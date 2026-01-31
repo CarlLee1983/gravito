@@ -157,6 +157,339 @@ describe('NotificationManager', () => {
       await job.handle()
     }
   })
+
+  describe('Metrics', () => {
+    it('enableMetrics() 應該啟用 metrics 收集', () => {
+      const core = {
+        logger: { warn: jest.fn(), error: jest.fn() },
+        hooks: { emit: jest.fn() },
+      }
+      const manager = new NotificationManager(core as any)
+
+      // 預設情況下，metrics 應該是未啟用的
+      expect(manager.getMetrics()).toBeUndefined()
+
+      // 啟用 metrics
+      manager.enableMetrics()
+
+      // 現在 getMetrics 應該返回空的摘要
+      const metrics = manager.getMetrics()
+      expect(metrics).toBeDefined()
+      expect(metrics?.totalSent).toBe(0)
+    })
+
+    it('enableMetrics() 應該支援自訂歷史記錄上限', () => {
+      const core = {
+        logger: { warn: jest.fn(), error: jest.fn() },
+        hooks: { emit: jest.fn() },
+      }
+      const manager = new NotificationManager(core as any)
+
+      manager.enableMetrics(5)
+
+      // 這個測試只是確認不會拋出錯誤
+      expect(manager.getMetrics()).toBeDefined()
+    })
+
+    it('getMetrics() 應該返回通知 metrics 摘要', async () => {
+      const core = {
+        logger: { warn: jest.fn(), error: jest.fn() },
+        hooks: { emit: jest.fn() },
+      }
+      const manager = new NotificationManager(core as any)
+      manager.enableMetrics()
+
+      manager.channel('mail', {
+        send: async () => {},
+      })
+
+      class TestNotification extends Notification {
+        via(_notifiable: Notifiable): string[] {
+          return ['mail']
+        }
+
+        toMail(_notifiable: Notifiable) {
+          return { subject: 'Test', to: 'test@example.com' }
+        }
+      }
+
+      await manager.send(notifiable, new TestNotification())
+
+      const metrics = manager.getMetrics()
+      expect(metrics).toBeDefined()
+      expect(metrics?.totalSent).toBe(1)
+      expect(metrics?.totalSuccess).toBe(1)
+      expect(metrics?.byChannel.mail).toBeDefined()
+      expect(metrics?.byChannel.mail.success).toBe(1)
+    })
+
+    it('getMetrics() 應該支援 since 參數過濾', async () => {
+      const core = {
+        logger: { warn: jest.fn(), error: jest.fn() },
+        hooks: { emit: jest.fn() },
+      }
+      const manager = new NotificationManager(core as any)
+      manager.enableMetrics()
+
+      manager.channel('mail', {
+        send: async () => {},
+      })
+
+      class TestNotification extends Notification {
+        via(_notifiable: Notifiable): string[] {
+          return ['mail']
+        }
+
+        toMail(_notifiable: Notifiable) {
+          return { subject: 'Test', to: 'test@example.com' }
+        }
+      }
+
+      const beforeSend = new Date()
+      await new Promise((resolve) => setTimeout(resolve, 10)) // 確保有時間差異
+
+      await manager.send(notifiable, new TestNotification())
+
+      // 使用 since 參數
+      const metricsAll = manager.getMetrics()
+      const metricsSince = manager.getMetrics(beforeSend)
+
+      expect(metricsAll?.totalSent).toBe(1)
+      expect(metricsSince?.totalSent).toBe(1)
+
+      // 使用未來時間應該返回 0
+      const futureMetrics = manager.getMetrics(new Date(Date.now() + 10000))
+      expect(futureMetrics?.totalSent).toBe(0)
+    })
+
+    it('getRecentFailures() 應該返回最近的失敗記錄', async () => {
+      const core = {
+        logger: { warn: jest.fn(), error: jest.fn() },
+        hooks: { emit: jest.fn() },
+      }
+      const manager = new NotificationManager(core as any)
+      manager.enableMetrics()
+
+      manager.channel('broken', {
+        send: async () => {
+          throw new Error('Test error')
+        },
+      })
+
+      class TestNotification extends Notification {
+        via(_notifiable: Notifiable): string[] {
+          return ['broken']
+        }
+      }
+
+      await manager.send(notifiable, new TestNotification())
+
+      const failures = manager.getRecentFailures(5)
+      expect(failures).toBeDefined()
+      expect(failures.length).toBe(1)
+      expect(failures[0].success).toBe(false)
+      expect(failures[0].channel).toBe('broken')
+      expect(failures[0].error).toContain('Test error')
+    })
+
+    it('getRecentFailures() 應該在未啟用 metrics 時返回空陣列', () => {
+      const core = {
+        logger: { warn: jest.fn(), error: jest.fn() },
+        hooks: { emit: jest.fn() },
+      }
+      const manager = new NotificationManager(core as any)
+
+      const failures = manager.getRecentFailures()
+      expect(failures).toEqual([])
+    })
+
+    it('getRecentFailures() 應該支援自訂 limit 參數', async () => {
+      const core = {
+        logger: { warn: jest.fn(), error: jest.fn() },
+        hooks: { emit: jest.fn() },
+      }
+      const manager = new NotificationManager(core as any)
+      manager.enableMetrics()
+
+      manager.channel('broken', {
+        send: async () => {
+          throw new Error('Test error')
+        },
+      })
+
+      class TestNotification extends Notification {
+        via(_notifiable: Notifiable): string[] {
+          return ['broken']
+        }
+      }
+
+      // 發送 5 次失敗的通知
+      for (let i = 0; i < 5; i++) {
+        await manager.send(notifiable, new TestNotification())
+      }
+
+      const failures = manager.getRecentFailures(3)
+      expect(failures.length).toBe(3)
+    })
+  })
+
+  describe('Concurrency Limit', () => {
+    it('sendWithConcurrencyLimit() 應該限制並發數量', async () => {
+      const core = {
+        logger: { warn: jest.fn(), error: jest.fn() },
+        hooks: { emit: jest.fn() },
+      }
+      const manager = new NotificationManager(core as any)
+
+      let concurrentCount = 0
+      let maxConcurrent = 0
+
+      manager.channel('mail', {
+        send: async () => {
+          concurrentCount++
+          maxConcurrent = Math.max(maxConcurrent, concurrentCount)
+          await new Promise((resolve) => setTimeout(resolve, 50))
+          concurrentCount--
+        },
+      })
+
+      manager.channel('sms', {
+        send: async () => {
+          concurrentCount++
+          maxConcurrent = Math.max(maxConcurrent, concurrentCount)
+          await new Promise((resolve) => setTimeout(resolve, 50))
+          concurrentCount--
+        },
+      })
+
+      manager.channel('slack', {
+        send: async () => {
+          concurrentCount++
+          maxConcurrent = Math.max(maxConcurrent, concurrentCount)
+          await new Promise((resolve) => setTimeout(resolve, 50))
+          concurrentCount--
+        },
+      })
+
+      class TestNotification extends Notification {
+        via(_notifiable: Notifiable): string[] {
+          return ['mail', 'sms', 'slack']
+        }
+
+        toMail(_notifiable: Notifiable) {
+          return { subject: 'Test', to: 'test@example.com' }
+        }
+
+        toSms(_notifiable: Notifiable) {
+          return { to: '+123', message: 'Test' }
+        }
+
+        toSlack(_notifiable: Notifiable) {
+          return { text: 'Test', channel: '#test' }
+        }
+      }
+
+      await manager.send(notifiable, new TestNotification(), {
+        concurrency: 2,
+      })
+
+      expect(maxConcurrent).toBeLessThanOrEqual(2)
+    })
+  })
+
+  describe('Send Modes', () => {
+    it('應該支援 parallel 模式（預設）', async () => {
+      const core = {
+        logger: { warn: jest.fn(), error: jest.fn() },
+        hooks: { emit: jest.fn() },
+      }
+      const manager = new NotificationManager(core as any)
+
+      const sendOrder: string[] = []
+
+      manager.channel('mail', {
+        send: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 10))
+          sendOrder.push('mail')
+        },
+      })
+
+      manager.channel('sms', {
+        send: async () => {
+          sendOrder.push('sms')
+        },
+      })
+
+      class TestNotification extends Notification {
+        via(_notifiable: Notifiable): string[] {
+          return ['mail', 'sms']
+        }
+
+        toMail(_notifiable: Notifiable) {
+          return { subject: 'Test', to: 'test@example.com' }
+        }
+
+        toSms(_notifiable: Notifiable) {
+          return { to: '+123', message: 'Test' }
+        }
+      }
+
+      const result = await manager.send(notifiable, new TestNotification(), {
+        parallel: true,
+      })
+
+      // parallel 模式下，sms 應該先完成（因為沒有延遲）
+      expect(sendOrder[0]).toBe('sms')
+      expect(sendOrder[1]).toBe('mail')
+      expect(result.allSuccess).toBe(true)
+    })
+
+    it('應該支援 sequential 模式', async () => {
+      const core = {
+        logger: { warn: jest.fn(), error: jest.fn() },
+        hooks: { emit: jest.fn() },
+      }
+      const manager = new NotificationManager(core as any)
+
+      const sendOrder: string[] = []
+
+      manager.channel('mail', {
+        send: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 10))
+          sendOrder.push('mail')
+        },
+      })
+
+      manager.channel('sms', {
+        send: async () => {
+          sendOrder.push('sms')
+        },
+      })
+
+      class TestNotification extends Notification {
+        via(_notifiable: Notifiable): string[] {
+          return ['mail', 'sms']
+        }
+
+        toMail(_notifiable: Notifiable) {
+          return { subject: 'Test', to: 'test@example.com' }
+        }
+
+        toSms(_notifiable: Notifiable) {
+          return { to: '+123', message: 'Test' }
+        }
+      }
+
+      const result = await manager.send(notifiable, new TestNotification(), {
+        parallel: false,
+      })
+
+      // sequential 模式下，應該按照 via() 返回的順序執行
+      expect(sendOrder[0]).toBe('mail')
+      expect(sendOrder[1]).toBe('sms')
+      expect(result.allSuccess).toBe(true)
+    })
+  })
 })
 
 describe('Channels', () => {

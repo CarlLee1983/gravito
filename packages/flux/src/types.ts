@@ -27,10 +27,10 @@ export interface FluxWaitResult {
  * Supports synchronous results, promises, and suspension signals.
  */
 export type StepHandlerResult =
-  | void
+  | undefined
   | undefined
   | FluxWaitResult
-  | Promise<void | undefined | FluxWaitResult>
+  | Promise<undefined | undefined | FluxWaitResult>
 
 /**
  * Internal representation of a step's execution outcome.

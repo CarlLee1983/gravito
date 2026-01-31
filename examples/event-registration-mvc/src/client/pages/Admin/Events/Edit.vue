@@ -164,9 +164,8 @@
 </template>
 
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3'
+import { router } from '@inertiajs/vue3'
 import { reactive, ref } from 'vue'
-import AdminLayout from '../../../components/AdminLayout.vue'
 
 const props = defineProps<{
   event: any
@@ -184,7 +183,9 @@ const form = reactive({
 })
 
 function formatDateTimeLocal(dateString: string): string {
-  if (!dateString) return ''
+  if (!dateString) {
+    return ''
+  }
   const date = new Date(dateString)
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')

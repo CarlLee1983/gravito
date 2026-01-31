@@ -169,8 +169,12 @@ export class HealthChecker {
    * @returns The most severe status found
    */
   private determineOverallStatus(statuses: HealthStatus[]): HealthStatus {
-    if (statuses.includes('unhealthy')) return 'unhealthy'
-    if (statuses.includes('degraded')) return 'degraded'
+    if (statuses.includes('unhealthy')) {
+      return 'unhealthy'
+    }
+    if (statuses.includes('degraded')) {
+      return 'degraded'
+    }
     return 'healthy'
   }
 }

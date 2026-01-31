@@ -113,24 +113,46 @@ export function getStableSchemaKey(schema: unknown): string {
 
   // 處理 ZodDiscriminatedUnion
   if (typeName === 'ZodDiscriminatedUnion' && def.discriminator && def.options) {
-    const options = Array.from(def.options as Map<string, unknown>).map(([key, opt]) =>
+    const options = Array.from(def.options as Map<string, unknown>).map(([_key, opt]) =>
       getStableSchemaKey(opt)
     )
     return `discriminated:${String(def.discriminator)}:[${options.sort().join('|')}]`
   }
 
   // 基本型別處理
-  if (typeName === 'ZodString') return 'str'
-  if (typeName === 'ZodNumber') return 'num'
-  if (typeName === 'ZodBoolean') return 'bool'
-  if (typeName === 'ZodDate') return 'date'
-  if (typeName === 'ZodBigInt') return 'bigint'
-  if (typeName === 'ZodUndefined') return 'undefined'
-  if (typeName === 'ZodNull') return 'null'
-  if (typeName === 'ZodAny') return 'any'
-  if (typeName === 'ZodUnknown') return 'unknown'
-  if (typeName === 'ZodNever') return 'never'
-  if (typeName === 'ZodVoid') return 'void'
+  if (typeName === 'ZodString') {
+    return 'str'
+  }
+  if (typeName === 'ZodNumber') {
+    return 'num'
+  }
+  if (typeName === 'ZodBoolean') {
+    return 'bool'
+  }
+  if (typeName === 'ZodDate') {
+    return 'date'
+  }
+  if (typeName === 'ZodBigInt') {
+    return 'bigint'
+  }
+  if (typeName === 'ZodUndefined') {
+    return 'undefined'
+  }
+  if (typeName === 'ZodNull') {
+    return 'null'
+  }
+  if (typeName === 'ZodAny') {
+    return 'any'
+  }
+  if (typeName === 'ZodUnknown') {
+    return 'unknown'
+  }
+  if (typeName === 'ZodNever') {
+    return 'never'
+  }
+  if (typeName === 'ZodVoid') {
+    return 'void'
+  }
 
   // Fallback：使用 typeName 的雜湊
   return stableHash(typeName)

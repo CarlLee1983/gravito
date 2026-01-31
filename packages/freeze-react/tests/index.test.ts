@@ -45,7 +45,7 @@ mock.module('react', () => ({
     return [initial as T, () => {}]
   },
   createElement: createElementMock,
-  useEffect: (effect: () => () => void) => {},
+  useEffect: (_effect: () => () => void) => {},
 }))
 
 mock.module('react/jsx-runtime', () => ({

@@ -126,7 +126,9 @@ describeBench('GridFS Performance', () => {
 
       await new Promise<void>((resolve, reject) => {
         stream.write(data, (err) => {
-          if (err) reject(err)
+          if (err) {
+            reject(err)
+          }
         })
         stream.end(() => resolve())
       })

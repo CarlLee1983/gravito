@@ -1,6 +1,5 @@
 import type { GravitoContext } from '@gravito/core'
 import type { FortifyConfig } from '../config'
-import { ErrorCodes } from '../errors/codes'
 import { FortifyError } from '../errors/FortifyError'
 import type { FortifyEventEmitter } from '../events/EventEmitter'
 import { getAuthUser } from '../middleware/BearerTokenAuth'
@@ -223,7 +222,9 @@ export class TokenController extends BaseController {
   }
 
   private parseAbilities(abilities?: string | string[]): string[] | undefined {
-    if (!abilities) return undefined
+    if (!abilities) {
+      return undefined
+    }
 
     if (typeof abilities === 'string') {
       try {

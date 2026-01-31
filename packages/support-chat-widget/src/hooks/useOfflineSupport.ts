@@ -91,7 +91,9 @@ export function useOfflineSupport(options: UseOfflineSupportOptions): UseOffline
    */
   const queueMessage = useCallback(
     (content: string) => {
-      if (!conversationId) return
+      if (!conversationId) {
+        return
+      }
 
       const state = chatPersistence.load()
 
@@ -123,7 +125,9 @@ export function useOfflineSupport(options: UseOfflineSupportOptions): UseOffline
    * @throws {Error} If the synchronization process fails (handled via onSyncError).
    */
   const syncPending = useCallback(async () => {
-    if (!conversationId) return
+    if (!conversationId) {
+      return
+    }
 
     const state = chatPersistence.load()
     if (!state || state.pendingMessages.length === 0) {

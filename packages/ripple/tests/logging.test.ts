@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
-import type { LogLevel } from '../src/logging/Logger'
 import { ConsoleLogger, createLogger } from '../src/logging/Logger'
 
 describe('Logger', () => {

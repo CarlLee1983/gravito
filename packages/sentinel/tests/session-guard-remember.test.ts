@@ -22,7 +22,9 @@ describe('SessionGuard Remember Me', () => {
       retrieveById: mock(async (id: string | number) => users[id] || null),
       retrieveByToken: mock(async (id: string | number, token: string) => {
         const user = users[id]
-        if (user && user.getRememberToken() === token) return user
+        if (user && user.getRememberToken() === token) {
+          return user
+        }
         return null
       }),
       updateRememberToken: mock(async () => {}),

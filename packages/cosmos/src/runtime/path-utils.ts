@@ -162,7 +162,7 @@ export const pathUtils = {
 
     let normalized = result.join('/')
     if (isAbs) {
-      normalized = '/' + normalized
+      normalized = `/${normalized}`
     }
     return normalized || (isAbs ? '/' : '.')
   },

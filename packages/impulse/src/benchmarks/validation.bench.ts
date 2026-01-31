@@ -1,7 +1,6 @@
 import { Bench } from 'tinybench'
 import * as v from 'valibot'
 import { z } from 'zod'
-import { SchemaCompilationCache } from '../core/SchemaCompilationCache'
 import { ValibotValidator } from '../validation/ValibotValidator'
 import { ZodValidator } from '../validation/ZodValidator'
 

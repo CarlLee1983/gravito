@@ -1,3 +1,5 @@
+// biome-ignore-all lint/suspicious/noExplicitAny: Complex Atlas Query Builder integration requires any casting
+
 /**
  * Relay Connection Implementation.
  *
@@ -191,12 +193,19 @@ export function createConnectionResolver<T extends Model>(
       // biome-ignore lint/suspicious/noExplicitAny: Recursive apply
       applyLogicalOperators(countQuery as any, where, (q, col, val) => {
         // biome-ignore lint/suspicious/noExplicitAny: Recursive apply
-        if (typeof val === 'string') applyFilter(q as any, col, { eq: val } as any, 'string')
+        if (typeof val === 'string') {
+          applyFilter(q as any, col, { eq: val } as any, 'string')
+        }
         // biome-ignore lint/suspicious/noExplicitAny: Recursive apply
-        else if (typeof val === 'number') applyFilter(q as any, col, { eq: val } as any, 'number')
-        else if (typeof val === 'boolean') q.where(col, '=', val)
+        else if (typeof val === 'number') {
+          applyFilter(q as any, col, { eq: val } as any, 'number')
+        } else if (typeof val === 'boolean') {
+          q.where(col, '=', val)
+        }
         // biome-ignore lint/suspicious/noExplicitAny: Recursive apply
-        else applyFilter(q as any, col, val as any, 'string')
+        else {
+          applyFilter(q as any, col, val as any, 'string')
+        }
       })
     }
     const totalCount = await countQuery.count()

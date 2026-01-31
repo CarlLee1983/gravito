@@ -4,7 +4,7 @@ export const CONFIG = {
   postgres: {
     driver: 'postgres' as const,
     host: process.env.DB_HOST_PG || 'localhost',
-    port: Number.parseInt(process.env.DB_PORT_PG || '5432'),
+    port: Number.parseInt(process.env.DB_PORT_PG || '5432', 10),
     username: 'gravito',
     password: 'password',
     database: 'atlas_bench',
@@ -12,7 +12,7 @@ export const CONFIG = {
   mysql: {
     driver: 'mysql' as const,
     host: process.env.DB_HOST_MYSQL || 'localhost',
-    port: Number.parseInt(process.env.DB_PORT_MYSQL || '3306'),
+    port: Number.parseInt(process.env.DB_PORT_MYSQL || '3306', 10),
     username: 'gravito',
     password: 'password',
     database: 'atlas_bench',
@@ -20,7 +20,7 @@ export const CONFIG = {
   mariadb: {
     driver: 'mariadb' as const,
     host: process.env.DB_HOST_MARIA || 'localhost',
-    port: Number.parseInt(process.env.DB_PORT_MARIA || '3306'),
+    port: Number.parseInt(process.env.DB_PORT_MARIA || '3306', 10),
     username: 'gravito',
     password: 'password',
     database: 'atlas_bench',

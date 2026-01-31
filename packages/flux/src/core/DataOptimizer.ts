@@ -164,7 +164,7 @@ export class DataOptimizer {
    * @returns A DataReference object.
    * @private
    */
-  private createReference(value: unknown, size: number): DataReference {
+  private createReference(_value: unknown, size: number): DataReference {
     return {
       __ref: true,
       id: this.generateReferenceId(),

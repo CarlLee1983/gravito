@@ -46,7 +46,7 @@ describe('Integration: Bridge Event Flow', () => {
     expect(logs).toBeDefined()
     expect(logs?.length).toBeGreaterThan(0)
 
-    const lastLog = JSON.parse(logs![0])
+    const lastLog = JSON.parse(logs?.[0])
     expect(lastLog.workerId).toBeDefined()
     expect(['success', 'info']).toContain(lastLog.level)
   })

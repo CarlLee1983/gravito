@@ -175,7 +175,9 @@ export class SitemapGenerator {
     }
 
     const writeManifest = async () => {
-      if (!this.options.generateManifest) return
+      if (!this.options.generateManifest) {
+        return
+      }
 
       const manifest: ShardManifest = {
         version: 1,

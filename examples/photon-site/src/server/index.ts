@@ -446,7 +446,9 @@ app.get('/legal/:page', (c) => {
 // Localized Docs Root Redirect
 app.get('/:lang/docs', (c) => {
   const lang = c.req.param('lang')
-  if (!supportedLangs.includes(lang)) return c.notFound()
+  if (!supportedLangs.includes(lang)) {
+    return c.notFound()
+  }
   return c.redirect(`/${lang}/docs/intro`)
 })
 
@@ -473,25 +475,33 @@ app.get('/:lang/docs/:page', async (c) => {
 // Localized Patterns
 app.get('/:lang/patterns', (c) => {
   const lang = c.req.param('lang')
-  if (!supportedLangs.includes(lang)) return c.notFound()
+  if (!supportedLangs.includes(lang)) {
+    return c.notFound()
+  }
   return renderInertia(c, 'Patterns', { lang })
 })
 
 // Localized Ecosystem
 app.get('/:lang/ecosystem', (c) => {
   const lang = c.req.param('lang')
-  if (!supportedLangs.includes(lang)) return c.notFound()
+  if (!supportedLangs.includes(lang)) {
+    return c.notFound()
+  }
   return renderInertia(c, 'Ecosystem', { lang })
 })
 
 // Localized Legal
 app.get('/:lang/legal/:page', (c) => {
   const lang = c.req.param('lang')
-  if (!supportedLangs.includes(lang)) return c.notFound()
+  if (!supportedLangs.includes(lang)) {
+    return c.notFound()
+  }
 
   const pageParam = c.req.param('page')
   const pageData = (legalContent as any)[pageParam || '']
-  if (!pageData) return c.redirect(`/${lang}`)
+  if (!pageData) {
+    return c.redirect(`/${lang}`)
+  }
 
   const content = pageData[lang] || pageData.en
   return renderInertia(c, 'Legal', { ...content, slug: pageParam, lang })
@@ -505,7 +515,9 @@ app.get('/:lang', (c) => {
 
   const lang = queryLang || pathLang || 'en'
 
-  if (!supportedLangs.includes(lang)) return c.notFound()
+  if (!supportedLangs.includes(lang)) {
+    return c.notFound()
+  }
 
   return renderInertia(c, 'Home', { version: '1.5.0', lang })
 })

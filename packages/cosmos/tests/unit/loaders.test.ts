@@ -122,7 +122,7 @@ describe('TranslationLoaders', () => {
 
     it('should support ETag caching', async () => {
       let callCount = 0
-      globalThis.fetch = mock((url: string, options?: any) => {
+      globalThis.fetch = mock((_url: string, options?: any) => {
         callCount++
         const ifNoneMatch = options?.headers?.['If-None-Match']
 
@@ -190,7 +190,7 @@ describe('TranslationLoaders', () => {
     it('should support custom headers', async () => {
       let receivedHeaders: Record<string, string> = {}
 
-      globalThis.fetch = mock((url: string, options?: any) => {
+      globalThis.fetch = mock((_url: string, options?: any) => {
         receivedHeaders = options?.headers || {}
         return Promise.resolve({
           ok: true,

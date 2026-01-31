@@ -94,7 +94,7 @@ export class MemoryStore implements CacheStore, TaggableStore {
    *
    * @param options - Configuration for capacity and eviction.
    */
-  constructor(private options: MemoryStoreOptions = {}) {
+  constructor(options: MemoryStoreOptions = {}) {
     this.entries = new LRUCache<Entry>(options.maxItems ?? 0, (key) => {
       this.tagIndexRemove(key)
       this.stats.evictions++

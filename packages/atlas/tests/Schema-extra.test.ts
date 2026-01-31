@@ -1,4 +1,4 @@
-import { describe, expect, it, spyOn } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import { DB } from '../src/DB'
 import { Schema } from '../src/schema/Schema'
 import type { QueryResult } from '../src/types'
@@ -32,7 +32,9 @@ describe('Schema facade', () => {
     const originalConnection = DB.connection
     // @ts-expect-error - mock connection
     DB.connection = (name?: string) => {
-      if (name === TEST_CONN) return mockConnection
+      if (name === TEST_CONN) {
+        return mockConnection
+      }
       return originalConnection.call(DB, name)
     }
 

@@ -19,7 +19,9 @@ export class MagicLinkService {
 
   async verify(token: string): Promise<any | null> {
     const result = await this.tokenService.validateToken(token)
-    if (!result) return null
+    if (!result) {
+      return null
+    }
 
     // Check ability
     const abilities = result.token.abilities

@@ -1,4 +1,4 @@
-import { type CacheLock, LockTimeoutError, sleep } from './locks'
+import { type CacheLock, sleep } from './locks'
 import type { CacheStore } from './store'
 import { isTaggableStore } from './store'
 import { type CacheKey, type CacheTtl, normalizeCacheKey } from './types'

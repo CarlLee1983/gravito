@@ -71,9 +71,13 @@ export class OrbitNebula implements GravitoOrbit {
 
     let defaultDisk = config.default
     if (!defaultDisk) {
-      if (config.local) defaultDisk = 'local'
-      else if (config.provider) defaultDisk = 'custom'
-      else defaultDisk = 'local'
+      if (config.local) {
+        defaultDisk = 'local'
+      } else if (config.provider) {
+        defaultDisk = 'custom'
+      } else {
+        defaultDisk = 'local'
+      }
     }
 
     const managerOptions = {

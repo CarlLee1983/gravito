@@ -65,7 +65,9 @@ export class RedisBatcher {
   }
 
   async flush(): Promise<void> {
-    if (this.pending.length === 0) return
+    if (this.pending.length === 0) {
+      return
+    }
 
     const batch = this.pending.splice(0)
     const pipeline =
@@ -104,7 +106,9 @@ export class RedisBatcher {
   }
 
   private startTimer(): void {
-    if (this.timer) clearInterval(this.timer)
+    if (this.timer) {
+      clearInterval(this.timer)
+    }
     this.timer = setInterval(() => {
       this.flush()
     }, this.options.flushInterval)

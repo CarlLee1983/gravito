@@ -1,6 +1,5 @@
 import { describe, expect, it, mock } from 'bun:test'
 import { Channel } from '../src/Channel'
-import type { ChannelEventMap } from '../src/types'
 
 // Module augmentation
 declare module '../src/types' {
@@ -17,7 +16,7 @@ describe('Channel', () => {
     const channel = new Channel<'news'>('news', sendMessage)
 
     // Callback type inference check (compile time)
-    const callback = mock((data: { title: string }) => {})
+    const callback = mock((_data: { title: string }) => {})
 
     channel.listen('ArticlePublished', callback)
 

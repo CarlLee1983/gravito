@@ -1,6 +1,4 @@
 <script lang="ts">
-import StaticLink from './StaticLink.svelte'
-
 const path = $state(typeof window !== 'undefined' ? window.location.pathname : '/')
 </script>
 

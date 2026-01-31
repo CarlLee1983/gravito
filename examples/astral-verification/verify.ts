@@ -21,7 +21,9 @@ try {
   try {
     const usersRes = await fetch('http://localhost:3000/users')
     console.log(`   Server status: ${usersRes.status}`)
-    if (!usersRes.ok) console.warn('   /users returned non-200')
+    if (!usersRes.ok) {
+      console.warn('   /users returned non-200')
+    }
   } catch (e) {
     console.error('   Failed to connect to server at all:', e)
   }
@@ -30,7 +32,9 @@ try {
   console.log('👉 Fetching /openapi.json...')
   const specRes = await fetch('http://localhost:3000/openapi.json')
 
-  if (!specRes.ok) throw new Error(`Failed to fetch spec: ${specRes.status}`)
+  if (!specRes.ok) {
+    throw new Error(`Failed to fetch spec: ${specRes.status}`)
+  }
 
   const spec = await specRes.json()
   console.log('✅ Spec fetched successfully')

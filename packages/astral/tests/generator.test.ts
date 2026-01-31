@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { FormRequest } from '@gravito/impulse'
 import { z } from 'zod'
-import { AstralConfigError, AstralResourceError, AstralSchemaError } from '../src/errors'
+import { AstralConfigError, AstralResourceError } from '../src/errors'
 import { astral, OrbitAstral } from '../src/index'
 import { OpenApiGenerator } from '../src/OpenApiGenerator'
 

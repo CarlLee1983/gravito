@@ -4,7 +4,7 @@ import './styles.css'
 createInertiaApp({
   resolve: (name) => {
     const pages = import.meta.glob('./pages/**/*.svelte', { eager: true })
-    return pages[`./pages/${name}.svelte`]
+    return pages[`./pages/${name}.svelte`] as any
   },
   setup({ el, App }) {
     new App({ target: el })

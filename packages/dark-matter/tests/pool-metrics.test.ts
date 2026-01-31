@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'bun:test'
+import { beforeAll, describe, expect, it } from 'bun:test'
 
 // 模擬 MongoDB Pool 結構
 class MockPool {
@@ -243,7 +243,7 @@ describe('MongoPoolMonitor', () => {
 
       expect(metrics).not.toBeNull()
       // 8 個連線被 checkout，只剩 2 個可用 - 可能有連線洩漏
-      const utilizationRate = (metrics!.currentCheckedOutCount / metrics!.totalConnections) * 100
+      const utilizationRate = (metrics?.currentCheckedOutCount / metrics?.totalConnections) * 100
       expect(utilizationRate).toBe(80) // 80% 使用率
     })
 

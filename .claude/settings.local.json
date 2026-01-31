@@ -41,6 +41,7 @@
       "Bash(git pull:*)",
       "Bash(gh pr create:*)",
       "Bash(bunx biome check:*)",
+      "Bash(git reset:*)",
       "Bash(gh pr edit:*)"
     ]
   },

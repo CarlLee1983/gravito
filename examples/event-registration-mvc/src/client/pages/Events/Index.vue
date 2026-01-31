@@ -81,8 +81,6 @@
 </template>
 
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3'
-import Layout from '../../components/Layout.vue'
 import { useI18n } from '../../composables/useI18n'
 
 const { t } = useI18n()
@@ -92,7 +90,7 @@ defineProps<{
 }>()
 
 const truncate = (text: string, length: number) => {
-  return text.length > length ? text.substring(0, length) + '...' : text
+  return text.length > length ? `${text.substring(0, length)}...` : text
 }
 
 const formatDate = (date: string) => {

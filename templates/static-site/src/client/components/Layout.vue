@@ -26,7 +26,6 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import StaticLink from './StaticLink.vue'
 
 defineProps<{ children?: any }>()
 

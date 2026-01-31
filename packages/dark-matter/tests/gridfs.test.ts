@@ -121,7 +121,9 @@ describeIntegration('GridFS Complete Features', () => {
 
       while (true) {
         const { done, value } = await reader.read()
-        if (done) break
+        if (done) {
+          break
+        }
         chunks.push(value)
       }
 
@@ -147,7 +149,9 @@ describeIntegration('GridFS Complete Features', () => {
 
       while (true) {
         const { done, value } = await reader.read()
-        if (done) break
+        if (done) {
+          break
+        }
         chunks.push(value)
         totalBytes += value.length
       }

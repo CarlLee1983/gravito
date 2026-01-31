@@ -1,5 +1,4 @@
-import { describe, expect, it, spyOn } from 'bun:test'
-import * as fs from 'node:fs'
+import { describe, expect, it } from 'bun:test'
 import { autoConfigure, loadConfigFile } from '../src/config/loadConfig'
 import { DB } from '../src/DB'
 

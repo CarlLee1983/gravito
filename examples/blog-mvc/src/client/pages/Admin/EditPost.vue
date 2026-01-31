@@ -1,16 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, useForm } from '@inertiajs/vue3'
-import {
-  AlertCircle,
-  ArrowLeft,
-  Edit3,
-  Eye,
-  Loader2,
-  Save,
-  Tag,
-  Trash2,
-  User,
-} from 'lucide-vue-next'
+import { useForm } from '@inertiajs/vue3'
 import { marked } from 'marked'
 import { computed, ref } from 'vue'
 

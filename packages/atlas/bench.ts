@@ -17,7 +17,9 @@ function runBench(name: string, fn: () => void, iterations = 10000) {
 console.log('--- DirtyTracker Bench ---')
 const tracker = new DirtyTracker()
 const data: any = {}
-for (let i = 0; i < 100; i++) data[`prop${i}`] = `value${i}`
+for (let i = 0; i < 100; i++) {
+  data[`prop${i}`] = `value${i}`
+}
 tracker.setOriginal(data)
 
 runBench('mark dirty (100 attributes)', () => {

@@ -138,10 +138,8 @@
 </template>
 
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3'
+import { router } from '@inertiajs/vue3'
 import { ref } from 'vue'
-import AdminLayout from '../../../components/AdminLayout.vue'
-import QrCodeDisplay from '../../../components/QrCodeDisplay.vue'
 import { useI18n } from '../../../composables/useI18n'
 
 const { t } = useI18n()

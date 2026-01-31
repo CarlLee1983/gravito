@@ -270,7 +270,9 @@ export class SchedulerManager {
         lastError = err
         this.logger?.error(`Task ${task.name} failed (attempt ${attempt + 1})`, err)
       } finally {
-        if (timeoutId) clearTimeout(timeoutId)
+        if (timeoutId) {
+          clearTimeout(timeoutId)
+        }
       }
     }
 

@@ -1,5 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
-import { ChannelManager } from '../src/channels'
+import { describe, expect, it, mock } from 'bun:test'
 import { RippleServer } from '../src/RippleServer'
 
 describe('Ripple Rate Limiting', () => {

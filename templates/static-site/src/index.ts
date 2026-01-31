@@ -11,7 +11,7 @@ async function main() {
   // But we can start it for development/testing
   if (process.env.NODE_ENV !== 'production') {
     const serverConfig = core.liftoff()
-    Bun.serve(serverConfig)
+    Bun.serve(serverConfig as any)
   }
 }
 

@@ -127,10 +127,10 @@ export class RollbackManager {
         currentCtx = await this.persist(currentCtx)
 
         if (this.retryPolicy.getConfig().maxAttempts === 0) {
-          await step.compensate!(currentCtx)
+          await step.compensate?.(currentCtx)
         } else {
           const result = await this.retryPolicy.execute(async () => {
-            await step.compensate!(currentCtx)
+            await step.compensate?.(currentCtx)
           })
 
           if (!result.success) {

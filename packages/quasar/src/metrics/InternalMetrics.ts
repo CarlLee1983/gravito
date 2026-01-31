@@ -42,13 +42,18 @@ export class MetricsCollector {
 
   recordHeartbeat(success: boolean, duration?: number): void {
     this.metrics.heartbeats.total++
-    if (success) this.metrics.heartbeats.successful++
-    else this.metrics.heartbeats.failed++
+    if (success) {
+      this.metrics.heartbeats.successful++
+    } else {
+      this.metrics.heartbeats.failed++
+    }
 
     if (duration !== undefined) {
       this.heartbeatDurations[this.heartbeatIdx] = duration
       this.heartbeatIdx = (this.heartbeatIdx + 1) % this.maxSamples
-      if (this.heartbeatCount < this.maxSamples) this.heartbeatCount++
+      if (this.heartbeatCount < this.maxSamples) {
+        this.heartbeatCount++
+      }
       this.metrics.heartbeats.avgDuration = this.calculateAverage(
         this.heartbeatDurations,
         this.heartbeatCount
@@ -58,24 +63,33 @@ export class MetricsCollector {
 
   recordProbe(success: boolean, duration?: number): void {
     this.metrics.probes.total++
-    if (!success) this.metrics.probes.errors++
+    if (!success) {
+      this.metrics.probes.errors++
+    }
 
     if (duration !== undefined) {
       this.probeDurations[this.probeIdx] = duration
       this.probeIdx = (this.probeIdx + 1) % this.maxSamples
-      if (this.probeCount < this.maxSamples) this.probeCount++
+      if (this.probeCount < this.maxSamples) {
+        this.probeCount++
+      }
       this.metrics.probes.avgDuration = this.calculateAverage(this.probeDurations, this.probeCount)
     }
   }
 
   recordBridgeEvent(processed: boolean, duration?: number): void {
-    if (processed) this.metrics.bridges.eventsProcessed++
-    else this.metrics.bridges.eventsDropped++
+    if (processed) {
+      this.metrics.bridges.eventsProcessed++
+    } else {
+      this.metrics.bridges.eventsDropped++
+    }
 
     if (duration !== undefined) {
       this.publishDurations[this.publishIdx] = duration
       this.publishIdx = (this.publishIdx + 1) % this.maxSamples
-      if (this.publishCount < this.maxSamples) this.publishCount++
+      if (this.publishCount < this.maxSamples) {
+        this.publishCount++
+      }
       this.metrics.bridges.avgPublishDuration = this.calculateAverage(
         this.publishDurations,
         this.publishCount
@@ -95,7 +109,9 @@ export class MetricsCollector {
   }
 
   private calculateAverage(durations: Float64Array, count: number): number {
-    if (count === 0) return 0
+    if (count === 0) {
+      return 0
+    }
     let sum = 0
     for (let i = 0; i < count; i++) {
       sum += durations[i]

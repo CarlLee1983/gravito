@@ -123,7 +123,9 @@ export class DataExtractor {
           // In some Hono versions, param() returns all params if no key provided
           // or we might need to check if params() exists (Gravito extension)
           const params = (ctx.req as any).param()
-          if (typeof params === 'object') return params
+          if (typeof params === 'object') {
+            return params
+          }
         }
         if (typeof (ctx.req as any).params === 'function') {
           return (ctx.req as any).params()

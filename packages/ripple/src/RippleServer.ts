@@ -723,7 +723,9 @@ export class RippleServer {
     excludeClientId?: string
   ): void {
     const subscribers = this.channels.getSubscribers(channel)
-    if (subscribers.length === 0) return
+    if (subscribers.length === 0) {
+      return
+    }
 
     const message: ServerMessage =
       event === 'presence'

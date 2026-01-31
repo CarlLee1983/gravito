@@ -2,7 +2,6 @@ import { describe, expect, it } from 'bun:test'
 import type { PlanetCore } from '@gravito/core'
 import { Notification } from '../src/Notification'
 import { NotificationManager } from '../src/NotificationManager'
-import type { Notifiable } from '../src/types'
 
 class TestNotification extends Notification {
   via() {

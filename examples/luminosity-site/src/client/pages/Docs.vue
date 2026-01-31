@@ -1,9 +1,4 @@
 <script setup lang="ts">
-import { StaticLink } from '@gravito/freeze-vue'
-import { Head } from '@inertiajs/vue3'
-import { ChevronRight, Clock, Clock3, Edit2, Github, MapPin } from 'lucide-vue-next'
-import Layout from '../components/Layout.vue'
-
 interface SidebarSection {
   title: string
   items: SidebarLink[]

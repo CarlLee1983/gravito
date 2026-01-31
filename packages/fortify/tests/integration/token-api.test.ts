@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test'
 import { definefortifyConfig } from '../../src/config'
 import { TokenController } from '../../src/controllers/TokenController'
-import { PersonalAccessTokenService } from '../../src/services/PersonalAccessTokenService'
 import { createMockContext } from '../helpers/mock-context'
 
 describe('TokenController Integration', () => {

@@ -5,12 +5,7 @@ import { getFederationDirectivesSDL } from './federation/directives'
 import { createEntitiesResolver } from './federation/entities'
 import { applyFilter, applyLogicalOperators } from './filters'
 import { AtlasMutationFactory } from './mutations/atlas-mutations'
-import {
-  type ConnectionArgs,
-  createConnectionResolver,
-  generateConnectionQuery,
-  generateConnectionTypes,
-} from './pagination/relay-connection'
+import { createConnectionResolver, generateConnectionQuery } from './pagination/relay-connection'
 import { SCALAR_RESOLVERS, SCALAR_TYPE_DEFS } from './scalars'
 import { createSubscriptionResolver, SUBSCRIPTION_TYPE_DEFS } from './subscriptions'
 import { extractAppendFields, extractModelMetadata } from './utils/model-metadata'
@@ -360,11 +355,15 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
       const relations = getRelations(model as unknown as typeof Model)
       for (const [relName, meta] of relations) {
         const RelatedClass = meta.related?.()
-        if (!RelatedClass) continue
+        if (!RelatedClass) {
+          continue
+        }
 
         const relatedName = RelatedClass.name
         const isExposed = options.models.some((m) => m.name === relatedName)
-        if (!isExposed) continue
+        if (!isExposed) {
+          continue
+        }
 
         if (meta.type === 'hasMany' || meta.type === 'belongsToMany' || meta.type === 'morphMany') {
           outputFields.push(`${relName}: [${relatedName}]`)

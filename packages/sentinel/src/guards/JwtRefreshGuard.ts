@@ -92,7 +92,9 @@ export class JwtRefreshGuard<User extends Authenticatable = Authenticatable>
     }
 
     const token = this.getTokenForRequest()
-    if (!token) return null
+    if (!token) {
+      return null
+    }
 
     try {
       const payload = await verify(token, this.config.secret, this.config.algo ?? 'HS256')
@@ -208,7 +210,9 @@ export class JwtRefreshGuard<User extends Authenticatable = Authenticatable>
       }
 
       const user = (await this.provider.retrieveById(payload.sub as string)) as User | null
-      if (!user) return null
+      if (!user) {
+        return null
+      }
 
       return this.createTokenPair(user)
     } catch {

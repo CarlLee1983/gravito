@@ -73,7 +73,7 @@ describe('DynamicRouteResolver', () => {
       const resolved = await DynamicRouteResolver.resolve(routes)
 
       expect(resolved[0].getData).toBeDefined()
-      const data = await resolved[0].getData!()
+      const data = await resolved[0].getData?.()
       expect(data.title).toBe('Post hello')
     })
 

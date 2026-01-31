@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'bun:test'
-import type { ServiceMap } from '../src/Container'
 import { Container } from '../src/Container'
 
 class Logger {

@@ -236,7 +236,9 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
 
   private async retrieveFromRememberCookie(): Promise<User | null> {
     const cookieString = this.ctx.req.header('Cookie')
-    if (!cookieString) return null
+    if (!cookieString) {
+      return null
+    }
 
     const cookies = cookieString.split(';').reduce(
       (acc, cookie) => {
@@ -248,10 +250,14 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
     )
 
     const rememberToken = cookies[this.rememberCookieName]
-    if (!rememberToken) return null
+    if (!rememberToken) {
+      return null
+    }
 
     const [id, token] = rememberToken.split('|')
-    if (!id || !token) return null
+    if (!id || !token) {
+      return null
+    }
 
     if (this.provider.retrieveByToken) {
       const user = await this.provider.retrieveByToken(id, token)

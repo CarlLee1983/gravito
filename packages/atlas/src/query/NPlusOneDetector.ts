@@ -5,7 +5,9 @@ export class NPlusOneDetector {
   private static enabled = process.env.NODE_ENV !== 'production'
 
   static track(tableName: string, sql: string, structureKey: string): void {
-    if (!this.enabled) return
+    if (!this.enabled) {
+      return
+    }
 
     const now = Date.now()
     const signature = `${tableName}:${structureKey}`

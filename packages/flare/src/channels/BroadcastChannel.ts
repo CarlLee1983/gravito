@@ -1,5 +1,5 @@
 import type { Notification } from '../Notification'
-import type { Notifiable, NotificationChannel } from '../types'
+import type { AbortableSendOptions, Notifiable, NotificationChannel } from '../types'
 
 /**
  * Broadcast channel.
@@ -13,7 +13,11 @@ export class BroadcastChannel implements NotificationChannel {
     }
   ) {}
 
-  async send(notification: Notification, notifiable: Notifiable): Promise<void> {
+  async send(
+    notification: Notification,
+    notifiable: Notifiable,
+    _options?: AbortableSendOptions
+  ): Promise<void> {
     if (!notification.toBroadcast) {
       throw new Error('Notification does not implement toBroadcast method')
     }
@@ -25,6 +29,7 @@ export class BroadcastChannel implements NotificationChannel {
     // Broadcast to a private channel.
     const channel = `private-${notifiableType}.${notifiableId}`
 
+    // Note: Broadcast service 通常不支援 AbortSignal
     await this.broadcastService.broadcast(
       channel,
       broadcastNotification.type,

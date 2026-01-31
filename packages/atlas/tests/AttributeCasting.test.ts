@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { DB } from '../src/DB'
 import { Model } from '../src/orm/model/Model'
 
 describe('Attribute Casting', () => {

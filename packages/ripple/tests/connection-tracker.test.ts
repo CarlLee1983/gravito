@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import { createLogger } from '../src/logging/Logger'
 import { DefaultConnectionTracker } from '../src/tracking/ConnectionTracker'
 

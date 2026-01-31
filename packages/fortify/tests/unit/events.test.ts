@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { FortifyEventEmitter } from '../../src/events/EventEmitter'
-import type { LoginEvent, LogoutEvent, RegisterEvent } from '../../src/events/types'
+import type { LoginEvent } from '../../src/events/types'
 
 describe('FortifyEventEmitter', () => {
   test('subscribes to events using on()', () => {
@@ -39,7 +39,7 @@ describe('FortifyEventEmitter', () => {
     const emitter = new FortifyEventEmitter()
     const executionOrder: number[] = []
 
-    emitter.on('auth:login', async (data) => {
+    emitter.on('auth:login', async (_data) => {
       executionOrder.push(1)
       await new Promise((resolve) => setTimeout(resolve, 10))
       executionOrder.push(2)

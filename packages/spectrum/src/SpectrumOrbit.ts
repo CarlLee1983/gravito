@@ -424,7 +424,9 @@ export class SpectrumOrbit implements GravitoOrbit {
         let isClosed = false
 
         const cleanup = () => {
-          if (isClosed) return
+          if (isClosed) {
+            return
+          }
           isClosed = true
           clearInterval(heartbeat)
           this.listeners.delete(send)
@@ -434,7 +436,9 @@ export class SpectrumOrbit implements GravitoOrbit {
         }
 
         const send = (payload: string) => {
-          if (isClosed) return
+          if (isClosed) {
+            return
+          }
           Promise.resolve()
             .then(() => writer.write(encoder.encode(`data: ${payload}\n\n`)))
             .catch(() => {
@@ -445,7 +449,9 @@ export class SpectrumOrbit implements GravitoOrbit {
         this.listeners.add(send)
 
         const heartbeat = setInterval(() => {
-          if (isClosed) return
+          if (isClosed) {
+            return
+          }
           Promise.resolve()
             .then(() => writer.write(encoder.encode(': heartbeat\n\n')))
             .catch(() => {

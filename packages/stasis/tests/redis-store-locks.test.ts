@@ -54,7 +54,9 @@ describe('RedisStore Distributed Lock Atomicity', () => {
   })
 
   it('should acquire and release lock correctly', async () => {
-    if (!redisAvailable) return
+    if (!redisAvailable) {
+      return
+    }
     const store = new RedisStore({ connection: 'locks-test' })
     const lock = store.lock('resource:1', 5)
 
@@ -68,7 +70,9 @@ describe('RedisStore Distributed Lock Atomicity', () => {
   })
 
   it('should not release another owners lock (race condition fix)', async () => {
-    if (!redisAvailable) return
+    if (!redisAvailable) {
+      return
+    }
     const store = new RedisStore({ connection: 'locks-test' })
 
     const lockA = store.lock('shared-resource', 1)
@@ -96,7 +100,9 @@ describe('RedisStore Distributed Lock Atomicity', () => {
   })
 
   it('should extend lock TTL only if owner matches', async () => {
-    if (!redisAvailable) return
+    if (!redisAvailable) {
+      return
+    }
     const store = new RedisStore({ connection: 'locks-test' })
 
     const lock1 = store.lock('extendable', 1)
@@ -123,7 +129,9 @@ describe('RedisStore Distributed Lock Atomicity', () => {
   })
 
   it('should get remaining time for lock', async () => {
-    if (!redisAvailable) return
+    if (!redisAvailable) {
+      return
+    }
     const store = new RedisStore({ connection: 'locks-test' })
 
     const lock = store.lock('timed-resource', 5)
@@ -144,7 +152,9 @@ describe('RedisStore Distributed Lock Atomicity', () => {
   })
 
   it('should support block with retryInterval and maxRetries', async () => {
-    if (!redisAvailable) return
+    if (!redisAvailable) {
+      return
+    }
     const store = new RedisStore({ connection: 'locks-test' })
 
     const lock1 = store.lock('blocking-resource', 2)
@@ -172,7 +182,9 @@ describe('RedisStore Distributed Lock Atomicity', () => {
   })
 
   it('should support block with AbortSignal', async () => {
-    if (!redisAvailable) return
+    if (!redisAvailable) {
+      return
+    }
     const store = new RedisStore({ connection: 'locks-test' })
 
     const lock1 = store.lock('abortable-resource', 10)
@@ -195,7 +207,9 @@ describe('RedisStore Distributed Lock Atomicity', () => {
   })
 
   it('should use exponential backoff in block method', async () => {
-    if (!redisAvailable) return
+    if (!redisAvailable) {
+      return
+    }
     const store = new RedisStore({ connection: 'locks-test' })
 
     const lock1 = store.lock('backoff-resource', 1)
@@ -224,7 +238,9 @@ describe('RedisStore Distributed Lock Atomicity', () => {
   })
 
   it('should execute callback and release lock on success', async () => {
-    if (!redisAvailable) return
+    if (!redisAvailable) {
+      return
+    }
     const store = new RedisStore({ connection: 'locks-test' })
 
     const lock = store.lock('callback-resource', 5)
@@ -242,7 +258,9 @@ describe('RedisStore Distributed Lock Atomicity', () => {
   })
 
   it('should release lock even if callback throws', async () => {
-    if (!redisAvailable) return
+    if (!redisAvailable) {
+      return
+    }
     const store = new RedisStore({ connection: 'locks-test' })
 
     const lock = store.lock('error-resource', 5)
@@ -259,7 +277,9 @@ describe('RedisStore Distributed Lock Atomicity', () => {
   })
 
   it('should handle concurrent lock acquisitions correctly', async () => {
-    if (!redisAvailable) return
+    if (!redisAvailable) {
+      return
+    }
     const store = new RedisStore({ connection: 'locks-test' })
 
     let sharedCounter = 0

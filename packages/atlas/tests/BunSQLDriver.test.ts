@@ -242,7 +242,7 @@ describe('BunSQLDriver', () => {
       await driver.connect()
 
       const sql = 'SELECT * FROM users WHERE id = ?'
-      const stmtId = await driver.prepare!(sql)
+      const stmtId = await driver.prepare?.(sql)
 
       expect(stmtId).toBeDefined()
       expect(typeof stmtId).toBe('string')
@@ -254,8 +254,8 @@ describe('BunSQLDriver', () => {
       await driver.connect()
 
       const sql = 'SELECT * FROM users WHERE id = ?'
-      const stmtId = await driver.prepare!(sql)
-      const result = await driver.executePrepared!(stmtId, [1])
+      const stmtId = await driver.prepare?.(sql)
+      const result = await driver.executePrepared?.(stmtId, [1])
 
       expect(result.rows).toEqual([{ id: 1, name: 'Test' }])
       expect(result.rowCount).toBe(1)
@@ -267,8 +267,8 @@ describe('BunSQLDriver', () => {
       await driver.connect()
 
       const sql = 'SELECT * FROM users WHERE id = ?'
-      const stmtId1 = await driver.prepare!(sql)
-      const stmtId2 = await driver.prepare!(sql)
+      const stmtId1 = await driver.prepare?.(sql)
+      const stmtId2 = await driver.prepare?.(sql)
 
       expect(stmtId1).toBe(stmtId2)
     })
@@ -279,11 +279,11 @@ describe('BunSQLDriver', () => {
       await driver.connect()
 
       const sql = 'SELECT * FROM users WHERE id = ?'
-      await driver.prepare!(sql)
-      await driver.clearPreparedStatements!()
+      await driver.prepare?.(sql)
+      await driver.clearPreparedStatements?.()
 
       // 清除後準備相同語句應該生成新的 ID
-      const newStmtId = await driver.prepare!(sql)
+      const newStmtId = await driver.prepare?.(sql)
       expect(newStmtId).toBeDefined()
     })
   })

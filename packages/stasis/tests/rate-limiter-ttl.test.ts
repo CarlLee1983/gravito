@@ -168,7 +168,9 @@ describe('RateLimiter TTL Precision', () => {
     })
 
     beforeEach(async () => {
-      if (!redisAvailable) return
+      if (!redisAvailable) {
+        return
+      }
       const client = Redis.connection('ratelimit-test')
       await client.flushdb()
       store = new RedisStore({ connection: 'ratelimit-test', prefix: 'ttl:' })
@@ -176,7 +178,9 @@ describe('RateLimiter TTL Precision', () => {
     })
 
     it('returns accurate retryAfter when limit exceeded', async () => {
-      if (!redisAvailable) return
+      if (!redisAvailable) {
+        return
+      }
       await limiter.attempt('test:1', 2, 10)
       await limiter.attempt('test:1', 2, 10)
 
@@ -189,7 +193,9 @@ describe('RateLimiter TTL Precision', () => {
     })
 
     it('availableIn returns accurate TTL from Redis', async () => {
-      if (!redisAvailable) return
+      if (!redisAvailable) {
+        return
+      }
       await store.put('test:2', 5, 10)
 
       const ttl = await limiter.availableIn('test:2', 10)
@@ -199,7 +205,9 @@ describe('RateLimiter TTL Precision', () => {
     })
 
     it('getInfo returns complete status with Redis TTL', async () => {
-      if (!redisAvailable) return
+      if (!redisAvailable) {
+        return
+      }
       await store.put('test:3', 10, 60)
 
       const info = await limiter.getInfo('test:3', 5, 60)
@@ -212,7 +220,9 @@ describe('RateLimiter TTL Precision', () => {
     })
 
     it('TTL precision is accurate within 1 second', async () => {
-      if (!redisAvailable) return
+      if (!redisAvailable) {
+        return
+      }
       await store.put('test:4', 3, 30)
 
       const ttl1 = await limiter.availableIn('test:4', 30)

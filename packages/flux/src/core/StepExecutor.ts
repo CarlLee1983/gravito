@@ -211,7 +211,7 @@ export class StepExecutor {
     handler: StepDefinition<TInput, TData>['handler'],
     ctx: WorkflowContext<TInput, TData>,
     timeout: number
-  ): Promise<void | undefined | FluxWaitResult> {
+  ): Promise<undefined | undefined | FluxWaitResult> {
     let timer: ReturnType<typeof setTimeout> | null = null
     try {
       const timeoutPromise = new Promise<never>((_, reject) => {

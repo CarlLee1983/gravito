@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router, usePage } from '@inertiajs/vue3'
+import { usePage } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 import Layout from '../../components/Layout.vue'
 

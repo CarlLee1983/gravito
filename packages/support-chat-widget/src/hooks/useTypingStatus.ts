@@ -39,7 +39,9 @@ export function useTypingStatus(options: UseTypingStatusOptions): UseTypingStatu
    * `emit` function to send a 'typing' event to the server.
    */
   const notifyTyping = useCallback(() => {
-    if (!conversationId || !emit) return
+    if (!conversationId || !emit) {
+      return
+    }
 
     emit('typing', { conversationId })
     console.log('[TypingStatus] User is typing:', conversationId)

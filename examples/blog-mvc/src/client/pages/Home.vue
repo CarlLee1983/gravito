@@ -1,21 +1,6 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3'
-import {
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Edit,
-  LogIn,
-  LogOut,
-  Newspaper,
-  PlusCircle,
-  Search,
-  Tag,
-  Trash2,
-  User,
-} from 'lucide-vue-next'
+import { router } from '@inertiajs/vue3'
 import { ref, watch } from 'vue'
-import ThemeSwitcher from '../components/ThemeSwitcher.vue'
 
 const props = defineProps<{
   posts: {
