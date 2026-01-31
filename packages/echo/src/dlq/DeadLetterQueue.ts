@@ -6,16 +6,16 @@ import type { IncomingWebhookRecord, OutgoingWebhookRecord } from '../storage/We
  * A DLQ serves as a safety net for webhook events that have permanently failed
  * all processing or delivery attempts. It enables manual inspection, diagnostic
  * analysis, and eventual re-processing of high-value events that would otherwise
- * be lost.
+ * be lost due to transient or permanent failures.
  *
- * @example
+ * @example Inspected failed events
  * ```typescript
  * const dlq: DeadLetterQueue = new MyPersistentDlq();
  *
- * // Inspect the queue
+ * // Retrieve recent failures for manual triage
  * const failedEvents = await dlq.peek(10);
  * for (const event of failedEvents) {
- *   console.log(`Failed due to: ${event.failureReason}`);
+ *   console.log(`Event ${event.id} failed after ${event.retryCount} attempts: ${event.failureReason}`);
  * }
  * ```
  *
@@ -26,7 +26,7 @@ export interface DeadLetterQueue {
    * Appends a permanently failed event to the queue for later inspection.
    *
    * @param event - The dead letter event metadata and original record.
-   * @returns A unique identifier for the event within the queue.
+   * @returns A promise resolving to a unique identifier for the event within the queue.
    * @throws {Error} If the underlying storage fails to persist the event.
    */
   enqueue(event: DeadLetterEvent): Promise<string>
@@ -34,23 +34,23 @@ export interface DeadLetterQueue {
   /**
    * Retrieves a snapshot of failed events from the queue without removing them.
    *
-   * @param limit - Maximum number of events to retrieve (FIFO order).
-   * @returns Collection of dead letter events.
+   * @param limit - Maximum number of events to retrieve (ordered by failure time).
+   * @returns A collection of dead letter events.
    */
   peek(limit?: number): Promise<DeadLetterEvent[]>
 
   /**
-   * Permanently removes an event from the queue after successful resolution.
+   * Permanently removes an event from the queue after successful manual resolution.
    *
-   * @param id - The unique identifier assigned during enqueue.
-   * @throws {Error} If the event ID is invalid or not found.
+   * @param id - The unique identifier assigned during the `enqueue` process.
+   * @throws {Error} If the event ID is invalid or not found in the queue.
    */
   dequeue(id: string): Promise<void>
 
   /**
    * Calculates the total number of events currently residing in the queue.
    *
-   * @returns Total count of dead letter events.
+   * @returns The total count of dead letter events.
    */
   size(): Promise<number>
 
@@ -61,37 +61,40 @@ export interface DeadLetterQueue {
 }
 
 /**
- * Metadata and payload for a failed webhook event stored in the DLQ.
+ * Metadata and payload for a failed webhook event stored in the Dead Letter Queue.
+ *
+ * This structure captures the complete context of a failure, including the original
+ * data and the diagnostic reason for the final failure.
  *
  * @public
  */
 export interface DeadLetterEvent {
   /**
-   * Unique identifier for the dead letter entry.
+   * A unique identifier for the entry within the DLQ storage.
    */
   id?: string
   /**
-   * Direction of the webhook that failed.
+   * Indicates whether the failure occurred during reception or dispatch.
    */
   type: 'incoming' | 'outgoing'
   /**
-   * The complete original record of the webhook at the time of failure.
+   * The complete original record of the webhook at the moment of failure.
    */
   originalEvent: IncomingWebhookRecord | OutgoingWebhookRecord
   /**
-   * Detailed diagnostic message describing why the event failed.
+   * A descriptive diagnostic message explaining why the event was sent to the DLQ.
    */
   failureReason: string
   /**
-   * Timestamp of when the event was officially declared "dead".
+   * The exact timestamp when the event reached its maximum retry limit or terminal error.
    */
   failedAt: Date
   /**
-   * Number of automated retry attempts completed before queueing.
+   * The total number of automated attempts made before giving up on the event.
    */
   retryCount: number
   /**
-   * Timestamp of the most recent delivery or processing attempt.
+   * The timestamp of the final attempted processing or delivery action.
    */
   lastRetryAt?: Date
 }

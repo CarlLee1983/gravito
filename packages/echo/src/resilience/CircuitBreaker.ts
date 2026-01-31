@@ -26,26 +26,29 @@ const DEFAULT_CONFIG: Required<CircuitBreakerConfig> = {
 }
 
 /**
- * State machine for managing service availability.
+ * State machine for managing downstream service availability via the Circuit Breaker pattern.
  *
- * - CLOSED: Normal state, all requests are executed.
- * - OPEN: Failure threshold exceeded, requests are immediately rejected.
- * - HALF_OPEN: Recovery testing phase, allowing a limited number of requests.
+ * This implementation tracks failures and successes to determine one of three states:
+ * - `CLOSED`: Healthy state. All requests are executed normally.
+ * - `OPEN`: Failing state. Trip thresholds exceeded; requests are rejected immediately to
+ *   prevent cascading failure and give the target system time to recover.
+ * - `HALF_OPEN`: Recovery phase. Allows a limited number of test requests to determine
+ *   if the downstream service has restored functionality.
  *
- * @example
+ * @example Protecting a fragile API call
  * ```typescript
  * const breaker = new CircuitBreaker('inventory-service', {
  *   failureThreshold: 5,
- *   openTimeout: 60000
+ *   openTimeout: 60000 // Stay open for 1 minute before testing recovery
  * });
  *
  * try {
- *   const result = await breaker.execute(async () => {
- *     return await apiClient.checkStock('SKU-123');
+ *   const stock = await breaker.execute(async () => {
+ *     return await apiClient.getInventory();
  *   });
  * } catch (error) {
  *   if (error.message.includes('Circuit breaker is OPEN')) {
- *     // Handle graceful degradation
+ *     // Redirect to fallback or return cached data
  *   }
  * }
  * ```
@@ -64,10 +67,10 @@ export class CircuitBreaker {
   private config: Required<CircuitBreakerConfig>
 
   /**
-   * Constructs a new CircuitBreaker for a specific resource or host.
+   * Constructs a new CircuitBreaker for a specific resource, host, or service.
    *
-   * @param name - Semantic identifier for the target being protected.
-   * @param config - Policy settings for failure thresholds and timeouts.
+   * @param name - A semantic identifier for the target being protected.
+   * @param config - Policy settings for failure thresholds, recovery timeouts, and callbacks.
    */
   constructor(
     private readonly name: string,
@@ -77,14 +80,14 @@ export class CircuitBreaker {
   }
 
   /**
-   * Executes an asynchronous operation within the safety of the circuit breaker.
+   * Executes an asynchronous operation within the safety window of the circuit breaker.
    *
-   * If the circuit is OPEN, this method throws an error immediately without
-   * attempting to execute the function.
+   * This method will proactively check the circuit state. If the state is `OPEN`, it will
+   * throw an error immediately without invoking the provided function.
    *
-   * @param fn - The operation to protect.
-   * @returns Resolves to the result of the operation.
-   * @throws {Error} If the circuit is currently OPEN or the operation fails.
+   * @param fn - The asynchronous operation to be protected.
+   * @returns A promise resolving to the result of the protected operation.
+   * @throws {Error} If the circuit is currently `OPEN` or if the underlying operation fails.
    */
   async execute<T>(fn: () => Promise<T>): Promise<T> {
     if (!this.config.enabled) {
@@ -109,6 +112,7 @@ export class CircuitBreaker {
 
   /**
    * Records a successful operation and updates the state machine.
+   * In `HALF_OPEN` state, this contributes to the success threshold for closing the circuit.
    */
   private onSuccess(): void {
     this.lastSuccessAt = new Date()
@@ -121,13 +125,14 @@ export class CircuitBreaker {
         this.reset()
       }
     } else if (this.state === 'CLOSED') {
-      // Reset failure count on success when in CLOSED state
+      // Reset failure count on success when in CLOSED state to ensure fresh window
       this.failures = 0
     }
   }
 
   /**
-   * Records a failed operation and determines if the circuit should trip.
+   * Records a failed operation and determines if the circuit should trip to `OPEN`.
+   * Any failure in `HALF_OPEN` state immediately trips the circuit back to `OPEN`.
    */
   private onFailure(): void {
     this.lastFailureAt = new Date()
@@ -147,7 +152,7 @@ export class CircuitBreaker {
   }
 
   /**
-   * Evaluates if enough time has passed to attempt recovery.
+   * Evaluates and performs automatic state transitions based on elapsed time and thresholds.
    */
   private checkStateTransition(): void {
     if (this.state === 'OPEN' && this.openedAt) {
@@ -168,7 +173,9 @@ export class CircuitBreaker {
   }
 
   /**
-   * Changes the state and triggers associated lifecycle callbacks.
+   * Transitions the circuit to a new state and executes configured lifecycle callbacks.
+   *
+   * @param newState - The target state to transition into.
    */
   private transitionTo(newState: CircuitBreakerState): void {
     this.state = newState
@@ -187,7 +194,7 @@ export class CircuitBreaker {
   }
 
   /**
-   * Resets all internal counters to their initial state.
+   * Resets all internal counters and timers to their initial baseline state.
    */
   private reset(): void {
     this.failures = 0
@@ -197,9 +204,9 @@ export class CircuitBreaker {
   }
 
   /**
-   * Retrieves the current health and performance metrics of the circuit.
+   * Retrieves a snapshot of the current health and performance metrics of the circuit.
    *
-   * @returns Current metrics snapshot.
+   * @returns An object containing state, failure counts, and activity timestamps.
    */
   getMetrics(): CircuitBreakerMetrics {
     return {
@@ -213,9 +220,8 @@ export class CircuitBreaker {
   }
 
   /**
-   * Forcefully resets the circuit breaker to the CLOSED state.
-   *
-   * Typically used for manual recovery or after resolving underlying issues.
+   * Forcefully resets the circuit breaker to the `CLOSED` state.
+   * Useful for manual recovery scenarios after a service has been verified healthy.
    */
   manualReset(): void {
     this.transitionTo('CLOSED')
@@ -223,16 +229,16 @@ export class CircuitBreaker {
   }
 
   /**
-   * Returns the current state of the circuit breaker.
+   * Returns the current operational state of the circuit breaker.
    *
-   * @returns Current state ('CLOSED', 'OPEN', or 'HALF_OPEN').
+   * @returns The current state identifier.
    */
   getState(): CircuitBreakerState {
     return this.state
   }
 
   /**
-   * Returns the semantic name of the circuit breaker instance.
+   * Returns the semantic name assigned to this circuit breaker instance.
    *
    * @returns The name identifier.
    */

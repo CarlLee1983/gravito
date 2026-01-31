@@ -41,28 +41,30 @@ const DEFAULT_RETRY_CONFIG: Required<RetryConfig> = {
 }
 
 /**
- * WebhookDispatcher handles the reliable delivery of webhooks to external targets.
+ * WebhookDispatcher manages the secure and reliable delivery of events to external targets.
  *
- * It provides a high-level API for sending signed payloads to third-party services,
- * incorporating advanced features like exponential backoff retries, circuit breaking,
- * and Dead Letter Queue (DLQ) integration for maximum reliability.
+ * It provides a robust engine for sending signed webhook payloads to third-party
+ * consumers, incorporating enterprise-grade reliability features such as:
+ * - Exponential backoff retries for transient network/server errors.
+ * - Per-host Circuit Breaking to prevent cascading failures.
+ * - Dead Letter Queue (DLQ) integration for capturing permanently failed events.
+ * - HMAC-SHA256 payload signing for authenticity.
  *
- * @example
+ * @example Dispatching a signed event
  * ```typescript
  * const dispatcher = new WebhookDispatcher({
- *   secret: 'my-webhook-secret',
+ *   secret: 'app-outbound-secret',
  *   retry: { maxAttempts: 5 }
  * });
  *
- * // Dispatch an event to a consumer
  * const result = await dispatcher.dispatch({
- *   url: 'https://api.example.com/webhooks',
- *   event: 'order.fulfilled',
+ *   url: 'https://consumer.com/webhooks',
+ *   event: 'order.shipped',
  *   data: { orderId: 'ORD-123' }
  * });
  *
- * if (!result.success) {
- *   console.error(`Dispatch failed: ${result.error}`);
+ * if (result.success) {
+ *   console.log('Webhook delivered successfully');
  * }
  * ```
  *
@@ -83,7 +85,7 @@ export class WebhookDispatcher {
   /**
    * Initializes the dispatcher with security and reliability policies.
    *
-   * @param config - Configuration for payload signing, retry strategies, and timeout limits.
+   * @param config - The configuration for payload signing, retry logic, and timeouts.
    */
   constructor(config: WebhookDispatcherConfig) {
     this.secret = config.secret
@@ -94,10 +96,10 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Attaches a Dead Letter Queue for capturing permanently failed deliveries.
+   * Attaches a Dead Letter Queue for capturing events that fail all delivery attempts.
    *
    * @param dlq - Implementation of the DeadLetterQueue interface.
-   * @returns Current instance for method chaining.
+   * @returns The current instance for method chaining.
    */
   setDeadLetterQueue(dlq: DeadLetterQueue): this {
     this.dlq = dlq
@@ -105,10 +107,10 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Configures the metrics provider for performance and failure tracking.
+   * Configures the metrics provider for delivery and failure tracking.
    *
    * @param metrics - Implementation of the MetricsProvider interface.
-   * @returns Current instance for method chaining.
+   * @returns The current instance for method chaining.
    */
   setMetrics(metrics: MetricsProvider): this {
     this.metrics = metrics
@@ -116,10 +118,10 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Configures the tracer for end-to-end request observability.
+   * Configures the distributed tracer for end-to-end request visibility.
    *
    * @param tracer - Implementation of the Tracer interface.
-   * @returns Current instance for method chaining.
+   * @returns The current instance for method chaining.
    */
   setTracer(tracer: Tracer): this {
     this.tracer = tracer
@@ -127,10 +129,10 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Configures the logger for diagnostic output and delivery auditing.
+   * Configures the logger for diagnostic and delivery audit logging.
    *
    * @param logger - Implementation of the EchoLogger interface.
-   * @returns Current instance for method chaining.
+   * @returns The current instance for method chaining.
    */
   setLogger(logger: EchoLogger): this {
     this.logger = logger
@@ -138,13 +140,13 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Resolves or creates a circuit breaker instance for a specific host.
+   * Resolves or creates a dedicated circuit breaker instance for a specific host.
    *
-   * Isolated circuit breakers prevent a single failing downstream service
-   * from impacting the delivery of webhooks to other targets.
+   * Using per-host isolation ensures that an outage at one consumer does not
+   * block or slow down deliveries to other healthy consumers.
    *
-   * @param url - Destination URL used to extract the host.
-   * @returns The active circuit breaker or undefined if disabled.
+   * @param url - Destination URL used to derive the target host.
+   * @returns The active circuit breaker instance, or undefined if disabled.
    */
   private getCircuitBreaker(url: string): CircuitBreaker | undefined {
     if (!this.circuitBreakerConfig?.enabled) {
@@ -185,10 +187,10 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Retrieves real-time health metrics for a specific target's circuit breaker.
+   * Retrieves the current health metrics for a specific target's circuit breaker.
    *
-   * @param url - Target URL to query.
-   * @returns Current metrics or null if no circuit exists for the host.
+   * @param url - The target URL whose host metrics are requested.
+   * @returns Current metrics or null if circuit breaking is not active for the host.
    */
   getCircuitBreakerMetrics(url: string): CircuitBreakerMetrics | null {
     const host = new URL(url).host
@@ -197,11 +199,9 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Manually resets a circuit breaker to its CLOSED state for a target.
+   * Manually resets a tripped circuit breaker to its CLOSED state for a specific target.
    *
-   * Useful for manual recovery after a downstream service has been confirmed healthy.
-   *
-   * @param url - Target URL whose host circuit should be reset.
+   * @param url - The target URL whose host circuit should be reset.
    */
   resetCircuitBreaker(url: string): void {
     const host = new URL(url).host
@@ -210,14 +210,18 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Executes the end-to-end delivery of a signed webhook payload.
+   * Executes the end-to-end delivery of a signed webhook event.
    *
-   * Signs the outgoing payload with HMAC-SHA256, attempts the HTTP POST request,
-   * and manages the retry lifecycle according to the configured policy.
+   * This method performs the following:
+   * 1. Wraps the payload with an authenticity signature (HMAC-SHA256).
+   * 2. Checks the state of the target's circuit breaker.
+   * 3. Executes the HTTP POST request.
+   * 4. Manages the retry lifecycle if errors occur.
+   * 5. Enqueues failed events to the DLQ if configured.
    *
-   * @param payload - Data and destination parameters for the webhook.
-   * @returns Final delivery outcome after all retry attempts.
-   * @throws {Error} If payload signing or critical network operations fail.
+   * @param payload - Data and destination parameters for the dispatch.
+   * @returns Final delivery outcome including success status and attempt count.
+   * @throws {Error} If critical internal operations (like signing) fail.
    */
   async dispatch<T = unknown>(payload: WebhookPayload<T>): Promise<WebhookDeliveryResult> {
     return this.tracer.withSpan('echo.dispatch_webhook', async (span) => {
@@ -280,10 +284,10 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Internal method to handle the retry loop for webhook delivery.
+   * Internal orchestration for the delivery retry loop.
    *
    * @param payload - The webhook payload.
-   * @returns A promise resolving to the final delivery result.
+   * @returns Final delivery result after all retry attempts.
    */
   private async dispatchInternal<T = unknown>(
     payload: WebhookPayload<T>
@@ -338,19 +342,22 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Dispatches a collection of webhooks concurrently using a worker pool pattern.
+   * Dispatches a batch of webhooks concurrently using an optimized worker pool.
    *
-   * @param payloads - Array of payloads to be delivered.
-   * @param options - Concurrency limits and failure termination policies.
-   * @returns Summary of successful and failed deliveries in the batch.
+   * This method balances high throughput with source/target resource constraints
+   * by allowing you to tune concurrency and error propagation policies.
    *
-   * @example
+   * @param payloads - Collection of payloads to deliver.
+   * @param options - Tuning parameters for concurrency and failure handling.
+   * @returns A summary result of all dispatch attempts in the batch.
+   *
+   * @example Batch dispatch with concurrency control
    * ```typescript
    * const results = await dispatcher.dispatchBatch(payloads, {
    *   concurrency: 10,
    *   stopOnFirstFailure: false
    * });
-   * console.log(`Dispatched ${results.succeeded} successfully`);
+   * console.log(`Batch complete. Succeeded: ${results.succeeded}, Failed: ${results.failed}`);
    * ```
    */
   async dispatchBatch<T = unknown>(
@@ -411,10 +418,12 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Re-attempts the delivery of a previously failed webhook from the DLQ.
+   * Re-attempts the delivery of a previously failed event from the Dead Letter Queue.
    *
-   * @param id - Unique identifier of the event within the Dead Letter Queue.
-   * @returns Outcome of the retry attempt, or null if the ID is not found.
+   * If the delivery succeeds, the event is automatically removed from the DLQ.
+   *
+   * @param id - The unique identifier of the event in the DLQ.
+   * @returns Result of the retry attempt, or null if the event ID is invalid.
    */
   async retryFromDlq(id: string): Promise<WebhookDeliveryResult | null> {
     if (!this.dlq) {
@@ -447,11 +456,11 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Performs a single delivery attempt.
+   * Executes a single delivery attempt including signing and circuit breaker check.
    *
    * @param payload - The webhook payload.
    * @param attempt - The current attempt number.
-   * @returns A promise resolving to the delivery result.
+   * @returns Detailed result of the single attempt.
    */
   private async attemptDelivery<T = unknown>(
     payload: WebhookPayload<T>,
@@ -548,10 +557,10 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Determines if a delivery should be retried based on the result.
+   * Internal logic to decide if an attempt should be retried.
    *
    * @param result - The delivery result to evaluate.
-   * @returns True if the delivery should be retried.
+   * @returns True if retry is eligible.
    */
   private shouldRetry(result: WebhookDeliveryResult): boolean {
     if (!result.statusCode) {
@@ -563,10 +572,10 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Calculates the delay for the next retry attempt using exponential backoff.
+   * Calculates the exponential backoff delay for the next attempt.
    *
    * @param attempt - The current attempt number.
-   * @returns The delay in milliseconds.
+   * @returns Delay in milliseconds.
    */
   private calculateDelay(attempt: number): number {
     const delay =
@@ -576,20 +585,10 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Helper method to pause execution.
-   *
-   * @param ms - The number of milliseconds to sleep.
-   * @returns A promise that resolves after the delay.
-   */
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
-  }
-
-  /**
-   * Categorizes delivery errors for metrics reporting.
+   * Standardized categorization of delivery errors for metrics.
    *
    * @param result - The delivery result to categorize.
-   * @returns A string representing the error category.
+   * @returns Category string.
    */
   private categorizeError(result: WebhookDeliveryResult): string {
     if (!result.statusCode) {
@@ -602,5 +601,15 @@ export class WebhookDispatcher {
       return 'client_error'
     }
     return 'other'
+  }
+
+  /**
+   * Utility for asynchronous sleep.
+   *
+   * @param ms - Duration to sleep in ms.
+   * @returns Promise that resolves after delay.
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms))
   }
 }

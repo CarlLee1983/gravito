@@ -1,7 +1,8 @@
 /**
- * Key Rotation Manager
+ * @fileoverview Key Rotation Manager
  *
- * 管理 Webhook Provider 的密鑰輪換，支援多版本密鑰、自動清理和 Grace Period。
+ * Manages the lifecycle of webhook provider secrets, including multi-version
+ * support, automatic cleanup, and grace periods for smooth transitions.
  *
  * @module @gravito/echo/rotation
  * @since v1.2
@@ -10,7 +11,7 @@
 import type { KeyRotationConfig, ProviderKeyEntry } from '../types'
 
 /**
- * 預設配置
+ * Default internal configuration for key rotation.
  */
 const DEFAULT_CONFIG: Required<KeyRotationConfig> = {
   enabled: false,
@@ -21,47 +22,42 @@ const DEFAULT_CONFIG: Required<KeyRotationConfig> = {
 }
 
 /**
- * Key Rotation Manager
+ * KeyRotationManager orchestrates the lifecycle of webhook provider secrets.
  *
- * 集中管理所有 Provider 的密鑰輪換，支援：
- * - 多版本密鑰管理
- * - 自動過期清理
- * - Grace Period 機制
- * - 主密鑰輪換
+ * It provides a central hub for managing multiple concurrent versions of signing
+ * secrets, enabling zero-downtime rotation. By maintaining a set of "active"
+ * keys (including those in a grace period), it ensures that webhooks signed
+ * with either an old or new secret are successfully verified during transition.
  *
- * @example
+ * Key features:
+ * - Multi-version secret management.
+ * - Automatic background cleanup of expired keys.
+ * - Grace period support for smooth cut-overs.
+ * - Promotion of new primary keys.
+ *
+ * @example Managing zero-downtime rotation
  * ```typescript
  * const manager = new KeyRotationManager({
- *   gracePeriod: 24 * 60 * 60 * 1000, // 24 hours
+ *   gracePeriod: 86400000, // 24 hours
  *   autoCleanup: true,
- * })
+ * });
  *
- * // 註冊多個密鑰
+ * // Register initial keys
  * manager.registerKeys('stripe', [
  *   {
- *     key: 'whsec_new',
+ *     key: 'whsec_primary',
  *     version: 'v2',
  *     isPrimary: true,
  *     activeFrom: new Date(),
- *   },
- *   {
- *     key: 'whsec_old',
- *     version: 'v1',
- *     isPrimary: false,
- *     activeFrom: new Date('2025-01-01'),
- *     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
- *   },
- * ])
+ *   }
+ * ]);
  *
- * // 獲取活動密鑰用於驗證
- * const keys = manager.getActiveKeys('stripe')
- *
- * // 輪換主密鑰
+ * // Rotate to a new secret
  * await manager.rotatePrimaryKey('stripe', {
- *   key: 'whsec_newest',
+ *   key: 'whsec_new_secret',
  *   version: 'v3',
  *   activeFrom: new Date(),
- * })
+ * });
  * ```
  *
  * @public
@@ -71,6 +67,11 @@ export class KeyRotationManager {
   private cleanupTimer?: Timer
   private config: Required<KeyRotationConfig>
 
+  /**
+   * Constructs a new KeyRotationManager with the specified policy.
+   *
+   * @param config - Configuration for auto-cleanup, grace periods, and rotation hooks.
+   */
   constructor(config: KeyRotationConfig = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config }
 
@@ -80,32 +81,35 @@ export class KeyRotationManager {
   }
 
   /**
-   * 註冊 Provider 的密鑰
+   * Registers a collection of keys for a specific provider.
    *
-   * @param providerName - Provider 名稱
-   * @param keys - 密鑰陣列
-   * @throws Error 如果沒有主密鑰或有多個主密鑰
+   * Validation ensures that exactly one primary key is specified for the provider.
+   *
+   * @param providerName - Canonical name of the provider instance.
+   * @param keys - Array of valid key entries with metadata.
+   * @throws {Error} If no primary key is provided or if multiple primary keys are detected.
    */
   registerKeys(providerName: string, keys: ProviderKeyEntry[]): void {
-    // 驗證密鑰
+    // Validate primary key presence and uniqueness
     const primaryKeys = keys.filter((k) => k.isPrimary)
     if (primaryKeys.length !== 1) {
       throw new Error(`Provider ${providerName} must have exactly one primary key`)
     }
 
-    // 按 activeFrom 降序排序
+    // Sort by activation date descending (newest first)
     const sorted = [...keys].sort((a, b) => b.activeFrom.getTime() - a.activeFrom.getTime())
 
     this.providerKeys.set(providerName, sorted)
   }
 
   /**
-   * 獲取所有活動密鑰用於驗證
+   * Retrieves all currently valid keys for a provider to attempt verification.
    *
-   * 返回當前有效的密鑰（activeFrom <= now < expiresAt）。
+   * A key is considered active if the current time is after its `activeFrom` date
+   * and before its `expiresAt` date (if defined).
    *
-   * @param providerName - Provider 名稱
-   * @returns 活動密鑰陣列
+   * @param providerName - Canonical name of the provider instance.
+   * @returns An array of currently active key entries.
    */
   getActiveKeys(providerName: string): ProviderKeyEntry[] {
     const keys = this.providerKeys.get(providerName) ?? []
@@ -119,10 +123,10 @@ export class KeyRotationManager {
   }
 
   /**
-   * 獲取主密鑰用於簽章
+   * Retrieves the current primary key used for signature generation.
    *
-   * @param providerName - Provider 名稱
-   * @returns 主密鑰或 null
+   * @param providerName - Canonical name of the provider instance.
+   * @returns The primary key entry, or null if no active primary key exists.
    */
   getPrimaryKey(providerName: string): ProviderKeyEntry | null {
     const keys = this.getActiveKeys(providerName)
@@ -130,13 +134,14 @@ export class KeyRotationManager {
   }
 
   /**
-   * 輪換為新的主密鑰
+   * Promotes a new primary key for the provider and retires the old one.
    *
-   * 舊的主密鑰會自動設定過期時間（使用 Grace Period），
-   * 新密鑰會成為主密鑰。
+   * The previous primary key is automatically assigned an expiration date based on
+   * the configured `gracePeriod`, allowing it to remain valid for incoming requests
+   * that were signed before the rotation propagated.
    *
-   * @param providerName - Provider 名稱
-   * @param newKey - 新密鑰（不含 isPrimary 屬性）
+   * @param providerName - Canonical name of the provider instance.
+   * @param newKey - Metadata and secret for the new primary key.
    */
   async rotatePrimaryKey(
     providerName: string,
@@ -144,14 +149,14 @@ export class KeyRotationManager {
   ): Promise<void> {
     const existingKeys = this.providerKeys.get(providerName) ?? []
 
-    // 標記舊的主密鑰為非主密鑰並設定過期時間
+    // Mark old primary key as inactive and set expiration based on grace period
     const updatedKeys: ProviderKeyEntry[] = existingKeys.map((key) => ({
       ...key,
       isPrimary: false,
       expiresAt: key.isPrimary ? new Date(Date.now() + this.config.gracePeriod) : key.expiresAt,
     }))
 
-    // 加入新的主密鑰
+    // Add the new primary key to the front of the list
     const primaryKey: ProviderKeyEntry = {
       ...newKey,
       isPrimary: true,
@@ -164,9 +169,9 @@ export class KeyRotationManager {
   }
 
   /**
-   * 清理過期密鑰
+   * Manually triggers a purge of all expired keys across all providers.
    *
-   * @returns 清理的密鑰數量
+   * @returns The total number of keys removed during this cycle.
    */
   cleanupExpiredKeys(): number {
     const now = new Date()
@@ -185,10 +190,10 @@ export class KeyRotationManager {
   }
 
   /**
-   * 啟動自動清理定時器
+   * Initializes the background timer for periodic key purging.
    */
   private startAutoCleanup(): void {
-    // 每小時執行一次清理
+    // Execute cleanup once per hour
     this.cleanupTimer = setInterval(
       () => {
         const cleaned = this.cleanupExpiredKeys()
@@ -201,7 +206,7 @@ export class KeyRotationManager {
   }
 
   /**
-   * 停止自動清理
+   * Stops the auto-cleanup background process.
    */
   destroy(): void {
     if (this.cleanupTimer) {
@@ -210,19 +215,19 @@ export class KeyRotationManager {
   }
 
   /**
-   * 獲取所有 Provider 的密鑰狀態
+   * Provides a read-only snapshot of all keys across all providers.
    *
-   * @returns Provider 名稱到密鑰陣列的對應
+   * @returns A map of provider names to their complete key history.
    */
   getAllProviderKeys(): Map<string, ProviderKeyEntry[]> {
     return new Map(this.providerKeys)
   }
 
   /**
-   * 檢查 Provider 是否有註冊密鑰
+   * Checks if a specific provider has any keys registered in the manager.
    *
-   * @param providerName - Provider 名稱
-   * @returns 是否有註冊密鑰
+   * @param providerName - Canonical name of the provider instance.
+   * @returns True if the provider is tracked.
    */
   hasProvider(providerName: string): boolean {
     return this.providerKeys.has(providerName)
