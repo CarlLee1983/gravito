@@ -7,25 +7,25 @@ import { type ScheduledTask, TaskSchedule } from './TaskSchedule'
 /**
  * Central registry and execution engine for scheduled tasks.
  *
- * Manages task definitions, evaluates cron expressions for due tasks, orchestrates
- * distributed locking, handles retries/timeouts, and emits lifecycle hooks for monitoring.
+ * Orchestrates the lifecycle of scheduled jobs by evaluating frequencies,
+ * managing distributed locks to prevent duplicate execution, and handling
+ * reliability features like retries and timeouts.
  *
- * Design considerations:
- * - Tasks run in parallel (fire-and-forget) to prevent blocking
- * - Lock keys are scoped to minute precision to prevent duplicate runs
- * - Node role filtering happens before lock acquisition to reduce contention
+ * Architecture Principles:
+ * - Distributed Safety: Uses lock keys scoped to minute precision for global deduplication.
+ * - Non-blocking: Executes tasks in parallel using fire-and-forget patterns.
+ * - Observability: Emits granular lifecycle hooks for monitoring and alerting.
  *
  * @example
  * ```typescript
- * const scheduler = new SchedulerManager(lockManager, logger, hooks, 'worker')
+ * const scheduler = new SchedulerManager(lockManager, logger, hooks, 'worker');
  *
- * scheduler.task('backup-db', async () => {
- *   await db.backup()
+ * // Define a maintenance task
+ * scheduler.task('daily-cleanup', async () => {
+ *   await db.cleanup();
  * })
- * .daily()
- * .at('03:00')
- * .onOneServer()
- * .retry(3, 5000)
+ * .dailyAt('03:00')
+ * .onOneServer();
  * ```
  *
  * @public
@@ -33,6 +33,14 @@ import { type ScheduledTask, TaskSchedule } from './TaskSchedule'
 export class SchedulerManager {
   private tasks: TaskSchedule[] = []
 
+  /**
+   * Initializes the scheduler engine.
+   *
+   * @param lockManager - Backend for distributed locking.
+   * @param logger - Optional logger for operational visibility.
+   * @param hooks - Optional manager for lifecycle event hooks.
+   * @param currentNodeRole - Role identifier for the local node (used for filtering).
+   */
   constructor(
     public lockManager: LockManager,
     private logger?: Logger,
@@ -41,19 +49,17 @@ export class SchedulerManager {
   ) {}
 
   /**
-   * Registers a callback-based scheduled task.
+   * Registers a new callback-based scheduled task.
    *
-   * @param name - Unique identifier for task (used in logs, hooks, and lock keys)
-   * @param callback - Async function to execute when cron expression matches
-   * @returns Fluent TaskSchedule interface for chaining frequency/constraint methods
+   * @param name - Unique task name used for identification and locking.
+   * @param callback - Asynchronous function containing the task logic.
+   * @returns A fluent TaskSchedule instance for further configuration.
    *
    * @example
    * ```typescript
-   * scheduler.task('send-reports', async () => {
-   *   await emailService.sendWeeklyReports()
-   * })
-   * .weekly()
-   * .onOneServer()
+   * scheduler.task('process-queues', async () => {
+   *   await queue.process();
+   * }).everyMinute();
    * ```
    */
   task(name: string, callback: () => void | Promise<void>): TaskSchedule {
@@ -65,18 +71,18 @@ export class SchedulerManager {
   /**
    * Registers a shell command as a scheduled task.
    *
-   * @param name - Unique task identifier
-   * @param command - Shell command string (executed via `sh -c`)
-   * @returns Fluent TaskSchedule interface
+   * Executes the command via `sh -c` on matching nodes.
    *
-   * @throws {Error} When command execution fails (non-zero exit code)
+   * @param name - Unique identifier for the command task.
+   * @param command - Raw shell command string.
+   * @returns A fluent TaskSchedule instance.
+   * @throws {Error} If the shell command returns a non-zero exit code during execution.
    *
    * @example
    * ```typescript
-   * scheduler.exec('backup-db', 'pg_dump mydb > /backups/$(date +%Y%m%d).sql')
+   * scheduler.exec('log-rotate', 'logrotate /etc/logrotate.conf')
    *   .daily()
-   *   .at('02:00')
-   *   .onNode('worker')
+   *   .onNode('worker');
    * ```
    */
   exec(name: string, command: string): TaskSchedule {
@@ -92,32 +98,31 @@ export class SchedulerManager {
   }
 
   /**
-   * Registers a pre-configured TaskSchedule instance.
+   * Injects a pre-configured TaskSchedule instance into the registry.
    *
-   * Useful for building task definitions in separate modules and importing them.
-   *
-   * @param schedule - Fully configured TaskSchedule instance
+   * @param schedule - Configured task schedule to register.
    */
   add(schedule: TaskSchedule) {
     this.tasks.push(schedule)
   }
 
   /**
-   * Retrieves all registered tasks as serializable objects.
+   * Exports all registered tasks for external inspection or serialization.
    *
-   * @returns Array of task configurations (used by CLI for `schedule:list`)
+   * @returns An array of raw task configurations.
    */
   getTasks(): ScheduledTask[] {
     return this.tasks.map((t) => t.getTask())
   }
 
   /**
-   * Evaluates all registered tasks and executes those matching current time.
+   * Main evaluation loop that triggers tasks due for execution.
    *
-   * Designed to be invoked every minute by system cron or daemon loop.
-   * Emits `scheduler:run:start` and `scheduler:run:complete` hooks for monitoring.
+   * Should be invoked every minute by a system timer (systemd/cron) or daemon.
+   * Performs frequency checks, role filtering, and parallel execution.
    *
-   * @param date - Reference time for cron evaluation (defaults to current time)
+   * @param date - Reference time for cron evaluation (default: current time).
+   * @returns Resolves when all due tasks have been initiated.
    */
   async run(date: Date = new Date()): Promise<void> {
     await this.hooks?.doAction('scheduler:run:start', { date })
@@ -143,8 +148,8 @@ export class SchedulerManager {
     }
 
     for (const task of dueTasks) {
-      // Fire and forget individual tasks so they run in parallel
-      // But we must catch errors to not crash the loop (which is already inside async void but good practice)
+      // Execute each task asynchronously to prevent blocking the main loop.
+      // We catch internal errors to ensure one failing task doesn't crash the scheduler.
       this.runTask(task, date).catch((err) => {
         this.logger?.error(`[Scheduler] Unexpected error running task ${task.name}`, err)
       })
@@ -154,28 +159,23 @@ export class SchedulerManager {
   }
 
   /**
-   * Executes individual task with node role filtering and distributed locking.
+   * Executes an individual task after validating execution constraints.
    *
-   * Workflow:
-   * 1. Check node role match (skip if mismatch)
-   * 2. Check overlapping control (skip if task is still running)
-   * 3. Attempt lock acquisition (skip if already locked)
-   * 4. Execute task (foreground or background based on configuration)
-   * 5. Release running lock after completion
+   * Evaluates node roles, overlapping prevention, and distributed time-window locks
+   * before initiating the actual task logic.
    *
-   * @param task - Task configuration to execute
-   * @param date - Reference time for lock key generation
+   * @param task - Target task configuration.
+   * @param date - Reference time used for lock key generation.
    *
    * @internal
    */
   async runTask(task: ScheduledTask, date: Date = new Date()): Promise<void> {
-    // Mode A & B: Node Role Check
+    // Stage 1: Node Role Validation
     if (task.nodeRole && this.currentNodeRole && task.nodeRole !== this.currentNodeRole) {
-      // This node doesn't match the required role, skip
       return
     }
 
-    // === Overlapping Control ===
+    // Stage 2: Overlapping Prevention
     const runningLockKey = `task:running:${task.name}`
 
     if (task.preventOverlapping) {
@@ -192,30 +192,28 @@ export class SchedulerManager {
         return
       }
 
-      // 取得執行鎖
+      // Acquire execution lock
       await this.lockManager.forceAcquire(runningLockKey, task.overlappingExpiresAt)
     }
 
-    // === Time-window Lock (onOneServer) ===
+    // Stage 3: Distributed Time-window Locking
     let acquiredTimeLock = false
-    // Make lock key specific to the current minute to prevent re-runs within the same window
     const timestamp = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}${date.getHours().toString().padStart(2, '0')}${date.getMinutes().toString().padStart(2, '0')}`
     const timeLockKey = `task:${task.name}:${timestamp}`
 
-    // Mode B: Single-point (Locking)
     if (task.shouldRunOnOneServer) {
       acquiredTimeLock = await this.lockManager.acquire(timeLockKey, task.lockTtl)
 
       if (!acquiredTimeLock) {
-        // 如果已取得執行鎖但拿不到時間鎖，需釋放執行鎖
+        // Rollback execution lock if time-window lock fails
         if (task.preventOverlapping) {
           await this.lockManager.release(runningLockKey)
         }
-        // Task running on another server or already completed for this window
         return
       }
     }
 
+    // Stage 4: Task Execution
     try {
       if (task.background) {
         this.executeTask(task)
@@ -223,20 +221,20 @@ export class SchedulerManager {
             this.logger?.error(`Background task ${task.name} failed`, err)
           })
           .finally(async () => {
-            // 背景任務完成時釋放執行鎖
+            // Release execution lock when background task finishes
             if (task.preventOverlapping) {
               await this.lockManager.release(runningLockKey)
             }
           })
       } else {
         await this.executeTask(task)
-        // 前景任務完成時釋放執行鎖
+        // Release execution lock when foreground task finishes
         if (task.preventOverlapping) {
           await this.lockManager.release(runningLockKey)
         }
       }
     } catch (err) {
-      // 執行失敗時釋放所有鎖
+      // Cleanup all locks on failure to allow subsequent attempts
       if (task.preventOverlapping) {
         await this.lockManager.release(runningLockKey)
       }
@@ -245,17 +243,17 @@ export class SchedulerManager {
       }
       throw err
     }
-    // Note: We DO NOT release the time lock here if successful.
-    // It will expire based on lockTtl, preventing other nodes from running it in the same minute window.
   }
 
   /**
-   * Runs task callback with timeout, retry logic, and lifecycle hooks.
+   * Internal wrapper for executing task logic with reliability controls.
    *
-   * Emits hooks: `task:start`, `task:retry`, `task:success`, `task:failure`.
-   * Retries are sequential with configurable delay between attempts.
+   * Handles timeouts, retries, and emits lifecycle hooks for monitoring.
    *
-   * @param task - Task to execute
+   * @param task - The scheduled task to execute.
+   * @returns Resolves when the task (and its retries) completes or fails permanently.
+   *
+   * @internal
    */
   private async executeTask(task: ScheduledTask) {
     const startTime = Date.now()

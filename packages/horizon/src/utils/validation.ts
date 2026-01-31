@@ -1,15 +1,16 @@
 /**
- * Parse and validate time string in HH:mm format.
+ * Parses and validates a 24-hour time string.
  *
- * @param time - Time string in "HH:mm" format (24-hour)
- * @returns Object containing validated hour and minute values
- * @throws Error if the time format is invalid
+ * Ensures the string follows the "HH:mm" format and that values are within
+ * valid ranges (00-23 for hours, 00-59 for minutes).
+ *
+ * @param time - Time string in "HH:mm" format.
+ * @returns Object containing validated hour and minute as integers.
+ * @throws {Error} If the format is invalid or values are out of bounds.
  *
  * @example
  * ```typescript
- * const { hour, minute } = parseTime('14:30')  // { hour: 14, minute: 30 }
- * parseTime('25:00')  // throws Error
- * parseTime('invalid')  // throws Error
+ * const { hour, minute } = parseTime('14:30'); // { hour: 14, minute: 30 }
  * ```
  *
  * @internal
@@ -34,17 +35,15 @@ export function parseTime(time: string): { hour: number; minute: number } {
 }
 
 /**
- * Validate minute value for hourly schedules.
+ * Validates that a value is a valid cron minute field.
  *
- * @param minute - Minute value to validate (should be 0-59)
- * @throws Error if the minute is not a valid integer between 0 and 59
+ * @param minute - Numeric value to validate.
+ * @throws {Error} If the minute is not an integer between 0 and 59.
  *
  * @example
  * ```typescript
- * validateMinute(30)  // OK
- * validateMinute(60)  // throws Error
- * validateMinute(-1)  // throws Error
- * validateMinute(1.5)  // throws Error
+ * validateMinute(45); // OK
+ * validateMinute(60); // throws Error
  * ```
  *
  * @internal
@@ -57,17 +56,15 @@ export function validateMinute(minute: number): void {
 }
 
 /**
- * Validate day of week value for weekly schedules.
+ * Validates that a value is a valid cron day-of-week field.
  *
- * @param dayOfWeek - Day of week (0-6, where 0 = Sunday, 6 = Saturday)
- * @throws Error if the day of week is not a valid integer between 0 and 6
+ * @param dayOfWeek - Numeric day index (0-6, where 0 is Sunday).
+ * @throws {Error} If the index is not an integer between 0 and 6.
  *
  * @example
  * ```typescript
- * validateDayOfWeek(0)  // OK (Sunday)
- * validateDayOfWeek(6)  // OK (Saturday)
- * validateDayOfWeek(7)  // throws Error
- * validateDayOfWeek(-1)  // throws Error
+ * validateDayOfWeek(0); // Sunday (OK)
+ * validateDayOfWeek(7); // throws Error
  * ```
  *
  * @internal
@@ -80,17 +77,15 @@ export function validateDayOfWeek(dayOfWeek: number): void {
 }
 
 /**
- * Validate day of month value for monthly schedules.
+ * Validates that a value is a valid cron day-of-month field.
  *
- * @param dayOfMonth - Day of month (1-31)
- * @throws Error if the day of month is not a valid integer between 1 and 31
+ * @param dayOfMonth - Numeric day (1-31).
+ * @throws {Error} If the day is not an integer between 1 and 31.
  *
  * @example
  * ```typescript
- * validateDayOfMonth(1)  // OK
- * validateDayOfMonth(31)  // OK
- * validateDayOfMonth(0)  // throws Error
- * validateDayOfMonth(32)  // throws Error
+ * validateDayOfMonth(31); // OK
+ * validateDayOfMonth(32); // throws Error
  * ```
  *
  * @internal
