@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3'
+import { router } from '@inertiajs/vue3'
 import { ref } from 'vue'
-import GImage from '../../components/GImage.vue'
 import Layout from '../../components/Layout.vue'
 
 defineOptions({ layout: Layout })
@@ -44,7 +43,9 @@ const removeItem = async (itemId: number) => {
 }
 
 const clearCart = async () => {
-  if (!confirm('確定要清空購物車嗎？')) return
+  if (!confirm('確定要清空購物車嗎？')) {
+    return
+  }
   await fetch('/cart/clear', { method: 'DELETE' })
   router.reload()
 }

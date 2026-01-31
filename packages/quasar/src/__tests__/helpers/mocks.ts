@@ -1,4 +1,4 @@
-import { EventEmitter } from 'events'
+import { EventEmitter } from 'node:events'
 
 export function createMockRedis() {
   const store = new Map<string, string>()
@@ -34,14 +34,14 @@ export function createMockRedis() {
       lists.set(key, list.slice(start, stop + 1))
       return 'OK'
     },
-    async publish(channel: string, message: string) {
+    async publish(_channel: string, _message: string) {
       return 0
     },
-    async subscribe(channel: string) {},
-    async psubscribe(pattern: string) {},
+    async subscribe(_channel: string) {},
+    async psubscribe(_pattern: string) {},
     async unsubscribe() {},
     async punsubscribe() {},
-    async lrem(key: string, count: number, element: string) {
+    async lrem(key: string, _count: number, element: string) {
       const list = lists.get(key) || []
       const index = list.indexOf(element)
       if (index > -1) {
@@ -59,7 +59,7 @@ export function createMockRedis() {
       if (!handlers.has(event)) {
         handlers.set(event, [])
       }
-      handlers.get(event)!.push(callback)
+      handlers.get(event)?.push(callback)
     },
     emitMessage(channel: string, message: string) {
       handlers.get('message')?.forEach((cb) => {

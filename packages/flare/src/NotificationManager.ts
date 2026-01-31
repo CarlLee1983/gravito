@@ -15,6 +15,8 @@ import type {
   SendResult,
   ShouldRetry,
 } from './types'
+import type { ChannelMiddleware } from './types/middleware'
+import { createHookEmitter, type HookEmitter } from './utils/hookEmitter'
 import { isRetryableError, withRetry } from './utils/retry'
 import { deepSerialize } from './utils/serialization'
 
@@ -30,6 +32,16 @@ export class NotificationManager {
   private channels = new Map<string, NotificationChannel>()
 
   /**
+   * Middleware stack for intercepting channel sends.
+   */
+  private middlewares: ChannelMiddleware[] = []
+
+  /**
+   * 是否需要重新排序中介層
+   */
+  private middlewaresDirty = false
+
+  /**
    * Queue manager (optional, injected by `orbit-queue`).
    */
   private queueManager?:
@@ -43,7 +55,14 @@ export class NotificationManager {
       }
     | undefined
 
-  constructor(private core: PlanetCore) {}
+  /**
+   * 型別安全的 hook emitter
+   */
+  private hookEmitter: HookEmitter
+
+  constructor(private core: PlanetCore) {
+    this.hookEmitter = createHookEmitter(core)
+  }
 
   private metrics?: NotificationMetricsCollector
 
@@ -79,6 +98,31 @@ export class NotificationManager {
   }
 
   /**
+   * Register a middleware for intercepting channel sends.
+   *
+   * Middleware will be executed in the order they are registered.
+   * Each middleware can modify, block, or monitor the notification flow.
+   *
+   * @param middleware - The middleware instance to register.
+   *
+   * @example
+   * ```typescript
+   * import { RateLimitMiddleware } from '@gravito/flare'
+   *
+   * const rateLimiter = new RateLimitMiddleware({
+   *   email: { maxPerSecond: 10 },
+   *   sms: { maxPerSecond: 5 }
+   * })
+   *
+   * manager.use(rateLimiter)
+   * ```
+   */
+  use(middleware: ChannelMiddleware): void {
+    this.middlewares.push(middleware)
+    this.middlewaresDirty = true
+  }
+
+  /**
    * Register the queue manager (called by `orbit-queue`).
    *
    * @param manager - The queue manager implementation.
@@ -109,8 +153,7 @@ export class NotificationManager {
     const channels = notification.via(notifiable)
     const startTime = Date.now()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (this.core.hooks as any).emit('notification:sending', {
+    await this.hookEmitter.emit('notification:sending', {
       notification,
       notifiable,
       channels,
@@ -118,8 +161,7 @@ export class NotificationManager {
 
     // Check whether it should be queued.
     if (notification.shouldQueue() && this.queueManager) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (this.core.hooks as any).emit('notification:queued', {
+      await this.hookEmitter.emit('notification:queued', {
         notification,
         notifiable,
         channels,
@@ -159,8 +201,7 @@ export class NotificationManager {
     const results = await this.sendNow(notifiable, notification, channels, options)
     const totalDuration = Date.now() - startTime
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (this.core.hooks as any).emit('notification:sent', {
+    await this.hookEmitter.emit('notification:sent', {
       notification,
       notifiable,
       results,
@@ -205,8 +246,7 @@ export class NotificationManager {
     const startTime = Date.now()
     const results: NotificationResult[] = []
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (this.core.hooks as any).emit('notification:batch:start', {
+    await this.hookEmitter.emit('notification:batch:start', {
       notification,
       count: notifiables.length,
     })
@@ -222,8 +262,7 @@ export class NotificationManager {
     const duration = Date.now() - startTime
     const successCount = results.filter((r) => r.allSuccess).length
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (this.core.hooks as any).emit('notification:batch:complete', {
+    await this.hookEmitter.emit('notification:batch:complete', {
       notification,
       total: notifiables.length,
       success: successCount,
@@ -398,8 +437,7 @@ export class NotificationManager {
                   `retrying (${attempt}/${retry.maxAttempts}) in ${delay}ms`,
                 error
               )
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              ;(this.core.hooks as any).emit('notification:channel:retry', {
+              this.hookEmitter.emit('notification:channel:retry', {
                 notification,
                 notifiable,
                 channel: channelName,
@@ -435,8 +473,7 @@ export class NotificationManager {
       const duration = Date.now() - startTime
       const err = error instanceof Error ? error : new Error(String(error))
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (this.core.hooks as any).emit('notification:channel:failed', {
+      await this.hookEmitter.emit('notification:channel:failed', {
         notification,
         notifiable,
         channel: channelName,
@@ -475,22 +512,95 @@ export class NotificationManager {
     notifiable: Notifiable,
     channelName: string
   ): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (this.core.hooks as any).emit('notification:channel:sending', {
+    await this.hookEmitter.emit('notification:channel:sending', {
       notification,
       notifiable,
       channel: channelName,
     })
 
-    await channel.send(notification, notifiable)
+    // Execute middleware chain
+    const executeWithMiddleware = async () => {
+      await this.executeMiddlewareChain(0, notification, notifiable, channelName, async () => {
+        await channel.send(notification, notifiable)
+      })
+    }
+
+    await executeWithMiddleware()
     const duration = 0 // Approximate for inner call, total calculated in wrapper
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (this.core.hooks as any).emit('notification:channel:sent', {
+    await this.hookEmitter.emit('notification:channel:sent', {
       notification,
       notifiable,
       channel: channelName,
       duration,
+    })
+  }
+
+  /**
+   * 取得已排序的中介層列表（Lazy sorting）
+   *
+   * 使用 lazy evaluation 策略：只在需要時排序，避免每次 use() 都重新排序。
+   * 排序規則：
+   * 1. 優先級高的（數字大）先執行
+   * 2. 同優先級維持註冊順序（stable sort）
+   *
+   * @returns 排序後的中介層列表
+   * @private
+   */
+  private getSortedMiddlewares(): ChannelMiddleware[] {
+    if (!this.middlewaresDirty) {
+      return this.middlewares
+    }
+
+    // 按優先級降序排序（同優先級維持原順序）
+    this.middlewares.sort((a, b) => {
+      const priorityA = a.priority ?? 0
+      const priorityB = b.priority ?? 0
+      return priorityB - priorityA // 降序：高優先級先執行
+    })
+
+    this.middlewaresDirty = false
+    return this.middlewares
+  }
+
+  /**
+   * Execute middleware chain recursively.
+   *
+   * @param index - Current middleware index
+   * @param notification - The notification being sent
+   * @param notifiable - The recipient
+   * @param channelName - The channel name
+   * @param finalHandler - The final handler to execute (actual channel.send)
+   * @private
+   */
+  private async executeMiddlewareChain(
+    index: number,
+    notification: Notification,
+    notifiable: Notifiable,
+    channelName: string,
+    finalHandler: () => Promise<void>
+  ): Promise<void> {
+    const sortedMiddlewares = this.getSortedMiddlewares()
+
+    // If we've executed all middleware, run the final handler
+    if (index >= sortedMiddlewares.length) {
+      await finalHandler()
+      return
+    }
+
+    // Get current middleware
+    const middleware = sortedMiddlewares[index]
+
+    // Execute middleware with next() function
+    await middleware.handle(notification, notifiable, channelName, async () => {
+      // next() calls the next middleware in the chain
+      await this.executeMiddlewareChain(
+        index + 1,
+        notification,
+        notifiable,
+        channelName,
+        finalHandler
+      )
     })
   }
 

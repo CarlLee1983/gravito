@@ -1,4 +1,4 @@
-import { EventEmitter } from 'events'
+import { EventEmitter } from 'node:events'
 import type { Redis } from 'ioredis'
 import { QUASAR_KEYS } from '../constants'
 import type { Logger } from './logger'
@@ -93,7 +93,9 @@ export class LeaderElection extends EventEmitter {
    * Start the leader election loop.
    */
   start() {
-    if (this.running) return
+    if (this.running) {
+      return
+    }
     this.running = true
     this.tick()
   }
@@ -128,7 +130,9 @@ export class LeaderElection extends EventEmitter {
   }
 
   private async tick() {
-    if (!this.running) return
+    if (!this.running) {
+      return
+    }
 
     try {
       const result = await this.redis.set(this.lockKey, this.nodeId, 'PX', this.ttl, 'NX')

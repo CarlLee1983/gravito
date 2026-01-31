@@ -72,7 +72,9 @@ export class MongoGridFS {
       const reader = (source as any).getReader()
       while (true) {
         const { done, value } = await reader.read()
-        if (done) break
+        if (done) {
+          break
+        }
         uploadStream.write(value)
       }
       uploadStream.end()
@@ -186,7 +188,9 @@ export class MongoGridFS {
     try {
       while (true) {
         const { done, value } = await reader.read()
-        if (done) break
+        if (done) {
+          break
+        }
 
         uploadStream.write(Buffer.from(value))
         bytesWritten += value.length
@@ -306,7 +310,9 @@ export class MongoGridFS {
     try {
       while (true) {
         const { done, value } = await reader.read()
-        if (done) break
+        if (done) {
+          break
+        }
 
         uploadStream.write(Buffer.from(value))
         bytesWritten += value.length

@@ -45,7 +45,12 @@ export function deepSerialize(obj: unknown, seen = new WeakSet()): unknown {
   // Handle Plain Object
   const result: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(obj)) {
-    if (!key.startsWith('_') && typeof value !== 'function') {
+    // 允許特殊的雙底線開頭屬性（如 __lazyId, __type）
+    // 但過濾掉單底線開頭的私有屬性（如 _cachedData）
+    const isSpecialProperty = key.startsWith('__')
+    const isPrivateProperty = key.startsWith('_') && !isSpecialProperty
+
+    if (!isPrivateProperty && typeof value !== 'function') {
       result[key] = deepSerialize(value, seen)
     }
   }

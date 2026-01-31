@@ -168,7 +168,7 @@ export class CompensationRetryPolicy {
    * }
    * ```
    */
-  isRetryable(error: Error): boolean {
+  isRetryable(_error: Error): boolean {
     return true
   }
 

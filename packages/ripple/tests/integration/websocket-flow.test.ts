@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import type { ChannelAuthorizer, PresenceUserInfo } from '../../src/types'
+import type { PresenceUserInfo } from '../../src/types'
 import { cleanupTestServer, createTestServer, type TestServerSetup } from '../helpers'
 
 describe('WebSocket Integration Tests', () => {
@@ -76,7 +76,9 @@ describe('WebSocket Integration Tests', () => {
 
           if (msg.type === 'subscribed') {
             subscribedCount++
-            if (subscribedCount === 3) resolve()
+            if (subscribedCount === 3) {
+              resolve()
+            }
           }
         }
       })
@@ -336,28 +338,40 @@ describe('WebSocket Integration Tests', () => {
 
         ws1.onmessage = (event) => {
           const msg = JSON.parse(event.data.toString())
-          if (msg.type === 'subscribed') onSubscribed()
+          if (msg.type === 'subscribed') {
+            onSubscribed()
+          }
           if (msg.type === 'event' && msg.event === 'TestEvent') {
             receivedBy.push('ws1')
-            if (receivedBy.length === 3) resolve()
+            if (receivedBy.length === 3) {
+              resolve()
+            }
           }
         }
 
         ws2.onmessage = (event) => {
           const msg = JSON.parse(event.data.toString())
-          if (msg.type === 'subscribed') onSubscribed()
+          if (msg.type === 'subscribed') {
+            onSubscribed()
+          }
           if (msg.type === 'event' && msg.event === 'TestEvent') {
             receivedBy.push('ws2')
-            if (receivedBy.length === 3) resolve()
+            if (receivedBy.length === 3) {
+              resolve()
+            }
           }
         }
 
         ws3.onmessage = (event) => {
           const msg = JSON.parse(event.data.toString())
-          if (msg.type === 'subscribed') onSubscribed()
+          if (msg.type === 'subscribed') {
+            onSubscribed()
+          }
           if (msg.type === 'event' && msg.event === 'TestEvent') {
             receivedBy.push('ws3')
-            if (receivedBy.length === 3) resolve()
+            if (receivedBy.length === 3) {
+              resolve()
+            }
           }
         }
       })

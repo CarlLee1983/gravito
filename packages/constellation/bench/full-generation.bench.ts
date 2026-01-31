@@ -1,4 +1,4 @@
-import { performance } from 'perf_hooks'
+import { performance } from 'node:perf_hooks'
 import { SitemapGenerator } from '../src/core/SitemapGenerator'
 import { MemorySitemapStorage } from '../src/storage/MemorySitemapStorage'
 

@@ -116,7 +116,7 @@ export class LocalStore implements StorageStore {
    * @internal
    * @throws {Error} Always, as not yet implemented
    */
-  list(prefix = ''): AsyncIterable<StorageItem> {
+  list(_prefix = ''): AsyncIterable<StorageItem> {
     throw new Error(
       '[LocalStore] list() is not yet implemented. ' +
         'Requires RuntimeAdapter.readDir() support in @gravito/core.'

@@ -100,7 +100,7 @@ export class MockRedis {
     if (!this.handlers.has(event)) {
       this.handlers.set(event, [])
     }
-    this.handlers.get(event)!.push(callback)
+    this.handlers.get(event)?.push(callback)
   }
 
   once(_event: string, _callback: Function): void {

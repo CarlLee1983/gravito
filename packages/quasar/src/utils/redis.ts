@@ -61,7 +61,9 @@ export class DefaultRedisConnectionManager implements RedisConnectionManager {
   }
 
   async connect(): Promise<void> {
-    if (this.client.status === 'ready' || this.client.status === 'connecting') return
+    if (this.client.status === 'ready' || this.client.status === 'connecting') {
+      return
+    }
     await this.client.connect()
   }
 

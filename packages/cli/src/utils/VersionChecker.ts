@@ -202,7 +202,9 @@ export class VersionChecker {
    */
   showUpgradeMessage(result: VersionCheckResult): void {
     // 已是最新版本，不顯示任何訊息
-    if (result.isLatest) return
+    if (result.isLatest) {
+      return
+    }
 
     console.log('') // 空行
 

@@ -1,8 +1,4 @@
 <script lang="ts">
-import { Head } from '@inertiajs/svelte'
-import Layout from '../components/Layout.svelte'
-import StaticLink from '../components/StaticLink.svelte'
-
 const { msg, version }: { msg: string; version: string } = $props()
 
 const count = $state(0)

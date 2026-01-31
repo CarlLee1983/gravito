@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router, useForm } from '@inertiajs/vue3'
+import { router, useForm } from '@inertiajs/vue3'
 import { ref } from 'vue'
 import AdminLayout from '../../../components/AdminLayout.vue'
 
@@ -46,7 +46,9 @@ const submit = () => {
 }
 
 const deleteCategory = async (id: number) => {
-  if (!confirm('確定要刪除此分類嗎？包含的商品將變為無分類。')) return
+  if (!confirm('確定要刪除此分類嗎？包含的商品將變為無分類。')) {
+    return
+  }
   await fetch(`/admin/categories/${id}`, { method: 'DELETE' })
   router.reload()
 }

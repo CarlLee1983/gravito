@@ -9,7 +9,7 @@ describe('Orbit Middleware Isolation', () => {
       const adapter = new PhotonAdapter()
 
       expect(() => {
-        adapter.useScoped('/api', '*', async (c, next) => next())
+        adapter.useScoped('/api', '*', async (_c, next) => next())
       }).toThrow(/Cannot use wildcard path/)
     })
 
@@ -17,7 +17,7 @@ describe('Orbit Middleware Isolation', () => {
       const adapter = new PhotonAdapter()
 
       expect(() => {
-        adapter.useScoped('/api', '*/*', async (c, next) => next())
+        adapter.useScoped('/api', '*/*', async (_c, next) => next())
       }).toThrow(/Cannot use wildcard path/)
     })
 
@@ -25,11 +25,11 @@ describe('Orbit Middleware Isolation', () => {
       const adapter = new PhotonAdapter()
 
       expect(() => {
-        adapter.useScoped('/api', '/users', async (c, next) => next())
+        adapter.useScoped('/api', '/users', async (_c, next) => next())
       }).not.toThrow()
 
       expect(() => {
-        adapter.useScoped('/api', '/users/*', async (c, next) => next())
+        adapter.useScoped('/api', '/users/*', async (_c, next) => next())
       }).not.toThrow()
     })
 
@@ -38,12 +38,12 @@ describe('Orbit Middleware Isolation', () => {
 
       // Should work with leading slash
       expect(() => {
-        adapter.useScoped('/api', '/users', async (c, next) => next())
+        adapter.useScoped('/api', '/users', async (_c, next) => next())
       }).not.toThrow()
 
       // Should work without leading slash
       expect(() => {
-        adapter.useScoped('api', '/users', async (c, next) => next())
+        adapter.useScoped('api', '/users', async (_c, next) => next())
       }).not.toThrow()
     })
   })
@@ -53,7 +53,7 @@ describe('Orbit Middleware Isolation', () => {
       const adapter = new BunNativeAdapter()
 
       expect(() => {
-        adapter.useScoped('/api', '*', async (c, next) => next())
+        adapter.useScoped('/api', '*', async (_c, next) => next())
       }).toThrow(/Cannot use wildcard path/)
     })
 
@@ -61,7 +61,7 @@ describe('Orbit Middleware Isolation', () => {
       const adapter = new BunNativeAdapter()
 
       expect(() => {
-        adapter.useScoped('/api', '*/*', async (c, next) => next())
+        adapter.useScoped('/api', '*/*', async (_c, next) => next())
       }).toThrow(/Cannot use wildcard path/)
     })
 
@@ -69,7 +69,7 @@ describe('Orbit Middleware Isolation', () => {
       const adapter = new BunNativeAdapter()
 
       expect(() => {
-        adapter.useScoped('/api', '/users', async (c, next) => next())
+        adapter.useScoped('/api', '/users', async (_c, next) => next())
       }).not.toThrow()
     })
   })

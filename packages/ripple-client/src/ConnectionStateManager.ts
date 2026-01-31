@@ -21,7 +21,9 @@ export class ConnectionStateManager {
    * @param newState - The new state.
    */
   setState(newState: ConnectionState): void {
-    if (this.state === newState) return
+    if (this.state === newState) {
+      return
+    }
 
     const prev = this.state
     this.state = newState

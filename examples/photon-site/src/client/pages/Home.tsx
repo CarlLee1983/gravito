@@ -6,7 +6,6 @@ import {
   ArrowUpRight,
   BarChart3,
   BookOpen,
-  ChevronRight,
   Cpu,
   Gauge,
   Menu,

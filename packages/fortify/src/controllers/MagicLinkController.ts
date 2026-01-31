@@ -1,6 +1,5 @@
 import type { GravitoContext } from '@gravito/core'
 import type { FortifyConfig } from '../config'
-import { ErrorCodes } from '../errors/codes'
 import { FortifyError } from '../errors/FortifyError'
 import type { FortifyEventEmitter } from '../events/EventEmitter'
 import type { MagicLinkService } from '../services/MagicLinkService'

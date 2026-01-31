@@ -76,7 +76,9 @@ onMounted(async () => {
 })
 
 const downloadQrCode = () => {
-  if (!dataUrl.value) return
+  if (!dataUrl.value) {
+    return
+  }
 
   const link = document.createElement('a')
   link.href = dataUrl.value

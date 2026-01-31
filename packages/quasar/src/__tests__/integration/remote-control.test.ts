@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, spyOn } from 'bun:test'
 import { QuasarAgent } from '../../QuasarAgent'
 import { createMockRedis } from '../helpers/mocks'
 

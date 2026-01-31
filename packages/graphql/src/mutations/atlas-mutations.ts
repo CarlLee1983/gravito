@@ -53,7 +53,9 @@ export const AtlasMutationFactory = {
 
   delete: async (model: ModelStatic<Model>, id: string | number) => {
     const instance = await model.find(id)
-    if (!instance) return false
+    if (!instance) {
+      return false
+    }
     await instance.delete()
     return true
   },

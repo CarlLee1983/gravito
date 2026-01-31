@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { Link, useForm } from '@inertiajs/vue3'
-import { ArrowRight, Gauge, Lock, Mail, ShieldCheck } from 'lucide-vue-next'
+import { useForm } from '@inertiajs/vue3'
 
 const form = useForm({
   email: 'admin@gravito.dev',

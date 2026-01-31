@@ -1,7 +1,6 @@
 import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import { defaultFortifyConfig, type FortifyConfig } from './config'
 import { FortifyEventEmitter } from './events/EventEmitter'
-import { securityHeaders } from './middleware/SecurityHeaders'
 import { registerAuthRoutes } from './routes/auth'
 import { MemoryAuthLogger } from './services/AuthLogger'
 import { MagicLinkService } from './services/MagicLinkService'

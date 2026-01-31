@@ -1,5 +1,5 @@
 import { describe, expect, it, mock } from 'bun:test'
-import { EventEmitter } from 'events'
+import { EventEmitter } from 'node:events'
 import { BeeQueueBridge } from '../bridges/BeeQueueBridge'
 
 describe('BeeQueueBridge', () => {

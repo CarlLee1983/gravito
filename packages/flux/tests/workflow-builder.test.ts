@@ -123,8 +123,8 @@ describe('WorkflowBuilder', () => {
 
       expect(workflow.name).toBe('validated-workflow')
       expect(workflow.validateInput).toBeDefined()
-      expect(workflow.validateInput!({ email: 'test@example.com', age: 25 })).toBe(true)
-      expect(workflow.validateInput!({ invalid: 'data' })).toBe(false)
+      expect(workflow.validateInput?.({ email: 'test@example.com', age: 25 })).toBe(true)
+      expect(workflow.validateInput?.({ invalid: 'data' })).toBe(false)
     })
   })
 })

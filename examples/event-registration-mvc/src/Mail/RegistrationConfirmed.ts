@@ -65,31 +65,4 @@ export class RegistrationConfirmed extends Mailable {
       </html>
     `
   }
-
-  private getTextContent(): string {
-    return `
-Registration Confirmed!
-
-Dear ${this.registration.user?.name},
-
-Your registration has been confirmed for:
-
-Event: ${this.registration.session?.event?.title}
-Session: ${this.registration.session?.title}
-Date & Time: ${new Date(this.registration.session?.start_time || '').toLocaleString()}
-Location: ${this.registration.session?.event?.location}
-Registration ID: ${this.registration.id}
-QR Code: ${this.registration.qr_code}
-
-Please save your QR code for check-in at the event.
-
-View your registration: ${process.env.APP_URL}/profile/registrations/${this.registration.id}
-
-We look forward to seeing you at the event!
-
----
-Event Registration System
-This is an automated email. Please do not reply.
-    `
-  }
 }

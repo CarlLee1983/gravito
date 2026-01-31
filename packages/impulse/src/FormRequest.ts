@@ -1,11 +1,10 @@
 import type { ContentfulStatusCode } from '@gravito/core'
 import { AuthorizationException, ValidationException } from '@gravito/core'
 import type { Context, MiddlewareHandler } from '@gravito/core/compat'
-import type { z } from 'zod'
 import { BlueprintGenerator } from './core/BlueprintGenerator'
 // Import extracted components
 import { DataExtractor, type DataSource } from './core/DataExtractor'
-import { type SchemaValidationResult, SchemaValidatorFactory } from './validation/SchemaValidator'
+import { SchemaValidatorFactory } from './validation/SchemaValidator'
 // Initialize validators (this must happen for the factory to work)
 import './validation/index'
 

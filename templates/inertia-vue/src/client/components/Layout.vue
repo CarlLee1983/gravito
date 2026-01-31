@@ -33,7 +33,6 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
-import StaticLink from './StaticLink.vue'
 
 const page = usePage()
 const isHome = computed(() => page.url === '/')

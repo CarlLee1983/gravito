@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, jest, mock, spyOn, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, jest, spyOn, test } from 'bun:test'
 import { DB } from '../src/DB'
 import { Model } from '../src/orm/model/Model'
 
@@ -40,7 +40,9 @@ describe('NPlusOneDetection', () => {
 
     const originalConnection = DB.connection
     connectionSpy = spyOn(DB, 'connection').mockImplementation((name?: string) => {
-      if (name === TEST_CONN) return mockConnection
+      if (name === TEST_CONN) {
+        return mockConnection
+      }
       return originalConnection.call(DB, name as any)
     })
     // @ts-expect-error

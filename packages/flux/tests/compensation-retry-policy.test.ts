@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
-import { CompensationRetryPolicy, type RetryResult } from '../src/engine/CompensationRetryPolicy'
+import { CompensationRetryPolicy } from '../src/engine/CompensationRetryPolicy'
 
 describe('CompensationRetryPolicy', () => {
   let policy: CompensationRetryPolicy
@@ -219,7 +219,7 @@ describe('CompensationRetryPolicy', () => {
     it('should handle payment refund with transient failures', async () => {
       let attempts = 0
       const paymentGateway = {
-        refund: async (txId: string) => {
+        refund: async (_txId: string) => {
           attempts++
           if (attempts < 2) {
             throw new Error('Gateway timeout')
@@ -244,7 +244,7 @@ describe('CompensationRetryPolicy', () => {
 
     it('should handle inventory release with permanent failure', async () => {
       const inventoryService = {
-        release: async (reservationId: string) => {
+        release: async (_reservationId: string) => {
           throw new Error('Reservation not found')
         },
       }
@@ -264,7 +264,7 @@ describe('CompensationRetryPolicy', () => {
     it('should handle network errors with selective retry', async () => {
       let callCount = 0
       const apiClient = {
-        cancelBooking: async (bookingId: string) => {
+        cancelBooking: async (_bookingId: string) => {
           callCount++
           if (callCount === 1) {
             const err: any = new Error('ECONNREFUSED')

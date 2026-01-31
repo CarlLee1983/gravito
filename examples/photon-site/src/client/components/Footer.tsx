@@ -5,7 +5,7 @@ import { getTranslation } from '../locales/types'
 
 const getFooterLinks = (
   t: any,
-  lang: string
+  _lang: string
 ): { title: string; links: { label: string; href: string; icon?: any }[] }[] => [
   {
     title: t.ecosystem_nodes,

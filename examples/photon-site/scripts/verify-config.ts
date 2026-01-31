@@ -139,9 +139,13 @@ async function main() {
     const icon = result.status === 'pass' ? '✅' : result.status === 'fail' ? '❌' : '⚠️'
     console.log(`${icon} ${result.name}: ${result.message}`)
 
-    if (result.status === 'pass') passCount++
-    else if (result.status === 'fail') failCount++
-    else warningCount++
+    if (result.status === 'pass') {
+      passCount++
+    } else if (result.status === 'fail') {
+      failCount++
+    } else {
+      warningCount++
+    }
   }
 
   console.log(`\n📈 統計:`)

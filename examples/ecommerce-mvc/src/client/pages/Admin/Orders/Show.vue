@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3'
+import { router } from '@inertiajs/vue3'
 import { ref } from 'vue'
 import AdminLayout from '../../../components/AdminLayout.vue'
 
@@ -27,7 +27,9 @@ const statusLabels: Record<string, string> = {
 }
 
 const updateStatus = async () => {
-  if (selectedStatus.value === props.order.status) return
+  if (selectedStatus.value === props.order.status) {
+    return
+  }
   isUpdating.value = true
   try {
     await fetch(`/admin/orders/${props.order.id}/status`, {

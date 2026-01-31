@@ -113,7 +113,9 @@ const refresh = async () => {
   const res = await fetch('/trace', { cache: 'no-store' })
   const text = await res.text()
   const hash = hashText(text)
-  if (hash === state.lastHash) return
+  if (hash === state.lastHash) {
+    return
+  }
 
   state.lastHash = hash
   state.events = parseNdjson(text)

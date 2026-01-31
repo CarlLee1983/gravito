@@ -58,7 +58,9 @@ export function useAutoScroll(options: UseAutoScrollOptions): UseAutoScrollRetur
    * Scrolls the container to the absolute bottom.
    */
   const scrollToBottom = useCallback(() => {
-    if (!containerRef.current) return
+    if (!containerRef.current) {
+      return
+    }
 
     containerRef.current.scrollTo({
       top: containerRef.current.scrollHeight,
@@ -72,7 +74,9 @@ export function useAutoScroll(options: UseAutoScrollOptions): UseAutoScrollRetur
    * @returns True if at or near the bottom.
    */
   const checkIfAtBottom = useCallback(() => {
-    if (!containerRef.current) return false
+    if (!containerRef.current) {
+      return false
+    }
 
     const { scrollTop, scrollHeight, clientHeight } = containerRef.current
     const distanceFromBottom = scrollHeight - scrollTop - clientHeight
@@ -103,7 +107,9 @@ export function useAutoScroll(options: UseAutoScrollOptions): UseAutoScrollRetur
    */
   useEffect(() => {
     const container = containerRef.current
-    if (!container) return
+    if (!container) {
+      return
+    }
 
     container.addEventListener('scroll', handleScroll)
 

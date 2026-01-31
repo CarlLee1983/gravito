@@ -85,7 +85,9 @@ export class LRUCache<T> {
    */
   get(key: string): T | undefined {
     const node = this.map.get(key)
-    if (!node) return undefined
+    if (!node) {
+      return undefined
+    }
     this.moveToHead(node)
     return node.value
   }
@@ -155,7 +157,9 @@ export class LRUCache<T> {
    */
   delete(key: string): boolean {
     const node = this.map.get(key)
-    if (!node) return false
+    if (!node) {
+      return false
+    }
 
     this.removeNode(node)
     this.map.delete(key)
@@ -177,7 +181,9 @@ export class LRUCache<T> {
    * @param node - The node to promote.
    */
   private moveToHead(node: LRUNode<T>): void {
-    if (node === this.head) return
+    if (node === this.head) {
+      return
+    }
 
     if (node.prev) {
       node.prev.next = node.next
@@ -227,7 +233,9 @@ export class LRUCache<T> {
    * Triggers the `onEvict` callback if provided.
    */
   private evict(): void {
-    if (!this.tail) return
+    if (!this.tail) {
+      return
+    }
 
     const node = this.tail
     if (this.onEvict) {

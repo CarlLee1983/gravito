@@ -1,5 +1,5 @@
 import { StaticLink, useFreeze } from '@gravito/freeze-react'
-import { Head, router, usePage } from '@inertiajs/react'
+import { router, usePage } from '@inertiajs/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Activity, Command, Menu, Moon, Search, Sun, Terminal, X, Zap } from 'lucide-react'
 import type React from 'react'

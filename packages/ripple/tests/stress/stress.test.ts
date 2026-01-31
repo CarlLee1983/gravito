@@ -47,7 +47,9 @@ describe('Stress Tests', () => {
 
       expect(connectedCount.value).toBe(connectionCount)
 
-      for (const ws of connections) ws.close()
+      for (const ws of connections) {
+        ws.close()
+      }
       await new Promise((resolve) => setTimeout(resolve, 100))
     }, 10000)
 
@@ -79,7 +81,9 @@ describe('Stress Tests', () => {
 
       expect(subscribed.count).toBe(connectionCount)
 
-      for (const ws of connections) ws.close()
+      for (const ws of connections) {
+        ws.close()
+      }
     }, 10000)
   })
 
@@ -142,7 +146,9 @@ describe('Stress Tests', () => {
 
       expect(subscribed).toBe(clientCount)
 
-      for (const ws of clients) ws.close()
+      for (const ws of clients) {
+        ws.close()
+      }
     }, 10000)
   })
 
@@ -223,7 +229,9 @@ describe('Stress Tests', () => {
         expect(count).toBe(messageCount)
       })
 
-      for (const ws of subscribers) ws.close()
+      for (const ws of subscribers) {
+        ws.close()
+      }
     }, 15000)
   })
 
@@ -256,7 +264,9 @@ describe('Stress Tests', () => {
 
       expect(joinedCount).toBe(userCount)
 
-      for (const ws of clients) ws.close()
+      for (const ws of clients) {
+        ws.close()
+      }
     }, 10000)
   })
 
@@ -282,7 +292,9 @@ describe('Stress Tests', () => {
 
         await new Promise((resolve) => setTimeout(resolve, 50))
 
-        for (const ws of clients) ws.close()
+        for (const ws of clients) {
+          ws.close()
+        }
         await new Promise((resolve) => setTimeout(resolve, 100))
       }
     }, 20000)
@@ -329,7 +341,9 @@ describe('Stress Tests', () => {
         }
       })
 
-      for (const ws of clients) ws.close()
+      for (const ws of clients) {
+        ws.close()
+      }
     }, 15000)
   })
 })

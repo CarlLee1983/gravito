@@ -55,7 +55,7 @@ describe('SchemaCompilationCache', () => {
       })
       expect(invalidResult.success).toBe(false)
       expect(invalidResult.errors).toBeDefined()
-      expect(invalidResult.errors!.length).toBeGreaterThan(0)
+      expect(invalidResult.errors?.length).toBeGreaterThan(0)
     })
 
     it('should handle different schema instances separately', () => {
@@ -240,14 +240,14 @@ describe('SchemaCompilationCache', () => {
 
       expect(result.success).toBe(false)
       expect(result.errors).toBeDefined()
-      expect(result.errors!.length).toBeGreaterThan(0)
+      expect(result.errors?.length).toBeGreaterThan(0)
 
       // Check error structure
-      const nameError = result.errors!.find((err) => err.path.includes('name'))
+      const nameError = result.errors?.find((err) => err.path.includes('name'))
       expect(nameError).toBeDefined()
-      expect(nameError!.message).toContain('2')
+      expect(nameError?.message).toContain('2')
 
-      const ageError = result.errors!.find((err) => err.path.includes('age'))
+      const ageError = result.errors?.find((err) => err.path.includes('age'))
       expect(ageError).toBeDefined()
     })
   })

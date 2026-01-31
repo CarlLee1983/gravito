@@ -158,7 +158,9 @@ export class PersonalAccessTokenService {
   }
 
   private calculateExpiration(minutes?: number): Date | null {
-    if (!minutes) return null
+    if (!minutes) {
+      return null
+    }
 
     const expiration = new Date()
     expiration.setMinutes(expiration.getMinutes() + minutes)

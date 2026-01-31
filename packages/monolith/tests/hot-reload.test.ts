@@ -12,14 +12,18 @@ describe('Orbit Monolith Hot Reload', () => {
 
   beforeEach(async () => {
     process.env.NODE_ENV = 'development'
-    if (existsSync(TMP_DIR)) await rm(TMP_DIR, { recursive: true, force: true })
+    if (existsSync(TMP_DIR)) {
+      await rm(TMP_DIR, { recursive: true, force: true })
+    }
     await mkdir(join(TMP_DIR, 'docs', 'en'), { recursive: true })
     await writeFile(join(TMP_DIR, 'docs', 'en', 'test.md'), '# Original')
   })
 
   afterEach(async () => {
     process.env.NODE_ENV = originalEnv
-    if (existsSync(TMP_DIR)) await rm(TMP_DIR, { recursive: true, force: true })
+    if (existsSync(TMP_DIR)) {
+      await rm(TMP_DIR, { recursive: true, force: true })
+    }
   })
 
   it('should enable watcher in development mode', async () => {
@@ -34,7 +38,7 @@ describe('Orbit Monolith Hot Reload', () => {
     let registeredHandler: any
 
     // @ts-expect-error
-    core.adapter.use = mock((path, handler) => {
+    core.adapter.use = mock((_path, handler) => {
       registeredHandler = handler
     })
 
@@ -43,7 +47,9 @@ describe('Orbit Monolith Hot Reload', () => {
     // Execute captured handler
     const ctx: any = {
       set: (k: string, v: any) => {
-        if (k === 'content') capturedManager = v
+        if (k === 'content') {
+          capturedManager = v
+        }
       },
     }
     await registeredHandler(ctx, async () => {})

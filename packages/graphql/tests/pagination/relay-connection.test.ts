@@ -52,7 +52,7 @@ describe('Relay Connection - Resolver', () => {
         this.limitValue = value
         return this
       },
-      orderBy(field: string, direction: string) {
+      orderBy(_field: string, _direction: string) {
         return this
       },
       async count() {
@@ -91,7 +91,7 @@ describe('Relay Connection - Resolver', () => {
         this.limitValue = value
         return this
       },
-      orderBy(field: string, direction: string) {
+      orderBy(_field: string, _direction: string) {
         return this
       },
       async count() {

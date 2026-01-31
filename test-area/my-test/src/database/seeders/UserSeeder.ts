@@ -1,6 +1,6 @@
 import type { DBService } from '@gravito/orbit-db'
 
-export default async function seed(db: DBService): Promise<void> {
+export default async function seed(_db: DBService): Promise<void> {
   // TODO: Implement seeder
   // Example:
   // await db.raw.insert(users).values([

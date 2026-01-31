@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import { toPrometheusFormat } from '../src/metrics/exporters/PrometheusExporter'
 import { NotificationMetricsCollector } from '../src/metrics/NotificationMetrics'
 

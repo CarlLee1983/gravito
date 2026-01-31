@@ -175,9 +175,8 @@
 
 <script setup lang="ts">
 import type { PageProps } from '@inertiajs/core'
-import { Link, router, usePage } from '@inertiajs/vue3'
+import { router, usePage } from '@inertiajs/vue3'
 import { computed, reactive, ref } from 'vue'
-import Layout from '../../components/Layout.vue'
 import { useI18n } from '../../composables/useI18n'
 
 const page = usePage<PageProps>()
@@ -224,7 +223,9 @@ const formatDateTime = (date: string) => {
 }
 
 const submitRegistration = () => {
-  if (!selectedSession.value) return
+  if (!selectedSession.value) {
+    return
+  }
 
   form.processing = true
   form.session_id = selectedSession.value.id

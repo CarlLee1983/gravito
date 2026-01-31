@@ -1,24 +1,5 @@
 <script setup lang="ts">
-import { StaticLink } from '@gravito/freeze-vue'
-import { Image } from '@gravito/prism/vue'
-import { Head } from '@inertiajs/vue3'
-import {
-  Activity,
-  ChevronRight,
-  FileText,
-  HardDrive,
-  Search,
-  Share2,
-  Shield,
-  Terminal,
-  Zap,
-} from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
-import gridSvg from '../assets/grid.svg'
-import heroGraphic from '../assets/hero-graphic.png'
-import Layout from '../components/Layout.vue'
-import Logo from '../components/Logo.vue'
-import SpotlightCard from '../components/SpotlightCard.vue'
 import { useI18n } from '../composables/useI18n'
 
 defineProps<{

@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { Link, router, usePage } from '@inertiajs/vue3'
+import { router, usePage } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 import { useI18n } from '../composables/useI18n'
-import SeoHead from './SeoHead.vue'
 
 const { t, locale } = useI18n()
 const page = usePage()
@@ -20,13 +19,17 @@ const toggleMenu = () => {
 
 const toggleUserMenu = () => {
   isUserMenuOpen.value = !isUserMenuOpen.value
-  if (isUserMenuOpen.value) isLangMenuOpen.value = false
+  if (isUserMenuOpen.value) {
+    isLangMenuOpen.value = false
+  }
 }
 
 const isLangMenuOpen = ref(false)
 const toggleLangMenu = () => {
   isLangMenuOpen.value = !isLangMenuOpen.value
-  if (isLangMenuOpen.value) isUserMenuOpen.value = false
+  if (isLangMenuOpen.value) {
+    isUserMenuOpen.value = false
+  }
 }
 
 const switchLanguage = (lang: string) => {

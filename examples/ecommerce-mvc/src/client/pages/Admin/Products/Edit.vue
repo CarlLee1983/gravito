@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3'
+import { router } from '@inertiajs/vue3'
 import { reactive, ref } from 'vue'
 import AdminLayout from '../../../components/AdminLayout.vue'
 

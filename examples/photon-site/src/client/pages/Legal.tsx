@@ -1,4 +1,3 @@
-import { useFreeze } from '@gravito/freeze-react'
 import { Head } from '@inertiajs/react'
 import { motion } from 'framer-motion'
 import { Scale, Shield } from 'lucide-react'

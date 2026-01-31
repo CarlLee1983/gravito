@@ -5,6 +5,33 @@
 import type { Notification } from './Notification'
 
 /**
+ * 支援取消的發送選項
+ *
+ * 用於在發送通知時支援 AbortController 取消功能。
+ *
+ * @example
+ * ```typescript
+ * const controller = new AbortController()
+ * setTimeout(() => controller.abort(), 5000)
+ *
+ * await channel.send(notification, notifiable, {
+ *   signal: controller.signal
+ * })
+ * ```
+ *
+ * @public
+ */
+export interface AbortableSendOptions {
+  /**
+   * AbortSignal 用於取消請求
+   *
+   * 當 signal 被 abort 時，底層的網路請求（如 fetch）會被取消。
+   * 這對於實作 timeout 或使用者主動取消特別有用。
+   */
+  signal?: AbortSignal
+}
+
+/**
  * Notification channel interface.
  * @public
  */
@@ -14,8 +41,13 @@ export interface NotificationChannel {
    *
    * @param notification - The notification instance containing data.
    * @param notifiable - The recipient of the notification.
+   * @param options - Optional abort options (v4.0.0+)
    */
-  send(notification: Notification, notifiable: Notifiable): Promise<void>
+  send(
+    notification: Notification,
+    notifiable: Notifiable,
+    options?: AbortableSendOptions
+  ): Promise<void>
 }
 
 /**
@@ -37,6 +69,19 @@ export interface Notifiable {
    * Optional list of preferred channels for this specific recipient.
    */
   preferredNotificationChannels?(): string[]
+
+  /**
+   * Optional notification preferences for this specific recipient.
+   * 取得用戶的通知偏好設定，用於控制通知的發送行為。
+   */
+  getNotificationPreferences?(): Promise<{
+    /** 啟用的通道列表（如果設定，則只允許這些通道） */
+    enabledChannels?: string[]
+    /** 禁用的通道列表（優先於 enabledChannels） */
+    disabledChannels?: string[]
+    /** 禁用的通知類型列表（Notification class names） */
+    disabledNotifications?: string[]
+  }>
 }
 
 /**
@@ -264,4 +309,47 @@ export interface BroadcastService {
 
 export interface QueueService {
   push(job: unknown, queue?: string, connection?: string, delay?: number): Promise<void>
+}
+
+/**
+ * Notification preference provider interface.
+ *
+ * 用於提供用戶通知偏好的介面。可以從資料庫、快取或其他來源載入用戶的偏好設定。
+ *
+ * @public
+ */
+export interface NotificationPreference {
+  /**
+   * Get user notification preferences.
+   *
+   * 獲取用戶的通知偏好設定。
+   *
+   * @param notifiable - 接收通知的用戶
+   * @returns 用戶的通知偏好設定
+   *
+   * @example
+   * ```typescript
+   * class DatabasePreferenceProvider implements NotificationPreference {
+   *   async getUserPreferences(notifiable: Notifiable) {
+   *     const prefs = await db.query(
+   *       'SELECT * FROM user_preferences WHERE user_id = ?',
+   *       [notifiable.getNotifiableId()]
+   *     )
+   *     return {
+   *       enabledChannels: prefs.enabled_channels,
+   *       disabledChannels: prefs.disabled_channels,
+   *       disabledNotifications: prefs.disabled_notifications
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  getUserPreferences(notifiable: Notifiable): Promise<{
+    /** 啟用的通道列表（如果設定，則只允許這些通道） */
+    enabledChannels: string[]
+    /** 禁用的通道列表（優先於 enabledChannels） */
+    disabledChannels: string[]
+    /** 禁用的通知類型列表（Notification class names） */
+    disabledNotifications: string[]
+  }>
 }

@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test'
 import { definefortifyConfig } from '../../src/config'
 import { TwoFactorController } from '../../src/controllers/TwoFactorController'
-import { ErrorCodes } from '../../src/errors/codes'
 import { createMockContext } from '../helpers/mock-context'
 
 class MockBuilder {
@@ -67,12 +66,15 @@ describe('TwoFactorController', () => {
     const ctxAny = context as any
 
     ctxAny.get = (key: string) => {
-      if (key === 'auth') return { user: async () => user }
-      if (key === 'session')
+      if (key === 'auth') {
+        return { user: async () => user }
+      }
+      if (key === 'session') {
         return {
           get: async () => 'secret',
           forget: mock(),
         }
+      }
       return undefined
     }
 
@@ -97,12 +99,15 @@ describe('TwoFactorController', () => {
     const mockAuth = { loginById: mock() }
 
     ctxAny.get = (key: string) => {
-      if (key === 'session')
+      if (key === 'session') {
         return {
           get: async (k: string) => (k === 'two_factor_user_id' ? userId : undefined),
           forget: mock(),
         }
-      if (key === 'auth') return mockAuth
+      }
+      if (key === 'auth') {
+        return mockAuth
+      }
       return undefined
     }
 

@@ -7,7 +7,7 @@ class HashManager {
   async check(value: string, hashed: string): Promise<boolean> {
     return hashed === `hashed:${value}`
   }
-  needsRehash(hashed: string): boolean {
+  needsRehash(_hashed: string): boolean {
     return true
   }
 }

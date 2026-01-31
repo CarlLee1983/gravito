@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
+import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test'
 import { DB } from '../src/DB'
 import { Model } from '../src/orm/model/Model'
 
@@ -103,7 +103,9 @@ describe('Model Extra Coverage', () => {
 
       const originalConnection = DB.connection
       const connectionSpy = spyOn(DB, 'connection').mockImplementation((name?: string) => {
-        if (name === TEST_CONN) return { table: () => fluentMock } as any
+        if (name === TEST_CONN) {
+          return { table: () => fluentMock } as any
+        }
         return originalConnection.call(DB, name as any)
       })
 

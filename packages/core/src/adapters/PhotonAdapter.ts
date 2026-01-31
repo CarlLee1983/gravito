@@ -652,7 +652,7 @@ export class PhotonAdapter<V extends GravitoVariables = GravitoVariables>
 
     const normalizedScope = scope.startsWith('/') ? scope : `/${scope}`
     const fullPath =
-      (this.config.basePath || '') + normalizedScope + (path.startsWith('/') ? '' : '/' + path)
+      (this.config.basePath || '') + normalizedScope + (path.startsWith('/') ? '' : `/${path}`)
 
     if (!fullPath.includes(normalizedScope)) {
       throw new Error(

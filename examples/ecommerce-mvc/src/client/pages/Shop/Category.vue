@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3'
-import GImage from '../../components/GImage.vue'
 import Layout from '../../components/Layout.vue'
 
 defineOptions({ layout: Layout })

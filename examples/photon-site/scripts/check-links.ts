@@ -132,7 +132,7 @@ async function main() {
     if (!issuesByFile.has(issue.file)) {
       issuesByFile.set(issue.file, [])
     }
-    issuesByFile.get(issue.file)!.push(issue)
+    issuesByFile.get(issue.file)?.push(issue)
   }
 
   for (const [file, fileIssues] of issuesByFile) {

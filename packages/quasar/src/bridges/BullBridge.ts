@@ -23,10 +23,18 @@ export class BullBridge extends BaseZenithBridge {
     )
 
     // Setup listeners
-    if (this.listeners[0]) queue.on('completed', this.listeners[0].handler)
-    if (this.listeners[1]) queue.on('failed', this.listeners[1].handler)
-    if (this.listeners[2]) queue.on('active', this.listeners[2].handler)
-    if (this.listeners[3]) queue.on('progress', this.listeners[3].handler)
+    if (this.listeners[0]) {
+      queue.on('completed', this.listeners[0].handler)
+    }
+    if (this.listeners[1]) {
+      queue.on('failed', this.listeners[1].handler)
+    }
+    if (this.listeners[2]) {
+      queue.on('active', this.listeners[2].handler)
+    }
+    if (this.listeners[3]) {
+      queue.on('progress', this.listeners[3].handler)
+    }
   }
 
   private handleJobActive(job: any): void {

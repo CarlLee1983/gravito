@@ -64,7 +64,7 @@ export class BunNativeAdapter implements HttpAdapter {
     }
 
     const normalizedScope = scope.startsWith('/') ? scope : `/${scope}`
-    const fullPath = normalizedScope + (path.startsWith('/') ? '' : '/' + path)
+    const fullPath = normalizedScope + (path.startsWith('/') ? '' : `/${path}`)
 
     if (!fullPath.includes(normalizedScope)) {
       throw new Error(

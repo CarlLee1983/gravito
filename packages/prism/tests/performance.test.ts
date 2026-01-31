@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { join } from 'path'
+import { join } from 'node:path'
 import { TemplateCache } from '../src/core/TemplateCache'
 import { TemplateEngine } from '../src/engine/TemplateEngine'
 

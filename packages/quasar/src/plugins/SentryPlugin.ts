@@ -30,7 +30,9 @@ export class SentryPlugin implements QuasarPlugin {
   }
 
   private reportToSentry(payload: any): void {
-    if (!this.sentry) return
+    if (!this.sentry) {
+      return
+    }
 
     const error = new Error(payload.message || 'Unknown Job Error')
     this.sentry.captureException(error, {
