@@ -1,5 +1,5 @@
 import type { Notification } from '../Notification'
-import type { Notifiable, NotificationChannel } from '../types'
+import type { AbortableSendOptions, Notifiable, NotificationChannel } from '../types'
 import { TimeoutChannel } from './TimeoutChannel'
 
 /**
@@ -34,14 +34,18 @@ export class SlackChannel implements NotificationChannel {
   constructor(private config: SlackChannelConfig) {
     // 建立內部 channel
     const innerChannel: NotificationChannel = {
-      send: async (notification: Notification, notifiable: Notifiable) => {
+      send: async (
+        notification: Notification,
+        notifiable: Notifiable,
+        options?: AbortableSendOptions
+      ) => {
         if (!notification.toSlack) {
           throw new Error('Notification does not implement toSlack method')
         }
 
         const slackMessage = notification.toSlack(notifiable)
 
-        // Send to Slack webhook.
+        // Send to Slack webhook with AbortSignal support
         const response = await fetch(this.config.webhookUrl, {
           method: 'POST',
           headers: {
@@ -54,6 +58,7 @@ export class SlackChannel implements NotificationChannel {
             icon_emoji: slackMessage.iconEmoji,
             attachments: slackMessage.attachments,
           }),
+          signal: options?.signal, // 傳遞 AbortSignal 給 fetch
         })
 
         if (!response.ok) {
@@ -70,7 +75,11 @@ export class SlackChannel implements NotificationChannel {
     })
   }
 
-  async send(notification: Notification, notifiable: Notifiable): Promise<void> {
-    return this.timeoutChannel.send(notification, notifiable)
+  async send(
+    notification: Notification,
+    notifiable: Notifiable,
+    options?: AbortableSendOptions
+  ): Promise<void> {
+    return this.timeoutChannel.send(notification, notifiable, options)
   }
 }

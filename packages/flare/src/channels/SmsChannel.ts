@@ -1,5 +1,5 @@
 import type { Notification } from '../Notification'
-import type { Notifiable, NotificationChannel, SmsMessage } from '../types'
+import type { AbortableSendOptions, Notifiable, NotificationChannel, SmsMessage } from '../types'
 import { TimeoutChannel } from './TimeoutChannel'
 
 /**
@@ -41,20 +41,24 @@ export class SmsChannel implements NotificationChannel {
   constructor(private config: SmsChannelConfig) {
     // 建立內部 channel
     const innerChannel: NotificationChannel = {
-      send: async (notification: Notification, notifiable: Notifiable) => {
+      send: async (
+        notification: Notification,
+        notifiable: Notifiable,
+        options?: AbortableSendOptions
+      ) => {
         if (!notification.toSms) {
           throw new Error('Notification does not implement toSms method')
         }
 
         const smsMessage = notification.toSms(notifiable)
 
-        // Implement per provider.
+        // Implement per provider with AbortSignal support
         switch (this.config.provider) {
           case 'twilio':
-            await this.sendViaTwilio(smsMessage)
+            await this.sendViaTwilio(smsMessage, options?.signal)
             break
           case 'aws-sns':
-            await this.sendViaAwsSns(smsMessage)
+            await this.sendViaAwsSns(smsMessage, options?.signal)
             break
           default:
             throw new Error(`Unsupported SMS provider: ${this.config.provider}`)
@@ -70,14 +74,18 @@ export class SmsChannel implements NotificationChannel {
     })
   }
 
-  async send(notification: Notification, notifiable: Notifiable): Promise<void> {
-    return this.timeoutChannel.send(notification, notifiable)
+  async send(
+    notification: Notification,
+    notifiable: Notifiable,
+    options?: AbortableSendOptions
+  ): Promise<void> {
+    return this.timeoutChannel.send(notification, notifiable, options)
   }
 
   /**
-   * Send SMS via Twilio.
+   * Send SMS via Twilio with AbortSignal support.
    */
-  private async sendViaTwilio(message: SmsMessage): Promise<void> {
+  private async sendViaTwilio(message: SmsMessage, signal?: AbortSignal): Promise<void> {
     if (!this.config.apiKey || !this.config.apiSecret) {
       throw new Error('Twilio API key and secret are required')
     }
@@ -98,6 +106,7 @@ export class SmsChannel implements NotificationChannel {
           To: message.to,
           Body: message.message,
         }),
+        signal, // 傳遞 AbortSignal 給 fetch
       }
     )
 
@@ -108,9 +117,9 @@ export class SmsChannel implements NotificationChannel {
   }
 
   /**
-   * Send SMS via AWS SNS.
+   * Send SMS via AWS SNS with AbortSignal support.
    */
-  private async sendViaAwsSns(message: SmsMessage): Promise<void> {
+  private async sendViaAwsSns(message: SmsMessage, signal?: AbortSignal): Promise<void> {
     // Lazy load AWS SDK
     let SNSClient: typeof import('@aws-sdk/client-sns').SNSClient
     let PublishCommand: typeof import('@aws-sdk/client-sns').PublishCommand
@@ -153,7 +162,8 @@ export class SmsChannel implements NotificationChannel {
     })
 
     try {
-      await client.send(command)
+      // AWS SDK v3 支援 abortSignal
+      await client.send(command, { abortSignal: signal })
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error))
       throw new Error(`Failed to send SMS via AWS SNS: ${err.message}`)

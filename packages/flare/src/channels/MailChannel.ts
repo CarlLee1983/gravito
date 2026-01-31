@@ -1,5 +1,5 @@
 import type { Notification } from '../Notification'
-import type { Notifiable, NotificationChannel } from '../types'
+import type { AbortableSendOptions, Notifiable, NotificationChannel } from '../types'
 import { TimeoutChannel } from './TimeoutChannel'
 
 /**
@@ -37,12 +37,17 @@ export class MailChannel implements NotificationChannel {
   ) {
     // 建立內部 channel
     const innerChannel: NotificationChannel = {
-      send: async (notification: Notification, notifiable: Notifiable) => {
+      send: async (
+        notification: Notification,
+        notifiable: Notifiable,
+        _options?: AbortableSendOptions
+      ) => {
         if (!notification.toMail) {
           throw new Error('Notification does not implement toMail method')
         }
 
         const message = notification.toMail(notifiable)
+        // Note: MailService 可能不支援 AbortSignal，取決於底層實作
         await this.mailService.send(message)
       },
     }
@@ -55,7 +60,11 @@ export class MailChannel implements NotificationChannel {
     })
   }
 
-  async send(notification: Notification, notifiable: Notifiable): Promise<void> {
-    return this.timeoutChannel.send(notification, notifiable)
+  async send(
+    notification: Notification,
+    notifiable: Notifiable,
+    options?: AbortableSendOptions
+  ): Promise<void> {
+    return this.timeoutChannel.send(notification, notifiable, options)
   }
 }

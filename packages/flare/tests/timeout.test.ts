@@ -1,7 +1,7 @@
 import { describe, expect, it, jest } from 'bun:test'
 import { TimeoutChannel } from '../src/channels/TimeoutChannel'
 import { Notification } from '../src/Notification'
-import type { Notifiable, NotificationChannel } from '../src/types'
+import type { AbortableSendOptions, Notifiable, NotificationChannel } from '../src/types'
 
 // Mock Notifiable
 const notifiable: Notifiable = {
@@ -15,13 +15,25 @@ class TestNotification extends Notification {
   }
 }
 
-// Mock Channel
+// Mock Channel with AbortSignal support
 class MockChannel implements NotificationChannel {
   constructor(public delay = 0) {}
 
-  async send(_notification: Notification, _notifiable: Notifiable): Promise<void> {
+  async send(
+    _notification: Notification,
+    _notifiable: Notifiable,
+    options?: AbortableSendOptions
+  ): Promise<void> {
     if (this.delay > 0) {
-      await new Promise((resolve) => setTimeout(resolve, this.delay))
+      // 模擬 fetch 行為：檢查 AbortSignal
+      return new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(resolve, this.delay)
+
+        options?.signal?.addEventListener('abort', () => {
+          clearTimeout(timer)
+          reject(new Error('The operation was aborted'))
+        })
+      })
     }
   }
 }

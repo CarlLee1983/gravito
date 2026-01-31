@@ -5,6 +5,33 @@
 import type { Notification } from './Notification'
 
 /**
+ * 支援取消的發送選項
+ *
+ * 用於在發送通知時支援 AbortController 取消功能。
+ *
+ * @example
+ * ```typescript
+ * const controller = new AbortController()
+ * setTimeout(() => controller.abort(), 5000)
+ *
+ * await channel.send(notification, notifiable, {
+ *   signal: controller.signal
+ * })
+ * ```
+ *
+ * @public
+ */
+export interface AbortableSendOptions {
+  /**
+   * AbortSignal 用於取消請求
+   *
+   * 當 signal 被 abort 時，底層的網路請求（如 fetch）會被取消。
+   * 這對於實作 timeout 或使用者主動取消特別有用。
+   */
+  signal?: AbortSignal
+}
+
+/**
  * Notification channel interface.
  * @public
  */
@@ -14,8 +41,13 @@ export interface NotificationChannel {
    *
    * @param notification - The notification instance containing data.
    * @param notifiable - The recipient of the notification.
+   * @param options - Optional abort options (v4.0.0+)
    */
-  send(notification: Notification, notifiable: Notifiable): Promise<void>
+  send(
+    notification: Notification,
+    notifiable: Notifiable,
+    options?: AbortableSendOptions
+  ): Promise<void>
 }
 
 /**

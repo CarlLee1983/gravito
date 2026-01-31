@@ -50,11 +50,11 @@ describe('SlackChannel with Timeout', () => {
   })
 
   it('當 fetch 超時時應該拋出 TimeoutError', async () => {
-    // Mock 一個非常慢的 fetch
+    // Mock fetch with AbortSignal support
     global.fetch = jest.fn(
-      () =>
-        new Promise((resolve) => {
-          setTimeout(
+      (_url, options: RequestInit = {}) =>
+        new Promise((resolve, reject) => {
+          const timer = setTimeout(
             () =>
               resolve({
                 ok: true,
@@ -62,6 +62,12 @@ describe('SlackChannel with Timeout', () => {
               } as Response),
             5000
           ) // 5 秒延遲
+
+          // 處理 AbortSignal
+          options.signal?.addEventListener('abort', () => {
+            clearTimeout(timer)
+            reject(new Error('The operation was aborted'))
+          })
         })
     )
 
@@ -103,11 +109,11 @@ describe('SlackChannel with Timeout', () => {
   it('應該支援 onTimeout 回調', async () => {
     const onTimeout = jest.fn()
 
-    // Mock 一個非常慢的 fetch
+    // Mock fetch with AbortSignal support
     global.fetch = jest.fn(
-      () =>
-        new Promise((resolve) => {
-          setTimeout(
+      (_url, options: RequestInit = {}) =>
+        new Promise((resolve, reject) => {
+          const timer = setTimeout(
             () =>
               resolve({
                 ok: true,
@@ -115,6 +121,12 @@ describe('SlackChannel with Timeout', () => {
               } as Response),
             5000
           )
+
+          // 處理 AbortSignal
+          options.signal?.addEventListener('abort', () => {
+            clearTimeout(timer)
+            reject(new Error('The operation was aborted'))
+          })
         })
     )
 
