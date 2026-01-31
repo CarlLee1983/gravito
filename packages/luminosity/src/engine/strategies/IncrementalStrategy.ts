@@ -29,6 +29,7 @@ export class IncrementalStrategy implements SeoStrategy {
 
   private compactTimer: ReturnType<typeof setInterval> | null = null
   private compactInterval: number | undefined
+  private maxLogSize: number
 
   constructor(config: SeoConfig) {
     if (!config.incremental) {
@@ -47,6 +48,7 @@ export class IncrementalStrategy implements SeoStrategy {
     this.compactor = new Compactor(this.logger)
     this.dynamic = new DynamicStrategy(config)
     this.compactInterval = config.incremental.compactInterval
+    this.maxLogSize = config.incremental.maxLogSize || 10 * 1024 * 1024 // 10MB default
   }
 
   /**
@@ -135,6 +137,7 @@ export class IncrementalStrategy implements SeoStrategy {
       timestamp: Date.now(),
       entry,
     })
+    await this.checkLogSizeAndCompact()
   }
 
   /**
@@ -149,6 +152,31 @@ export class IncrementalStrategy implements SeoStrategy {
       timestamp: Date.now(),
       url,
     })
+    await this.checkLogSizeAndCompact()
+  }
+
+  /**
+   * Check log size and trigger compaction if needed.
+   *
+   * If the log file exceeds maxLogSize, automatically triggers compaction
+   * to prevent unbounded log growth.
+   *
+   * @private
+   */
+  private async checkLogSizeAndCompact(): Promise<void> {
+    try {
+      const currentSize = await this.logger.getSize()
+
+      if (currentSize > this.maxLogSize) {
+        console.log(
+          `[GravitoSeo] Log size ${currentSize} bytes exceeds maxLogSize ${this.maxLogSize} bytes, triggering compaction...`
+        )
+        await this.compact()
+      }
+    } catch (error) {
+      // Log error but don't fail the operation
+      console.error('[GravitoSeo] Failed to check log size:', error)
+    }
   }
 
   /**

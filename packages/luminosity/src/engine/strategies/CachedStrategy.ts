@@ -1,4 +1,6 @@
 import type { SitemapEntry } from '../../interfaces'
+import type { CacheLockProvider } from '../../storage/adapter'
+import { InMemoryLockProvider } from '../../storage/InMemoryLockProvider'
 import { MemoryCache } from '../../storage/MemoryCache'
 import type { SeoConfig } from '../../types'
 import type { SeoStrategy } from '../interfaces'
@@ -10,17 +12,23 @@ import { DynamicStrategy } from './DynamicStrategy'
  * It provides "cache stampede" protection to ensure that multiple simultaneous
  * requests do not trigger identical heavy regeneration tasks.
  *
+ * Supports pluggable lock providers for distributed environments.
+ *
  * @public
  * @since 3.0.0
  */
 export class CachedStrategy implements SeoStrategy {
   private dynamicStrategy: DynamicStrategy
   private cache: MemoryCache
+  private lockProvider: CacheLockProvider
 
   constructor(config: SeoConfig) {
     this.dynamicStrategy = new DynamicStrategy(config)
     const ttl = config.cache?.ttl || 3600 // Default 1 hour
     this.cache = new MemoryCache(ttl)
+
+    // Use provided lock provider or default to in-memory
+    this.lockProvider = config.cache?.lockProvider || new InMemoryLockProvider()
   }
 
   /**
@@ -36,42 +44,34 @@ export class CachedStrategy implements SeoStrategy {
   /**
    * Retrieves sitemap entries, utilizing the cache.
    *
-   * Implements the "Cache Stampede" protection pattern (Mutex) to prevent
-   * multiple concurrent requests from regenerating the sitemap simultaneously.
+   * Implements the "Cache Stampede" protection pattern using distributed locks
+   * to prevent multiple concurrent requests from regenerating the sitemap simultaneously.
    *
    * @returns A promise that resolves to the array of sitemap entries.
    * @throws {Error} If fetching entries fails.
    */
   async getEntries(): Promise<SitemapEntry[]> {
-    // 1. Check Cache
+    // 1. Check Cache (first check)
     const cached = this.cache.get()
     if (cached) {
       return cached
     }
 
-    // 2. Acquire Mutex (Cache Stampede Protection)
-    const isOwner = await this.cache.lock()
+    // 2. Acquire Lock (Cache Stampede Protection)
+    const lock = this.lockProvider.createLock('luminosity:cache:lock', 30)
 
-    // 3. Double Check Cache (in case we waited and someone else filled it)
-    const cachedAfterWait = this.cache.get()
-    if (cachedAfterWait) {
-      if (isOwner) {
-        this.cache.unlock()
+    return await lock.block(10, async () => {
+      // 3. Double-check cache (another instance might have populated it)
+      const cachedAfterLock = this.cache.get()
+      if (cachedAfterLock) {
+        return cachedAfterLock
       }
-      return cachedAfterWait
-    }
 
-    // 4. If we are not the owner but cache is still empty (should happen rarely if logic is correct),
-    // or if we are the owner: Fetch Data
-    try {
+      // 4. Compute and cache
       const entries = await this.dynamicStrategy.getEntries()
       this.cache.set(entries)
       return entries
-    } finally {
-      if (isOwner) {
-        this.cache.unlock()
-      }
-    }
+    })
   }
 
   /**
