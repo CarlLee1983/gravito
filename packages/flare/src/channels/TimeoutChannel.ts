@@ -59,9 +59,7 @@ export class TimeoutChannel implements NotificationChannel {
         this.config.onTimeout(this.inner.constructor.name, notification)
       }
 
-      throw new TimeoutError(
-        `Notification send timeout after ${this.config.timeout}ms`
-      )
+      throw new TimeoutError(`Notification send timeout after ${this.config.timeout}ms`)
     }
 
     // 建立 timeout Promise
@@ -72,11 +70,7 @@ export class TimeoutChannel implements NotificationChannel {
           this.config.onTimeout(this.inner.constructor.name, notification)
         }
 
-        reject(
-          new TimeoutError(
-            `Notification send timeout after ${this.config.timeout}ms`
-          )
-        )
+        reject(new TimeoutError(`Notification send timeout after ${this.config.timeout}ms`))
       }, this.config.timeout)
     })
 

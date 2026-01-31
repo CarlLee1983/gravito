@@ -514,15 +514,9 @@ export class NotificationManager {
 
     // Execute middleware chain
     const executeWithMiddleware = async () => {
-      await this.executeMiddlewareChain(
-        0,
-        notification,
-        notifiable,
-        channelName,
-        async () => {
-          await channel.send(notification, notifiable)
-        }
-      )
+      await this.executeMiddlewareChain(0, notification, notifiable, channelName, async () => {
+        await channel.send(notification, notifiable)
+      })
     }
 
     await executeWithMiddleware()
@@ -566,7 +560,13 @@ export class NotificationManager {
     // Execute middleware with next() function
     await middleware.handle(notification, notifiable, channelName, async () => {
       // next() calls the next middleware in the chain
-      await this.executeMiddlewareChain(index + 1, notification, notifiable, channelName, finalHandler)
+      await this.executeMiddlewareChain(
+        index + 1,
+        notification,
+        notifiable,
+        channelName,
+        finalHandler
+      )
     })
   }
 

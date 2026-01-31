@@ -47,17 +47,21 @@ export class PreferenceMiddleware implements ChannelMiddleware {
    * Create a new PreferenceMiddleware instance.
    *
    * @param preferenceProvider - 可選的偏好提供者，如果未提供則使用 Notifiable 上的方法
+   * @param logger - 可選的 logger 實例，用於記錄錯誤訊息
    *
    * @example
    * ```typescript
    * // 不使用提供者（從 Notifiable.getNotificationPreferences 讀取）
    * const middleware = new PreferenceMiddleware()
    *
-   * // 使用資料庫提供者
-   * const middleware = new PreferenceMiddleware(new DatabasePreferenceProvider())
+   * // 使用資料庫提供者和 logger
+   * const middleware = new PreferenceMiddleware(new DatabasePreferenceProvider(), logger)
    * ```
    */
-  constructor(private preferenceProvider?: NotificationPreference) {}
+  constructor(
+    private preferenceProvider?: NotificationPreference,
+    private logger?: { error: (message: string, ...args: unknown[]) => void }
+  ) {}
 
   /**
    * Handle the notification and apply user preference filtering.
@@ -105,11 +109,16 @@ export class PreferenceMiddleware implements ChannelMiddleware {
       await next()
     } catch (error) {
       // 偏好載入失敗時，記錄錯誤但不阻止通知發送（容錯機制）
-      console.error(
+      const errorMessage =
         `[PreferenceMiddleware] Failed to load preferences for ${notifiable.getNotifiableId()}, ` +
-          `allowing notification to proceed:`,
-        error
-      )
+        `allowing notification to proceed:`
+
+      if (this.logger) {
+        this.logger.error(errorMessage, error)
+      } else {
+        console.error(errorMessage, error)
+      }
+
       await next()
     }
   }
@@ -125,9 +134,7 @@ export class PreferenceMiddleware implements ChannelMiddleware {
    *
    * @private
    */
-  private async getPreferences(
-    notifiable: Notifiable
-  ): Promise<{
+  private async getPreferences(notifiable: Notifiable): Promise<{
     enabledChannels?: string[]
     disabledChannels?: string[]
     disabledNotifications?: string[]

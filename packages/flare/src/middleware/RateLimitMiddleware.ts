@@ -77,7 +77,9 @@ class MemoryStore implements CacheStore {
 
   async get<T>(key: string): Promise<T | null> {
     const item = this.cache.get(key)
-    if (!item) return null
+    if (!item) {
+      return null
+    }
 
     if (Date.now() > item.expiry) {
       this.cache.delete(key)
@@ -210,8 +212,8 @@ export class RateLimitMiddleware implements ChannelMiddleware {
    * @throws {Error} 當超過限流時拋出錯誤
    */
   async handle(
-    notification: Notification,
-    notifiable: Notifiable,
+    _notification: Notification,
+    _notifiable: Notifiable,
     channel: string,
     next: () => Promise<void>
   ): Promise<void> {
@@ -298,7 +300,9 @@ export class RateLimitMiddleware implements ChannelMiddleware {
    */
   reset(channel: string): void {
     const channelConfig = this.config[channel]
-    if (!channelConfig) return
+    if (!channelConfig) {
+      return
+    }
 
     if (channelConfig.maxPerSecond) {
       const key = `${channel}:second`

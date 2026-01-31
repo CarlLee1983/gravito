@@ -80,7 +80,7 @@ export function checkSerializable(obj: unknown, path = ''): SerializationCheckRe
       value instanceof WeakSet ||
       value instanceof ArrayBuffer ||
       value instanceof DataView ||
-      typeof Buffer !== 'undefined' && value instanceof Buffer
+      (typeof Buffer !== 'undefined' && value instanceof Buffer)
     ) {
       problematicPaths.push(currentPath)
       warnings.push(`發現不可序列化的 ${value.constructor.name} 於路徑: ${currentPath}`)
@@ -135,8 +135,8 @@ export function assertSerializable(obj: unknown): void {
   if (!result.serializable) {
     throw new Error(
       `物件包含不可序列化的屬性:\n` +
-      `問題路徑: ${result.problematicPaths.join(', ')}\n` +
-      `詳細資訊:\n${result.warnings.join('\n')}`
+        `問題路徑: ${result.problematicPaths.join(', ')}\n` +
+        `詳細資訊:\n${result.warnings.join('\n')}`
     )
   }
 }

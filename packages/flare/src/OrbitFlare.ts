@@ -5,7 +5,13 @@ import { MailChannel } from './channels/MailChannel'
 import { SlackChannel } from './channels/SlackChannel'
 import { SmsChannel } from './channels/SmsChannel'
 import { NotificationManager } from './NotificationManager'
-import type { BroadcastService, DatabaseService, MailService, NotificationPreference, QueueService } from './types'
+import type {
+  BroadcastService,
+  DatabaseService,
+  MailService,
+  NotificationPreference,
+  QueueService,
+} from './types'
 import type { ChannelMiddleware } from './types/middleware'
 
 /**
@@ -192,7 +198,7 @@ export class OrbitFlare implements GravitoOrbit {
     }
   }
 
-  private setupSlackChannel(core: PlanetCore, manager: NotificationManager): void {
+  private setupSlackChannel(_core: PlanetCore, manager: NotificationManager): void {
     const slack = this.options.channels?.slack as
       | {
           webhookUrl: string

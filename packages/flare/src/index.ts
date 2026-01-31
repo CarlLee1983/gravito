@@ -14,20 +14,16 @@ export type { SmsChannelConfig } from './channels/SmsChannel'
 export { SmsChannel } from './channels/SmsChannel'
 export type { TimeoutConfig } from './channels/TimeoutChannel'
 export { TimeoutChannel, TimeoutError } from './channels/TimeoutChannel'
-
-// Middleware
-export type { ChannelMiddleware } from './types/middleware'
-export type {
-  ChannelRateLimitConfig,
-  RateLimitConfig,
-  CacheStore,
-} from './middleware/RateLimitMiddleware'
-export { RateLimitMiddleware } from './middleware/RateLimitMiddleware'
-export { PreferenceMiddleware } from './middleware/PreferenceMiddleware'
 export { toPrometheusFormat } from './metrics/exporters/PrometheusExporter'
 export type { MetricsSummary, NotificationMetric } from './metrics/NotificationMetrics'
 export { NotificationMetricsCollector } from './metrics/NotificationMetrics'
-
+export { PreferenceMiddleware } from './middleware/PreferenceMiddleware'
+export type {
+  CacheStore,
+  ChannelRateLimitConfig,
+  RateLimitConfig,
+} from './middleware/RateLimitMiddleware'
+export { RateLimitMiddleware } from './middleware/RateLimitMiddleware'
 export type { ShouldQueue } from './Notification'
 export { Notification } from './Notification'
 export { NotificationManager } from './NotificationManager'
@@ -35,14 +31,6 @@ export type { OrbitFlareOptions } from './OrbitFlare'
 export { OrbitFlare } from './OrbitFlare'
 export type { MailTemplate, SlackTemplate, TemplateData } from './templates/NotificationTemplate'
 export { TemplatedNotification } from './templates/NotificationTemplate'
-
-// Lazy Loading & Serialization Utilities
-export { LazyNotification } from './utils/LazyNotification'
-export type { SerializationCheckResult } from './utils/serializationGuard'
-export { assertSerializable, checkSerializable } from './utils/serializationGuard'
-export { deepDeserialize, deepSerialize } from './utils/serialization'
-export { TokenBucket } from './utils/TokenBucket'
-
 export type {
   BatchResult,
   BroadcastNotification,
@@ -66,3 +54,11 @@ export type {
   SlackMessage,
   SmsMessage,
 } from './types'
+// Middleware
+export type { ChannelMiddleware } from './types/middleware'
+// Lazy Loading & Serialization Utilities
+export { LazyNotification } from './utils/LazyNotification'
+export { deepDeserialize, deepSerialize } from './utils/serialization'
+export type { SerializationCheckResult } from './utils/serializationGuard'
+export { assertSerializable, checkSerializable } from './utils/serializationGuard'
+export { TokenBucket } from './utils/TokenBucket'
