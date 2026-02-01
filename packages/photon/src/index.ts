@@ -74,6 +74,16 @@ export * from './middleware/binary'
 export * from './middleware/htmx'
 
 /**
+ * Rate limiting middleware for Photon.
+ *
+ * Provides built-in rate limiting with token bucket and sliding window strategies.
+ * Supports both memory-based and custom storage backends.
+ *
+ * @public
+ */
+export * from './middleware/ratelimit'
+
+/**
  * OpenAPI utilities
  * @public
  */
