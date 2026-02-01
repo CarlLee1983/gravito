@@ -6,6 +6,7 @@ import {
   createFetchWithTimeout,
   executeWithRetry,
   mergeAbortSignals,
+  OfflineQueue,
   RequestDeduplicator,
   resolveHeaders,
 } from './utils'
@@ -53,6 +54,7 @@ export function createBeam<T extends Photon<Env, Schema, string>>(
     !options?.timeout &&
     !options?.retry &&
     !options?.deduplicate &&
+    !options?.offlineQueue &&
     !options?.onRequest &&
     !options?.onResponse &&
     !options?.onError
@@ -78,10 +80,12 @@ function createEnhancedFetch(options: BeamOptions) {
     ? new RequestDeduplicator(options.deduplicateWindow)
     : null
 
-  return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    try {
-      let config = init || {}
+  // Create offline queue if enabled
+  const offlineQueue = options.offlineQueue?.enabled ? new OfflineQueue(options.offlineQueue) : null
 
+  return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    let config = init || {}
+    try {
       // 1. Resolve dynamic headers
       const headers = await resolveHeaders(options.headers)
       if (headers) {
@@ -135,7 +139,13 @@ function createEnhancedFetch(options: BeamOptions) {
 
       return response
     } catch (error) {
-      // 6. Execute onError interceptor
+      // 6. Handle offline queue if enabled
+      if (offlineQueue && (error instanceof BeamNetworkError || error instanceof Error)) {
+        const { signal: _s, ...configWithoutSignal } = config
+        await offlineQueue.add(fetch.bind(globalThis), input, configWithoutSignal)
+      }
+
+      // 7. Execute onError interceptor
       const beamError =
         error instanceof BeamError ? error : new BeamNetworkError('Request failed', error)
 

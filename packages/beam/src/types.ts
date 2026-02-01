@@ -40,6 +40,41 @@ export interface RetryOptions {
 }
 
 /**
+ * Offline queue configuration options
+ *
+ * @public
+ */
+export interface OfflineQueueOptions {
+  /**
+   * Whether to enable the offline queue
+   *
+   * @default false
+   */
+  enabled?: boolean
+
+  /**
+   * Storage engine to use for the queue
+   *
+   * @default 'memory'
+   */
+  storage?: 'memory' | 'localStorage'
+
+  /**
+   * Maximum number of requests to queue
+   *
+   * @default 100
+   */
+  maxSize?: number
+
+  /**
+   * Whether to automatically retry queued requests when the network becomes online
+   *
+   * @default true
+   */
+  retryOnReconnect?: boolean
+}
+
+/**
  * Options for the Beam (RPC) client.
  *
  * Orbit Beam uses these options to configure the underlying HTTP client.
@@ -187,4 +222,21 @@ export interface BeamOptions extends Omit<RequestInit, 'headers'> {
    * ```
    */
   onError?: (error: BeamError) => void | Promise<void>
+
+  /**
+   * Offline queue configuration
+   *
+   * When enabled, requests that fail due to network errors will be queued
+   * and retried when the network becomes available.
+   *
+   * @example
+   * ```typescript
+   * offlineQueue: {
+   *   enabled: true,
+   *   storage: 'localStorage',
+   *   maxSize: 100
+   * }
+   * ```
+   */
+  offlineQueue?: OfflineQueueOptions
 }

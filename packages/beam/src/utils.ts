@@ -310,3 +310,129 @@ export class RequestDeduplicator {
     return this.cache.size
   }
 }
+
+/**
+ * Queued request object
+ */
+export interface QueuedRequest {
+  id: string
+  input: string
+  init: RequestInit
+  timestamp: number
+}
+
+/**
+ * Offline queue manager for persistence and re-sending requests
+ */
+export class OfflineQueue {
+  private queue: QueuedRequest[] = []
+  private options: Required<import('./types').OfflineQueueOptions>
+
+  constructor(options: import('./types').OfflineQueueOptions = {}) {
+    this.options = {
+      enabled: options.enabled ?? false,
+      storage: options.storage ?? 'memory',
+      maxSize: options.maxSize ?? 100,
+      retryOnReconnect: options.retryOnReconnect ?? true,
+    }
+
+    if (this.options.storage === 'localStorage' && typeof window !== 'undefined') {
+      this.loadFromStorage()
+    }
+
+    if (this.options.retryOnReconnect && typeof window !== 'undefined') {
+      window.addEventListener('online', () => {
+        this.drain().catch(() => {})
+      })
+    }
+  }
+
+  /**
+   * Gets the current queue size
+   */
+  get size(): number {
+    return this.queue.length
+  }
+
+  /**
+   * Adds a request to the offline queue
+   */
+  async add(
+    _fetchFn: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
+    input: RequestInfo | URL,
+    init?: RequestInit
+  ): Promise<void> {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+
+    const request: QueuedRequest = {
+      id: Math.random().toString(36).substring(7),
+      input: url,
+      init: init || {},
+      timestamp: Date.now(),
+    }
+
+    if (this.queue.length >= this.options.maxSize) {
+      this.queue.shift() // FIFO eviction
+    }
+
+    this.queue.push(request)
+    this.persist()
+  }
+
+  /**
+   * Drains the queue by re-sending all requests
+   *
+   * @param fetchFn - Optional fetch function to use for re-sending (defaults to global fetch)
+   */
+  async drain(
+    fetchFn: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> = fetch.bind(
+      globalThis
+    )
+  ): Promise<void> {
+    const currentQueue = [...this.queue]
+    this.queue = []
+
+    const remainingRequests: QueuedRequest[] = []
+
+    for (const req of currentQueue) {
+      try {
+        await fetchFn(req.input, req.init)
+      } catch (_error) {
+        remainingRequests.push(req)
+      }
+    }
+
+    if (remainingRequests.length > 0) {
+      // Re-add failed requests to the FRONT of the queue to maintain order
+      this.queue = [...remainingRequests, ...this.queue]
+      this.persist()
+    }
+  }
+
+  /**
+   * Clears the entire queue
+   */
+  clear(): void {
+    this.queue = []
+    this.persist()
+  }
+
+  private persist() {
+    if (this.options.storage === 'localStorage' && typeof localStorage !== 'undefined') {
+      localStorage.setItem('beam_offline_queue', JSON.stringify(this.queue))
+    }
+  }
+
+  private loadFromStorage() {
+    if (typeof localStorage !== 'undefined') {
+      const stored = localStorage.getItem('beam_offline_queue')
+      if (stored) {
+        try {
+          this.queue = JSON.parse(stored)
+        } catch (_e) {
+          this.queue = []
+        }
+      }
+    }
+  }
+}

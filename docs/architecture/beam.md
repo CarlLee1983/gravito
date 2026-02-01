@@ -181,7 +181,7 @@ const data = await validateResponse(res, z.object({ id: z.number() }))
 | AbortSignal 整合 | 🔥🔥 中 | 🟢 低 | P1 | ✅ v1.1 |
 | 請求去重 | 🔥🔥 中 | 🟡 中 | P2 | ✅ v1.2 |
 | React Server Actions | 🔥 低 | 🔴 高 | P3 | v2.0 |
-| 離線佇列機制 | 🔥🔥 中 | 🔴 高 | P3 | v2.0 |
+| 離線佇列機制 | 🔥🔥 中 | 🔴 高 | P3 | ✅ v2.0 |
 | WebSocket 支援 | 🔥 低 | 🔴 高 | P4 | v2.x |
 
 ---
