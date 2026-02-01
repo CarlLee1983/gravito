@@ -117,7 +117,7 @@ export class SQLitePersistence implements PersistenceAdapter {
     options: {
       limit?: number
       offset?: number
-      status?: 'completed' | 'failed' | 'waiting' | string
+      status?: 'completed' | 'failed' | 'waiting' | string | string[]
       jobId?: string
       startTime?: Date
       endTime?: Date
@@ -126,7 +126,11 @@ export class SQLitePersistence implements PersistenceAdapter {
     let query = this.db.table(this.table).where('queue', queue)
 
     if (options.status) {
-      query = query.where('status', options.status)
+      if (Array.isArray(options.status)) {
+        query = query.whereIn('status', options.status)
+      } else {
+        query = query.where('status', options.status)
+      }
     }
 
     if (options.jobId) {
@@ -351,7 +355,7 @@ export class SQLitePersistence implements PersistenceAdapter {
   async count(
     queue: string,
     options: {
-      status?: 'completed' | 'failed' | 'waiting' | string
+      status?: 'completed' | 'failed' | 'waiting' | string | string[]
       jobId?: string
       startTime?: Date
       endTime?: Date
@@ -360,7 +364,11 @@ export class SQLitePersistence implements PersistenceAdapter {
     let query = this.db.table(this.table).where('queue', queue)
 
     if (options.status) {
-      query = query.where('status', options.status)
+      if (Array.isArray(options.status)) {
+        query = query.whereIn('status', options.status)
+      } else {
+        query = query.where('status', options.status)
+      }
     }
 
     if (options.jobId) {

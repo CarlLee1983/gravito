@@ -35,6 +35,23 @@ export interface OrbitStreamOptions extends QueueConfig {
    * Only used if `autoStartWorker` is true. Defines concurrency, polling intervals, etc.
    */
   workerOptions?: ConsumerOptions
+
+  /**
+   * Configuration for the Stream Monitoring Dashboard API.
+   *
+   * If enabled, registers API routes for monitoring queue health and job history.
+   *
+   * @default false
+   */
+  dashboard?:
+    | boolean
+    | {
+        /**
+         * Base path for the dashboard API routes.
+         * @default '/_flux'
+         */
+        path?: string
+      }
 }
 
 /**
@@ -61,6 +78,7 @@ export interface OrbitStreamOptions extends QueueConfig {
 export class OrbitStream implements GravitoOrbit {
   private queueManager?: QueueManager
   private consumer?: Consumer
+  private core?: PlanetCore
 
   constructor(private options: OrbitStreamOptions = {}) {}
 
@@ -94,6 +112,7 @@ export class OrbitStream implements GravitoOrbit {
    * @param core - The PlanetCore instance.
    */
   install(core: PlanetCore): void {
+    this.core = core
     // Create QueueManager.
     this.queueManager = new QueueManager(this.options)
 
@@ -137,6 +156,15 @@ export class OrbitStream implements GravitoOrbit {
 
     core.logger.info('[OrbitStream] Installed')
 
+    if (this.options.dashboard) {
+      const { DashboardProvider } = require('./DashboardProvider')
+      const dashboard = new DashboardProvider(this.queueManager)
+      const path =
+        typeof this.options.dashboard === 'object' ? this.options.dashboard.path : '/_flux'
+      dashboard.registerRoutes(core, path)
+      core.logger.info(`[OrbitStream] Dashboard API registered at ${path}`)
+    }
+
     // Auto-start embedded worker in development (optional)
     if (
       this.options.autoStartWorker &&
@@ -170,8 +198,18 @@ export class OrbitStream implements GravitoOrbit {
       throw new Error('Worker is already running')
     }
 
-    this.consumer = new Consumer(this.queueManager, options)
-    this.consumer.start().catch((error) => {
+    const consumerOptions: ConsumerOptions = {
+      ...options,
+      onEvent: (event, payload) => {
+        const signal = this.core?.container.make('signal') as any
+        if (signal && typeof signal.emit === 'function') {
+          signal.emit(`stream:${event}`, payload)
+        }
+      },
+    }
+
+    this.consumer = new Consumer(this.queueManager, consumerOptions)
+    this.consumer.start().catch((error: unknown) => {
       console.error('[OrbitStream] Worker error:', error)
     })
   }

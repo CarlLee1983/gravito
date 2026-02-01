@@ -174,6 +174,25 @@ export interface QueueStats {
 }
 
 /**
+ * Snapshot of statistics across all connections and queues.
+ *
+ * Used by monitoring dashboards to provide a high-level overview
+ * of the entire background processing system.
+ *
+ * @public
+ */
+export interface GlobalStats {
+  /** Map of connection names to their respective queue statistics */
+  connections: Record<string, QueueStats[]>
+  /** Total number of pending jobs across all connections */
+  totalSize: number
+  /** Total number of failed jobs across all connections */
+  totalFailed: number
+  /** Timestamp of the snapshot */
+  timestamp: number
+}
+
+/**
  * Advanced topic configuration options for distributed queue systems.
  *
  * Used primarily by drivers like Kafka to configure topic properties.
@@ -322,6 +341,43 @@ export interface RabbitMQDriverConfig {
 }
 
 /**
+ * Configuration for the gRPC driver.
+ *
+ * Configures the queue system to use a remote gRPC service.
+ *
+ * @public
+ * @example
+ * ```typescript
+ * const config: GrpcDriverConfig = {
+ *   driver: 'grpc',
+ *   url: 'localhost:50051',
+ *   protoUser: 'myuser',
+ *   protoPassword: 'mypassword',
+ *   serviceName: 'QueueService',
+ *   packageName: 'stream'
+ * };
+ * ```
+ */
+export interface GrpcDriverConfig {
+  /** Driver type identifier */
+  driver: 'grpc'
+  /** The gRPC server URL (host:port) */
+  url: string
+  /** Path to the .proto file (optional, defaults to built-in) */
+  protoPath?: string
+  /** The package name defined in the .proto file (default: 'stream') */
+  packageName?: string
+  /** The service name defined in the .proto file (default: 'QueueService') */
+  serviceName?: string
+  /** Optional credentials/metadata for connection */
+  credentials?: {
+    rootCerts?: Buffer
+    privateKey?: Buffer
+    certChain?: Buffer
+  }
+}
+
+/**
  * Union type for all supported queue connection configurations.
  *
  * @public
@@ -333,6 +389,7 @@ export type QueueConnectionConfig =
   | KafkaDriverConfig
   | SQSDriverConfig
   | RabbitMQDriverConfig
+  | GrpcDriverConfig
   | { driver: 'nats'; [key: string]: unknown }
   | { driver: string; [key: string]: unknown }
 
@@ -477,7 +534,7 @@ export interface PersistenceAdapter {
     options?: {
       limit?: number
       offset?: number
-      status?: 'completed' | 'failed' | 'waiting' | string
+      status?: 'completed' | 'failed' | 'waiting' | string | string[]
       jobId?: string
       startTime?: Date
       endTime?: Date
@@ -523,7 +580,7 @@ export interface PersistenceAdapter {
   count(
     queue: string,
     options?: {
-      status?: 'completed' | 'failed' | 'waiting' | string
+      status?: 'completed' | 'failed' | 'waiting' | string | string[]
       jobId?: string
       startTime?: Date
       endTime?: Date

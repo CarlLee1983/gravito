@@ -812,4 +812,37 @@ export class QueueManager {
       await driver.clearFailed(queue)
     }
   }
+
+  /**
+   * Retrieves high-level statistics across all registered connections and queues.
+   *
+   * Iterates through all drivers and collects metadata to provide a comprehensive
+   * snapshot of the entire queue system's health.
+   *
+   * @returns A promise resolving to a GlobalStats object.
+   */
+  async getGlobalStats(): Promise<import('./types').GlobalStats> {
+    const stats: import('./types').GlobalStats = {
+      connections: {},
+      totalSize: 0,
+      totalFailed: 0,
+      timestamp: Date.now(),
+    }
+
+    for (const [name, driver] of this.drivers.entries()) {
+      const queueNames = driver.getQueues ? await driver.getQueues() : ['default']
+      const connectionStats: QueueStats[] = []
+
+      for (const queue of queueNames) {
+        const qStats = await this.stats(queue, name)
+        connectionStats.push(qStats)
+        stats.totalSize += qStats.size
+        stats.totalFailed += qStats.failed ?? 0
+      }
+
+      stats.connections[name] = connectionStats
+    }
+
+    return stats
+  }
 }

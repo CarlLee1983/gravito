@@ -168,6 +168,13 @@ export interface ConsumerOptions {
    * @default undefined (無限制)
    */
   maxRequests?: number
+
+  /**
+   * Optional event callback for external monitoring systems.
+   *
+   * Called whenever a job lifecycle event occurs (started, processed, failed, etc.).
+   */
+  onEvent?: (event: string, payload: any) => void
 }
 
 /**
@@ -458,6 +465,7 @@ export class Consumer extends EventEmitter {
     this.log(`Processing job ${job.id} from ${currentQueue}`)
 
     this.emit('job:started', { job, queue: currentQueue })
+    this.options.onEvent?.('job:started', { jobId: job.id, queue: currentQueue })
 
     if (this.options.monitor) {
       await this.publishLog('info', `Processing job: ${job.id}`, job.id)
@@ -468,6 +476,7 @@ export class Consumer extends EventEmitter {
       const duration = Date.now() - startTime
       this.stats.processed++
       this.emit('job:processed', { job, duration, queue: currentQueue })
+      this.options.onEvent?.('job:processed', { jobId: job.id, duration, queue: currentQueue })
 
       this.log(`Completed job ${job.id} in ${duration}ms`)
 
@@ -491,6 +500,12 @@ export class Consumer extends EventEmitter {
       const error = err as Error
       const duration = Date.now() - startTime
       this.emit('job:failed', { job, error, duration, queue: currentQueue })
+      this.options.onEvent?.('job:failed', {
+        jobId: job.id,
+        error: error.message,
+        duration,
+        queue: currentQueue,
+      })
 
       this.log(`Failed job ${job.id} in ${duration}ms`, { error: error.message })
       this.stats.failed++
@@ -524,6 +539,7 @@ export class Consumer extends EventEmitter {
         }
       } else {
         this.emit('job:failed_permanently', { job, error })
+        this.options.onEvent?.('job:failed_permanently', { jobId: job.id, error: error.message })
         this.log(`Job ${job.id} failed permanently`)
         await this.queueManager.fail(job, error).catch((dlqErr) => {
           console.error('[Consumer] Error moving job to DLQ:', dlqErr)

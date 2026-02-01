@@ -255,6 +255,10 @@ export class RedisDriver implements QueueDriver {
     }
     const payload = JSON.stringify(payloadObj)
 
+    if (typeof this.client.sadd === 'function') {
+      await this.client.sadd(`${this.prefix}queues`, queue)
+    }
+
     // Handle Group FIFO logic
     if (groupId && typeof this.client.pushGroupJob === 'function') {
       // We use a global active set per queue? No, maybe structure per group?
@@ -904,5 +908,16 @@ export class RedisDriver implements QueueDriver {
   async clearFailed(queue: string): Promise<void> {
     const key = `${this.getKey(queue)}:failed`
     await this.client.del(key)
+  }
+
+  /**
+   * Retrieves all discovered queue names from Redis.
+   */
+  async getQueues(): Promise<string[]> {
+    if (typeof this.client.smembers === 'function') {
+      const queues = await this.client.smembers(`${this.prefix}queues`)
+      return Array.isArray(queues) ? queues.sort() : []
+    }
+    return ['default']
   }
 }

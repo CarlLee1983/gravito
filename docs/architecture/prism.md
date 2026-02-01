@@ -115,24 +115,29 @@ SSG 透過 `StaticSiteGenerator` 類別實作，其工作流如下：
 
 ### 5.1 XSS 風險 ✅ **已實作 (v3.2.0)**
 
-**問題**：`{{{ variable }}}` 預設會跳脫 HTML，但 `{{{ variable }}}` (Raw Output) 不會。
+**問題**：標準變數語法會跳脫 HTML，但 Raw Output 不會。
+
+```blade
+{{ variable }}        // 安全：自動跳脫 HTML
+{%- raw -%}...{%- endraw -%}  // 危險：不跳脫 HTML
+```
 
 **風險**：若開發者在 Raw Output 中輸出使用者輸入，可能導致 XSS 攻擊。
 
 **實作的緩解措施**：
 - **Sanitizer 工具類別** (`src/security/Sanitizer.ts`)：提供基於白名單的 HTML 淨化機制，自動移除危險標籤 (`<script>`, `<iframe>`) 與事件處理器 (`onclick`, `onerror`)。
-- **Template Helper**：新增 `{{sanitize}}` 輔助函數，可直接在模板中淨化使用者輸入。
+- **Template Helper**：新增 `sanitize` 輔助函數，可直接在模板中淨化使用者輸入。
 - **三種淨化模式**：支援 `default` (安全格式化)、`strict` (最小化)、`strip` (純文字) 模式。
 
 **測試驗證**：已通過 `tests/sanitizer.test.ts` 驗證，涵蓋 img onerror、SVG-based XSS、Form action 等多種攻擊向量。
 
 **最佳實踐指引**：
-1. **避免 Raw Output**：除非處理信任的內容（如後端產生的 HTML），否則應使用 `{{ variable }}` 而非 `{{{ variable }}}`。
+1. **避免 Raw Output**：除非處理信任的內容（如後端產生的 HTML），否則應使用標準變數語法而非 Raw Output。
 2. **淨化使用者輸入**：對於 Rich Text Editor 或 Markdown 轉換後的 HTML，應先使用 `sanitizeHtml()` 處理再渲染。
 3. **CSP (Content Security Policy)**：建議搭配 CSP Header 進一步限制 inline script 執行。
 
 **殘餘風險**：
-- `{{{ variable }}}` 仍可繞過淨化，開發者需自行避免在此語法中輸出使用者輸入。
+- Raw Output 仍可繞過淨化，開發者需自行避免在此語法中輸出使用者輸入。
 - Sanitizer 基於正則表達式解析，對於極端複雜或惡意構造的 HTML 可能存在邊界情況。建議搭配 CSP 作為防禦深度策略。
 
 ### 5.2 SSG 記憶體消耗 ✅ **已實作 (v3.2.0)**
