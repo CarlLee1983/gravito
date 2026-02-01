@@ -39,16 +39,21 @@ const isStaticSite = (): boolean => {
 }
 
 const target = computed(() => props.to || props.href || '#')
-const _isStatic = computed(() => isStaticSite())
+const isStatic = computed(() => isStaticSite())
 
 // 判斷是否為外部連結
 const isExternal = computed(() => {
   return target.value.startsWith('http') || target.value.startsWith('//')
 })
 
+// 判斷是否為錨點連結
+const isAnchor = computed(() => {
+  return target.value.startsWith('#')
+})
+
 const basePath = computed(() => import.meta.env.BASE_URL || '/')
 
-const _staticTarget = computed(() => {
+const staticTarget = computed(() => {
   if (isExternal.value || target.value.startsWith('#')) {
     return target.value
   }
@@ -60,7 +65,7 @@ const _staticTarget = computed(() => {
 })
 
 const isActive = computed(() => route.path === target.value)
-const _staticClass = computed(() => {
+const staticClass = computed(() => {
   if (!props.activeClass) {
     return props.class
   }
@@ -69,8 +74,8 @@ const _staticClass = computed(() => {
 </script>
 
 <template>
-  <!-- 如果是外部連結，永遠使用 <a> -->
-  <a v-if="isExternal" :href="target" :class="props.class" :target="props.target || '_blank'" :rel="props.rel || 'noopener noreferrer'">
+  <!-- 如果是外部連結或錨點連結，使用 <a> -->
+  <a v-if="isExternal || isAnchor" :href="target" :class="props.class" :target="isAnchor ? undefined : (props.target || '_blank')" :rel="isAnchor ? undefined : (props.rel || 'noopener noreferrer')">
     <slot />
   </a>
 
