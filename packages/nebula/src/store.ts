@@ -108,6 +108,31 @@ export interface StorageStore {
    * @returns A promise resolving to the signed URL string
    */
   getSignedUrl?(key: string, expiresIn: number): Promise<string>
+
+  // ==================== 串流操作 ====================
+
+  /**
+   * Writes data from a readable stream.
+   *
+   * 串流寫入檔案（可選實作）
+   * Useful for handling large files without loading entire content into memory.
+   *
+   * @param key - Unique identifier or path for the file
+   * @param stream - Readable stream containing the data
+   * @throws {Error} If the backend fails to write the stream
+   */
+  putStream?(key: string, stream: ReadableStream<Uint8Array>): Promise<void>
+
+  /**
+   * Reads data as a readable stream.
+   *
+   * 串流讀取檔案（可選實作）
+   * Useful for handling large files without loading entire content into memory.
+   *
+   * @param key - Unique identifier or path for the file
+   * @returns A readable stream of the file content, or null if the key does not exist
+   */
+  getStream?(key: string): Promise<ReadableStream<Uint8Array> | null>
 }
 
 /**

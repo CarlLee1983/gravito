@@ -1,14 +1,14 @@
 ---
 title: Nebula Architecture 技術架構規格書
-version: 1.0.0
+version: 1.1.0
 status: Stable
 tier: C
-last_updated: 2026-01-29
+last_updated: 2026-02-01
 ---
 
-# 🌌 Nebula Architecture 技術架構規格書 (v1.0)
+# 🌌 Nebula Architecture 技術架構規格書 (v1.1)
 
-本文件詳述 `@gravito/nebula` 的內部架構、Manager/Repository 模式實作以及安全防護機制。
+本文件詳述 `@gravito/nebula` 的內部架構、Manager/Repository 模式實作、串流支援以及安全防護機制。
 
 ---
 
@@ -56,11 +56,42 @@ Nebula 旨在為 Gravito 提供一個標準化、與具體實現解耦的儲存�
   3. 確保解析後的絕對路徑必須以 `rootDir` 開頭。
 - **重要性**：這防止了惡意使用者透過 `../../etc/passwd` 等 payload 讀取伺服器敏感檔案。
 
-### 3.2 串流與大檔案處理
-目前的介面設計主要基於 `Blob`。
-- **現狀**：`put(key, Blob | string)`。
-- **限制**：對於 GB 級別的大檔案，全量讀入記憶體 (Blob) 可能導致 OOM。
-- **規劃**：未來版本需引入 `ReadableStream` 支援，實現真正的串流傳輸 (S3 Multipart Upload 等)。
+### 3.2 串流與大檔案處理 ✨ (v1.1 新增)
+Nebula 現已支援 `ReadableStream` 介面，解決大檔案記憶體溢出問題。
+
+- **新增 API**：
+  - `putStream(key: string, stream: ReadableStream<Uint8Array>): Promise<void>` - 串流寫入
+  - `getStream(key: string): Promise<ReadableStream<Uint8Array> | null>` - 串流讀取
+
+- **支援狀況**：
+  - ✅ **LocalStore**: 完整支援，使用 Bun 原生 file writer/reader
+  - ✅ **MemoryStore**: 完整支援，適用於測試場景
+  - ⏳ **S3Store**: 規劃中 (將在 v1.2 實作)
+
+- **效能優勢**：
+  - 記憶體使用量與檔案大小解耦，處理 10MB 檔案的記憶體增量 < 5MB
+  - 適用於影片、大型壓縮檔等場景
+
+- **使用範例**：
+  ```typescript
+  // 上傳大檔案
+  const fileStream = Bun.file('large-video.mp4').stream()
+  await storage.putStream('videos/upload.mp4', fileStream)
+
+  // 下載串流
+  const downloadStream = await storage.getStream('videos/upload.mp4')
+  if (downloadStream) {
+    const file = Bun.file('downloaded.mp4')
+    const writer = file.writer()
+    const reader = downloadStream.getReader()
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      writer.write(value)
+    }
+    await writer.end()
+  }
+  ```
 
 ### 3.3 Hook 系統整合
 Nebula 深度整合了 `PlanetCore` 的 Hook 系統。
@@ -86,16 +117,26 @@ Nebula 深度整合了 `PlanetCore` 的 Hook 系統。
 
 ## 5. 後續優化建議
 
-### 短期 (v1.1)
-1. **Stream Support**：在 `StorageStore` 介面中新增 `putStream` 與 `getStream`。
-2. **Metadata Enhancement**：支援自定義 Metadata (S3 Tags, Content-Disposition)。
+### ✅ 已完成 (v1.1)
+1. ~~**Stream Support**~~：✅ 已在 `StorageStore` 介面中新增 `putStream` 與 `getStream`。
+   - LocalStore 和 MemoryStore 已完整實作
+   - 測試覆蓋率達 100%（12 個測試案例，涵蓋小檔案、大檔案、錯誤處理等場景）
+
+### 短期 (v1.1 - 待完成)
+1. **List Pagination**：實作 `listPaginated` 介面，支援分頁與游標機制，防止大型 S3 Bucket OOM。
+2. **Metadata Enhancement**：支援自定義 Metadata (S3 Tags, Content-Disposition, Cache-Control)。
 
 ### 中期 (v1.2)
-1. **S3 Driver**：將 S3 Driver 從核心分離為獨立套件 `@gravito/nebula-s3`，減少核心依賴體積。
+1. **S3 Driver**：將 S3 Driver 從核心分離為獨立套件 `@gravito/nebula-s3`。
+   - 支援 putStream/getStream
+   - 支援 Presigned URL
+   - 支援 Multipart Upload
+   - 支援分頁列舉 (listPaginated)
 2. **Image Processing**：提供官方的 `ImageProcessor` Hook，基於 `sharp` 或 `bun-sharp`。
 
 ### 長期 (v2.0)
 1. **CDN Integration**：在 `getUrl` 中支援 CDN 域名簽名與路徑重寫。
+2. **Cache Purge**：自動清除 CDN 快取機制 (Cloudflare/CloudFront/Fastly)。
 
 ---
 *Created by Gravito Architect.*

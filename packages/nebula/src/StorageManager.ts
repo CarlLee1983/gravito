@@ -165,4 +165,32 @@ export class StorageManager {
   getSignedUrl(key: string, expiresIn: number): Promise<string> {
     return this.disk().getSignedUrl(key, expiresIn)
   }
+
+  /**
+   * Stores content from a readable stream on the default disk.
+   *
+   * 串流上傳到預設磁碟
+   * Useful for handling large files without loading entire content into memory.
+   *
+   * @param key - The destination path
+   * @param stream - Readable stream containing the data
+   * @throws {Error} If the default disk driver does not support stream writing
+   */
+  putStream(key: string, stream: ReadableStream<Uint8Array>): Promise<void> {
+    return this.disk().putStream(key, stream)
+  }
+
+  /**
+   * Retrieves content as a readable stream from the default disk.
+   *
+   * 從預設磁碟串流讀取
+   * Useful for handling large files without loading entire content into memory.
+   *
+   * @param key - The path/identifier of the file
+   * @returns Readable stream of file content, or null if not found
+   * @throws {Error} If the default disk driver does not support stream reading
+   */
+  getStream(key: string): Promise<ReadableStream<Uint8Array> | null> {
+    return this.disk().getStream(key)
+  }
 }

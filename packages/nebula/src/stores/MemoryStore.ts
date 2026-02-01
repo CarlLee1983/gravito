@@ -151,4 +151,50 @@ export class MemoryStore implements StorageStore {
   getUrl(key: string): string {
     return `/memory/${key}`
   }
+
+  /**
+   * Stores data from a readable stream in memory.
+   *
+   * 串流寫入記憶體
+   * Reads the entire stream into memory before storing.
+   *
+   * @param key - Unique identifier for the file
+   * @param stream - Readable stream containing the data
+   */
+  async putStream(key: string, stream: ReadableStream<Uint8Array>): Promise<void> {
+    const reader = stream.getReader()
+    const chunks: Uint8Array[] = []
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        chunks.push(value)
+      }
+
+      // Combine all chunks into a single Blob
+      const blob = new Blob(chunks)
+      await this.put(key, blob)
+    } catch (error) {
+      reader.releaseLock()
+      throw new Error(`[MemoryStore] Failed to write stream: ${error}`)
+    }
+  }
+
+  /**
+   * Reads an in-memory file as a readable stream.
+   *
+   * 串流讀取記憶體檔案
+   *
+   * @param key - Unique identifier for the file
+   * @returns Readable stream of file content, or null if not found
+   */
+  async getStream(key: string): Promise<ReadableStream<Uint8Array> | null> {
+    const blob = await this.get(key)
+    if (!blob) {
+      return null
+    }
+
+    return blob.stream()
+  }
 }
