@@ -1,6 +1,6 @@
 ---
 title: Stasis Architecture 技術架構規格書
-version: 1.2.0
+version: 2.0.0
 status: Stable
 tier: C
 last_updated: 2026-02-01
@@ -54,6 +54,14 @@ Stasis 的設計目標是在效能與一致性之間取得平衡。
   - **Atomic Writes**：寫入 `temp` 檔 -> `rename`，防止寫入中斷導致檔案損壞。
   - **Cleanup Daemon**：定期掃描並刪除過期檔案。
   - **Hashing**：將 Key 進行 SHA-256 雜湊作為檔名，避免檔案系統限制。
+
+### 2.5 PredictiveStore (Smart Prefetching)
+- **職責**：基於存取模式預測，提前預熱快取。
+- **位置**：`src/stores/PredictiveStore.ts`
+- **機制**：
+  - **AccessTracker**：使用 Markov Chain (Order-1) 記錄 Key 的接續關係 (A -> B)。
+  - **Auto-Prefetch**：當讀取 Key A 時，若預測 B 的機率高，則在背景觸發 `store.get(B)`。
+  - **應用**：搭配 `TieredStore` 使用時，能自動將資料從 L2 (Redis) 預熱至 L1 (Memory)。
 
 ---
 
@@ -112,8 +120,8 @@ Stasis 的設計目標是在效能與一致性之間取得平衡。
 1. **Tiered Cache**：支援 L1 (Memory) + L2 (Redis) 多級快取架構。
 2. **Circuit Breaker**：當 Redis 連線異常時，自動降級到 Local Memory 或暫時跳過快取。
 
-### 長期 (v2.0)
-1. **Cache Predictions**：基於存取模式預測，提前預熱快取 (Prefetching)。
+### 長期 (v2.0) - ✅ 已完成
+1. **Cache Predictions**：實作 `PredictiveStore` 與 `MarkovPredictor`，支援基於存取模式的自動預熱。
 
 ---
 *Created by Gravito Architect.*

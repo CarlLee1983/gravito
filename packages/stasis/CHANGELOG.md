@@ -1,5 +1,12 @@
 # @gravito/stasis
 
+## 3.1.0
+
+### Minor Changes
+
+- **Predictive Caching**: Implemented `PredictiveStore` and `MarkovPredictor` to enable smart prefetching based on access patterns (Architecture v2.0).
+- Added `driver: 'predictive'` support to `OrbitStasis` configuration.
+
 ## 3.0.1
 
 ### Patch Changes

@@ -1,11 +1,13 @@
 import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { CacheManager } from './CacheManager'
 import type { CacheEventMode, CacheEvents } from './CacheRepository'
+import { MarkovPredictor } from './prediction/AccessPredictor'
 import type { CacheStore } from './store'
 import { CircuitBreakerStore } from './stores/CircuitBreakerStore'
 import { FileStore } from './stores/FileStore'
 import { MemoryStore } from './stores/MemoryStore'
 import { NullStore } from './stores/NullStore'
+import { PredictiveStore } from './stores/PredictiveStore'
 import { RedisStore } from './stores/RedisStore'
 import { TieredStore } from './stores/TieredStore'
 import type { CacheTtl } from './types'
@@ -13,12 +15,14 @@ import type { CacheTtl } from './types'
 export * from './CacheManager'
 export * from './CacheRepository'
 export * from './locks'
+export * from './prediction/AccessPredictor'
 export * from './RateLimiter'
 export * from './store'
 export * from './stores/CircuitBreakerStore'
 export * from './stores/FileStore'
 export * from './stores/MemoryStore'
 export * from './stores/NullStore'
+export * from './stores/PredictiveStore'
 export * from './stores/RedisStore'
 export * from './stores/TieredStore'
 export * from './types'
@@ -236,6 +240,8 @@ export type OrbitCacheStoreConfig =
   | { driver: 'provider'; provider: CacheStorageProvider }
   /** Multi-level cache. */
   | { driver: 'tiered'; local: string; remote: string }
+  /** Predictive cache that prefetches keys based on usage patterns. */
+  | { driver: 'predictive'; inner: string; maxNodes?: number }
   /** Fault tolerance layer. */
   | {
       driver: 'circuit-breaker'
@@ -366,6 +372,13 @@ function createStoreFactory(config: OrbitCacheOptions): (name: string) => CacheS
     if (storeConfig.driver === 'tiered') {
       const factory = createStoreFactory(config)
       return new TieredStore(factory(storeConfig.local), factory(storeConfig.remote))
+    }
+
+    if (storeConfig.driver === 'predictive') {
+      const factory = createStoreFactory(config)
+      return new PredictiveStore(factory(storeConfig.inner), {
+        predictor: new MarkovPredictor({ maxNodes: storeConfig.maxNodes }),
+      })
     }
 
     if (storeConfig.driver === 'circuit-breaker') {
