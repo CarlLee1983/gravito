@@ -131,6 +131,11 @@ describe('@gravito/beam', () => {
         onError: async () => {},
       })
       expect(client5).toBeDefined()
+
+      const client6 = createBeam<TestAppType>('http://localhost:3000', {
+        deduplicate: true,
+      })
+      expect(client6).toBeDefined()
     })
 
     test('should work with combination of old and new options', () => {

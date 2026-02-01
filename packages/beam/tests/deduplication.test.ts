@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, mock, test } from 'bun:test'
 import { createBeam } from '../src'
 import { RequestDeduplicator } from '../src/utils'
 
@@ -10,13 +10,13 @@ describe('Request Deduplication (v1.2)', () => {
       deduplicator = new RequestDeduplicator(1000)
     })
 
-    it('should create instance with default window', () => {
+    test('should create instance with default window', () => {
       const ded = new RequestDeduplicator()
       expect(ded.size).toBe(0)
     })
 
-    it('should generate unique keys for different URLs', () => {
-      const mockFetch = vi.fn().mockResolvedValue(new Response('ok'))
+    test('should generate unique keys for different URLs', () => {
+      const mockFetch = mock(() => Promise.resolve(new Response('ok')))
 
       deduplicator.fetch(mockFetch, 'http://localhost/api/users', { method: 'GET' })
       deduplicator.fetch(mockFetch, 'http://localhost/api/posts', { method: 'GET' })
@@ -24,8 +24,8 @@ describe('Request Deduplication (v1.2)', () => {
       expect(deduplicator.size).toBe(2)
     })
 
-    it('should deduplicate identical GET requests', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(new Response('ok'))
+    test('should deduplicate identical GET requests', async () => {
+      const mockFetch = mock(() => Promise.resolve(new Response('ok')))
 
       // Fire two identical requests
       const promise1 = deduplicator.fetch(mockFetch, 'http://localhost/api/users', {
@@ -41,8 +41,8 @@ describe('Request Deduplication (v1.2)', () => {
       expect(mockFetch).toHaveBeenCalledTimes(1)
     })
 
-    it('should NOT deduplicate POST requests', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(new Response('ok'))
+    test('should NOT deduplicate POST requests', async () => {
+      const mockFetch = mock(() => Promise.resolve(new Response('ok')))
 
       // Fire two identical POST requests
       const promise1 = deduplicator.fetch(mockFetch, 'http://localhost/api/users', {
@@ -58,8 +58,8 @@ describe('Request Deduplication (v1.2)', () => {
       expect(mockFetch).toHaveBeenCalledTimes(2)
     })
 
-    it('should clear cache after request completes', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(new Response('ok'))
+    test('should clear cache after request completes', async () => {
+      const mockFetch = mock(() => Promise.resolve(new Response('ok')))
 
       await deduplicator.fetch(mockFetch, 'http://localhost/api/users', { method: 'GET' })
 
@@ -67,8 +67,8 @@ describe('Request Deduplication (v1.2)', () => {
       expect(deduplicator.size).toBe(0)
     })
 
-    it('should clear cache on error', async () => {
-      const mockFetch = vi.fn().mockRejectedValue(new Error('Network error'))
+    test('should clear cache on error', async () => {
+      const mockFetch = mock(() => Promise.reject(new Error('Network error')))
 
       await expect(
         deduplicator.fetch(mockFetch, 'http://localhost/api/users', { method: 'GET' })
@@ -78,8 +78,8 @@ describe('Request Deduplication (v1.2)', () => {
       expect(deduplicator.size).toBe(0)
     })
 
-    it('should return cloned responses for concurrent requests', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(new Response('{"data":"test"}'))
+    test('should return cloned responses for concurrent requests', async () => {
+      const mockFetch = mock(() => Promise.resolve(new Response('{"data":"test"}')))
 
       const promise1 = deduplicator.fetch(mockFetch, 'http://localhost/api/users', {
         method: 'GET',
@@ -98,8 +98,8 @@ describe('Request Deduplication (v1.2)', () => {
       expect(data2).toEqual({ data: 'test' })
     })
 
-    it('should clear all cache entries', () => {
-      const mockFetch = vi.fn().mockResolvedValue(new Response('ok'))
+    test('should clear all cache entries', () => {
+      const mockFetch = mock(() => Promise.resolve(new Response('ok')))
 
       deduplicator.fetch(mockFetch, 'http://localhost/api/users', { method: 'GET' })
       deduplicator.fetch(mockFetch, 'http://localhost/api/posts', { method: 'GET' })
@@ -111,8 +111,8 @@ describe('Request Deduplication (v1.2)', () => {
       expect(deduplicator.size).toBe(0)
     })
 
-    it('should include relevant headers in cache key', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(new Response('ok'))
+    test('should include relevant headers in cache key', async () => {
+      const mockFetch = mock(() => Promise.resolve(new Response('ok')))
 
       // Same URL but different Accept headers
       const promise1 = deduplicator.fetch(mockFetch, 'http://localhost/api/users', {
@@ -133,8 +133,8 @@ describe('Request Deduplication (v1.2)', () => {
   })
 
   describe('Beam with Deduplication', () => {
-    it('should deduplicate requests when enabled', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(new Response('{"data":"test"}'))
+    test('should deduplicate requests when enabled', async () => {
+      const mockFetch = mock(() => Promise.resolve(new Response('{"data":"test"}')))
       global.fetch = mockFetch
 
       const client = createBeam<any>('http://localhost', {
@@ -151,8 +151,8 @@ describe('Request Deduplication (v1.2)', () => {
       expect(mockFetch).toHaveBeenCalledTimes(1)
     })
 
-    it('should NOT deduplicate when disabled (default)', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(new Response('{"data":"test"}'))
+    test('should NOT deduplicate when disabled (default)', async () => {
+      const mockFetch = mock(() => Promise.resolve(new Response('{"data":"test"}')))
       global.fetch = mockFetch
 
       const client = createBeam<any>('http://localhost')
@@ -167,8 +167,8 @@ describe('Request Deduplication (v1.2)', () => {
       expect(mockFetch).toHaveBeenCalledTimes(2)
     })
 
-    it('should respect custom deduplication window', async () => {
-      const mockFetch = vi.fn().mockResolvedValue(new Response('{"data":"test"}'))
+    test('should respect custom deduplication window', async () => {
+      const mockFetch = mock(() => Promise.resolve(new Response('{"data":"test"}')))
       global.fetch = mockFetch
 
       const client = createBeam<any>('http://localhost', {
