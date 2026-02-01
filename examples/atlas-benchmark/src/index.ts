@@ -36,9 +36,10 @@ async function main() {
 
         // 4. Performance Optimizations (v1.4.0)
         await runOptimizationsScenario()
-      } catch (e: any) {
-        console.error(`❌ Driver [${driver}] (${mode.name}) Failed:`, e.message)
-        if (e.message.includes('not yet implemented')) {
+      } catch (e: unknown) {
+        const error = e instanceof Error ? e : new Error(String(e))
+        console.error(`❌ Driver [${driver}] (${mode.name}) Failed:`, error.message)
+        if (error.message.includes('not yet implemented')) {
           console.warn('   (Skipping unimplemented driver)')
         }
       } finally {
