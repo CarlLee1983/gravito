@@ -45,7 +45,8 @@
       "Bash(gh pr edit:*)",
       "Bash(git for-each-ref:*)",
       "Bash(column:*)",
-      "Bash(git worktree:*)"
+      "Bash(git worktree:*)",
+      "Bash(git rev-parse:*)"
     ]
   },
   "enabledMcpjsonServers": [
