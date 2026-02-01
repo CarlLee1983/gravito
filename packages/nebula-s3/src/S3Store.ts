@@ -100,11 +100,11 @@ export class S3Store implements StorageStore {
     // Sanitize metadata to ensure only ASCII characters (S3 requirement)
     const sanitizedMetadata = options?.metadata
       ? Object.fromEntries(
-          Object.entries(options.metadata).map(([k, v]) => [
+          Object.entries(options.metadata).map(([k, v]: [string, string]) => [
             k,
             // Replace non-ASCII characters with URL encoding
             // biome-ignore lint/suspicious/noControlCharactersInRegex: Need to detect non-ASCII for S3 compatibility
-            v.replace(/[^\x00-\x7F]/g, (char) => encodeURIComponent(char)),
+            v.replace(/[^\x00-\x7F]/g, (char: string) => encodeURIComponent(char)),
           ])
         )
       : undefined
@@ -338,7 +338,9 @@ export class S3Store implements StorageStore {
       Key: key,
     })
 
-    return getSignedUrl(this.client, command, { expiresIn })
+    // Type assertion needed due to AWS SDK type mismatch
+    // biome-ignore lint/suspicious/noExplicitAny: AWS SDK type compatibility
+    return getSignedUrl(this.client as any, command, { expiresIn })
   }
 
   /**
