@@ -6,21 +6,57 @@ tier: C
 last_updated: 2026-01-29
 ---
 
-# 🌌 Plasma Architecture 技術架構規格書 (v1.0)
+# Plasma Architecture 技術架構規格書
 
-本文件詳述 `@gravito/plasma` 的內部架構、Bun 原生整合策略以及多連接管理機制。
+## 模組概覽
+
+**Plasma** (`@gravito/plasma`) 是 Gravito 框架的高效能 Redis 驅動 Orbit。它專為 Bun Runtime 優化，原生支持 `Bun.redis` 以達到極致效能，同時兼容 Node.js 環境。
+
+### 核心職責
+- **Bun Native Integration**：直接調用 Bun 的原生 C++ Redis 綁定。
+- **Connection Management**：支援多連線配置與懶加載。
+- **Fluent API**：提供 Laravel 風格的鏈式呼叫介面。
+- **Auto-Failover**：內建重連機制與錯誤標準化。
+
+## 快速開始
+
+### 1. 安裝
+```bash
+bun add @gravito/plasma
+```
+
+### 2. 註冊 Orbit
+```typescript
+import { OrbitPlasma } from '@gravito/plasma'
+
+const config = defineConfig({
+  config: {
+    redis: {
+      default: { host: 'localhost', port: 6379 }
+    }
+  },
+  orbits: [new OrbitPlasma()]
+})
+```
+
+### 3. 基本用法
+```typescript
+const redis = core.container.make('redis')
+await redis.set('key', 'value')
+const val = await redis.get('key')
+```
 
 ---
 
-## 1. 核心哲學：Bun Native Redis
+## 架構設計
+
+### 1. 核心哲學：Bun Native Redis
 
 Plasma 專為 Bun runtime 打造，其核心目標是最大化利用 Bun 內建的高效能 TCP 與 Redis 實作 (`Bun.redis`)。
 - **Zero Dependency**：在 Bun 環境下，Plasma 不依賴任何外部套件 (如 `ioredis` 或 `redis`)，直接調用原生的 C++ 綁定。
 - **Compatibility**：提供 Laravel 風格的 Fluent API，同時保持與 `ioredis` 的高度相容性，以便在 Node.js 環境中無痛切換。
 
----
-
-## 2. 模組組件分析
+### 2. 模組組件分析
 
 ### 2.1 RedisManager (Connection Pool)
 - **職責**：管理多個 Redis 連接 (e.g., default, cache, session)。
@@ -47,7 +83,7 @@ Plasma 專為 Bun runtime 打造，其核心目標是最大化利用 Bun 內建�
 
 ---
 
-## 3. 技術規格與設計決策
+## 技術規格與設計決策
 
 ### 3.1 為什麼優先使用 Bun.redis？
 - **效能**：`Bun.redis` 是基於 Zig/C++ 實作的，比純 JS 的 `ioredis` 在序列化與 TCP 讀寫上快 2-5 倍。
@@ -65,7 +101,21 @@ Plasma 專為 Bun runtime 打造，其核心目標是最大化利用 Bun 內建�
 
 ---
 
-## 4. 潛在風險與效能評估
+## API 參考
+
+### RedisManager
+- `connection(name?: string): RedisClient`
+- `extend(name: string, driver: CustomDriver): void`
+
+### RedisClient
+- `get(key: string): Promise<string | null>`
+- `set(key: string, value: string, ttl?: number): Promise<void>`
+- `del(key: string | string[]): Promise<number>`
+- `pipeline(): Pipeline`
+
+---
+
+## 風險分析與效能評估
 
 ### 4.1 Bun.redis 的功能完整性
 `Bun.redis` 目前仍處於實驗階段，某些進階命令 (如 Redis Cluster, Sentinel) 支援不全。
@@ -78,7 +128,7 @@ Plasma 專為 Bun runtime 打造，其核心目標是最大化利用 Bun 內建�
 
 ---
 
-## 5. 後續優化建議
+## 後續優化建議
 
 ### 短期 (v1.1)
 1. **Cluster Support**：整合 `ioredis` 的 Cluster 功能，並在 `RedisManager` 中提供統一介面。
@@ -89,6 +139,7 @@ Plasma 專為 Bun runtime 打造，其核心目標是最大化利用 Bun 內建�
 
 ### 長期 (v2.0)
 1. **RESP3 Protocol**：待 Bun 原生支援 RESP3 後跟進，提供更豐富的數據類型回傳 (如 Map, Set)。
+
 
 ---
 *Created by Gravito Architect.*

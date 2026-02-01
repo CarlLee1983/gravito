@@ -6,13 +6,62 @@ tier: C
 last_updated: 2026-02-01
 ---
 
-# 🌌 Stasis Architecture 技術架構規格書 (v1.2)
+# Stasis Architecture 技術架構規格書
 
-本文件詳述 `@gravito/stasis` 的內部架構、快取策略實作以及分散式鎖定機制。
+## 模組概覽
+
+**@gravito/stasis** 🧊 為 Gravito 框架提供高效能的快取與限流 Orbit。它提供統一的快取 API，支援多種存儲後端、分佈式鎖與整合式限流機制。
+
+### 核心職責
+- **Unified Cache API**: 提供簡單的 `get`, `put`, `remember` 等方法。
+- **Multiple Storage Drivers**: 原生支援 Memory, Redis, File-based 快取。
+- **Distributed Locks**: 防止競爭條件的原子跨進程鎖。
+- **Flexible Caching (SWR)**: 支援 Stale-While-Revalidate 策略。
+- **Integrated Rate Limiting**: 基於快取基礎設施的限流機制。
+
+## 快速開始
+
+### 1. 註冊 Orbit
+
+```typescript
+import { PlanetCore, defineConfig } from '@gravito/core'
+import { OrbitStasis } from '@gravito/stasis'
+
+const config = defineConfig({
+  config: {
+    cache: {
+      default: 'memory',
+      stores: {
+        memory: { driver: 'memory', maxItems: 5000 },
+        redis: { driver: 'redis', connection: 'default' }
+      }
+    }
+  },
+  orbits: [new OrbitStasis()]
+})
+
+const core = await PlanetCore.boot(config)
+```
+
+### 2. 基本快取操作
+
+```typescript
+const cache = core.container.make('cache')
+
+// 簡單存儲
+await cache.put('stats:total', 100, 3600) // 存儲 1 小時
+
+// "Remember" 模式 (Get or Set)
+const users = await cache.remember('users:all', 300, async () => {
+  return await db.users.findMany()
+})
+```
 
 ---
 
-## 1. 核心哲學：Flexible Consistency
+## 架構設計
+
+### 1. 核心哲學：Flexible Consistency
 
 Stasis 的設計目標是在效能與一致性之間取得平衡。
 - **Flexible Cache (SWR)**：支援「過期但可用」的快取策略，背景異步刷新，大幅降低用戶等待時間。
@@ -20,9 +69,7 @@ Stasis 的設計目標是在效能與一致性之間取得平衡。
 - **Single-Flight (Coalescing)**：防止快取擊穿，確保高並發下後端資源請求的唯一性。
 - **Driver Agnostic**：業務代碼無需修改即可從 Memory 切換到 Redis。
 
----
-
-## 2. 模組組件分析
+### 2. 模組組件分析
 
 ### 2.1 CacheManager (Orchestrator)
 - **職責**：管理多個 Cache Store，提供高階 API (`remember`, `flexible`, `tags`)。
@@ -65,7 +112,7 @@ Stasis 的設計目標是在效能與一致性之間取得平衡。
 
 ---
 
-## 3. 技術規格與設計決策
+## 技術規格與設計決策
 
 ### 3.1 分散式鎖 (Distributed Locks)
 - **Redis Driver**: 使用 `SET resource lock_id NX PX 10000` (Redlock 簡化版)。
@@ -92,11 +139,23 @@ Stasis 的設計目標是在效能與一致性之間取得平衡。
 
 ---
 
-## 4. 潛在風險與效能評估
+## API 參考
+
+### CacheManager
+- `cache.get(key, default?)`: 取得項目。
+- `cache.put(key, value, ttl?)`: 存儲項目。
+- `cache.remember(key, ttl, callback)`: 取得或執行回調並存儲。
+- `cache.flexible(key, ttl, stale, callback)`: Stale-While-Revalidate。
+- `cache.increment / decrement`: 原子數字更新。
+- `cache.tags(['tag1']).flush()`: 依標籤失效。
+
+---
+
+## 風險分析與潛在問題
 
 ### 4.1 Flexible Cache 的記憶體風險
 在高並發且大量 Key 過期的情況下，`refreshFlexible` 可能會在背景產生大量 Promise，佔用 Event Loop。
-- **現狀**：已透過 `refreshSemaphore` 在單機層面緩解。
+- **現況**：已透過 `refreshSemaphore` 在單機層面緩解。
 - **優化**：未來應引入 `p-limit` 限制全域背景任務的並發度。
 
 ### 4.2 FileStore 的 I/O 瓶頸
@@ -110,7 +169,7 @@ Stasis 的設計目標是在效能與一致性之間取得平衡。
 
 ---
 
-## 5. 後續優化建議
+## 後續優化建議
 
 ### 短期 (v1.1) - ✅ 已完成
 1. **Promise Coalescing**：在 `remember()` 中加入單機防擊穿邏輯。
@@ -122,6 +181,8 @@ Stasis 的設計目標是在效能與一致性之間取得平衡。
 
 ### 長期 (v2.0) - ✅ 已完成
 1. **Cache Predictions**：實作 `PredictiveStore` 與 `MarkovPredictor`，支援基於存取模式的自動預熱。
+
+
 
 ---
 *Created by Gravito Architect.*
