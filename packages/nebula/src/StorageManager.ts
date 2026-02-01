@@ -1,5 +1,12 @@
 import { StorageRepository } from './StorageRepository'
-import type { StorageItem, StorageMetadata, StorageStore } from './store'
+import type {
+  ListOptions,
+  ListResult,
+  PutOptions,
+  StorageItem,
+  StorageMetadata,
+  StorageStore,
+} from './store'
 import type { StorageHooks } from './types'
 
 /**
@@ -64,11 +71,12 @@ export class StorageManager {
    *
    * @param key - The destination path/identifier
    * @param data - The content to store
+   * @param options - Optional upload options (content-type, metadata, cache-control, etc.)
    * @returns A promise that resolves when the operation completes
    * @throws {Error} If the storage operation fails on the default disk
    */
-  put(key: string, data: Blob | Buffer | string): Promise<void> {
-    return this.disk().put(key, data)
+  put(key: string, data: Blob | Buffer | string, options?: PutOptions): Promise<void> {
+    return this.disk().put(key, data, options)
   }
 
   /**
@@ -164,5 +172,61 @@ export class StorageManager {
    */
   getSignedUrl(key: string, expiresIn: number): Promise<string> {
     return this.disk().getSignedUrl(key, expiresIn)
+  }
+
+  /**
+   * Stores content from a readable stream on the default disk.
+   *
+   * 串流上傳到預設磁碟
+   * Useful for handling large files without loading entire content into memory.
+   *
+   * @param key - The destination path
+   * @param stream - Readable stream containing the data
+   * @throws {Error} If the default disk driver does not support stream writing
+   */
+  putStream(key: string, stream: ReadableStream<Uint8Array>): Promise<void> {
+    return this.disk().putStream(key, stream)
+  }
+
+  /**
+   * Retrieves content as a readable stream from the default disk.
+   *
+   * 從預設磁碟串流讀取
+   * Useful for handling large files without loading entire content into memory.
+   *
+   * @param key - The path/identifier of the file
+   * @returns Readable stream of file content, or null if not found
+   * @throws {Error} If the default disk driver does not support stream reading
+   */
+  getStream(key: string): Promise<ReadableStream<Uint8Array> | null> {
+    return this.disk().getStream(key)
+  }
+
+  /**
+   * Lists files with pagination support on the default disk.
+   *
+   * 在預設磁碟上分頁列舉檔案
+   * Recommended for large storage backends to prevent OOM.
+   *
+   * @param prefix - Path prefix to filter by
+   * @param options - Pagination and filtering options
+   * @returns Paginated list result with cursor for next page
+   * @throws {Error} If the default disk driver does not support paginated listing
+   */
+  listPaginated(prefix: string, options?: ListOptions): Promise<ListResult> {
+    return this.disk().listPaginated(prefix, options)
+  }
+
+  /**
+   * Updates custom metadata for a file on the default disk.
+   *
+   * 更新預設磁碟上檔案的自定義 Metadata
+   *
+   * @param key - The path/identifier of the file
+   * @param metadata - Custom metadata to set
+   * @throws {Error} If the default disk driver does not support metadata updates
+   */
+  setMetadata(key: string, metadata: Record<string, string>): Promise<void> {
+    return this.disk().setMetadata(key, metadata)
   }
 }

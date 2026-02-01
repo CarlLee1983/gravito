@@ -1,8 +1,16 @@
-import type { StorageItem, StorageMetadata, StorageStore } from '../store'
+import type {
+  ListOptions,
+  ListResult,
+  PutOptions,
+  StorageItem,
+  StorageMetadata,
+  StorageStore,
+} from '../store'
 
 interface MemoryFile {
   data: Blob
   metadata: StorageMetadata
+  options?: PutOptions
 }
 
 /**
@@ -30,24 +38,27 @@ export class MemoryStore implements StorageStore {
    *
    * @param key - Unique identifier for the file
    * @param data - Content to store
+   * @param options - Optional upload options (content-type, metadata, etc.)
    */
-  async put(key: string, data: Blob | Buffer | string): Promise<void> {
+  async put(key: string, data: Blob | Buffer | string, options?: PutOptions): Promise<void> {
     let blob: Blob
     if (data instanceof Blob) {
       blob = data
     } else if (typeof data === 'string') {
-      blob = new Blob([data])
+      blob = new Blob([data], { type: options?.contentType })
     } else {
-      blob = new Blob([new Uint8Array(data)])
+      blob = new Blob([new Uint8Array(data)], { type: options?.contentType })
     }
 
     this.files.set(key, {
       data: blob,
+      options,
       metadata: {
         key,
         size: blob.size,
-        mimeType: blob.type || 'application/octet-stream',
+        mimeType: options?.contentType || blob.type || 'application/octet-stream',
         lastModified: new Date(),
+        customMetadata: options?.metadata,
       },
     })
   }
@@ -150,5 +161,138 @@ export class MemoryStore implements StorageStore {
    */
   getUrl(key: string): string {
     return `/memory/${key}`
+  }
+
+  /**
+   * Stores data from a readable stream in memory.
+   *
+   * 串流寫入記憶體
+   * Reads the entire stream into memory before storing.
+   *
+   * @param key - Unique identifier for the file
+   * @param stream - Readable stream containing the data
+   */
+  async putStream(key: string, stream: ReadableStream<Uint8Array>): Promise<void> {
+    const reader = stream.getReader()
+    const chunks: Uint8Array[] = []
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        chunks.push(value)
+      }
+
+      // Combine all chunks into a single Blob
+      const buffer = Buffer.concat(chunks)
+      const blob = new Blob([buffer])
+      await this.put(key, blob)
+    } catch (error) {
+      reader.releaseLock()
+      throw new Error(`[MemoryStore] Failed to write stream: ${error}`)
+    }
+  }
+
+  /**
+   * Reads an in-memory file as a readable stream.
+   *
+   * 串流讀取記憶體檔案
+   *
+   * @param key - Unique identifier for the file
+   * @returns Readable stream of file content, or null if not found
+   */
+  async getStream(key: string): Promise<ReadableStream<Uint8Array> | null> {
+    const blob = await this.get(key)
+    if (!blob) {
+      return null
+    }
+
+    return blob.stream()
+  }
+
+  /**
+   * Updates custom metadata for an in-memory file.
+   *
+   * 更新自定義 Metadata
+   *
+   * @param key - Unique identifier for the file
+   * @param metadata - Custom metadata to set
+   * @throws {Error} If file does not exist
+   */
+  async setMetadata(key: string, metadata: Record<string, string>): Promise<void> {
+    const file = this.files.get(key)
+    if (!file) {
+      throw new Error(`[MemoryStore] File not found: ${key}`)
+    }
+
+    // Merge new metadata with existing metadata
+    file.metadata.customMetadata = {
+      ...file.metadata.customMetadata,
+      ...metadata,
+    }
+
+    // Update lastModified
+    file.metadata.lastModified = new Date()
+  }
+
+  /**
+   * Lists files with pagination support.
+   *
+   * 分頁列舉記憶體中的檔案
+   * Provides cursor-based pagination for consistent API with other drivers.
+   *
+   * @param prefix - Key prefix to filter by
+   * @param options - Pagination and filtering options
+   * @returns Paginated list result
+   */
+  async listPaginated(prefix = '', options?: ListOptions): Promise<ListResult> {
+    const maxResults = options?.maxResults ?? 1000
+    const cursorKey = options?.cursor
+
+    // Get all matching keys
+    const allKeys = Array.from(this.files.keys())
+      .filter((key) => key.startsWith(prefix))
+      .sort() // Ensure consistent ordering
+
+    // Find start position based on cursor
+    let startIndex = 0
+    if (cursorKey) {
+      startIndex = allKeys.findIndex((key) => key > cursorKey)
+      if (startIndex === -1) {
+        // Cursor is beyond all items
+        return {
+          items: [],
+          nextCursor: null,
+          hasMore: false,
+          count: 0,
+        }
+      }
+    }
+
+    // Slice the results
+    const endIndex = startIndex + maxResults
+    const pageKeys = allKeys.slice(startIndex, endIndex)
+    const hasMore = endIndex < allKeys.length
+
+    // Build items
+    const items: StorageItem[] = pageKeys.map((key) => {
+      const file = this.files.get(key)!
+      return {
+        key,
+        isDirectory: false,
+        size: file.metadata.size,
+        lastModified: file.metadata.lastModified,
+      }
+    })
+
+    // Next cursor is the last key in this page
+    const nextCursor = hasMore && items.length > 0 ? items[items.length - 1].key : null
+
+    return {
+      items,
+      nextCursor,
+      hasMore,
+      count: items.length,
+    }
   }
 }

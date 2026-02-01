@@ -1,7 +1,7 @@
 import { mkdir } from 'node:fs/promises'
 import { isAbsolute, normalize, resolve, sep } from 'node:path'
 import { getRuntimeAdapter } from '@gravito/core'
-import type { StorageItem, StorageMetadata, StorageStore } from '../store'
+import type { PutOptions, StorageItem, StorageMetadata, StorageStore } from '../store'
 
 /**
  * LocalStore implements storage on the local filesystem.
@@ -33,12 +33,17 @@ export class LocalStore implements StorageStore {
    *
    * @param key - Relative path from the root directory
    * @param data - Content to write
+   * @param options - Optional upload options (note: customMetadata not persisted in LocalStore)
    * @throws {Error} If the key is invalid or path is outside root
    */
-  async put(key: string, data: Blob | Buffer | string): Promise<void> {
+  async put(key: string, data: Blob | Buffer | string, options?: PutOptions): Promise<void> {
     const path = this.resolvePath(key)
     await this.ensureDirectory(path)
     await this.runtime.writeFile(path, data)
+
+    // Note: LocalStore does not persist customMetadata or other options
+    // These options are primarily for S3/Cloud storage drivers
+    // In the future, we could store metadata in a separate .meta file or extended attributes
   }
 
   /**
@@ -154,6 +159,59 @@ export class LocalStore implements StorageStore {
   getUrl(key: string): string {
     const safeKey = this.normalizeKey(key)
     return `${this.baseUrl}/${safeKey}`
+  }
+
+  /**
+   * Writes data from a readable stream to a file on the local disk.
+   *
+   * 串流寫入檔案
+   * Automatically creates parent directories if they don't exist.
+   * Useful for handling large files without loading entire content into memory.
+   *
+   * @param key - Relative path from the root directory
+   * @param stream - Readable stream containing the data
+   * @throws {Error} If the key is invalid or path is outside root
+   */
+  async putStream(key: string, stream: ReadableStream<Uint8Array>): Promise<void> {
+    const path = this.resolvePath(key)
+    await this.ensureDirectory(path)
+
+    // Use Bun's native file writer for stream support
+    const file = Bun.file(path)
+    const writer = file.writer()
+    const reader = stream.getReader()
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        writer.write(value)
+      }
+      await writer.end()
+    } catch (error) {
+      reader.releaseLock()
+      throw new Error(`[LocalStore] Failed to write stream: ${error}`)
+    }
+  }
+
+  /**
+   * Reads a file from the local disk as a readable stream.
+   *
+   * 串流讀取檔案
+   * Useful for handling large files without loading entire content into memory.
+   *
+   * @param key - Relative path from the root directory
+   * @returns Readable stream of file content, or null if not found
+   * @throws {Error} If the key is invalid or path is outside root
+   */
+  async getStream(key: string): Promise<ReadableStream<Uint8Array> | null> {
+    if (!(await this.exists(key))) {
+      return null
+    }
+
+    const path = this.resolvePath(key)
+    const file = Bun.file(path)
+    return file.stream()
   }
 
   private normalizeKey(key: string): string {

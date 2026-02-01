@@ -15,9 +15,10 @@ export interface StorageStore {
    * 儲存檔案
    * @param key - Unique identifier or path for the file
    * @param data - Content to be stored
+   * @param options - Optional upload options (content-type, metadata, cache-control, etc.)
    * @throws {Error} If the backend fails to write the data
    */
-  put(key: string, data: Blob | Buffer | string): Promise<void>
+  put(key: string, data: Blob | Buffer | string, options?: PutOptions): Promise<void>
 
   /**
    * Retrieves data from the storage backend.
@@ -77,6 +78,19 @@ export interface StorageStore {
    */
   list?(prefix?: string): AsyncIterable<StorageItem>
 
+  /**
+   * Lists files with pagination support.
+   *
+   * 分頁列舉檔案（適合大型儲存空間）
+   * Recommended for large storage backends (S3, GCS) to prevent OOM.
+   * Provides cursor-based pagination for efficient large-scale file enumeration.
+   *
+   * @param prefix - Optional path prefix to filter results
+   * @param options - Pagination and filtering options
+   * @returns Paginated list result with cursor for next page
+   */
+  listPaginated?(prefix: string, options?: ListOptions): Promise<ListResult>
+
   // ==================== 元資料 ====================
 
   /**
@@ -87,6 +101,18 @@ export interface StorageStore {
    * @returns Metadata object or null if file not found
    */
   getMetadata(key: string): Promise<StorageMetadata | null>
+
+  /**
+   * Updates custom metadata for a file.
+   *
+   * 更新自定義 Metadata（可選實作）
+   * Note: This method only updates custom metadata, not system metadata like size or mimeType.
+   *
+   * @param key - Unique identifier or path for the file
+   * @param metadata - Custom metadata to set (key-value pairs)
+   * @throws {Error} If the file does not exist or operation fails
+   */
+  setMetadata?(key: string, metadata: Record<string, string>): Promise<void>
 
   // ==================== URL ====================
 
@@ -108,6 +134,31 @@ export interface StorageStore {
    * @returns A promise resolving to the signed URL string
    */
   getSignedUrl?(key: string, expiresIn: number): Promise<string>
+
+  // ==================== 串流操作 ====================
+
+  /**
+   * Writes data from a readable stream.
+   *
+   * 串流寫入檔案（可選實作）
+   * Useful for handling large files without loading entire content into memory.
+   *
+   * @param key - Unique identifier or path for the file
+   * @param stream - Readable stream containing the data
+   * @throws {Error} If the backend fails to write the stream
+   */
+  putStream?(key: string, stream: ReadableStream<Uint8Array>): Promise<void>
+
+  /**
+   * Reads data as a readable stream.
+   *
+   * 串流讀取檔案（可選實作）
+   * Useful for handling large files without loading entire content into memory.
+   *
+   * @param key - Unique identifier or path for the file
+   * @returns A readable stream of the file content, or null if the key does not exist
+   */
+  getStream?(key: string): Promise<ReadableStream<Uint8Array> | null>
 }
 
 /**
@@ -127,6 +178,25 @@ export interface StorageMetadata {
   lastModified?: Date
   /** ETag (用於快取驗證) */
   etag?: string
+  /** 自定義 Metadata (S3 風格) */
+  customMetadata?: Record<string, string>
+}
+
+/**
+ * PutOptions provides additional options for file uploads.
+ *
+ * 檔案上傳選項
+ * @public
+ */
+export interface PutOptions {
+  /** Content-Type header (MIME type) */
+  contentType?: string
+  /** 自定義 metadata (key-value pairs) */
+  metadata?: Record<string, string>
+  /** Cache-Control header (用於 CDN) */
+  cacheControl?: string
+  /** Content-Disposition header (下載檔名控制) */
+  contentDisposition?: string
 }
 
 /**
@@ -144,4 +214,36 @@ export interface StorageItem {
   size?: number
   /** 最後修改時間 */
   lastModified?: Date
+}
+
+/**
+ * ListOptions provides pagination and filtering options for file listing.
+ *
+ * 列舉選項（分頁與過濾）
+ * @public
+ */
+export interface ListOptions {
+  /** 最大回傳數量（預設: 1000） */
+  maxResults?: number
+  /** 分頁游標（繼續上次的列舉） */
+  cursor?: string
+  /** 是否包含子目錄（預設: true） */
+  recursive?: boolean
+}
+
+/**
+ * ListResult contains paginated file listing results.
+ *
+ * 分頁列舉結果
+ * @public
+ */
+export interface ListResult {
+  /** 檔案清單項目 */
+  items: StorageItem[]
+  /** 下一頁游標（null 表示沒有更多結果） */
+  nextCursor: string | null
+  /** 是否還有更多結果 */
+  hasMore: boolean
+  /** 本次回傳的項目數量 */
+  count: number
 }

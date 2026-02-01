@@ -1,4 +1,11 @@
-import type { StorageItem, StorageMetadata, StorageStore } from './store'
+import type {
+  ListOptions,
+  ListResult,
+  PutOptions,
+  StorageItem,
+  StorageMetadata,
+  StorageStore,
+} from './store'
 import type { StorageHooks } from './types'
 
 /**
@@ -24,17 +31,18 @@ export class StorageRepository {
    *
    * @param key - The destination path
    * @param data - The content to store
+   * @param options - Optional upload options (content-type, metadata, cache-control, etc.)
    * @throws {Error} If the underlying store fails to persist the data
    */
-  async put(key: string, data: Blob | Buffer | string): Promise<void> {
+  async put(key: string, data: Blob | Buffer | string, options?: PutOptions): Promise<void> {
     const finalData = this.hooks
-      ? await this.hooks.applyFilter('storage:upload', data, { key })
+      ? await this.hooks.applyFilter('storage:upload', data, { key, options })
       : data
 
-    await this.store.put(key, finalData)
+    await this.store.put(key, finalData, options)
 
     if (this.hooks) {
-      await this.hooks.doAction('storage:uploaded', { key })
+      await this.hooks.doAction('storage:uploaded', { key, options })
     }
   }
 
@@ -138,6 +146,26 @@ export class StorageRepository {
   }
 
   /**
+   * Lists files with pagination support.
+   *
+   * 分頁列舉檔案
+   * Recommended for large storage backends to prevent OOM.
+   * Provides cursor-based pagination for efficient enumeration.
+   *
+   * @param prefix - Path prefix to filter by
+   * @param options - Pagination and filtering options
+   * @returns Paginated list result with cursor for next page
+   * @throws {Error} If the underlying driver does not support paginated listing
+   */
+  async listPaginated(prefix: string, options?: ListOptions): Promise<ListResult> {
+    if (!this.store.listPaginated) {
+      throw new Error('[StorageRepository] This storage driver does not support paginated listing.')
+    }
+
+    return this.store.listPaginated(prefix, options)
+  }
+
+  /**
    * Retrieves file metadata.
    *
    * @param key - Path of the file
@@ -145,6 +173,23 @@ export class StorageRepository {
    */
   async getMetadata(key: string): Promise<StorageMetadata | null> {
     return this.store.getMetadata(key)
+  }
+
+  /**
+   * Updates custom metadata for a file.
+   *
+   * 更新自定義 Metadata
+   *
+   * @param key - Path of the file
+   * @param metadata - Custom metadata to set
+   * @throws {Error} If the underlying driver does not support metadata updates
+   */
+  async setMetadata(key: string, metadata: Record<string, string>): Promise<void> {
+    if (!this.store.setMetadata) {
+      throw new Error('[StorageRepository] This storage driver does not support metadata updates.')
+    }
+
+    await this.store.setMetadata(key, metadata)
   }
 
   /**
@@ -171,5 +216,59 @@ export class StorageRepository {
     }
 
     return this.store.getSignedUrl(key, expiresIn)
+  }
+
+  /**
+   * Stores content from a readable stream and triggers upload hooks.
+   *
+   * 串流上傳並觸發 hooks
+   * Useful for handling large files without loading entire content into memory.
+   * Applies the `storage:upload` filter and fires the `storage:uploaded` action.
+   *
+   * @param key - The destination path
+   * @param stream - Readable stream containing the data
+   * @throws {Error} If the underlying driver does not support stream writing
+   */
+  async putStream(key: string, stream: ReadableStream<Uint8Array>): Promise<void> {
+    if (!this.store.putStream) {
+      throw new Error('[StorageRepository] This storage driver does not support stream writing.')
+    }
+
+    // Note: Filter hooks for streams would need to handle ReadableStream type
+    // For now, we apply the stream directly without filtering
+    await this.store.putStream(key, stream)
+
+    if (this.hooks) {
+      await this.hooks.doAction('storage:uploaded', { key })
+    }
+  }
+
+  /**
+   * Retrieves content as a readable stream and triggers hit/miss hooks.
+   *
+   * 串流讀取並觸發 hooks
+   * Useful for handling large files without loading entire content into memory.
+   * Fires `storage:hit` if the file exists, or `storage:miss` otherwise.
+   *
+   * @param key - Path of the file
+   * @returns Readable stream of file content, or null if not found
+   * @throws {Error} If the underlying driver does not support stream reading
+   */
+  async getStream(key: string): Promise<ReadableStream<Uint8Array> | null> {
+    if (!this.store.getStream) {
+      throw new Error('[StorageRepository] This storage driver does not support stream reading.')
+    }
+
+    const stream = await this.store.getStream(key)
+
+    if (this.hooks) {
+      if (stream) {
+        await this.hooks.doAction('storage:hit', { key })
+      } else {
+        await this.hooks.doAction('storage:miss', { key })
+      }
+    }
+
+    return stream
   }
 }
