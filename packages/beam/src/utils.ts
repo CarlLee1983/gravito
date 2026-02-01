@@ -183,3 +183,130 @@ export async function resolveHeaders(
   }
   return headers
 }
+
+/**
+ * Request deduplicator for preventing redundant GET requests
+ *
+ * This class maintains a cache of in-flight requests and ensures that
+ * identical GET requests share the same underlying fetch promise.
+ */
+export class RequestDeduplicator {
+  private cache = new Map<string, Promise<Response>>()
+  private timeouts = new Map<string, NodeJS.Timeout>()
+  private window: number
+
+  constructor(window = 1000) {
+    this.window = window
+  }
+
+  /**
+   * Generates a unique cache key for a request
+   *
+   * @param input - Request URL or Request object
+   * @param init - Request initialization options
+   * @returns A unique cache key
+   */
+  private generateKey(input: RequestInfo | URL, init?: RequestInit): string {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+    const method = init?.method?.toUpperCase() || 'GET'
+
+    // Only deduplicate GET requests
+    if (method !== 'GET') {
+      return `${Math.random()}` // Force unique key for non-GET requests
+    }
+
+    // Include relevant headers in the key (exclude auth headers that might change)
+    const relevantHeaders: Record<string, string> = {}
+    if (init?.headers) {
+      const headers = new Headers(init.headers)
+      // Only include headers that affect the response content
+      const includedHeaders = ['accept', 'accept-language', 'content-type']
+      for (const key of includedHeaders) {
+        const value = headers.get(key)
+        if (value) {
+          relevantHeaders[key] = value
+        }
+      }
+    }
+
+    return `${method}::${url}::${JSON.stringify(relevantHeaders)}`
+  }
+
+  /**
+   * Clears a cache entry and its associated timeout
+   *
+   * @param key - Cache key to clear
+   */
+  private clearEntry(key: string): void {
+    this.cache.delete(key)
+    const timeout = this.timeouts.get(key)
+    if (timeout) {
+      clearTimeout(timeout)
+      this.timeouts.delete(key)
+    }
+  }
+
+  /**
+   * Fetches a resource with deduplication
+   *
+   * @param fetchFn - The fetch function to use
+   * @param input - Request URL or Request object
+   * @param init - Request initialization options
+   * @returns A promise that resolves to the response
+   */
+  async fetch(
+    fetchFn: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
+    input: RequestInfo | URL,
+    init?: RequestInit
+  ): Promise<Response> {
+    const key = this.generateKey(input, init)
+
+    // If there's an in-flight request, return a clone of its response
+    if (this.cache.has(key)) {
+      const cachedPromise = this.cache.get(key)!
+      return cachedPromise.then((res) => res.clone())
+    }
+
+    // Create new request promise
+    const promise = fetchFn(input, init)
+      .then((res) => {
+        // Clear cache entry immediately after completion
+        this.clearEntry(key)
+        return res
+      })
+      .catch((error) => {
+        // Clear cache entry on error
+        this.clearEntry(key)
+        throw error
+      })
+
+    // Store in cache
+    this.cache.set(key, promise)
+
+    // Set timeout to clear cache entry if it takes too long
+    const timeout = setTimeout(() => {
+      this.clearEntry(key)
+    }, this.window)
+    this.timeouts.set(key, timeout)
+
+    return promise.then((res) => res.clone())
+  }
+
+  /**
+   * Clears all cached requests
+   */
+  clear(): void {
+    for (const timeout of this.timeouts.values()) {
+      clearTimeout(timeout)
+    }
+    this.cache.clear()
+    this.timeouts.clear()
+  }
+
+  /**
+   * Gets the current cache size
+   */
+  get size(): number {
+    return this.cache.size
+  }
+}

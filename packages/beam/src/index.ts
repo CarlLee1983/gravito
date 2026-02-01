@@ -6,6 +6,7 @@ import {
   createFetchWithTimeout,
   executeWithRetry,
   mergeAbortSignals,
+  RequestDeduplicator,
   resolveHeaders,
 } from './utils'
 
@@ -51,6 +52,7 @@ export function createBeam<T extends Photon<Env, Schema, string>>(
   if (
     !options?.timeout &&
     !options?.retry &&
+    !options?.deduplicate &&
     !options?.onRequest &&
     !options?.onResponse &&
     !options?.onError
@@ -68,9 +70,14 @@ export function createBeam<T extends Photon<Env, Schema, string>>(
 }
 
 /**
- * Creates an enhanced fetch function with support for timeout, retry, and interceptors
+ * Creates an enhanced fetch function with support for timeout, retry, deduplication, and interceptors
  */
 function createEnhancedFetch(options: BeamOptions) {
+  // Create deduplicator instance if enabled
+  const deduplicator = options.deduplicate
+    ? new RequestDeduplicator(options.deduplicateWindow)
+    : null
+
   return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     try {
       let config = init || {}
@@ -104,9 +111,17 @@ function createEnhancedFetch(options: BeamOptions) {
       }
 
       // 4. Create fetch function (with possible timeout and signal support)
-      const fetchFn = options.timeout
-        ? createFetchWithTimeout(options.timeout, options.signal as AbortSignal | undefined)
-        : fetch.bind(globalThis)
+      const baseFetchFn: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> =
+        options.timeout
+          ? createFetchWithTimeout(options.timeout, options.signal as AbortSignal | undefined)
+          : (input: RequestInfo | URL, init?: RequestInit) => fetch(input, init)
+
+      // Wrap with deduplicator if enabled
+      const fetchFn: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> =
+        deduplicator
+          ? (input: RequestInfo | URL, init?: RequestInit) =>
+              deduplicator.fetch(baseFetchFn, input, init)
+          : baseFetchFn
 
       // 5. Execute request (with possible retry)
       let response = await (options.retry

@@ -179,7 +179,7 @@ const data = await validateResponse(res, z.object({ id: z.number() }))
 |------|--------|----------|--------|----------|
 | Jitter 支援 | 🔥🔥🔥 高 | 🟢 低 | P0 | ✅ v1.1 |
 | AbortSignal 整合 | 🔥🔥 中 | 🟢 低 | P1 | ✅ v1.1 |
-| 請求去重 | 🔥🔥 中 | 🟡 中 | P2 | v1.2 |
+| 請求去重 | 🔥🔥 中 | 🟡 中 | P2 | ✅ v1.2 |
 | React Server Actions | 🔥 低 | 🔴 高 | P3 | v2.0 |
 | 離線佇列機制 | 🔥🔥 中 | 🔴 高 | P3 | v2.0 |
 | WebSocket 支援 | 🔥 低 | 🔴 高 | P4 | v2.x |
@@ -276,49 +276,38 @@ setTimeout(() => controller.abort(), 1000) // 1 秒後取消所有請求
 
 ### 中期優化 (v1.2)
 
-#### 5.3 請求去重 (Deduplication)
+#### 5.3 請求去重 (Deduplication) (✅ 已實作)
 
 **問題陳述**
 在 React 應用中，相同的 GET 請求可能在短時間內被多次發起（如多個元件同時掛載），造成網路資源浪費。
 
-**技術方案**
+**技術方案 (已實作)**
 ```typescript
-// 實作概念：Request Deduplication Cache
-class RequestDeduplicator {
-  private cache = new Map<string, Promise<Response>>()
+// 使用範例
+const client = createBeam<AppType>('/api', {
+  deduplicate: true,           // 啟用去重
+  deduplicateWindow: 1000      // 1 秒內的相同請求會被去重（預設值）
+})
 
-  async fetch(url: string, init?: RequestInit): Promise<Response> {
-    const key = this.generateKey(url, init)
-
-    // 若已有進行中的請求，直接返回
-    if (this.cache.has(key)) {
-      return this.cache.get(key)!.then(res => res.clone())
-    }
-
-    // 發起新請求
-    const promise = fetch(url, init).finally(() => {
-      this.cache.delete(key) // 清理完成的請求
-    })
-
-    this.cache.set(key, promise)
-    return promise.then(res => res.clone())
-  }
-
-  private generateKey(url: string, init?: RequestInit): string {
-    // 僅針對 GET 請求進行去重
-    if (init?.method && init.method !== 'GET') {
-      return `${Math.random()}` // 強制唯一
-    }
-    return `${url}::${JSON.stringify(init?.headers || {})}`
-  }
+// 多個元件同時請求相同資料
+const UserProfile = () => {
+  const res = await client.users.$get()  // 第一次請求
+  // ...
 }
 
-// API 設計
-const client = createBeam<AppType>('/api', {
-  deduplicate: true,  // 啟用去重
-  deduplicateTimeout: 1000  // 1 秒內的相同請求會被去重
-})
+const UserStats = () => {
+  const res = await client.users.$get()  // 共享第一次請求的結果
+  // ...
+}
 ```
+
+**實作細節**
+- ✅ 新增 `RequestDeduplicator` 類別管理請求快取
+- ✅ 僅針對 GET 請求進行去重（POST/PUT/DELETE 不受影響）
+- ✅ 基於 URL + 相關 headers 生成唯一 key
+- ✅ 請求完成後立即清理快取
+- ✅ 支援自訂去重時間窗口
+- ✅ 返回 Response clone 確保多個消費者可獨立讀取
 
 **權衡分析**
 | 優點 | 缺點 |
@@ -333,10 +322,11 @@ const client = createBeam<AppType>('/api', {
 - 降低後端 QPS
 
 **破壞性變更評估**
-- ⚠️ 可能影響即時性要求高的應用
-- 建議：預設關閉，由使用者選擇啟用
+- ✅ 預設關閉，完全向後相容
+- ✅ 僅影響 GET 請求
+- ✅ 使用者可自行選擇啟用
 
-**實作成本**：~12 小時（含邊界測試）
+**實作成本**：~8 小時（含完整測試）
 
 ---
 

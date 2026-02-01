@@ -103,6 +103,36 @@ export interface BeamOptions extends Omit<RequestInit, 'headers'> {
   retry?: RetryOptions
 
   /**
+   * Enable request deduplication for GET requests
+   *
+   * When enabled, identical GET requests made within the deduplication window
+   * will share the same underlying fetch promise, reducing redundant network calls.
+   *
+   * @default false
+   *
+   * @example
+   * ```typescript
+   * deduplicate: true
+   * ```
+   */
+  deduplicate?: boolean
+
+  /**
+   * Deduplication time window (milliseconds)
+   *
+   * Requests are considered identical if they occur within this time window.
+   * After a request completes, it's immediately removed from the cache.
+   *
+   * @default 1000 (1 second)
+   *
+   * @example
+   * ```typescript
+   * deduplicateWindow: 2000  // 2 second window
+   * ```
+   */
+  deduplicateWindow?: number
+
+  /**
    * Request interceptor
    *
    * Called before sending the request, can be used to modify request configuration (e.g., adding auth token)
