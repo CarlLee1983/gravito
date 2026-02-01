@@ -22,8 +22,8 @@ export class NullStore implements CacheStore {
   /**
    * Simulates a cache miss for any given key.
    *
-   * @param _key - The identifier for the cached item.
-   * @returns Always resolves to `null` regardless of the key.
+   * @param _key - Identifier for the cached item.
+   * @returns Always `null` regardless of requested key.
    *
    * @example
    * ```typescript

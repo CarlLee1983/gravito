@@ -42,7 +42,8 @@
       "Bash(gh pr create:*)",
       "Bash(bunx biome check:*)",
       "Bash(git reset:*)",
-      "Bash(gh pr edit:*)"
+      "Bash(gh pr edit:*)",
+      "Bash(tsc:*)"
     ]
   },
   "enabledMcpjsonServers": ["pencil", "context7"]

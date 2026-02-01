@@ -1,22 +1,30 @@
 import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { CacheManager } from './CacheManager'
 import type { CacheEventMode, CacheEvents } from './CacheRepository'
+import { MarkovPredictor } from './prediction/AccessPredictor'
 import type { CacheStore } from './store'
+import { CircuitBreakerStore } from './stores/CircuitBreakerStore'
 import { FileStore } from './stores/FileStore'
 import { MemoryStore } from './stores/MemoryStore'
 import { NullStore } from './stores/NullStore'
+import { PredictiveStore } from './stores/PredictiveStore'
 import { RedisStore } from './stores/RedisStore'
+import { TieredStore } from './stores/TieredStore'
 import type { CacheTtl } from './types'
 
 export * from './CacheManager'
 export * from './CacheRepository'
 export * from './locks'
+export * from './prediction/AccessPredictor'
 export * from './RateLimiter'
 export * from './store'
+export * from './stores/CircuitBreakerStore'
 export * from './stores/FileStore'
 export * from './stores/MemoryStore'
 export * from './stores/NullStore'
+export * from './stores/PredictiveStore'
 export * from './stores/RedisStore'
+export * from './stores/TieredStore'
 export * from './types'
 
 /**
@@ -26,6 +34,16 @@ export * from './types'
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * class MyProvider implements CacheStorageProvider {
+ *   async get(key) { ... }
+ *   async set(key, value, ttl) { ... }
+ *   async delete(key) { ... }
+ *   async clear() { ... }
+ * }
+ * ```
  */
 export interface CacheStorageProvider {
   /**
@@ -230,27 +248,49 @@ export type OrbitCacheStoreConfig =
   | { driver: 'custom'; store: CacheStore }
   /** Use an implementation of the `CacheStorageProvider` interface. */
   | { driver: 'provider'; provider: CacheStorageProvider }
+  /** Multi-level cache. */
+  | { driver: 'tiered'; local: string; remote: string }
+  /** Predictive cache that prefetches keys based on usage patterns. */
+  | { driver: 'predictive'; inner: string; maxNodes?: number }
+  /** Fault tolerance layer. */
+  | {
+      driver: 'circuit-breaker'
+      primary: string
+      maxFailures?: number
+      resetTimeout?: number
+      fallback?: string
+    }
 
 /**
  * Options for configuring the `OrbitStasis` cache orbit.
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const options: OrbitCacheOptions = {
+ *   default: 'redis',
+ *   stores: {
+ *     redis: { driver: 'redis', connection: 'default' }
+ *   }
+ * };
+ * ```
  */
 export interface OrbitCacheOptions {
-  /** The key used to expose the cache manager in the request context. @default 'cache' */
+  /** The key used to expose the cache manager in the request context. @defaultValue 'cache' */
   exposeAs?: string
-  /** The name of the default store to use for proxy methods. @default 'memory' */
+  /** The name of the default store to use for proxy methods. @defaultValue 'memory' */
   default?: string
   /** Global prefix for all cache keys across all stores. */
   prefix?: string
-  /** Default time-to-live for cache entries if not specified. @default 60 */
+  /** Default time-to-live for cache entries if not specified. @defaultValue 60 */
   defaultTtl?: CacheTtl
   /** Map of named cache stores and their configurations. */
   stores?: Record<string, OrbitCacheStoreConfig>
   /** How to handle cache events (hit/miss/etc) */
   eventsMode?: CacheEventMode
-  /** Whether to throw if an event listener fails. @default false */
+  /** Whether to throw if an event listener fails. @defaultValue false */
   throwOnEventError?: boolean
   /** Custom error handler for cache events. */
   onEventError?: (error: unknown, event: keyof CacheEvents, payload: { key?: string }) => void
@@ -347,6 +387,29 @@ function createStoreFactory(config: OrbitCacheOptions): (name: string) => CacheS
           return next
         },
       } satisfies CacheStore
+    }
+
+    if (storeConfig.driver === 'tiered') {
+      const factory = createStoreFactory(config)
+      return new TieredStore(factory(storeConfig.local), factory(storeConfig.remote))
+    }
+
+    if (storeConfig.driver === 'predictive') {
+      const factory = createStoreFactory(config)
+      return new PredictiveStore(factory(storeConfig.inner), {
+        predictor: new MarkovPredictor({ maxNodes: storeConfig.maxNodes }),
+      })
+    }
+
+    if (storeConfig.driver === 'circuit-breaker') {
+      const factory = createStoreFactory(config)
+      const primary = factory(storeConfig.primary)
+      const fallback = storeConfig.fallback ? factory(storeConfig.fallback) : undefined
+      return new CircuitBreakerStore(primary, {
+        maxFailures: storeConfig.maxFailures,
+        resetTimeout: storeConfig.resetTimeout,
+        fallback,
+      })
     }
 
     throw new Error(`Unsupported cache driver '${(storeConfig as { driver?: string }).driver}'.`)
@@ -449,6 +512,18 @@ export class OrbitStasis implements GravitoOrbit {
   }
 }
 
+/**
+ * Helper function to create and install the OrbitStasis orbit.
+ *
+ * @param core - Gravito PlanetCore instance.
+ * @param options - Cache configuration options.
+ * @returns Initialized CacheManager.
+ *
+ * @example
+ * ```typescript
+ * const cache = orbitCache(core, { default: 'memory' });
+ * ```
+ */
 export default function orbitCache(
   core: PlanetCore,
   options: OrbitCacheOptions = {}

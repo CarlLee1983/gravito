@@ -78,7 +78,7 @@ describe('🌌 Gravito Ecommerce Galaxy - Full System Ignition', () => {
 
     // Setup Schema & Seed Data
     const { Schema, DB } = await import('@gravito/atlas')
-    await Schema.create('promotions', (table: any) => {
+    await Schema.create('promotions', (table: Record<string, unknown>) => {
       table.string('id').primary()
       table.string('name')
       table.string('type')
@@ -115,7 +115,7 @@ describe('🌌 Gravito Ecommerce Galaxy - Full System Ignition', () => {
 
     // Step 2: Verify Payment Intent Generation
     let paymentIntentCaptured = false
-    core.hooks.addAction('payment:intent:ready', (payload: any) => {
+    core.hooks.addAction('payment:intent:ready', (payload: Record<string, unknown>) => {
       paymentIntentCaptured = true
       core.logger.info(`Step 2: Stripe Intent Received -> ${payload.intent.gatewayTransactionId}`)
     })
