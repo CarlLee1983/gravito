@@ -43,8 +43,16 @@
       "Bash(bunx biome check:*)",
       "Bash(git reset:*)",
       "Bash(gh pr edit:*)",
-      "Bash(tsc:*)"
+      "Bash(git for-each-ref:*)",
+      "Bash(column:*)",
+      "Bash(git worktree:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(tsc:*)",
+      "Bash(curl:*)"
     ]
   },
-  "enabledMcpjsonServers": ["pencil", "context7"]
+  "enabledMcpjsonServers": [
+    "pencil",
+    "context7"
+  ]
 }
