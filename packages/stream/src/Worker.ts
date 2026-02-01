@@ -1,4 +1,6 @@
 import type { Job } from './Job'
+import type { SerializedJob } from './types'
+import { SandboxedWorker, type SandboxedWorkerConfig } from './workers/SandboxedWorker'
 
 /**
  * Configuration options for the Worker.
@@ -34,6 +36,26 @@ export interface WorkerOptions {
    * This allows for custom error reporting or cleanup logic outside of the job class.
    */
   onFailed?: (job: Job, error: Error) => Promise<void>
+
+  /**
+   * Enable sandboxed execution using Worker Threads.
+   *
+   * When enabled, jobs are executed in isolated Worker Threads, providing:
+   * - Context isolation: Each job runs in a separate execution environment
+   * - Crash protection: Worker crashes don't affect the main thread
+   * - Memory limits: Prevent memory leaks from affecting the main process
+   * - Timeout enforcement: Jobs exceeding the timeout are forcefully terminated
+   *
+   * @default false
+   */
+  sandboxed?: boolean
+
+  /**
+   * Sandboxed worker configuration options.
+   *
+   * Only used when `sandboxed` is true.
+   */
+  sandboxConfig?: SandboxedWorkerConfig
 }
 
 /**
@@ -42,25 +64,49 @@ export interface WorkerOptions {
  * The Worker is responsible for running the `handle()` method of a job, managing its lifecycle,
  * enforcing timeouts, and handling retries or failures.
  *
+ * Supports two execution modes:
+ * - **Standard Mode** (default): Executes jobs directly in the current process
+ * - **Sandboxed Mode**: Executes jobs in isolated Worker Threads for enhanced security and stability
+ *
  * @example
  * ```typescript
+ * // Standard mode
  * const worker = new Worker({
  *   maxAttempts: 3,
  *   timeout: 60
+ * });
+ *
+ * // Sandboxed mode
+ * const sandboxedWorker = new Worker({
+ *   maxAttempts: 3,
+ *   timeout: 60,
+ *   sandboxed: true,
+ *   sandboxConfig: {
+ *     maxExecutionTime: 30000,
+ *     maxMemory: 512,
+ *     isolateContexts: true
+ *   }
  * });
  *
  * await worker.process(job);
  * ```
  */
 export class Worker {
-  constructor(private options: WorkerOptions = {}) {}
+  private sandboxedWorker?: SandboxedWorker
+
+  constructor(private options: WorkerOptions = {}) {
+    // 如果啟用 sandboxed 模式，初始化 SandboxedWorker
+    if (options.sandboxed) {
+      this.sandboxedWorker = new SandboxedWorker(options.sandboxConfig)
+    }
+  }
 
   /**
    * Processes a single job instance.
    *
    * 1. Checks attempt counts.
    * 2. Enforces execution timeout (if configured).
-   * 3. Runs `job.handle()`.
+   * 3. Runs `job.handle()` (either directly or in a sandboxed Worker Thread).
    * 4. Catches errors and invokes failure handlers if max attempts are reached.
    *
    * @param job - The job to process.
@@ -76,19 +122,11 @@ export class Worker {
     }
 
     try {
-      // Execute job (with optional timeout)
-      if (timeout) {
-        await Promise.race([
-          job.handle(),
-          new Promise<never>((_, reject) =>
-            setTimeout(
-              () => reject(new Error(`Job timeout after ${timeout} seconds`)),
-              timeout * 1000
-            )
-          ),
-        ])
+      // Execute job (sandboxed or standard mode)
+      if (this.options.sandboxed && this.sandboxedWorker) {
+        await this.processSandboxed(job)
       } else {
-        await job.handle()
+        await this.processStandard(job, timeout)
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error))
@@ -101,6 +139,71 @@ export class Worker {
       }
 
       throw err
+    }
+  }
+
+  /**
+   * Processes a job in standard mode (directly in current process).
+   *
+   * @param job - The job to process.
+   * @param timeout - Optional timeout in seconds.
+   */
+  private async processStandard(job: Job, timeout?: number): Promise<void> {
+    if (timeout) {
+      await Promise.race([
+        job.handle(),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`Job timeout after ${timeout} seconds`)),
+            timeout * 1000
+          )
+        ),
+      ])
+    } else {
+      await job.handle()
+    }
+  }
+
+  /**
+   * Processes a job in sandboxed mode (in Worker Thread).
+   *
+   * @param job - The job to process.
+   */
+  private async processSandboxed(job: Job): Promise<void> {
+    if (!this.sandboxedWorker) {
+      throw new Error('Sandboxed worker not initialized')
+    }
+
+    // 序列化 Job 為 SerializedJob
+    const serialized = this.serializeJob(job)
+
+    // 在 Worker Thread 中執行
+    await this.sandboxedWorker.execute(serialized)
+  }
+
+  /**
+   * Serializes a Job instance for Worker Thread execution.
+   *
+   * @param job - The job to serialize.
+   * @returns Serialized job data.
+   */
+  private serializeJob(job: Job): SerializedJob {
+    // 將 Job 序列化為 JSON
+    // 注意：這是簡化版本，實際應用可能需要更複雜的序列化邏輯
+    const data = JSON.stringify(job)
+
+    return {
+      id: job.id ?? `job-${Date.now()}-${Math.random()}`,
+      type: 'json',
+      data,
+      createdAt: Date.now(),
+      attempts: job.attempts,
+      maxAttempts: job.maxAttempts,
+      delaySeconds: job.delaySeconds,
+      groupId: job.groupId,
+      priority: job.priority,
+      retryAfterSeconds: job.retryAfterSeconds,
+      retryMultiplier: job.retryMultiplier,
     }
   }
 
@@ -127,6 +230,18 @@ export class Worker {
       } catch (callbackError) {
         console.error('[Worker] Error in onFailed callback:', callbackError)
       }
+    }
+  }
+
+  /**
+   * Terminates the sandboxed worker and releases resources.
+   *
+   * Should be called when the worker is no longer needed.
+   * Only applicable when running in sandboxed mode.
+   */
+  async terminate(): Promise<void> {
+    if (this.sandboxedWorker) {
+      await this.sandboxedWorker.terminate()
     }
   }
 }

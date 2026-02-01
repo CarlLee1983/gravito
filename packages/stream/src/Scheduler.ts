@@ -1,5 +1,6 @@
 import parser from 'cron-parser'
 import type { GroupRedisClient } from './drivers/RedisDriver'
+import { DistributedLock } from './locks/DistributedLock'
 import type { QueueManager } from './QueueManager'
 import type { SerializedJob } from './types'
 
@@ -39,6 +40,65 @@ export interface ScheduledJobConfig {
 }
 
 /**
+ * Scheduler 的配置選項。
+ *
+ * 定義排程器的行為，包含分散式鎖的設定。
+ *
+ * @public
+ * @since 3.1.0
+ * @example
+ * ```typescript
+ * const options: SchedulerOptions = {
+ *   prefix: 'myapp:queue:',
+ *   lockTtl: 60000,        // 鎖持有 60 秒
+ *   lockRefreshInterval: 20000  // 每 20 秒自動續約
+ * };
+ * ```
+ */
+export interface SchedulerOptions {
+  /**
+   * Redis 鍵的前綴。
+   *
+   * @default 'queue:'
+   */
+  prefix?: string
+
+  /**
+   * 分散式鎖的生存時間（毫秒）。
+   *
+   * 設定較長的 TTL 可確保長時間運行的任務不會因鎖過期而被重複執行。
+   * 建議設為任務預期執行時間的 2-3 倍。
+   *
+   * @default 60000 (60 秒)
+   */
+  lockTtl?: number
+
+  /**
+   * 鎖的自動續約間隔（毫秒）。
+   *
+   * 如果設定此值，鎖將每隔 lockRefreshInterval 自動延長 TTL。
+   * 建議設為 lockTtl 的 1/3。
+   *
+   * @default 20000 (20 秒)
+   */
+  lockRefreshInterval?: number
+
+  /**
+   * 獲取鎖失敗時的重試次數。
+   *
+   * @default 0
+   */
+  lockRetryCount?: number
+
+  /**
+   * 每次重試之間的延遲時間（毫秒）。
+   *
+   * @default 100
+   */
+  lockRetryDelay?: number
+}
+
+/**
  * Manages recurring tasks and cron jobs.
  *
  * The Scheduler allows you to register jobs to run at specific intervals using CRON syntax.
@@ -62,12 +122,21 @@ export interface ScheduledJobConfig {
  */
 export class Scheduler {
   private prefix: string
+  private lockTtl: number
+  private lockRefreshInterval?: number
+  private lockRetryCount: number
+  private lockRetryDelay: number
+  private distributedLock?: DistributedLock
 
   constructor(
     private manager: QueueManager,
-    options: { prefix?: string } = {}
+    options: SchedulerOptions = {}
   ) {
     this.prefix = options.prefix ?? 'queue:'
+    this.lockTtl = options.lockTtl ?? 60000 // 預設 60 秒
+    this.lockRefreshInterval = options.lockRefreshInterval ?? 20000 // 預設 20 秒
+    this.lockRetryCount = options.lockRetryCount ?? 0
+    this.lockRetryDelay = options.lockRetryDelay ?? 100
   }
 
   private get client(): GroupRedisClient {
@@ -76,6 +145,18 @@ export class Scheduler {
       throw new Error('[Scheduler] Driver does not support Redis client access')
     }
     return (driver as { client: GroupRedisClient }).client
+  }
+
+  /**
+   * 獲取或創建分散式鎖實例。
+   *
+   * @private
+   */
+  private getDistributedLock(): DistributedLock {
+    if (!this.distributedLock) {
+      this.distributedLock = new DistributedLock(this.client)
+    }
+    return this.distributedLock
   }
 
   /**
@@ -182,8 +263,11 @@ export class Scheduler {
    * Checks for and triggers tasks that are due for execution.
    *
    * This method should be called periodically (e.g., via a system cron or a dedicated tick loop).
-   * It scans the schedule for tasks with `nextRun <= now`, acquires a lock for each,
+   * It scans the schedule for tasks with `nextRun <= now`, acquires a distributed lock for each,
    * pushes them to their queue, and updates the `nextRun` time.
+   *
+   * The distributed lock ensures that in a multi-node environment, each scheduled job is executed
+   * only once per interval, even if multiple scheduler instances are running.
    *
    * @returns The number of jobs triggered in this tick.
    */
@@ -197,46 +281,55 @@ export class Scheduler {
     const dueIds = await client.zrangebyscore(`${this.prefix}schedules`, 0, now)
     let fired = 0
 
+    const lock = this.getDistributedLock()
+
     for (const id of dueIds) {
-      // Use a lock to ensure only one worker processes this tick for this schedule
+      // 使用分散式鎖確保只有一個 worker 處理此排程
+      // 鎖的鍵包含排程 ID 和當前時間戳（精確到秒），確保每個時間窗口只執行一次
       const lockKey = `${this.prefix}lock:schedule:${id}:${Math.floor(now / 1000)}`
 
-      if (typeof client.set !== 'function') {
-        continue // Skip if SET not supported
-      }
+      const acquired = await lock.acquire(lockKey, {
+        ttl: this.lockTtl,
+        retryCount: this.lockRetryCount,
+        retryDelay: this.lockRetryDelay,
+        refreshInterval: this.lockRefreshInterval,
+      })
 
-      const lock = await client.set(lockKey, '1', 'EX', 10, 'NX')
+      if (acquired) {
+        try {
+          const data = await client.hgetall?.(`${this.prefix}schedule:${id}`)
+          if (data?.id && data.enabled === 'true') {
+            try {
+              const serializedJob = JSON.parse(data.job) as SerializedJob
+              const connection = data.connection || this.manager.getDefaultConnection()
+              const driver = this.manager.getDriver(connection)
 
-      if (lock === 'OK') {
-        const data = await client.hgetall?.(`${this.prefix}schedule:${id}`)
-        if (data?.id && data.enabled === 'true') {
-          try {
-            const serializedJob = JSON.parse(data.job) as SerializedJob
-            const connection = data.connection || this.manager.getDefaultConnection()
-            const driver = this.manager.getDriver(connection)
+              // 1. 直接推送到佇列（傳遞序列化的資料）
+              // 這避免了在排程器程序中註冊 job 類別的需求
+              await driver.push(data.queue, serializedJob)
 
-            // 1. Push to queue directly (relaying the serialized blob)
-            // This avoids the need to have job classes registered in the scheduler process
-            await driver.push(data.queue, serializedJob)
+              // 2. 排程下次執行
+              const nextRun = (parser as any).parse(data.cron).next().getTime()
 
-            // 2. Schedule next run
-            const nextRun = (parser as any).parse(data.cron).next().getTime()
+              if (typeof client.pipeline === 'function') {
+                const pipe = client.pipeline()
+                pipe.hset(`${this.prefix}schedule:${id}`, {
+                  lastRun: now,
+                  nextRun: nextRun,
+                })
+                pipe.zadd(`${this.prefix}schedules`, nextRun, id)
+                await pipe.exec()
+              }
 
-            if (typeof client.pipeline === 'function') {
-              const pipe = client.pipeline()
-              pipe.hset(`${this.prefix}schedule:${id}`, {
-                lastRun: now,
-                nextRun: nextRun,
-              })
-              pipe.zadd(`${this.prefix}schedules`, nextRun, id)
-              await pipe.exec()
+              fired++
+            } catch (err: unknown) {
+              const error = err instanceof Error ? err : new Error(String(err))
+              console.error(`[Scheduler] Failed to process schedule ${id}:`, error.message)
             }
-
-            fired++
-          } catch (err: unknown) {
-            const error = err instanceof Error ? err : new Error(String(err))
-            console.error(`[Scheduler] Failed to process schedule ${id}:`, error.message)
           }
+        } finally {
+          // 確保鎖被釋放
+          await lock.release(lockKey)
         }
       }
     }

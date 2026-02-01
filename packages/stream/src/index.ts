@@ -41,6 +41,8 @@ export { SQSDriver } from './drivers/SQSDriver'
 
 // Core classes
 export { Job } from './Job'
+export type { LockOptions } from './locks/DistributedLock'
+export { DistributedLock } from './locks/DistributedLock'
 export type { OrbitStreamOptions } from './OrbitStream'
 export { OrbitStream } from './OrbitStream'
 export { BufferedPersistence } from './persistence/BufferedPersistence'
@@ -49,6 +51,7 @@ export { SQLitePersistence } from './persistence/SQLitePersistence'
 // Core interfaces & types
 export type { Queueable } from './Queueable'
 export { QueueManager } from './QueueManager'
+export type { ScheduledJobConfig, SchedulerOptions } from './Scheduler'
 export { Scheduler } from './Scheduler'
 export { ClassNameSerializer } from './serializers/ClassNameSerializer'
 // Serializers
@@ -64,3 +67,12 @@ export type {
 // Types
 export type { WorkerOptions } from './Worker'
 export { Worker } from './Worker'
+
+// Workers (Sandboxed execution)
+export {
+  SandboxedWorker,
+  type SandboxedWorkerConfig,
+  WorkerPool,
+  type WorkerPoolConfig,
+  type WorkerPoolStats,
+} from './workers'
