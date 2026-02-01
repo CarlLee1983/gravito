@@ -1,5 +1,6 @@
 import parser from 'cron-parser'
 import type { GroupRedisClient } from './drivers/RedisDriver'
+import { DistributedLock } from './locks/DistributedLock'
 import type { QueueManager } from './QueueManager'
 import type { SerializedJob } from './types'
 
@@ -39,6 +40,65 @@ export interface ScheduledJobConfig {
 }
 
 /**
+ * Configuration options for the Scheduler.
+ *
+ * Defines behavior for scheduling tasks, including distributed lock settings.
+ *
+ * @public
+ * @since 3.1.0
+ * @example
+ * ```typescript
+ * const options: SchedulerOptions = {
+ *   prefix: 'myapp:queue:',
+ *   lockTtl: 60000,        // Lock held for 60 seconds
+ *   lockRefreshInterval: 20000  // Auto-renew every 20 seconds
+ * };
+ * ```
+ */
+export interface SchedulerOptions {
+  /**
+   * Prefix for Redis keys.
+   *
+   * @default 'queue:'
+   */
+  prefix?: string
+
+  /**
+   * Time-to-live for the distributed lock in milliseconds.
+   *
+   * Setting a longer TTL ensures long-running tasks are not executed repeatedly
+   * due to lock expiration. Recommended to be 2-3 times the expected execution time.
+   *
+   * @default 60000 (60 seconds)
+   */
+  lockTtl?: number
+
+  /**
+   * Interval for automatic lock renewal in milliseconds.
+   *
+   * If set, the lock will be automatically extended every `lockRefreshInterval`.
+   * Recommended to be 1/3 of `lockTtl`.
+   *
+   * @default 20000 (20 seconds)
+   */
+  lockRefreshInterval?: number
+
+  /**
+   * Number of retries when acquiring a lock fails.
+   *
+   * @default 0
+   */
+  lockRetryCount?: number
+
+  /**
+   * Delay between lock acquisition retries in milliseconds.
+   *
+   * @default 100
+   */
+  lockRetryDelay?: number
+}
+
+/**
  * Manages recurring tasks and cron jobs.
  *
  * The Scheduler allows you to register jobs to run at specific intervals using CRON syntax.
@@ -62,12 +122,21 @@ export interface ScheduledJobConfig {
  */
 export class Scheduler {
   private prefix: string
+  private lockTtl: number
+  private lockRefreshInterval?: number
+  private lockRetryCount: number
+  private lockRetryDelay: number
+  private distributedLock?: DistributedLock
 
   constructor(
     private manager: QueueManager,
-    options: { prefix?: string } = {}
+    options: SchedulerOptions = {}
   ) {
     this.prefix = options.prefix ?? 'queue:'
+    this.lockTtl = options.lockTtl ?? 60000
+    this.lockRefreshInterval = options.lockRefreshInterval ?? 20000
+    this.lockRetryCount = options.lockRetryCount ?? 0
+    this.lockRetryDelay = options.lockRetryDelay ?? 100
   }
 
   private get client(): GroupRedisClient {
@@ -76,6 +145,18 @@ export class Scheduler {
       throw new Error('[Scheduler] Driver does not support Redis client access')
     }
     return (driver as { client: GroupRedisClient }).client
+  }
+
+  /**
+   * Gets or creates the distributed lock instance.
+   *
+   * @private
+   */
+  private getDistributedLock(): DistributedLock {
+    if (!this.distributedLock) {
+      this.distributedLock = new DistributedLock(this.client)
+    }
+    return this.distributedLock
   }
 
   /**
@@ -182,8 +263,11 @@ export class Scheduler {
    * Checks for and triggers tasks that are due for execution.
    *
    * This method should be called periodically (e.g., via a system cron or a dedicated tick loop).
-   * It scans the schedule for tasks with `nextRun <= now`, acquires a lock for each,
+   * It scans the schedule for tasks with `nextRun <= now`, acquires a distributed lock for each,
    * pushes them to their queue, and updates the `nextRun` time.
+   *
+   * The distributed lock ensures that in a multi-node environment, each scheduled job is executed
+   * only once per interval, even if multiple scheduler instances are running.
    *
    * @returns The number of jobs triggered in this tick.
    */
@@ -197,46 +281,55 @@ export class Scheduler {
     const dueIds = await client.zrangebyscore(`${this.prefix}schedules`, 0, now)
     let fired = 0
 
+    const lock = this.getDistributedLock()
+
     for (const id of dueIds) {
-      // Use a lock to ensure only one worker processes this tick for this schedule
+      // Use distributed lock to ensure only one worker processes this schedule
+      // Lock key includes ID and current timestamp (seconds) to ensure once per window
       const lockKey = `${this.prefix}lock:schedule:${id}:${Math.floor(now / 1000)}`
 
-      if (typeof client.set !== 'function') {
-        continue // Skip if SET not supported
-      }
+      const acquired = await lock.acquire(lockKey, {
+        ttl: this.lockTtl,
+        retryCount: this.lockRetryCount,
+        retryDelay: this.lockRetryDelay,
+        refreshInterval: this.lockRefreshInterval,
+      })
 
-      const lock = await client.set(lockKey, '1', 'EX', 10, 'NX')
+      if (acquired) {
+        try {
+          const data = await client.hgetall?.(`${this.prefix}schedule:${id}`)
+          if (data?.id && data.enabled === 'true') {
+            try {
+              const serializedJob = JSON.parse(data.job) as SerializedJob
+              const connection = data.connection || this.manager.getDefaultConnection()
+              const driver = this.manager.getDriver(connection)
 
-      if (lock === 'OK') {
-        const data = await client.hgetall?.(`${this.prefix}schedule:${id}`)
-        if (data?.id && data.enabled === 'true') {
-          try {
-            const serializedJob = JSON.parse(data.job) as SerializedJob
-            const connection = data.connection || this.manager.getDefaultConnection()
-            const driver = this.manager.getDriver(connection)
+              // 1. Push directly to queue (pass serialized data)
+              // This avoids needing to register job classes in the scheduler process
+              await driver.push(data.queue, serializedJob)
 
-            // 1. Push to queue directly (relaying the serialized blob)
-            // This avoids the need to have job classes registered in the scheduler process
-            await driver.push(data.queue, serializedJob)
+              // 2. Schedule next run
+              const nextRun = (parser as any).parse(data.cron).next().getTime()
 
-            // 2. Schedule next run
-            const nextRun = (parser as any).parse(data.cron).next().getTime()
+              if (typeof client.pipeline === 'function') {
+                const pipe = client.pipeline()
+                pipe.hset(`${this.prefix}schedule:${id}`, {
+                  lastRun: now,
+                  nextRun: nextRun,
+                })
+                pipe.zadd(`${this.prefix}schedules`, nextRun, id)
+                await pipe.exec()
+              }
 
-            if (typeof client.pipeline === 'function') {
-              const pipe = client.pipeline()
-              pipe.hset(`${this.prefix}schedule:${id}`, {
-                lastRun: now,
-                nextRun: nextRun,
-              })
-              pipe.zadd(`${this.prefix}schedules`, nextRun, id)
-              await pipe.exec()
+              fired++
+            } catch (err: unknown) {
+              const error = err instanceof Error ? err : new Error(String(err))
+              console.error(`[Scheduler] Failed to process schedule ${id}:`, error.message)
             }
-
-            fired++
-          } catch (err: unknown) {
-            const error = err instanceof Error ? err : new Error(String(err))
-            console.error(`[Scheduler] Failed to process schedule ${id}:`, error.message)
           }
+        } finally {
+          // Ensure lock is released
+          await lock.release(lockKey)
         }
       }
     }

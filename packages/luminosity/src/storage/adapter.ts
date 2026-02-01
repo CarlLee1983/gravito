@@ -1,4 +1,47 @@
 /**
+ * Interface for distributed locking mechanism.
+ *
+ * Provides a unified API for acquiring and releasing locks across
+ * different lock implementations (in-memory, Redis, etc.).
+ *
+ * @public
+ * @since 3.1.0
+ */
+export interface CacheLock {
+  /**
+   * Attempt to execute a function with distributed locking.
+   *
+   * Acquires the lock, executes the function, and releases the lock.
+   * If lock acquisition fails within the timeout, throws an error.
+   *
+   * @param timeout - Maximum time to wait for lock acquisition (seconds).
+   * @param fn - The function to execute while holding the lock.
+   * @returns The result of the function.
+   * @throws {Error} If lock acquisition times out.
+   */
+  block<T>(timeout: number, fn: () => Promise<T>): Promise<T>
+}
+
+/**
+ * Interface for creating cache locks.
+ *
+ * Factory interface for creating lock instances with specific keys and TTLs.
+ *
+ * @public
+ * @since 3.1.0
+ */
+export interface CacheLockProvider {
+  /**
+   * Create a lock for a specific key.
+   *
+   * @param key - The lock key (e.g., 'luminosity:sitemap:lock').
+   * @param ttl - Lock time-to-live in seconds.
+   * @returns A lock instance.
+   */
+  createLock(key: string, ttl: number): CacheLock
+}
+
+/**
  * Interface for a low-level storage adapter.
  *
  * Provides a unified API for basic file operations across different

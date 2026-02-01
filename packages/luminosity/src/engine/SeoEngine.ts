@@ -86,6 +86,15 @@ export class SeoEngine {
   }
 
   /**
+   * Get all entries from the current strategy.
+   *
+   * @returns A promise that resolves to an array of sitemap entries.
+   */
+  async getEntries(): Promise<any[]> {
+    return this.strategy.getEntries()
+  }
+
+  /**
    * Shutdown the SEO engine.
    *
    * Shuts down the underlying strategy if applicable.

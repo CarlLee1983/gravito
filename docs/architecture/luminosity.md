@@ -18,9 +18,25 @@ last_updated: 2026-01-29
 - **Metadata Management**：統一管理 OpenGraph, Twitter Cards, JSON-LD 與 Analytics 腳本。
 - **Incremental Engine**：針對大型網站的增量更新機制 (LSM-Tree concept)。
 
----
+## 2. 快速開始
 
-## 2. 技術規格與架構設計
+### 安裝
+```bash
+bun add @gravito/luminosity
+```
+
+### 基本用法
+```typescript
+import { Luminosity } from '@gravito/luminosity';
+
+const lux = new Luminosity({
+  baseUrl: 'https://example.com'
+});
+
+await lux.generateSitemap();
+```
+
+## 3. 技術規格與架構設計
 
 ### 2.1 三模態架構 (Tri-Mode Architecture)
 
@@ -108,7 +124,18 @@ Luminosity 提供三種運作模式，透過 `SeoEngine` 進行切換：
 
 ---
 
-## 6. 後續優化建議
+## 6. API 參考
+
+### Luminosity
+- `constructor(config: LuminosityConfig)`
+- `generateSitemap(options?: GenerateOptions): Promise<void>`
+- `addUrl(url: string | SitemapUrl): void`
+
+### SeoEngine
+- `setStrategy(strategy: SeoStrategy): void`
+- `render(): Promise<string>`
+
+## 7. 後續優化建議
 
 1.  **分佈式鎖定機制** (Priority: High)
     -   為 `CachedStrategy` 增加 Redis Lock 支援。
