@@ -8,9 +8,8 @@ export type { GrpcDriverConfig } from '../types'
 
 export class GrpcDriver implements QueueDriver {
   private client: grpc.Client
-  private protoPackage: any
 
-  constructor(private config: GrpcDriverConfig) {
+  constructor(config: GrpcDriverConfig) {
     const protoPath = config.protoPath || path.resolve(__dirname, '../../proto/queue.proto')
 
     // Fallback for bundled environments where __dirname might not be reliable
@@ -97,7 +96,7 @@ export class GrpcDriver implements QueueDriver {
 
   async clear(queue: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      ;(this.client as any).Clear({ queue }, (err: any, response: any) => {
+      ;(this.client as any).Clear({ queue }, (err: any) => {
         if (err) return reject(err)
         resolve()
       })
@@ -118,7 +117,7 @@ export class GrpcDriver implements QueueDriver {
 
     // Let's assume the server only needs ID.
     return new Promise((resolve, reject) => {
-      ;(this.client as any).Acknowledge({ jobId: messageId }, (err: any, response: any) => {
+      ;(this.client as any).Acknowledge({ jobId: messageId }, (err: any) => {
         if (err) return reject(err)
         resolve()
       })
