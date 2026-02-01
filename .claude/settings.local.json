@@ -53,8 +53,13 @@
       "Bash(docker-compose ps:*)",
       "Bash(bunx tsc:*)",
       "Bash(biome check:*)",
+      "Bash(tsc:*)",
+      "Bash(bunx tsup:*)",
       "Bash(git stash:*)"
     ]
   },
-  "enabledMcpjsonServers": ["pencil", "context7"]
+  "enabledMcpjsonServers": [
+    "pencil",
+    "context7"
+  ]
 }
