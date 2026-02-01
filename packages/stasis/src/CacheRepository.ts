@@ -1,7 +1,7 @@
 import { type CacheLock, sleep } from './locks'
 import type { CacheStore } from './store'
 import { isTaggableStore } from './store'
-import { type CacheKey, type CacheTtl, normalizeCacheKey } from './types'
+import { type CacheKey, type CacheTtl, type CompressionOptions, normalizeCacheKey } from './types'
 
 /**
  * Supported modes for emitting cache events.
@@ -69,6 +69,13 @@ export type CacheRepositoryOptions = {
    * @default 50
    */
   retryDelay?: number
+
+  /**
+   * Compression settings for cached values.
+   *
+   * @since 3.1.0
+   */
+  compression?: CompressionOptions
 }
 
 /**
@@ -106,6 +113,7 @@ export type FlexibleStats = {
  */
 export class CacheRepository {
   private refreshSemaphore = new Map<string, Promise<void>>()
+  private coalesceSemaphore = new Map<string, Promise<any>>()
   private flexibleStats = { refreshCount: 0, refreshFailures: 0, totalTime: 0 }
 
   constructor(
@@ -237,13 +245,14 @@ export class CacheRepository {
     defaultValue?: T | (() => T | Promise<T>)
   ): Promise<T | null> {
     const fullKey = this.key(key)
-    const value = await this.store.get<T>(fullKey)
-    if (value !== null) {
+    const raw = await this.store.get<any>(fullKey)
+
+    if (raw !== null) {
       const e = this.emit('hit', { key: fullKey })
       if (e) {
         await e
       }
-      return value
+      return this.decompress<T>(raw)
     }
 
     const e = this.emit('miss', { key: fullKey })
@@ -316,7 +325,8 @@ export class CacheRepository {
    */
   async put(key: CacheKey, value: unknown, ttl: CacheTtl): Promise<void> {
     const fullKey = this.key(key)
-    await this.store.put(fullKey, value, ttl)
+    const data = await this.compress(value)
+    await this.store.put(fullKey, data, ttl)
     const e = this.emit('write', { key: fullKey })
     if (e) {
       await e
@@ -412,14 +422,29 @@ export class CacheRepository {
     ttl: CacheTtl,
     callback: () => Promise<T> | T
   ): Promise<T> {
-    const existing = await this.get<T>(key)
-    if (existing !== null) {
-      return existing
+    const fullKey = this.key(key)
+
+    if (this.coalesceSemaphore.has(fullKey)) {
+      return this.coalesceSemaphore.get(fullKey)
     }
 
-    const value = await callback()
-    await this.put(key, value, ttl)
-    return value
+    const promise = (async () => {
+      try {
+        const existing = await this.get<T>(key)
+        if (existing !== null) {
+          return existing
+        }
+
+        const value = await callback()
+        await this.put(key, value, ttl)
+        return value
+      } finally {
+        this.coalesceSemaphore.delete(fullKey)
+      }
+    })()
+
+    this.coalesceSemaphore.set(fullKey, promise)
+    return promise
   }
 
   /**
@@ -541,14 +566,8 @@ export class CacheRepository {
     }
     const value = await callback()
     const totalTtl = ttlSeconds + staleSeconds
-    await this.store.put(fullKey, value, totalTtl)
+    await this.put(fullKey, value, totalTtl)
     await this.putMetaKey(metaKey, now + ttlMillis, totalTtl)
-    {
-      const e = this.emit('write', { key: fullKey })
-      if (e) {
-        await e
-      }
-    }
     return value
   }
 
@@ -620,12 +639,8 @@ export class CacheRepository {
 
       const totalTtl = ttlSeconds + staleSeconds
       const now = Date.now()
-      await this.store.put(fullKey, value, totalTtl)
+      await this.put(fullKey, value, totalTtl)
       await this.putMetaKey(metaKey, now + Math.max(0, ttlSeconds) * 1000, totalTtl)
-      const e = this.emit('write', { key: fullKey })
-      if (e) {
-        await e
-      }
 
       this.flexibleStats.refreshCount++
       this.flexibleStats.totalTime += Date.now() - startTime
@@ -844,6 +859,52 @@ export class CacheRepository {
    */
   getStore(): CacheStore {
     return this.store
+  }
+
+  /**
+   * Compress a value before storage if compression is enabled and thresholds are met.
+   */
+  private async compress(value: unknown): Promise<unknown> {
+    const opts = this.options.compression
+    if (!opts?.enabled || value === null || value === undefined) {
+      return value
+    }
+
+    // Only compress strings or objects that would be JSON stringified
+    const json = JSON.stringify(value)
+    if (json.length < (opts.minSize ?? 1024)) {
+      return value
+    }
+
+    const { gzipSync } = await import('node:zlib')
+    const compressed = gzipSync(Buffer.from(json), { level: opts.level ?? 6 })
+
+    return {
+      __gravito_compressed: true,
+      data: compressed.toString('base64'),
+    }
+  }
+
+  /**
+   * Decompress a value after retrieval if it was previously compressed.
+   */
+  private async decompress<T>(value: any): Promise<T | null> {
+    if (
+      value !== null &&
+      typeof value === 'object' &&
+      '__gravito_compressed' in value &&
+      value.__gravito_compressed === true
+    ) {
+      const { gunzipSync } = await import('node:zlib')
+      const buffer = Buffer.from(value.data, 'base64')
+      const decompressed = gunzipSync(buffer).toString()
+      try {
+        return JSON.parse(decompressed)
+      } catch {
+        return decompressed as any
+      }
+    }
+    return value as T
   }
 }
 

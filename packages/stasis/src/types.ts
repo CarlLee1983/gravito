@@ -129,3 +129,37 @@ export function isExpired(expiresAt: number | null | undefined, now = Date.now()
   }
   return now > expiresAt
 }
+
+/**
+ * Options for data compression within the cache.
+ *
+ * Defines how and when data should be compressed before storage to save space
+ * and reduce I/O overhead.
+ *
+ * @public
+ * @since 3.1.0
+ */
+export type CompressionOptions = {
+  /**
+   * Whether to enable compression for cached values.
+   *
+   * @default false
+   */
+  enabled: boolean
+
+  /**
+   * Minimum size in bytes for the value to be compressed.
+   * Values smaller than this threshold will be stored uncompressed.
+   *
+   * @default 1024
+   */
+  minSize?: number
+
+  /**
+   * Compression level for zlib (1-9).
+   * Higher levels provide better compression but require more CPU.
+   *
+   * @default 6
+   */
+  level?: number
+}
