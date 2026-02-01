@@ -899,7 +899,7 @@
     },
     "packages/constellation": {
       "name": "@gravito/constellation",
-      "version": "3.0.2",
+      "version": "3.1.0",
       "dependencies": {
         "@aws-sdk/client-s3": "^3.956.0",
         "@google-cloud/storage": "^7.18.0",
@@ -1394,7 +1394,7 @@
     },
     "packages/nebula": {
       "name": "@gravito/nebula",
-      "version": "4.0.0",
+      "version": "4.1.0",
       "devDependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/photon": "workspace:*",
@@ -1708,6 +1708,8 @@
         "@aws-sdk/client-sqs": "^3.955.0",
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
+        "@grpc/grpc-js": "^1.14.3",
+        "@grpc/proto-loader": "^0.8.0",
         "cron-parser": "^5.4.0",
         "p-limit": "^5.0.0",
       },

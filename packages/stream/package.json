@@ -18,6 +18,7 @@
   },
   "files": [
     "dist",
+    "proto",
     "README.md",
     "LICENSE"
   ],
@@ -44,6 +45,8 @@
     "@aws-sdk/client-sqs": "^3.955.0",
     "@gravito/atlas": "workspace:*",
     "@gravito/core": "workspace:*",
+    "@grpc/grpc-js": "^1.14.3",
+    "@grpc/proto-loader": "^0.8.0",
     "cron-parser": "^5.4.0",
     "p-limit": "^5.0.0"
   },

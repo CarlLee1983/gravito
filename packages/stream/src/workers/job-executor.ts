@@ -138,8 +138,19 @@ if (parentPort) {
     if (message.type === 'execute' && message.job) {
       try {
         if (message.classRegistry) {
-          const _registry = JSON.parse(message.classRegistry)
-          // TODO: Implement class registry hydration if needed
+          const registry = JSON.parse(message.classRegistry)
+          for (const [className, path] of Object.entries(registry)) {
+            try {
+              const module = require(path as string)
+              const JobClass = module[className] || module.default || module
+              jobClasses.set(className, JobClass)
+            } catch (err) {
+              console.error(
+                `[WorkerThread] Failed to load job class "${className}" from "${path}":`,
+                err
+              )
+            }
+          }
         }
 
         await executeJob(message.job)

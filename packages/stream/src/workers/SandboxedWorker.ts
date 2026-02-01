@@ -118,7 +118,24 @@ export class SandboxedWorker {
       return this.worker
     }
 
-    const workerPath = resolve(__dirname, 'job-executor.js')
+    const fs = require('node:fs')
+    let workerPath = resolve(__dirname, 'job-executor.js')
+
+    // If running in development (TS), use the .ts executor if it exists
+    if (!fs.existsSync(workerPath)) {
+      const tsPath = resolve(__dirname, 'job-executor.ts')
+      if (fs.existsSync(tsPath)) {
+        workerPath = tsPath
+      }
+    }
+
+    // Support Bun's native TS execution or ts-node/register
+    const execArgv = process.execArgv.slice()
+    if (workerPath.endsWith('.ts') && !process.env.BUN_BINARY_TARGET) {
+      if (!execArgv.includes('--loader')) {
+        execArgv.push('--loader', 'ts-node/esm')
+      }
+    }
 
     const resourceLimits: any = {}
     if (this.config.maxMemory > 0) {
@@ -128,6 +145,7 @@ export class SandboxedWorker {
 
     this.worker = new ThreadWorker(workerPath, {
       resourceLimits: Object.keys(resourceLimits).length > 0 ? resourceLimits : undefined,
+      execArgv,
     })
 
     this.state = WorkerState.INITIALIZING

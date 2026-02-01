@@ -96,6 +96,21 @@ export interface SchedulerOptions {
    * @default 100
    */
   lockRetryDelay?: number
+
+  /**
+   * The interval in milliseconds at which the scheduler checks for due tasks.
+   *
+   * @default 60000 (1 minute)
+   */
+  tickInterval?: number
+
+  /**
+   * The time-to-live for the leader lock in milliseconds.
+   *
+   * Ensures that only one node acts as the scheduler leader.
+   * @default 30000 (30 seconds)
+   */
+  leaderTtl?: number
 }
 
 /**
@@ -116,8 +131,8 @@ export interface SchedulerOptions {
  *   job: new CleanupJob()
  * });
  *
- * // In your worker loop or separate process
- * setInterval(() => scheduler.tick(), 60000);
+ * // Automatically start the scheduler loop
+ * await scheduler.start();
  * ```
  */
 export class Scheduler {
@@ -126,7 +141,12 @@ export class Scheduler {
   private lockRefreshInterval?: number
   private lockRetryCount: number
   private lockRetryDelay: number
+  private tickInterval: number
+  private leaderTtl: number
   private distributedLock?: DistributedLock
+  private running = false
+  private timer: NodeJS.Timeout | null = null
+  private isLeader = false
 
   constructor(
     private manager: QueueManager,
@@ -137,6 +157,8 @@ export class Scheduler {
     this.lockRefreshInterval = options.lockRefreshInterval ?? 20000
     this.lockRetryCount = options.lockRetryCount ?? 0
     this.lockRetryDelay = options.lockRetryDelay ?? 100
+    this.tickInterval = options.tickInterval ?? 60000
+    this.leaderTtl = options.leaderTtl ?? 30000
   }
 
   private get client(): GroupRedisClient {
@@ -238,6 +260,79 @@ export class Scheduler {
     }
 
     return configs
+  }
+
+  /**
+   * Starts the automatic scheduler loop.
+   *
+   * Periodically triggers `tick()` to process due jobs. Uses leader election
+   * to ensure that only one node performs the scanning in a multi-node environment.
+   */
+  async start(): Promise<void> {
+    if (this.running) return
+    this.running = true
+
+    const loop = async () => {
+      if (!this.running) return
+
+      try {
+        await this.performTickWithLeaderElection()
+      } catch (err) {
+        console.error('[Scheduler] Loop error:', err)
+      }
+
+      this.timer = setTimeout(loop, this.tickInterval)
+    }
+
+    loop()
+  }
+
+  /**
+   * Stops the automatic scheduler loop.
+   */
+  async stop(): Promise<void> {
+    this.running = false
+    if (this.timer) {
+      clearTimeout(this.timer)
+      this.timer = null
+    }
+
+    if (this.isLeader) {
+      await this.releaseLeader()
+    }
+  }
+
+  /**
+   * Acquires the leader lock and performs a tick.
+   *
+   * @private
+   */
+  private async performTickWithLeaderElection(): Promise<void> {
+    const lock = this.getDistributedLock()
+    const leaderKey = `${this.prefix}scheduler:leader`
+
+    this.isLeader = await lock.acquire(leaderKey, {
+      ttl: this.leaderTtl,
+      refreshInterval: Math.floor(this.leaderTtl / 3),
+      retryCount: 0,
+      retryDelay: 0,
+    })
+
+    if (this.isLeader) {
+      await this.tick()
+    }
+  }
+
+  /**
+   * Releases the leader lock.
+   *
+   * @private
+   */
+  private async releaseLeader(): Promise<void> {
+    const lock = this.getDistributedLock()
+    const leaderKey = `${this.prefix}scheduler:leader`
+    await lock.release(leaderKey)
+    this.isLeader = false
   }
 
   /**

@@ -178,4 +178,13 @@ export class MemoryDriver implements QueueDriver {
     }
     return results
   }
+
+  /**
+   * Lists all active queues in memory.
+   */
+  async getQueues(): Promise<string[]> {
+    return Array.from(this.queues.keys())
+      .filter((q) => !q.startsWith('failed:'))
+      .sort()
+  }
 }
