@@ -1,7 +1,8 @@
 import type { GravitoContext, GravitoOrbit, PlanetCore } from '@gravito/core'
+import type { OpenAPIV3_1 } from 'openapi-types'
 import { AstralConfigError, AstralResourceError } from './errors'
 import { OpenApiGenerator } from './OpenApiGenerator'
-import type { AstralConfig, AstralOperation, AstralResource } from './types'
+import type { AstralConfig, AstralOperation, AstralResource, OpenApiDocument } from './types'
 
 export * from './errors'
 export * from './types'
@@ -48,6 +49,7 @@ export const astral = {
 export class OrbitAstral implements GravitoOrbit {
   private config: AstralConfig
   private generator: OpenApiGenerator
+  private cachedSpec: OpenAPIV3_1.Document | null = null
 
   /**
    * Create a new OrbitAstral instance.
@@ -277,9 +279,13 @@ export class OrbitAstral implements GravitoOrbit {
 
     // 1. Serve OpenAPI JSON (with caching)
     router.get(this.config.jsonPath || '/openapi.json', (ctx: GravitoContext) => {
+      if (this.cachedSpec) {
+        return ctx.json(this.cachedSpec)
+      }
+
       const routes = router.compile()
-      const spec = this.generator.generateWithCache(routes)
-      return ctx.json(spec)
+      this.cachedSpec = this.generator.generateWithCache(routes) as any
+      return ctx.json(this.cachedSpec)
     })
 
     // 2. Serve Swagger UI
