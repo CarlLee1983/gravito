@@ -27,6 +27,8 @@ export { Consumer } from './Consumer'
 // Driver config types
 export type { DatabaseDriverConfig } from './drivers/DatabaseDriver'
 export { DatabaseDriver } from './drivers/DatabaseDriver'
+export type { GrpcDriverConfig } from './drivers/GrpcDriver'
+export { GrpcDriver } from './drivers/GrpcDriver'
 export type { KafkaDriverConfig } from './drivers/KafkaDriver'
 export { KafkaDriver } from './drivers/KafkaDriver'
 export { MemoryDriver } from './drivers/MemoryDriver'

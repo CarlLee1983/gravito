@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package stream;
+
+service QueueService {
+  // Pushes a job to the queue
+  rpc Push (PushRequest) returns (PushResponse);
+
+  // Pulls a job from the queue
+  rpc Pull (PullRequest) returns (PullResponse);
+
+  // Acknowledges a job completion
+  rpc Acknowledge (AcknowledgeRequest) returns (AcknowledgeResponse);
+
+  // Returns queue size
+  rpc Size (SizeRequest) returns (SizeResponse);
+
+  // Clears the queue
+  rpc Clear (ClearRequest) returns (ClearResponse);
+  
+  // Get Queue Stats
+  rpc Stats (StatsRequest) returns (StatsResponse);
+}
+
+message Job {
+  string id = 1;
+  string type = 2;       // 'json', 'class', 'msgpack'
+  string data = 3;       // The serialized payload
+  string className = 4;
+  int64 createdAt = 5;
+  int32 delaySeconds = 6;
+  int32 attempts = 7;
+  int32 maxAttempts = 8;
+  string groupId = 9;
+  string priority = 10;  // string representation (e.g. "high" or "10")
+  int64 failedAt = 11;
+  string error = 12;
+  int32 retryAfterSeconds = 13;
+  double retryMultiplier = 14;
+}
+
+message PushRequest {
+  string queue = 1;
+  Job job = 2;
+  JobPushOptions options = 3;
+}
+
+message JobPushOptions {
+  string groupId = 1;
+  string priority = 2;
+}
+
+message PushResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message PullRequest {
+  string queue = 1;
+}
+
+message PullResponse {
+  Job job = 1; // null/empty if no job
+}
+
+message AcknowledgeRequest {
+  string queue = 1;
+  string jobId = 2;
+}
+
+message AcknowledgeResponse {
+  bool success = 1;
+}
+
+message SizeRequest {
+  string queue = 1;
+}
+
+message SizeResponse {
+  int32 size = 1;
+}
+
+message ClearRequest {
+  string queue = 1;
+}
+
+message ClearResponse {
+  bool success = 1;
+}
+
+message StatsRequest {
+  string queue = 1;
+}
+
+message StatsResponse {
+  string queue = 1;
+  int32 size = 2;
+  int32 delayed = 3;
+  int32 failed = 4;
+  int32 reserved = 5;
+}

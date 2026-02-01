@@ -224,4 +224,13 @@ export interface QueueDriver {
    * @param queue - The name of the queue.
    */
   clearFailed?(queue: string): Promise<void>
+
+  /**
+   * Lists all queues managed by this driver.
+   *
+   * Useful for monitoring dashboards to discover active queues dynamically.
+   *
+   * @returns A list of queue names.
+   */
+  getQueues?(): Promise<string[]>
 }

@@ -122,28 +122,30 @@ Stream 支援多種序列化方式：
 1. **Memory Leak 修復**: 自動清理 group limiters，避免記憶體累積
 2. **maxRequests 機制**: 支援設定處理上限後自動停止，確保 worker 定期重啟
 
-### 短期 (v1.1)
-1. **Sandboxed Worker** 🔧 規劃中
-   - 在獨立的 Thread/Worker 執行 Job，隔離上下文並防止主線程崩潰
-   - 技術選型: Node.js `worker_threads` 或 `child_process.fork`
-   - 預期效益: 提升穩定性，防止單一 job OOM 導致整個 process 崩潰
-   - 技術挑戰: 序列化成本、共享狀態處理、除錯困難
+### ✅ 已完成 (v1.1)
+1. **Sandboxed Worker** 🚀 已實作
+   - 在獨立的 Worker Thread 執行 Job，隔離上下文並防止主線程崩潰
+   - 支援 WorkerPool 管理、超時控制與記憶體限制
+   - 支援自動路徑解析（相容 .ts/.js）與動態類別載入
 
-2. **Cron Scheduler 分散式鎖** 🔧 規劃中
-   - 增強 Scheduler 以支援分散式 Cron (避免多節點重複執行)
-   - 實作方式: Redlock 風格的分散式鎖 + Leader Election
-   - 預期效益: 確保 cron job 在多節點環境下只執行一次
-   - 技術挑戰: 時鐘漂移、網路分區、鎖續約
+2. **Cron Scheduler 分散式鎖與自動化** 🚀 已實作
+   - 增強 Scheduler 支援分散式鎖（Leader Election）
+   - 內建 `start()` 循環，確保 cron job 在多節點環境下穩定執行且不重複
+   - 自動續約鎖，避免長任務執行期間鎖失效
 
-### 中期 (v1.2)
-1. **Horizon Dashboard** 📋 待實作
-   - 開發類似 Laravel Horizon 的即時監控面板
-   - 功能: 即時隊列狀態、Worker 健康監控、Job 詳情瀏覽與重試、效能趨勢圖表
-   - 技術棧: REST API + WebSocket + React/Vue 前端
-   - 整合: `OrbitSpectrum` 或 `OrbitZenith`
+### ✅ 已完成 (v1.2)
+1. **Horizon Dashboard API** 🚀 已實作
+   - 提供 `/stats`, `/queues`, `/jobs`, `/logs` 等監控與管理端點
+   - 整合 `OrbitStream` 選項 `dashboard: true` 自動註冊路由
+   - 支援分頁、狀態篩選與失敗作業手動重試
+
+2. **即時生命週期廣播** 🚀 已實作
+   - 整合 `EventBus` / `OrbitSignal`
+   - 消費者自動廣播 `stream:job:started`, `stream:job:processed`, `stream:job:failed` 等事件
+   - 為即時監控面板提供數據基礎
 
 ### 長期 (v2.0)
-1. **gRPC Driver** 📋 待實作
+1. **gRPC Driver** ✅ 已實作
    - 支援透過 gRPC 直接推送作業到其他微服務，實現同步/異步混合架構
    - 使用場景: 跨服務 Job 派發、高效能二進制協議、強型別契約
    - 技術挑戰: Proto 版本管理、連線管理、錯誤處理
