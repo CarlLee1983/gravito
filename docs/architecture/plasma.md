@@ -117,28 +117,67 @@ Plasma 專為 Bun runtime 打造，其核心目標是最大化利用 Bun 內建�
 
 ## 風險分析與效能評估
 
-### 4.1 Bun.redis 的功能完整性
+### 4.1 Bun.redis 的功能完整性 ✅ 已實作
 `Bun.redis` 目前仍處於實驗階段，某些進階命令 (如 Redis Cluster, Sentinel) 支援不全。
 - **風險**：若應用依賴 Cluster 模式，必須強制切換回 `ioredis`。
-- **解法**：在配置中設定 `clientType: 'ioredis'`。
+- **解法**：✅ **已在 `RedisManager.ts` 中實作**，透過設定 `clientType: 'ioredis'` 即可強制使用 ioredis 驅動（見 `createClient()` 方法，第 123-145 行）。
+- **實作位置**：`packages/plasma/src/RedisManager.ts`
 
-### 4.2 連接洩漏
+### 4.2 連接洩漏 ✅ 已實作
 在高並發或熱重載場景下，若未正確呼叫 `disconnect()`，可能導致 TCP 連接耗盡。
-- **防護**：`OrbitPlasma` 嚴格綁定了 `core:shutdown` 事件，但在開發模式 (HMR) 下仍需注意。
+- **防護**：✅ **已在 `OrbitPlasma.ts` 中實作**：
+  - 註冊了 `core:shutdown` Hook（第 158-161 行）
+  - `RedisManager` 提供了 `disconnectAll()` 方法（第 173-179 行）以優雅關閉所有連接
+  - 開發模式 (HMR) 下仍需注意，但核心防護機制已就位
+- **實作位置**：
+  - `packages/plasma/src/OrbitPlasma.ts` (Hook 註冊)
+  - `packages/plasma/src/RedisManager.ts` (連接管理)
 
 ---
 
 ## 後續優化建議
 
 ### 短期 (v1.1)
-1. **Cluster Support**：整合 `ioredis` 的 Cluster 功能，並在 `RedisManager` 中提供統一介面。
-2. **Lua Script Registry**：提供管理 Lua 腳本的機制，自動計算 SHA1 並使用 `EVALSHA` 優化效能。
+1. **Cluster Support** ✅ **已實作**
+   - **目標**：整合 `ioredis` 的 Cluster 功能，並在 `RedisManager` 中提供統一介面
+   - **狀態**：
+     - ✅ 新增 `RedisClusterClient` 類別，封裝 `ioredis.Cluster`
+     - ✅ `RedisConfig` 新增 `cluster` 選項 (nodes, scaleReads, etc.)
+     - ✅ `RedisManager` 自動識別 cluster 配置並實例化正確的客戶端
+     - ✅ 保持 `RedisClientContract` 介面一致
+   - **實作位置**：
+     - `packages/plasma/src/RedisClusterClient.ts`
+     - `packages/plasma/src/RedisManager.ts` (createClient 邏輯)
+
+2. **Lua Script Registry** ✅ **已實作**
+   - **目標**：提供管理 Lua 腳本的機制，自動計算 SHA1 並使用 `EVALSHA` 優化效能
+   - **狀態**：
+     - ✅ 已實作 `ScriptRegistry` 類別
+     - ✅ 支援 `register()` 自動計算 SHA1
+     - ✅ 支援 `execute()` 自動處理 `EVALSHA` 失敗時的 `EVAL` fallback
+     - ✅ 在 `RedisManager` 與 `Redis` Facade 中提供 `scripts()` 存取點
+   - **實作位置**：
+     - `packages/plasma/src/ScriptRegistry.ts`
+     - `packages/plasma/src/RedisManager.ts`
 
 ### 中期 (v1.2)
-1. **Stream API**：完整支援 Redis Streams (`XADD`, `XREADGROUP`)，為 `queue` 模組鋪路。
+1. **Stream API** ✅ **已實作**
+   - **目標**：完整支援 Redis Streams (`XADD`, `XREAD`, `XREADGROUP`, `XACK`, `XPENDING` 等)，為 `queue` 模組鋪路
+   - **狀態**：
+     - ✅ `RedisClientContract` 新增 Stream API 定義
+     - ✅ `BunRedisClient` 與 `RedisClient` (ioredis) 均已實作
+     - ✅ 支援 `XADD`, `XREAD`, `XREADGROUP`, `XGROUP`, `XACK`, `XLEN`, `XRANGE`, `XREVRANGE`, `XTRIM`, `XDEL`
+     - ✅ `BunRedisClient` 處理了 Bun 原生 `send()` 返回格式差異 (Object vs Array)
+   - **實作位置**：
+     - `packages/plasma/src/types/index.ts` (類型定義)
+     - `packages/plasma/src/clients/BunRedisClient.ts`
+     - `packages/plasma/src/RedisClient.ts`
 
 ### 長期 (v2.0)
-1. **RESP3 Protocol**：待 Bun 原生支援 RESP3 後跟進，提供更豐富的數據類型回傳 (如 Map, Set)。
+1. **RESP3 Protocol** ❌ **未實作**
+   - **目標**：待 Bun 原生支援 RESP3 後跟進，提供更豐富的數據類型回傳 (如 Map, Set, Double 等)
+   - **狀態**：當前使用 RESP2 協議，沒有 RESP3 相關配置或介面
+   - **影響**：部分進階數據類型無法以原生形式返回，需額外解析
 
 
 ---

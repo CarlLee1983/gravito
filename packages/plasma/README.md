@@ -108,6 +108,41 @@ const session = c.get('redis').connection('session');
 await session.set('sid_123', data);
 ```
 
+## 🌐 Redis Cluster Support
+
+Plasma fully supports Redis Cluster via `ioredis`. You can configure cluster nodes in the `connections` config:
+
+```typescript
+const plasma = new OrbitPlasma({
+  connections: {
+    // Standard Cluster Configuration
+    cluster: {
+      clientType: 'ioredis', // Explicitly use ioredis (required for cluster)
+      cluster: {
+        nodes: [
+          { host: '10.0.0.1', port: 7000 },
+          { host: '10.0.0.2', port: 7000 },
+          { host: '10.0.0.3', port: 7000 }
+        ],
+        scaleReads: 'slave', // Optional: Distribute reads to slave nodes
+        redisOptions: {
+          password: 'secret-password'
+        }
+      }
+    },
+    
+    // Alternative: Use a single seed node
+    clusterSeed: {
+      host: 'cluster-endpoint',
+      port: 6379,
+      cluster: {
+        enable: true // Auto-discover other nodes from seed
+      }
+    }
+  }
+});
+```
+
 ## 📖 API Reference
 
 ### Common Operations
@@ -153,6 +188,56 @@ await redis.subscribe('events', (msg) => {
 
 // Publish
 await redis.publish('events', 'Hello!');
+```
+
+### Lua Scripts
+
+Manage and execute Lua scripts with automatic SHA1 caching and fallback:
+
+```typescript
+// 1. Get script registry
+const scripts = Redis.scripts();
+
+// 2. Register script (calculates SHA1 automatically)
+scripts.register('incr_double', `
+  local current = redis.call('GET', KEYS[1])
+  local val = tonumber(current) or 0
+  redis.call('SET', KEYS[1], val + 2)
+  return val + 2
+`);
+
+// 3. Execute (uses EVALSHA first, falls back to EVAL if needed)
+const result = await scripts.execute('incr_double', ['my-counter']);
+```
+
+### Redis Streams
+
+Full support for Stream API (`XADD`, `XREAD`, `XGROUP`, etc.):
+
+```typescript
+// Add to stream
+const id = await redis.xadd('mystream', { 
+  sensor: 'temp-1', 
+  value: '25.5' 
+}, { maxlen: 1000 });
+
+// Create consumer group
+await redis.xgroup('CREATE', 'mystream', 'workers', '$', true);
+
+// Read as consumer group
+const results = await redis.xreadgroup('workers', 'consumer-1', { 
+  mystream: '>' 
+}, { count: 10, block: 2000 });
+
+// Acknowledge
+if (results) {
+  for (const [stream, entries] of results) {
+    for (const [entryId, fields] of entries) {
+      console.log('Processing:', entryId, fields);
+      await redis.xack(stream, 'workers', entryId);
+    }
+  }
+}
 ```
 
 ## 🪝 Hooks & Events
