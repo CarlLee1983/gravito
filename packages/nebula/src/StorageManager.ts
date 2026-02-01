@@ -1,5 +1,12 @@
 import { StorageRepository } from './StorageRepository'
-import type { ListOptions, ListResult, StorageItem, StorageMetadata, StorageStore } from './store'
+import type {
+  ListOptions,
+  ListResult,
+  PutOptions,
+  StorageItem,
+  StorageMetadata,
+  StorageStore,
+} from './store'
 import type { StorageHooks } from './types'
 
 /**
@@ -64,11 +71,12 @@ export class StorageManager {
    *
    * @param key - The destination path/identifier
    * @param data - The content to store
+   * @param options - Optional upload options (content-type, metadata, cache-control, etc.)
    * @returns A promise that resolves when the operation completes
    * @throws {Error} If the storage operation fails on the default disk
    */
-  put(key: string, data: Blob | Buffer | string): Promise<void> {
-    return this.disk().put(key, data)
+  put(key: string, data: Blob | Buffer | string, options?: PutOptions): Promise<void> {
+    return this.disk().put(key, data, options)
   }
 
   /**
@@ -207,5 +215,18 @@ export class StorageManager {
    */
   listPaginated(prefix: string, options?: ListOptions): Promise<ListResult> {
     return this.disk().listPaginated(prefix, options)
+  }
+
+  /**
+   * Updates custom metadata for a file on the default disk.
+   *
+   * 更新預設磁碟上檔案的自定義 Metadata
+   *
+   * @param key - The path/identifier of the file
+   * @param metadata - Custom metadata to set
+   * @throws {Error} If the default disk driver does not support metadata updates
+   */
+  setMetadata(key: string, metadata: Record<string, string>): Promise<void> {
+    return this.disk().setMetadata(key, metadata)
   }
 }

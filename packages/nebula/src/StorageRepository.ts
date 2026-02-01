@@ -1,4 +1,11 @@
-import type { ListOptions, ListResult, StorageItem, StorageMetadata, StorageStore } from './store'
+import type {
+  ListOptions,
+  ListResult,
+  PutOptions,
+  StorageItem,
+  StorageMetadata,
+  StorageStore,
+} from './store'
 import type { StorageHooks } from './types'
 
 /**
@@ -24,17 +31,18 @@ export class StorageRepository {
    *
    * @param key - The destination path
    * @param data - The content to store
+   * @param options - Optional upload options (content-type, metadata, cache-control, etc.)
    * @throws {Error} If the underlying store fails to persist the data
    */
-  async put(key: string, data: Blob | Buffer | string): Promise<void> {
+  async put(key: string, data: Blob | Buffer | string, options?: PutOptions): Promise<void> {
     const finalData = this.hooks
-      ? await this.hooks.applyFilter('storage:upload', data, { key })
+      ? await this.hooks.applyFilter('storage:upload', data, { key, options })
       : data
 
-    await this.store.put(key, finalData)
+    await this.store.put(key, finalData, options)
 
     if (this.hooks) {
-      await this.hooks.doAction('storage:uploaded', { key })
+      await this.hooks.doAction('storage:uploaded', { key, options })
     }
   }
 
@@ -165,6 +173,23 @@ export class StorageRepository {
    */
   async getMetadata(key: string): Promise<StorageMetadata | null> {
     return this.store.getMetadata(key)
+  }
+
+  /**
+   * Updates custom metadata for a file.
+   *
+   * 更新自定義 Metadata
+   *
+   * @param key - Path of the file
+   * @param metadata - Custom metadata to set
+   * @throws {Error} If the underlying driver does not support metadata updates
+   */
+  async setMetadata(key: string, metadata: Record<string, string>): Promise<void> {
+    if (!this.store.setMetadata) {
+      throw new Error('[StorageRepository] This storage driver does not support metadata updates.')
+    }
+
+    await this.store.setMetadata(key, metadata)
   }
 
   /**

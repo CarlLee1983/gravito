@@ -1,8 +1,16 @@
-import type { ListOptions, ListResult, StorageItem, StorageMetadata, StorageStore } from '../store'
+import type {
+  ListOptions,
+  ListResult,
+  PutOptions,
+  StorageItem,
+  StorageMetadata,
+  StorageStore,
+} from '../store'
 
 interface MemoryFile {
   data: Blob
   metadata: StorageMetadata
+  options?: PutOptions
 }
 
 /**
@@ -30,24 +38,27 @@ export class MemoryStore implements StorageStore {
    *
    * @param key - Unique identifier for the file
    * @param data - Content to store
+   * @param options - Optional upload options (content-type, metadata, etc.)
    */
-  async put(key: string, data: Blob | Buffer | string): Promise<void> {
+  async put(key: string, data: Blob | Buffer | string, options?: PutOptions): Promise<void> {
     let blob: Blob
     if (data instanceof Blob) {
       blob = data
     } else if (typeof data === 'string') {
-      blob = new Blob([data])
+      blob = new Blob([data], { type: options?.contentType })
     } else {
-      blob = new Blob([new Uint8Array(data)])
+      blob = new Blob([new Uint8Array(data)], { type: options?.contentType })
     }
 
     this.files.set(key, {
       data: blob,
+      options,
       metadata: {
         key,
         size: blob.size,
-        mimeType: blob.type || 'application/octet-stream',
+        mimeType: options?.contentType || blob.type || 'application/octet-stream',
         lastModified: new Date(),
+        customMetadata: options?.metadata,
       },
     })
   }
@@ -196,6 +207,31 @@ export class MemoryStore implements StorageStore {
     }
 
     return blob.stream()
+  }
+
+  /**
+   * Updates custom metadata for an in-memory file.
+   *
+   * 更新自定義 Metadata
+   *
+   * @param key - Unique identifier for the file
+   * @param metadata - Custom metadata to set
+   * @throws {Error} If file does not exist
+   */
+  async setMetadata(key: string, metadata: Record<string, string>): Promise<void> {
+    const file = this.files.get(key)
+    if (!file) {
+      throw new Error(`[MemoryStore] File not found: ${key}`)
+    }
+
+    // Merge new metadata with existing metadata
+    file.metadata.customMetadata = {
+      ...file.metadata.customMetadata,
+      ...metadata,
+    }
+
+    // Update lastModified
+    file.metadata.lastModified = new Date()
   }
 
   /**

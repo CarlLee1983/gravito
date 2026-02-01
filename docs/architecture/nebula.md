@@ -155,7 +155,68 @@ Nebula 現已支援 `ReadableStream` 介面，解決大檔案記憶體溢出問�
   - 適用於數百萬檔案的大型儲存空間
   - 防止全量列舉導致的 OOM
 
-### 3.4 Hook 系統整合
+### 3.4 元資料增強與自定義屬性 ✨ (v1.1 新增)
+支援在檔案上傳時設定自定義 metadata，適用於需要附加業務資訊的場景。
+
+- **新增 API**：
+  - `put(key, data, options?: PutOptions)` - 擴展支援上傳選項
+  - `setMetadata(key, metadata)` - 更新自定義 metadata
+
+- **型別定義**：
+  ```typescript
+  interface PutOptions {
+    contentType?: string           // MIME 類型
+    metadata?: Record<string, string>  // 自定義 metadata
+    cacheControl?: string         // Cache-Control header (CDN)
+    contentDisposition?: string   // Content-Disposition header
+  }
+
+  interface StorageMetadata {
+    key: string
+    size: number
+    mimeType?: string
+    lastModified?: Date
+    etag?: string
+    customMetadata?: Record<string, string>  // 新增欄位
+  }
+  ```
+
+- **支援狀況**：
+  - ✅ **MemoryStore**: 完整支援 (包含 setMetadata)
+  - ⚠️ **LocalStore**: 接受 options 參數但不持久化 customMetadata
+  - ⏳ **S3Store**: 規劃中 (S3 原生支援 metadata)
+
+- **使用範例**：
+  ```typescript
+  // 上傳時設定 metadata
+  await storage.put('image.jpg', imageData, {
+    contentType: 'image/jpeg',
+    metadata: {
+      author: 'John Doe',
+      description: 'Sunset photography',
+      tags: 'nature,sunset',
+    },
+    cacheControl: 'public, max-age=31536000',
+  })
+
+  // 讀取 metadata
+  const meta = await storage.getMetadata('image.jpg')
+  console.log(meta.customMetadata?.author) // "John Doe"
+
+  // 更新 metadata (不修改檔案內容)
+  await storage.setMetadata('image.jpg', {
+    tags: 'nature,sunset,photography',
+    updatedAt: new Date().toISOString(),
+  })
+  ```
+
+- **應用場景**：
+  - 圖片版權資訊（作者、授權方式）
+  - 檔案分類標籤
+  - 業務流程狀態（已審核、待處理）
+  - CDN 快取策略
+
+### 3.5 Hook 系統整合
 Nebula 深度整合了 `PlanetCore` 的 Hook 系統。
 - **Filter**: `storage:upload` (可修改上傳內容，如壓縮)。
 - **Action**: `storage:uploaded` (上傳後觸發，如發送通知)。
@@ -194,8 +255,12 @@ Nebula 深度整合了 `PlanetCore` 的 Hook 系統。
    - 測試覆蓋率達 100%（11 個測試案例，涵蓋分頁、游標、過濾、效能等場景）
    - 防止大型儲存空間列舉時的 OOM 風險
 
-### 短期 (v1.1 - 待完成)
-1. **Metadata Enhancement**：支援自定義 Metadata (S3 Tags, Content-Disposition, Cache-Control)。
+3. ~~**Metadata Enhancement**~~：✅ 已支援自定義 Metadata 與上傳選項。
+   - 新增 `PutOptions` 型別，支援 contentType、metadata、cacheControl、contentDisposition
+   - 擴展 `StorageMetadata` 新增 `customMetadata` 欄位
+   - 新增 `setMetadata` 方法用於更新自定義 metadata
+   - MemoryStore 完整實作（LocalStore 支援選項但不持久化）
+   - 測試覆蓋率達 100%（14 個測試案例，涵蓋各種 metadata 操作場景）
 
 ### 中期 (v1.2)
 1. **S3 Driver**：將 S3 Driver 從核心分離為獨立套件 `@gravito/nebula-s3`。

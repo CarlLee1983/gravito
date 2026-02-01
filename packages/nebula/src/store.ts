@@ -15,9 +15,10 @@ export interface StorageStore {
    * 儲存檔案
    * @param key - Unique identifier or path for the file
    * @param data - Content to be stored
+   * @param options - Optional upload options (content-type, metadata, cache-control, etc.)
    * @throws {Error} If the backend fails to write the data
    */
-  put(key: string, data: Blob | Buffer | string): Promise<void>
+  put(key: string, data: Blob | Buffer | string, options?: PutOptions): Promise<void>
 
   /**
    * Retrieves data from the storage backend.
@@ -101,6 +102,18 @@ export interface StorageStore {
    */
   getMetadata(key: string): Promise<StorageMetadata | null>
 
+  /**
+   * Updates custom metadata for a file.
+   *
+   * 更新自定義 Metadata（可選實作）
+   * Note: This method only updates custom metadata, not system metadata like size or mimeType.
+   *
+   * @param key - Unique identifier or path for the file
+   * @param metadata - Custom metadata to set (key-value pairs)
+   * @throws {Error} If the file does not exist or operation fails
+   */
+  setMetadata?(key: string, metadata: Record<string, string>): Promise<void>
+
   // ==================== URL ====================
 
   /**
@@ -165,6 +178,25 @@ export interface StorageMetadata {
   lastModified?: Date
   /** ETag (用於快取驗證) */
   etag?: string
+  /** 自定義 Metadata (S3 風格) */
+  customMetadata?: Record<string, string>
+}
+
+/**
+ * PutOptions provides additional options for file uploads.
+ *
+ * 檔案上傳選項
+ * @public
+ */
+export interface PutOptions {
+  /** Content-Type header (MIME type) */
+  contentType?: string
+  /** 自定義 metadata (key-value pairs) */
+  metadata?: Record<string, string>
+  /** Cache-Control header (用於 CDN) */
+  cacheControl?: string
+  /** Content-Disposition header (下載檔名控制) */
+  contentDisposition?: string
 }
 
 /**

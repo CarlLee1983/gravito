@@ -1,7 +1,7 @@
 import { mkdir } from 'node:fs/promises'
 import { isAbsolute, normalize, resolve, sep } from 'node:path'
 import { getRuntimeAdapter } from '@gravito/core'
-import type { StorageItem, StorageMetadata, StorageStore } from '../store'
+import type { PutOptions, StorageItem, StorageMetadata, StorageStore } from '../store'
 
 /**
  * LocalStore implements storage on the local filesystem.
@@ -33,12 +33,17 @@ export class LocalStore implements StorageStore {
    *
    * @param key - Relative path from the root directory
    * @param data - Content to write
+   * @param options - Optional upload options (note: customMetadata not persisted in LocalStore)
    * @throws {Error} If the key is invalid or path is outside root
    */
-  async put(key: string, data: Blob | Buffer | string): Promise<void> {
+  async put(key: string, data: Blob | Buffer | string, options?: PutOptions): Promise<void> {
     const path = this.resolvePath(key)
     await this.ensureDirectory(path)
     await this.runtime.writeFile(path, data)
+
+    // Note: LocalStore does not persist customMetadata or other options
+    // These options are primarily for S3/Cloud storage drivers
+    // In the future, we could store metadata in a separate .meta file or extended attributes
   }
 
   /**
