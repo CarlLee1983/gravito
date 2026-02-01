@@ -2,7 +2,7 @@
 title: Ripple 架構技術規格書
 version: 3.4.0
 status: Stable
-tier: A
+tier: B
 last_updated: 2026-01-28
 dependencies:
   bun: ">=1.0.0"

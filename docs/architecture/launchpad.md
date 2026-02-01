@@ -6,22 +6,58 @@ tier: C
 last_updated: 2026-01-29
 ---
 
-# 🌌 Launchpad Architecture 技術架構規格書 (v1.0)
+# Launchpad Architecture 技術架構規格書
 
-本文件詳述 `@gravito/launchpad` 的內部架構、火箭池 (Rocket Pool) 機制以及零停機部署策略。
+## 模組概覽
+
+**Launchpad** (`@gravito/launchpad`) 是專為 Bun Runtime 設計的容器編排與部署系統。它透過「火箭池」(Rocket Pool) 機制實現零停機、毫秒級的應用部署。
+
+### 核心職責
+- **Rocket Pool**: 預熱容器池，消除冷啟動時間。
+- **Payload Injection**: 直接注入程式碼，無需重建鏡像。
+- **Zero-Downtime**: 綠藍部署與流量無縫切換。
+- **GitHub Integration**: 自動化 PR 預覽環境。
+
+## 快速開始
+
+### 1. 安裝
+```bash
+bun add @gravito/launchpad
+```
+
+### 2. 初始化 Mission Control
+```typescript
+import { MissionControl } from '@gravito/launchpad'
+
+const mc = new MissionControl({
+  poolSize: 3,
+  baseImage: 'oven/bun:latest'
+})
+
+await mc.ignite() // 啟動預熱池
+```
+
+### 3. 部署任務
+```typescript
+await mc.deploy({
+  id: 'mission-1',
+  repo: 'https://github.com/org/repo',
+  branch: 'main'
+})
+```
 
 ---
 
-## 1. 核心哲學：Instant Deployment for Bun
+## 架構設計
 
-Launchpad 是專為 Bun Runtime 設計的容器編排與部署系統。
+### 1. 核心哲學：Instant Deployment for Bun
+
+Launchpad 的設計核心是追求極致的部署速度。
 - **Rocket Pool**: 獨創的「預熱容器池」概念，預先啟動閒置的 Bun 容器 (Rockets)，消除 Cold Start 時間。
 - **Payload Injection**: 透過 `docker cp` 直接將程式碼注入已運行的容器，實現毫秒級部署。
 - **Clean Architecture**: 嚴格遵循 DDD (Domain-Driven Design) 分層架構，確保核心邏輯與基礎設施 (Docker/Git) 解耦。
 
----
-
-## 2. 模組組件分析
+### 2. 模組組件分析
 
 ### 2.1 Domain Layer (Core Logic)
 - **Rocket (Aggregate Root)**: 代表一個容器實例。維護狀態機 (`IDLE` -> `PREPARING` -> `ORBITING` -> `REFURBISHING`)。
@@ -41,7 +77,7 @@ Launchpad 是專為 Bun Runtime 設計的容器編排與部署系統。
 
 ---
 
-## 3. 技術規格與設計決策
+## 技術規格與設計決策
 
 ### 3.1 火箭池架構 (Rocket Pool)
 為了達到「秒級部署」，Launchpad 不在部署時建立容器。
@@ -63,7 +99,20 @@ Launchpad 內建了一個基於 Bun 的 HTTP Proxy。
 
 ---
 
-## 4. 潛在風險與效能評估
+## API 參考
+
+### MissionControl
+- `ignite(): Promise<void>`
+- `deploy(mission: Mission): Promise<DeploymentResult>`
+- `terminate(missionId: string): Promise<void>`
+
+### Rocket
+- `getStatus(): RocketStatus`
+- `getLogs(): ReadableStream`
+
+---
+
+## 風險分析與效能評估
 
 ### 4.1 依賴安裝時間
 雖然容器是預熱的，但 `bun install` 仍需時間。
@@ -80,7 +129,7 @@ Launchpad 內建了一個基於 Bun 的 HTTP Proxy。
 
 ---
 
-## 5. 後續優化建議
+## 後續優化建議
 
 ### 短期 (v1.1)
 1. **Log Streaming**: 將容器日誌透過 WebSocket (`@gravito/ripple`) 即時推送到 Dashboard。

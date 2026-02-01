@@ -8,7 +8,7 @@ last_updated: 2026-01-29
 
 # Prism View Engine 架構技術規格書
 
-## 1. 模組概覽
+## 模組概覽
 
 **Prism** (`@gravito/prism`) 是 Gravito 框架的高效能模板引擎與靜態站點生成器 (SSG)。它結合了後端模板渲染 (Server-Side Rendering) 與現代前端優化技術 (Image Optimization, Core Web Vitals)。
 
@@ -18,7 +18,7 @@ last_updated: 2026-01-29
 - **Static Site Generation (SSG)**：支援完整靜態匯出、增量建構 (Incremental Builds) 與動態路由解析。
 - **Performance**：LRU 模板快取與 Hash-based Invalidation 機制。
 
-## 2. 快速開始
+## 快速開始
 
 ### 安裝
 ```bash
@@ -39,14 +39,14 @@ const html = await prism.render('home', { title: 'Hello Gravito' });
 
 ---
 
-## 3. 技術規格與架構設計
+## 架構設計
 
-### 3.1 核心元件
+### 1. 技術規格與核心元件
 
 Prism 由三個主要子系統組成：
 
 1.  **Template Engine** (`src/core/TemplateCompiler.ts`)
-    -   負責解析 Blade 風格的模板語法 (`@if`, `@foreach`, `variable`)。
+    -   負責解析 Blade 風格的模板語法 (`@if`, `@foreach`, `$variable`)。
     -   實作 LRU 快取機制，將編譯後的函數緩存在記憶體中。
     -   支援 `<x-component>` 語法與 Slot 機制.
 2.  **Image Service** (`src/image/ImageService.ts`)
@@ -56,7 +56,7 @@ Prism 由三個主要子系統組成：
     -   爬蟲引擎，負責掃描路由並生成靜態 HTML。
     -   支援 Loopback Rendering（透過 `adapter.fetch` 請求自身）以確保 Middleware 正確執行。
 
-### 3.2 渲染流程 (Render Pipeline)
+### 2. 渲染流程 (Render Pipeline)
 
 ```mermaid
 graph LR
@@ -76,7 +76,7 @@ graph LR
     HTML --> Response
 ```
 
-### 3.3 SSG 架構
+### 3. SSG 架構
 
 SSG 透過 `StaticSiteGenerator` 類別實作，其工作流如下：
 
@@ -88,7 +88,7 @@ SSG 透過 `StaticSiteGenerator` 類別實作，其工作流如下：
 
 ---
 
-## 4. 關鍵設計決策
+## 關鍵設計決策
 
 ### 4.1 Loopback Rendering for SSG
 **決策**：SSG 透過 HTTP 請求 (`adapter.fetch`) 訪問自身應用來獲取 HTML，而非直接呼叫渲染函數。
@@ -111,7 +111,7 @@ SSG 透過 `StaticSiteGenerator` 類別實作，其工作流如下：
 
 ---
 
-## 5. 風險分析與潛在問題
+## 風險分析與潛在問題
 
 ### 5.1 XSS 風險 ✅ **已實作 (v3.2.0)**
 
@@ -185,7 +185,7 @@ SSG 透過 `StaticSiteGenerator` 類別實作，其工作流如下：
 
 ---
 
-## 6. 效能與擴展性
+## 效能與擴展性
 
 ### 6.1 模板編譯快取機制
 
@@ -370,7 +370,7 @@ Prism 採用雙層 LRU 快取架構，將模板編譯與原始檔案讀取分離
     -   **Strict Mode**：~30ms（僅保留基本格式）。
     -   **Strip Mode**：~20ms（移除所有 HTML）。
 -   **使用場景**：
-    -   範本助手：`{{sanitize html=userContent mode="default"}}`。
+    -   範本助手：`{{ sanitize($html, 'default') }}`。
     -   程式化清理：`Sanitizer.sanitize(html, 'strict')`。
     -   純文字提取：`Sanitizer.stripTags(html)`。
 
@@ -419,7 +419,7 @@ Prism 採用雙層 LRU 快取架構，將模板編譯與原始檔案讀取分離
 
 ---
 
-## 7. API 參考
+## API 參考
 
 ### OrbitPrism
 - `constructor(options: PrismOptions)`
@@ -428,7 +428,7 @@ Prism 採用雙層 LRU 快取架構，將模板編譯與原始檔案讀取分離
 ### StaticSiteGenerator
 - `export(outDir: string, baseUrl: string, routes: string[]): Promise<void>`
 
-## 8. 後續優化建議
+## 後續優化建議
 
 1.  **Hydration 支援 (Island Architecture)** (Priority: High)
     -   引入類似 Astro 的 Island 架構，允許在靜態 HTML 中嵌入互動式 React/Vue 組件 (`<x-react-component client:load />`)。

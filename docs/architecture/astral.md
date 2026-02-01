@@ -6,20 +6,49 @@ tier: C
 last_updated: 2026-01-29
 ---
 
-# 🌌 Astral Architecture 技術架構規格書 (v1.0)
+# Astral Architecture 技術架構規格書
 
-本文件詳述 `@gravito/astral` 的內部架構、影子合約 (Shadow Contract) 設計模式以及與 Gravito Core 的整合機制。
+## 模組概覽
+
+**Astral** (`@gravito/astral`) 是 Gravito 框架的 OpenAPI (Swagger) 自動生成 Orbit。它採用「影子合約」(Shadow Contracts) 模式，將 API 文檔定義與業務邏輯分離。
+
+### 核心職責
+- **Shadow Contracts**：獨立於 Controller 的 API 定義。
+- **Auto-Generation**：自動從路由與 Zod Schema 生成 OpenAPI 3.1 JSON。
+- **Swagger UI Integration**：內建互動式 API 測試介面。
+- **Type Safety**：與框架的驗證層深度整合。
+
+## 快速開始
+
+### 1. 安裝
+```bash
+bun add @gravito/astral
+```
+
+### 2. 註冊 Orbit
+```typescript
+import { OrbitAstral } from '@gravito/astral'
+
+const config = defineConfig({
+  orbits: [new OrbitAstral()]
+})
+```
+
+### 3. 訪問文檔
+啟動應用後，訪問 `/openapi.json` 取得規格書，或 `/docs` 進入 Swagger UI。
 
 ---
 
-## 1. 核心哲學：Shadow Contracts
+## 架構設計
+
+### 1. 核心哲學：Shadow Contracts
 
 傳統的 OpenAPI 方案 (如 NestJS/Swagger) 通常依賴裝飾器 (Decorators) 將文檔元數據直接標註在 Controller 上。Astral 選擇了不同的路徑：
 
 - **分離關注點**：文檔定義 (Contract) 獨立於業務邏輯 (Controller)。
 - **單一真值來源 (SSOT)**：重用 `Zod` Schema 與 `FormRequest`，不需重複定義 DTO。
 
-### 架構圖
+#### 架構圖
 
 ```mermaid
 graph TD
@@ -30,9 +59,7 @@ graph TD
     E -->|Serve| F[Swagger UI]
 ```
 
----
-
-## 2. 模組組件分析
+### 2. 模組組件分析
 
 ### 2.1 OrbitAstral (Entrypoint)
 - **職責**：作為 Gravito 的 Orbit 插件，負責生命週期管理與路由註冊。
@@ -59,12 +86,12 @@ graph TD
 
 ---
 
-## 3. 技術規格與設計決策
+## 技術規格與設計決策
 
 ### 3.1 為什麼選擇執行時生成 (Runtime Generation)？
 Astral 選擇在應用啟動後動態讀取路由表生成文檔，而非編譯時生成。
 - **優點**：能夠確切反映**實際註冊**的路由，避免「文檔有寫但程式沒實作」的狀況。
-- **缺點**：若不快取，會有效能損耗。
+- **缺點**：若快取無效，會有效能損耗。
 
 ### 3.2 Zod Schema 快取機制
 為了效能，`OpenApiGenerator` 維護了一個 `schemaCache` (`Map<string, any>`)。
@@ -91,7 +118,19 @@ const matchingRoutes = routes.filter((route) =>
 
 ---
 
-## 4. 潛在風險與效能瓶頸
+## API 參考
+
+### OrbitAstral
+- `install(core: PlanetCore): void`
+- `config`: `AstralConfig`
+
+### Shadow Contracts
+- `defineResource(path: string, options: ResourceOptions)`
+- `defineOperation(options: OperationOptions)`
+
+---
+
+## 風險分析與潛在問題
 
 ### 4.1 缺乏輸出快取 (Critical)
 目前 `OrbitAstral.install` 中的實作如下：
@@ -121,7 +160,7 @@ router.get(jsonPath, (ctx) => {
 
 ---
 
-## 5. 後續優化建議
+## 後續優化建議
 
 ### 短期 (v1.1)
 1. **實作回應快取**：在 `OrbitAstral` 中新增 `private cachedSpec: any`，首次生成後快取。
@@ -133,6 +172,7 @@ router.get(jsonPath, (ctx) => {
 
 ### 長期 (v2.0)
 1. **靜態生成模式 (SSG)**：提供 CLI 工具，在 CI/CD 階段生成 `openapi.json`，完全移除執行時開銷。
+
 
 ---
 *Created by Gravito Architect.*

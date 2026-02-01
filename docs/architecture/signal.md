@@ -8,7 +8,7 @@ last_updated: 2026-01-29
 
 # OrbitSignal 架構技術規格書
 
-## 1. 模組概覽
+## 模組概覽
 
 **OrbitSignal** (`@gravito/signal`) 是 Gravito 框架中的通訊核心（Communications Orbit），專注於電子郵件的發送、模板渲染與測試開發。
 
@@ -18,11 +18,46 @@ last_updated: 2026-01-29
 - **Template Rendering**：支援 HTML, React, Vue, Prism 等多種渲染引擎。
 - **Development Experience**：內建 `DevMailbox` 與預覽 UI，攔截並展示開發環境的信件。
 
+## 快速開始
+
+### 1. 安裝
+```bash
+bun add @gravito/signal
+```
+
+### 2. 註冊 Orbit
+```typescript
+import { PlanetCore, defineConfig } from '@gravito/core'
+import { OrbitSignal } from '@gravito/signal'
+
+const config = defineConfig({
+  orbits: [new OrbitSignal()]
+})
+
+const core = await PlanetCore.boot(config)
+```
+
+### 3. 基本用法
+```typescript
+import { Mailable } from '@gravito/signal'
+
+class WelcomeEmail extends Mailable {
+  async build() {
+    return this.to('user@example.com')
+      .subject('Welcome!')
+      .view('emails.welcome', { name: 'John' })
+  }
+}
+
+const mail = core.container.make('mail')
+await mail.send(new WelcomeEmail())
+```
+
 ---
 
-## 2. 技術規格與架構設計
+## 架構設計
 
-### 2.1 核心元件
+### 1. 技術規格與核心元件
 
 OrbitSignal 採用了經典的 Strategy Pattern 與 Factory Pattern 組合：
 
@@ -42,7 +77,7 @@ OrbitSignal 採用了經典的 Strategy Pattern 與 Factory Pattern 組合：
     -   **DevMailbox**：記憶體內的信件儲存。
     -   **DevServer**：提供 `/__mail` 介面，即時預覽信件內容。
 
-### 2.2 信件發送流程
+### 2. 信件發送流程
 
 ```mermaid
 sequenceDiagram
@@ -69,7 +104,7 @@ sequenceDiagram
     OrbitSignal->>OrbitSignal: emit('afterSend')
 ```
 
-### 2.3 佇列整合 (Queue Integration)
+### 3. 佇列整合 (Queue Integration)
 
 `Mailable` 實作了 `Queueable` 介面，允許信件非同步發送。
 
@@ -89,21 +124,21 @@ class Mailable {
 
 ---
 
-## 3. 關鍵設計決策
+## 關鍵設計決策
 
-### 3.1 Mailable Class 作為核心單元
+### 4.1 Mailable Class 作為核心單元
 **決策**：要求使用者繼承 `Mailable` 類別而非使用設定物件。
 **原因**：
 -   **封裝性**：將資料準備、模板選擇與附件邏輯封裝在一個類別中，便於測試與重用。
 -   **序列化**：Class 實例易於序列化，適合放入 Job Queue。
 
-### 3.2 開發模式攔截
+### 4.2 開發模式攔截
 **決策**：在 `devMode: true` 時，強制替換 Transport 為 `MemoryTransport`。
 **原因**：
 -   防止開發誤發信件給真實用戶。
 -   提供類似 MailHog 的本地體驗，無需外部依賴。
 
-### 3.3 渲染引擎抽象化
+### 4.3 渲染引擎抽象化
 **決策**：支援 React/Vue 作為郵件模板引擎。
 **原因**：
 -   傳統模板（EJS）缺乏組件化能力。
@@ -112,38 +147,53 @@ class Mailable {
 
 ---
 
-## 4. 風險分析與潛在問題
+## API 參考
 
-### 4.1 記憶體洩漏風險 (DevMailbox)
+### OrbitSignal
+- `send(mailable: Mailable): Promise<void>`
+- `queue(mailable: Mailable): Promise<void>`
+- `on(event: string, callback: Function): void`
+
+### Mailable
+- `to(address: string | string[]): this`
+- `subject(subject: string): this`
+- `view(template: string, data?: object): this`
+- `attach(path: string, options?: object): this`
+
+---
+
+## 風險分析與潛在問題
+
+### 5.1 記憶體洩漏風險 (DevMailbox)
 -   **問題**：`DevMailbox` 將所有攔截的信件儲存在陣列中。
 -   **風險**：長時間運行的開發伺服器中，若發送大量測試信件，可能導致 OOM。
 -   **建議**：實作環形緩衝區（Ring Buffer），限制最大保留數量（如 100 封）。
 
-### 4.2 隱式依賴注入
+### 5.2 隱式依賴注入
 -   **問題**：`Mailable.queue()` 嘗試透過動態 import 獲取全域 `app()` 來解析 `mail` 服務。
 -   **風險**：Service Locator 模式破壞了依賴注入原則，增加測試難度。
 -   **建議**：應在 `send()` 或 `queue()` 時顯式傳入 context。
 
-### 4.3 Nodemailer 依賴
+### 5.3 Nodemailer 依賴
 -   **問題**：`SmtpTransport` 強依賴 `nodemailer`。
 -   **風險**：`nodemailer` 已進入維護模式。
 -   **緩解**：保持 `Transport` 介面純淨，未來可替換為其他庫。
 
 ---
 
-## 5. 效能與擴展性
+## 效能與擴展性
 
-### 5.1 連線池管理
+### 6.1 連線池管理
 -   **機制**：`SmtpTransport` 預設啟用 Pooling。
 -   **效益**：大幅減少 SMTP 握手開銷，適合高吞吐量發送。
 
-### 5.2 渲染效能
+### 6.2 渲染效能
 -   **觀察**：React/Vue SSR 渲染開銷較大。
 -   **建議**：高吞吐量交易信件建議使用 `TemplateRenderer` (Prism)；行銷信件則利用 React/Vue 組件優勢。
 
 ---
 
-## 6. 後續優化建議
+## 後續優化建議
 
 1.  **DevMailbox 容量限制** (Priority: Medium)
     -   限制記憶體中保留的信件數量。
@@ -153,3 +203,4 @@ class Mailable {
 
 3.  **MJML 支援** (Priority: Medium)
     -   增加 `mjml` 渲染器，解決 Email Client 相容性問題。
+

@@ -99,7 +99,7 @@ export interface ExampleObject {
   /** Long description for the example. */
   description?: string
   /** Embedded literal example. */
-  value?: any
+  value?: unknown
   /** A URL that points to the literal example. */
   externalValue?: string
 }
@@ -113,13 +113,13 @@ export interface ExampleObject {
  */
 export interface MediaTypeObject {
   /** The schema defining the content of the request, response, or parameter. */
-  schema?: ZodSchema | any
+  schema?: ZodSchema | OpenAPIV3_1.SchemaObject | OpenAPIV3_1.ReferenceObject
   /** Example of the media type. */
-  example?: any
+  example?: unknown
   /** Examples of the media type. */
-  examples?: Record<string, ExampleObject>
+  examples?: Record<string, ExampleObject | OpenAPIV3_1.ReferenceObject>
   /** A map between a property name and its encoding information. */
-  encoding?: Record<string, any>
+  encoding?: Record<string, OpenAPIV3_1.EncodingObject>
 }
 
 /**
@@ -245,23 +245,23 @@ export interface TagObject {
  */
 export interface ComponentsObject {
   /** Reusable schemas (models). */
-  schemas?: Record<string, ZodSchema | any>
+  schemas?: Record<string, ZodSchema | OpenAPIV3_1.SchemaObject | OpenAPIV3_1.ReferenceObject>
   /** Reusable responses. */
-  responses?: Record<string, any>
+  responses?: Record<string, OpenAPIV3_1.ResponseObject | OpenAPIV3_1.ReferenceObject>
   /** Reusable parameters. */
-  parameters?: Record<string, any>
+  parameters?: Record<string, OpenAPIV3_1.ParameterObject | OpenAPIV3_1.ReferenceObject>
   /** Reusable examples. */
-  examples?: Record<string, ExampleObject>
+  examples?: Record<string, ExampleObject | OpenAPIV3_1.ReferenceObject>
   /** Reusable request bodies. */
-  requestBodies?: Record<string, RequestBodyObject>
+  requestBodies?: Record<string, OpenAPIV3_1.RequestBodyObject | OpenAPIV3_1.ReferenceObject>
   /** Reusable headers. */
-  headers?: Record<string, any>
+  headers?: Record<string, OpenAPIV3_1.HeaderObject | OpenAPIV3_1.ReferenceObject>
   /** Reusable security schemes. */
   securitySchemes?: Record<string, SecurityScheme>
   /** Reusable links. */
-  links?: Record<string, any>
+  links?: Record<string, OpenAPIV3_1.LinkObject | OpenAPIV3_1.ReferenceObject>
   /** Reusable callbacks. */
-  callbacks?: Record<string, any>
+  callbacks?: Record<string, OpenAPIV3_1.CallbackObject | OpenAPIV3_1.ReferenceObject>
 }
 
 /**

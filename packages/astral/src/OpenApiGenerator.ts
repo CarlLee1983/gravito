@@ -98,25 +98,46 @@ export class OpenApiGenerator {
         }
       }
       if (this.config.components.responses) {
-        spec.components!.responses = this.config.components.responses as any
+        spec.components!.responses = this.config.components.responses as Record<
+          string,
+          OpenAPIV3_1.ResponseObject | OpenAPIV3_1.ReferenceObject
+        >
       }
       if (this.config.components.parameters) {
-        spec.components!.parameters = this.config.components.parameters as any
+        spec.components!.parameters = this.config.components.parameters as Record<
+          string,
+          OpenAPIV3_1.ParameterObject | OpenAPIV3_1.ReferenceObject
+        >
       }
       if (this.config.components.examples) {
-        spec.components!.examples = this.config.components.examples as any
+        spec.components!.examples = this.config.components.examples as Record<
+          string,
+          OpenAPIV3_1.ExampleObject | OpenAPIV3_1.ReferenceObject
+        >
       }
       if (this.config.components.requestBodies) {
-        spec.components!.requestBodies = this.config.components.requestBodies as any
+        spec.components!.requestBodies = this.config.components.requestBodies as Record<
+          string,
+          OpenAPIV3_1.RequestBodyObject | OpenAPIV3_1.ReferenceObject
+        >
       }
       if (this.config.components.headers) {
-        spec.components!.headers = this.config.components.headers as any
+        spec.components!.headers = this.config.components.headers as Record<
+          string,
+          OpenAPIV3_1.HeaderObject | OpenAPIV3_1.ReferenceObject
+        >
       }
       if (this.config.components.links) {
-        spec.components!.links = this.config.components.links as any
+        spec.components!.links = this.config.components.links as Record<
+          string,
+          OpenAPIV3_1.LinkObject | OpenAPIV3_1.ReferenceObject
+        >
       }
       if (this.config.components.callbacks) {
-        spec.components!.callbacks = this.config.components.callbacks as any
+        spec.components!.callbacks = this.config.components.callbacks as Record<
+          string,
+          OpenAPIV3_1.CallbackObject | OpenAPIV3_1.ReferenceObject
+        >
       }
     }
 
@@ -168,8 +189,10 @@ export class OpenApiGenerator {
    * @returns A map of processed JSON Schemas.
    * @private
    */
-  private processComponentSchemas(schemas: Record<string, any>): Record<string, any> {
-    const processed: Record<string, any> = {}
+  private processComponentSchemas(
+    schemas: Record<string, ZodSchema | OpenAPIV3_1.SchemaObject | OpenAPIV3_1.ReferenceObject>
+  ): Record<string, OpenAPIV3_1.SchemaObject | OpenAPIV3_1.ReferenceObject> {
+    const processed: Record<string, OpenAPIV3_1.SchemaObject | OpenAPIV3_1.ReferenceObject> = {}
     for (const [name, schema] of Object.entries(schemas)) {
       try {
         // If it's a Zod schema, convert it
@@ -198,23 +221,33 @@ export class OpenApiGenerator {
    * @param routeIndex - The route index for O(1) lookup.
    * @private
    */
-  private processResource(spec: any, resource: AstralResource, routeIndex: RouteIndex) {
+  private processResource(
+    spec: OpenAPIV3_1.Document,
+    resource: AstralResource,
+    routeIndex: RouteIndex
+  ) {
     // Find matching routes using O(1) index lookup
     const matchingRoutes = routeIndex.findByPrefix(resource.path)
 
     for (const route of matchingRoutes) {
       const path = this.normalizePath(route.path)
-      const method = route.method.toLowerCase()
+      const method = route.method.toLowerCase() as OpenAPIV3_1.HttpMethods
+
+      if (!spec.paths) {
+        spec.paths = {}
+      }
 
       if (!spec.paths[path]) {
         spec.paths[path] = {}
       }
 
+      const pathItem = spec.paths[path]!
+
       // Find the operation metadata from contract
       const opKey = this.inferOperationKey(route, resource)
       const opMetadata = resource.operations[opKey] || {}
 
-      spec.paths[path][method] = this.buildOperation(opMetadata, resource, method, route.path)
+      pathItem[method] = this.buildOperation(opMetadata, resource, method, route.path) as any
     }
   }
 
@@ -283,7 +316,7 @@ export class OpenApiGenerator {
           description: 'Successful response',
           content: {
             'application/json': {
-              schema: op.output ? this.zodToSchema(op.output) : { type: 'object' },
+              schema: (op.output ? this.zodToSchema(op.output) : { type: 'object' }) as any,
             },
           },
         },
@@ -316,7 +349,7 @@ export class OpenApiGenerator {
             name,
             in: 'path',
             required: true,
-            schema: jsonSchema,
+            schema: jsonSchema as any,
           })
         } catch (error) {
           throw new AstralSchemaError(
@@ -336,10 +369,12 @@ export class OpenApiGenerator {
             description: typeof schema === 'string' ? schema : 'Error response',
             content: {
               'application/json': {
-                schema: typeof schema === 'string' ? { type: 'object' } : this.zodToSchema(schema),
+                schema: (typeof schema === 'string'
+                  ? { type: 'object' }
+                  : this.zodToSchema(schema)) as any,
               },
             },
-          }
+          } as any
         } catch (error) {
           throw new AstralSchemaError(
             `無法轉換錯誤響應 ${code} 的 schema`,
@@ -448,29 +483,43 @@ export class OpenApiGenerator {
    * @returns The converted JSON Schema object.
    * @private
    */
-  private zodToSchema(zod: any) {
+  private zodToSchema(
+    zod: ZodSchema | ZodSchema[] | OpenAPIV3_1.SchemaObject | OpenAPIV3_1.ReferenceObject
+  ): OpenAPIV3_1.SchemaObject | OpenAPIV3_1.ReferenceObject {
     try {
       // Generate cache key
       const cacheKey = this.getSchemaKey(zod)
 
       // Check cache
       if (this.schemaCache.has(cacheKey)) {
-        return this.schemaCache.get(cacheKey)
+        return this.schemaCache.get(cacheKey)!
       }
 
-      let result: any
+      let result: OpenAPIV3_1.SchemaObject | OpenAPIV3_1.ReferenceObject
 
       if (Array.isArray(zod)) {
         result = {
           type: 'array',
-          items: zodToJsonSchema(zod[0] as ZodSchema, { target: 'openApi3' }),
+          items: zodToJsonSchema(zod[0] as ZodSchema, {
+            target: 'openApi3',
+          }) as OpenAPIV3_1.SchemaObject,
         }
+      } else if (
+        zod &&
+        typeof zod === 'object' &&
+        ('_def' in zod || (zod as any).constructor?.name === 'ZodType')
+      ) {
+        result = zodToJsonSchema(zod as ZodSchema, {
+          target: 'openApi3',
+        }) as OpenAPIV3_1.SchemaObject
       } else {
-        result = zodToJsonSchema(zod as ZodSchema, { target: 'openApi3' })
+        result = zod as OpenAPIV3_1.SchemaObject | OpenAPIV3_1.ReferenceObject
       }
 
       // Store in cache
-      this.schemaCache.set(cacheKey, result)
+      if ('type' in result || '$ref' in result) {
+        this.schemaCache.set(cacheKey, result as OpenAPIV3_1.SchemaObject)
+      }
 
       return result
     } catch (error) {

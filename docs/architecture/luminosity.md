@@ -8,7 +8,7 @@ last_updated: 2026-01-29
 
 # Luminosity SEO Engine 架構技術規格書
 
-## 1. 模組概覽
+## 模組概覽
 
 **Luminosity** (`@gravito/luminosity`) 是 Gravito 框架中的智能 SEO 引擎，負責網站地圖 (Sitemap) 生成、Robots.txt 管理與 Meta Tag 優化。其設計核心是 **"Tri-Mode Architecture"**，旨在同時滿足小型動態網站與百萬級頁面的超大型網站需求。
 
@@ -18,14 +18,14 @@ last_updated: 2026-01-29
 - **Metadata Management**：統一管理 OpenGraph, Twitter Cards, JSON-LD 與 Analytics 腳本。
 - **Incremental Engine**：針對大型網站的增量更新機制 (LSM-Tree concept)。
 
-## 2. 快速開始
+## 快速開始
 
-### 安裝
+### 1. 安裝
 ```bash
 bun add @gravito/luminosity
 ```
 
-### 基本用法
+### 2. 基本用法
 ```typescript
 import { Luminosity } from '@gravito/luminosity';
 
@@ -36,9 +36,11 @@ const lux = new Luminosity({
 await lux.generateSitemap();
 ```
 
-## 3. 技術規格與架構設計
+---
 
-### 2.1 三模態架構 (Tri-Mode Architecture)
+## 架構設計
+
+### 1. 三模態架構 (Tri-Mode Architecture)
 
 Luminosity 提供三種運作模式，透過 `SeoEngine` 進行切換：
 
@@ -57,7 +59,7 @@ Luminosity 提供三種運作模式，透過 `SeoEngine` 進行切換：
         -   **LSM-Tree**：背景 `Compactor` 定期合併 Log 並更新靜態 Sitemap 檔案。
     -   **優點**：讀取效能極致 (Static File Serving)，寫入不阻塞。
 
-### 2.2 串流生成引擎 (Streaming Generation)
+### 2. 串流生成引擎 (Streaming Generation)
 
 核心生成邏輯位於 `Luminosity` 類別 (`src/Luminosity.ts`)：
 
@@ -65,7 +67,7 @@ Luminosity 提供三種運作模式，透過 `SeoEngine` 進行切換：
 -   **Auto-Sharding**：計數器監控單檔 URL 數量，達到 `maxEntriesPerFile` (預設 50,000) 自動切割檔案。
 -   **Stream Gzip**：直接將 XML 串流 Pipe 到 `createGzip()`，再寫入磁碟，CPU 與 I/O 平行處理。
 
-### 2.3 Metadata 構建器
+### 3. Metadata 構建器
 
 `SeoMetadata` (`src/meta/SeoMetadata.ts`) 採用 Builder 模式整合多種 SEO 標籤：
 
@@ -74,57 +76,26 @@ Luminosity 提供三種運作模式，透過 `SeoEngine` 進行切換：
 
 ---
 
-## 3. 關鍵設計決策
+## 關鍵設計決策
 
-### 3.1 採用 XML Stream 而非 DOM
+### 4.1 採用 XML Stream 而非 DOM
 **決策**：不建構完整的 XML DOM 樹，而是直接拼接字串串流。
 **原因**：
 -   **記憶體效率**：百萬級 URL 若轉為 DOM 物件會瞬間耗盡記憶體。
 -   **效能**：字串拼接比 DOM 序列化快數倍。
 
-### 3.2 增量更新策略 (LSM-Tree 啟發)
+### 4.2 增量更新策略 (LSM-Tree 啟發)
 **決策**：在 Incremental Mode 下，不直接修改 XML 檔案。
 **原因**：XML 檔案不支援隨機寫入（Random Write）。
 **解決方案**：所有變更 (Add/Update/Delete) 視為 Log Entry，由 Compactor 在背景執行 Merge Sort 並重寫 XML。
 
-### 3.3 儲存抽象層
+### 4.3 儲存抽象層
 **決策**：定義 `StorageAdapter` 介面。
 **原因**：支援 Serverless 環境 (AWS Lambda + S3) 與本地開發 (FileSystem) 的無縫切換。
 
 ---
 
-## 4. 風險分析與潛在問題
-
-### 4.1 增量模式的 Log 膨脹
--   **問題**：若 `Compactor` 執行失敗或頻率過低，WAL Log 會無限增長。
--   **風險**：導致磁碟空間耗盡，且重啟時重放 Log (Replay) 時間過長。
--   **建議**：實作 Log Rotation 與強制 Compact 閾值。
-
-### 4.2 記憶體內的 Mutex 鎖
--   **問題**：`CachedStrategy` 目前可能使用 Process 內的 Mutex。
--   **風險**：在多實例 (Cluster/PM2) 環境下，Mutex 無法跨 Process 同步，導致重複計算。
--   **建議**：需支援 Distributed Lock (如 Redis Lock)。
-
-### 4.3 檔案系統權限
--   **問題**：Luminosity 預設寫入 `./public`。
--   **風險**：在唯讀容器 (Read-only Container) 下會報錯。
--   **建議**：引導使用者在容器環境下使用 `S3Adapter` 或掛載 Volume。
-
----
-
-## 5. 效能與擴展性
-
-### 5.1 Gzip 串流壓縮
--   **機制**：使用 Node.js `zlib` 模組進行串流壓縮。
--   **效益**：XML 文本壓縮率極高 (90%+)，大幅減少磁碟 I/O 與網路傳輸時間。
-
-### 5.2 Sitemap Index 自動分頁
--   **機制**：當 URL 超過 50,000 筆或檔案大小超過 50MB，自動建立 `sitemap-index.xml` 並指向分頁檔。
--   **擴展性**：理論上支援無限數量的 URL。
-
----
-
-## 6. API 參考
+## API 參考
 
 ### Luminosity
 - `constructor(config: LuminosityConfig)`
@@ -135,7 +106,40 @@ Luminosity 提供三種運作模式，透過 `SeoEngine` 進行切換：
 - `setStrategy(strategy: SeoStrategy): void`
 - `render(): Promise<string>`
 
-## 7. 後續優化建議
+---
+
+## 風險分析與潛在問題
+
+### 5.1 增量模式的 Log 膨脹
+-   **問題**：若 `Compactor` 執行失敗或頻率過低， WAL Log 會無限增長。
+-   **風險**：導致磁碟空間耗盡，且重啟時重放 Log (Replay) 時間過長。
+-   **建議**：實作 Log Rotation 與強制 Compact 閾值。
+
+### 5.2 記憶體內的 Mutex 鎖
+-   **問題**：`CachedStrategy` 目前可能使用 Process 內的 Mutex。
+-   **風險**：在多實例 (Cluster/PM2) 環境下，Mutex 無法跨 Process 同步，導致重複計算。
+-   **建議**：需支援 Distributed Lock (如 Redis Lock)。
+
+### 5.3 檔案系統權限
+-   **問題**：Luminosity 預設寫入 `./public`。
+-   **風險**：在唯讀容器 (Read-only Container) 下會報錯。
+-   **建議**：引導使用者在容器環境下使用 `S3Adapter` 或掛載 Volume。
+
+---
+
+## 效能與擴展性
+
+### 6.1 Gzip 串流壓縮
+-   **機制**：使用 Node.js `zlib` 模組進行串流壓縮。
+-   **效益**：XML 文本壓縮率極高 (90%+)，大幅減少磁碟 I/O 與網路傳輸時間。
+
+### 6.2 Sitemap Index 自動分頁
+-   **機制**：當 URL 超過 50,000 筆或檔案大小超過 50MB，自動建立 `sitemap-index.xml` 並指向分頁檔。
+-   **擴展性**：理論上支援無限數量的 URL。
+
+---
+
+## 後續優化建議
 
 1.  **分佈式鎖定機制** (Priority: High)
     -   為 `CachedStrategy` 增加 Redis Lock 支援。

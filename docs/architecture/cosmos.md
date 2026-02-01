@@ -6,13 +6,52 @@ tier: C
 last_updated: 2026-01-31
 ---
 
-# Cosmos Architecture 技術架構規格書 (v3.2.0)
+# Cosmos Architecture 技術架構規格書
 
-本文件詳述 `@gravito/cosmos` 的內部架構、國際化 (i18n) 實作機制以及請求範疇 (Request-Scoped) 的設計策略。
+## 模組概覽
+
+**Cosmos** (`@gravito/cosmos`) 是 Gravito 框架的高效能國際化 (i18n) 引擎。它採用「全域資源、請求範疇狀態」的架構，支援強類型翻譯、惰性載入與 Edge Runtime。
+
+### 核心職責
+- **Type-Safe i18n**：基於 TypeScript 模板文字類型的翻譯鍵值檢查。
+- **Request-Scoped State**：輕量級請求實例管理當前語言。
+- **Multi-Source Loaders**：支援檔案系統、遠端 API 與 Edge KV 載入翻譯。
+- **Edge Compatibility**：完全支援 Cloudflare Workers 與 Vercel Edge。
+
+## 快速開始
+
+### 1. 安裝
+```bash
+bun add @gravito/cosmos
+```
+
+### 2. 註冊 Orbit
+```typescript
+import { OrbitCosmos } from '@gravito/cosmos'
+
+const config = defineConfig({
+  config: {
+    i18n: {
+      defaultLocale: 'zh-TW',
+      supportedLocales: ['zh-TW', 'en']
+    }
+  },
+  orbits: [new OrbitCosmos()]
+})
+```
+
+### 3. 基本用法
+```typescript
+// 在 Controller 中
+const t = ctx.get('i18n').t
+const message = t('auth.welcome', { name: 'User' })
+```
 
 ---
 
-## 1. 核心哲學：Lightweight & Request-Scoped
+## 架構設計
+
+### 1. 核心哲學：Lightweight & Request-Scoped
 
 Cosmos 是 Gravito 框架的國際化引擎，其設計目標是在高效能與開發體驗之間取得平衡。
 - **Request-Scoped State**：採用「全局資源、請求狀態」的分離模式。翻譯資源由全域 Manager 管理，而每個 HTTP 請求擁有獨立的輕量級 Instance 來追蹤當前語言。
@@ -20,9 +59,7 @@ Cosmos 是 Gravito 框架的國際化引擎，其設計目標是在高效能與�
 - **Lazy Loading**：翻譯檔案僅在需要時從檔案系統載入，顯著降低應用啟動時間與記憶體初始佔用。
 - **Performance Optimized**：引入 LRU 快取與並發載入合併機制，解決高效能場景下的瓶頸。
 
----
-
-## 2. 模組組件分析
+### 2. 模組組件分析
 
 ### 2.1 OrbitCosmos (Entrypoint)
 - **職責**：作為 Orbit 插件，負責初始化與安裝。
@@ -75,7 +112,7 @@ Cosmos 是 Gravito 框架的國際化引擎，其設計目標是在高效能與�
 
 ---
 
-## 3. 技術規格與設計決策
+## 技術規格與設計決策
 
 ### 3.1 雙層架構 (Manager vs Instance)
 Cosmos 選擇不將 Locale 狀態儲存在全域，也不為每個請求複製整個翻譯資源。
@@ -96,7 +133,21 @@ Cosmos 遵循 `Intl` 標準而非自定義邏輯。
 
 ---
 
-## 4. 潛在風險與效能評估
+## API 參考
+
+### I18nManager (Singleton)
+- `translate(locale: string, key: string, params?: object): string`
+- `reloadLocale(locale: string): Promise<void>`
+- `addLoader(loader: TranslationLoader): void`
+
+### I18nInstance (Transient)
+- `t(key: string, params?: object): string`
+- `getLocale(): string`
+- `setLocale(locale: string): void`
+
+---
+
+## 風險分析與潛在問題
 
 ### 4.1 快取無限增長 (Memory Leak Risk)
 - **現況**：✅ 已實作 LRU 快取淘汰機制。
@@ -108,128 +159,7 @@ Cosmos 遵循 `Intl` 標準而非自定義邏輯。
 
 ---
 
-## 5. 新增功能 (v3.1.0) ⭐
-
-### 5.1 TranslationLoader 抽象層
-Cosmos 現在支援抽象化的翻譯載入機制,允許從多種來源載入翻譯資源:
-
-```typescript
-import { FileSystemLoader, RemoteLoader, ChainedLoader } from '@gravito/cosmos'
-
-// 組合多個載入器,實現降級策略
-const config: I18nConfig = {
-  defaultLocale: 'zh-TW',
-  supportedLocales: ['zh-TW', 'en'],
-  loaders: [
-    new FileSystemLoader({ baseDir: './lang' }),
-    new RemoteLoader({
-      url: 'https://api.example.com/i18n/:locale',
-      headers: { 'Authorization': 'Bearer token' },
-      etagCache: true,
-      retries: 3
-    })
-  ]
-}
-```
-
-**主要特性**：
-- 支援檔案系統、遠端 HTTP API、或自訂載入器
-- 鏈式組合,實現多層降級策略
-- RemoteLoader 支援 ETag 快取優化、自動重試、超時處理
-- 完全向後相容舊的 `lazyLoad.loader` 配置
-
-### 5.2 熱重載 (HMR) 支援
-在開發模式下,翻譯檔案的變更會自動被檢測並重新載入:
-
-```typescript
-const config: I18nConfig = {
-  defaultLocale: 'zh-TW',
-  supportedLocales: ['zh-TW', 'en'],
-  loaders: [new FileSystemLoader({ baseDir: './lang' })],
-  hmr: {
-    enabled: process.env.NODE_ENV === 'development',
-    watchDirs: ['./lang'],
-    debounce: 300,
-    verbose: true
-  }
-}
-```
-
-**主要特性**：
-- 自動監視翻譯檔案變更
-- 防抖機制,避免頻繁觸發重新載入
-- 僅影響變更的語言,不會清空整個快取
-- 可配置的副檔名篩選和監視目錄
-
-### 5.3 reloadLocale API
-新增 `reloadLocale()` 方法,支援手動重新載入特定語言:
-
-```typescript
-// 手動重新載入某個語言
-await i18nManager.reloadLocale('zh-TW')
-
-// 也可以在自訂邏輯中使用
-app.post('/admin/reload-i18n/:locale', async (c) => {
-  const locale = c.req.param('locale')
-  await c.get('i18n').manager.reloadLocale(locale)
-  return c.json({ success: true })
-})
-```
-
----
-
-## 6. v2.0 Edge Runtime 支援 ⭐ 已完成
-
-### 6.1 Runtime Detection
-建立統一的運行環境檢測機制,支援 Node.js、Edge Runtime 自動識別:
-
-- **detectRuntime()**: 檢測當前運行環境
-- **isNode()**, **isEdge()**: 輔助檢查函數
-- 支援 Cloudflare Workers、Vercel Edge、Deno Deploy
-
-### 6.2 Edge-Compatible Path Utils
-提供無需 Node.js `path` 模組的路徑操作工具:
-
-- `join()`, `basename()`, `dirname()`, `extname()`
-- `isAbsolute()`, `normalize()`
-- 完全 Edge Runtime 相容
-
-### 6.3 Edge Runtime Loaders
-
-**MemoryLoader**
-- 從記憶體載入靜態翻譯
-- 適合小型應用 (<100KB)
-- 最快的載入速度
-
-**EdgeKVLoader**
-- 通用 KV 儲存抽象
-- 支援任何 KVStorage 介面實現
-- 可擴展的設計
-
-**CloudflareKVLoader**
-- Cloudflare Workers KV 專用
-- 全球邊緣快取
-- 低延遲讀取
-
-**VercelKVLoader**
-- Vercel KV (基於 Redis) 專用
-- Edge 環境優化
-- TTL 支援
-
-### 6.4 條件化導出
-提供三個入口點,根據環境自動選擇:
-
-- `index.ts`: 通用入口 (包含所有功能)
-- `index.edge.ts`: Edge 專用 (排除 Node.js 依賴)
-- `index.node.ts`: Node.js 專用 (包含完整功能)
-
-### 6.5 運行時保護
-- **FileSystemLoader**: Edge 環境拋出明確錯誤
-- **HMRWatcher**: Edge 環境靜默停用並顯示警告
-
----
-
-## 7. 後續優化建議
+## 後續優化建議
 
 ### 短期 (v1.1) ✅ 已完成
 1. ✅ **Loading Coalescing**：修復並發載入問題
@@ -252,6 +182,7 @@ app.post('/admin/reload-i18n/:locale', async (c) => {
 2. **WebSocket 實時推送**：支援翻譯變更的實時推送,無需重新載入
 3. **AI 翻譯整合**：自動翻譯缺失的鍵值
 4. **翻譯管理介面**：視覺化的翻譯編輯器
+
 
 ---
 *Created by Gravito Architect. Last updated: 2026-01-31 (v2.0.0)*
