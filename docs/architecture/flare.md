@@ -21,7 +21,27 @@ Flare 的設計靈感來自 Laravel Notification，旨在提供一個統一的�
 
 ---
 
-## 2. 模組組件分析
+## 2. 快速開始
+
+### 安裝
+```bash
+bun add @gravito/flare
+```
+
+### 基本用法
+```typescript
+import { Notification, NotificationManager } from '@gravito/flare';
+
+class WelcomeNotification extends Notification {
+  via() { return ['mail']; }
+  toMail() { return { subject: 'Welcome', body: 'Hello!' }; }
+}
+
+const manager = new NotificationManager();
+await manager.send(user, new WelcomeNotification());
+```
+
+## 3. 模組組件分析
 
 ### 2.1 OrbitFlare (Orchestrator)
 - **職責**：作為 Orbit 插件，負責初始化與安裝。
@@ -58,48 +78,48 @@ Flare 的設計靈感來自 Laravel Notification，旨在提供一個統一的�
 
 ---
 
-## 3. 技術規格與設計決策
+## 4. 技術規格與架構設計
 
-### 3.1 隊列整合 (Queue Integration)
+### 4.1 隊列整合 (Queue Integration)
 Flare 不直接依賴 `@gravito/stream`，而是透過 `QueueService` 介面進行鬆耦合。
 - **序列化**：為了將 `Notification` 物件放入隊列，Flare 使用 `deepSerialize` 將其轉換為純 JSON。這意味著 Notification 類別必須是無狀態的 (Stateless) 或只包含可序列化的屬性。
 - **反序列化**：Worker 取出任務時，會重新建構 Notification 實例 (需要 Worker 端的類別定義)。
 
-### 3.2 批次發送 (Batch Sending)
+### 4.2 批次發送 (Batch Sending)
 為了優化效能，`NotificationManager` 提供了 `sendBatch` 與 `sendBatchStream`。
 - **用途**：發送系統公告給 10,000 名用戶。
 - **實作**：控制並發度 (Concurrency Limit)，避免瞬間淹沒下游服務 (如 SMTP Server)。
 
-### 3.3 可觀測性 (Observability)
+### 4.3 可觀測性 (Observability)
 Flare 內建了 `NotificationMetricsCollector`。
 - **指標**：追蹤每個通道的成功率、延遲與失敗原因。
 - **Prometheus**：提供 `toPrometheusFormat` 導出器，方便整合 Grafana。
 
 ---
 
-## 4. 潛在風險與效能評估
+## 5. 潛在風險與效能評估
 
-### 4.1 序列化限制
+### 5.1 序列化限制
 若 `Notification` 建構子包含無法序列化的物件 (如 DB Connection 或 Socket)，隊列發送會失敗。
 - **建議**：Notification 應只包含 ID 或純資料，在 `toMail` 等方法中再進行資料庫查詢 (Lazy Loading)。
 
-### 4.2 通道阻塞
+### 5.2 通道阻塞
 若某個通道 (如 Slack Webhook) 回應極慢且未設定超時，會拖慢整個 `send` 過程 (即使是並行發送，Promise.all 也會等待最慢的)。
 - **解法**：`SlackChannel` 等內建通道應實作嚴格的 Timeout 機制。
 
 ---
 
-## 5. 後續優化建議
+## 6. API 參考
 
-### 短期 (v1.1)
-1. **Rate Limiting**：在 Channel 層級實作限流 (如每秒最多發送 10 封郵件)。
-2. **Preference Driver**：新增 `PreferenceChannel`，根據用戶設定 (User Settings) 自動過濾通道。
+### NotificationManager
+- `send(notifiable: any, notification: Notification): Promise<void>`
+- `sendBatch(notifiables: any[], notification: Notification): Promise<void>`
 
-### 中期 (v1.2)
-1. **In-App Notifications**：增強 `DatabaseChannel`，支援即時推送 (SSE/WebSocket) 到前端通知中心。
-
-### 長期 (v2.0)
-1. **Interactive Notifications**：支援 Slack/Teams 的互動式按鈕回調處理。
+### Notification
+- `via(notifiable: any): string[]`
+- `toMail?(notifiable: any): MailMessage`
+- `toSlack?(notifiable: any): SlackMessage`
 
 ---
-*Created by Gravito Architect.*
+
+## 7. 後續優化建議

@@ -39,6 +39,10 @@ export interface ExportOptions {
   manifestPath?: string
   /** Additional paths to export that aren't in the router. */
   extraPaths?: string[]
+  /** Batch size for processing routes (memory optimization). @default 100 */
+  batchSize?: number
+  /** Enable memory usage logging. @default false */
+  logMemoryUsage?: boolean
 }
 
 /**
@@ -62,6 +66,22 @@ export class StaticSiteGenerator {
    * @param core - The PlanetCore instance to crawl routes from.
    */
   constructor(private core: PlanetCore) {}
+
+  private logMemory(label: string): void {
+    const usage = process.memoryUsage()
+    this.core.logger.debug(
+      `[SSG Memory] ${label}: RSS=${(usage.rss / 1024 / 1024).toFixed(2)}MB, Heap=${(usage.heapUsed / 1024 / 1024).toFixed(2)}MB`
+    )
+  }
+
+  private async *generateRouteBatches(
+    routes: Array<{ path: string; getData?: () => Promise<any> }>,
+    batchSize: number
+  ): AsyncGenerator<Array<{ path: string; getData?: () => Promise<any> }>> {
+    for (let i = 0; i < routes.length; i += batchSize) {
+      yield routes.slice(i, i + batchSize)
+    }
+  }
 
   /**
    * Export dynamic routes to static HTML.
@@ -137,60 +157,86 @@ export class StaticSiteGenerator {
   ): Promise<void> {
     const concurrency = options.concurrency ?? 10
     const timeout = options.timeout ?? 30000
+    const batchSize = options.batchSize ?? 100
+    const logMemory = options.logMemoryUsage ?? false
 
-    const queue = [...routes]
     const total = routes.length
     let success = 0
     let failed = 0
+    let processedBatches = 0
 
-    const worker = async () => {
-      while (queue.length > 0) {
-        const route = queue.shift()
-        if (!route) {
-          break
-        }
-
-        try {
-          const url = `http://localhost${route.path}`
-          const request = new Request(url, {
-            signal: AbortSignal.timeout(timeout),
-          })
-
-          const response = await this.core.adapter.fetch(request)
-
-          if (!response.ok) {
-            this.core.logger.warn(`[SSG] ⚠️ Skipping ${route.path}: Status ${response.status}`)
-            failed++
-            continue
-          }
-
-          const html = await response.text()
-
-          const pathWithoutQuery = route.path.split('?')[0]
-          let relativePath =
-            pathWithoutQuery === '/'
-              ? 'index.html'
-              : `${pathWithoutQuery.replace(/^\//, '')}/index.html`
-
-          if (pathWithoutQuery.endsWith('.html')) {
-            relativePath = pathWithoutQuery.replace(/^\//, '')
-          }
-
-          const absolutePath = join(outputDir, relativePath)
-          await mkdir(dirname(absolutePath), { recursive: true })
-          await writeFile(absolutePath, html, 'utf-8')
-
-          success++
-          this.core.logger.info(`[SSG] ✅ Rendered (${success + failed}/${total}): ${route.path}`)
-        } catch (error: any) {
-          failed++
-          this.core.logger.error(`[SSG] ❌ Failed ${route.path}: ${error.message}`)
-        }
-      }
+    if (logMemory) {
+      this.logMemory('Export Start')
     }
 
-    const workers = Array.from({ length: Math.min(concurrency, total) }, () => worker())
-    await Promise.all(workers)
+    for await (const batch of this.generateRouteBatches(routes, batchSize)) {
+      processedBatches++
+
+      const queue = [...batch]
+      const batchNumber = processedBatches
+
+      if (logMemory) {
+        this.logMemory(`Batch ${batchNumber} Start (${queue.length} routes)`)
+      }
+
+      const worker = async () => {
+        while (queue.length > 0) {
+          const route = queue.shift()
+          if (!route) {
+            break
+          }
+
+          try {
+            const url = `http://localhost${route.path}`
+            const request = new Request(url, {
+              signal: AbortSignal.timeout(timeout),
+            })
+
+            const response = await this.core.adapter.fetch(request)
+
+            if (!response.ok) {
+              this.core.logger.warn(`[SSG] ⚠️ Skipping ${route.path}: Status ${response.status}`)
+              failed++
+              continue
+            }
+
+            const html = await response.text()
+
+            const pathWithoutQuery = route.path.split('?')[0]
+            let relativePath =
+              pathWithoutQuery === '/'
+                ? 'index.html'
+                : `${pathWithoutQuery.replace(/^\//, '')}/index.html`
+
+            if (pathWithoutQuery.endsWith('.html')) {
+              relativePath = pathWithoutQuery.replace(/^\//, '')
+            }
+
+            const absolutePath = join(outputDir, relativePath)
+            await mkdir(dirname(absolutePath), { recursive: true })
+            await writeFile(absolutePath, html, 'utf-8')
+
+            success++
+            this.core.logger.info(`[SSG] ✅ Rendered (${success + failed}/${total}): ${route.path}`)
+          } catch (error: any) {
+            failed++
+            this.core.logger.error(`[SSG] ❌ Failed ${route.path}: ${error.message}`)
+          }
+        }
+      }
+
+      const workers = Array.from({ length: Math.min(concurrency, batch.length) }, () => worker())
+      await Promise.all(workers)
+
+      if (logMemory) {
+        this.logMemory(`Batch ${batchNumber} Complete`)
+      }
+
+      if (global.gc && logMemory) {
+        global.gc()
+        this.logMemory(`After GC (Batch ${batchNumber})`)
+      }
+    }
 
     this.core.logger.info(`[SSG] Export complete! Success: ${success}, Failed: ${failed}`)
   }
@@ -250,11 +296,17 @@ export class StaticSiteGenerator {
   async export(
     outputDir: string,
     baseUrl = 'https://gravito.dev',
-    extraPaths: string[] = []
+    extraPaths: string[] = [],
+    options: ExportOptions = {}
   ): Promise<void> {
     this.core.logger.info(`[SSG] Starting static export to: ${outputDir}`)
 
-    // Get routes from either PlanetCore Router or Gravito AOTRouter
+    const logMemory = options.logMemoryUsage ?? false
+
+    if (logMemory) {
+      this.logMemory('Discovery Start')
+    }
+
     let routes: SSGRoute[] = []
     const router = this.core.router as RouterWithRoutes
 
@@ -266,7 +318,6 @@ export class StaticSiteGenerator {
       this.core.logger.warn('[SSG] Could not detect routes specific format. SSG might fail.')
     }
 
-    // Deduplicate routes based on path
     const uniquePaths = new Set<string>()
     const uniqueRoutes: SSGRoute[] = []
 
@@ -280,7 +331,6 @@ export class StaticSiteGenerator {
       }
     }
 
-    // Process router routes
     if (Array.isArray(routes)) {
       routes
         .filter(
@@ -294,7 +344,6 @@ export class StaticSiteGenerator {
         .forEach(addRoute)
     }
 
-    // Process extra paths
     extraPaths.forEach((path) => {
       if (path) {
         addRoute({ path, method: 'GET' })
@@ -309,69 +358,17 @@ export class StaticSiteGenerator {
       return
     }
 
-    // Concurrency control
-    const CONCURRENCY = 10
-    const queue = [...uniqueRoutes]
-    let success = 0
-    let failed = 0
-
-    const worker = async () => {
-      while (queue.length > 0) {
-        const route = queue.shift()
-        if (!route) {
-          break
-        }
-
-        try {
-          const url = `http://localhost${route.path}`
-
-          // Use adapter.fetch with a timeout signal
-          const request = new Request(url, {
-            signal: AbortSignal.timeout(30000), // 30 second timeout per page
-          })
-
-          const response = await this.core.adapter.fetch(request)
-
-          if (!response.ok) {
-            this.core.logger.warn(
-              `[SSG] ⚠️ Skipping ${route.path}: Returned status ${response.status}`
-            )
-            failed++
-            continue
-          }
-
-          const html = await response.text()
-
-          // Determine file path
-          const pathWithoutQuery = route.path.split('?')[0]
-          let relativePath =
-            pathWithoutQuery === '/'
-              ? 'index.html'
-              : `${pathWithoutQuery.replace(/^\//, '')}/index.html`
-
-          if (pathWithoutQuery.endsWith('.html')) {
-            relativePath = pathWithoutQuery.replace(/^\//, '')
-          }
-
-          const absolutePath = join(outputDir, relativePath)
-          await mkdir(dirname(absolutePath), { recursive: true })
-          await writeFile(absolutePath, html, 'utf-8')
-
-          success++
-          this.core.logger.info(`[SSG] ✅ Rendered (${success + failed}/${total}): ${route.path}`)
-        } catch (error) {
-          failed++
-          const errorMessage = error instanceof Error ? error.message : String(error)
-          this.core.logger.error(`[SSG] ❌ Failed to export ${route.path}: ${errorMessage}`)
-        }
-      }
+    if (logMemory) {
+      this.logMemory(`Discovery Complete (${total} routes)`)
     }
 
-    // Start workers
-    const workers = Array.from({ length: Math.min(CONCURRENCY, total) }, () => worker())
-    await Promise.all(workers)
+    await this.exportRoutes(
+      uniqueRoutes.map((r) => ({ path: r.path })),
+      outputDir,
+      baseUrl,
+      options
+    )
 
-    // Generate Sitemap
     try {
       await this.generateSitemap(outputDir, uniqueRoutes, baseUrl)
     } catch (e) {
@@ -379,7 +376,6 @@ export class StaticSiteGenerator {
       this.core.logger.error(`[SSG] Failed to generate sitemap: ${errorMessage}`)
     }
 
-    // Generate Robots.txt
     try {
       await this.generateRobotsTxt(outputDir, baseUrl)
     } catch (e) {
@@ -387,9 +383,11 @@ export class StaticSiteGenerator {
       this.core.logger.error(`[SSG] Failed to generate robots.txt: ${errorMessage}`)
     }
 
-    this.core.logger.info(
-      `[SSG] Static export completed! ✨ Success: ${success}, Failed: ${failed}`
-    )
+    this.core.logger.info(`[SSG] Static export completed! ✨`)
+
+    if (logMemory) {
+      this.logMemory('Export Complete')
+    }
   }
 
   private async generateSitemap(

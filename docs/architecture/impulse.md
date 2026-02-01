@@ -1,12 +1,12 @@
 ---
 title: Impulse Architecture 技術架構規格書
-version: 1.0.0
+version: 1.1.0
 status: Stable
 tier: C
-last_updated: 2026-01-29
+last_updated: 2026-01-31
 ---
 
-# 🌌 Impulse Architecture 技術架構規格書 (v1.0)
+# 🌌 Impulse Architecture 技術架構規格書 (v1.1)
 
 本文件詳述 `@gravito/impulse` 的內部架構、多層緩存策略以及與核心框架的整合模式。
 
@@ -49,11 +49,15 @@ Impulse 受到 Laravel FormRequest 的啟發，旨在提供一個宣告式的請
 ### 2.4 Middleware Factory
 - **職責**：將 Class 轉換為標準 Gravito Middleware。
 - **位置**：`src/FormRequest.ts` -> `validateRequest`
+- **特性**：
+  - **自動 Partial Validation**：當請求方法為 `PATCH` 時，自動啟用部分驗證模式 (Partial Mode)。
+  - **手動控制**：支援 `validateRequest(Request, { partial: true })` 強制啟用。
 - **流程**：
   1. 從快取獲取 `FormRequest` 實例 (Singleton)。
-  2. 執行驗證。
+  2. 執行驗證 (自動偵測 `PATCH` 或使用傳入的 `partial` 選項)。
   3. 成功 -> `ctx.set('validated', data)`，呼叫 `next()`。
   4. 失敗 -> 拋出 `ValidationException` 或回傳 422 JSON。
+
 
 ---
 
@@ -69,6 +73,9 @@ Impulse 受到 Laravel FormRequest 的啟發，旨在提供一個宣告式的請
 | **L2** | `SchemaCache` | 緩存 Schema 的類型檢測結果 (Zod vs Valibot) | Process |
 | **L3** | `SchemaCompilationCache` | 緩存編譯後的驗證函數 (JIT 優化) | Process |
 | **L4** | `MessageCache` | 緩存錯誤訊息的解析結果 (Field + Code -> Msg) | Process |
+
+**快取管理**：
+- **Impulse.clearAllCaches()**：全域 API，用於清除所有 L1-L4 快取。主要用於開發模式 (HMR) 確保變更即時生效。
 
 **決策評估**：
 - 雖然 JavaScript Class 實例化很快，但在高並發場景下，減少 GC 壓力至關重要。Singleton 模式確保每個 Request Class 全域只有一個實例。
@@ -99,9 +106,9 @@ Impulse 支援精細的錯誤訊息自定義，解析順序如下：
 
 ## 5. 後續優化建議
 
-### 短期 (v1.1)
-1. **Schema Hot Reload**：在開發模式下提供清除緩存的機制，支援 HMR。
-2. **Partial Validation**：支援 `PATCH` 請求的部分驗證 (Partial Schema)。
+### 短期 (v1.1) - ✅ 已完成
+1. **Schema Hot Reload**：提供 `Impulse.clearAllCaches()` 清除快取，支援 HMR。
+2. **Partial Validation**：支援 `PATCH` 請求與手動指定的部分驗證。
 
 ### 中期 (v1.2)
 1. **OpenAPI Generator**：利用 `BlueprintGenerator` 的元數據，自動生成 OpenAPI Spec (整合 Astral)。

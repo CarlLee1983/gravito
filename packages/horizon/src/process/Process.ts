@@ -1,27 +1,41 @@
 import { getRuntimeAdapter } from '@gravito/core'
 
 /**
- * Result of a process execution.
+ * Encapsulates the outcome of a child process execution.
+ *
+ * Provides status codes and captured stream outputs for programmatic inspection.
  *
  * @public
  * @since 3.0.0
  */
 export interface ProcessResult {
-  /** Exit code of the process (0 indicates success). */
+  /** numeric exit code returned by the operating system (0 typically denotes success). */
   exitCode: number
-  /** Standard output from the process. */
+  /** Captured UTF-8 encoded text from the standard output stream. */
   stdout: string
-  /** Standard error output from the process. */
+  /** Captured UTF-8 encoded text from the standard error stream. */
   stderr: string
-  /** Whether the process completed successfully (exitCode === 0). */
+  /** Semantic indicator of successful completion (mapped from exitCode === 0). */
   success: boolean
 }
 
 /**
- * Execute a shell command and capture its output.
+ * Spawns a shell command and asynchronously captures its full output.
  *
- * @param command - The command string to execute.
- * @returns A promise that resolves to the process result.
+ * Leverages the Gravito runtime adapter to ensure compatibility across different
+ * JavaScript runtimes (Bun, Node.js). Executes commands within a shell (`sh -c`)
+ * to support pipes, redirects, and environment variables.
+ *
+ * @param command - Raw shell command string to execute.
+ * @returns Resolves to a detailed `ProcessResult` object.
+ *
+ * @example
+ * ```typescript
+ * const result = await runProcess('ls -lh /var/logs');
+ * if (result.success) {
+ *   processLogs(result.stdout);
+ * }
+ * ```
  *
  * @public
  * @since 3.0.0
@@ -33,6 +47,7 @@ export async function runProcess(command: string): Promise<ProcessResult> {
     stderr: 'pipe',
   })
 
+  // Stream consumption using standard Web Streams API via Response
   const [stdout, stderr] = await Promise.all([
     new Response(proc.stdout ?? null).text(),
     new Response(proc.stderr ?? null).text(),
@@ -50,25 +65,26 @@ export async function runProcess(command: string): Promise<ProcessResult> {
 
 // Legacy class-based API for backward compatibility
 /**
- * Process execution utility for running shell commands.
+ * Utility class for managing child process lifecycles.
  *
- * Provides a simple interface for executing shell commands
- * and capturing their output.
+ * Acts as a wrapper for `runProcess` to maintain compatibility with earlier
+ * versions of the framework.
  *
  * @example
  * ```typescript
- * const result = await Process.run('ls -la')
- * if (result.success) {
- *   console.log(result.stdout)
- * } else {
- *   console.error(result.stderr)
- * }
+ * const { stdout } = await Process.run('bun -v');
  * ```
  *
  * @since 3.0.0
  * @public
  */
 export class Process {
+  /**
+   * Static alias for `runProcess`.
+   *
+   * @param command - Command to execute.
+   * @returns Process outcome.
+   */
   static async run(command: string): Promise<ProcessResult> {
     return runProcess(command)
   }

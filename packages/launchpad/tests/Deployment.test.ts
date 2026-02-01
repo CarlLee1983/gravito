@@ -23,7 +23,9 @@ describe('Payload Injection Flow', () => {
     findAll: mock(() => Promise.resolve([])),
   }
 
-  const pool = new PoolManager(mockDocker, mockRepo)
+  const pool = new PoolManager(mockDocker, mockRepo, undefined, undefined, {
+    exhaustionStrategy: 'dynamic',
+  })
   const injector = new PayloadInjector(mockDocker, mockGit)
 
   it('應該能從指派任務到成功點火', async () => {

@@ -13,9 +13,12 @@ import { CachedRocketRepository } from './Infrastructure/Persistence/CachedRocke
 import { BunProxyAdapter } from './Infrastructure/Router/BunProxyAdapter'
 
 export * from './Application/MissionControl'
+export * from './Application/MissionQueue'
 export * from './Application/PayloadInjector'
 export * from './Application/PoolManager'
 export * from './Application/RefurbishUnit'
+export * from './Domain/Events'
+export * from './Domain/Interfaces'
 export * from './Domain/Mission'
 export * from './Domain/Rocket'
 export * from './Domain/RocketStatus'

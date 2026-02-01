@@ -23,7 +23,8 @@ class MinimalRequest implements FastRequest {
   constructor(
     private readonly _request: Request,
     private readonly _params: Record<string, string>,
-    private readonly _path: string
+    private readonly _path: string,
+    private readonly _routePattern?: string
   ) {}
 
   get url(): string {
@@ -36,6 +37,10 @@ class MinimalRequest implements FastRequest {
 
   get path(): string {
     return this._path
+  }
+
+  get routePattern(): string | undefined {
+    return this._routePattern
   }
 
   param(name: string): string | undefined {
@@ -127,8 +132,13 @@ export class MinimalContext implements IFastContext {
   public readonly req: MinimalRequest
   private _resHeaders: Record<string, string> = {}
 
-  constructor(request: Request, params: Record<string, string>, path: string) {
-    this.req = new MinimalRequest(request, params, path)
+  constructor(
+    request: Request,
+    params: Record<string, string>,
+    path: string,
+    routePattern?: string
+  ) {
+    this.req = new MinimalRequest(request, params, path, routePattern)
   }
 
   // get req(): FastRequest {

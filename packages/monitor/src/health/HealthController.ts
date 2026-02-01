@@ -18,10 +18,17 @@ export class HealthController {
    */
   async health(c: GravitoContext): Promise<Response> {
     const report = await this.registry.check()
+    const cacheStats = this.registry.getCacheStats()
 
     const status = report.status === 'healthy' ? 200 : report.status === 'degraded' ? 200 : 503
 
-    return c.json(report, status)
+    return c.json(
+      {
+        ...report,
+        cache: cacheStats,
+      },
+      status
+    )
   }
 
   /**

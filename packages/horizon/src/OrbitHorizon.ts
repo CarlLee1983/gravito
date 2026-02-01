@@ -14,8 +14,6 @@ import { SchedulerManager } from './SchedulerManager'
  * Design rationale: Uses pluggable lock backends (memory/cache) to support both
  * development (single-node) and production (multi-node) environments without code changes.
  *
- * @throws {Error} When cache driver is configured but OrbitCache is not loaded first
- *
  * @example
  * Single-node development setup:
  * ```typescript
@@ -52,14 +50,17 @@ import { SchedulerManager } from './SchedulerManager'
  */
 export class OrbitHorizon implements GravitoOrbit {
   /**
-   * Integrates Horizon scheduler into PlanetCore lifecycle.
+   * Integrates the Horizon scheduler into the PlanetCore lifecycle.
    *
-   * Initializes lock backend (memory/cache), registers SchedulerManager in IoC container,
-   * and injects scheduler instance into request context for controller access.
+   * Orchestrates the initialization sequence:
+   * 1. Resolves lock backend (memory or cache-based).
+   * 2. Instantiates SchedulerManager with global dependencies (logger, hooks).
+   * 3. Registers the scheduler in the IoC container for CLI and global access.
+   * 4. Injects the scheduler into the request context via middleware.
    *
-   * @param core - PlanetCore instance providing config, container, and adapter
+   * @param core - PlanetCore instance providing configuration and service container.
    *
-   * @throws {Error} Implicitly via LockManager when cache driver is requested but unavailable
+   * @throws {Error} If the cache driver is explicitly requested but `CacheManager` is unavailable.
    */
   install(core: PlanetCore): void {
     const config = core.config.get<{

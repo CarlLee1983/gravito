@@ -14,8 +14,18 @@ export class DockerAdapter implements IDockerAdapter {
   private baseImage = 'oven/bun:1.0-slim'
   private runtime = getRuntimeAdapter()
 
+  // 快取目錄配置
+  private readonly cacheConfig = {
+    hostCachePath: process.env.BUN_CACHE_PATH || `${process.env.HOME}/.bun/install/cache`,
+    containerCachePathRoot: '/root/.bun/install/cache',
+    containerCachePathBun: '/home/bun/.bun/install/cache',
+  }
+
   async createBaseContainer(): Promise<string> {
     const rocketId = `rocket-${crypto.randomUUID()}`
+
+    // 確保宿主機快取目錄存在
+    await this.ensureCacheDirectory()
 
     const proc = this.runtime.spawn([
       'docker',
@@ -27,10 +37,39 @@ export class DockerAdapter implements IDockerAdapter {
       'gravito-origin=launchpad',
       '-p',
       '3000', // 讓 Docker 分配隨機宿主機埠
+      // === 快取掛載（關鍵） ===
       '-v',
-      `${process.env.HOME}/.bun/install/cache:/root/.bun/install/cache`,
+      `${this.cacheConfig.hostCachePath}:${this.cacheConfig.containerCachePathRoot}:rw`,
       '-v',
-      `${process.env.HOME}/.bun/install/cache:/home/bun/.bun/install/cache`,
+      `${this.cacheConfig.hostCachePath}:${this.cacheConfig.containerCachePathBun}:rw`,
+      // === 環境變數配置（確保 bun 使用快取） ===
+      '-e',
+      `BUN_INSTALL_CACHE_DIR=${this.cacheConfig.containerCachePathBun}`,
+      '-e',
+      'BUN_INSTALL_CACHE=shared',
+      '-e',
+      'BUN_INSTALL_PREFER_OFFLINE=true',
+      // === 效能相關環境變數 ===
+      '-e',
+      'NODE_ENV=development',
+      // === 資源限制（防止單一容器占用過多資源） ===
+      '--memory',
+      '1g',
+      '--memory-swap',
+      '1g',
+      '--cpus',
+      '1.0',
+      // === 安全設定 ===
+      '--security-opt',
+      'no-new-privileges:true',
+      '--cap-drop',
+      'ALL',
+      '--cap-add',
+      'CHOWN',
+      '--cap-add',
+      'SETUID',
+      '--cap-add',
+      'SETGID',
       this.baseImage,
       'tail',
       '-f',
@@ -42,6 +81,8 @@ export class DockerAdapter implements IDockerAdapter {
     const exitCode = await proc.exited
 
     if (containerId.length === 64 && /^[0-9a-f]+$/.test(containerId)) {
+      // 驗證快取是否正確掛載
+      await this.verifyCacheMount(containerId)
       return containerId
     }
 
@@ -51,6 +92,42 @@ export class DockerAdapter implements IDockerAdapter {
     }
 
     return containerId
+  }
+
+  /**
+   * 確保快取目錄存在
+   *
+   * @private
+   * @since 1.3.0
+   */
+  private async ensureCacheDirectory(): Promise<void> {
+    const cachePath = this.cacheConfig.hostCachePath
+    const proc = this.runtime.spawn(['mkdir', '-p', cachePath])
+    await proc.exited
+
+    // 設定適當的權限
+    const chmodProc = this.runtime.spawn(['chmod', '777', cachePath])
+    await chmodProc.exited
+  }
+
+  /**
+   * 驗證快取是否正確掛載
+   *
+   * @private
+   * @since 1.3.0
+   */
+  private async verifyCacheMount(containerId: string): Promise<void> {
+    const result = await this.executeCommand(containerId, [
+      'sh',
+      '-c',
+      `ls -la ${this.cacheConfig.containerCachePathBun} 2>/dev/null || echo 'NOT_MOUNTED'`,
+    ])
+
+    if (result.stdout.includes('NOT_MOUNTED')) {
+      console.warn(`[DockerAdapter] 警告: 容器 ${containerId} 的快取目錄可能未正確掛載`)
+    } else {
+      console.log(`[DockerAdapter] 快取目錄已確認掛載: ${containerId}`)
+    }
   }
 
   async getExposedPort(containerId: string, containerPort = 3000): Promise<number> {

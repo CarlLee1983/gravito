@@ -82,25 +82,80 @@ Stream 支援多種序列化方式：
 
 ### 4.1 記憶體洩漏 (Memory Leak)
 在長執行的 Worker Process 中，若 Job 實例化後未被釋放 (如閉包引用)，會導致 OOM。
-- **建議**：定期重啟 Worker (類似 PHP-FPM 的 `max_requests`)，或使用 PM2 管理。
+
+#### 已識別的風險來源
+1. **Group Limiters 累積**: `groupLimiters` Map 在高頻率不同 `groupId` 場景下會無限增長
+2. **Job 閉包引用**: Job 物件在閉包中被引用，延長 GC 周期
+3. **BufferedPersistence 緩衝區**: 資料庫連線中斷時 buffer 可能無限增長
+
+#### ✅ 已實作的修復 (v1.0.1)
+- **自動清理機制**: 新增 `groupLimiterLastUsed` 追蹤，每 30 秒清理超過 60 秒未使用的 group limiters
+- **maxRequests 機制**: 類似 PHP-FPM 的 `max_requests`，可設定處理上限後自動停止 worker
+  ```typescript
+  const consumer = new Consumer(manager, {
+    maxRequests: 10000, // 處理 10000 個 jobs 後自動停止
+    // ...
+  })
+  ```
+
+#### 建議
+- 定期重啟 Worker (類似 PHP-FPM 的 `max_requests`)，或使用 PM2 管理
+- 監控記憶體使用量，設定告警閾值
 
 ### 4.2 佇列阻塞 (Head-of-Line Blocking)
 在 `RedisDriver` 中，若某個 Job 處理極慢且並發度低，會阻塞後續 Job。
-- **解法**：增加 `concurrency` 或將慢作業移至獨立隊列。
+
+#### 已識別的風險來源
+1. **同步 Pop 模型**: 若第一個 queue 有 job，後面的 queue 完全被忽略
+2. **Group Sequential 的全局鎖**: 同一 `groupId` 的 job 被強制序列化
+3. **優先級遍歷成本**: 每次 pop 都要遍歷所有優先級
+
+#### 解法
+- 增加 `concurrency` 或將慢作業移至獨立隊列
+- 使用獨立的 Consumer 實例處理不同優先級
 
 ---
 
 ## 5. 後續優化建議
 
+### ✅ 已完成 (v1.0.1)
+1. **Memory Leak 修復**: 自動清理 group limiters，避免記憶體累積
+2. **maxRequests 機制**: 支援設定處理上限後自動停止，確保 worker 定期重啟
+
 ### 短期 (v1.1)
-1. **Sandboxed Worker**：支援在獨立的 Thread/Worker 執行 Job，隔離上下文並防止主線程崩潰。
-2. **Cron Scheduler**：增強 Scheduler 以支援分散式 Cron (避免多節點重複執行)。
+1. **Sandboxed Worker** 🔧 規劃中
+   - 在獨立的 Thread/Worker 執行 Job，隔離上下文並防止主線程崩潰
+   - 技術選型: Node.js `worker_threads` 或 `child_process.fork`
+   - 預期效益: 提升穩定性，防止單一 job OOM 導致整個 process 崩潰
+   - 技術挑戰: 序列化成本、共享狀態處理、除錯困難
+
+2. **Cron Scheduler 分散式鎖** 🔧 規劃中
+   - 增強 Scheduler 以支援分散式 Cron (避免多節點重複執行)
+   - 實作方式: Redlock 風格的分散式鎖 + Leader Election
+   - 預期效益: 確保 cron job 在多節點環境下只執行一次
+   - 技術挑戰: 時鐘漂移、網路分區、鎖續約
 
 ### 中期 (v1.2)
-1. **Horizon Dashboard**：開發類似 Laravel Horizon 的即時監控面板 (整合 `OrbitSpectrum` 或 `OrbitZenith`)。
+1. **Horizon Dashboard** 📋 待實作
+   - 開發類似 Laravel Horizon 的即時監控面板
+   - 功能: 即時隊列狀態、Worker 健康監控、Job 詳情瀏覽與重試、效能趨勢圖表
+   - 技術棧: REST API + WebSocket + React/Vue 前端
+   - 整合: `OrbitSpectrum` 或 `OrbitZenith`
 
 ### 長期 (v2.0)
-1. **gRPC Driver**：支援透過 gRPC 直接推送作業到其他微服務，實現同步/異步混合架構。
+1. **gRPC Driver** 📋 待實作
+   - 支援透過 gRPC 直接推送作業到其他微服務，實現同步/異步混合架構
+   - 使用場景: 跨服務 Job 派發、高效能二進制協議、強型別契約
+   - 技術挑戰: Proto 版本管理、連線管理、錯誤處理
+
+---
+
+## 6. 變更歷史
+
+### v1.0.1 (2026-01-31)
+- ✅ 修復 `groupLimiters` 記憶體洩漏問題
+- ✅ 新增 `maxRequests` 選項支援定期重啟 worker
+- ✅ 完成深度架構分析與優化規劃 (由 Opus 4.5 分析，Sonnet 4.5 實作)
 
 ---
 *Created by Gravito Architect.*
