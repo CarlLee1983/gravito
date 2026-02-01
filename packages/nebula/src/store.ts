@@ -77,6 +77,19 @@ export interface StorageStore {
    */
   list?(prefix?: string): AsyncIterable<StorageItem>
 
+  /**
+   * Lists files with pagination support.
+   *
+   * 分頁列舉檔案（適合大型儲存空間）
+   * Recommended for large storage backends (S3, GCS) to prevent OOM.
+   * Provides cursor-based pagination for efficient large-scale file enumeration.
+   *
+   * @param prefix - Optional path prefix to filter results
+   * @param options - Pagination and filtering options
+   * @returns Paginated list result with cursor for next page
+   */
+  listPaginated?(prefix: string, options?: ListOptions): Promise<ListResult>
+
   // ==================== 元資料 ====================
 
   /**
@@ -169,4 +182,36 @@ export interface StorageItem {
   size?: number
   /** 最後修改時間 */
   lastModified?: Date
+}
+
+/**
+ * ListOptions provides pagination and filtering options for file listing.
+ *
+ * 列舉選項（分頁與過濾）
+ * @public
+ */
+export interface ListOptions {
+  /** 最大回傳數量（預設: 1000） */
+  maxResults?: number
+  /** 分頁游標（繼續上次的列舉） */
+  cursor?: string
+  /** 是否包含子目錄（預設: true） */
+  recursive?: boolean
+}
+
+/**
+ * ListResult contains paginated file listing results.
+ *
+ * 分頁列舉結果
+ * @public
+ */
+export interface ListResult {
+  /** 檔案清單項目 */
+  items: StorageItem[]
+  /** 下一頁游標（null 表示沒有更多結果） */
+  nextCursor: string | null
+  /** 是否還有更多結果 */
+  hasMore: boolean
+  /** 本次回傳的項目數量 */
+  count: number
 }

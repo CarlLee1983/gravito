@@ -93,7 +93,69 @@ Nebula 現已支援 `ReadableStream` 介面，解決大檔案記憶體溢出問�
   }
   ```
 
-### 3.3 Hook 系統整合
+### 3.3 分頁列舉與大規模檔案管理 ✨ (v1.1 新增)
+針對大型儲存空間（如 S3 Bucket 數百萬檔案）的列舉效能優化。
+
+- **新增 API**：
+  - `listPaginated(prefix: string, options?: ListOptions): Promise<ListResult>` - 分頁列舉
+
+- **型別定義**：
+  ```typescript
+  interface ListOptions {
+    maxResults?: number    // 預設 1000
+    cursor?: string        // 分頁游標
+    recursive?: boolean    // 預設 true
+  }
+
+  interface ListResult {
+    items: StorageItem[]   // 檔案清單
+    nextCursor: string | null  // 下一頁游標
+    hasMore: boolean       // 是否有更多結果
+    count: number          // 本次回傳數量
+  }
+  ```
+
+- **支援狀況**：
+  - ✅ **MemoryStore**: 完整支援
+  - ⏳ **LocalStore**: 待 RuntimeAdapter 支援 readDir
+  - ⏳ **S3Store**: 規劃中 (將在 v1.2 實作)
+
+- **使用範例**：
+  ```typescript
+  // 基本分頁列舉
+  const page1 = await storage.listPaginated('images/', { maxResults: 100 })
+  console.log(`Found ${page1.count} files`)
+
+  // 繼續獲取下一頁
+  if (page1.hasMore) {
+    const page2 = await storage.listPaginated('images/', {
+      maxResults: 100,
+      cursor: page1.nextCursor!
+    })
+  }
+
+  // 完整分頁迭代
+  let cursor: string | null = null
+  do {
+    const result = await storage.listPaginated('uploads/', {
+      maxResults: 1000,
+      cursor: cursor ?? undefined
+    })
+
+    for (const item of result.items) {
+      console.log(`File: ${item.key}, Size: ${item.size}`)
+    }
+
+    cursor = result.nextCursor
+  } while (cursor !== null)
+  ```
+
+- **效能優勢**：
+  - 游標式分頁，記憶體使用量恆定
+  - 適用於數百萬檔案的大型儲存空間
+  - 防止全量列舉導致的 OOM
+
+### 3.4 Hook 系統整合
 Nebula 深度整合了 `PlanetCore` 的 Hook 系統。
 - **Filter**: `storage:upload` (可修改上傳內容，如壓縮)。
 - **Action**: `storage:uploaded` (上傳後觸發，如發送通知)。
@@ -103,10 +165,14 @@ Nebula 深度整合了 `PlanetCore` 的 Hook 系統。
 
 ## 4. 潛在風險與效能評估
 
-### 4.1 列表效能 (List Performance)
+### 4.1 列表效能 (List Performance) ✅ (v1.1 已改善)
 `list()` 介面返回 `AsyncIterable`。
-- **風險**：對於擁有數百萬檔案的 S3 Bucket，全量遍歷極慢且昂貴。
-- **建議**：應盡量避免在生產環境對大型 Bucket 呼叫無參數的 `list()`。應配合 `prefix` 使用。
+- **原風險**：對於擁有數百萬檔案的 S3 Bucket，全量遍歷極慢且昂貴。
+- **✅ 解決方案**：已新增 `listPaginated` 介面，提供游標式分頁列舉。
+- **建議**：
+  - 對於大型儲存空間，優先使用 `listPaginated` 而非 `list()`
+  - 始終配合 `prefix` 參數使用以縮小範圍
+  - 設定合理的 `maxResults`（建議 100-1000）
 
 ### 4.2 本地儲存的擴展性
 `LocalStore` 依賴單一檔案系統。
@@ -122,9 +188,14 @@ Nebula 深度整合了 `PlanetCore` 的 Hook 系統。
    - LocalStore 和 MemoryStore 已完整實作
    - 測試覆蓋率達 100%（12 個測試案例，涵蓋小檔案、大檔案、錯誤處理等場景）
 
+2. ~~**List Pagination**~~：✅ 已實作 `listPaginated` 介面，支援分頁與游標機制。
+   - 新增 `ListOptions` 和 `ListResult` 型別
+   - MemoryStore 完整實作（LocalStore 待 RuntimeAdapter 支援）
+   - 測試覆蓋率達 100%（11 個測試案例，涵蓋分頁、游標、過濾、效能等場景）
+   - 防止大型儲存空間列舉時的 OOM 風險
+
 ### 短期 (v1.1 - 待完成)
-1. **List Pagination**：實作 `listPaginated` 介面，支援分頁與游標機制，防止大型 S3 Bucket OOM。
-2. **Metadata Enhancement**：支援自定義 Metadata (S3 Tags, Content-Disposition, Cache-Control)。
+1. **Metadata Enhancement**：支援自定義 Metadata (S3 Tags, Content-Disposition, Cache-Control)。
 
 ### 中期 (v1.2)
 1. **S3 Driver**：將 S3 Driver 從核心分離為獨立套件 `@gravito/nebula-s3`。

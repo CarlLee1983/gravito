@@ -1,5 +1,5 @@
 import { StorageRepository } from './StorageRepository'
-import type { StorageItem, StorageMetadata, StorageStore } from './store'
+import type { ListOptions, ListResult, StorageItem, StorageMetadata, StorageStore } from './store'
 import type { StorageHooks } from './types'
 
 /**
@@ -192,5 +192,20 @@ export class StorageManager {
    */
   getStream(key: string): Promise<ReadableStream<Uint8Array> | null> {
     return this.disk().getStream(key)
+  }
+
+  /**
+   * Lists files with pagination support on the default disk.
+   *
+   * 在預設磁碟上分頁列舉檔案
+   * Recommended for large storage backends to prevent OOM.
+   *
+   * @param prefix - Path prefix to filter by
+   * @param options - Pagination and filtering options
+   * @returns Paginated list result with cursor for next page
+   * @throws {Error} If the default disk driver does not support paginated listing
+   */
+  listPaginated(prefix: string, options?: ListOptions): Promise<ListResult> {
+    return this.disk().listPaginated(prefix, options)
   }
 }

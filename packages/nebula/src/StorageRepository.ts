@@ -1,4 +1,4 @@
-import type { StorageItem, StorageMetadata, StorageStore } from './store'
+import type { ListOptions, ListResult, StorageItem, StorageMetadata, StorageStore } from './store'
 import type { StorageHooks } from './types'
 
 /**
@@ -135,6 +135,26 @@ export class StorageRepository {
     }
 
     yield* this.store.list(prefix)
+  }
+
+  /**
+   * Lists files with pagination support.
+   *
+   * 分頁列舉檔案
+   * Recommended for large storage backends to prevent OOM.
+   * Provides cursor-based pagination for efficient enumeration.
+   *
+   * @param prefix - Path prefix to filter by
+   * @param options - Pagination and filtering options
+   * @returns Paginated list result with cursor for next page
+   * @throws {Error} If the underlying driver does not support paginated listing
+   */
+  async listPaginated(prefix: string, options?: ListOptions): Promise<ListResult> {
+    if (!this.store.listPaginated) {
+      throw new Error('[StorageRepository] This storage driver does not support paginated listing.')
+    }
+
+    return this.store.listPaginated(prefix, options)
   }
 
   /**

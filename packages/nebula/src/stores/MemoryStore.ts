@@ -1,4 +1,4 @@
-import type { StorageItem, StorageMetadata, StorageStore } from '../store'
+import type { ListOptions, ListResult, StorageItem, StorageMetadata, StorageStore } from '../store'
 
 interface MemoryFile {
   data: Blob
@@ -196,5 +196,66 @@ export class MemoryStore implements StorageStore {
     }
 
     return blob.stream()
+  }
+
+  /**
+   * Lists files with pagination support.
+   *
+   * 分頁列舉記憶體中的檔案
+   * Provides cursor-based pagination for consistent API with other drivers.
+   *
+   * @param prefix - Key prefix to filter by
+   * @param options - Pagination and filtering options
+   * @returns Paginated list result
+   */
+  async listPaginated(prefix = '', options?: ListOptions): Promise<ListResult> {
+    const maxResults = options?.maxResults ?? 1000
+    const cursorKey = options?.cursor
+
+    // Get all matching keys
+    const allKeys = Array.from(this.files.keys())
+      .filter((key) => key.startsWith(prefix))
+      .sort() // Ensure consistent ordering
+
+    // Find start position based on cursor
+    let startIndex = 0
+    if (cursorKey) {
+      startIndex = allKeys.findIndex((key) => key > cursorKey)
+      if (startIndex === -1) {
+        // Cursor is beyond all items
+        return {
+          items: [],
+          nextCursor: null,
+          hasMore: false,
+          count: 0,
+        }
+      }
+    }
+
+    // Slice the results
+    const endIndex = startIndex + maxResults
+    const pageKeys = allKeys.slice(startIndex, endIndex)
+    const hasMore = endIndex < allKeys.length
+
+    // Build items
+    const items: StorageItem[] = pageKeys.map((key) => {
+      const file = this.files.get(key)!
+      return {
+        key,
+        isDirectory: false,
+        size: file.metadata.size,
+        lastModified: file.metadata.lastModified,
+      }
+    })
+
+    // Next cursor is the last key in this page
+    const nextCursor = hasMore && items.length > 0 ? items[items.length - 1].key : null
+
+    return {
+      items,
+      nextCursor,
+      hasMore,
+      count: items.length,
+    }
   }
 }
