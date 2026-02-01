@@ -6,6 +6,7 @@ import {
   type GoogleSubmitterConfig,
   IncrementalStrategy,
   SeoEngine,
+  type SitemapEntry,
 } from '@gravito/luminosity'
 import pc from 'picocolors'
 
@@ -113,7 +114,7 @@ export async function submitCommand(
 
     // Apply limit if specified
     const urlsToSubmit = options.limit ? entries.slice(0, options.limit) : entries
-    const urls = urlsToSubmit.map((entry) => entry.url)
+    const urls = urlsToSubmit.map((entry: SitemapEntry) => entry.url)
 
     console.log(pc.cyan(`Found ${pc.bold(entries.length)} URLs in sitemap`))
     if (options.limit) {

@@ -165,7 +165,7 @@ export async function analyzeCommand(
 
       // Count log lines
       const logContent = await storageAdapter.read(logPath)
-      logLineCount = logContent.split('\n').filter((line) => line.trim()).length
+      logLineCount = logContent.split('\n').filter((line: string) => line.trim()).length
     }
 
     // Calculate health score

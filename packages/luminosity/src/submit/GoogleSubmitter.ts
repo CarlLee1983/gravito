@@ -267,10 +267,15 @@ export class GoogleSubmitter {
     }
 
     const data = await response.json()
-    this.accessToken = data.access_token
+    if (!data.access_token) {
+      throw new Error('Response from Google OAuth did not contain an access token')
+    }
+
+    const token = data.access_token as string
+    this.accessToken = token
     this.tokenExpiresAt = Date.now() + (data.expires_in - 60) * 1000 // Refresh 1 min early
 
-    return this.accessToken
+    return token
   }
 
   /**
