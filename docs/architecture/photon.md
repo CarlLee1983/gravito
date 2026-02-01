@@ -1112,12 +1112,30 @@ core.mountOrbit('/api', apiOrbit)
 
 1. ~~**Orbit 級別的 Middleware 隔離**~~ ✅ **已實作** (v1.0.0-beta.1)
    - `useScoped()` API 提供強制路徑驗證，確保中介軟體只作用於特定 Orbit 子樹。
+   - 位置：`@gravito/core/adapters/PhotonAdapter.ts`
 
-2. **HTTP/3 QUIC 支援** (Priority: Low)
-   - 評估 Bun 的 HTTP/3 支援進度，適時暴露相關配置。
+2. ~~**內建 Rate Limiting**~~ ✅ **已實作** (v1.0.0)
+   - 提供開箱即用的速率限制中介軟體，支援記憶體與自訂儲存後端。
+   - 位置：`@gravito/photon/middleware/ratelimit`
+   - 功能：Token Bucket 策略、可自訂金鑰生成器、多種預設配置（strict, moderate, lenient, api, auth）
+   - 用法：
+     ```typescript
+     import { Photon, rateLimit, rateLimiter } from '@gravito/photon'
+     
+     const app = new Photon()
+     
+     // 基本用法：每分鐘 100 次請求
+     app.use('*', rateLimit({ maxRequests: 100, windowMs: 60000 }))
+     
+     // 使用預設配置
+     app.use('/api/*', rateLimiter.api()) // 每小時 1000 次
+     app.use('/auth/*', rateLimiter.auth()) // 每 15 分鐘 5 次（登入端點）
+     ```
 
-3. **內建 Rate Limiting** (Priority: Medium)
-   - 提供開箱即用的速率限制中介軟體。
+3. **HTTP/3 QUIC 支援** (Priority: Low) ⏸️ **待評估**
+   - **當前狀態**：Bun v1.3.4 尚未支援 HTTP/3 或 QUIC 協議
+   - **建議**：持續追蹤 Bun roadmap，待官方實作後暴露相關配置選項
+   - **預計影響**：需等待 Bun runtime 層級支援，無法透過 Photon 層單獨實作
 
 ---
 
