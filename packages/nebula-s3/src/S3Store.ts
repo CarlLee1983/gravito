@@ -97,12 +97,24 @@ export class S3Store implements StorageStore {
       body = data
     }
 
+    // Sanitize metadata to ensure only ASCII characters (S3 requirement)
+    const sanitizedMetadata = options?.metadata
+      ? Object.fromEntries(
+          Object.entries(options.metadata).map(([k, v]) => [
+            k,
+            // Replace non-ASCII characters with URL encoding
+            // biome-ignore lint/suspicious/noControlCharactersInRegex: Need to detect non-ASCII for S3 compatibility
+            v.replace(/[^\x00-\x7F]/g, (char) => encodeURIComponent(char)),
+          ])
+        )
+      : undefined
+
     const command = new PutObjectCommand({
       Bucket: this.options.bucket,
       Key: key,
       Body: body,
       ContentType: options?.contentType,
-      Metadata: options?.metadata,
+      Metadata: sanitizedMetadata,
       CacheControl: options?.cacheControl,
       ContentDisposition: options?.contentDisposition,
     })
@@ -152,20 +164,20 @@ export class S3Store implements StorageStore {
    * @returns true 如果刪除成功，false 如果檔案不存在
    */
   async delete(key: string): Promise<boolean> {
-    try {
-      const command = new DeleteObjectCommand({
-        Bucket: this.options.bucket,
-        Key: key,
-      })
-
-      await this.client.send(command)
-      return true
-    } catch (error: any) {
-      if (error.name === 'NoSuchKey') {
-        return false
-      }
-      throw error
+    // S3 Delete is idempotent - it always succeeds even if key doesn't exist
+    // We need to check existence first to match StorageStore semantics
+    const exists = await this.exists(key)
+    if (!exists) {
+      return false
     }
+
+    const command = new DeleteObjectCommand({
+      Bucket: this.options.bucket,
+      Key: key,
+    })
+
+    await this.client.send(command)
+    return true
   }
 
   /**
@@ -232,13 +244,27 @@ export class S3Store implements StorageStore {
 
       const response = await this.client.send(command)
 
+      // Decode URL-encoded metadata values
+      const decodedMetadata = response.Metadata
+        ? Object.fromEntries(
+            Object.entries(response.Metadata).map(([k, v]) => {
+              try {
+                return [k, decodeURIComponent(v)]
+              } catch {
+                // If decode fails, return original value
+                return [k, v]
+              }
+            })
+          )
+        : undefined
+
       return {
         key,
         size: response.ContentLength ?? 0,
         mimeType: response.ContentType,
         lastModified: response.LastModified,
         etag: response.ETag?.replace(/"/g, ''),
-        customMetadata: response.Metadata,
+        customMetadata: decodedMetadata,
       }
     } catch (error: any) {
       if (error.name === 'NotFound' || error.name === 'NoSuchKey') {
