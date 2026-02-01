@@ -95,7 +95,6 @@ export class Worker {
   private sandboxedWorker?: SandboxedWorker
 
   constructor(private options: WorkerOptions = {}) {
-    // 如果啟用 sandboxed 模式，初始化 SandboxedWorker
     if (options.sandboxed) {
       this.sandboxedWorker = new SandboxedWorker(options.sandboxConfig)
     }
@@ -174,10 +173,10 @@ export class Worker {
       throw new Error('Sandboxed worker not initialized')
     }
 
-    // 序列化 Job 為 SerializedJob
+    // Serialize Job to SerializedJob
     const serialized = this.serializeJob(job)
 
-    // 在 Worker Thread 中執行
+    // Execute in Worker Thread
     await this.sandboxedWorker.execute(serialized)
   }
 
@@ -188,8 +187,8 @@ export class Worker {
    * @returns Serialized job data.
    */
   private serializeJob(job: Job): SerializedJob {
-    // 將 Job 序列化為 JSON
-    // 注意：這是簡化版本，實際應用可能需要更複雜的序列化邏輯
+    // Serialize Job to JSON
+    // Note: This is a simplified version; real-world usage might require more complex serialization logic
     const data = JSON.stringify(job)
 
     return {

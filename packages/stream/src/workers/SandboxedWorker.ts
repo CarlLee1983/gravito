@@ -1,7 +1,8 @@
 /**
- * Sandboxed Worker 實作
+ * Sandboxed Worker Implementation.
  *
- * 在獨立的 Worker Thread 中執行 Job，提供上下文隔離和錯誤防護。
+ * Executes jobs in isolated Worker Threads to provide context isolation,
+ * error containment, and resource limits.
  *
  * @public
  */
@@ -11,66 +12,67 @@ import { Worker as ThreadWorker } from 'worker_threads'
 import type { SerializedJob } from '../types'
 
 /**
- * Sandboxed Worker 配置選項
+ * Configuration options for the Sandboxed Worker.
  */
 export interface SandboxedWorkerConfig {
   /**
-   * 最大執行時間（毫秒）
+   * Maximum execution time for a job in milliseconds.
    *
-   * 超過此時間的 Job 將被終止。
-   * @default 30000 (30 秒)
+   * Jobs exceeding this duration will be forcefully terminated.
+   * @default 30000 (30 seconds)
    */
   maxExecutionTime?: number
 
   /**
-   * 最大記憶體限制（MB）
+   * Maximum memory limit for the worker in MB.
    *
-   * 超過此限制的 Worker 將被終止並重啟。
-   * 注意：此限制需要透過 resourceLimits 設定，但不是所有平台都支援。
-   * @default undefined (無限制)
+   * If the worker exceeds this limit, it will be terminated and restarted.
+   * Note: Relies on `resourceLimits` which may vary by platform.
+   * @default undefined (unlimited)
    */
   maxMemory?: number
 
   /**
-   * 是否隔離上下文
+   * Whether to isolate contexts for each job.
    *
-   * true 表示每個 Job 在獨立的 Worker Thread 中執行，
-   * false 表示複用同一個 Worker Thread。
+   * If `true`, a new Worker Thread is created for every job execution.
+   * If `false`, the Worker Thread is reused across multiple jobs.
    * @default false
    */
   isolateContexts?: boolean
 
   /**
-   * Worker Thread 閒置超時（毫秒）
+   * Idle timeout for the Worker Thread in milliseconds.
    *
-   * Worker 閒置超過此時間後將被終止以節省資源。
-   * @default 60000 (60 秒)
+   * The worker will be terminated if it remains idle for this duration to save resources.
+   * @default 60000 (60 seconds)
    */
   idleTimeout?: number
 }
 
 /**
- * Worker 狀態
+ * Internal state of the worker.
  */
 enum WorkerState {
-  /** 初始化中 */
+  /** Worker is initializing or starting up. */
   INITIALIZING = 'initializing',
-  /** 就緒 */
+  /** Worker is ready to accept jobs. */
   READY = 'ready',
-  /** 執行中 */
+  /** Worker is currently executing a job. */
   BUSY = 'busy',
-  /** 已終止 */
+  /** Worker has been terminated or exited. */
   TERMINATED = 'terminated',
 }
 
 /**
- * Sandboxed Worker
+ * Sandboxed Worker.
  *
- * 在獨立的 Worker Thread 中執行 Job，提供：
- * - 上下文隔離：每個 Job 可選擇在獨立的執行環境中運行
- * - 超時控制：自動終止執行時間過長的 Job
- * - 記憶體限制：防止記憶體洩漏影響主線程
- * - 錯誤隔離：Worker 崩潰不會影響主線程
+ * Manages the lifecycle of a Node.js Worker Thread for job execution.
+ * Provides features like:
+ * - Context Isolation: Run code in a separate thread.
+ * - Timeout Enforcement: Terminate hangs or long-running jobs.
+ * - Memory Limits: Prevent OOM issues affecting the main process.
+ * - Error Containment: Worker crashes do not crash the main application.
  *
  * @example
  * ```typescript
@@ -92,9 +94,9 @@ export class SandboxedWorker {
   private executionTimer: NodeJS.Timeout | null = null
 
   /**
-   * 建構 Sandboxed Worker
+   * Creates a SandboxedWorker instance.
    *
-   * @param config - Worker 配置選項
+   * @param config - Configuration options for the worker.
    */
   constructor(config: SandboxedWorkerConfig = {}) {
     this.config = {
@@ -106,23 +108,20 @@ export class SandboxedWorker {
   }
 
   /**
-   * 初始化 Worker Thread
+   * Initializes the Worker Thread.
    *
-   * @returns Worker 實例
-   * @throws {Error} 如果 Worker 建立失敗
+   * @returns The active Worker Thread instance.
+   * @throws {Error} If worker initialization fails or times out.
    */
   private async initWorker(): Promise<ThreadWorker> {
-    // 如果已存在且未終止，直接返回
     if (this.worker && this.state !== WorkerState.TERMINATED) {
       return this.worker
     }
 
-    // 建立新的 Worker Thread
     const workerPath = resolve(__dirname, 'job-executor.js')
 
     const resourceLimits: any = {}
     if (this.config.maxMemory > 0) {
-      // 設定記憶體限制（以位元組為單位）
       resourceLimits.maxOldGenerationSizeMb = this.config.maxMemory
       resourceLimits.maxYoungGenerationSizeMb = Math.min(this.config.maxMemory / 2, 128)
     }
@@ -133,7 +132,6 @@ export class SandboxedWorker {
 
     this.state = WorkerState.INITIALIZING
 
-    // 等待 Worker 準備完成
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error('Worker initialization timeout'))
@@ -155,7 +153,6 @@ export class SandboxedWorker {
       })
     })
 
-    // 設定錯誤處理
     this.worker.on('error', (error) => {
       console.error('[SandboxedWorker] Worker error:', error)
       this.state = WorkerState.TERMINATED
@@ -172,61 +169,50 @@ export class SandboxedWorker {
   }
 
   /**
-   * 執行 Job
+   * Executes a job in the sandboxed environment.
    *
-   * 在 Worker Thread 中執行序列化的 Job。
-   *
-   * @param job - 序列化的 Job 資料
-   * @throws {Error} 如果 Job 執行失敗或超時
+   * @param job - The serialized job data to execute.
+   * @throws {Error} If execution fails, times out, or the worker crashes.
    */
   async execute(job: SerializedJob): Promise<void> {
-    // 如果需要隔離上下文，每次建立新的 Worker
     if (this.config.isolateContexts) {
       await this.terminate()
     }
 
-    // 初始化或取得 Worker
     const worker = await this.initWorker()
     this.state = WorkerState.BUSY
 
-    // 清除閒置計時器
     if (this.idleTimer) {
       clearTimeout(this.idleTimer)
       this.idleTimer = null
     }
 
     try {
-      // 執行 Job（帶超時控制）
       await Promise.race([this.executeInWorker(worker, job), this.createTimeoutPromise()])
     } finally {
       this.state = WorkerState.READY
 
-      // 清除執行計時器
       if (this.executionTimer) {
         clearTimeout(this.executionTimer)
         this.executionTimer = null
       }
 
-      // 設定閒置計時器
       if (!this.config.isolateContexts) {
         this.startIdleTimer()
       } else {
-        // 如果隔離上下文，立即終止
         await this.terminate()
       }
     }
   }
 
   /**
-   * 在 Worker 中執行 Job
+   * Internal method to send execution message to the worker thread.
    *
-   * @param worker - Worker 實例
-   * @param job - 序列化的 Job 資料
-   * @returns Promise，在 Job 執行完成時解析
+   * @param worker - The worker thread instance.
+   * @param job - Job data.
    */
   private executeInWorker(worker: ThreadWorker, job: SerializedJob): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      // 監聽執行結果
       const messageHandler = (message: any) => {
         if (message.type === 'success') {
           cleanup()
@@ -241,13 +227,11 @@ export class SandboxedWorker {
         }
       }
 
-      // 監聽錯誤
       const errorHandler = (error: Error) => {
         cleanup()
         reject(error)
       }
 
-      // 監聽退出
       const exitHandler = (code: number) => {
         cleanup()
         if (code !== 0) {
@@ -255,19 +239,16 @@ export class SandboxedWorker {
         }
       }
 
-      // 清理監聽器
       const cleanup = () => {
         worker.off('message', messageHandler)
         worker.off('error', errorHandler)
         worker.off('exit', exitHandler)
       }
 
-      // 註冊監聽器
       worker.on('message', messageHandler)
       worker.on('error', errorHandler)
       worker.on('exit', exitHandler)
 
-      // 發送執行訊息
       worker.postMessage({
         type: 'execute',
         job,
@@ -276,14 +257,11 @@ export class SandboxedWorker {
   }
 
   /**
-   * 建立超時 Promise
-   *
-   * @returns Promise，在超時時拒絕
+   * Creates a promise that rejects after the configured timeout.
    */
   private createTimeoutPromise(): Promise<never> {
     return new Promise<never>((_, reject) => {
       this.executionTimer = setTimeout(() => {
-        // 超時，終止 Worker
         this.terminate().catch(console.error)
         reject(new Error(`Job execution timeout after ${this.config.maxExecutionTime}ms`))
       }, this.config.maxExecutionTime)
@@ -291,9 +269,7 @@ export class SandboxedWorker {
   }
 
   /**
-   * 啟動閒置計時器
-   *
-   * 在 Worker 閒置一段時間後自動終止以節省資源。
+   * Starts the idle timer to auto-terminate the worker.
    */
   private startIdleTimer(): void {
     if (this.idleTimer) {
@@ -306,9 +282,9 @@ export class SandboxedWorker {
   }
 
   /**
-   * 終止 Worker Thread
+   * Terminates the Worker Thread immediately.
    *
-   * 立即終止 Worker，釋放資源。
+   * Stops any running job and releases resources.
    */
   async terminate(): Promise<void> {
     if (this.idleTimer) {
@@ -335,27 +311,27 @@ export class SandboxedWorker {
   }
 
   /**
-   * 取得 Worker 狀態
+   * Gets the current state of the worker.
    *
-   * @returns 當前狀態
+   * @returns The current `WorkerState`.
    */
   getState(): string {
     return this.state
   }
 
   /**
-   * 檢查 Worker 是否就緒
+   * Checks if the worker is ready to accept a job.
    *
-   * @returns true 表示就緒，可以執行 Job
+   * @returns `true` if ready, `false` otherwise.
    */
   isReady(): boolean {
     return this.state === WorkerState.READY
   }
 
   /**
-   * 檢查 Worker 是否忙碌
+   * Checks if the worker is currently executing a job.
    *
-   * @returns true 表示正在執行 Job
+   * @returns `true` if busy, `false` otherwise.
    */
   isBusy(): boolean {
     return this.state === WorkerState.BUSY

@@ -40,9 +40,9 @@ export interface ScheduledJobConfig {
 }
 
 /**
- * Scheduler 的配置選項。
+ * Configuration options for the Scheduler.
  *
- * 定義排程器的行為，包含分散式鎖的設定。
+ * Defines behavior for scheduling tasks, including distributed lock settings.
  *
  * @public
  * @since 3.1.0
@@ -50,48 +50,48 @@ export interface ScheduledJobConfig {
  * ```typescript
  * const options: SchedulerOptions = {
  *   prefix: 'myapp:queue:',
- *   lockTtl: 60000,        // 鎖持有 60 秒
- *   lockRefreshInterval: 20000  // 每 20 秒自動續約
+ *   lockTtl: 60000,        // Lock held for 60 seconds
+ *   lockRefreshInterval: 20000  // Auto-renew every 20 seconds
  * };
  * ```
  */
 export interface SchedulerOptions {
   /**
-   * Redis 鍵的前綴。
+   * Prefix for Redis keys.
    *
    * @default 'queue:'
    */
   prefix?: string
 
   /**
-   * 分散式鎖的生存時間（毫秒）。
+   * Time-to-live for the distributed lock in milliseconds.
    *
-   * 設定較長的 TTL 可確保長時間運行的任務不會因鎖過期而被重複執行。
-   * 建議設為任務預期執行時間的 2-3 倍。
+   * Setting a longer TTL ensures long-running tasks are not executed repeatedly
+   * due to lock expiration. Recommended to be 2-3 times the expected execution time.
    *
-   * @default 60000 (60 秒)
+   * @default 60000 (60 seconds)
    */
   lockTtl?: number
 
   /**
-   * 鎖的自動續約間隔（毫秒）。
+   * Interval for automatic lock renewal in milliseconds.
    *
-   * 如果設定此值，鎖將每隔 lockRefreshInterval 自動延長 TTL。
-   * 建議設為 lockTtl 的 1/3。
+   * If set, the lock will be automatically extended every `lockRefreshInterval`.
+   * Recommended to be 1/3 of `lockTtl`.
    *
-   * @default 20000 (20 秒)
+   * @default 20000 (20 seconds)
    */
   lockRefreshInterval?: number
 
   /**
-   * 獲取鎖失敗時的重試次數。
+   * Number of retries when acquiring a lock fails.
    *
    * @default 0
    */
   lockRetryCount?: number
 
   /**
-   * 每次重試之間的延遲時間（毫秒）。
+   * Delay between lock acquisition retries in milliseconds.
    *
    * @default 100
    */
@@ -133,8 +133,8 @@ export class Scheduler {
     options: SchedulerOptions = {}
   ) {
     this.prefix = options.prefix ?? 'queue:'
-    this.lockTtl = options.lockTtl ?? 60000 // 預設 60 秒
-    this.lockRefreshInterval = options.lockRefreshInterval ?? 20000 // 預設 20 秒
+    this.lockTtl = options.lockTtl ?? 60000
+    this.lockRefreshInterval = options.lockRefreshInterval ?? 20000
     this.lockRetryCount = options.lockRetryCount ?? 0
     this.lockRetryDelay = options.lockRetryDelay ?? 100
   }
@@ -148,7 +148,7 @@ export class Scheduler {
   }
 
   /**
-   * 獲取或創建分散式鎖實例。
+   * Gets or creates the distributed lock instance.
    *
    * @private
    */
@@ -284,8 +284,8 @@ export class Scheduler {
     const lock = this.getDistributedLock()
 
     for (const id of dueIds) {
-      // 使用分散式鎖確保只有一個 worker 處理此排程
-      // 鎖的鍵包含排程 ID 和當前時間戳（精確到秒），確保每個時間窗口只執行一次
+      // Use distributed lock to ensure only one worker processes this schedule
+      // Lock key includes ID and current timestamp (seconds) to ensure once per window
       const lockKey = `${this.prefix}lock:schedule:${id}:${Math.floor(now / 1000)}`
 
       const acquired = await lock.acquire(lockKey, {
@@ -304,11 +304,11 @@ export class Scheduler {
               const connection = data.connection || this.manager.getDefaultConnection()
               const driver = this.manager.getDriver(connection)
 
-              // 1. 直接推送到佇列（傳遞序列化的資料）
-              // 這避免了在排程器程序中註冊 job 類別的需求
+              // 1. Push directly to queue (pass serialized data)
+              // This avoids needing to register job classes in the scheduler process
               await driver.push(data.queue, serializedJob)
 
-              // 2. 排程下次執行
+              // 2. Schedule next run
               const nextRun = (parser as any).parse(data.cron).next().getTime()
 
               if (typeof client.pipeline === 'function') {
@@ -328,7 +328,7 @@ export class Scheduler {
             }
           }
         } finally {
-          // 確保鎖被釋放
+          // Ensure lock is released
           await lock.release(lockKey)
         }
       }

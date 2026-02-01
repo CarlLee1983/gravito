@@ -1,7 +1,8 @@
 /**
- * Worker Pool 實作
+ * Worker Pool Implementation.
  *
- * 管理多個 Sandboxed Worker，提供並發控制、Worker 複用和健康檢查功能。
+ * Manages a pool of Sandboxed Workers to provide concurrency control,
+ * worker reuse, load balancing, and health monitoring.
  *
  * @public
  */
@@ -10,63 +11,63 @@ import type { SerializedJob } from '../types'
 import { SandboxedWorker, type SandboxedWorkerConfig } from './SandboxedWorker'
 
 /**
- * Worker Pool 配置選項
+ * Configuration options for the Worker Pool.
  */
 export interface WorkerPoolConfig extends SandboxedWorkerConfig {
   /**
-   * Worker Pool 大小
+   * The maximum number of workers allowed in the pool.
    *
-   * 同時存在的 Worker 數量上限。
    * @default 4
    */
   poolSize?: number
 
   /**
-   * 最小 Worker 數量
+   * The minimum number of workers to keep alive.
    *
-   * Pool 會預先創建並保持此數量的 Worker 就緒。
+   * The pool will pre-warm and maintain at least this many ready workers.
    * @default 0
    */
   minWorkers?: number
 
   /**
-   * 健康檢查間隔（毫秒）
+   * Interval for performing health checks in milliseconds.
    *
-   * 定期檢查 Worker 健康狀態並清理無效的 Worker。
-   * @default 30000 (30 秒)
+   * Periodically scans for and removes terminated or unhealthy workers.
+   * @default 30000 (30 seconds)
    */
   healthCheckInterval?: number
 }
 
 /**
- * Worker 統計資訊
+ * Runtime statistics for the Worker Pool.
  */
 export interface WorkerPoolStats {
-  /** 總 Worker 數量 */
+  /** Total number of workers (ready + busy). */
   total: number
-  /** 就緒的 Worker 數量 */
+  /** Number of idle workers ready for new jobs. */
   ready: number
-  /** 忙碌的 Worker 數量 */
+  /** Number of workers currently executing jobs. */
   busy: number
-  /** 已終止的 Worker 數量 */
+  /** Number of workers in terminated state awaiting cleanup. */
   terminated: number
-  /** 等待執行的 Job 數量 */
+  /** Number of jobs waiting in the queue. */
   pending: number
-  /** 已完成的 Job 總數 */
+  /** Total number of successfully completed jobs. */
   completed: number
-  /** 失敗的 Job 總數 */
+  /** Total number of failed jobs. */
   failed: number
 }
 
 /**
- * Worker Pool
+ * Worker Pool.
  *
- * 管理一組 Sandboxed Worker，提供：
- * - 並發控制：限制同時執行的 Job 數量
- * - Worker 複用：避免頻繁創建和銷毀 Worker
- * - 負載平衡：將 Job 分配到可用的 Worker
- * - 健康檢查：定期清理無效的 Worker
- * - 預熱機制：預先創建 Worker 以減少首次執行延遲
+ * Orchestrates multiple `SandboxedWorker` instances to execute jobs concurrently.
+ *
+ * Key features:
+ * - **Concurrency Control**: Limits the number of simultaneous job executions (`poolSize`).
+ * - **Queueing**: Queues jobs when all workers are busy.
+ * - **Lifecycle Management**: Automatically creates, reuses, and terminates workers.
+ * - **Health Monitoring**: Periodically cleans up dead workers and maintains `minWorkers`.
  *
  * @example
  * ```typescript
@@ -95,9 +96,9 @@ export class WorkerPool {
   }
 
   /**
-   * 建構 Worker Pool
+   * Creates a WorkerPool instance.
    *
-   * @param config - Pool 配置選項
+   * @param config - Configuration options for the pool.
    */
   constructor(config: WorkerPoolConfig = {}) {
     this.config = {
@@ -110,17 +111,12 @@ export class WorkerPool {
       idleTimeout: config.idleTimeout ?? 60000,
     }
 
-    // 初始化最小 Worker 數量
     this.warmUp()
-
-    // 啟動健康檢查
     this.startHealthCheck()
   }
 
   /**
-   * 預熱 Worker Pool
-   *
-   * 預先創建指定數量的 Worker 以加快首次執行速度。
+   * Pre-warms the pool by creating the minimum number of workers.
    */
   private warmUp(): void {
     const targetCount = Math.min(this.config.minWorkers, this.config.poolSize)
@@ -130,9 +126,9 @@ export class WorkerPool {
   }
 
   /**
-   * 創建新的 Worker
+   * Creates a new SandboxedWorker and adds it to the pool.
    *
-   * @returns SandboxedWorker 實例
+   * @returns The newly created worker.
    */
   private createWorker(): SandboxedWorker {
     const worker = new SandboxedWorker({
@@ -147,42 +143,41 @@ export class WorkerPool {
   }
 
   /**
-   * 取得可用的 Worker
+   * Retrieves an available worker from the pool.
    *
-   * 如果沒有可用的 Worker，會嘗試創建新的（在 Pool 大小限制內）。
+   * Priorities:
+   * 1. Reuse an existing ready worker.
+   * 2. Create a new worker if the pool is not full.
+   * 3. Return `null` if the pool is saturated.
    *
-   * @returns 可用的 Worker，如果沒有則返回 null
+   * @returns An available worker or `null`.
    */
   private getAvailableWorker(): SandboxedWorker | null {
-    // 尋找就緒的 Worker
     const readyWorker = this.workers.find((w) => w.isReady())
     if (readyWorker) {
       return readyWorker
     }
 
-    // 如果沒有就緒的 Worker，檢查是否可以創建新的
     if (this.workers.length < this.config.poolSize) {
       return this.createWorker()
     }
 
-    // Pool 已滿且所有 Worker 都在忙碌
     return null
   }
 
   /**
-   * 執行 Job
+   * Executes a job using the worker pool.
    *
-   * 將 Job 分配到可用的 Worker 執行。如果沒有可用的 Worker，
-   * Job 會被加入佇列等待。
+   * If a worker is available, the job starts immediately.
+   * Otherwise, it is added to the pending queue.
    *
-   * @param job - 序列化的 Job 資料
-   * @throws {Error} 如果 Job 執行失敗
+   * @param job - The serialized job data.
+   * @throws {Error} If execution fails.
    */
   async execute(job: SerializedJob): Promise<void> {
     const worker = this.getAvailableWorker()
 
     if (worker) {
-      // 有可用的 Worker，直接執行
       try {
         await worker.execute(job)
         this.stats.completed++
@@ -190,11 +185,9 @@ export class WorkerPool {
         this.stats.failed++
         throw error
       } finally {
-        // 執行完成後，檢查是否有等待的 Job
         this.processQueue()
       }
     } else {
-      // 沒有可用的 Worker，加入佇列
       return new Promise<void>((resolve, reject) => {
         this.queue.push({ job, resolve, reject })
       })
@@ -202,9 +195,7 @@ export class WorkerPool {
   }
 
   /**
-   * 處理佇列中的 Job
-   *
-   * 當有 Worker 變為可用時，從佇列中取出 Job 執行。
+   * Processes the next job in the queue if a worker is available.
    */
   private processQueue(): void {
     if (this.queue.length === 0) {
@@ -221,7 +212,6 @@ export class WorkerPool {
       return
     }
 
-    // 執行 Job
     worker
       .execute(item.job)
       .then(() => {
@@ -233,15 +223,12 @@ export class WorkerPool {
         item.reject(error)
       })
       .finally(() => {
-        // 繼續處理佇列
         this.processQueue()
       })
   }
 
   /**
-   * 啟動健康檢查
-   *
-   * 定期檢查 Worker 狀態並清理已終止的 Worker。
+   * Starts the periodic health check.
    */
   private startHealthCheck(): void {
     if (this.healthCheckTimer) {
@@ -254,12 +241,11 @@ export class WorkerPool {
   }
 
   /**
-   * 執行健康檢查
+   * Performs a health check on the pool.
    *
-   * 清理已終止的 Worker 並確保最小 Worker 數量。
+   * Removes terminated workers and ensures `minWorkers` are available.
    */
   private performHealthCheck(): void {
-    // 移除已終止的 Worker
     this.workers = this.workers.filter((worker) => {
       if (worker.getState() === 'terminated') {
         worker.terminate().catch(console.error)
@@ -268,7 +254,6 @@ export class WorkerPool {
       return true
     })
 
-    // 確保最小 Worker 數量
     const activeWorkers = this.workers.length
     if (activeWorkers < this.config.minWorkers) {
       const needed = this.config.minWorkers - activeWorkers
@@ -279,9 +264,9 @@ export class WorkerPool {
   }
 
   /**
-   * 取得 Pool 統計資訊
+   * Gets the current statistics of the worker pool.
    *
-   * @returns 統計資訊
+   * @returns Snapshot of pool statistics.
    */
   getStats(): WorkerPoolStats {
     let ready = 0
@@ -307,36 +292,31 @@ export class WorkerPool {
   }
 
   /**
-   * 關閉 Pool
+   * Shuts down the worker pool.
    *
-   * 終止所有 Worker 並清理資源。等待中的 Job 會被拒絕。
+   * Terminates all workers and rejects any pending jobs.
    */
   async shutdown(): Promise<void> {
-    // 停止健康檢查
     if (this.healthCheckTimer) {
       clearInterval(this.healthCheckTimer)
       this.healthCheckTimer = null
     }
 
-    // 拒絕所有等待中的 Job
     for (const item of this.queue) {
       item.reject(new Error('Worker pool is shutting down'))
     }
     this.queue = []
 
-    // 終止所有 Worker
     await Promise.all(this.workers.map((worker) => worker.terminate().catch(console.error)))
 
     this.workers = []
   }
 
   /**
-   * 等待所有 Job 完成
+   * Waits for all active and pending jobs to complete.
    *
-   * 阻塞直到所有執行中和等待中的 Job 都完成。
-   *
-   * @param timeout - 最大等待時間（毫秒），0 表示無限等待
-   * @throws {Error} 如果超時
+   * @param timeout - Maximum wait time in milliseconds. 0 for infinite.
+   * @throws {Error} If the timeout is reached.
    */
   async waitForCompletion(timeout = 0): Promise<void> {
     const startTime = Date.now()
