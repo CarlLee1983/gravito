@@ -7,27 +7,80 @@ import type { RetryOptions } from './types'
 const DEFAULT_RETRY_STATUS_CODES = [408, 429, 500, 502, 503, 504]
 
 /**
+ * Merges multiple AbortSignals into a single signal
+ * When any of the input signals aborts, the merged signal will also abort
+ *
+ * @param signals - Array of AbortSignals to merge
+ * @returns A merged AbortSignal
+ */
+export function mergeAbortSignals(signals: (AbortSignal | undefined)[]): AbortSignal {
+  const validSignals = signals.filter((s): s is AbortSignal => s !== undefined)
+
+  // If no signals, return a signal that never aborts
+  if (validSignals.length === 0) {
+    return new AbortController().signal
+  }
+
+  // If only one signal, return it directly
+  if (validSignals.length === 1) {
+    return validSignals[0]
+  }
+
+  // Create a new controller to merge multiple signals
+  const controller = new AbortController()
+
+  // Listen to all signals and abort when any of them aborts
+  for (const signal of validSignals) {
+    if (signal.aborted) {
+      controller.abort()
+      break
+    }
+    signal.addEventListener('abort', () => controller.abort(), { once: true })
+  }
+
+  return controller.signal
+}
+
+/**
  * Creates a fetch function with timeout support
  *
  * @param timeout - Timeout duration in milliseconds
+ * @param userSignal - Optional user-provided AbortSignal
  * @returns A fetch function with timeout capability
  */
 export function createFetchWithTimeout(
-  timeout: number
+  timeout: number,
+  userSignal?: AbortSignal
 ): (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> {
   return async (input, init) => {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), timeout)
+    const timeoutController = new AbortController()
+    const timeoutId = setTimeout(() => timeoutController.abort(), timeout)
 
     try {
+      // Merge timeout signal with user signal and init signal
+      const mergedSignal = mergeAbortSignals([
+        timeoutController.signal,
+        userSignal,
+        init?.signal as AbortSignal | undefined,
+      ])
+
       const response = await fetch(input, {
         ...init,
-        signal: controller.signal,
+        signal: mergedSignal,
       })
       return response
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new BeamTimeoutError(timeout)
+        // Check if it was a timeout or user cancellation
+        if (
+          timeoutController.signal.aborted &&
+          !userSignal?.aborted &&
+          !(init?.signal as AbortSignal)?.aborted
+        ) {
+          throw new BeamTimeoutError(timeout)
+        }
+        // Re-throw as network error for user-initiated cancellation
+        throw new BeamNetworkError('Request aborted', error)
       }
       throw new BeamNetworkError('Network request failed', error)
     } finally {

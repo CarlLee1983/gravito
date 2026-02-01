@@ -178,7 +178,7 @@ const data = await validateResponse(res, z.object({ id: z.number() }))
 | 功能 | 影響力 | 實作成本 | 優先級 | 目標版本 |
 |------|--------|----------|--------|----------|
 | Jitter 支援 | 🔥🔥🔥 高 | 🟢 低 | P0 | ✅ v1.1 |
-| AbortSignal 整合 | 🔥🔥 中 | 🟢 低 | P1 | v1.1 |
+| AbortSignal 整合 | 🔥🔥 中 | 🟢 低 | P1 | ✅ v1.1 |
 | 請求去重 | 🔥🔥 中 | 🟡 中 | P2 | v1.2 |
 | React Server Actions | 🔥 低 | 🔴 高 | P3 | v2.0 |
 | 離線佇列機制 | 🔥🔥 中 | 🔴 高 | P3 | v2.0 |
@@ -231,31 +231,35 @@ function calculateRetryDelay(
 
 ---
 
-#### 5.2 支援 AbortSignal 整合
+#### 5.2 支援 AbortSignal 整合 (✅ 已實作)
 
 **問題陳述**
 使用者需要手動管理 `AbortController`，無法在 Beam 層級統一處理請求取消。
 
-**技術方案**
+**技術方案 (已實作)**
 ```typescript
-// 方案 A：允許傳遞 AbortSignal
+// 方案 A：全域 signal（已支援）
 const controller = new AbortController()
 
 const client = createBeam<AppType>('/api', {
   signal: controller.signal  // 全域取消信號
 })
 
-// 方案 B：支援每次請求傳遞（推薦）
-const res = await client.users.$get({
-  signal: controller.signal  // 單次請求信號
-})
-
-// 方案 C：自動超時取消
+// 方案 B：與 timeout 自動合併（已實作）
 const client = createBeam<AppType>('/api', {
   timeout: 5000,
-  autoAbort: true  // 超時時自動 abort
+  signal: controller.signal  // 自動合併 timeout 與 user signal
 })
+
+// 使用範例
+setTimeout(() => controller.abort(), 1000) // 1 秒後取消所有請求
 ```
+
+**實作細節**
+- ✅ 新增 `mergeAbortSignals` 工具函式，支援合併多個 AbortSignal
+- ✅ `createFetchWithTimeout` 現在接受 `userSignal` 參數
+- ✅ 自動區分 timeout abort 與 user abort，拋出正確的錯誤類型
+- ✅ 完全向後相容，不影響現有程式碼
 
 **向後相容性**
 - ✅ 完全向後相容
@@ -266,7 +270,7 @@ const client = createBeam<AppType>('/api', {
 - 減少無效網路流量
 - 統一取消邏輯管理
 
-**實作成本**：~6 小時（含文檔）
+**實作成本**：~4 小時（含測試）
 
 ---
 

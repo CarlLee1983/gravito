@@ -2,7 +2,12 @@ import type { Env, Photon, Schema } from '@gravito/photon'
 import { hc as beamClient } from '@gravito/photon/client'
 import { BeamError, BeamNetworkError } from './errors'
 import type { BeamOptions } from './types'
-import { createFetchWithTimeout, executeWithRetry, resolveHeaders } from './utils'
+import {
+  createFetchWithTimeout,
+  executeWithRetry,
+  mergeAbortSignals,
+  resolveHeaders,
+} from './utils'
 
 /**
  * Orbit Beam - Lightweight type-safe RPC client for Gravito applications.
@@ -89,12 +94,21 @@ function createEnhancedFetch(options: BeamOptions) {
         config = await options.onRequest(config)
       }
 
-      // 3. Create fetch function (with possible timeout)
+      // 3. Merge signals if user provided one
+      if (options.signal) {
+        const mergedSignal = mergeAbortSignals([
+          options.signal as AbortSignal,
+          config.signal as AbortSignal | undefined,
+        ])
+        config = { ...config, signal: mergedSignal }
+      }
+
+      // 4. Create fetch function (with possible timeout and signal support)
       const fetchFn = options.timeout
-        ? createFetchWithTimeout(options.timeout)
+        ? createFetchWithTimeout(options.timeout, options.signal as AbortSignal | undefined)
         : fetch.bind(globalThis)
 
-      // 4. Execute request (with possible retry)
+      // 5. Execute request (with possible retry)
       let response = await (options.retry
         ? executeWithRetry(() => fetchFn(input, config), options.retry)
         : fetchFn(input, config))
