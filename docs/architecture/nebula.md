@@ -1,14 +1,14 @@
 ---
 title: Nebula Architecture 技術架構規格書
-version: 1.1.0
+version: 1.2.0
 status: Stable
 tier: C
 last_updated: 2026-02-01
 ---
 
-# 🌌 Nebula Architecture 技術架構規格書 (v1.1)
+# 🌌 Nebula Architecture 技術架構規格書 (v1.2)
 
-本文件詳述 `@gravito/nebula` 的內部架構、Manager/Repository 模式實作、串流支援以及安全防護機制。
+本文件詳述 `@gravito/nebula` 的內部架構、Manager/Repository 模式實作、串流支援、S3 Driver 以及安全防護機制。
 
 ---
 
@@ -262,13 +262,20 @@ Nebula 深度整合了 `PlanetCore` 的 Hook 系統。
    - MemoryStore 完整實作（LocalStore 支援選項但不持久化）
    - 測試覆蓋率達 100%（14 個測試案例，涵蓋各種 metadata 操作場景）
 
-### 中期 (v1.2)
-1. **S3 Driver**：將 S3 Driver 從核心分離為獨立套件 `@gravito/nebula-s3`。
-   - 支援 putStream/getStream
-   - 支援 Presigned URL
-   - 支援 Multipart Upload
-   - 支援分頁列舉 (listPaginated)
-2. **Image Processing**：提供官方的 `ImageProcessor` Hook，基於 `sharp` 或 `bun-sharp`。
+### ✅ 已完成 (v1.2)
+1. ~~**S3 Driver**~~：✅ 已實作獨立套件 `@gravito/nebula-s3`。
+   - 完整的 S3 儲存驅動實作
+   - 支援 AWS S3、Cloudflare R2、MinIO 等 S3 相容服務
+   - 完整支援 Stream (putStream/getStream)
+   - 完整支援 Pagination (listPaginated)
+   - 完整支援 Metadata (customMetadata, setMetadata)
+   - 支援 Presigned URL (getSignedUrl)
+   - 支援 CDN 整合 (publicUrl)
+   - 測試覆蓋率：8 個基本測試 + 5 個整合測試
+
+### 中期 (v1.2 - 待完成)
+1. **Image Processing**：提供官方的 `ImageProcessor` Hook，基於 `sharp` 或 `bun-sharp`。
+2. **Multipart Upload**：在 S3Store 中實作大檔案分片上傳 (目前使用完整串流上傳)。
 
 ### 長期 (v2.0)
 1. **CDN Integration**：在 `getUrl` 中支援 CDN 域名簽名與路徑重寫。

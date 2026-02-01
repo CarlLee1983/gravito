@@ -1,0 +1,43 @@
+{
+  "name": "@gravito/nebula-s3",
+  "version": "1.0.0",
+  "description": "S3 storage driver for @gravito/nebula",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "bun build.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "gravito",
+    "nebula",
+    "s3",
+    "storage",
+    "aws",
+    "cloudflare-r2",
+    "minio"
+  ],
+  "author": "Gravito Team",
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.710.0",
+    "@aws-sdk/s3-request-presigner": "^3.710.0",
+    "@gravito/nebula": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@gravito/core": "workspace:*"
+  }
+}
