@@ -34,6 +34,16 @@ export * from './types'
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * class MyProvider implements CacheStorageProvider {
+ *   async get(key) { ... }
+ *   async set(key, value, ttl) { ... }
+ *   async delete(key) { ... }
+ *   async clear() { ... }
+ * }
+ * ```
  */
 export interface CacheStorageProvider {
   /**
@@ -256,21 +266,31 @@ export type OrbitCacheStoreConfig =
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const options: OrbitCacheOptions = {
+ *   default: 'redis',
+ *   stores: {
+ *     redis: { driver: 'redis', connection: 'default' }
+ *   }
+ * };
+ * ```
  */
 export interface OrbitCacheOptions {
-  /** The key used to expose the cache manager in the request context. @default 'cache' */
+  /** The key used to expose the cache manager in the request context. @defaultValue 'cache' */
   exposeAs?: string
-  /** The name of the default store to use for proxy methods. @default 'memory' */
+  /** The name of the default store to use for proxy methods. @defaultValue 'memory' */
   default?: string
   /** Global prefix for all cache keys across all stores. */
   prefix?: string
-  /** Default time-to-live for cache entries if not specified. @default 60 */
+  /** Default time-to-live for cache entries if not specified. @defaultValue 60 */
   defaultTtl?: CacheTtl
   /** Map of named cache stores and their configurations. */
   stores?: Record<string, OrbitCacheStoreConfig>
   /** How to handle cache events (hit/miss/etc) */
   eventsMode?: CacheEventMode
-  /** Whether to throw if an event listener fails. @default false */
+  /** Whether to throw if an event listener fails. @defaultValue false */
   throwOnEventError?: boolean
   /** Custom error handler for cache events. */
   onEventError?: (error: unknown, event: keyof CacheEvents, payload: { key?: string }) => void
@@ -492,6 +512,18 @@ export class OrbitStasis implements GravitoOrbit {
   }
 }
 
+/**
+ * Helper function to create and install the OrbitStasis orbit.
+ *
+ * @param core - Gravito PlanetCore instance.
+ * @param options - Cache configuration options.
+ * @returns Initialized CacheManager.
+ *
+ * @example
+ * ```typescript
+ * const cache = orbitCache(core, { default: 'memory' });
+ * ```
+ */
 export default function orbitCache(
   core: PlanetCore,
   options: OrbitCacheOptions = {}

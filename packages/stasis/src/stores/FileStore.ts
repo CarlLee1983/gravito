@@ -128,6 +128,7 @@ export class FileStore implements CacheStore {
    * Starts the background process for periodic cache maintenance.
    *
    * @param interval - Time between cleanup cycles in milliseconds.
+   * @internal
    */
   private startCleanupDaemon(interval: number): void {
     this.cleanupTimer = setInterval(() => {
@@ -233,7 +234,8 @@ export class FileStore implements CacheStore {
   /**
    * Ensures that the base storage directory exists.
    *
-   * @throws {Error} If the directory cannot be created.
+   * @throws {Error} If the directory cannot be created due to permissions or path conflicts.
+   * @internal
    */
   private async ensureDir(): Promise<void> {
     await mkdir(this.options.directory, { recursive: true })
@@ -242,8 +244,9 @@ export class FileStore implements CacheStore {
   /**
    * Resolves the filesystem path for a given cache key.
    *
-   * @param key - The normalized cache key.
-   * @returns The absolute path to the JSON file representing the key.
+   * @param key - Normalized cache key.
+   * @returns Absolute path to the JSON file representing the key.
+   * @internal
    */
   private filePathForKey(key: string): string {
     const hashed = hashKey(key)
@@ -603,8 +606,14 @@ export class FileStore implements CacheStore {
  *
  * Used to create safe filenames and subdirectory structures.
  *
- * @param key - The string to hash.
- * @returns A hex-encoded SHA-256 hash.
+ * @param key - String to hash.
+ * @returns Hex-encoded SHA-256 hash.
+ * @internal
+ *
+ * @example
+ * ```typescript
+ * const hash = hashKey('my-secret-key');
+ * ```
  */
 function hashKey(key: string): string {
   return createHash('sha256').update(key).digest('hex')

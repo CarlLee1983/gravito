@@ -1,26 +1,51 @@
+/**
+ * Contract for a mechanism that predicts future cache key accesses.
+ *
+ * Implementations observe sequential access patterns to predict which keys
+ * are likely to be requested next, enabling prefetching strategies.
+ *
+ * @public
+ * @since 3.2.0
+ */
 export interface AccessPredictor {
   /**
-   * Record an access to a key.
-   * @param key The key being accessed
+   * Record a cache key access to learn temporal patterns.
+   *
+   * @param key - Cache key currently being accessed.
    */
   record(key: string): void
 
   /**
-   * Predict likely next keys based on access history.
-   * @param key The current key
-   * @returns Array of predicted keys
+   * Predict potential future keys based on learned access history.
+   *
+   * @param key - Current cache key acting as the trigger for prediction.
+   * @returns Array of predicted keys, ordered by likelihood.
    */
   predict(key: string): string[]
 
   /**
-   * Reset prediction statistics.
+   * Reset all learned transition probabilities and state.
    */
   reset(): void
 }
 
 /**
  * A simple Markov Chain predictor (Order-1).
- * Records transitions A -> B and predicts B when A is seen.
+ *
+ * Records transitions (A -> B) between sequential accesses and predicts
+ * B when A is next encountered. This is particularly effective for
+ * predictable resource loading sequences.
+ *
+ * @public
+ * @since 3.2.0
+ *
+ * @example
+ * ```typescript
+ * const predictor = new MarkovPredictor();
+ * predictor.record('user:1');
+ * predictor.record('user:1:profile');
+ * const next = predictor.predict('user:1'); // ['user:1:profile']
+ * ```
  */
 export class MarkovPredictor implements AccessPredictor {
   private transitions = new Map<string, Map<string, number>>()
@@ -28,6 +53,11 @@ export class MarkovPredictor implements AccessPredictor {
   private readonly maxNodes: number
   private readonly maxEdgesPerNode: number
 
+  /**
+   * Initialize a new MarkovPredictor.
+   *
+   * @param options - Limits for internal transition graph to manage memory.
+   */
   constructor(options: { maxNodes?: number; maxEdgesPerNode?: number } = {}) {
     this.maxNodes = options.maxNodes ?? 1000
     this.maxEdgesPerNode = options.maxEdgesPerNode ?? 10

@@ -32,6 +32,15 @@ export class LockTimeoutError extends Error {
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const lock = cache.lock('process', 60);
+ * const result = await lock.block(10, async () => {
+ *   // Exclusive work
+ *   return 42;
+ * });
+ * ```
  */
 export interface CacheLock {
   /**
@@ -142,17 +151,25 @@ export interface CacheLock {
  *
  * @public
  * @since 3.1.0
+ *
+ * @example
+ * ```typescript
+ * const options: BlockOptions = {
+ *   retryInterval: 250,
+ *   maxRetries: 10
+ * };
+ * ```
  */
 export interface BlockOptions {
   /**
    * Delay between consecutive acquisition attempts.
-   * @default 100
+   * @defaultValue 100
    */
   retryInterval?: number
 
   /**
    * Maximum number of times to attempt acquisition before failing.
-   * @default Infinity
+   * @defaultValue Infinity
    */
   maxRetries?: number
 

@@ -5,16 +5,28 @@ export type CircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN'
 
 /**
  * Options for the CircuitBreakerStore.
+ *
+ * @public
+ * @since 3.2.0
+ *
+ * @example
+ * ```typescript
+ * const options: CircuitBreakerOptions = {
+ *   maxFailures: 3,
+ *   resetTimeout: 30000,
+ *   fallback: new MemoryStore()
+ * };
+ * ```
  */
 export type CircuitBreakerOptions = {
   /**
    * Number of consecutive failures before opening the circuit.
-   * @default 5
+   * @defaultValue 5
    */
   maxFailures?: number
   /**
    * Time in milliseconds to stay in OPEN state before transitioning to HALF_OPEN.
-   * @default 60000
+   * @defaultValue 60000
    */
   resetTimeout?: number
   /**
@@ -134,6 +146,16 @@ export class CircuitBreakerStore implements CacheStore {
 
   /**
    * Returns current state for monitoring.
+   *
+   * @returns Current state of the circuit breaker.
+   *
+   * @example
+   * ```typescript
+   * const state = store.getState();
+   * if (state === 'OPEN') {
+   *   console.warn('Primary cache is unavailable');
+   * }
+   * ```
    */
   getState(): CircuitState {
     return this.state

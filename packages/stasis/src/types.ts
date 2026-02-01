@@ -5,6 +5,11 @@
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const key: CacheKey = 'user:123:profile';
+ * ```
  */
 export type CacheKey = string
 
@@ -19,6 +24,12 @@ export type CacheKey = string
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const ttl: CacheTtl = 3600; // 1 hour
+ * const absoluteTtl: CacheTtl = new Date('2026-12-31');
+ * ```
  */
 export type CacheTtl = number | Date | null | undefined
 
@@ -29,6 +40,12 @@ export type CacheTtl = number | Date | null | undefined
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const val: CacheValue<string> = 'cached content';
+ * const miss: CacheValue<number> = null;
+ * ```
  */
 export type CacheValue<T = unknown> = T | null
 
@@ -138,12 +155,21 @@ export function isExpired(expiresAt: number | null | undefined, now = Date.now()
  *
  * @public
  * @since 3.1.0
+ *
+ * @example
+ * ```typescript
+ * const options: CompressionOptions = {
+ *   enabled: true,
+ *   minSize: 2048,
+ *   level: 9
+ * };
+ * ```
  */
 export type CompressionOptions = {
   /**
    * Whether to enable compression for cached values.
    *
-   * @default false
+   * @defaultValue false
    */
   enabled: boolean
 
@@ -151,7 +177,7 @@ export type CompressionOptions = {
    * Minimum size in bytes for the value to be compressed.
    * Values smaller than this threshold will be stored uncompressed.
    *
-   * @default 1024
+   * @defaultValue 1024
    */
   minSize?: number
 
@@ -159,7 +185,7 @@ export type CompressionOptions = {
    * Compression level for zlib (1-9).
    * Higher levels provide better compression but require more CPU.
    *
-   * @default 6
+   * @defaultValue 6
    */
   level?: number
 }

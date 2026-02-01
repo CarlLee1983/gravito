@@ -12,6 +12,16 @@ import type { CacheKey, CacheTtl, CacheValue } from '../types'
  * If the underlying store is a TieredStore, this effectively promotes B
  * from the remote core (e.g. Redis) to the local cache (e.g. Memory)
  * before it is explicitly requested, reducing latency.
+ *
+ * @public
+ * @since 3.2.0
+ *
+ * @example
+ * ```typescript
+ * const store = new PredictiveStore(new TieredStore(l1, l2));
+ * // Accessing 'a' will prefetch 'b' if a -> b pattern is detected
+ * await store.get('a');
+ * ```
  */
 export class PredictiveStore implements CacheStore {
   private predictor: AccessPredictor

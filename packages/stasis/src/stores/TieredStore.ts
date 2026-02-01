@@ -10,6 +10,12 @@ import type { CacheKey, CacheTtl } from '../types'
  *
  * @public
  * @since 3.2.0
+ *
+ * @example
+ * ```typescript
+ * const store = new TieredStore(new MemoryStore(), new RedisStore());
+ * await store.put('key', 'value', 3600);
+ * ```
  */
 export class TieredStore implements CacheStore {
   /**

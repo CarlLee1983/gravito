@@ -15,6 +15,14 @@ import {
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const options: RedisStoreOptions = {
+ *   connection: 'primary',
+ *   prefix: 'cache:'
+ * };
+ * ```
  */
 export type RedisStoreOptions = {
   /** The name of the Redis connection to use. */
@@ -35,6 +43,16 @@ export type RedisStoreOptions = {
 export class RedisStore implements CacheStore, TaggableStore {
   private connectionName?: string
 
+  /**
+   * Initialize a new RedisStore instance.
+   *
+   * @param options - Redis connection and prefix settings.
+   *
+   * @example
+   * ```typescript
+   * const store = new RedisStore({ prefix: 'app:' });
+   * ```
+   */
   constructor(options: RedisStoreOptions = {}) {
     this.connectionName = options.connection
     // We defer getting the connection until used, or get it now.
@@ -51,6 +69,13 @@ export class RedisStore implements CacheStore, TaggableStore {
     return Redis.connection(this.connectionName)
   }
 
+  /**
+   * Retrieve an item from Redis.
+   *
+   * @param key - Unique cache key identifier.
+   * @returns Parsed JSON value or null if missing/expired.
+   * @throws {Error} If Redis connection fails or read errors occur.
+   */
   async get<T = unknown>(key: CacheKey): Promise<CacheValue<T>> {
     const normalized = normalizeCacheKey(key)
     const value = await this.client.get(normalized)
@@ -67,6 +92,14 @@ export class RedisStore implements CacheStore, TaggableStore {
     }
   }
 
+  /**
+   * Store an item in Redis.
+   *
+   * @param key - Unique cache key identifier.
+   * @param value - Value to serialize and store.
+   * @param ttl - Expiration duration.
+   * @throws {Error} If Redis connection fails or write errors occur.
+   */
   async put(key: CacheKey, value: unknown, ttl: CacheTtl): Promise<void> {
     const normalized = normalizeCacheKey(key)
     const serialized = JSON.stringify(value)
@@ -134,6 +167,14 @@ export class RedisStore implements CacheStore, TaggableStore {
     return await this.client.incrby(normalized, value)
   }
 
+  /**
+   * Decrement a numeric value in Redis.
+   *
+   * @param key - Unique cache key identifier.
+   * @param value - Amount to subtract.
+   * @returns Updated numeric value.
+   * @throws {Error} If key is not numeric or Redis errors occur.
+   */
   async decrement(key: CacheKey, value = 1): Promise<number> {
     const normalized = normalizeCacheKey(key)
     if (value === 1) {

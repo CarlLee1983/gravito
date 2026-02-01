@@ -11,6 +11,11 @@ import type { CacheTtl } from './types'
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const config: StoreConfig = { driver: 'redis', connection: 'default' };
+ * ```
  */
 export type StoreConfig =
   | { driver: 'memory'; maxItems?: number }
@@ -36,11 +41,21 @@ export type StoreConfig =
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const config: CacheConfig = {
+ *   default: 'redis',
+ *   prefix: 'app:',
+ *   stores: {
+ *     redis: { driver: 'redis' }
+ *   }
+ * };
+ * ```
  */
 export type CacheConfig = {
   /**
    * The name of the default store to use when no store is explicitly requested.
-   * @defaultValue 'memory'
    */
   default?: string
   /**
@@ -134,9 +149,9 @@ export class CacheManager {
    * Lazily initializes and caches the repository instance for the given store name.
    * If no name is provided, it falls back to the default store.
    *
-   * @param name - The name of the store to retrieve.
-   * @returns The initialized CacheRepository instance.
-   * @throws {Error} If the store factory fails to create the underlying store.
+   * @param name - Store name to retrieve.
+   * @returns Initialized CacheRepository instance.
+   * @throws {Error} If the store factory fails to create the underlying store or the driver is unsupported.
    *
    * @example
    * ```typescript
@@ -171,10 +186,10 @@ export class CacheManager {
    * If the key is missing, the provided default value or the result of the
    * default value closure will be returned.
    *
-   * @param key - The unique cache key.
-   * @param defaultValue - The fallback value or closure to execute on miss.
-   * @returns The cached value or the resolved default.
-   * @throws {Error} If the underlying store driver encounters a read error.
+   * @param key - Unique cache key.
+   * @param defaultValue - Fallback value or factory to execute on cache miss.
+   * @returns Cached value or the resolved default.
+   * @throws {Error} If the underlying store driver encounters a read error or connection failure.
    *
    * @example
    * ```typescript
@@ -295,14 +310,14 @@ export class CacheManager {
   /**
    * Get an item from the cache, or execute the callback and store the result.
    *
-   * This is a "get or set" operation that ensures the value is cached after
-   * the first miss.
+   * Ensures the value is cached after the first miss. This provides an atomic-like
+   * "get or set" flow to prevent multiple concurrent fetches of the same data.
    *
-   * @param key - The unique cache key.
-   * @param ttl - Time to live for the cached result if a miss occurs.
-   * @param callback - The closure to execute to fetch the fresh data.
-   * @returns The cached or freshly fetched value.
-   * @throws {Error} If the callback throws or the store write fails.
+   * @param key - Unique cache key.
+   * @param ttl - Duration to cache the result if a miss occurs.
+   * @param callback - Logic to execute to fetch fresh data.
+   * @returns Cached or freshly fetched value.
+   * @throws {Error} If the callback fails or the store write operation errors.
    *
    * @example
    * ```typescript
@@ -478,10 +493,10 @@ export class CacheManager {
   /**
    * Increment the value of an integer item in the default cache store.
    *
-   * @param key - The unique cache key.
-   * @param value - The amount to increment by (defaults to 1).
-   * @returns The new value after incrementing.
-   * @throws {Error} If the value is not an integer or the store is read-only.
+   * @param key - Unique cache key.
+   * @param value - Amount to add.
+   * @returns New value after incrementing.
+   * @throws {Error} If existing value is not a number or the store is read-only.
    *
    * @example
    * ```typescript
@@ -495,10 +510,10 @@ export class CacheManager {
   /**
    * Decrement the value of an integer item in the default cache store.
    *
-   * @param key - The unique cache key.
-   * @param value - The amount to decrement by (defaults to 1).
-   * @returns The new value after decrementing.
-   * @throws {Error} If the value is not an integer or the store is read-only.
+   * @param key - Unique cache key.
+   * @param value - Amount to subtract.
+   * @returns New value after decrementing.
+   * @throws {Error} If existing value is not a number or the store is read-only.
    *
    * @example
    * ```typescript

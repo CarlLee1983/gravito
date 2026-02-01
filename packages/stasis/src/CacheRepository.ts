@@ -10,6 +10,11 @@ import { type CacheKey, type CacheTtl, type CompressionOptions, normalizeCacheKe
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const mode: CacheEventMode = 'async';
+ * ```
  */
 export type CacheEventMode = 'sync' | 'async' | 'off'
 
@@ -21,6 +26,14 @@ export type CacheEventMode = 'sync' | 'async' | 'off'
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const events: CacheEvents = {
+ *   hit: (key) => console.log(`Cache hit: ${key}`),
+ *   miss: (key) => console.log(`Cache miss: ${key}`)
+ * };
+ * ```
  */
 export type CacheEvents = {
   /** Triggered on a cache hit. */
@@ -43,6 +56,15 @@ export type CacheEvents = {
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const options: CacheRepositoryOptions = {
+ *   prefix: 'v1:',
+ *   defaultTtl: 3600,
+ *   eventsMode: 'async'
+ * };
+ * ```
  */
 export type CacheRepositoryOptions = {
   /** Optional prefix for all cache keys. */
@@ -51,22 +73,22 @@ export type CacheRepositoryOptions = {
   defaultTtl?: CacheTtl
   /** Event handlers for cache operations. */
   events?: CacheEvents
-  /** Mode for emitting events (sync, async, or off). @default 'async' */
+  /** Mode for emitting events (sync, async, or off). */
   eventsMode?: CacheEventMode
-  /** Whether to throw an error if an event handler fails. @default false */
+  /** Whether to throw an error if an event handler fails. @defaultValue false */
   throwOnEventError?: boolean
   /** Callback triggered when an event handler encounters an error. */
   onEventError?: (error: unknown, event: keyof CacheEvents, payload: { key?: string }) => void
-  /** Timeout for background flexible refresh in milliseconds. @default 30000 */
+  /** Timeout for background flexible refresh in milliseconds. @defaultValue 30000 */
   refreshTimeout?: number
   /**
    * Maximum number of retries for the background flexible refresh callback.
-   * @default 0
+   * @defaultValue 0
    */
   maxRetries?: number
   /**
    * Delay between retries for flexible refresh in milliseconds.
-   * @default 50
+   * @defaultValue 50
    */
   retryDelay?: number
 
@@ -86,6 +108,15 @@ export type CacheRepositoryOptions = {
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const stats: FlexibleStats = {
+ *   refreshCount: 10,
+ *   refreshFailures: 0,
+ *   avgRefreshTime: 15.5
+ * };
+ * ```
  */
 export type FlexibleStats = {
   /** Total number of successful background refreshes. */
@@ -313,10 +344,10 @@ export class CacheRepository {
    *
    * Persists the value in the underlying store with the given TTL.
    *
-   * @param key - The unique cache key.
-   * @param value - The value to store.
-   * @param ttl - Time-to-live.
-   * @throws {Error} If the underlying store fails to persist the value.
+   * @param key - Unique cache key.
+   * @param value - Value to store.
+   * @param ttl - Expiration duration.
+   * @throws {Error} If the underlying store fails to persist the value or serialization fails.
    *
    * @example
    * ```typescript
