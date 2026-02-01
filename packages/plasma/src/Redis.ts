@@ -4,6 +4,7 @@
  */
 
 import { RedisManager } from './RedisManager'
+import type { ScriptRegistry } from './ScriptRegistry'
 import type {
   RedisClientContract,
   RedisConfig,
@@ -68,6 +69,13 @@ export class Redis {
    */
   static connection(name?: string): RedisClientContract {
     return manager.connection(name)
+  }
+
+  /**
+   * Get script registry for a connection.
+   */
+  static scripts(name?: string): ScriptRegistry {
+    return manager.scripts(name)
   }
 
   // ============================================================================
@@ -731,5 +739,19 @@ export class Redis {
    */
   static pipeline(): RedisPipelineContract {
     return manager.getDefault().pipeline()
+  }
+
+  /**
+   * Executes a Lua script atomically on the Redis server
+   */
+  static async eval(script: string, numKeys: number, ...args: string[]): Promise<unknown> {
+    return await manager.getDefault().eval(script, numKeys, ...args)
+  }
+
+  /**
+   * Executes a Lua script by its SHA1 digest
+   */
+  static async evalsha(sha1: string, numKeys: number, ...args: string[]): Promise<unknown> {
+    return await manager.getDefault().evalsha(sha1, numKeys, ...args)
   }
 }

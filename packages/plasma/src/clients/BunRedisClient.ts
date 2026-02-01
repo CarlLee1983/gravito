@@ -36,6 +36,11 @@ export class BunRedisClient implements RedisClientContract {
   private connected = false
   private emitter = new EventEmitter()
 
+  /**
+   * Initialize a new BunRedisClient instance.
+   *
+   * @param config - Redis configuration options including host, port, and retry strategy.
+   */
   constructor(private readonly config: RedisConfig = {}) {}
 
   // ============================================================================
@@ -330,6 +335,9 @@ export class BunRedisClient implements RedisClientContract {
 
   /**
    * Get a key's value.
+   *
+   * @param key - The key to retrieve.
+   * @returns Promise resolving to the string value, or null if key does not exist.
    */
   async get(key: string): Promise<string | null> {
     try {
@@ -341,7 +349,17 @@ export class BunRedisClient implements RedisClientContract {
   }
 
   /**
-   * Set a key's value.
+   * Set a key's value with optional expiration and existence constraints.
+   *
+   * @param key - The key to set.
+   * @param value - The string value to store.
+   * @param options - Optional settings like EX (seconds), PX (milliseconds), NX (if not exists), XX (if exists).
+   * @returns Promise resolving to 'OK' if successful, or null if constraints (NX/XX) were not met.
+   *
+   * @example
+   * ```typescript
+   * await client.set('user:1', 'data', { ex: 3600, nx: true });
+   * ```
    */
   async set(key: string, value: string, options?: SetOptions): Promise<'OK' | null> {
     const prefixedKey = this.prefixKey(key)
@@ -381,7 +399,10 @@ export class BunRedisClient implements RedisClientContract {
   }
 
   /**
-   * Delete keys.
+   * Delete one or more keys.
+   *
+   * @param keys - One or more keys to delete.
+   * @returns Promise resolving to the number of keys that were removed.
    */
   async del(...keys: string[]): Promise<number> {
     try {
@@ -393,8 +414,13 @@ export class BunRedisClient implements RedisClientContract {
   }
 
   /**
-   * Check if keys exist.
-   * Note: Bun.redis returns boolean, we convert to number for compatibility
+   * Check if one or more keys exist.
+   *
+   * Note: Bun.redis returns boolean for single key existence, this method
+   * iterates and returns the total count for compatibility with standard Redis API.
+   *
+   * @param keys - One or more keys to check.
+   * @returns Promise resolving to the number of keys that exist.
    */
   async exists(...keys: string[]): Promise<number> {
     try {
@@ -1029,12 +1055,359 @@ export class BunRedisClient implements RedisClientContract {
     return new BunRedisPipeline(this)
   }
 
+  /**
+   * Execute a Lua script on the server.
+   *
+   * @param script - The Lua script to execute.
+   * @param numKeys - The number of keys that the script will access.
+   * @param args - Keys followed by any additional arguments.
+   * @returns Promise resolving to the script's return value.
+   *
+   * @example
+   * ```typescript
+   * const result = await client.eval('return redis.call("GET", KEYS[1])', 1, 'mykey');
+   * ```
+   */
   async eval(script: string, numKeys: number, ...args: string[]): Promise<unknown> {
     try {
       return await this.sendCommand('EVAL', [script, numKeys.toString(), ...args])
     } catch (error) {
       throw this.handleException(error, 'EVAL')
     }
+  }
+
+  /**
+   * Execute a Lua script cached on the server by its SHA1 digest.
+   *
+   * @param sha1 - The SHA1 digest of the script.
+   * @param numKeys - The number of keys that the script will access.
+   * @param args - Keys followed by any additional arguments.
+   * @returns Promise resolving to the script's return value.
+   *
+   * @example
+   * ```typescript
+   * const sha1 = '...';
+   * const result = await client.evalsha(sha1, 1, 'mykey');
+   * ```
+   */
+  async evalsha(sha1: string, numKeys: number, ...args: string[]): Promise<unknown> {
+    try {
+      return await this.sendCommand('EVALSHA', [sha1, numKeys.toString(), ...args])
+    } catch (error) {
+      throw this.handleException(error, 'EVALSHA')
+    }
+  }
+
+  // ============================================================================
+  // Stream Operations
+  // ============================================================================
+
+  /**
+   * Add an entry to a stream.
+   *
+   * @param key - The stream key.
+   * @param data - Record of field-value pairs to add.
+   * @param options - Optional settings like MAXLEN and ID.
+   * @returns Promise resolving to the generated entry ID.
+   *
+   * @example
+   * ```typescript
+   * const id = await client.xadd('mystream', { sensor: 'temp', val: '20' }, { maxlen: 1000 });
+   * ```
+   */
+  async xadd(
+    key: string,
+    data: Record<string, string>,
+    options?: import('../types').XAddOptions
+  ): Promise<string> {
+    const prefixedKey = this.prefixKey(key)
+    const args: string[] = [prefixedKey]
+
+    if (options?.maxlen) {
+      args.push('MAXLEN')
+      if (options.approximate) {
+        args.push('~')
+      }
+      args.push(options.maxlen.toString())
+    }
+
+    if (options?.id) {
+      args.push(options.id)
+    } else {
+      args.push('*')
+    }
+
+    for (const [field, value] of Object.entries(data)) {
+      args.push(field, value)
+    }
+
+    const result = await this.sendCommand('XADD', args)
+    return String(result)
+  }
+
+  /**
+   * Read data from one or more streams.
+   *
+   * Results are normalized to a standard format: `[stream, entries][]`.
+   * Bun.redis may return an object format `{ streamKey: entries }`, which this
+   * method automatically converts to the standard array-based format.
+   *
+   * @param streams - Record of stream keys and their corresponding start IDs.
+   * @param options - Optional settings like COUNT and BLOCK.
+   * @returns Promise resolving to the stream data, or null if no data is available.
+   *
+   * @example
+   * ```typescript
+   * const results = await client.xread({ mystream: '0' }, { count: 10 });
+   * ```
+   */
+  async xread(
+    streams: Record<string, string>,
+    options?: import('../types').XReadOptions
+  ): Promise<import('../types').StreamReadResult | null> {
+    const args: string[] = []
+
+    if (options?.count) {
+      args.push('COUNT', options.count.toString())
+    }
+    if (options?.block) {
+      args.push('BLOCK', options.block.toString())
+    }
+
+    args.push('STREAMS')
+    const keys: string[] = []
+    const ids: string[] = []
+
+    for (const [key, id] of Object.entries(streams)) {
+      keys.push(this.prefixKey(key))
+      ids.push(id)
+    }
+
+    args.push(...keys, ...ids)
+
+    try {
+      const result = await this.sendCommand('XREAD', args)
+      if (!result) return null
+
+      // Bun.redis returns streams as an object? { streamKey: entries }
+      // We need to convert it to standard [stream, entries][] format
+      if (!Array.isArray(result) && typeof result === 'object') {
+        return Object.entries(result) as any
+      }
+
+      // biome-ignore lint/suspicious/noExplicitAny: complex stream response
+      return result as any
+    } catch (error) {
+      throw this.handleException(error, 'XREAD')
+    }
+  }
+
+  /**
+   * Read data from one or more streams as a member of a consumer group.
+   *
+   * Results are normalized to a standard format: `[stream, entries][]`.
+   *
+   * @param group - The consumer group name.
+   * @param consumer - The consumer name.
+   * @param streams - Record of stream keys and their corresponding start IDs (usually '>').
+   * @param options - Optional settings like COUNT and BLOCK.
+   * @returns Promise resolving to the stream data, or null if no data is available.
+   *
+   * @example
+   * ```typescript
+   * const results = await client.xreadgroup('workers', 'c1', { mystream: '>' });
+   * ```
+   */
+  async xreadgroup(
+    group: string,
+    consumer: string,
+    streams: Record<string, string>,
+    options?: import('../types').XReadOptions
+  ): Promise<import('../types').StreamReadResult | null> {
+    const args: string[] = ['GROUP', group, consumer]
+
+    if (options?.count) {
+      args.push('COUNT', options.count.toString())
+    }
+    if (options?.block) {
+      args.push('BLOCK', options.block.toString())
+    }
+
+    args.push('STREAMS')
+    const keys: string[] = []
+    const ids: string[] = []
+
+    for (const [key, id] of Object.entries(streams)) {
+      keys.push(this.prefixKey(key))
+      ids.push(id)
+    }
+
+    args.push(...keys, ...ids)
+
+    try {
+      const result = await this.sendCommand('XREADGROUP', args)
+      if (!result) return null
+
+      // Bun.redis returns streams as an object? { streamKey: entries }
+      if (!Array.isArray(result) && typeof result === 'object') {
+        return Object.entries(result) as any
+      }
+
+      // biome-ignore lint/suspicious/noExplicitAny: complex stream response
+      return result as any
+    } catch (error) {
+      throw this.handleException(error, 'XREADGROUP')
+    }
+  }
+
+  /**
+   * Manage consumer groups.
+   *
+   * @param command - The XGROUP subcommand (CREATE, DESTROY, DELCONSUMER, SETID).
+   * @param key - The stream key.
+   * @param group - The consumer group name.
+   * @param args - Additional arguments specific to the subcommand.
+   * @returns Promise resolving to the command result.
+   *
+   * @example
+   * ```typescript
+   * await client.xgroup('CREATE', 'mystream', 'workers', '$', true);
+   * ```
+   */
+  async xgroup(
+    command: 'CREATE' | 'DESTROY' | 'DELCONSUMER' | 'SETID',
+    key: string,
+    group: string,
+    ...args: (string | boolean | undefined)[]
+  ): Promise<any> {
+    const prefixedKey = this.prefixKey(key)
+    const cmdArgs: string[] = [command, prefixedKey, group]
+
+    if (command === 'CREATE') {
+      const id = (args[0] as string) || '$'
+      const mkstream = args[1] as boolean
+      cmdArgs.push(id)
+      if (mkstream) {
+        cmdArgs.push('MKSTREAM')
+      }
+    } else if (command === 'DELCONSUMER') {
+      const consumer = args[0] as string
+      cmdArgs.push(consumer)
+    } else if (command === 'SETID') {
+      const id = args[0] as string
+      cmdArgs.push(id)
+    }
+
+    const result = await this.sendCommand('XGROUP', cmdArgs)
+    return result
+  }
+
+  /**
+   * Acknowledge one or more messages in a consumer group.
+   *
+   * @param key - The stream key.
+   * @param group - The consumer group name.
+   * @param ids - One or more message IDs to acknowledge.
+   * @returns Promise resolving to the number of messages acknowledged.
+   */
+  async xack(key: string, group: string, ...ids: string[]): Promise<number> {
+    const prefixedKey = this.prefixKey(key)
+    const result = await this.sendCommand('XACK', [prefixedKey, group, ...ids])
+    return Number(result)
+  }
+
+  /**
+   * Get the number of entries in a stream.
+   *
+   * @param key - The stream key.
+   * @returns Promise resolving to the number of entries.
+   */
+  async xlen(key: string): Promise<number> {
+    const prefixedKey = this.prefixKey(key)
+    const result = await this.sendCommand('XLEN', [prefixedKey])
+    return Number(result)
+  }
+
+  /**
+   * Retrieve a range of entries from a stream.
+   *
+   * @param key - The stream key.
+   * @param start - The start ID (use '-' for the smallest ID).
+   * @param end - The end ID (use '+' for the largest ID).
+   * @param count - Optional maximum number of entries to return.
+   * @returns Promise resolving to an array of stream entries.
+   */
+  async xrange(
+    key: string,
+    start: string,
+    end: string,
+    count?: number
+  ): Promise<import('../types').StreamEntry[]> {
+    const prefixedKey = this.prefixKey(key)
+    const args: string[] = [prefixedKey, start, end]
+    if (count) {
+      args.push('COUNT', count.toString())
+    }
+    const result = await this.sendCommand('XRANGE', args)
+    // biome-ignore lint/suspicious/noExplicitAny: complex stream response
+    return (result as any) || []
+  }
+
+  /**
+   * Retrieve a range of entries from a stream in reverse order.
+   *
+   * @param key - The stream key.
+   * @param end - The end ID (use '+' for the largest ID).
+   * @param start - The start ID (use '-' for the smallest ID).
+   * @param count - Optional maximum number of entries to return.
+   * @returns Promise resolving to an array of stream entries.
+   */
+  async xrevrange(
+    key: string,
+    end: string,
+    start: string,
+    count?: number
+  ): Promise<import('../types').StreamEntry[]> {
+    const prefixedKey = this.prefixKey(key)
+    const args: string[] = [prefixedKey, end, start]
+    if (count) {
+      args.push('COUNT', count.toString())
+    }
+    const result = await this.sendCommand('XREVRANGE', args)
+    // biome-ignore lint/suspicious/noExplicitAny: complex stream response
+    return (result as any) || []
+  }
+
+  /**
+   * Trim a stream to a maximum length.
+   *
+   * @param key - The stream key.
+   * @param maxlen - The maximum number of entries to keep.
+   * @param approximate - If true, uses the '~' operator for approximate trimming.
+   * @returns Promise resolving to the number of entries removed.
+   */
+  async xtrim(key: string, maxlen: number, approximate?: boolean): Promise<number> {
+    const prefixedKey = this.prefixKey(key)
+    const args: string[] = [prefixedKey, 'MAXLEN']
+    if (approximate) {
+      args.push('~')
+    }
+    args.push(maxlen.toString())
+    const result = await this.sendCommand('XTRIM', args)
+    return Number(result)
+  }
+
+  /**
+   * Delete one or more entries from a stream.
+   *
+   * @param key - The stream key.
+   * @param ids - One or more message IDs to delete.
+   * @returns Promise resolving to the number of entries removed.
+   */
+  async xdel(key: string, ...ids: string[]): Promise<number> {
+    const prefixedKey = this.prefixKey(key)
+    const result = await this.sendCommand('XDEL', [prefixedKey, ...ids])
+    return Number(result)
   }
 }
 
