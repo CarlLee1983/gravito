@@ -1,5 +1,7 @@
 import { BunRedisClient } from './clients/BunRedisClient'
 import { RedisClient } from './RedisClient'
+import { RedisClusterClient } from './RedisClusterClient'
+import { type ScriptDefinition, ScriptRegistry } from './ScriptRegistry'
 import type { RedisClientContract, RedisConfig, RedisManagerConfig } from './types'
 
 /**
@@ -28,6 +30,7 @@ export class RedisManager {
   private connections = new Map<string, RedisClientContract>()
   private defaultConnection = 'default'
   private configs = new Map<string, RedisConfig>()
+  private scriptDefinitions = new Map<string, ScriptDefinition>()
 
   /**
    * Apply global connection settings.
@@ -103,7 +106,7 @@ export class RedisManager {
         throw new Error(`Redis connection "${connectionName}" not configured`)
       }
 
-      // 根據 clientType 選擇實現
+      // Select implementation based on clientType
       const client = this.createClient(config)
       this.connections.set(connectionName, client)
     }
@@ -112,15 +115,42 @@ export class RedisManager {
   }
 
   /**
+   * Get script registry for a connection.
+   *
+   * All registries share the same script definitions. The registry allows
+   * registering and executing Lua scripts with automatic SHA1 caching.
+   *
+   * @param name - Connection name. Defaults to default connection.
+   * @returns ScriptRegistry instance for the specified connection.
+   *
+   * @example
+   * ```typescript
+   * const scripts = manager.scripts();
+   * scripts.register('incr_by_two', 'return redis.call("INCRBY", KEYS[1], 2)');
+   * const result = await scripts.execute('incr_by_two', ['my-key']);
+   * ```
+   */
+  scripts(name?: string): ScriptRegistry {
+    const client = this.connection(name)
+    return new ScriptRegistry(client, this.scriptDefinitions)
+  }
+
+  /**
    * Factory method for client instantiation.
    *
-   * Determines the optimal client implementation based on runtime environment.
+   * Determines the optimal client implementation based on runtime environment
+   * and configuration. Supports standard Redis connections and Redis Cluster.
    * In 'auto' mode, prefers Bun.redis when available for better performance.
    *
-   * @param config - Connection configuration including optional clientType override.
+   * @param config - Connection configuration including optional clientType override and cluster settings.
    * @returns Initialized client instance (not yet connected).
    */
   private createClient(config: RedisConfig): RedisClientContract {
+    // Check for cluster configuration
+    if (config.cluster?.enable || config.cluster?.nodes?.length) {
+      return new RedisClusterClient(config)
+    }
+
     const clientType = config.clientType ?? 'auto'
 
     if (clientType === 'bun') {
@@ -131,14 +161,14 @@ export class RedisManager {
       return new RedisClient(config)
     }
 
-    // auto: 優先使用 Bun.redis，如果不可用則 fallback 到 ioredis
+    // auto: Prefer Bun.redis, fallback to ioredis if unavailable
     try {
-      // 檢查 Bun.redis 是否可用
+      // Check if Bun.redis is available
       if (typeof Bun !== 'undefined' && Bun.redis) {
         return new BunRedisClient(config)
       }
     } catch {
-      // Bun.redis 不可用，使用 ioredis
+      // Bun.redis unavailable, use ioredis
     }
 
     return new RedisClient(config)
