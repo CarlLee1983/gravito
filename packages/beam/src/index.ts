@@ -135,8 +135,10 @@ export {
 } from './errors'
 export {
   createAuthenticatedBeam,
+  createCachedHeaderResolver,
   safeResponse,
   unwrapResponse,
+  validateResponse,
 } from './helpers'
 export type {
   BeamOptions,

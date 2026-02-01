@@ -139,3 +139,91 @@ export async function safeResponse<T>(
     }
   }
 }
+
+/**
+ * Creates a cached header resolver to prevent redundant expensive operations
+ *
+ * This is useful for headers like authentication tokens that involve
+ * complex logic or I/O and don't need to be refreshed on every request.
+ *
+ * @param resolver - The async function that retrieves headers
+ * @param ttl - Cache survival time in milliseconds (default: 60,000 / 1 min)
+ * @returns A cached header resolver function
+ *
+ * @example
+ * ```typescript
+ * const client = createBeam<AppType>('/api', {
+ *   headers: createCachedHeaderResolver(async () => {
+ *     const token = await fetchAuthToken()
+ *     return { Authorization: `Bearer ${token}` }
+ *   }, 5 * 60 * 1000) // cache for 5 minutes
+ * })
+ * ```
+ *
+ * @public
+ */
+export function createCachedHeaderResolver(
+  resolver: () => Record<string, string> | Promise<Record<string, string>>,
+  ttl = 60000
+): () => Promise<Record<string, string>> {
+  let cache: Record<string, string> | null = null
+  let expiry = 0
+
+  return async () => {
+    const now = Date.now()
+    if (!cache || now > expiry) {
+      cache = await resolver()
+      expiry = now + ttl
+    }
+    return cache
+  }
+}
+
+/**
+ * Validate a response body against a schema
+ *
+ * Provides runtime validation for response data to ensure it matches the expected type.
+ * Supports Zod-like schema objects with a `parse` or `validate` method, or a simple validator function.
+ *
+ * @template T - Expected output type
+ * @param response - Fetch Response object
+ * @param schema - Validation schema or function
+ * @returns Validated data
+ * @throws {BeamError} When validation fails or response is not 2xx
+ *
+ * @example
+ * ```typescript
+ * import { z } from 'zod'
+ *
+ * const UserSchema = z.object({ id: z.number(), name: z.string() })
+ *
+ * const res = await client.users.$get()
+ * const data = await validateResponse(res, UserSchema)
+ * ```
+ *
+ * @public
+ */
+export async function validateResponse<T>(
+  response: Response,
+  schema:
+    | { parse: (data: unknown) => T }
+    | { validate: (data: unknown) => T }
+    | ((data: unknown) => T)
+): Promise<T> {
+  const data = await unwrapResponse<unknown>(response)
+
+  try {
+    if (typeof schema === 'function') {
+      return schema(data)
+    }
+    if ('parse' in schema) {
+      return schema.parse(data)
+    }
+    if ('validate' in schema) {
+      return schema.validate(data)
+    }
+    return data as T
+  } catch (e) {
+    throw new BeamError('Validation failed', response.status, 'VALIDATION_ERROR', e)
+  }
+}

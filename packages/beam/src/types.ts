@@ -25,6 +25,18 @@ export interface RetryOptions {
    * Exponential backoff factor, default is 2
    */
   backoff?: number
+
+  /**
+   * Whether to add jitter (randomness) to retry delays to prevent thundering herds.
+   * Default is true if retry count > 0.
+   */
+  jitter?: boolean
+
+  /**
+   * Whether to lazy load the retry logic.
+   * Useful for minimizing bundle size if retries are rarely needed.
+   */
+  lazy?: boolean
 }
 
 /**

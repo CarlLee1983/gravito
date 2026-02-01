@@ -89,51 +89,9 @@ Beam 鼓勵使用 `import type { AppType }` 引入後端定義。
 #### 風險描述
 對於擁有數千個路由的超大型應用，TypeScript 的型別推斷可能會顯著變慢，影響開發體驗。
 
-#### 量化基準
-- **警戒線**：路由數量 > 500 時，IDE 型別提示延遲可能超過 1 秒
-- **危險線**：路由數量 > 2000 時，`tsc` 編譯時間可能增加 3-5 倍
-- **根本原因**：`AppType` 是一個極度複雜的遞迴型別，深度可達 10+ 層
-
 #### 緩解策略
-**1. 路由模組化**
-```typescript
-// ❌ 不推薦：單一巨大型別
-const app = new Photon()
-  .route('/user', userRoutes)      // 200 routes
-  .route('/product', productRoutes) // 300 routes
-  .route('/order', orderRoutes)     // 500 routes
-
-// ✅ 推薦：分割型別定義
-const userApp = new Photon().route('/user', userRoutes)
-const productApp = new Photon().route('/product', productRoutes)
-
-export type UserClient = typeof userApp
-export type ProductClient = typeof productApp
-
-// 前端使用
-const userClient = createBeam<UserClient>('/api/user')
-const productClient = createBeam<ProductClient>('/api/product')
-```
-
-**2. 使用 TypeScript Project References**
-```json
-// tsconfig.json
-{
-  "compilerOptions": {
-    "composite": true,
-    "incremental": true
-  },
-  "references": [
-    { "path": "./packages/user-client" },
-    { "path": "./packages/product-client" }
-  ]
-}
-```
-
-#### 監控機制
-- 使用 `tsc --extendedDiagnostics` 追蹤型別檢查時間
-- 設定 CI 警報：若型別檢查超過 30 秒則發出通知
-- 定期審查 `AppType` 的型別深度（使用 `ts-morph` 分析）
+**1. 路由模組化**：推薦分割型別定義。
+**2. 使用 TypeScript Project References**：利用增量編譯優化 IDE 速度。
 
 ---
 
@@ -142,143 +100,36 @@ const productClient = createBeam<ProductClient>('/api/product')
 #### 風險描述
 若 `onRequest` 或 `onResponse` 攔截器中包含閉包引用大型物件且未釋放，可能導致記憶體洩漏。
 
-#### 常見洩漏場景
-```typescript
-// ❌ 危險：閉包捕獲大型物件
-let requestCache = new Map() // 永不清空
-
-const client = createBeam<AppType>('/api', {
-  onRequest: async (req) => {
-    requestCache.set(req.url, new Uint8Array(1024 * 1024)) // 1MB
-    return req
-  }
-})
-
-// ✅ 安全：使用 WeakMap 或定期清理
-const requestCache = new WeakMap()
-
-const client = createBeam<AppType>('/api', {
-  onRequest: async (req) => {
-    const metadata = { timestamp: Date.now(), size: 100 }
-    requestCache.set(req, metadata) // 自動 GC
-    return req
-  }
-})
-```
-
 #### 緩解策略
-1. **避免在攔截器中累積狀態**：使用 WeakMap 代替 Map
-2. **實作定期清理**：若必須使用 Map，加入 TTL 機制
-3. **限制快取大小**：使用 LRU Cache（如 `lru-cache` 套件）
-
-#### 監控機制
-```typescript
-// 生產環境監控範例
-if (process.env.NODE_ENV === 'production') {
-  setInterval(() => {
-    const usage = process.memoryUsage()
-    if (usage.heapUsed > 500 * 1024 * 1024) { // 500MB
-      console.warn('[Beam] High memory usage detected', usage)
-    }
-  }, 60000) // 每分鐘檢查
-}
-```
+1. **避免在攔截器中累積狀態**：使用 WeakMap 代替 Map。
+2. **實作定期清理**：若必須使用 Map，加入 TTL 機制。
 
 ---
 
 ### 4.3 重試風暴 (Retry Storm)
 
 #### 風險描述
-內建的重試機制若配置不當（如所有客戶端同時重試），可能導致後端雪崩效應 (Thundering Herd)。
+內建的重試機制若配置不當（如所有客戶端同時重試），可能導致後端雪崩效應。
 
-#### 量化影響
-- **場景**：1000 個客戶端同時向失敗的服務發送請求
-- **無 Jitter**：所有重試在同一時間點發生，產生 1000 QPS 突波
-- **有 Jitter**：重試分散在 ±50% 時間範圍內，平滑至 200-300 QPS
+#### 緩解策略 (✅ v1.1 已優化)
+**實作 Jitter (抖動)**：在 v1.1 中，我們為指數退避增加了隨機抖動 (±20%)，確保重試請求在時間軸上均勻分佈。
 
-#### 緩解策略
-**1. 預設防護機制**
-```typescript
-// Beam 預設配置（安全但保守）
-const client = createBeam<AppType>('/api', {
-  retry: 0,  // 預設不重試
-  timeout: 30000
-})
-```
-
-**2. 建議配置（生產環境）**
 ```typescript
 const client = createBeam<AppType>('/api', {
-  retry: 3,
-  retryDelay: 1000,           // 基礎延遲 1 秒
-  retryBackoff: 2,            // 指數退避係數
-  retryJitter: true,          // 🚨 目前尚未實作，為 v1.1 待辦項
-  retryOn: [408, 429, 500, 502, 503, 504] // 僅針對特定狀態碼重試
-})
-
-// 預期延遲時間：
-// 第 1 次：1000ms ± jitter
-// 第 2 次：2000ms ± jitter
-// 第 3 次：4000ms ± jitter
-```
-
-**3. 熔斷機制（進階）**
-```typescript
-// 建議整合 Circuit Breaker（如 opossum）
-import CircuitBreaker from 'opossum'
-
-const breaker = new CircuitBreaker(
-  (url: string, init?: RequestInit) => fetch(url, init),
-  {
-    timeout: 3000,
-    errorThresholdPercentage: 50,
-    resetTimeout: 30000
+  retry: {
+    count: 3,
+    jitter: true // ✅ 已實作：防止重試風暴
   }
-)
-
-const client = createBeam<AppType>('/api', {
-  fetch: breaker.fire.bind(breaker) as typeof fetch
 })
 ```
-
-#### 監控機制
-- 追蹤重試率：`retry_count / total_requests`
-- 設定警報：若重試率 > 10% 則發送通知
-- 記錄重試分佈：使用 Histogram 觀察重試間隔
 
 ---
 
 ### 4.4 Bundle Size 影響
 
-#### 風險描述
-雖然 Beam 設計為「零運行時開銷」，但實際 Bundle 大小仍受到 `hono/client` 與自訂攔截器的影響。
-
-#### 量化基準
-```bash
-# 最小配置（Fast Path）
-@gravito/beam: ~2KB (gzipped)
-hono/client: ~3KB (gzipped)
-總計: ~5KB
-
-# 完整配置（Enhanced Fetch + 所有攔截器）
-@gravito/beam: ~4KB (gzipped)
-hono/client: ~3KB (gzipped)
-使用者攔截器: ~2KB (gzipped)
-總計: ~9KB
-```
-
 #### 優化策略
-1. **Tree-shaking**：確保僅打包使用的功能
-2. **條件式載入**：延遲載入重試邏輯
-```typescript
-// 動態載入重試邏輯
-const client = createBeam<AppType>('/api', {
-  retry: {
-    lazy: true, // 延遲至第一次重試時才載入
-    count: 3
-  }
-})
-```
+1. **Tree-shaking**：確保僅打包使用的功能。
+2. **條件式載入**：正在評估延遲載入重試邏輯。
 
 ---
 
@@ -287,52 +138,16 @@ const client = createBeam<AppType>('/api', {
 #### 風險描述
 若 `headers` 選項設定為異步函數，每次請求都會執行該函數，可能成為效能瓶頸。
 
-#### 量化影響
-```typescript
-// 場景：Token 檢查涉及 localStorage 讀取
-const client = createBeam<AppType>('/api', {
-  headers: async () => {
-    const token = localStorage.getItem('token') // ~0.1ms
-    const isExpired = checkExpiry(token)         // ~0.5ms
-    if (isExpired) {
-      await refreshToken()                       // ~200ms (網路請求)
-    }
-    return { Authorization: `Bearer ${token}` }
-  }
-})
+#### 緩解策略 (✅ v1.1 已優化)
+**快取標頭解析器**：新增 `createCachedHeaderResolver` 工具，允許對高開銷的標頭（如透過網路刷新的 Token）進行 TTL 快取。
 
-// 最壞情況：每次請求增加 200ms 延遲
-```
-
-#### 緩解策略
-**1. 快取 Token 狀態**
 ```typescript
-let cachedToken: string | null = null
-let tokenExpiry: number = 0
+import { createCachedHeaderResolver } from '@gravito/beam'
 
 const client = createBeam<AppType>('/api', {
-  headers: async () => {
-    const now = Date.now()
-    if (!cachedToken || now > tokenExpiry) {
-      cachedToken = await refreshToken()
-      tokenExpiry = now + 3600000 // 1 小時
-    }
-    return { Authorization: `Bearer ${cachedToken}` }
-  }
-})
-```
-
-**2. 使用攔截器處理 401**
-```typescript
-const client = createBeam<AppType>('/api', {
-  headers: { Authorization: `Bearer ${getToken()}` },
-  onResponse: async (res) => {
-    if (res.status === 401) {
-      await refreshToken()
-      // 重新發送請求（需手動實作）
-    }
-    return res
-  }
+  headers: createCachedHeaderResolver(async () => {
+    return { Authorization: `Bearer ${await getToken()}` }
+  }, 60000) // 快取 1 分鐘
 })
 ```
 
@@ -341,54 +156,17 @@ const client = createBeam<AppType>('/api', {
 ### 4.6 型別安全性邊界
 
 #### 風險描述
-Beam 依賴 TypeScript 型別推斷，但在以下場景可能失效：
-- 使用 `any` 覆蓋型別
-- 後端與前端型別定義不同步
-- 動態路由或運行時路由註冊
+Beam 依賴 TypeScript 型別推斷，但在後端與前端定義不同步或使用 `any` 時可能失效。
 
-#### 防護策略
-**1. 禁用 `any` 型別**
-```json
-// tsconfig.json
-{
-  "compilerOptions": {
-    "noImplicitAny": true,
-    "strict": true
-  }
-}
-```
+#### 防護策略 (✅ v1.1 已優化)
+**執行時驗證**：新增 `validateResponse` 工具，支援使用 Zod 等 Schema 對回傳資料進行執行時檢查，彌補編譯時型別檢查的不足。
 
-**2. 自動化型別同步檢查**
 ```typescript
-// scripts/check-types.ts
-import type { AppType as BackendType } from '@/server'
-import type { AppType as FrontendType } from '@/client'
-
-type TypesMatch = BackendType extends FrontendType
-  ? FrontendType extends BackendType
-    ? true
-    : false
-  : false
-
-const check: TypesMatch = true // 編譯時檢查
-```
-
-**3. 使用 Zod 進行運行時驗證**
-```typescript
+import { validateResponse } from '@gravito/beam'
 import { z } from 'zod'
 
-const UserSchema = z.object({
-  id: z.number(),
-  name: z.string()
-})
-
-const client = createBeam<AppType>('/api', {
-  onResponse: async (res) => {
-    const data = await res.json()
-    UserSchema.parse(data) // 運行時驗證
-    return res
-  }
-})
+const res = await client.users.$get()
+const data = await validateResponse(res, z.object({ id: z.number() }))
 ```
 
 ---
@@ -399,7 +177,7 @@ const client = createBeam<AppType>('/api', {
 
 | 功能 | 影響力 | 實作成本 | 優先級 | 目標版本 |
 |------|--------|----------|--------|----------|
-| Jitter 支援 | 🔥🔥🔥 高 | 🟢 低 | P0 | v1.1 |
+| Jitter 支援 | 🔥🔥🔥 高 | 🟢 低 | P0 | ✅ v1.1 |
 | AbortSignal 整合 | 🔥🔥 中 | 🟢 低 | P1 | v1.1 |
 | 請求去重 | 🔥🔥 中 | 🟡 中 | P2 | v1.2 |
 | React Server Actions | 🔥 低 | 🔴 高 | P3 | v2.0 |
@@ -410,7 +188,7 @@ const client = createBeam<AppType>('/api', {
 
 ### 短期優化 (v1.1)
 
-#### 5.1 新增 Jitter 支援
+#### 5.1 新增 Jitter 支援 (✅ 已實作)
 
 **問題陳述**
 目前重試機制使用固定的指數退避，可能導致所有客戶端在同一時間點重試，造成流量突波。

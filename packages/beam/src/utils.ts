@@ -47,7 +47,13 @@ export async function executeWithRetry(
   fetchFn: () => Promise<Response>,
   options: RetryOptions = {}
 ): Promise<Response> {
-  const { count = 0, delay = 1000, statusCodes = DEFAULT_RETRY_STATUS_CODES, backoff = 2 } = options
+  const {
+    count = 0,
+    delay = 1000,
+    statusCodes = DEFAULT_RETRY_STATUS_CODES,
+    backoff = 2,
+    jitter = true,
+  } = options
 
   let lastError: Error | undefined
   let attempts = 0
@@ -78,7 +84,16 @@ export async function executeWithRetry(
     attempts++
     if (attempts <= count) {
       // Calculate delay duration (exponential backoff)
-      const waitTime = delay * backoff ** (attempts - 1)
+      let waitTime = delay * backoff ** (attempts - 1)
+
+      // Apply jitter if enabled (randomized ±20% range)
+      if (jitter) {
+        const jitterFactor = 0.2
+        const min = waitTime * (1 - jitterFactor)
+        const max = waitTime * (1 + jitterFactor)
+        waitTime = Math.floor(Math.random() * (max - min + 1) + min)
+      }
+
       await sleep(waitTime)
     }
   }
