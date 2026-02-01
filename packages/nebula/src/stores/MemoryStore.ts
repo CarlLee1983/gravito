@@ -184,7 +184,8 @@ export class MemoryStore implements StorageStore {
       }
 
       // Combine all chunks into a single Blob
-      const blob = new Blob(chunks)
+      const buffer = Buffer.concat(chunks)
+      const blob = new Blob([buffer])
       await this.put(key, blob)
     } catch (error) {
       reader.releaseLock()
