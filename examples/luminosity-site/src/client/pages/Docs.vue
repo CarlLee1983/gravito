@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ChevronRight, Clock3, Github } from 'lucide-vue-next'
 interface SidebarSection {
   title: string
   items: SidebarLink[]

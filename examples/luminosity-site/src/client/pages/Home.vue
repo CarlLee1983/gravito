@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { Activity, ChevronRight, FileText, HardDrive, Search, Shield, Terminal, Zap } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
+import heroGraphic from '../assets/hero-graphic.png'
 import { useI18n } from '../composables/useI18n'
 
 defineProps<{
@@ -57,14 +59,11 @@ onMounted(() => {
       <div class="absolute inset-0 z-0">
         <!-- Main Hero Graphic (RESTORED & ENHANCED) -->
         <div class="absolute inset-0 opacity-60 pointer-events-none select-none mix-blend-screen overflow-hidden">
-          <Image 
+          <img 
             :src="heroGraphic" 
             alt="Luminosity Core" 
             class="w-full h-full object-cover animate-pulse-slow scale-110 blur-[2px] sm:blur-none"
             loading="eager"
-            fetchpriority="high"
-            formatNegotiation
-            usePicture
             style="mask-image: radial-gradient(circle at center, black 30%, transparent 80%);"
           />
         </div>
@@ -325,7 +324,7 @@ onMounted(() => {
           >
             <FileText :size="16" />
             <span class="group-hover:underline underline-offset-4">
-              {{ locale === 'zh' ? '查看完整基準測試報告' : 'View Full Benchmark Report' }}
+              {{ t.benchmark.benchmark_cta }}
             </span>
             <ChevronRight :size="16" class="group-hover:translate-x-1 transition-transform" />
           </StaticLink>

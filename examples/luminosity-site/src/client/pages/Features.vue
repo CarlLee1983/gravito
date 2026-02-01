@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Activity, Layers, Share2, Zap } from 'lucide-vue-next'
+import { Activity, ChevronRight, Cpu, Layers, Share2, Shield, Terminal, Zap } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useI18n } from '../composables/useI18n'
 
@@ -127,7 +127,7 @@ const points = computed(() => [
                     :href="point.docsLink"
                     class="text-xs font-black uppercase tracking-widest text-emerald-500 hover:text-emerald-400 flex items-center gap-1 group/btn"
                   >
-                    {{ locale === 'zh' ? '了解更多' : 'Learn More' }}
+                    {{ t.learn_more }}
                     <ChevronRight :size="14" class="group-hover/btn:translate-x-1 transition-transform" />
                   </StaticLink>
                 </div>

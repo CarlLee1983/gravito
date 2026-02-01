@@ -1,14 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from '../composables/useI18n'
 
-const { locale } = useI18n()
-
-const getPath = (path: string) => {
-  if (locale.value === 'zh') {
-    return `/zh${path}`
-  }
-  return path
-}
+const { t } = useI18n()
 </script>
 
 <template>
@@ -27,17 +20,17 @@ const getPath = (path: string) => {
           <h4 class="font-bold mb-6 text-sm uppercase tracking-widest text-emerald-500">Resources</h4>
           <ul class="space-y-4">
             <li>
-                          <StaticLink :href="getPath('/docs/introduction')" class="text-gray-400 hover:text-white transition-colors">
+              <StaticLink href="/docs/introduction" class="text-gray-400 hover:text-white transition-colors">
                 Documentation
               </StaticLink>
             </li>
             <li>
-              <StaticLink :href="getPath('/docs/benchmark')" class="text-gray-400 hover:text-white transition-colors">
+              <StaticLink href="/docs/benchmark" class="text-gray-400 hover:text-white transition-colors">
                 Benchmark Report
               </StaticLink>
             </li>
             <li>
-              <StaticLink :href="getPath('/docs/examples')" class="text-gray-400 hover:text-white transition-colors">
+              <StaticLink href="/docs/examples" class="text-gray-400 hover:text-white transition-colors">
                 Examples
               </StaticLink>
             </li>
@@ -65,8 +58,8 @@ const getPath = (path: string) => {
           &copy; {{ new Date().getFullYear() }} Gravito Framework. Built for Builders.
         </p>
         <div class="flex gap-6">
-          <StaticLink :href="getPath('/privacy')" class="text-gray-600 hover:text-white text-sm">Privacy</StaticLink>
-          <StaticLink :href="getPath('/terms')" class="text-gray-600 hover:text-white text-sm">Terms</StaticLink>
+          <StaticLink href="/privacy" class="text-gray-600 hover:text-white text-sm">Privacy</StaticLink>
+          <StaticLink href="/terms" class="text-gray-600 hover:text-white text-sm">Terms</StaticLink>
         </div>
       </div>
     </div>

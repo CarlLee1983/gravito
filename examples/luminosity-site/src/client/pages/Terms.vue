@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { AlertTriangle, CheckCircle, Scale } from 'lucide-vue-next'
 import { useI18n } from '../composables/useI18n'
 
 const { t } = useI18n()
