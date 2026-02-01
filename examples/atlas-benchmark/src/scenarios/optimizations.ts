@@ -150,13 +150,18 @@ async function testDirtyTrackerComparison() {
   })
 
   // Enable deep comparison
-  ;(item as any)._dirtyTracker.setDeepComparison(true)
+  ;(
+    item as { _dirtyTracker: { setDeepComparison: (v: boolean) => void } }
+  )._dirtyTracker.setDeepComparison(true)
 
   // Test 1: Shallow comparison (fast path)
   const shallowIterations = 10000
   const shallowStart = performance.now()
   for (let i = 0; i < shallowIterations; i++) {
-    ;(item as any)._dirtyTracker.mark('name', 'Test')
+    ;(item as { _dirtyTracker: { mark: (k: string, v: unknown) => void } })._dirtyTracker.mark(
+      'name',
+      'Test'
+    )
   }
   const shallowTime = performance.now() - shallowStart
   const shallowOps = shallowIterations / (shallowTime / 1000)

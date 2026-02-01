@@ -1,7 +1,7 @@
 import { type CacheLock, sleep } from './locks'
 import type { CacheStore } from './store'
 import { isTaggableStore } from './store'
-import { type CacheKey, type CacheTtl, normalizeCacheKey } from './types'
+import { type CacheKey, type CacheTtl, type CompressionOptions, normalizeCacheKey } from './types'
 
 /**
  * Supported modes for emitting cache events.
@@ -10,6 +10,11 @@ import { type CacheKey, type CacheTtl, normalizeCacheKey } from './types'
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const mode: CacheEventMode = 'async';
+ * ```
  */
 export type CacheEventMode = 'sync' | 'async' | 'off'
 
@@ -21,6 +26,14 @@ export type CacheEventMode = 'sync' | 'async' | 'off'
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const events: CacheEvents = {
+ *   hit: (key) => console.log(`Cache hit: ${key}`),
+ *   miss: (key) => console.log(`Cache miss: ${key}`)
+ * };
+ * ```
  */
 export type CacheEvents = {
   /** Triggered on a cache hit. */
@@ -43,6 +56,15 @@ export type CacheEvents = {
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const options: CacheRepositoryOptions = {
+ *   prefix: 'v1:',
+ *   defaultTtl: 3600,
+ *   eventsMode: 'async'
+ * };
+ * ```
  */
 export type CacheRepositoryOptions = {
   /** Optional prefix for all cache keys. */
@@ -51,24 +73,31 @@ export type CacheRepositoryOptions = {
   defaultTtl?: CacheTtl
   /** Event handlers for cache operations. */
   events?: CacheEvents
-  /** Mode for emitting events (sync, async, or off). @default 'async' */
+  /** Mode for emitting events (sync, async, or off). */
   eventsMode?: CacheEventMode
-  /** Whether to throw an error if an event handler fails. @default false */
+  /** Whether to throw an error if an event handler fails. @defaultValue false */
   throwOnEventError?: boolean
   /** Callback triggered when an event handler encounters an error. */
   onEventError?: (error: unknown, event: keyof CacheEvents, payload: { key?: string }) => void
-  /** Timeout for background flexible refresh in milliseconds. @default 30000 */
+  /** Timeout for background flexible refresh in milliseconds. @defaultValue 30000 */
   refreshTimeout?: number
   /**
    * Maximum number of retries for the background flexible refresh callback.
-   * @default 0
+   * @defaultValue 0
    */
   maxRetries?: number
   /**
    * Delay between retries for flexible refresh in milliseconds.
-   * @default 50
+   * @defaultValue 50
    */
   retryDelay?: number
+
+  /**
+   * Compression settings for cached values.
+   *
+   * @since 3.1.0
+   */
+  compression?: CompressionOptions
 }
 
 /**
@@ -79,6 +108,15 @@ export type CacheRepositoryOptions = {
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const stats: FlexibleStats = {
+ *   refreshCount: 10,
+ *   refreshFailures: 0,
+ *   avgRefreshTime: 15.5
+ * };
+ * ```
  */
 export type FlexibleStats = {
   /** Total number of successful background refreshes. */
@@ -106,6 +144,7 @@ export type FlexibleStats = {
  */
 export class CacheRepository {
   private refreshSemaphore = new Map<string, Promise<void>>()
+  private coalesceSemaphore = new Map<string, Promise<any>>()
   private flexibleStats = { refreshCount: 0, refreshFailures: 0, totalTime: 0 }
 
   constructor(
@@ -237,13 +276,14 @@ export class CacheRepository {
     defaultValue?: T | (() => T | Promise<T>)
   ): Promise<T | null> {
     const fullKey = this.key(key)
-    const value = await this.store.get<T>(fullKey)
-    if (value !== null) {
+    const raw = await this.store.get<any>(fullKey)
+
+    if (raw !== null) {
       const e = this.emit('hit', { key: fullKey })
       if (e) {
         await e
       }
-      return value
+      return this.decompress<T>(raw)
     }
 
     const e = this.emit('miss', { key: fullKey })
@@ -304,10 +344,10 @@ export class CacheRepository {
    *
    * Persists the value in the underlying store with the given TTL.
    *
-   * @param key - The unique cache key.
-   * @param value - The value to store.
-   * @param ttl - Time-to-live.
-   * @throws {Error} If the underlying store fails to persist the value.
+   * @param key - Unique cache key.
+   * @param value - Value to store.
+   * @param ttl - Expiration duration.
+   * @throws {Error} If the underlying store fails to persist the value or serialization fails.
    *
    * @example
    * ```typescript
@@ -316,7 +356,8 @@ export class CacheRepository {
    */
   async put(key: CacheKey, value: unknown, ttl: CacheTtl): Promise<void> {
     const fullKey = this.key(key)
-    await this.store.put(fullKey, value, ttl)
+    const data = await this.compress(value)
+    await this.store.put(fullKey, data, ttl)
     const e = this.emit('write', { key: fullKey })
     if (e) {
       await e
@@ -412,14 +453,29 @@ export class CacheRepository {
     ttl: CacheTtl,
     callback: () => Promise<T> | T
   ): Promise<T> {
-    const existing = await this.get<T>(key)
-    if (existing !== null) {
-      return existing
+    const fullKey = this.key(key)
+
+    if (this.coalesceSemaphore.has(fullKey)) {
+      return this.coalesceSemaphore.get(fullKey)
     }
 
-    const value = await callback()
-    await this.put(key, value, ttl)
-    return value
+    const promise = (async () => {
+      try {
+        const existing = await this.get<T>(key)
+        if (existing !== null) {
+          return existing
+        }
+
+        const value = await callback()
+        await this.put(key, value, ttl)
+        return value
+      } finally {
+        this.coalesceSemaphore.delete(fullKey)
+      }
+    })()
+
+    this.coalesceSemaphore.set(fullKey, promise)
+    return promise
   }
 
   /**
@@ -541,14 +597,8 @@ export class CacheRepository {
     }
     const value = await callback()
     const totalTtl = ttlSeconds + staleSeconds
-    await this.store.put(fullKey, value, totalTtl)
+    await this.put(fullKey, value, totalTtl)
     await this.putMetaKey(metaKey, now + ttlMillis, totalTtl)
-    {
-      const e = this.emit('write', { key: fullKey })
-      if (e) {
-        await e
-      }
-    }
     return value
   }
 
@@ -620,12 +670,8 @@ export class CacheRepository {
 
       const totalTtl = ttlSeconds + staleSeconds
       const now = Date.now()
-      await this.store.put(fullKey, value, totalTtl)
+      await this.put(fullKey, value, totalTtl)
       await this.putMetaKey(metaKey, now + Math.max(0, ttlSeconds) * 1000, totalTtl)
-      const e = this.emit('write', { key: fullKey })
-      if (e) {
-        await e
-      }
 
       this.flexibleStats.refreshCount++
       this.flexibleStats.totalTime += Date.now() - startTime
@@ -844,6 +890,52 @@ export class CacheRepository {
    */
   getStore(): CacheStore {
     return this.store
+  }
+
+  /**
+   * Compress a value before storage if compression is enabled and thresholds are met.
+   */
+  private async compress(value: unknown): Promise<unknown> {
+    const opts = this.options.compression
+    if (!opts?.enabled || value === null || value === undefined) {
+      return value
+    }
+
+    // Only compress strings or objects that would be JSON stringified
+    const json = JSON.stringify(value)
+    if (json.length < (opts.minSize ?? 1024)) {
+      return value
+    }
+
+    const { gzipSync } = await import('node:zlib')
+    const compressed = gzipSync(Buffer.from(json), { level: opts.level ?? 6 })
+
+    return {
+      __gravito_compressed: true,
+      data: compressed.toString('base64'),
+    }
+  }
+
+  /**
+   * Decompress a value after retrieval if it was previously compressed.
+   */
+  private async decompress<T>(value: any): Promise<T | null> {
+    if (
+      value !== null &&
+      typeof value === 'object' &&
+      '__gravito_compressed' in value &&
+      value.__gravito_compressed === true
+    ) {
+      const { gunzipSync } = await import('node:zlib')
+      const buffer = Buffer.from(value.data, 'base64')
+      const decompressed = gunzipSync(buffer).toString()
+      try {
+        return JSON.parse(decompressed)
+      } catch {
+        return decompressed as any
+      }
+    }
+    return value as T
   }
 }
 

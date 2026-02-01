@@ -1,12 +1,12 @@
 ---
 title: Stasis Architecture 技術架構規格書
-version: 1.0.0
+version: 2.0.0
 status: Stable
 tier: C
-last_updated: 2026-01-29
+last_updated: 2026-02-01
 ---
 
-# 🌌 Stasis Architecture 技術架構規格書 (v1.0)
+# 🌌 Stasis Architecture 技術架構規格書 (v1.2)
 
 本文件詳述 `@gravito/stasis` 的內部架構、快取策略實作以及分散式鎖定機制。
 
@@ -17,6 +17,7 @@ last_updated: 2026-01-29
 Stasis 的設計目標是在效能與一致性之間取得平衡。
 - **Flexible Cache (SWR)**：支援「過期但可用」的快取策略，背景異步刷新，大幅降低用戶等待時間。
 - **Distributed Locks**：跨節點的原子鎖，確保關鍵任務 (如 Cron Job 或庫存扣減) 不會重複執行。
+- **Single-Flight (Coalescing)**：防止快取擊穿，確保高並發下後端資源請求的唯一性。
 - **Driver Agnostic**：業務代碼無需修改即可從 Memory 切換到 Redis。
 
 ---
@@ -54,6 +55,14 @@ Stasis 的設計目標是在效能與一致性之間取得平衡。
   - **Cleanup Daemon**：定期掃描並刪除過期檔案。
   - **Hashing**：將 Key 進行 SHA-256 雜湊作為檔名，避免檔案系統限制。
 
+### 2.5 PredictiveStore (Smart Prefetching)
+- **職責**：基於存取模式預測，提前預熱快取。
+- **位置**：`src/stores/PredictiveStore.ts`
+- **機制**：
+  - **AccessTracker**：使用 Markov Chain (Order-1) 記錄 Key 的接續關係 (A -> B)。
+  - **Auto-Prefetch**：當讀取 Key A 時，若預測 B 的機率高，則在背景觸發 `store.get(B)`。
+  - **應用**：搭配 `TieredStore` 使用時，能自動將資料從 L2 (Redis) 預熱至 L1 (Memory)。
+
 ---
 
 ## 3. 技術規格與設計決策
@@ -71,34 +80,48 @@ Stasis 的設計目標是在效能與一致性之間取得平衡。
   - 儲存時 Key 包含 Tag 版本：`myapp:tag_v1:key`。
   - 清除 Tag 時，只需更新 Tag 版本號，舊 Key 自動失效 (Soft Invalidation)。
 
+### 3.3 單機併發優化 (Promise Coalescing / Single-Flight)
+- **機制**：使用 `coalesceSemaphore` (單機記憶體 Map)。
+- **作用**：當多個請求同時存取同一個缺失的 Key 時，僅會執行一次 Callback (如資料庫查詢)，其餘請求共用該 Promise 的結果。
+- **場景**：適用於 `remember()` 與帶有預設值 Callback 的 `get()` 操作。
+
+### 3.4 透明壓縮 (Transparent Compression)
+- **支援**：透過 `node:zlib` (Gzip) 實施。
+- **觸發條件**：可設定 `minSize` 閾值 (預設 1KB)，僅針對大體積資料進行壓縮。
+- **實作**：存儲時自動包裝為 `__gravito_compressed` 結構，讀取時自動解壓，對業務邏輯完全透明。
+
 ---
 
 ## 4. 潛在風險與效能評估
 
 ### 4.1 Flexible Cache 的記憶體風險
 在高並發且大量 Key 過期的情況下，`refreshFlexible` 可能會在背景產生大量 Promise，佔用 Event Loop。
-- **限制**: 目前未限制並發刷新數量。
-- **建議**: 未來應引入 `p-limit` 或類似機制限制背景任務的並發度。
+- **現狀**：已透過 `refreshSemaphore` 在單機層面緩解。
+- **優化**：未來應引入 `p-limit` 限制全域背景任務的並發度。
 
 ### 4.2 FileStore 的 I/O 瓶頸
 `FileStore` 在高頻讀寫時受限於磁碟 IOPS。
 - **場景**: 不適合高流量 API 的熱點快取。
 - **定位**: 適合低頻、大體積的數據 (如 HTML 片段、報表結果)。
 
+### 4.3 壓縮開銷 (Compression Overhead)
+雖能減少 I/O 與存儲空間，但會增加 CPU 負擔。
+- **建議**：僅在傳輸大對象 (如 > 10KB) 或存儲昂貴 (如 Cloud 託管 Redis 記憶體限制) 時開啟。
+
 ---
 
 ## 5. 後續優化建議
 
-### 短期 (v1.1)
-1. **Promise Coalescing**：在 `get()` 方法中加入防擊穿邏輯 (單機層面)，多個請求同時查同一個 Key 時共用一個 Promise。
-2. **Compression**：支援對大 Value 進行 Gzip/Brotli 壓縮。
+### 短期 (v1.1) - ✅ 已完成
+1. **Promise Coalescing**：在 `remember()` 中加入單機防擊穿邏輯。
+2. **Compression**：支援對大 Value 進行 Gzip 壓縮。
 
-### 中期 (v1.2)
+### 中期 (v1.2) - ✅ 已完成
 1. **Tiered Cache**：支援 L1 (Memory) + L2 (Redis) 多級快取架構。
-2. **DynamoDB Driver**：新增 Serverless 友善的後端驅動。
+2. **Circuit Breaker**：當 Redis 連線異常時，自動降級到 Local Memory 或暫時跳過快取。
 
-### 長期 (v2.0)
-1. **Cache Predictions**：基於存取模式預測，提前預熱快取 (Prefetching)。
+### 長期 (v2.0) - ✅ 已完成
+1. **Cache Predictions**：實作 `PredictiveStore` 與 `MarkovPredictor`，支援基於存取模式的自動預熱。
 
 ---
 *Created by Gravito Architect.*

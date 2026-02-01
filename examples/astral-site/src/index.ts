@@ -36,8 +36,8 @@ async function main() {
   })
 
   const liftoff = core.liftoff()
-  Bun.serve(liftoff as any)
-  console.log(`🚀 Astral Demo running at http://localhost:${liftoff.port}/docs`)
+  const server = Bun.serve(liftoff as Parameters<typeof Bun.serve>[0])
+  console.log(`🚀 Astral Demo running at http://localhost:${server.port}/docs`)
 }
 
 main().catch(console.error)

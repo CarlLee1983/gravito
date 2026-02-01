@@ -28,6 +28,11 @@ type LockEntry = {
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const options: MemoryStoreOptions = { maxItems: 500 };
+ * ```
  */
 export type MemoryStoreOptions = {
   /**
@@ -46,6 +51,17 @@ export type MemoryStoreOptions = {
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const stats: MemoryCacheStats = {
+ *   hits: 100,
+ *   misses: 20,
+ *   hitRate: 0.83,
+ *   size: 500,
+ *   evictions: 5
+ * };
+ * ```
  */
 export type MemoryCacheStats = {
   /** Total number of successful cache lookups. */

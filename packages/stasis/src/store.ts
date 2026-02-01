@@ -9,6 +9,15 @@ import type { CacheKey, CacheTtl, CacheValue } from './types'
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * class MyStore implements CacheStore {
+ *   async get(key) { ... }
+ *   async put(key, value, ttl) { ... }
+ *   // ... other methods
+ * }
+ * ```
  */
 export interface CacheStore {
   /**
@@ -130,6 +139,13 @@ export interface CacheStore {
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * if (isTaggableStore(store)) {
+ *   await store.flushTags(['users']);
+ * }
+ * ```
  */
 export interface TaggableStore {
   /**

@@ -8,6 +8,11 @@ import type { CacheStore } from './store'
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const res: RateLimiterResponse = { allowed: true, remaining: 4, reset: 1622548800 };
+ * ```
  */
 export interface RateLimiterResponse {
   /** Whether the request is allowed based on current usage and limits. */
@@ -28,6 +33,11 @@ export interface RateLimiterResponse {
  *
  * @public
  * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const info: RateLimitInfo = { limit: 10, remaining: 5, reset: 1622548800 };
+ * ```
  */
 export interface RateLimitInfo {
   /** Maximum number of attempts allowed within the configured window. */
@@ -64,7 +74,12 @@ export class RateLimiter {
   /**
    * Creates a new RateLimiter instance.
    *
-   * @param store - The cache backend used to persist attempt counts.
+   * @param store - Cache backend used to persist attempt counts.
+   *
+   * @example
+   * ```typescript
+   * const limiter = new RateLimiter(new MemoryStore());
+   * ```
    */
   constructor(private store: CacheStore) {}
 
@@ -131,10 +146,10 @@ export class RateLimiter {
    * store does not support TTL inspection, it falls back to the provided
    * decay period.
    *
-   * @param key - The unique identifier for the rate limit.
-   * @param decaySeconds - The default decay period to use as a fallback.
-   * @returns The number of seconds until the key expires.
-   * @throws {Error} If the store's TTL check fails.
+   * @param key - Unique identifier for the rate limit.
+   * @param decaySeconds - Default decay period to use as a fallback.
+   * @returns Number of seconds until the key expires.
+   * @throws {Error} If the store fails to retrieve TTL metadata.
    */
   async availableIn(key: string, decaySeconds: number): Promise<number> {
     if (typeof this.store.ttl === 'function') {

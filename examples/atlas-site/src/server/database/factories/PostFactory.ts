@@ -9,5 +9,5 @@ export const PostFactory = factory(
     content: Fake.paragraph(),
     is_published: Fake.boolean(),
   }),
-  { model: Post as any, table: 'posts' }
+  { model: Post as typeof Post, table: 'posts' }
 )
