@@ -47,7 +47,8 @@
       "Bash(column:*)",
       "Bash(git worktree:*)",
       "Bash(git rev-parse:*)",
-      "Bash(tsc:*)"
+      "Bash(tsc:*)",
+      "Bash(curl:*)"
     ]
   },
   "enabledMcpjsonServers": [
