@@ -12,21 +12,74 @@
 export type RedisClientType = 'bun' | 'ioredis' | 'auto'
 
 /**
- * Redis connection configuration
+ * Configuration for a single Redis node (standalone or cluster).
+ * Used for both basic connection settings and as a seed node for cluster discovery.
+ *
+ * @public
+ * @example
+ * ```typescript
+ * const node: RedisNode = {
+ *   host: '127.0.0.1',
+ *   port: 6379,
+ *   password: 'your-password'
+ * };
+ * ```
  */
+export interface RedisNode {
+  /** The hostname or IP address of the Redis server */
+  host?: string
+  /** The port number of the Redis server (default: 6379) */
+  port?: number
+  /** Authentication password for the Redis server */
+  password?: string
+  /** Database index to use (0-15, not supported in Cluster mode) */
+  db?: number
+}
+
+/**
+ * Cluster configuration options for Redis Cluster environments.
+ * Requires 'ioredis' client type.
+ *
+ * @public
+ * @example
+ * ```typescript
+ * const cluster: ClusterOptions = {
+ *   enable: true,
+ *   nodes: [
+ *     { host: '10.0.0.1', port: 7000 },
+ *     { host: '10.0.0.2', port: 7000 }
+ *   ],
+ *   scaleReads: 'slave'
+ * };
+ * ```
+ */
+export interface ClusterOptions {
+  /**
+   * List of cluster nodes to connect to.
+   * If 'enable' is true but 'nodes' is empty, the main host/port will be used as a seed.
+   */
+  nodes?: RedisNode[]
+  /** Whether to enable Redis Cluster mode */
+  enable?: boolean
+  /**
+   * Strategy for scaling read operations across the cluster.
+   * - 'master': Only read from master nodes (default)
+   * - 'slave': Only read from slave nodes
+   * - 'all': Read from both master and slave nodes
+   */
+  scaleReads?: 'master' | 'slave' | 'all'
+  /**
+   * Advanced Redis Cluster specific options passed directly to the underlying ioredis client.
+   * @see https://github.com/luin/ioredis/blob/master/API.md#new-clusterstartupnodes-options
+   */
+  redisOptions?: Record<string, any>
+}
+
 /**
  * Detailed configuration for a single Redis connection.
  * @public
  */
-export interface RedisConfig {
-  /** The hostname or IP address of the Redis server */
-  host?: string
-  /** The port number (default: 6379) */
-  port?: number
-  /** Authentication password */
-  password?: string
-  /** Logical database index (defaults to 0) */
-  db?: number
+export interface RedisConfig extends RedisNode {
   /** Initial connection timeout in milliseconds */
   connectTimeout?: number
   /** Individual command execution timeout in milliseconds */
@@ -41,6 +94,8 @@ export interface RedisConfig {
   retryDelay?: number
   /** Client implementation type: 'bun' (Bun.redis), 'ioredis', or 'auto' (default: 'auto') */
   clientType?: RedisClientType
+  /** Cluster configuration */
+  cluster?: ClusterOptions
 }
 
 /**
@@ -123,9 +178,92 @@ export interface ScanOptions {
   count?: number
 }
 
+/**
+ * Options for the XADD command to append entries to a stream.
+ *
+ * @public
+ * @example
+ * ```typescript
+ * const options: XAddOptions = {
+ *   maxlen: 1000,
+ *   approximate: true,
+ *   id: '*'
+ * };
+ * ```
+ */
+export interface XAddOptions {
+  /**
+   * Maximum length of the stream (MAXLEN).
+   * When specified, the stream is truncated to this length.
+   */
+  maxlen?: number
+  /**
+   * Whether to use approximate matching for MAXLEN (~).
+   * This is more efficient as it doesn't require exact truncation.
+   */
+  approximate?: boolean
+  /**
+   * The stream ID to use.
+   * Use '*' to let Redis auto-generate a unique ID based on the current time.
+   */
+  id?: string
+}
+
+/**
+ * Options for XREAD and XREADGROUP commands to retrieve data from streams.
+ *
+ * @public
+ * @example
+ * ```typescript
+ * const options: XReadOptions = {
+ *   count: 10,
+ *   block: 2000
+ * };
+ * ```
+ */
+export interface XReadOptions {
+  /**
+   * Maximum number of elements to return per stream (COUNT).
+   */
+  count?: number
+  /**
+   * Time in milliseconds to block the connection if no data is available (BLOCK).
+   * Use 0 to block indefinitely.
+   */
+  block?: number
+}
+
 // ============================================================================
 // Result Types
 // ============================================================================
+
+/**
+ * Represents a single entry in a Redis Stream.
+ * A tuple consisting of the entry ID and an array of field-value pairs.
+ *
+ * @public
+ * @example
+ * ```typescript
+ * const entry: StreamEntry = ['1626535435629-0', ['sensor', 'temp', 'value', '25.5']];
+ * ```
+ */
+export type StreamEntry = [id: string, fields: string[]]
+
+/**
+ * Represents the result of an XREAD or XREADGROUP operation.
+ * An array of stream results, where each result is a tuple of the stream key and its entries.
+ *
+ * @public
+ * @example
+ * ```typescript
+ * const result: StreamReadResult = [
+ *   ['mystream', [
+ *     ['1626535435629-0', ['field1', 'value1']]
+ *   ]]
+ * ];
+ * ```
+ */
+export type StreamReadResult = [stream: string, entries: StreamEntry[]][]
 
 /**
  * Represents the result of a single SCAN iteration.
@@ -329,6 +467,46 @@ export interface RedisClientContract {
 
   /** Executes a Lua script atomically on the Redis server */
   eval(script: string, numKeys: number, ...args: string[]): Promise<unknown>
+  /** Executes a Lua script by its SHA1 digest */
+  evalsha(sha1: string, numKeys: number, ...args: string[]): Promise<unknown>
+
+  /** Appends a new entry to a stream */
+  xadd(key: string, data: Record<string, string>, options?: XAddOptions): Promise<string>
+  /** Reads data from one or more streams */
+  xread(streams: Record<string, string>, options?: XReadOptions): Promise<StreamReadResult | null>
+  /** Reads data from a stream using a consumer group */
+  xreadgroup(
+    group: string,
+    consumer: string,
+    streams: Record<string, string>,
+    options?: XReadOptions
+  ): Promise<StreamReadResult | null>
+  /** Creates a new consumer group */
+  xgroup(
+    command: 'CREATE',
+    key: string,
+    group: string,
+    id?: string,
+    mkstream?: boolean
+  ): Promise<'OK'>
+  /** Destroys a consumer group */
+  xgroup(command: 'DESTROY', key: string, group: string): Promise<number>
+  /** Deletes a consumer from a consumer group */
+  xgroup(command: 'DELCONSUMER', key: string, group: string, consumer: string): Promise<number>
+  /** Sets the consumer group last delivered ID */
+  xgroup(command: 'SETID', key: string, group: string, id: string): Promise<'OK'>
+  /** Acknowledges messages in a consumer group */
+  xack(key: string, group: string, ...ids: string[]): Promise<number>
+  /** Returns the number of entries in a stream */
+  xlen(key: string): Promise<number>
+  /** Returns a range of elements in a stream */
+  xrange(key: string, start: string, end: string, count?: number): Promise<StreamEntry[]>
+  /** Returns a range of elements in a stream in reverse order */
+  xrevrange(key: string, end: string, start: string, count?: number): Promise<StreamEntry[]>
+  /** Trims the stream to a specified length */
+  xtrim(key: string, maxlen: number, approximate?: boolean): Promise<number>
+  /** Deletes entries from a stream */
+  xdel(key: string, ...ids: string[]): Promise<number>
 }
 
 /**
