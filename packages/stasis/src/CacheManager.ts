@@ -19,6 +19,14 @@ export type StoreConfig =
   | { driver: 'null' }
   // legacy adapter: allow plugging any provider that matches old interface
   | { driver: 'provider' }
+  | { driver: 'tiered'; local: string; remote: string }
+  | {
+      driver: 'circuit-breaker'
+      primary: string
+      maxFailures?: number
+      resetTimeout?: number
+      fallback?: string
+    }
 
 /**
  * Global cache configuration for managing multiple named stores.

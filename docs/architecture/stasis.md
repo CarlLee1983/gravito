@@ -1,12 +1,12 @@
 ---
 title: Stasis Architecture 技術架構規格書
-version: 1.1.0
+version: 1.2.0
 status: Stable
 tier: C
 last_updated: 2026-02-01
 ---
 
-# 🌌 Stasis Architecture 技術架構規格書 (v1.1)
+# 🌌 Stasis Architecture 技術架構規格書 (v1.2)
 
 本文件詳述 `@gravito/stasis` 的內部架構、快取策略實作以及分散式鎖定機制。
 
@@ -108,7 +108,7 @@ Stasis 的設計目標是在效能與一致性之間取得平衡。
 1. **Promise Coalescing**：在 `remember()` 中加入單機防擊穿邏輯。
 2. **Compression**：支援對大 Value 進行 Gzip 壓縮。
 
-### 中期 (v1.2)
+### 中期 (v1.2) - ✅ 已完成
 1. **Tiered Cache**：支援 L1 (Memory) + L2 (Redis) 多級快取架構。
 2. **Circuit Breaker**：當 Redis 連線異常時，自動降級到 Local Memory 或暫時跳過快取。
 

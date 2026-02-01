@@ -2,10 +2,12 @@ import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gra
 import { CacheManager } from './CacheManager'
 import type { CacheEventMode, CacheEvents } from './CacheRepository'
 import type { CacheStore } from './store'
+import { CircuitBreakerStore } from './stores/CircuitBreakerStore'
 import { FileStore } from './stores/FileStore'
 import { MemoryStore } from './stores/MemoryStore'
 import { NullStore } from './stores/NullStore'
 import { RedisStore } from './stores/RedisStore'
+import { TieredStore } from './stores/TieredStore'
 import type { CacheTtl } from './types'
 
 export * from './CacheManager'
@@ -13,10 +15,12 @@ export * from './CacheRepository'
 export * from './locks'
 export * from './RateLimiter'
 export * from './store'
+export * from './stores/CircuitBreakerStore'
 export * from './stores/FileStore'
 export * from './stores/MemoryStore'
 export * from './stores/NullStore'
 export * from './stores/RedisStore'
+export * from './stores/TieredStore'
 export * from './types'
 
 /**
@@ -230,6 +234,16 @@ export type OrbitCacheStoreConfig =
   | { driver: 'custom'; store: CacheStore }
   /** Use an implementation of the `CacheStorageProvider` interface. */
   | { driver: 'provider'; provider: CacheStorageProvider }
+  /** Multi-level cache. */
+  | { driver: 'tiered'; local: string; remote: string }
+  /** Fault tolerance layer. */
+  | {
+      driver: 'circuit-breaker'
+      primary: string
+      maxFailures?: number
+      resetTimeout?: number
+      fallback?: string
+    }
 
 /**
  * Options for configuring the `OrbitStasis` cache orbit.
@@ -347,6 +361,22 @@ function createStoreFactory(config: OrbitCacheOptions): (name: string) => CacheS
           return next
         },
       } satisfies CacheStore
+    }
+
+    if (storeConfig.driver === 'tiered') {
+      const factory = createStoreFactory(config)
+      return new TieredStore(factory(storeConfig.local), factory(storeConfig.remote))
+    }
+
+    if (storeConfig.driver === 'circuit-breaker') {
+      const factory = createStoreFactory(config)
+      const primary = factory(storeConfig.primary)
+      const fallback = storeConfig.fallback ? factory(storeConfig.fallback) : undefined
+      return new CircuitBreakerStore(primary, {
+        maxFailures: storeConfig.maxFailures,
+        resetTimeout: storeConfig.resetTimeout,
+        fallback,
+      })
     }
 
     throw new Error(`Unsupported cache driver '${(storeConfig as { driver?: string }).driver}'.`)
