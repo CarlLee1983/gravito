@@ -64,6 +64,8 @@ export interface SeoConfig {
     ttl: number
     /** Maximum number of entries to keep in memory. */
     maxSize?: number
+    /** Optional distributed lock provider for multi-instance environments. */
+    lockProvider?: any
   }
 
   /** Incremental generation settings for 'incremental' mode. */
