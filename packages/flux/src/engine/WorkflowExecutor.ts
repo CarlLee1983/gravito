@@ -363,7 +363,7 @@ export class WorkflowExecutor {
   ): Promise<WorkflowContext<TInput, TData>> {
     let currentCtx = ctx
     if (this.optimizer) {
-      const optimizedData = this.optimizer.optimizeForStorage(ctx.data)
+      const optimizedData = this.optimizer.optimizeForStorage(ctx.data) as TData
       currentCtx = updateWorkflowContext(ctx, { data: optimizedData })
     }
 
