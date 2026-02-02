@@ -90,7 +90,7 @@ export class TimeoutChannel implements NotificationChannel {
     notifiable: Notifiable,
     options?: AbortableSendOptions
   ): Promise<void> {
-    // 如果 timeout <= 0，立即拋出錯誤
+    // If timeout <= 0, throw error immediately
     if (this.config.timeout <= 0) {
       if (this.config.onTimeout) {
         this.config.onTimeout(this.inner.constructor.name, notification)
@@ -98,11 +98,11 @@ export class TimeoutChannel implements NotificationChannel {
       throw new TimeoutError(`Notification send timeout after ${this.config.timeout}ms`)
     }
 
-    // 建立 AbortController
+    // Create AbortController
     const controller = new AbortController()
     const { signal } = controller
 
-    // 如果外部傳入 signal，監聽它
+    // If external signal is provided, listen to it
     if (options?.signal) {
       if (options.signal.aborted) {
         throw new AbortError('Request was aborted before sending')
@@ -112,7 +112,7 @@ export class TimeoutChannel implements NotificationChannel {
       })
     }
 
-    // 建立 timeout Promise
+    // Create timeout Promise
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
         if (this.config.onTimeout) {
@@ -120,7 +120,7 @@ export class TimeoutChannel implements NotificationChannel {
         }
         controller.abort()
 
-        // 判斷是 timeout 還是外部 abort
+        // Determine if it's a timeout or external abort
         if (options?.signal?.aborted) {
           reject(new AbortError('Request was aborted externally'))
         } else {
@@ -129,22 +129,22 @@ export class TimeoutChannel implements NotificationChannel {
       }, this.config.timeout)
     })
 
-    // 執行實際的 send 操作（傳遞 signal 給內部 channel）
+    // Execute actual send operation (pass signal to inner channel)
     const sendPromise = this.inner.send(notification, notifiable, { signal }).catch((error) => {
-      // 如果是外部 signal 導致的 abort，包裝成 AbortError
+      // If aborted by external signal, wrap as AbortError
       if (options?.signal?.aborted) {
         throw new AbortError('Request was aborted externally')
       }
-      // 如果是 timeout 導致的 abort，包裝成 TimeoutError
+      // If aborted by timeout, wrap as TimeoutError
       if (signal.aborted) {
         throw new TimeoutError(`Notification send timeout after ${this.config.timeout}ms`)
       }
-      // 其他錯誤直接拋出
+      // Re-throw other errors
       throw error
     })
 
-    // 使用 Promise.race 來競爭：timeout 時立即拋出錯誤
-    // 即使底層服務不支援 AbortSignal，timeout 也會生效
+    // Use Promise.race: throw error immediately on timeout
+    // Timeout works even if underlying service doesn't support AbortSignal
     return Promise.race([sendPromise, timeoutPromise])
   }
 }

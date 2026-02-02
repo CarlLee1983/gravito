@@ -3,20 +3,20 @@ import type { AbortableSendOptions, Notifiable, NotificationChannel } from '../t
 import { TimeoutChannel } from './TimeoutChannel'
 
 /**
- * 預設 timeout 時間（毫秒）
+ * Default timeout duration in milliseconds (30 seconds).
  */
-const DEFAULT_TIMEOUT_MS = 30_000 // 30 秒
+const DEFAULT_TIMEOUT_MS = 30_000
 
 /**
  * Mail channel 配置選項。
  */
 export interface MailChannelConfig {
   /**
-   * Timeout 時間（毫秒），預設 30000ms (30秒)。
+   * Timeout duration in milliseconds. Default: 30000ms (30s).
    */
   timeout?: number
   /**
-   * Timeout 發生時的回調函數。
+   * Callback function triggered when a timeout occurs.
    */
   onTimeout?: (channel: string, notification: Notification) => void
 }
@@ -35,7 +35,7 @@ export class MailChannel implements NotificationChannel {
     },
     private config?: MailChannelConfig
   ) {
-    // 建立內部 channel
+    // Create internal channel
     const innerChannel: NotificationChannel = {
       send: async (
         notification: Notification,
@@ -47,12 +47,12 @@ export class MailChannel implements NotificationChannel {
         }
 
         const message = notification.toMail(notifiable)
-        // Note: MailService 可能不支援 AbortSignal，取決於底層實作
+        // Note: MailService might not support AbortSignal, depending on underlying implementation
         await this.mailService.send(message)
       },
     }
 
-    // 使用 TimeoutChannel 包裝
+    // Wrap with TimeoutChannel
     const timeout = this.config?.timeout ?? DEFAULT_TIMEOUT_MS
     this.timeoutChannel = new TimeoutChannel(innerChannel, {
       timeout,
