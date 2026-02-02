@@ -1,3 +1,4 @@
+import { DeadLetterQueue } from './events/DeadLetterQueue'
 import type { EventOptions } from './events/EventOptions'
 import { DEFAULT_EVENT_OPTIONS } from './events/EventOptions'
 import { EventPriorityQueue } from './events/EventPriorityQueue'
@@ -40,6 +41,12 @@ export interface HookManagerConfig {
    * @default false
    */
   showDeprecationWarnings?: boolean
+
+  /**
+   * Enable Dead Letter Queue for failed events.
+   * @default true
+   */
+  enableDLQ?: boolean
 }
 
 /**
@@ -50,6 +57,7 @@ export class HookManager {
   private filters: Map<string, FilterCallback[]> = new Map()
   private actions: Map<string, ActionCallback[]> = new Map()
   private eventQueue: EventPriorityQueue
+  private dlq: DeadLetterQueue
   private config: HookManagerConfig
 
   constructor(config: HookManagerConfig = {}) {
@@ -57,9 +65,16 @@ export class HookManager {
       asyncByDefault: false,
       migrationMode: 'sync',
       showDeprecationWarnings: false,
+      enableDLQ: true,
       ...config,
     }
     this.eventQueue = new EventPriorityQueue()
+    this.dlq = new DeadLetterQueue()
+
+    // Connect DLQ to event queue
+    if (this.config.enableDLQ) {
+      this.eventQueue.setDeadLetterQueue(this.dlq)
+    }
   }
 
   /**
@@ -343,5 +358,59 @@ export class HookManager {
    */
   getConfig(): HookManagerConfig {
     return { ...this.config }
+  }
+
+  /**
+   * Get the Dead Letter Queue instance.
+   *
+   * @returns Dead Letter Queue
+   */
+  getDLQ(): DeadLetterQueue {
+    return this.dlq
+  }
+
+  /**
+   * Requeue a failed event from the Dead Letter Queue.
+   *
+   * @param dlqEntryId - DLQ entry ID
+   * @returns True if requeued successfully, false if entry not found
+   */
+  async requeueDLQEntry(dlqEntryId: string): Promise<boolean> {
+    const entry = this.dlq.get(dlqEntryId)
+
+    if (!entry) {
+      return false
+    }
+
+    // Update last retried timestamp
+    this.dlq.updateLastRetried(dlqEntryId)
+
+    // Requeue the event
+    await this.doActionAsync(entry.eventName, entry.payload, entry.options)
+
+    // Delete from DLQ after successful requeue
+    this.dlq.delete(dlqEntryId)
+
+    return true
+  }
+
+  /**
+   * Requeue all failed events for a specific event name.
+   *
+   * @param eventName - Event name to requeue
+   * @returns Number of events requeued
+   */
+  async requeueDLQBatch(eventName: string): Promise<number> {
+    const entries = this.dlq.list({ eventName })
+    let requeuedCount = 0
+
+    for (const entry of entries) {
+      const success = await this.requeueDLQEntry(entry.id)
+      if (success) {
+        requeuedCount++
+      }
+    }
+
+    return requeuedCount
   }
 }

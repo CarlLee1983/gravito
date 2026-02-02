@@ -68,8 +68,9 @@ export {
 } from './ErrorHandler'
 // Events
 export { EventManager } from './EventManager'
-export type { EventOptions } from './events'
-export { DEFAULT_EVENT_OPTIONS, EventPriorityQueue, type EventTask } from './events'
+// Event System
+export type { DLQEntry, DLQFilter, EventOptions, EventTask } from './events'
+export { DEFAULT_EVENT_OPTIONS, DeadLetterQueue, EventPriorityQueue } from './events'
 // Exceptions
 export * from './exceptions'
 // Global Error Handlers

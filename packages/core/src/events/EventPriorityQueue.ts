@@ -1,4 +1,5 @@
 import type { ActionCallback } from '../HookManager'
+import type { DeadLetterQueue } from './DeadLetterQueue'
 import type { EventOptions } from './EventOptions'
 
 /**
@@ -40,6 +41,24 @@ export interface EventTask {
    * Partition key for ordering (if applicable).
    */
   partitionKey?: string
+
+  /**
+   * Number of retry attempts made.
+   * @internal
+   */
+  retryCount?: number
+
+  /**
+   * Timestamp when the event first failed.
+   * @internal
+   */
+  firstFailedAt?: number
+
+  /**
+   * Last error encountered.
+   * @internal
+   */
+  lastError?: Error
 }
 
 /**
@@ -57,6 +76,16 @@ export class EventPriorityQueue {
   private lowPriority: EventTask[] = []
   private processing = false
   private taskIdCounter = 0
+  private dlq?: DeadLetterQueue
+
+  /**
+   * Set the Dead Letter Queue for failed events.
+   *
+   * @param dlq - Dead Letter Queue instance
+   */
+  setDeadLetterQueue(dlq: DeadLetterQueue): void {
+    this.dlq = dlq
+  }
 
   /**
    * Enqueue an event task for processing.
@@ -78,6 +107,7 @@ export class EventPriorityQueue {
       callbacks,
       createdAt: Date.now(),
       partitionKey: options.partitionKey,
+      retryCount: 0,
     }
 
     const priority = options.priority || 'normal'
@@ -158,22 +188,132 @@ export class EventPriorityQueue {
 
   /**
    * Execute an event task by running all its callbacks.
+   * Implements retry logic with exponential backoff and DLQ integration.
    *
    * @param task - Event task to execute
    * @internal
    */
   private async executeTask(task: EventTask): Promise<void> {
-    const { callbacks, args, options } = task
+    const { callbacks, args, options, hook } = task
     const timeout = options.timeout || 5000
+    const retryConfig = options.retry || {}
+    const maxRetries = retryConfig.maxRetries || 0
+
+    let lastError: Error | undefined
 
     for (const callback of callbacks) {
       try {
         // Execute callback with timeout
         await this.executeWithTimeout(callback, args, timeout)
       } catch (error) {
-        console.error(`[EventPriorityQueue] Error in callback for event '${task.hook}':`, error)
-        // Continue with next callback even if one fails
+        lastError = error as Error
+
+        console.error(`[EventPriorityQueue] Error in callback for event '${hook}':`, error)
+
+        // Track first failure timestamp
+        if (!task.firstFailedAt) {
+          task.firstFailedAt = Date.now()
+        }
+
+        task.lastError = lastError
+        task.retryCount = (task.retryCount || 0) + 1
+
+        // Check if we should retry
+        if (task.retryCount <= maxRetries) {
+          // Calculate retry delay with exponential backoff
+          const delay = this.calculateRetryDelay(
+            task.retryCount,
+            retryConfig.backoff || 'exponential',
+            retryConfig.initialDelayMs || 1000,
+            retryConfig.maxDelayMs || 30000
+          )
+
+          console.warn(
+            `[EventPriorityQueue] Retrying event '${hook}' (attempt ${task.retryCount}/${maxRetries}) after ${delay}ms`
+          )
+
+          // Schedule retry
+          setTimeout(() => {
+            this.enqueueRetry(task)
+          }, delay)
+
+          return
+        }
+
+        // Max retries exceeded
+        if (retryConfig.dlqAfterMaxRetries && this.dlq) {
+          // Send to DLQ
+          this.dlq.add(hook, args, options, lastError, task.retryCount, task.firstFailedAt!)
+
+          console.error(
+            `[EventPriorityQueue] Event '${hook}' sent to DLQ after ${task.retryCount} failed attempts`
+          )
+        } else {
+          console.error(
+            `[EventPriorityQueue] Event '${hook}' permanently failed after ${task.retryCount} attempts`
+          )
+        }
+
+        // Don't continue with other callbacks if one fails
+        break
       }
+    }
+  }
+
+  /**
+   * Calculate retry delay based on backoff strategy.
+   *
+   * @param retryCount - Current retry attempt number
+   * @param backoff - Backoff strategy
+   * @param initialDelay - Initial delay in ms
+   * @param maxDelay - Maximum delay in ms
+   * @returns Delay in milliseconds
+   * @internal
+   */
+  private calculateRetryDelay(
+    retryCount: number,
+    backoff: 'exponential' | 'linear',
+    initialDelay: number,
+    maxDelay: number
+  ): number {
+    let delay: number
+
+    if (backoff === 'exponential') {
+      // Exponential backoff: delay = initialDelay * 2^(retryCount - 1)
+      delay = initialDelay * 2 ** (retryCount - 1)
+    } else {
+      // Linear backoff: delay = initialDelay * retryCount
+      delay = initialDelay * retryCount
+    }
+
+    // Cap at maxDelay
+    return Math.min(delay, maxDelay)
+  }
+
+  /**
+   * Re-enqueue a task for retry.
+   *
+   * @param task - Task to retry
+   * @internal
+   */
+  private enqueueRetry(task: EventTask): void {
+    const priority = task.options.priority || 'normal'
+
+    switch (priority) {
+      case 'high':
+        this.highPriority.push(task)
+        break
+      case 'normal':
+        this.normalPriority.push(task)
+        break
+      case 'low':
+        this.lowPriority.push(task)
+        break
+    }
+
+    // Trigger processing if not already running
+    if (!this.processing) {
+      this.processNext()
     }
   }
 
