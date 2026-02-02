@@ -65,17 +65,17 @@ Phase 4: 長期優化               [██░░░░░░░░░░░░�
 
 ### Issue 1.2: Event System - Reliability & Scalability
 
-**狀態**：📋 規劃進行中
+**狀態**：🔄 Phase 1 實施進行中
 **預計開始**：Week 7
 **預計完成**：Week 14
 
 | Phase | 狀態 | 任務 | 文檔 | 進度 |
 |-------|------|------|------|------|
-| Phase 1 | 📋 規劃 | 5 個 | [Phase1-DLQ-And-Retry.md](./priority-1-critical/Issue1.2-Event-System-Reliability/Phase1-DLQ-And-Retry.md) | 100% 📋 |
-| Phase 2 | 🗓️ 待規劃 | 5 個 | [Phase2-熔断器.md](./priority-1-critical/Issue1.2-Event-System-Reliability/Phase2-熔断器.md) | 50% 🗓️ |
-| Phase 3 | 🗓️ 待規劃 | 5 個 | Phase3-背压机制.md | 30% 🗓️ |
-| Phase 4 | 🗓️ 待規劃 | 5 個 | Phase4-BullQueue整合.md | 20% 🗓️ |
-| **小計** | | **20 個任務** | | **待規劃** |
+| Phase 1 | 🔄 實施中 | 5 個 | [Phase1-DLQ-And-Retry.md](./priority-1-critical/Issue1.2-Event-System-Reliability/Phase1-DLQ-And-Retry.md) | 40% 🔄 (2/5 任務完成) |
+| Phase 2 | 🗓️ 待規劃 | 5 個 | [Phase2-熔断器.md](./priority-1-critical/Issue1.2-Event-System-Reliability/Phase2-熔断器.md) | 0% 🗓️ |
+| Phase 3 | 🗓️ 待規劃 | 5 個 | Phase3-背压机制.md | 0% 🗓️ |
+| Phase 4 | 🗓️ 待規劃 | 5 個 | Phase4-BullQueue整合.md | 0% 🗓️ |
+| **小計** | | **20 個任務** | | **40% (2/5 任務完成)** |
 
 **前置條件**：✅ Issue 1.1 完成
 
@@ -339,6 +339,64 @@ Week 21+:   Issue 3.2 + 優化
 
 ---
 
+## 🔄 Issue 1.2 Phase 1 進度追蹤
+
+**開始日期**：2026-02-03
+**預期完成日期**：Week 8
+**當前進度**：40% (2/5 任務完成)
+
+### 已完成任務
+
+**Task 1.2.1.1: DLQ 數據表遷移** ✅
+- 文件：`packages/core/migrations/001_create_event_dlq_table.ts`
+- 功能：event_dlq 資料表設計和索引優化
+- 狀態：✅ 已提交
+
+**Task 1.2.1.2: RetryPolicy 實現** ✅
+- 文件：`packages/core/src/reliability/RetryPolicy.ts`
+- 功能：重試策略引擎、退避算法、Jitter 支持
+- 類別：
+  - `RetryEngine` - 主要重試邏輯類
+  - `getDefaultRetryPolicy()` - 默認配置
+  - `getPresetRetryPolicy()` - 預設策略 (API, DB, MQ)
+- 狀態：✅ 已提交
+
+### 待實施任務
+
+**Task 1.2.1.3: DeadLetterQueueManager** ⏳
+- 文件位置：`packages/core/src/reliability/DeadLetterQueueManager.ts`
+- 功能：
+  - `addEntry()` - 添加失敗事件
+  - `getEntries()` - 查詢事件
+  - `requeueEntry()` - 重隊列單個事件
+  - `requeueBatch()` - 批量重隊列
+  - `deleteEntry()` - 刪除事件
+  - `updateStatus()` - 更新狀態
+  - `getStats()` - 統計信息
+- 估計工作量：3 小時
+
+**Task 1.2.1.4: HookManager 集成** ⏳
+- 文件修改：`packages/core/src/HookManager.ts`
+- 功能：集成重試和 DLQ 到 doActionAsync
+- 估計工作量：3 小時
+
+**Task 1.2.1.5: 測試與文檔** ⏳
+- 單元測試：RetryPolicy、DeadLetterQueueManager
+- 集成測試：完整重試和 DLQ 流程
+- 文檔：DLQ_AND_RETRY_GUIDE.md
+- 估計工作量：3 小時
+
+### 下次繼續時的提示
+
+1. 接續 Task 1.2.1.3 (DeadLetterQueueManager)
+2. 在 `packages/core/src/reliability/` 目錄創建新文件
+3. 使用已完成的 RetryPolicy 類
+4. 集成已建立的 event_dlq 數據表
+5. 確保與現有 HookManager 兼容
+
+---
+
 **最後更新**：2026-02-03
 **維護者**：Gravito Framework Team
-**當前迭代**：Issue 1.1 Phase 1-3 ✅ 全部完成（75%），準備開始 Issue 1.2 Phase 1（DLQ 與重試機制）
+**當前迭代**：🔄 Issue 1.2 Phase 1 進行中（2/5 任務完成）
+**下次開始點**：Task 1.2.1.3 - DeadLetterQueueManager 實現
