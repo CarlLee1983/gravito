@@ -1,8 +1,9 @@
 ---
-title: Distributed Locking Guide
+title: Constellation Distributed Locking Guide
 version: 1.0.0
 status: Stable
-last_updated: 2026-01-29
+tier: C
+last_updated: 2026-02-02
 ---
 
 # Constellation 分散式鎖定機制使用指南
