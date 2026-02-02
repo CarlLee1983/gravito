@@ -209,11 +209,11 @@ if (config.migrationMode === 'hybrid' && !options?.async) {
 ##### Phase 1: 核心異步派發（Week 1-2）
 
 **任務清單**：
-- [ ] 1.1 在 `@gravito/core` 的 `HookManager` 中添加 `doActionAsync` 方法
-- [ ] 1.2 實現 `EventPriorityQueue` 類
-- [ ] 1.3 添加 `EventOptions` 接口定義
-- [ ] 1.4 實現 Feature Flag: `events.asyncByDefault`
-- [ ] 1.5 編寫單元測試（80%+ 覆蓋率）
+- [x] 1.1 在 `@gravito/core` 的 `HookManager` 中添加 `doActionAsync` 方法
+- [x] 1.2 實現 `EventPriorityQueue` 類
+- [x] 1.3 添加 `EventOptions` 接口定義
+- [x] 1.4 實現 Feature Flag: `events.asyncByDefault`
+- [x] 1.5 編寫單元測試（80%+ 覆蓋率）
 
 **驗收標準**：
 ```bash
@@ -679,8 +679,8 @@ class StreamEventBackend {
 
 **任務清單**：
 - [ ] 1.1 創建 `event_dlq` 資料表
-- [ ] 1.2 實現 `RetryPolicy` 邏輯
-- [ ] 1.3 實現 `DeadLetterQueueManager`
+- [x] 1.2 實現 `RetryPolicy` 邏輯
+- [x] 1.3 實現 `DeadLetterQueueManager` (In-Memory)
 - [ ] 1.4 添加 CLI 工具（list/requeue）
 - [ ] 1.5 編寫整合測試
 
@@ -689,10 +689,10 @@ class StreamEventBackend {
 ##### Phase 2: Circuit Breaker（Week 3-4）
 
 **任務清單**：
-- [ ] 2.1 整合 `@gravito/stasis` Circuit Breaker
-- [ ] 2.2 實現監聽器級別的 Circuit Breaker
+- [x] 2.1 整合 `@gravito/stasis` Circuit Breaker (Implemented in Core)
+- [x] 2.2 實現監聽器級別的 Circuit Breaker
 - [ ] 2.3 添加狀態監控 CLI
-- [ ] 2.4 實現自動恢復邏輯
+- [x] 2.4 實現自動恢復邏輯
 - [ ] 2.5 混沌測試（Chaos Engineering）
 
 ---
@@ -700,9 +700,9 @@ class StreamEventBackend {
 ##### Phase 3: Backpressure（Week 5-6）
 
 **任務清單**：
-- [ ] 3.1 實現 `QueueConfig` 與 `BackpressureManager`
+- [x] 3.1 實現 `QueueConfig` 與 `BackpressureManager` (Logic in Queue)
 - [ ] 3.2 添加記憶體監控（`process.memoryUsage()`）
-- [ ] 3.3 實現拒絕策略（drop/block/reject）
+- [x] 3.3 實現拒絕策略（drop/block/reject）
 - [ ] 3.4 HTTP 層面的 429 響應
 - [ ] 3.5 負載測試（10000 events/s）
 
