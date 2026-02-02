@@ -6,25 +6,23 @@
  * @packageDocumentation
  */
 
-export { InventoryLockServiceProvider } from './InventoryLockServiceProvider'
-
-// Domain Models
-export type { InventoryLock, LockStatus } from './Domain/Models'
-export { CreateLockRequest, LockStrategy } from './Domain/Models'
+// Repository Contracts
+export type { IInventoryLockRepository } from './Application/Contracts/IInventoryLockRepository'
+export { DeductInventory } from './Application/UseCases/DeductInventory'
+export { DetectDeadlock } from './Application/UseCases/DetectDeadlock'
 
 // Use Cases
 export { LockInventory } from './Application/UseCases/LockInventory'
 export { ReleaseInventory } from './Application/UseCases/ReleaseInventory'
-export { DeductInventory } from './Application/UseCases/DeductInventory'
-
-// Services
-export { DistributedLockService } from './Application/Services/DistributedLockService'
-export { InventoryDeductionService } from './Application/Services/InventoryDeductionService'
-
-// Events
-export { InventoryLocked } from './Domain/Events/InventoryLocked'
-export { InventoryDeducted } from './Domain/Events/InventoryDeducted'
-export { InventoryLockFailed } from './Domain/Events/InventoryLockFailed'
-
-// Repository Contracts
-export type { IInventoryLockRepository } from './Application/Contracts/IInventoryLockRepository'
+// Domain Models
+export type { InventoryLock } from './Domain/Models'
+export {
+  InventoryDeducted,
+  InventoryLocked,
+  InventoryReleased,
+  LockFailed,
+  LockInventoryRequest,
+  LockStatus,
+  ReleaseLockRequest,
+} from './Domain/Models'
+export { InventoryLockServiceProvider } from './InventoryLockServiceProvider'
