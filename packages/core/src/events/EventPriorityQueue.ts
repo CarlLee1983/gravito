@@ -62,6 +62,28 @@ export interface EventTask {
 }
 
 /**
+ * Backpressure strategy for event queue overflow.
+ */
+export type BackpressureStrategy = 'drop-oldest' | 'drop-newest' | 'reject' | 'ignore'
+
+/**
+ * Configuration for event priority queue.
+ */
+export interface EventQueueConfig {
+  /**
+   * Maximum number of events allowed in the queue.
+   * If 0 or undefined, queue is unbounded.
+   */
+  maxSize?: number
+
+  /**
+   * Strategy to handle new events when queue is full.
+   * @default 'reject'
+   */
+  strategy?: BackpressureStrategy
+}
+
+/**
  * Priority queue for event processing.
  * Events are processed based on their priority level:
  * - High priority events are processed first
@@ -77,6 +99,11 @@ export class EventPriorityQueue {
   private processing = false
   private taskIdCounter = 0
   private dlq?: DeadLetterQueue
+  private config: EventQueueConfig
+
+  constructor(config: EventQueueConfig = {}) {
+    this.config = config
+  }
 
   /**
    * Set the Dead Letter Queue for failed events.
@@ -98,6 +125,13 @@ export class EventPriorityQueue {
    */
   enqueue(hook: string, args: unknown, callbacks: ActionCallback[], options: EventOptions): string {
     const taskId = `task-${++this.taskIdCounter}-${Date.now()}`
+
+    // Check backpressure
+    if (this.config.maxSize && this.getDepth() >= this.config.maxSize) {
+      if (!this.handleBackpressure(hook)) {
+        return 'dropped'
+      }
+    }
 
     const task: EventTask = {
       id: taskId,
@@ -130,6 +164,60 @@ export class EventPriorityQueue {
     }
 
     return taskId
+  }
+
+  /**
+   * Handle backpressure when queue is full.
+   * @returns True if space was made, false if event should be dropped
+   */
+  private handleBackpressure(hook: string): boolean {
+    const strategy = this.config.strategy || 'reject'
+
+    switch (strategy) {
+      case 'reject':
+        throw new Error(
+          `[EventPriorityQueue] Queue full (size: ${this.config.maxSize}). Rejected event '${hook}'.`
+        )
+      case 'drop-newest':
+        console.warn(`[EventPriorityQueue] Queue full. Dropping new event '${hook}' (drop-newest).`)
+        return false
+      case 'ignore':
+        return false
+      case 'drop-oldest':
+        this.dropOldest()
+        return true
+      default:
+        throw new Error(
+          `[EventPriorityQueue] Queue full (size: ${this.config.maxSize}). Rejected event '${hook}'.`
+        )
+    }
+  }
+
+  /**
+   * Drop the oldest event from the queue, prioritizing low priority events.
+   */
+  private dropOldest(): void {
+    if (this.lowPriority.length > 0) {
+      const dropped = this.lowPriority.shift()
+      console.warn(
+        `[EventPriorityQueue] Queue full. Dropped oldest LOW priority event '${dropped?.hook}'.`
+      )
+      return
+    }
+    if (this.normalPriority.length > 0) {
+      const dropped = this.normalPriority.shift()
+      console.warn(
+        `[EventPriorityQueue] Queue full. Dropped oldest NORMAL priority event '${dropped?.hook}'.`
+      )
+      return
+    }
+    if (this.highPriority.length > 0) {
+      const dropped = this.highPriority.shift()
+      console.warn(
+        `[EventPriorityQueue] Queue full. Dropped oldest HIGH priority event '${dropped?.hook}'.`
+      )
+      return
+    }
   }
 
   /**

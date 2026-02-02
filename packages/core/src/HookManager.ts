@@ -2,7 +2,7 @@ import { CircuitBreaker, type CircuitBreakerOptions } from './events/CircuitBrea
 import { DeadLetterQueue } from './events/DeadLetterQueue'
 import type { EventOptions } from './events/EventOptions'
 import { DEFAULT_EVENT_OPTIONS } from './events/EventOptions'
-import { EventPriorityQueue } from './events/EventPriorityQueue'
+import { EventPriorityQueue, type EventQueueConfig } from './events/EventPriorityQueue'
 
 /**
  * Callback function for filters (transforms values).
@@ -48,6 +48,11 @@ export interface HookManagerConfig {
    * @default true
    */
   enableDLQ?: boolean
+
+  /**
+   * Configuration for the event priority queue (Backpressure).
+   */
+  queue?: EventQueueConfig
 }
 
 /**
@@ -69,7 +74,7 @@ export class HookManager {
       enableDLQ: true,
       ...config,
     }
-    this.eventQueue = new EventPriorityQueue()
+    this.eventQueue = new EventPriorityQueue(this.config.queue)
     this.dlq = new DeadLetterQueue()
 
     // Connect DLQ to event queue
