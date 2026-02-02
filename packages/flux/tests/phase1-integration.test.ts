@@ -165,7 +165,7 @@ describe('Phase 1 Integration: Risk Mitigation', () => {
 
       const result = await engine.execute(workflow, {})
 
-      expect(result.status).toBe('failed')
+      expect(result.status).toBe('compensation_failed')
       expect(result.history[0].status).toBe('compensating')
     })
   })
