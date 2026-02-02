@@ -77,6 +77,9 @@ export {
   DeadLetterQueue,
   EventPriorityQueue,
 } from './events'
+// Event System Observability
+export type { ObservabilityConfig } from './events/observability'
+export { EventMetrics, EventTracer, ObservableHookManager } from './events/observability'
 // Exceptions
 export * from './exceptions'
 // Global Error Handlers
