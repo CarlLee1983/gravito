@@ -1,43 +1,59 @@
-/**
- * @fileoverview Video processor using FFmpeg
- */
-
 import { randomUUID } from 'node:crypto'
 import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { getRuntimeAdapter } from '@gravito/core'
 import { FFmpegAdapter } from '../adapters/FFmpegAdapter'
+import { FFmpegWasmAdapter } from '../adapters/FFmpegWasmAdapter'
 import type { FileInput, FileOutput, ProcessingProgress, ProcessOptions } from '../types'
 import { BaseProcessor } from './BaseProcessor'
 
 /**
- * Video processor options
+ * Options for configuring the VideoProcessor
  */
 export interface VideoProcessorOptions {
   /**
-   * FFmpeg binary path
+   * Path to the FFmpeg binary (ignored in WASM mode)
    */
   ffmpegPath?: string
 
   /**
-   * Temporary directory for processing
+   * Directory used for storing temporary files during processing
    */
   tempDir?: string
+
+  /**
+   * Whether to use FFmpeg WASM instead of the system binary
+   */
+  wasmMode?: boolean
 }
 
 /**
- * Video processor
+ * Video processor implementation using FFmpeg
  *
- * Handles video processing operations: resize, rotate, transcode, etc.
+ * Handles video transformation tasks such as resizing, rotation, and transcoding.
+ * Can operate in native mode (using system binary) or WASM mode.
+ *
+ * @example
+ * ```typescript
+ * const processor = new VideoProcessor({ wasmMode: true });
+ * const output = await processor.process(input, { format: 'mp4', width: 1280 });
+ * ```
  */
 export class VideoProcessor extends BaseProcessor {
-  private adapter: FFmpegAdapter
+  private adapter: FFmpegAdapter | FFmpegWasmAdapter
   private tempDir: string
   private runtime = getRuntimeAdapter()
 
+  /**
+   * Creates a new VideoProcessor instance
+   *
+   * @param options - Configuration options for the processor
+   */
   constructor(options: VideoProcessorOptions = {}) {
     super()
-    this.adapter = new FFmpegAdapter(options.ffmpegPath)
+    this.adapter = options.wasmMode
+      ? new FFmpegWasmAdapter()
+      : new FFmpegAdapter(options.ffmpegPath)
     this.tempDir = options.tempDir || '/tmp/forge-video'
   }
 
@@ -57,6 +73,7 @@ export class VideoProcessor extends BaseProcessor {
    * @param input - File input
    * @param options - Processing options (may include onProgress callback)
    * @returns Processed file output
+   * @throws {Error} If processing fails or if output path cannot be determined
    */
   async process(
     input: FileInput,
@@ -77,6 +94,7 @@ export class VideoProcessor extends BaseProcessor {
 
     // Execute FFmpeg
     await this.adapter.execute(args, {
+      input: inputPath,
       output: outputPath,
       onProgress: options.onProgress,
     })
