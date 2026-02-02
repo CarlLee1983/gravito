@@ -1,6 +1,6 @@
 ---
 title: Forge Architecture 技術架構規格書
-version: 1.1.0
+version: 1.2.0
 status: Stable
 tier: C
 last_updated: 2026-02-02
@@ -91,13 +91,13 @@ FFmpeg 的進度輸出是「當前時間」，而非百分比。
 
 ### 4.1 磁碟空間耗盡
 並發處理大量影片時，臨時目錄可能迅速佔滿磁碟。
-- [ ] **防護**：應實作 `DiskSpaceGuard`，在空間不足時拒絕新任務。
+- [x] **防護**：實作 `DiskSpaceGuard`，在空間不足時拒絕新任務。(Implemented in v1.2)
 - [x] **清理**：確保 `finally` 區塊中總是執行 `deleteFile`，防止殭屍檔案。(Implemented in v1.1)
 
 ### 4.2 CPU 資源競爭
 轉碼是 CPU 密集型任務。
-- [ ] **風險**：若不限制並發度，可能導致伺服器卡死。
-- [ ] **建議**：在 `@gravito/stream` 中為 Forge 任務配置獨立的 Queue 與 Concurrency Limit (如 `concurrency: 2`)。
+- [x] **風險**：若不限制並發度，可能導致伺服器卡死。
+- [x] **建議**：ForgeService 提供 `concurrency` 配置以限制本地並發。在 `@gravito/stream` 中建議配置獨立 Queue。(Implemented in v1.2)
 
 ---
 
@@ -105,11 +105,11 @@ FFmpeg 的進度輸出是「當前時間」，而非百分比。
 
 ### 短期 (v1.1)
 - [x] **Metadata Extraction**：新增 `getMetadata()` API，獲取影片時長、解析度、編碼等資訊。(Done)
-- [ ] **Watermarking**：在 Pipeline 中支援浮水印 (Overlay) 功能。
+- [x] **Watermarking**：在 Pipeline 中支援浮水印 (Overlay) 功能。(Done)
 
 ### 中期 (v1.2)
-- [ ] **GPU Acceleration**：支援 FFmpeg 的 NVENC/VAAPI 硬體加速參數。
-- [ ] **HLS/DASH**：支援生成串流媒體切片 (m3u8)。
+- [x] **GPU Acceleration**：支援 FFmpeg 的 NVENC/VAAPI 硬體加速參數。(Done)
+- [x] **HLS/DASH**：支援生成串流媒體切片 (m3u8)。(Done)
 
 ### 長期 (v2.0)
 - [ ] **WASM Mode**：探索 `ffmpeg.wasm`，在不依賴系統二進制的情況下運行 (適用於 Serverless 環境)。

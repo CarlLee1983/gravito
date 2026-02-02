@@ -58,6 +58,22 @@ export class VideoPipeline extends BasePipeline {
   }
 
   /**
+   * Add watermark operation
+   *
+   * @param source - Watermark source (file path or Blob)
+   * @param options - Watermark options
+   * @returns Pipeline instance
+   */
+  watermark(
+    source: string | Blob | File,
+    options: Omit<import('../types').WatermarkOptions, 'source'> = {}
+  ): this {
+    return this.add(this.videoProcessor, {
+      watermark: { ...options, source },
+    }) as this
+  }
+
+  /**
    * Add processor with custom options
    *
    * @param processor - Processor instance
