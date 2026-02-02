@@ -3,5 +3,7 @@
  * @packageDocumentation
  */
 
-export { DEFAULT_EVENT_OPTIONS, EventOptions } from './EventOptions'
-export { EventPriorityQueue, EventTask } from './EventPriorityQueue'
+export type { EventOptions } from './EventOptions'
+export { DEFAULT_EVENT_OPTIONS } from './EventOptions'
+export type { EventTask } from './EventPriorityQueue'
+export { EventPriorityQueue } from './EventPriorityQueue'
