@@ -5,7 +5,6 @@ import { CircularDependencyException } from './exceptions/CircularDependencyExce
  */
 export type Factory<T> = (container: Container) => T
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
 /**
  * ServiceMap interface for type-safe IoC resolution.
  *
@@ -20,13 +19,13 @@ export type Factory<T> = (container: Container) => T
  * }
  * ```
  */
+// biome-ignore lint/complexity/noBannedTypes: empty interface needed for module augmentation
 export type ServiceMap = {}
 
 /**
  * ServiceKey represents the allowed keys for service resolution.
  * Includes keys from ServiceMap, generic strings, or symbols.
  */
-// biome-ignore lint/complexity/noBannedTypes: needed for string autocomplete hack
 export type ServiceKey = keyof ServiceMap | (string & {}) | symbol
 
 interface Binding<T = unknown> {

@@ -85,8 +85,10 @@ export class MakeCommand {
    * @throws {Error} If the template is missing OR the target file already occupies the path.
    */
   async run(type: string, name: string | undefined, options: any = {}) {
+    let resolvedName = name
+
     // 1. Handle missing name with interactive prompt
-    if (!name || name === '') {
+    if (!resolvedName || resolvedName === '') {
       const promptedName = await text({
         message: `Enter the name of your ${type}:`,
         placeholder: `My${this.toPascalCase(type)}`,
@@ -106,13 +108,13 @@ export class MakeCommand {
         process.exit(0)
       }
 
-      name = promptedName as string
+      resolvedName = promptedName as string
     }
 
     // Special handling for satellites: uses the full Scaffold engine instead of simple stubs
     if (type === 'satellite') {
-      await this.runSatellite(name, options)
-      return name
+      await this.runSatellite(resolvedName, options)
+      return resolvedName
     }
 
     try {
@@ -134,7 +136,7 @@ export class MakeCommand {
         throw new Error(`Stub template [${stubName}] could not be located in any search path.`)
       }
 
-      const normalizedName = this.normalizeName(type, name)
+      const normalizedName = this.normalizeName(type, resolvedName)
       const content = this.replaceVariables(
         stubContent,
         normalizedName.pascal,
@@ -156,7 +158,7 @@ export class MakeCommand {
         // Actual migration generation would be triggered here via database service
       }
 
-      return name
+      return resolvedName
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)
       console.error(pc.red(`❌ Generation failure for ${type}: ${message}`))

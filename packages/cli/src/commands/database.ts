@@ -33,7 +33,9 @@ import { cancel, isCancel, text } from '@clack/prompts'
  * @public
  */
 export async function makeMigration(name: string | undefined) {
-  if (!name || name === '') {
+  let resolvedName = name
+
+  if (!resolvedName || resolvedName === '') {
     const promptedName = await text({
       message: 'Enter the name of your migration:',
       placeholder: 'create_users_table',
@@ -50,11 +52,11 @@ export async function makeMigration(name: string | undefined) {
       process.exit(0)
     }
 
-    name = promptedName as string
+    resolvedName = promptedName as string
   }
 
   const driver = await getMigrationDriver()
-  const result = await driver.generate(name)
+  const result = await driver.generate(resolvedName)
 
   if (result.success) {
     console.log(pc.green(`✅ ${result.message}`))
