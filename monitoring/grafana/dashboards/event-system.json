@@ -1,0 +1,317 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "gravito-events",
+    "title": "Gravito Event System",
+    "tags": ["gravito", "events", "monitoring"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Event Dispatch Latency (P50/P95/P99)",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(gravito_event_dispatch_latency_seconds_bucket[5m]))",
+            "legendFormat": "P50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(gravito_event_dispatch_latency_seconds_bucket[5m]))",
+            "legendFormat": "P95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(gravito_event_dispatch_latency_seconds_bucket[5m]))",
+            "legendFormat": "P99",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "Duration (seconds)",
+              "axisPlacement": "auto"
+            },
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Queue Depth by Priority",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        },
+        "targets": [
+          {
+            "expr": "gravito_event_queue_depth{priority='high'}",
+            "legendFormat": "High",
+            "refId": "A"
+          },
+          {
+            "expr": "gravito_event_queue_depth{priority='normal'}",
+            "legendFormat": "Normal",
+            "refId": "B"
+          },
+          {
+            "expr": "gravito_event_queue_depth{priority='low'}",
+            "legendFormat": "Low",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "Queue Depth",
+              "axisPlacement": "auto"
+            },
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Event Throughput (events/sec)",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "targets": [
+          {
+            "expr": "rate(gravito_event_throughput_total[1m])",
+            "legendFormat": "Throughput",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "Events/sec",
+              "axisPlacement": "auto"
+            },
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Listener Execution Time (Top 10 Slowest)",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "targets": [
+          {
+            "expr": "topk(10, histogram_quantile(0.99, rate(gravito_event_listener_execution_seconds_bucket[5m])))",
+            "legendFormat": "{{ listener_name }}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisLabel": "Duration (seconds)",
+              "axisPlacement": "auto"
+            },
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Failure Rate",
+        "type": "gauge",
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 0,
+          "y": 16
+        },
+        "targets": [
+          {
+            "expr": "(rate(gravito_event_failures_total[5m]) / rate(gravito_event_throughput_total[5m])) * 100",
+            "legendFormat": "Failure Rate %",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "max": 100,
+            "min": 0,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 2
+                },
+                {
+                  "color": "red",
+                  "value": 5
+                }
+              ]
+            },
+            "unit": "percent"
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Timeout Count (5m rate)",
+        "type": "stat",
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 6,
+          "y": 16
+        },
+        "targets": [
+          {
+            "expr": "rate(gravito_event_timeouts_total[5m])",
+            "legendFormat": "Timeouts/sec",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 1
+                },
+                {
+                  "color": "red",
+                  "value": 5
+                }
+              ]
+            },
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Error Rate by Event Type",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        },
+        "targets": [
+          {
+            "expr": "rate(gravito_event_failures_total[5m])",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            }
+          }
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "event_name",
+          "type": "query",
+          "datasource": "Prometheus",
+          "query": "label_values(gravito_event_dispatch_latency_seconds_bucket, event_name)",
+          "multi": true,
+          "allValue": ".*",
+          "current": {
+            "text": "All",
+            "value": "$__all"
+          }
+        },
+        {
+          "name": "priority",
+          "type": "custom",
+          "values": [
+            {
+              "text": "All",
+              "value": "$__all"
+            },
+            {
+              "text": "High",
+              "value": "high"
+            },
+            {
+              "text": "Normal",
+              "value": "normal"
+            },
+            {
+              "text": "Low",
+              "value": "low"
+            }
+          ],
+          "current": {
+            "text": "All",
+            "value": "$__all"
+          }
+        }
+      ]
+    }
+  },
+  "overwrite": true,
+  "folderId": null
+}

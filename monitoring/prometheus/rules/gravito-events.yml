@@ -1,0 +1,112 @@
+groups:
+  - name: gravito_events
+    interval: 30s
+    rules:
+      # Critical: P99 延遲過高
+      - alert: HighEventDispatchLatency
+        expr: histogram_quantile(0.99, rate(gravito_event_dispatch_latency_seconds_bucket[5m])) > 0.8
+        for: 5m
+        labels:
+          severity: critical
+          component: event-system
+        annotations:
+          summary: "事件派發 P99 延遲過高"
+          description: "P99 延遲: {{ $value | humanize }}s，已超過 800ms。事件: {{ $labels.event_name }}"
+          runbook_url: "https://gravito.dev/docs/runbooks/event-system#high-latency"
+
+      # Warning: 隊列深度過高
+      - alert: HighEventQueueDepth
+        expr: gravito_event_queue_depth{priority="high"} > 1000
+        for: 2m
+        labels:
+          severity: warning
+          component: event-system
+        annotations:
+          summary: "高優先級事件隊列堆積"
+          description: "隊列深度: {{ $value | humanize }}，應調查原因"
+          runbook_url: "https://gravito.dev/docs/runbooks/event-system#queue-depth"
+
+      # Critical: 失敗率過高
+      - alert: HighEventFailureRate
+        expr: |
+          (rate(gravito_event_failures_total[5m]) /
+           rate(gravito_event_throughput_total[5m])) > 0.05
+        for: 3m
+        labels:
+          severity: critical
+          component: event-system
+        annotations:
+          summary: "事件處理失敗率過高"
+          description: "失敗率: {{ $value | humanizePercentage }}，超過 5%。事件: {{ $labels.event_name }}"
+          runbook_url: "https://gravito.dev/docs/runbooks/event-system#high-failure-rate"
+
+      # Warning: 監聽器執行時間過長
+      - alert: SlowEventListener
+        expr: histogram_quantile(0.99, rate(gravito_event_listener_execution_seconds_bucket[5m])) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          component: event-system
+        annotations:
+          summary: "監聽器執行時間過長"
+          description: "P99 耗時: {{ $value | humanize }}s，監聽器: {{ $labels.listener_name }}"
+          runbook_url: "https://gravito.dev/docs/runbooks/event-system#slow-listener"
+
+      # Critical: 吞吐量異常下降
+      - alert: EventThroughputDrop
+        expr: |
+          (rate(gravito_event_throughput_total[5m]) < 100)
+          and
+          (increase(gravito_event_throughput_total[1h]) > 0)
+        for: 2m
+        labels:
+          severity: critical
+          component: event-system
+        annotations:
+          summary: "事件吞吐量異常下降"
+          description: "當前吞吐: {{ $value | humanize }} events/sec，預期 > 100 events/sec"
+          runbook_url: "https://gravito.dev/docs/runbooks/event-system#throughput-drop"
+
+      # Warning: 隊列深度異常增長
+      - alert: QueueDepthTrend
+        expr: |
+          (rate(gravito_event_queue_depth[5m]) > 0)
+          and
+          (gravito_event_queue_depth > 500)
+        for: 10m
+        labels:
+          severity: warning
+          component: event-system
+        annotations:
+          summary: "事件隊列深度異常增長"
+          description: "隊列持續增長，當前深度: {{ $value }}，優先級: {{ $labels.priority }}"
+          runbook_url: "https://gravito.dev/docs/runbooks/event-system#queue-growth"
+
+      # Critical: 超時率過高
+      - alert: HighTimeoutRate
+        expr: |
+          (rate(gravito_event_timeouts_total[5m]) /
+           rate(gravito_event_throughput_total[5m])) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          component: event-system
+        annotations:
+          summary: "事件超時率過高"
+          description: "超時率: {{ $value | humanizePercentage }}，超過 1%。事件: {{ $labels.event_name }}"
+          runbook_url: "https://gravito.dev/docs/runbooks/event-system#high-timeout"
+
+      # Info: 監聽器成功率監控
+      - alert: EventListenerHealthCheck
+        expr: |
+          (1 - (rate(gravito_event_failures_total[5m]) /
+                rate(gravito_event_throughput_total[5m])))
+          < 0.95
+        for: 5m
+        labels:
+          severity: info
+          component: event-system
+        annotations:
+          summary: "監聽器健康狀態下降"
+          description: "成功率: {{ $value | humanizePercentage }}，低於預期的 95%"
+          runbook_url: "https://gravito.dev/docs/runbooks/event-system#listener-health"
