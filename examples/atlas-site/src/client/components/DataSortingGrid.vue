@@ -22,7 +22,7 @@ const containerRef = ref<HTMLElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let animationFrameId: number
 
-const _containerStyle = computed(() => {
+const containerStyle = computed(() => {
   if (!props.withBackground) {
     return {}
   }

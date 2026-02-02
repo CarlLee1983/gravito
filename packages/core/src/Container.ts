@@ -19,10 +19,13 @@ export type Factory<T> = (container: Container) => T
  * }
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// biome-ignore lint/complexity/noBannedTypes: empty interface needed for module augmentation
 export type ServiceMap = {}
 
-// biome-ignore lint/complexity/noBannedTypes: needed for string autocomplete hack
+/**
+ * ServiceKey represents the allowed keys for service resolution.
+ * Includes keys from ServiceMap, generic strings, or symbols.
+ */
 export type ServiceKey = keyof ServiceMap | (string & {}) | symbol
 
 interface Binding<T = unknown> {
@@ -79,7 +82,10 @@ export class Container {
   }
 
   /**
-   * Register an existing instance as shared service.
+   * Register an existing instance as a shared service.
+   *
+   * @param key - The unique identifier for the service.
+   * @param instance - The instance to register.
    */
   instance<T>(key: ServiceKey, instance: T): void {
     this.instances.set(key, instance)
@@ -137,14 +143,18 @@ export class Container {
   }
 
   /**
-   * Check if a service is bound.
+   * Check if a service is bound or has an instance in the container.
+   *
+   * @param key - The service key to check.
+   * @returns True if the service exists.
    */
   has(key: ServiceKey): boolean {
     return this.bindings.has(key) || this.instances.has(key)
   }
 
   /**
-   * Flush all instances and bindings.
+   * Flush all instances and bindings from the container.
+   * Resets the container to an empty state.
    */
   flush(): void {
     this.bindings.clear()
@@ -152,7 +162,9 @@ export class Container {
   }
 
   /**
-   * Forget a specific instance (but keep binding)
+   * Forget a specific instance while keeping its binding.
+   *
+   * @param key - The service key to forget.
    */
   forget(key: ServiceKey): void {
     this.instances.delete(key)

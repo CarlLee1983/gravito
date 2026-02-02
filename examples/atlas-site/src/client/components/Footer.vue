@@ -10,6 +10,16 @@ const apiLink = computed(() => {
   const lang = locale.value === 'zh-TW' ? 'zh-TW' : 'en'
   return `https://gravito.dev/${lang}/docs/guide/database/overview`
 })
+
+const guideLink = computed(() => {
+  const lang = locale.value === 'zh-TW' ? 'zh-TW' : 'en'
+  return `https://gravito.dev/${lang}/docs/guide/orm-usage`
+})
+
+const streamLink = computed(() => {
+  const lang = locale.value === 'zh-TW' ? 'zh-TW' : 'en'
+  return `https://gravito.dev/${lang}/docs/guide/queues`
+})
 </script>
 
 <template>
@@ -33,9 +43,9 @@ const apiLink = computed(() => {
         <div class="flex flex-col gap-4">
             <h4 class="text-white font-bold uppercase tracking-widest text-[10px]">{{ t('footer.resources') }}</h4>
             <ul class="flex flex-col gap-2 text-gray-500 text-xs font-mono">
-                <li><StaticLink to="/docs/cli" class="hover:text-primary transition-colors">{{ t('footer.guide') }}</StaticLink></li>
+                <li><a :href="guideLink" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors">{{ t('footer.guide') }}</a></li>
                 <li><a :href="apiLink" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors">{{ t('footer.api') }}</a></li>
-                <li><a href="https://github.com/gravito-framework/gravito/tree/main/packages/atlas" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors">{{ t('footer.examples') }}</a></li>
+                <li><a href="https://github.com/gravito-framework/gravito/tree/main/examples" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors">{{ t('footer.examples') }}</a></li>
             </ul>
         </div>
 
@@ -44,7 +54,8 @@ const apiLink = computed(() => {
             <h4 class="text-white font-bold uppercase tracking-widest text-[10px]">{{ t('footer.ecosystem') }}</h4>
             <ul class="flex flex-col gap-2 text-gray-500 text-xs font-mono">
                 <li><a href="https://gravito.dev" target="_blank" class="hover:text-primary transition-colors">{{ t('footer.core') }}</a></li>
-                <li><StaticLink to="/docs/cli" class="hover:text-primary transition-colors">{{ t('footer.cli') }}</StaticLink></li>
+                <li><a href="https://photon.gravito.dev" target="_blank" class="hover:text-primary transition-colors">{{ t('footer.photon') }}</a></li>
+                <li><a :href="streamLink" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors">{{ t('footer.stream') }}</a></li>
             </ul>
         </div>
 

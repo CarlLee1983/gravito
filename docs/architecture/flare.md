@@ -97,15 +97,16 @@ Flare 內建了 `NotificationMetricsCollector`。
 
 ---
 
-## 5. 潛在風險與效能評估
+## 5. 可靠性設計與效能防護
 
 ### 5.1 序列化限制
 若 `Notification` 建構子包含無法序列化的物件 (如 DB Connection 或 Socket)，隊列發送會失敗。
-- **建議**：Notification 應只包含 ID 或純資料，在 `toMail` 等方法中再進行資料庫查詢 (Lazy Loading)。
+- **防護機制**：`NotificationManager` 在推送到隊列前會執行 `checkSerializable`，若發現無法序列化的屬性會輸出警告日誌。
+- **最佳實踐**：建議 `Notification` 建構子只包含 ID 或純資料 (DTO)，在 `toMail` 等方法中再進行資料讀取 (Lazy Loading)。
 
 ### 5.2 通道阻塞
-若某個通道 (如 Slack Webhook) 回應極慢且未設定超時，會拖慢整個 `send` 過程 (即使是並行發送，Promise.all 也會等待最慢的)。
-- **解法**：`SlackChannel` 等內建通道應實作嚴格的 Timeout 機制。
+若某個通道 (如 Slack Webhook) 回應極慢且未設定超時，會拖慢整個 `send` 過程 (即使是並行發送，`Promise.all` 也會等待最慢的請求)。
+- **機制保障**：所有內建通道 (`SlackChannel`, `MailChannel`, `DatabaseChannel` 等) 預設皆經過 `TimeoutChannel` 包裝，強制執行超時中斷 (預設 10s~30s)，確保單一通道故障不會阻塞整體並行發送流程。
 
 ---
 

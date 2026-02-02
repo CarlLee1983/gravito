@@ -11,6 +11,7 @@ export type WorkflowStatus =
   | 'suspended'
   | 'rolling_back'
   | 'rolled_back'
+  | 'compensation_failed'
 
 /**
  * Signal payload returned by a step to pause execution until an external event occurs.
@@ -371,6 +372,32 @@ export interface FluxConfig<TData = Record<string, any>> {
     workflowComplete?: <TInput = unknown>(ctx: WorkflowContext<TInput, TData>) => void
     workflowError?: <TInput = unknown>(ctx: WorkflowContext<TInput, TData>, error: Error) => void
   }
+  /** Configuration for data optimization (handling large objects). */
+  optimizer?: {
+    enabled: boolean
+    threshold?: number
+    defaultLocation?: 's3' | 'redis' | 'database' | 'memory'
+  }
+  /** Distributed lock provider for cluster mode. */
+  lockProvider?: import('./core/LockProvider').LockProvider
+}
+
+/**
+ * Configuration for a scheduled workflow execution.
+ */
+export interface CronScheduleOptions<TInput = unknown> {
+  /** Unique identifier for the schedule. */
+  id: string
+  /** Cron expression (e.g., "* * * * *"). */
+  cron: string
+  /** Workflow definition to execute. */
+  workflow: WorkflowDefinition<TInput, any> | string
+  /** Input to provide to the workflow. */
+  input: TInput
+  /** Optional metadata for the schedule. */
+  meta?: Record<string, unknown>
+  /** Whether the schedule is active. @default true */
+  enabled?: boolean
 }
 
 /**

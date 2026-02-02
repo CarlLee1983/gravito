@@ -176,9 +176,10 @@ export class OrbitFlare implements GravitoOrbit {
 
   private setupDatabaseChannel(core: PlanetCore, manager: NotificationManager): void {
     const db = core.container.make<DatabaseService>('db')
+    const config = this.options.channels?.database as any
 
     if (db && this.isDatabaseService(db)) {
-      manager.channel('database', new DatabaseChannel(db))
+      manager.channel('database', new DatabaseChannel(db, config))
     } else {
       core.logger.warn(
         '[OrbitFlare] Database service not found or invalid, database channel disabled'
@@ -188,9 +189,10 @@ export class OrbitFlare implements GravitoOrbit {
 
   private setupBroadcastChannel(core: PlanetCore, manager: NotificationManager): void {
     const broadcast = core.container.make<BroadcastService>('broadcast')
+    const config = this.options.channels?.broadcast as any
 
     if (broadcast && this.isBroadcastService(broadcast)) {
-      manager.channel('broadcast', new BroadcastChannel(broadcast))
+      manager.channel('broadcast', new BroadcastChannel(broadcast, config))
     } else {
       core.logger.warn(
         '[OrbitFlare] Broadcast service not found or invalid, broadcast channel disabled'
@@ -208,21 +210,6 @@ export class OrbitFlare implements GravitoOrbit {
 
     if (slack) {
       manager.channel('slack', new SlackChannel(slack))
-    }
-
-    if (this.options.enableSms) {
-      const sms = this.options.channels?.sms as
-        | {
-            provider: string
-            apiKey?: string
-            apiSecret?: string
-            from?: string
-          }
-        | undefined
-
-      if (sms) {
-        manager.channel('sms', new SmsChannel(sms))
-      }
     }
   }
 

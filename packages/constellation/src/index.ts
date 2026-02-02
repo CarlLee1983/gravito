@@ -17,6 +17,7 @@ export { SitemapIndex } from './core/SitemapIndex'
 export { SitemapStream } from './core/SitemapStream'
 export * from './helpers/I18nSitemap'
 export { GenerateSitemapJob, type GenerateSitemapJobOptions } from './jobs/GenerateSitemapJob'
+export { MemoryLock, type RedisClient, RedisLock, type RedisLockOptions } from './locks'
 export {
   type DynamicSitemapOptions,
   OrbitSitemap,

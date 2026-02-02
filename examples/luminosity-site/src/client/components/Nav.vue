@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useFreeze } from '@gravito/freeze-vue'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from '../composables/useI18n'
 
 const isMobileMenuOpen = ref(false)
@@ -24,16 +24,16 @@ onUnmounted(() => {
 const { locale, navigateToLocale } = useFreeze()
 const { t } = useI18n()
 
-const navLinks = [
-  { label: 'Features', path: '/features' },
-  { label: 'Documentation', path: '/docs/introduction' },
+const navLinks = computed(() => [
+  { label: t.value.nav.features, path: '/features' },
+  { label: t.value.nav.docs, path: '/docs/introduction' },
   { label: 'Frameworks', path: '/docs/frameworks' },
   { label: 'Gravito Framework', path: 'https://gravito.dev/en/docs/guide/seo-engine' },
   {
     label: 'GitHub',
     path: 'https://github.com/gravito-framework/gravito/tree/main/packages/luminosity',
   },
-]
+])
 
 const toggleLang = () => {
   showLangMenu.value = !showLangMenu.value

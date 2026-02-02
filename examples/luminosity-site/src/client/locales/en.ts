@@ -14,6 +14,7 @@ export default {
     ctaDocs: 'View Docs',
   },
   scroll: 'Scroll to Explore',
+  learn_more: 'Learn More',
   features: {
     lsm: {
       title: 'Incremental LSM-Tree Engine',
@@ -108,6 +109,7 @@ export default {
     throughput: 'Throughput',
     memory: 'Memory Peak',
     build: 'Final Build',
+    benchmark_cta: 'View Full Benchmark Report',
   },
   legal: {
     privacy: {
@@ -148,5 +150,15 @@ export default {
           'Luminosity must not be used to facilitate malicious crawling, DoS attacks via sitemap bombing, or any activity that violates the integrity of the web ecosystem.',
       },
     },
+  },
+  not_found: {
+    title: '404 - Page Not Found',
+    heading: 'Lost in Space',
+    subheading: "The page you're looking for has drifted beyond our orbit.",
+    description:
+      'It might have been moved, deleted, or perhaps it never existed in this dimension.',
+    homeButton: 'Return Home',
+    docsButton: 'Browse Docs',
+    backLink: 'Go back',
   },
 }

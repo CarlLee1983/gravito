@@ -1087,21 +1087,28 @@ Ripple 不會啟動自己的 HTTP 伺服器，而是掛載在現有的 `Bun.serv
 
 ---
 
-## 後續優化建議
+## 11. 發展路線圖 (Roadmap)
 
-### 短期 (v3.5)
-1. **完善 Rate Limiting**：內建速率限制功能，防止濫用。
-2. **Reconnection 邏輯**：自動重連機制，提升穩定性。
+### ✅ 已實作 (Done)
+- [x] **Bun Native WebSocket**: 直接利用 `Bun.serve({ websocket })`，效能優於 `ws`。
+- [x] **Channel System**: 支援 Public, Private, Presence 頻道。
+- [x] **Horizontal Scaling**: 內建 Redis Driver 支援多節點擴展。
+- [x] **Message Serialization Caching**: 減少 60% CPU 序列化開銷。
+- [x] **Rate Limiting (v3.5 提前實作)**: 內建 Token Bucket 演算法實現 Whisper 頻率限制。
+- [x] **Full Observability**: 內建 Health Checks、Logging 與連線追蹤。
 
-### 中期 (v4.0)
-1. **NATS / Kafka Driver**：提供比 Redis 更高吞吐量的後端驅動。
-2. **Client SDK**：發佈 `@gravito/ripple-client` (類似 `laravel-echo`)，提供自動重連與頻道訂閱封裝。
+### ⏳ 短期目標 (v3.6)
+- [ ] **Reconnection 邏輯**: 伺服器端輔助的斷線偵測與狀態保持。
+- [ ] **Presence 持久化**: 支援在 Redis Driver 下跨節點共享 Presence 成員列表。
 
-### 長期 (v5.0)
-1. **uWebSockets.js**：探索在 Node.js 環境下使用 `uWebSockets.js` 作為底層，實現跨 Runtime 的高效能支援。
-2. **Protocol Buffers**：支援 Protobuf 序列化，進一步提升效能。
+### 📅 中期目標 (v4.0)
+- [ ] **NATS / Kafka Driver**: 提供比 Redis 更高吞吐量的後端驅動。
+- [ ] **Client SDK**: 發佈 `@gravito/ripple-client`，提供自動重連與頻道訂閱封裝。
+
+### 🚀 長期目標 (v5.0)
+- [ ] **uWebSockets.js**: 探索 Node.js 環境下的跨 Runtime 高效能支援。
+- [ ] **Protocol Buffers**: 支援 Protobuf 序列化提升效能。
 
 ---
-
-*最後更新：2026-01-28*
-*版本：v3.4.0*
+*最後更新：2026-02-02*
+*版本：v3.5.0*

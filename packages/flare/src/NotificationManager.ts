@@ -19,6 +19,7 @@ import type { ChannelMiddleware } from './types/middleware'
 import { createHookEmitter, type HookEmitter } from './utils/hookEmitter'
 import { isRetryableError, withRetry } from './utils/retry'
 import { deepSerialize } from './utils/serialization'
+import { checkSerializable } from './utils/serializationGuard'
 
 /**
  * Notification manager.
@@ -175,7 +176,18 @@ export class NotificationManager {
         notifiableId: notifiable.getNotifiableId(),
         notifiableType: notifiable.getNotifiableType?.() || 'user',
         channels,
-        notificationData: this.serializeNotification(notification),
+        notificationData: (() => {
+          // Check serialization safety, log warning if unsafe
+          const checkResult = checkSerializable(notification)
+          if (!checkResult.serializable) {
+            this.core.logger.warn(
+              `[NotificationManager] Notification '${notification.constructor.name}' contains non-serializable properties. ` +
+                `These will be filtered out during queuing. Problematic paths: ${checkResult.problematicPaths.join(', ')}. ` +
+                `Advice: Use LazyNotification or keep only IDs/pure data in the constructor.`
+            )
+          }
+          return this.serializeNotification(notification)
+        })(),
         handle: async () => {
           await this.sendNow(notifiable, notification, channels)
         },

@@ -145,19 +145,10 @@ export const DocsLayout = ({
                 type="button"
                 onClick={toggleTheme}
                 className="w-8 h-8 flex items-center justify-center rounded-sm border border-s-brd bg-surf-bg text-s-txt hover:text-photon-gold transition-all shadow-sm"
-                title={theme === 'dark' ? '切換至亮色模式' : 'Switch to Dark Mode'}
+                title={t('toggle_theme')}
               >
                 <AnimatePresence mode="wait">
                   {theme === 'dark' ? (
-                    <motion.div
-                      key="moon"
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.5 }}
-                    >
-                      <Moon size={14} />
-                    </motion.div>
-                  ) : (
                     <motion.div
                       key="sun"
                       initial={{ opacity: 0, scale: 0.5 }}
@@ -165,6 +156,15 @@ export const DocsLayout = ({
                       exit={{ opacity: 0, scale: 0.5 }}
                     >
                       <Sun size={14} />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="moon"
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.5 }}
+                    >
+                      <Moon size={14} />
                     </motion.div>
                   )}
                 </AnimatePresence>

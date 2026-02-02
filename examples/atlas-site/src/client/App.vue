@@ -84,9 +84,9 @@
                {{ locale === 'en' ? 'TW' : 'EN' }}
             </button>
             
-            <a href="/docs" class="hidden sm:inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-primary-glow hover:shadow-neon-blue transition-all duration-500 active:scale-95">
+            <StaticLink to="/docs/cli" class="hidden sm:inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-primary-glow hover:shadow-neon-blue transition-all duration-500 active:scale-95">
               Get Started
-            </a>
+            </StaticLink>
           </div>
         </div>
       </nav>

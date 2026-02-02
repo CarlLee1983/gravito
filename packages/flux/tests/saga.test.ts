@@ -75,7 +75,7 @@ describe('FluxEngine Saga Pattern', () => {
     const result = await engine.execute(workflow, {})
 
     // If compensation fails, the whole workflow fails (critical failure)
-    expect(result.status).toBe('failed')
+    expect(result.status).toBe('compensation_failed')
     // When compensation fails, the engine catches the error and marks the workflow as failed,
     // but the step status in history remains 'compensating' as set before the compensation attempt.
     expect(result.history[0].status).toBe('compensating')

@@ -2,7 +2,14 @@ import type { Env, Photon, Schema } from '@gravito/photon'
 import { hc as beamClient } from '@gravito/photon/client'
 import { BeamError, BeamNetworkError } from './errors'
 import type { BeamOptions } from './types'
-import { createFetchWithTimeout, executeWithRetry, resolveHeaders } from './utils'
+import {
+  createFetchWithTimeout,
+  executeWithRetry,
+  mergeAbortSignals,
+  OfflineQueue,
+  RequestDeduplicator,
+  resolveHeaders,
+} from './utils'
 
 /**
  * Orbit Beam - Lightweight type-safe RPC client for Gravito applications.
@@ -46,6 +53,8 @@ export function createBeam<T extends Photon<Env, Schema, string>>(
   if (
     !options?.timeout &&
     !options?.retry &&
+    !options?.deduplicate &&
+    !options?.offlineQueue &&
     !options?.onRequest &&
     !options?.onResponse &&
     !options?.onError
@@ -63,13 +72,20 @@ export function createBeam<T extends Photon<Env, Schema, string>>(
 }
 
 /**
- * Creates an enhanced fetch function with support for timeout, retry, and interceptors
+ * Creates an enhanced fetch function with support for timeout, retry, deduplication, and interceptors
  */
 function createEnhancedFetch(options: BeamOptions) {
-  return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    try {
-      let config = init || {}
+  // Create deduplicator instance if enabled
+  const deduplicator = options.deduplicate
+    ? new RequestDeduplicator(options.deduplicateWindow)
+    : null
 
+  // Create offline queue if enabled
+  const offlineQueue = options.offlineQueue?.enabled ? new OfflineQueue(options.offlineQueue) : null
+
+  return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    let config = init || {}
+    try {
       // 1. Resolve dynamic headers
       const headers = await resolveHeaders(options.headers)
       if (headers) {
@@ -89,12 +105,29 @@ function createEnhancedFetch(options: BeamOptions) {
         config = await options.onRequest(config)
       }
 
-      // 3. Create fetch function (with possible timeout)
-      const fetchFn = options.timeout
-        ? createFetchWithTimeout(options.timeout)
-        : fetch.bind(globalThis)
+      // 3. Merge signals if user provided one
+      if (options.signal) {
+        const mergedSignal = mergeAbortSignals([
+          options.signal as AbortSignal,
+          config.signal as AbortSignal | undefined,
+        ])
+        config = { ...config, signal: mergedSignal }
+      }
 
-      // 4. Execute request (with possible retry)
+      // 4. Create fetch function (with possible timeout and signal support)
+      const baseFetchFn: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> =
+        options.timeout
+          ? createFetchWithTimeout(options.timeout, options.signal as AbortSignal | undefined)
+          : (input: RequestInfo | URL, init?: RequestInit) => fetch(input, init)
+
+      // Wrap with deduplicator if enabled
+      const fetchFn: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> =
+        deduplicator
+          ? (input: RequestInfo | URL, init?: RequestInit) =>
+              deduplicator.fetch(baseFetchFn, input, init)
+          : baseFetchFn
+
+      // 5. Execute request (with possible retry)
       let response = await (options.retry
         ? executeWithRetry(() => fetchFn(input, config), options.retry)
         : fetchFn(input, config))
@@ -106,7 +139,13 @@ function createEnhancedFetch(options: BeamOptions) {
 
       return response
     } catch (error) {
-      // 6. Execute onError interceptor
+      // 6. Handle offline queue if enabled
+      if (offlineQueue && (error instanceof BeamNetworkError || error instanceof Error)) {
+        const { signal: _s, ...configWithoutSignal } = config
+        await offlineQueue.add(fetch.bind(globalThis), input, configWithoutSignal)
+      }
+
+      // 7. Execute onError interceptor
       const beamError =
         error instanceof BeamError ? error : new BeamNetworkError('Request failed', error)
 
@@ -135,8 +174,10 @@ export {
 } from './errors'
 export {
   createAuthenticatedBeam,
+  createCachedHeaderResolver,
   safeResponse,
   unwrapResponse,
+  validateResponse,
 } from './helpers'
 export type {
   BeamOptions,

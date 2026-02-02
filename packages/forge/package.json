@@ -88,5 +88,9 @@
     "type": "git",
     "url": "git+https://github.com/gravito-framework/gravito.git",
     "directory": "packages/forge"
+  },
+  "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2"
   }
 }

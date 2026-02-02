@@ -21,6 +21,14 @@ export interface ProcessorAdapter {
   execute(args: string[], options?: AdapterOptions): Promise<string>
 
   /**
+   * Probe file for metadata
+   *
+   * @param inputPath - Path to the file
+   * @returns Metadata object
+   */
+  probe(inputPath: string): Promise<Record<string, unknown>>
+
+  /**
    * Get processing progress (if supported)
    *
    * @param processId - Process ID

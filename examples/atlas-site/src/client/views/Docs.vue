@@ -97,11 +97,11 @@ const content = ref('')
 const loading = ref(true)
 const scrollProgress = ref(0)
 
-const _compiledMarkdown = computed(() => {
+const compiledMarkdown = computed(() => {
   return marked.parse(content.value)
 })
 
-const _themeClass = computed(() => {
+const themeClass = computed(() => {
   const id = ((route.params.id as string) || '').toLowerCase()
   if (id.includes('mongo')) {
     return 'theme-mongodb'

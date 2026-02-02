@@ -20,10 +20,11 @@ const TRANSITIONS: Record<WorkflowStatus, WorkflowStatus[]> = {
   running: ['paused', 'completed', 'failed', 'suspended', 'rolling_back'],
   paused: ['running', 'failed'],
   suspended: ['running', 'failed'],
-  rolling_back: ['rolled_back', 'failed'],
+  rolling_back: ['rolled_back', 'failed', 'compensation_failed'],
   rolled_back: ['pending'], // allow retry from scratch
   completed: [], // terminal state
   failed: ['pending'], // allow retry
+  compensation_failed: ['pending'], // allow retry even if compensation failed
 }
 
 /**
@@ -129,7 +130,10 @@ export class StateMachine extends EventTarget {
    */
   isTerminal(): boolean {
     return (
-      this._status === 'completed' || this._status === 'failed' || this._status === 'rolled_back'
+      this._status === 'completed' ||
+      this._status === 'failed' ||
+      this._status === 'rolled_back' ||
+      this._status === 'compensation_failed'
     )
   }
 

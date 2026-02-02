@@ -25,6 +25,53 @@ export interface RetryOptions {
    * Exponential backoff factor, default is 2
    */
   backoff?: number
+
+  /**
+   * Whether to add jitter (randomness) to retry delays to prevent thundering herds.
+   * Default is true if retry count > 0.
+   */
+  jitter?: boolean
+
+  /**
+   * Whether to lazy load the retry logic.
+   * Useful for minimizing bundle size if retries are rarely needed.
+   */
+  lazy?: boolean
+}
+
+/**
+ * Offline queue configuration options
+ *
+ * @public
+ */
+export interface OfflineQueueOptions {
+  /**
+   * Whether to enable the offline queue
+   *
+   * @default false
+   */
+  enabled?: boolean
+
+  /**
+   * Storage engine to use for the queue
+   *
+   * @default 'memory'
+   */
+  storage?: 'memory' | 'localStorage'
+
+  /**
+   * Maximum number of requests to queue
+   *
+   * @default 100
+   */
+  maxSize?: number
+
+  /**
+   * Whether to automatically retry queued requests when the network becomes online
+   *
+   * @default true
+   */
+  retryOnReconnect?: boolean
 }
 
 /**
@@ -91,6 +138,36 @@ export interface BeamOptions extends Omit<RequestInit, 'headers'> {
   retry?: RetryOptions
 
   /**
+   * Enable request deduplication for GET requests
+   *
+   * When enabled, identical GET requests made within the deduplication window
+   * will share the same underlying fetch promise, reducing redundant network calls.
+   *
+   * @default false
+   *
+   * @example
+   * ```typescript
+   * deduplicate: true
+   * ```
+   */
+  deduplicate?: boolean
+
+  /**
+   * Deduplication time window (milliseconds)
+   *
+   * Requests are considered identical if they occur within this time window.
+   * After a request completes, it's immediately removed from the cache.
+   *
+   * @default 1000 (1 second)
+   *
+   * @example
+   * ```typescript
+   * deduplicateWindow: 2000  // 2 second window
+   * ```
+   */
+  deduplicateWindow?: number
+
+  /**
    * Request interceptor
    *
    * Called before sending the request, can be used to modify request configuration (e.g., adding auth token)
@@ -145,4 +222,21 @@ export interface BeamOptions extends Omit<RequestInit, 'headers'> {
    * ```
    */
   onError?: (error: BeamError) => void | Promise<void>
+
+  /**
+   * Offline queue configuration
+   *
+   * When enabled, requests that fail due to network errors will be queued
+   * and retried when the network becomes available.
+   *
+   * @example
+   * ```typescript
+   * offlineQueue: {
+   *   enabled: true,
+   *   storage: 'localStorage',
+   *   maxSize: 100
+   * }
+   * ```
+   */
+  offlineQueue?: OfflineQueueOptions
 }

@@ -29,6 +29,7 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    host: '127.0.0.1',
     // Add origin for proper asset loading when accessed from Photon server
     origin: 'http://localhost:5173',
   },

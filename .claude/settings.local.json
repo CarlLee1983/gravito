@@ -53,8 +53,5 @@
       "Bash(docker-compose ps:*)"
     ]
   },
-  "enabledMcpjsonServers": [
-    "pencil",
-    "context7"
-  ]
+  "enabledMcpjsonServers": ["pencil", "context7"]
 }

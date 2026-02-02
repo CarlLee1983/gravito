@@ -14,6 +14,7 @@ export default {
     ctaDocs: '查看文件',
   },
   scroll: '滾動探索',
+  learn_more: '了解更多',
   features: {
     lsm: {
       title: 'LSM 樹增量引擎',
@@ -108,6 +109,7 @@ export default {
     throughput: '吞吐量',
     memory: '記憶體峰值',
     build: '最終建置',
+    benchmark_cta: '查看完整基準測試報告',
   },
   legal: {
     privacy: {
@@ -147,5 +149,14 @@ export default {
           '不得利用 Luminosity 進行惡意爬取、透過網站地圖轟炸進行 DoS 攻擊，或任何違反網路生態系統完整性的活動。',
       },
     },
+  },
+  not_found: {
+    title: '404 - 頁面未找到',
+    heading: '迷失於虛空',
+    subheading: '您所尋找的頁面已漂流至軌道之外。',
+    description: '它可能已被移動、刪除，或者根本不存在於這個維度。',
+    homeButton: '返回首頁',
+    docsButton: '瀏覽文件',
+    backLink: '返回上一頁',
   },
 }

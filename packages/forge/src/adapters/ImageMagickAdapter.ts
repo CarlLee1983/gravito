@@ -87,4 +87,61 @@ export class ImageMagickAdapter implements ProcessorAdapter {
       })
     })
   }
+
+  /**
+   * Probe image for metadata
+   *
+   * @param inputPath - Path to the image file
+   * @returns Metadata object
+   */
+  async probe(inputPath: string): Promise<Record<string, unknown>> {
+    const command = this.useConvert ? 'identify' : this.magickPath
+    const commandArgs = this.useConvert ? [inputPath] : ['identify', inputPath]
+
+    return new Promise((resolve, reject) => {
+      const process = this.runtime.spawn([command, ...commandArgs], {
+        stdout: 'pipe',
+      })
+
+      let stdoutBuffer = ''
+      if (process.stdout) {
+        const reader = process.stdout.getReader()
+        const decoder = new TextDecoder()
+        ;(async () => {
+          try {
+            while (true) {
+              const { done, value } = await reader.read()
+              if (done) break
+              stdoutBuffer += decoder.decode(value, { stream: true })
+            }
+          } catch {
+            // Ignore
+          }
+        })()
+      }
+
+      process.exited.then((code) => {
+        if (code !== 0) {
+          resolve({})
+          return
+        }
+
+        const metadata: Record<string, unknown> = {}
+        // ImageMagick identify output normally looks like:
+        // image.jpg JPEG 1920x1080 1920x1080+0+0 8-bit sRGB 1.234MB 0.000u 0:00.000
+        const parts = stdoutBuffer.split(' ')
+        if (parts.length >= 3) {
+          metadata.format = parts[1]
+          const res = parts[2].split('x')
+          if (res.length === 2) {
+            metadata.width = parseInt(res[0], 10)
+            metadata.height = parseInt(res[1], 10)
+          }
+        }
+        resolve(metadata)
+      })
+
+      process.exited.catch(reject)
+    })
+  }
 }

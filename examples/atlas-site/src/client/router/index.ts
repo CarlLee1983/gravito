@@ -6,6 +6,7 @@ const router = createRouter({
   routes: [
     { path: '/', name: 'Home', component: Home },
     { path: '/features', name: 'Features', component: () => import('../views/FeaturesView.vue') },
+    { path: '/docs', redirect: '/docs/cli' },
     { path: '/docs/:id', name: 'Docs', component: () => import('../views/Docs.vue') },
   ],
   scrollBehavior(_to, _from, savedPosition) {

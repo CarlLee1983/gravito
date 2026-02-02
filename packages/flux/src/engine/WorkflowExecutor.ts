@@ -1,4 +1,5 @@
 import type { ContextManager } from '../core/ContextManager'
+import type { DataOptimizer } from '../core/DataOptimizer'
 import type { StateMachine } from '../core/StateMachine'
 import type { StepExecutor } from '../core/StepExecutor'
 import type {
@@ -49,7 +50,8 @@ export class WorkflowExecutor {
     private stepExecutor: StepExecutor,
     private traceEmitter: TraceEmitter,
     private config: FluxConfig = {},
-    private onPersist?: (ctx: WorkflowContext<any, any>) => Promise<WorkflowContext<any, any>>
+    private onPersist?: (ctx: WorkflowContext<any, any>) => Promise<WorkflowContext<any, any>>,
+    private optimizer?: DataOptimizer
   ) {
     this.parallelExecutor = new ParallelExecutor()
   }
@@ -359,11 +361,17 @@ export class WorkflowExecutor {
   private async persist<TInput, TData extends Record<string, any>>(
     ctx: WorkflowContext<TInput, TData>
   ): Promise<WorkflowContext<TInput, TData>> {
+    let currentCtx = ctx
+    if (this.optimizer) {
+      const optimizedData = this.optimizer.optimizeForStorage(ctx.data) as TData
+      currentCtx = updateWorkflowContext(ctx, { data: optimizedData })
+    }
+
     if (this.onPersist) {
-      return await this.onPersist(ctx)
+      return await this.onPersist(currentCtx)
     } else {
-      await this.storage.save(this.contextManager.toState(ctx))
-      return ctx
+      await this.storage.save(this.contextManager.toState(currentCtx))
+      return currentCtx
     }
   }
 }
