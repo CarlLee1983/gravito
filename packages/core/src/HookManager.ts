@@ -1,8 +1,10 @@
 import { CircuitBreaker, type CircuitBreakerOptions } from './events/CircuitBreaker'
 import { DeadLetterQueue } from './events/DeadLetterQueue'
+import type { EventBackend } from './events/EventBackend'
 import type { EventOptions } from './events/EventOptions'
 import { DEFAULT_EVENT_OPTIONS } from './events/EventOptions'
 import { EventPriorityQueue, type EventQueueConfig } from './events/EventPriorityQueue'
+import type { EventTask } from './events/types'
 
 /**
  * Callback function for filters (transforms values).
@@ -53,6 +55,11 @@ export interface HookManagerConfig {
    * Configuration for the event priority queue (Backpressure).
    */
   queue?: EventQueueConfig
+
+  /**
+   * Custom event backend for distributed processing.
+   */
+  backend?: EventBackend
 }
 
 /**
@@ -63,7 +70,8 @@ export class HookManager {
   private filters: Map<string, FilterCallback[]> = new Map()
   private actions: Map<string, ActionCallback[]> = new Map()
   private eventQueue: EventPriorityQueue
-  private dlq: DeadLetterQueue
+  private backend: EventBackend
+  private dlq?: DeadLetterQueue
   private config: HookManagerConfig
 
   constructor(config: HookManagerConfig = {}) {
@@ -74,12 +82,14 @@ export class HookManager {
       enableDLQ: true,
       ...config,
     }
-    this.eventQueue = new EventPriorityQueue(this.config.queue)
-    this.dlq = new DeadLetterQueue()
+    this.eventQueue = new EventPriorityQueue(config.queue)
+    this.backend = config.backend || this.eventQueue
 
-    // Connect DLQ to event queue
-    if (this.config.enableDLQ) {
-      this.eventQueue.setDeadLetterQueue(this.dlq)
+    if (config.enableDLQ ?? true) {
+      if (this.backend instanceof EventPriorityQueue) {
+        this.dlq = new DeadLetterQueue()
+        this.eventQueue.setDeadLetterQueue(this.dlq)
+      }
     }
   }
 
@@ -237,7 +247,7 @@ export class HookManager {
    * @param args - The arguments to pass to the callbacks.
    * @internal
    */
-  private async doActionSync<TArgs = unknown>(hook: string, args: TArgs): Promise<void> {
+  async doActionSync<TArgs = unknown>(hook: string, args: TArgs): Promise<void> {
     const callbacks = this.actions.get(hook) || []
 
     for (const callback of callbacks) {
@@ -291,8 +301,23 @@ export class HookManager {
       async: true,
     }
 
-    // Enqueue the event for async processing
-    this.eventQueue.enqueue(hook, args, callbacks, mergedOptions)
+    // Use backend to enqueue
+    // We construct the task here to ensure consistent ID generation and type safety
+    const task: EventTask = {
+      id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      hook,
+      args,
+      callbacks: callbacks as ActionCallback[],
+      options: mergedOptions,
+      createdAt: Date.now(),
+      partitionKey: mergedOptions.partitionKey,
+      retryCount: 0,
+    }
+
+    const result = this.backend.enqueue(task)
+    if (result instanceof Promise) {
+      await result
+    }
 
     // Note: We don't await the queue processing here
     // Events are processed asynchronously in the background
@@ -389,11 +414,20 @@ export class HookManager {
   }
 
   /**
+   * Set the event backend for distributed processing.
+   *
+   * @param backend - Event backend instance
+   */
+  setBackend(backend: EventBackend): void {
+    this.backend = backend
+  }
+
+  /**
    * Get the Dead Letter Queue instance.
    *
    * @returns Dead Letter Queue
    */
-  getDLQ(): DeadLetterQueue {
+  getDLQ(): DeadLetterQueue | undefined {
     return this.dlq
   }
 
@@ -404,6 +438,7 @@ export class HookManager {
    * @returns True if requeued successfully, false if entry not found
    */
   async requeueDLQEntry(dlqEntryId: string): Promise<boolean> {
+    if (!this.dlq) return false
     const entry = this.dlq.get(dlqEntryId)
 
     if (!entry) {
@@ -429,6 +464,7 @@ export class HookManager {
    * @returns Number of events requeued
    */
   async requeueDLQBatch(eventName: string): Promise<number> {
+    if (!this.dlq) return 0
     const entries = this.dlq.list({ eventName })
     let requeuedCount = 0
 

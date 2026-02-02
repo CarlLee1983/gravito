@@ -711,8 +711,8 @@ class StreamEventBackend {
 ##### Phase 4: Bull Queue 整合（Week 7-8）
 
 **任務清單**：
-- [ ] 4.1 創建 `SystemEventJob`
-- [ ] 4.2 實現 `StreamEventBackend`
+- [x] 4.1 創建 `SystemEventJob`
+- [x] 4.2 實現 `StreamEventBackend`
 - [ ] 4.3 支持多 Worker 部署
 - [ ] 4.4 集成 Bull Board UI
 - [ ] 4.5 遷移指南文檔

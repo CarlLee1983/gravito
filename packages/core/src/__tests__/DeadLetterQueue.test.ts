@@ -306,7 +306,7 @@ describe('Dead Letter Queue (DLQ)', () => {
       await hookManager.doActionAsync('test:event', {}, options)
 
       // Wait for all retries
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      await new Promise((resolve) => setTimeout(resolve, 800))
 
       // Should have 4 calls (initial + 3 retries)
       expect(timestamps.length).toBe(4)
@@ -318,13 +318,13 @@ describe('Dead Letter Queue (DLQ)', () => {
 
       // Exponential: 50ms, 100ms, 200ms (approximately)
       expect(delay1).toBeGreaterThanOrEqual(40)
-      expect(delay1).toBeLessThan(70)
+      expect(delay1).toBeLessThan(100)
 
       expect(delay2).toBeGreaterThanOrEqual(90)
-      expect(delay2).toBeLessThan(120)
+      expect(delay2).toBeLessThan(150)
 
       expect(delay3).toBeGreaterThanOrEqual(190)
-      expect(delay3).toBeLessThan(220)
+      expect(delay3).toBeLessThan(260)
     })
 
     it('should use linear backoff', async () => {

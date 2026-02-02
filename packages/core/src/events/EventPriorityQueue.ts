@@ -1,87 +1,10 @@
 import type { ActionCallback } from '../HookManager'
 import type { DeadLetterQueue } from './DeadLetterQueue'
+import type { EventBackend } from './EventBackend'
 import type { EventOptions } from './EventOptions'
+import type { BackpressureStrategy, EventQueueConfig, EventTask } from './types'
 
-/**
- * Event task for priority queue processing.
- * @internal
- */
-export interface EventTask {
-  /**
-   * Unique identifier for this event task.
-   */
-  id: string
-
-  /**
-   * Event hook name.
-   */
-  hook: string
-
-  /**
-   * Event payload/arguments.
-   */
-  args: unknown
-
-  /**
-   * Event options.
-   */
-  options: EventOptions
-
-  /**
-   * Callbacks to execute for this event.
-   */
-  callbacks: ActionCallback[]
-
-  /**
-   * Timestamp when the event was created.
-   */
-  createdAt: number
-
-  /**
-   * Partition key for ordering (if applicable).
-   */
-  partitionKey?: string
-
-  /**
-   * Number of retry attempts made.
-   * @internal
-   */
-  retryCount?: number
-
-  /**
-   * Timestamp when the event first failed.
-   * @internal
-   */
-  firstFailedAt?: number
-
-  /**
-   * Last error encountered.
-   * @internal
-   */
-  lastError?: Error
-}
-
-/**
- * Backpressure strategy for event queue overflow.
- */
-export type BackpressureStrategy = 'drop-oldest' | 'drop-newest' | 'reject' | 'ignore'
-
-/**
- * Configuration for event priority queue.
- */
-export interface EventQueueConfig {
-  /**
-   * Maximum number of events allowed in the queue.
-   * If 0 or undefined, queue is unbounded.
-   */
-  maxSize?: number
-
-  /**
-   * Strategy to handle new events when queue is full.
-   * @default 'reject'
-   */
-  strategy?: BackpressureStrategy
-}
+export type { EventTask, EventQueueConfig, BackpressureStrategy }
 
 /**
  * Priority queue for event processing.
@@ -92,7 +15,7 @@ export interface EventQueueConfig {
  *
  * @internal
  */
-export class EventPriorityQueue {
+export class EventPriorityQueue implements EventBackend {
   private highPriority: EventTask[] = []
   private normalPriority: EventTask[] = []
   private lowPriority: EventTask[] = []
@@ -123,28 +46,43 @@ export class EventPriorityQueue {
    * @param options - Event options
    * @returns Task ID
    */
-  enqueue(hook: string, args: unknown, callbacks: ActionCallback[], options: EventOptions): string {
-    const taskId = `task-${++this.taskIdCounter}-${Date.now()}`
+  /*
+   * Enqueue an event task.
+   */
+  enqueue(task: EventTask): void
+  enqueue(hook: string, args: unknown, callbacks: ActionCallback[], options: EventOptions): string
+  enqueue(
+    hookOrTask: string | EventTask,
+    args?: unknown,
+    callbacks?: ActionCallback[],
+    options?: EventOptions
+  ): string | void {
+    let task: EventTask
+
+    if (typeof hookOrTask !== 'string') {
+      task = hookOrTask
+    } else {
+      const taskId = `task-${++this.taskIdCounter}-${Date.now()}`
+      task = {
+        id: taskId,
+        hook: hookOrTask,
+        args,
+        options: options!,
+        callbacks: callbacks!,
+        createdAt: Date.now(),
+        partitionKey: options?.partitionKey,
+        retryCount: 0,
+      }
+    }
 
     // Check backpressure
     if (this.config.maxSize && this.getDepth() >= this.config.maxSize) {
-      if (!this.handleBackpressure(hook)) {
+      if (!this.handleBackpressure(task.hook)) {
         return 'dropped'
       }
     }
 
-    const task: EventTask = {
-      id: taskId,
-      hook,
-      args,
-      options,
-      callbacks,
-      createdAt: Date.now(),
-      partitionKey: options.partitionKey,
-      retryCount: 0,
-    }
-
-    const priority = options.priority || 'normal'
+    const priority = task.options.priority || 'normal'
 
     switch (priority) {
       case 'high':
@@ -163,7 +101,7 @@ export class EventPriorityQueue {
       this.processNext()
     }
 
-    return taskId
+    return task.id
   }
 
   /**
