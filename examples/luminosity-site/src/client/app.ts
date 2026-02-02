@@ -1,8 +1,14 @@
-import { createInertiaApp } from '@inertiajs/vue3'
+import { createInertiaApp, Head, Link } from '@inertiajs/vue3'
 import { createApp, h } from 'vue'
 import './app.css'
 
-import { defineConfig, FreezePlugin } from '@gravito/freeze-vue'
+import { defineConfig, FreezePlugin, StaticLink } from '@gravito/freeze-vue'
+import Footer from './components/Footer.vue'
+// Components
+import Layout from './components/Layout.vue'
+import Logo from './components/Logo.vue'
+import Nav from './components/Nav.vue'
+import SpotlightCard from './components/SpotlightCard.vue'
 
 createInertiaApp({
   resolve: (name) => {
@@ -21,11 +27,22 @@ createInertiaApp({
       locales: ['en', 'zh'] as any,
       defaultLocale: 'en' as any,
       baseUrl: 'https://lux.gravito.dev',
+      staticDomains: ['gravito.dev', 'lux.gravito.dev'],
     })
 
-    createApp({ render: () => h(App, props) })
+    const app = createApp({ render: () => h(App, props) })
       .use(plugin)
-      .use(FreezePlugin, freezeConfig)
-      .mount(el)
+      .use(FreezePlugin, { config: freezeConfig, LinkComponent: Link })
+
+    // Global Components
+    app.component('Layout', Layout)
+    app.component('Nav', Nav)
+    app.component('Footer', Footer)
+    app.component('Logo', Logo)
+    app.component('SpotlightCard', SpotlightCard)
+    app.component('StaticLink', StaticLink)
+    app.component('Head', Head)
+
+    app.mount(el)
   },
 })

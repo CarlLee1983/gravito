@@ -1,29 +1,8 @@
 <script setup lang="ts">
-import { useFreeze } from '@gravito/freeze-vue'
+import { ChevronLeft, Home, Search } from 'lucide-vue-next'
+import { useI18n } from '../composables/useI18n'
 
-const { locale } = useFreeze()
-
-const t = {
-  en: {
-    title: '404 - Page Not Found',
-    heading: 'Lost in Space',
-    subheading: "The page you're looking for has drifted beyond our orbit.",
-    description:
-      'It might have been moved, deleted, or perhaps it never existed in this dimension.',
-    homeButton: 'Return Home',
-    docsButton: 'Browse Docs',
-  },
-  zh: {
-    title: '404 - 頁面未找到',
-    heading: '迷失於虛空',
-    subheading: '您所尋找的頁面已漂流至軌道之外。',
-    description: '它可能已被移動、刪除，或者根本不存在於這個維度。',
-    homeButton: '返回首頁',
-    docsButton: '瀏覽文件',
-  },
-}
-
-const currentT = locale.value === 'zh' ? t.zh : t.en
+const { t, locale } = useI18n()
 
 const goBack = () => {
   if (typeof window !== 'undefined') {
@@ -35,7 +14,7 @@ const goBack = () => {
 <template>
   <Layout>
     <Head>
-      <title>{{ currentT.title }} - Luminosity</title>
+      <title>{{ t.not_found.title }} - Luminosity</title>
       <meta name="robots" content="noindex, nofollow" />
     </Head>
 
@@ -70,17 +49,17 @@ const goBack = () => {
 
         <!-- Heading -->
         <h1 class="text-5xl md:text-7xl font-black tracking-tighter mb-6 leading-tight">
-          <span class="text-white">{{ currentT.heading }}</span>
+          <span class="text-white">{{ t.not_found.heading }}</span>
         </h1>
 
         <!-- Subheading -->
         <p class="text-xl md:text-2xl text-emerald-400 font-medium mb-4">
-          {{ currentT.subheading }}
+          {{ t.not_found.subheading }}
         </p>
 
         <!-- Description -->
         <p class="text-gray-500 text-lg mb-12 max-w-md mx-auto">
-          {{ currentT.description }}
+          {{ t.not_found.description }}
         </p>
 
         <!-- Action Buttons -->
@@ -90,7 +69,7 @@ const goBack = () => {
             class="w-full sm:w-auto px-8 py-4 bg-emerald-500 text-void font-bold rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(16,185,129,0.3)] flex items-center justify-center gap-3"
           >
             <Home :size="20" />
-            {{ currentT.homeButton }}
+            {{ t.not_found.homeButton }}
           </StaticLink>
           
           <StaticLink 
@@ -98,7 +77,7 @@ const goBack = () => {
             class="w-full sm:w-auto px-8 py-4 border border-white/10 text-white font-bold rounded-2xl hover:bg-white/5 transition-all backdrop-blur-sm flex items-center justify-center gap-3"
           >
             <Search :size="20" />
-            {{ currentT.docsButton }}
+            {{ t.not_found.docsButton }}
           </StaticLink>
         </div>
 
@@ -109,7 +88,7 @@ const goBack = () => {
             class="text-gray-500 hover:text-emerald-400 transition-colors text-sm flex items-center gap-2 mx-auto"
           >
             <ChevronLeft :size="16" />
-            {{ locale === 'zh' ? '返回上一頁' : 'Go back' }}
+            {{ t.not_found.backLink }}
           </button>
         </div>
       </div>
