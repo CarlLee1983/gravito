@@ -477,4 +477,46 @@ export class HookManager {
 
     return requeuedCount
   }
+
+  /**
+   * Get Dead Letter Queue entries with optional filtering.
+   *
+   * @param filter - Filter options
+   * @returns Array of DLQ entries
+   */
+  getDLQEntries(filter: { eventName?: string; from?: number; to?: number; limit?: number } = {}) {
+    if (!this.dlq) return []
+    return this.dlq.list(filter)
+  }
+
+  /**
+   * Get count of Dead Letter Queue entries for an event.
+   *
+   * @param eventName - Event name
+   * @returns Count of entries
+   */
+  getDLQCount(eventName: string): number {
+    if (!this.dlq) return 0
+    return this.dlq.getCountByEvent(eventName)
+  }
+
+  /**
+   * Delete a DLQ entry.
+   *
+   * @param entryId - DLQ entry ID
+   * @returns True if deleted, false if not found
+   */
+  deleteDLQEntry(entryId: string): boolean {
+    if (!this.dlq) return false
+    return this.dlq.delete(entryId)
+  }
+
+  /**
+   * Remove all listeners for a specific action hook.
+   *
+   * @param hook - Hook name
+   */
+  removeAction(hook: string): void {
+    this.actions.delete(hook)
+  }
 }
