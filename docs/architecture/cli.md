@@ -80,25 +80,26 @@ Orbit Pulse 採用基於文字替換的簡單模板系統，而非複雜的 EJS/
 
 ## 4. 潛在風險與效能評估
 
-### 4.1 模板版本同步 (Template Drift)
+### 4.1 模板版本同步 (Template Drift) ✅ 已處理
 CLI 與 Templates 分開維護可能導致版本不一致。
 - **風險**：新版 CLI 生成的專案依賴舊版 Core，或反之。
-- **緩解**：`create` 命令會在生成 `package.json` 時強制鎖定 `@gravito/*` 的版本。
+- **緩解 (已實作)**：`create` 命令在生成 `package.json` 時會自動移除 `^` 等動態版本前綴，強制鎖定 `@gravito/*` 的精確版本。
 
-### 4.2 依賴解析複雜度
+### 4.2 依賴解析複雜度 ✅ 已補強
 `ProfileResolver` 負責根據 Profile 計算依賴樹，這部分邏輯較為隱晦。
 - **風險**：若配置錯誤，可能導致生成的專案缺少關鍵依賴。
+- **緩解 (已實作)**：整合 `DependencyValidator` 在生成過程中自動校對依賴完整性，若偵測缺失則主動提示安裝命令。
 
 ---
 
 ## 5. 後續優化建議
 
 ### 短期 (v1.1)
-1. **外掛系統 (Plugin System)**：允許第三方開發者註冊自定義命令 (如 `gravito my-plugin:run`)。
-2. **Stub 自定義**：允許使用者在專案根目錄建立 `stubs/` 來覆蓋預設模板。
+1. [x] **外掛系統 (Plugin System)**：允許第三方開發者註冊自定義命令 (如 `gravito my-plugin:run`)。(v1.1 已實作)
+2. [x] **Stub 自定義**：允許使用者在專案根目錄建立 `stubs/` 來覆蓋預設模板。(v1.1 已實作)
 
 ### 中期 (v1.2)
-1. **Interactive Make**：`make:*` 命令若缺少參數，自動進入交互模式詢問。
+1. [x] **Interactive Make**：`make:*` 命令若缺少參數，自動進入交互模式詢問。(v1.2 已實作)
 
 ### 長期 (v2.0)
 1. **GUI Dashboard**：提供基於 Web 的專案管理介面 (`gravito ui`)，可視化執行命令與監控狀態。
