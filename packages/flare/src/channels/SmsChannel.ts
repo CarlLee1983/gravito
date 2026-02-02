@@ -3,9 +3,9 @@ import type { AbortableSendOptions, Notifiable, NotificationChannel, SmsMessage 
 import { TimeoutChannel } from './TimeoutChannel'
 
 /**
- * 預設 timeout 時間（毫秒）
+ * Default timeout duration in milliseconds (30 seconds).
  */
-const DEFAULT_TIMEOUT_MS = 30_000 // 30 秒
+const DEFAULT_TIMEOUT_MS = 30_000
 
 /**
  * SMS channel configuration.
@@ -21,11 +21,11 @@ export interface SmsChannelConfig {
   accessKeyId?: string
   secretAccessKey?: string
   /**
-   * Timeout 時間（毫秒），預設 30000ms (30秒)。
+   * Timeout duration in milliseconds. Default: 30000ms (30s).
    */
   timeout?: number
   /**
-   * Timeout 發生時的回調函數。
+   * Callback function triggered when a timeout occurs.
    */
   onTimeout?: (channel: string, notification: Notification) => void
 }
@@ -39,7 +39,7 @@ export class SmsChannel implements NotificationChannel {
   private timeoutChannel: TimeoutChannel
 
   constructor(private config: SmsChannelConfig) {
-    // 建立內部 channel
+    // Create internal channel
     const innerChannel: NotificationChannel = {
       send: async (
         notification: Notification,
@@ -66,7 +66,7 @@ export class SmsChannel implements NotificationChannel {
       },
     }
 
-    // 使用 TimeoutChannel 包裝
+    // Wrap with TimeoutChannel
     const timeout = this.config.timeout ?? DEFAULT_TIMEOUT_MS
     this.timeoutChannel = new TimeoutChannel(innerChannel, {
       timeout,
@@ -106,7 +106,7 @@ export class SmsChannel implements NotificationChannel {
           To: message.to,
           Body: message.message,
         }),
-        signal, // 傳遞 AbortSignal 給 fetch
+        signal, // Pass AbortSignal to fetch
       }
     )
 

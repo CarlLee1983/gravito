@@ -3,9 +3,9 @@ import type { AbortableSendOptions, Notifiable, NotificationChannel } from '../t
 import { TimeoutChannel } from './TimeoutChannel'
 
 /**
- * 預設 timeout 時間（毫秒）
+ * Default timeout duration in milliseconds (30 seconds).
  */
-const DEFAULT_TIMEOUT_MS = 30_000 // 30 秒
+const DEFAULT_TIMEOUT_MS = 30_000
 
 /**
  * Slack channel configuration.
@@ -32,7 +32,7 @@ export class SlackChannel implements NotificationChannel {
   private timeoutChannel: TimeoutChannel
 
   constructor(private config: SlackChannelConfig) {
-    // 建立內部 channel
+    // Create internal channel
     const innerChannel: NotificationChannel = {
       send: async (
         notification: Notification,
@@ -58,7 +58,7 @@ export class SlackChannel implements NotificationChannel {
             icon_emoji: slackMessage.iconEmoji,
             attachments: slackMessage.attachments,
           }),
-          signal: options?.signal, // 傳遞 AbortSignal 給 fetch
+          signal: options?.signal, // Pass AbortSignal to fetch
         })
 
         if (!response.ok) {
@@ -67,7 +67,7 @@ export class SlackChannel implements NotificationChannel {
       },
     }
 
-    // 使用 TimeoutChannel 包裝
+    // Wrap with TimeoutChannel
     const timeout = this.config.timeout ?? DEFAULT_TIMEOUT_MS
     this.timeoutChannel = new TimeoutChannel(innerChannel, {
       timeout,
