@@ -68,6 +68,8 @@ export {
 } from './ErrorHandler'
 // Events
 export { EventManager } from './EventManager'
+export type { EventOptions } from './events'
+export { DEFAULT_EVENT_OPTIONS, EventPriorityQueue, type EventTask } from './events'
 // Exceptions
 export * from './exceptions'
 // Global Error Handlers
@@ -81,7 +83,7 @@ export {
 export { type GravitoManifest, GravitoServer } from './GravitoServer'
 // Hooks
 export type { ActionCallback, FilterCallback } from './HookManager'
-export { HookManager } from './HookManager'
+export { HookManager, type HookManagerConfig } from './HookManager'
 // Helpers
 export * from './helpers'
 // HTTP / Security utilities
@@ -128,9 +130,14 @@ export {
   type RouteOptions,
   Router,
 } from './Router'
+// Resilience Utilities
+export {
+  CircuitBreaker,
+  type CircuitBreakerOptions,
+  type CircuitState,
+} from './resilience/CircuitBreaker'
 // Service Provider
 export { ServiceProvider } from './ServiceProvider'
-
 // Security
 export { Encrypter, type EncrypterOptions } from './security/Encrypter'
 
