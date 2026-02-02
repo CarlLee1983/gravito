@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { cancel, isCancel, text } from '@clack/prompts'
 import { Scaffold } from '@gravito/scaffold'
 import pc from 'picocolors'
 
@@ -28,86 +29,103 @@ import pc from 'picocolors'
  * @public
  */
 export class MakeCommand {
-  private stubsPath: string
+  private searchPaths: string[] = []
 
   /**
-   * Create a new MakeCommand instance.
+   * Initializes a new MakeCommand instance.
    *
-   * Resolves the path to the stubs directory.
+   * Sets up an ordered list of search paths for stub templates. This implementation
+   * enables a "layered" override mechanism where users can provide custom templates
+   * in their project root, falling back to CLI defaults if a specific stub is missing.
+   *
+   * @param customStubsPath - Optional explicit path to search for stubs first.
+   *
+   * @example
+   * ```typescript
+   * const make = new MakeCommand('./overrides/stubs');
+   * ```
    */
-  constructor(stubsPath?: string) {
-    if (stubsPath) {
-      this.stubsPath = stubsPath
-      return
-    }
-
-    // === Stub 查找優先級 ===
-    // 1. 專案根目錄的 stubs/ (最高優先級 - 使用者自定義)
-    // 2. 專案根目錄的 .gravito/stubs/ (隱藏目錄)
-    // 3. CLI 內建 stubs (開發模式)
-    // 4. CLI 內建 stubs (生產模式)
-    // 5. Monorepo 模式
+  constructor(customStubsPath?: string) {
     const cwd = process.cwd()
+
+    // Default built-in stub locations
     const devPath = path.resolve(__dirname, '../../stubs')
     const prodPath = path.resolve(__dirname, '../stubs')
 
-    const candidates = [
-      // 使用者自定義 stubs (最高優先級)
+    if (customStubsPath) {
+      this.searchPaths.push(customStubsPath)
+    }
+
+    // Define stub resolution priority (ordered from highest to lowest)
+    this.searchPaths.push(
+      // 1. Project root stubs (Highest priority - User overrides)
       path.resolve(cwd, 'stubs'),
+      // 2. Hidden project stubs
       path.resolve(cwd, '.gravito/stubs'),
-
-      // CLI 預設 stubs
+      // 3. CLI built-in stubs (Production mode)
       prodPath,
+      // 4. CLI built-in stubs (Development mode)
       devPath,
-
-      // Monorepo 模式
+      // 5. Monorepo-relative paths
       path.resolve(cwd, 'packages/cli/stubs'),
-      path.resolve(cwd, '../packages/cli/stubs'),
-    ]
-
-    // 尋找第一個包含有效 stub 檔案的目錄
-    const validPath = candidates.find((candidate) =>
-      existsSync(path.join(candidate, 'controller.stub'))
+      path.resolve(cwd, '../packages/cli/stubs')
     )
 
-    if (validPath) {
-      this.stubsPath = validPath
-
-      // 如果使用的是使用者自定義 stubs，顯示提示
-      if (
-        validPath === path.resolve(cwd, 'stubs') ||
-        validPath === path.resolve(cwd, '.gravito/stubs')
-      ) {
-        console.log(pc.gray(`📁 使用自定義 stubs: ${validPath}`))
-      }
-    } else {
-      // Fallback
-      this.stubsPath = devPath
-    }
+    // Prune non-existent paths to optimize file system lookups
+    this.searchPaths = this.searchPaths.filter((p) => existsSync(p))
   }
 
   /**
-   * Run the generator.
+   * Orchestrates the creation of application artifacts from stubs.
    *
-   * @param type - The type of artifact to create (e.g., 'controller', 'model').
-   * @param name - The user-provided name for the artifact.
-   * @param options - Additional generation options.
-   * @returns A promise that resolves when the file is created.
+   * @param type - The category of the artifact (e.g., 'controller', 'model', 'middleware').
+   * @param name - The identifier for the new artifact. Suffixes are automatically managed.
+   * @param options - Configuration flags for the generator.
+   * @returns A promise resolving when the artifact is successfully written to disk.
+   * @throws {Error} If the template is missing OR the target file already occupies the path.
    */
-  async run(type: string, name: string, options: any = {}) {
-    // 特殊處理 satellite：使用 Scaffold 引擎而不是簡單的 stub
+  async run(type: string, name: string | undefined, options: any = {}) {
+    let resolvedName = name
+
+    // 1. Handle missing name with interactive prompt
+    if (!resolvedName || resolvedName === '') {
+      const promptedName = await text({
+        message: `Enter the name of your ${type}:`,
+        placeholder: `My${this.toPascalCase(type)}`,
+        validate: (value) => {
+          if (value.length === 0) {
+            return 'Name is required!'
+          }
+          if (/[^a-zA-Z0-9_-]/.test(value)) {
+            return 'Name contains invalid characters'
+          }
+          return
+        },
+      })
+
+      if (isCancel(promptedName)) {
+        cancel('Operation cancelled.')
+        process.exit(0)
+      }
+
+      resolvedName = promptedName as string
+    }
+
+    // Special handling for satellites: uses the full Scaffold engine instead of simple stubs
     if (type === 'satellite') {
-      return this.runSatellite(name, options)
+      await this.runSatellite(resolvedName, options)
+      return resolvedName
     }
 
     try {
       let stubName = `${type}.stub`
 
-      // Handle resource controller
+      // Logic for specialized controller variants
       if (type === 'controller' && options.resource) {
         stubName = 'controller.resource.stub'
       }
 
+      // Logic for GraphQL-ready models
       if (type === 'model' && options.graphql) {
         stubName = 'model.graphql.stub'
       }
@@ -115,10 +133,10 @@ export class MakeCommand {
       const stubContent = await this.readStub(stubName)
 
       if (!stubContent) {
-        throw new Error(`Stub not found: ${stubName}`)
+        throw new Error(`Stub template [${stubName}] could not be located in any search path.`)
       }
 
-      const normalizedName = this.normalizeName(type, name)
+      const normalizedName = this.normalizeName(type, resolvedName)
       const content = this.replaceVariables(
         stubContent,
         normalizedName.pascal,
@@ -132,34 +150,53 @@ export class MakeCommand {
 
       console.log(pc.green(`✅ Created ${type}: ${this.getRelativePath(targetPath)}`))
 
-      // Extra logic for models: handle migration
+      // Post-generation hooks (e.g., auto-generating migrations for models)
       if (type === 'model' && options.migration) {
-        // We'll call the make:migration logic here
-        // For simplicity in this demo, we assume createMigration is a standalone logic
-        // But in a real app, we would import the database helper.
-        console.log(pc.cyan(`📦 Generating migration for ${normalizedName.pascal}...`))
-        // (Implementation details would follow to trigger migration stub)
+        console.log(
+          pc.cyan(`📦 Scaffolding linked database migration for ${normalizedName.pascal}...`)
+        )
+        // Actual migration generation would be triggered here via database service
       }
+
+      return resolvedName
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)
-      console.error(pc.red(`❌ Failed to create ${type}: ${message}`))
+      console.error(pc.red(`❌ Generation failure for ${type}: ${message}`))
       process.exit(1)
     }
   }
 
   /**
-   * Read a stub file.
+   * Reads a stub file content from the prioritized search paths.
    *
-   * @param filename - The name of the stub file.
-   * @returns The content of the stub file, or null if not found.
+   * Iterates through all registered search paths and returns the content of the first
+   * match found. Notifies the user with a visual indicator when a custom override
+   * is actively being used.
+   *
+   * @param filename - The name of the stub file (e.g., 'controller.stub').
+   * @returns The raw string content of the stub, or null if not found in any path.
    */
   private async readStub(filename: string): Promise<string | null> {
-    try {
-      const filePath = path.join(this.stubsPath, filename)
-      return await fs.readFile(filePath, 'utf-8')
-    } catch (_e) {
-      return null
+    for (const searchPath of this.searchPaths) {
+      try {
+        const filePath = path.join(searchPath, filename)
+        if (existsSync(filePath)) {
+          // Provide visual feedback when using user-defined overrides (first two paths)
+          const cwd = process.cwd()
+          if (
+            searchPath === path.resolve(cwd, 'stubs') ||
+            searchPath === path.resolve(cwd, '.gravito/stubs')
+          ) {
+            console.log(pc.gray(`📁 Using custom stub override: ${this.getRelativePath(filePath)}`))
+          }
+
+          return await fs.readFile(filePath, 'utf-8')
+        }
+      } catch (_e) {
+        // Silently continue to next candidate path
+      }
     }
+    return null
   }
 
   private replaceVariables(
@@ -175,11 +212,15 @@ export class MakeCommand {
   }
 
   /**
-   * Run the generator for Satellite (plugin) artifacts.
+   * Handles the complex scaffolding of a Gravito Satellite (plugin/extension).
    *
-   * @param name - The name of the satellite.
-   * @param options - Generation options (e.g., internal).
-   * @private
+   * Unlike simple stubs, satellites require a full project structure with its
+   * own configuration, dependencies, and git lifecycle. This uses the core
+   * Scaffold engine to perform the generation.
+   *
+   * @param name - The name of the satellite project.
+   * @param options - Generation settings including visibility and workspace linking.
+   * @internal
    */
   private async runSatellite(name: string, options: any) {
     const isInternal = options.internal || false
@@ -196,17 +237,19 @@ export class MakeCommand {
       targetDir,
       architecture: 'satellite',
       isInternal,
-      installDeps: false, // 讓使用者手動安裝
-      initGit: !isInternal, // 內部插件不需要獨立 git
+      installDeps: false, // Encourages user to run install manually for better control
+      initGit: !isInternal, // Internal satellites share the parent repository's git
     })
 
     if (result.success) {
       console.log(pc.green(`✅ Satellite created at: ${result.targetDir}`))
       if (isInternal) {
-        console.log(pc.yellow(`ℹ️ Don't forget to run 'bun install' at root to link the workspace.`))
+        console.log(
+          pc.yellow(`ℹ️ Reminder: Run 'bun install' at workspace root to link the new satellite.`)
+        )
       }
     } else {
-      console.error(pc.red(`❌ Failed to create satellite: ${result.errors?.join(', ')}`))
+      console.error(pc.red(`❌ Satellite generation failed: ${result.errors?.join(', ')}`))
     }
   }
 
@@ -240,12 +283,14 @@ export class MakeCommand {
   }
 
   /**
-   * Normalize the input name.
+   * Transforms the input identifier into standardized PascalCase and camelCase variations.
    *
-   * @param type - The artifact type.
-   * @param rawName - The raw input name.
-   * @returns An object containing PascalCase and camelCase versions of the name.
-   * @private
+   * Automatically strips redundant suffixes (e.g., 'Controller', 'Seeder') to ensure
+   * consistent naming regardless of user input style.
+   *
+   * @param type - The category of artifact determining which suffixes to prune.
+   * @param rawName - The raw string identifier provided by the user.
+   * @returns A NormalizedName object with transformed identifiers.
    */
   private normalizeName(type: string, rawName: string): NormalizedName {
     const pascalRaw = this.toPascalCase(rawName)
@@ -288,21 +333,27 @@ export class MakeCommand {
   }
 
   /**
-   * Write content to a file, ensuring it does not already exist.
+   * Atomically writes content to the target path, preventing accidental overwrites.
    *
-   * @param filepath - The path to the file.
-   * @param content - The content to write.
-   * @throws {Error} If the file already exists.
-   * @private
+   * Checks for path existence before writing. This safety check prevents the CLI
+   * from destroying existing application logic if the user accidentally reusable
+   * an existing name.
+   *
+   * @param filepath - Absolute path to the file to be created.
+   * @param content - Template-processed string content.
+   * @throws {Error} If a file already exists at the specified path.
    */
   private async writeFile(filepath: string, content: string) {
-    // Check if exists
+    // Safety check: verify path vacancy
     try {
       await fs.access(filepath)
-      // If no error, file exists
-      throw new Error(`File already exists: ${filepath}`)
+      // If access succeeds, the file already exists
+      throw new Error(
+        `Integrity Error: A file already exists at ${filepath}. Action aborted to prevent data loss.`
+      )
     } catch (err: unknown) {
       const error = err as NodeJS.ErrnoException
+      // ENOENT is expected; any other error code indicates a different system fault
       if (error.code !== 'ENOENT') {
         throw err
       }

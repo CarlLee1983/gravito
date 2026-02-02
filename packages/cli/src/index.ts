@@ -11,6 +11,7 @@
  * - maintenance: System health and diagnostic tools
  */
 
+import { existsSync } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { cancel, intro, isCancel, note, outro, select, spinner, text } from '@clack/prompts'
@@ -665,7 +666,10 @@ cli
       if (pkg.dependencies) {
         for (const dep of Object.keys(pkg.dependencies)) {
           if (pkg.dependencies[dep] === 'workspace:*') {
-            pkg.dependencies[dep] = versionRegistry.get(dep)
+            const version = versionRegistry.get(dep)
+            // Force lock: remove ^ or ~ prefix for @gravito/* packages
+            pkg.dependencies[dep] =
+              version.startsWith('^') || version.startsWith('~') ? version.slice(1) : version
           }
         }
       }
@@ -673,7 +677,10 @@ cli
       if (pkg.devDependencies) {
         for (const dep of Object.keys(pkg.devDependencies)) {
           if (pkg.devDependencies[dep] === 'workspace:*') {
-            pkg.devDependencies[dep] = versionRegistry.get(dep)
+            const version = versionRegistry.get(dep)
+            // Force lock: remove ^ or ~ prefix for @gravito/* packages
+            pkg.devDependencies[dep] =
+              version.startsWith('^') || version.startsWith('~') ? version.slice(1) : version
           }
         }
       }
@@ -825,50 +832,50 @@ cli.command('stub:init', 'Initialize custom stub templates').action(() => stubsI
 const make = new MakeCommand()
 
 cli
-  .command('make:controller <name>', 'Create a new controller')
+  .command('make:controller [name]', 'Create a new controller')
   .option('--resource', 'Generate a resource controller')
   .action((name, options) => make.run('controller', name, options))
 
 cli
-  .command('make:model <name>', 'Create a new model')
+  .command('make:model [name]', 'Create a new model')
   .option('-m, --migration', 'Create a new migration file for the model')
   .option('-c, --controller', 'Create a new controller for the model')
   .option('-r, --request', 'Create a new form request for the model')
   .option('-g, --graphql', 'Create a model configured for GraphQL automation')
   .option('-a, --all', 'Create a migration, controller, and form request for the model')
   .action(async (name, options) => {
-    // 1. Make the model
-    await make.run('model', name, options)
+    // 1. Make the model (capturing the actual name if prompted)
+    const actualName = (await make.run('model', name, options)) as string
 
     // 2. Handle linked generation
     if (options.all || options.migration) {
-      await makeMigration(`create_${name.toLowerCase()}s_table`)
+      await makeMigration(`create_${actualName.toLowerCase()}s_table`)
     }
 
     if (options.all || options.controller) {
-      await make.run('controller', name, { resource: true })
+      await make.run('controller', actualName, { resource: true })
     }
 
     if (options.all || options.request) {
-      await make.run('request', `${name}Store`)
+      await make.run('request', `${actualName}Store`)
     }
   })
 
 cli
-  .command('make:middleware <name>', 'Create a new middleware')
+  .command('make:middleware [name]', 'Create a new middleware')
   .action((name) => make.run('middleware', name))
 
 cli
-  .command('make:request <name>', 'Create a new form request class')
+  .command('make:request [name]', 'Create a new form request class')
   .action((name) => make.run('request', name))
 
 cli
-  .command('make:command <name>', 'Create a new custom CLI command')
+  .command('make:command [name]', 'Create a new custom CLI command')
   .option('--command <command>', 'The signature of the command (e.g. app:greet)')
   .action((name, options) => make.run('command', name, options))
 
 cli
-  .command('make:satellite <name>', 'Create a new Gravito Satellite (Plugin)')
+  .command('make:satellite [name]', 'Create a new Gravito Satellite (Plugin)')
   .option('--internal', 'Create as an internal official satellite in satellites/ directory')
   .action((name, options) => make.run('satellite', name, options))
 
@@ -903,11 +910,11 @@ cli
 import { dbDeploy, dbSeed, makeMigration, migrate, migrateStatus } from './commands/database'
 
 cli
-  .command('make:migration <name>', 'Create a new migration file')
+  .command('make:migration [name]', 'Create a new migration file')
   .action((name) => makeMigration(name))
 
 cli
-  .command('make:seeder <name>', 'Create a new seeder file')
+  .command('make:seeder [name]', 'Create a new seeder file')
   .action((name) => make.run('seeder', name))
 
 cli
@@ -1010,9 +1017,85 @@ cli.command('dev', 'Start development server with health checks').action(async (
 
 cli.help()
 
-cli.version('1.0.0-beta.6')
+cli.version('3.2.0')
 
-// 版本檢查 + CLI 啟動
+/**
+ * Dynamically loads and registers third-party plugins.
+ *
+ * Scans the project's package.json for explicit plugin definitions in the `gravito.plugins`
+ * field or automatically detects dependencies starting with `gravito-plugin-`.
+ * Each plugin must export a `register` function to hook into the CLI instance.
+ *
+ * @param cli - The CAC CLI instance to register commands to.
+ * @throws {Error} Silently fails on parsing errors or missing packages to ensure core stability.
+ *
+ * @example
+ * ```typescript
+ * // In package.json
+ * { "gravito": { "plugins": ["./my-local-plugin.ts"] } }
+ * ```
+ */
+async function loadPlugins(cli: any) {
+  try {
+    const cwd = process.cwd()
+    const pkgPath = path.join(cwd, 'package.json')
+
+    if (!existsSync(pkgPath)) {
+      return
+    }
+
+    const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'))
+    const plugins: string[] = []
+
+    // 1. Load from explicit gravito.plugins configuration
+    if (pkg.gravito?.plugins && Array.isArray(pkg.gravito.plugins)) {
+      plugins.push(...pkg.gravito.plugins)
+    }
+
+    // 2. Auto-detect dependencies starting with gravito-plugin-
+    const deps = { ...pkg.dependencies, ...pkg.devDependencies }
+    for (const dep of Object.keys(deps)) {
+      if (dep.startsWith('gravito-plugin-') && !plugins.includes(dep)) {
+        plugins.push(dep)
+      }
+    }
+
+    if (plugins.length === 0) {
+      return
+    }
+
+    for (const pluginName of plugins) {
+      try {
+        // Attempt to load from project node_modules or local path
+        const pluginPath = pluginName.startsWith('.') ? path.resolve(cwd, pluginName) : pluginName
+
+        const plugin = await import(pluginPath)
+
+        // Support both ES Module default export and named export
+        const registerFn = plugin.default?.register || plugin.register
+
+        if (typeof registerFn === 'function') {
+          await registerFn(cli)
+        } else {
+          console.warn(
+            pc.yellow(`⚠️  Plugin '${pluginName}' does not export a valid register function`)
+          )
+        }
+      } catch (err) {
+        console.warn(pc.yellow(`⚠️  Failed to load plugin '${pluginName}':`), err)
+      }
+    }
+  } catch (_err) {
+    // Silent fail to ensure CLI remains usable
+  }
+}
+
+/**
+ * Entry point for CLI execution.
+ *
+ * Performs non-blocking version checks, loads dynamic plugins, and parses
+ * command line arguments to trigger actions.
+ */
 async function main() {
   // 版本檢查 (非阻塞)
   try {
@@ -1022,6 +1105,9 @@ async function main() {
   } catch {
     // 靜默失敗，不影響 CLI 使用
   }
+
+  // 加載外掛
+  await loadPlugins(cli)
 
   // 啟動 CLI
   try {

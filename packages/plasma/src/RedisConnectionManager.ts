@@ -5,10 +5,16 @@
 
 import type { PipelineResult, RedisConfig } from './types'
 
+/**
+ * Represents the dynamically loaded ioredis module.
+ */
 export interface IORedisModule {
   default: new (options: IORedisOptions) => IORedisClient
 }
 
+/**
+ * Configuration options for the ioredis client.
+ */
 export interface IORedisOptions {
   host?: string
   port?: number
@@ -23,6 +29,9 @@ export interface IORedisOptions {
   tls?: Record<string, unknown>
 }
 
+/**
+ * Core interface for the ioredis client instance.
+ */
 // biome-ignore lint/suspicious/noExplicitAny: ioredis has complex method signatures
 export interface IORedisClient extends Record<string, any> {
   connect(): Promise<void>
@@ -33,15 +42,24 @@ export interface IORedisClient extends Record<string, any> {
   on(event: string, callback: (...args: unknown[]) => void): void
 }
 
+/**
+ * Extended ioredis client supporting arbitrary command calls.
+ */
 export interface IORedisClientWithCall extends IORedisClient {
   call(command: string, ...args: unknown[]): Promise<unknown>
 }
 
+/**
+ * Represents a sequence of Redis commands for pipeline execution.
+ */
 // biome-ignore lint/suspicious/noExplicitAny: ioredis pipeline has dynamic methods
 export interface IORedisChain extends Record<string, any> {
   exec(): Promise<PipelineResult>
 }
 
+/**
+ * Manages Redis client connections, including automatic retries and subscriber management.
+ */
 export class RedisConnectionManager {
   private client: IORedisClient | null = null
   private subscriber: IORedisClient | null = null

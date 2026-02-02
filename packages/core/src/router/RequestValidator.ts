@@ -14,6 +14,11 @@ const formRequestCache = new WeakMap<Function, boolean>()
  */
 const formRequestInstances = new WeakMap<FormRequestClass, FormRequestLike>()
 
+/**
+ * Handles validation of incoming requests using FormRequest classes.
+ * Provides mechanisms to detect and convert FormRequest classes into Gravito middleware.
+ */
+// biome-ignore lint/complexity/noStaticOnlyClass: utility class designed for static access
 export class RequestValidator {
   /**
    * Check if a value is a FormRequest class.

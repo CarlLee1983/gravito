@@ -23,6 +23,8 @@ async function getMigrationDriver(): Promise<MigrationDriver> {
   }
 }
 
+import { cancel, isCancel, text } from '@clack/prompts'
+
 /**
  * Generate a new database migration file.
  *
@@ -30,9 +32,31 @@ async function getMigrationDriver(): Promise<MigrationDriver> {
  * @returns A promise that resolves when the migration is generated.
  * @public
  */
-export async function makeMigration(name: string) {
+export async function makeMigration(name: string | undefined) {
+  let resolvedName = name
+
+  if (!resolvedName || resolvedName === '') {
+    const promptedName = await text({
+      message: 'Enter the name of your migration:',
+      placeholder: 'create_users_table',
+      validate: (value) => {
+        if (value.length === 0) {
+          return 'Migration name is required!'
+        }
+        return
+      },
+    })
+
+    if (isCancel(promptedName)) {
+      cancel('Operation cancelled.')
+      process.exit(0)
+    }
+
+    resolvedName = promptedName as string
+  }
+
   const driver = await getMigrationDriver()
-  const result = await driver.generate(name)
+  const result = await driver.generate(resolvedName)
 
   if (result.success) {
     console.log(pc.green(`✅ ${result.message}`))
