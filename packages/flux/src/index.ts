@@ -85,9 +85,6 @@ export type {
   FluxTraceSink,
   // Helper
   FluxWaitResult,
-  // Lock
-  Lock,
-  LockProvider,
   // Step types
   StepDefinition,
   StepDescriptor,
