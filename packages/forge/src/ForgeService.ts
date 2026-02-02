@@ -111,6 +111,17 @@ export class ForgeService {
   }
 
   /**
+   * Get metadata from a file.
+   *
+   * @param input - The file input to probe.
+   * @returns A promise that resolves to the file metadata.
+   */
+  async getMetadata(input: FileInput): Promise<Record<string, unknown>> {
+    const processor = await this.getProcessor(input)
+    return await processor.getMetadata(input)
+  }
+
+  /**
    * Process a file asynchronously.
    *
    * @param input - The file input to process.

@@ -52,6 +52,32 @@ export class VideoProcessor extends BaseProcessor {
   }
 
   /**
+   * Get metadata from a video file
+   *
+   * @param input - File input
+   * @returns Technical metadata
+   */
+  async getMetadata(input: FileInput): Promise<Record<string, unknown>> {
+    // Ensure temp directory exists
+    await mkdir(this.tempDir, { recursive: true })
+
+    const inputPath = await this.getInputPath(input)
+    const isTempInput = typeof input.source !== 'string'
+
+    try {
+      return await this.adapter.probe(inputPath)
+    } finally {
+      if (isTempInput) {
+        try {
+          await this.runtime.deleteFile(inputPath)
+        } catch {
+          // Ignore
+        }
+      }
+    }
+  }
+
+  /**
    * Process a video file
    *
    * @param input - File input
@@ -65,36 +91,48 @@ export class VideoProcessor extends BaseProcessor {
     // Ensure temp directory exists
     await mkdir(this.tempDir, { recursive: true })
 
-    // Get input file path
+    // Get input file path. This might create a temporary file if input.source is a Blob/File.
     const inputPath = await this.getInputPath(input)
+    const isTempInput = typeof input.source !== 'string'
 
     // Generate output path
     const outputFilename = `${randomUUID()}.${options.format || 'mp4'}`
     const outputPath = join(this.tempDir, outputFilename)
 
-    // Build FFmpeg arguments
-    const args = this.buildFFmpegArgs(inputPath, outputPath, options)
+    try {
+      // Build FFmpeg arguments
+      const args = this.buildFFmpegArgs(inputPath, outputPath, options)
 
-    // Execute FFmpeg
-    await this.adapter.execute(args, {
-      output: outputPath,
-      onProgress: options.onProgress,
-    })
+      // Execute FFmpeg
+      await this.adapter.execute(args, {
+        output: outputPath,
+        onProgress: options.onProgress,
+      })
 
-    // Get output file info
-    const stats = await this.runtime.stat(outputPath)
+      // Get output file info
+      const stats = await this.runtime.stat(outputPath)
 
-    return {
-      url: outputPath, // Will be replaced by storage URL after upload
-      path: outputPath,
-      size: stats.size,
-      mimeType: this.getOutputMimeType(options.format || 'mp4'),
-      metadata: {
-        format: options.format || 'mp4',
-        codec: options.codec,
-        width: options.width,
-        height: options.height,
-      },
+      return {
+        url: outputPath, // Will be replaced by storage URL after upload
+        path: outputPath,
+        size: stats.size,
+        mimeType: this.getOutputMimeType(options.format || 'mp4'),
+        metadata: {
+          format: options.format || 'mp4',
+          codec: options.codec,
+          width: options.width,
+          height: options.height,
+        },
+      }
+    } finally {
+      // Clean up temporary input file if it was created
+      if (isTempInput) {
+        try {
+          await this.runtime.deleteFile(inputPath)
+        } catch {
+          // Ignore cleanup errors
+        }
+      }
     }
   }
 

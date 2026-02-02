@@ -21,6 +21,14 @@ export abstract class BaseProcessor implements Processor {
   abstract process(input: FileInput, options: ProcessOptions): Promise<FileOutput>
 
   /**
+   * Get metadata from a file
+   *
+   * @param input - File input
+   * @returns Technical metadata
+   */
+  abstract getMetadata(input: FileInput): Promise<Record<string, unknown>>
+
+  /**
    * Check if processor supports the given MIME type
    *
    * @param mimeType - MIME type to check
