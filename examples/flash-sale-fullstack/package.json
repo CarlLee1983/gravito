@@ -1,0 +1,27 @@
+{
+  "name": "@gravito-examples/flash-sale-fullstack",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run src/app.ts",
+    "test": "bun test",
+    "test:load": "k6 run load-tests/k6-test.js",
+    "build": "bun run build.ts",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
+  },
+  "dependencies": {
+    "@gravito/core": "workspace:*",
+    "@gravito/photon": "workspace:*",
+    "@gravito/atlas": "workspace:*",
+    "@gravito/signal": "workspace:*",
+    "@gravito/satellite-flash-sale": "workspace:*",
+    "@gravito/satellite-inventory-lock": "workspace:*",
+    "redis": "^4.6.10"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.8",
+    "bun-types": "latest",
+    "typescript": "^5.9.3"
+  }
+}
