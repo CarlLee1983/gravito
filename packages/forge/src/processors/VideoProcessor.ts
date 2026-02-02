@@ -4,7 +4,13 @@ import { join } from 'node:path'
 import { getRuntimeAdapter } from '@gravito/core'
 import { FFmpegAdapter } from '../adapters/FFmpegAdapter'
 import { FFmpegWasmAdapter } from '../adapters/FFmpegWasmAdapter'
-import type { FileInput, FileOutput, ProcessingProgress, ProcessOptions } from '../types'
+import type {
+  FileInput,
+  FileOutput,
+  ProcessingProgress,
+  ProcessOptions,
+  WatermarkOptions,
+} from '../types'
 import { BaseProcessor } from './BaseProcessor'
 
 /**
@@ -68,6 +74,32 @@ export class VideoProcessor extends BaseProcessor {
   }
 
   /**
+   * Get metadata from a video file
+   *
+   * @param input - File input
+   * @returns Technical metadata
+   */
+  async getMetadata(input: FileInput): Promise<Record<string, unknown>> {
+    // Ensure temp directory exists
+    await mkdir(this.tempDir, { recursive: true })
+
+    const inputPath = await this.getInputPath(input)
+    const isTempInput = typeof input.source !== 'string'
+
+    try {
+      return await this.adapter.probe(inputPath)
+    } finally {
+      if (isTempInput) {
+        try {
+          await this.runtime.deleteFile(inputPath)
+        } catch {
+          // Ignore
+        }
+      }
+    }
+  }
+
+  /**
    * Process a video file
    *
    * @param input - File input
@@ -82,37 +114,68 @@ export class VideoProcessor extends BaseProcessor {
     // Ensure temp directory exists
     await mkdir(this.tempDir, { recursive: true })
 
-    // Get input file path
+    // Get input file path. This might create a temporary file if input.source is a Blob/File.
     const inputPath = await this.getInputPath(input)
+    const isTempInput = typeof input.source !== 'string'
 
     // Generate output path
-    const outputFilename = `${randomUUID()}.${options.format || 'mp4'}`
+    const extension = options.hls ? 'm3u8' : options.format || 'mp4'
+    const outputFilename = `${randomUUID()}.${extension}`
     const outputPath = join(this.tempDir, outputFilename)
 
-    // Build FFmpeg arguments
-    const args = this.buildFFmpegArgs(inputPath, outputPath, options)
+    let watermarkPath: string | undefined
+    let isTempWatermark = false
 
-    // Execute FFmpeg
-    await this.adapter.execute(args, {
-      input: inputPath,
-      output: outputPath,
-      onProgress: options.onProgress,
-    })
+    try {
+      // Handle watermark if present
+      if (options.watermark) {
+        watermarkPath = await this.getInputPath({ source: options.watermark.source })
+        isTempWatermark = typeof options.watermark.source !== 'string'
+      }
 
-    // Get output file info
-    const stats = await this.runtime.stat(outputPath)
+      // Build FFmpeg arguments
+      const args = this.buildFFmpegArgs(inputPath, outputPath, options, watermarkPath)
 
-    return {
-      url: outputPath, // Will be replaced by storage URL after upload
-      path: outputPath,
-      size: stats.size,
-      mimeType: this.getOutputMimeType(options.format || 'mp4'),
-      metadata: {
-        format: options.format || 'mp4',
-        codec: options.codec,
-        width: options.width,
-        height: options.height,
-      },
+      // Execute FFmpeg
+      await this.adapter.execute(args, {
+        input: inputPath,
+        output: outputPath,
+        onProgress: options.onProgress,
+      })
+
+      // Get output file info
+      const stats = await this.runtime.stat(outputPath)
+
+      return {
+        url: outputPath, // Will be replaced by storage URL after upload
+        path: outputPath,
+        size: stats.size,
+        mimeType: this.getOutputMimeType(options.format || 'mp4'),
+        metadata: {
+          format: options.format || 'mp4',
+          codec: options.codec,
+          width: options.width,
+          height: options.height,
+        },
+      }
+    } finally {
+      // Clean up temporary input file if it was created
+      if (isTempInput) {
+        try {
+          await this.runtime.deleteFile(inputPath)
+        } catch {
+          // Ignore cleanup errors
+        }
+      }
+
+      // Clean up temporary watermark file if it was created
+      if (isTempWatermark && watermarkPath) {
+        try {
+          await this.runtime.deleteFile(watermarkPath)
+        } catch {
+          // Ignore
+        }
+      }
     }
   }
 
@@ -140,18 +203,27 @@ export class VideoProcessor extends BaseProcessor {
    * @param inputPath - Input file path
    * @param outputPath - Output file path
    * @param options - Processing options
+   * @param watermarkPath - Optional watermark file path
    * @returns FFmpeg arguments
    */
   private buildFFmpegArgs(
     inputPath: string,
     outputPath: string,
-    options: ProcessOptions
+    options: ProcessOptions,
+    watermarkPath?: string
   ): string[] {
     const args: string[] = ['-i', inputPath]
+
+    // Add watermark input if present
+    if (watermarkPath) {
+      args.push('-i', watermarkPath)
+    }
 
     // Video codec
     if (options.codec) {
       args.push('-c:v', options.codec)
+    } else if (options.gpu) {
+      args.push('-c:v', 'h264_nvenc')
     } else {
       args.push('-c:v', 'libx264') // Default H.264
     }
@@ -191,6 +263,30 @@ export class VideoProcessor extends BaseProcessor {
       args.push('-crf', String(options.quality))
     }
 
+    // Watermark (overlay filter)
+    if (watermarkPath && options.watermark) {
+      const watermarkFilter = this.getWatermarkFilter(options.watermark as WatermarkOptions)
+      if (watermarkFilter) {
+        // filter_complex is used when multiple inputs are involved
+        args.push('-filter_complex', watermarkFilter)
+      }
+    }
+
+    // HLS
+    if (options.hls) {
+      const hlsOptions = typeof options.hls === 'object' ? options.hls : {}
+      args.push(
+        '-f',
+        'hls',
+        '-hls_time',
+        String(hlsOptions.segmentTime || 10),
+        '-hls_list_size',
+        String(hlsOptions.playlistSize || 0),
+        '-hls_segment_filename',
+        join(this.tempDir, `${randomUUID()}_%03d.ts`)
+      )
+    }
+
     // Overwrite output
     args.push('-y')
 
@@ -213,6 +309,53 @@ export class VideoProcessor extends BaseProcessor {
       270: 'transpose=2', // 90° counter-clockwise
     }
     return rotations[angle] || null
+  }
+
+  /**
+   * Get watermark overlay filter
+   *
+   * @param options - Watermark options
+   * @returns FFmpeg filter string
+   */
+  private getWatermarkFilter(options: WatermarkOptions): string {
+    const { position = 'bottom-right', x = 10, y = 10, opacity, scale } = options
+
+    let posFilter = ''
+    switch (position) {
+      case 'top-left':
+        posFilter = `x=${x}:y=${y}`
+        break
+      case 'top-right':
+        posFilter = `x=main_w-overlay_w-${x}:y=${y}`
+        break
+      case 'bottom-left':
+        posFilter = `x=${x}:y=main_h-overlay_h-${y}`
+        break
+      case 'bottom-right':
+        posFilter = `x=main_w-overlay_w-${x}:y=main_h-overlay_h-${y}`
+        break
+      case 'center':
+        posFilter = `x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2`
+        break
+    }
+
+    const filter = `overlay=${posFilter}`
+
+    // Handle opacity/scale if needed
+    if (opacity !== undefined || scale !== undefined) {
+      let wmPrep = '[1:v]'
+      if (scale !== undefined) {
+        wmPrep += `scale=iw*${scale}:-1,`
+      }
+      if (opacity !== undefined) {
+        wmPrep += `format=rgba,colorchannelmixer=aa=${opacity},`
+      }
+      // Remove trailing comma
+      wmPrep = wmPrep.replace(/,$/, '')
+      return `${wmPrep}[wm];[0:v][wm]${filter}`
+    }
+
+    return `[0:v][1:v]${filter}`
   }
 
   /**

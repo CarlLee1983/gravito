@@ -77,7 +77,7 @@ export class FFmpegWasmAdapter implements ProcessorAdapter {
     const ffmpeg = await this.load()
 
     if (onProgress) {
-      ffmpeg.on('progress', ({ progress, time }) => {
+      ffmpeg.on('progress', ({ progress, time }: { progress: number; time: number }) => {
         onProgress({
           progress: Math.round(progress * 100),
           message: `Processing: ${Math.round(time / 1000000)}s`,
@@ -115,5 +115,61 @@ export class FFmpegWasmAdapter implements ProcessorAdapter {
     await ffmpeg.deleteFile(outputFileName)
 
     return output
+  }
+
+  /**
+   * Probe file for metadata
+   *
+   * @param inputPath - Path to the file
+   * @returns Metadata object
+   */
+  async probe(inputPath: string): Promise<Record<string, unknown>> {
+    const ffmpeg = await this.load()
+    const inputFileName = 'probe_' + inputPath.split('/').pop()
+
+    await ffmpeg.writeFile(inputFileName, await fetchFile(inputPath))
+
+    // Capture logs to parse metadata
+    const logs: string[] = []
+    const logHandler = ({ message }: { message: string }) => {
+      logs.push(message)
+    }
+    ffmpeg.on('log', logHandler)
+
+    try {
+      await ffmpeg.exec(['-i', inputFileName])
+    } catch (_error) {
+      // FFmpeg returns non-zero when just showing info
+    } finally {
+      ffmpeg.off('log', logHandler)
+      await ffmpeg.deleteFile(inputFileName)
+    }
+
+    const stderrBuffer = logs.join('\n')
+    const metadata: Record<string, unknown> = {}
+
+    // Parse duration
+    const durationMatch = stderrBuffer.match(/Duration: (\d+):(\d+):(\d+\.\d+)/)
+    if (durationMatch) {
+      metadata.duration =
+        parseInt(durationMatch[1], 10) * 3600 +
+        parseInt(durationMatch[2], 10) * 60 +
+        parseFloat(durationMatch[3])
+    }
+
+    // Parse resolution
+    const resolutionMatch = stderrBuffer.match(/, (\d{2,})x(\d{2,})/)
+    if (resolutionMatch) {
+      metadata.width = parseInt(resolutionMatch[1], 10)
+      metadata.height = parseInt(resolutionMatch[2], 10)
+    }
+
+    // Parse codec
+    const codecMatch = stderrBuffer.match(/Video: ([^, \n]+)/)
+    if (codecMatch) {
+      metadata.codec = codecMatch[1]
+    }
+
+    return metadata
   }
 }

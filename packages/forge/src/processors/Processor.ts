@@ -28,6 +28,14 @@ export interface Processor {
   supports(mimeType: string): boolean
 
   /**
+   * Get metadata from a file
+   *
+   * @param input - File input
+   * @returns Technical metadata
+   */
+  getMetadata(input: FileInput): Promise<Record<string, unknown>>
+
+  /**
    * Get processing progress (optional, for async processing)
    *
    * @param jobId - Job ID

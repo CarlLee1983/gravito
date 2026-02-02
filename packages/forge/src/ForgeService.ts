@@ -9,6 +9,7 @@ import { VideoProcessor } from './processors/VideoProcessor'
 import { ProcessingStatusManager } from './status/ProcessingStatus'
 import type { StatusStore } from './status/StatusStore'
 import type { FileInput, FileOutput, ProcessingStatus, ProcessOptions } from './types'
+import { DiskSpaceGuard } from './utils/DiskSpaceGuard'
 import { sniffMimeType } from './utils/mime'
 
 /**
@@ -56,6 +57,16 @@ export interface ForgeServiceConfig {
      */
     tempDir?: string
   }
+
+  /**
+   * Minimum available disk space in bytes (optional)
+   */
+  minAvailableSpace?: number
+
+  /**
+   * Maximum concurrent processing tasks (default: Infinity)
+   */
+  concurrency?: number
 }
 
 /**
@@ -90,6 +101,10 @@ export class ForgeService {
   private imageProcessor: ImageProcessor
   private storage?: StorageProvider
   private statusStore?: StatusStore
+  private minAvailableSpace?: number
+  private concurrency: number
+  private activeTasks = 0
+  private waitingTasks: (() => void)[] = []
   private runtime = getRuntimeAdapter()
 
   /**
@@ -102,6 +117,8 @@ export class ForgeService {
     this.imageProcessor = new ImageProcessor(config.image)
     this.storage = config.storage
     this.statusStore = config.statusStore
+    this.minAvailableSpace = config.minAvailableSpace
+    this.concurrency = config.concurrency || Infinity
   }
 
   /**
@@ -120,16 +137,53 @@ export class ForgeService {
     options: ProcessOptions & { sync?: boolean } = {}
   ): Promise<FileOutput> {
     const processor = await this.getProcessor(input)
-    const output = await processor.process(input, options)
 
-    if (this.storage && output.path) {
-      const file = await this.runtime.readFileAsBlob(output.path)
-      const storageKey = this.generateStorageKey(input.filename || 'processed')
-      await this.storage.put(storageKey, file)
-      output.url = this.storage.getUrl(storageKey)
+    // Check disk space if configured
+    if (this.minAvailableSpace) {
+      const tempDir = (processor as any).tempDir || '/tmp'
+      await DiskSpaceGuard.check(tempDir, this.minAvailableSpace)
     }
 
-    return output
+    // Wait for concurrency slot
+    if (this.activeTasks >= this.concurrency) {
+      await new Promise<void>((resolve) => {
+        this.waitingTasks.push(resolve)
+      })
+    }
+
+    this.activeTasks++
+
+    try {
+      const output = await processor.process(input, options)
+
+      // Upload to storage if configured
+      if (this.storage && output.path) {
+        const file = await this.runtime.readFileAsBlob(output.path)
+        const storageKey = this.generateStorageKey(input.filename || 'processed')
+        await this.storage.put(storageKey, file)
+        output.url = this.storage.getUrl(storageKey)
+      }
+
+      return output
+    } finally {
+      this.activeTasks--
+      // Pick next waiting task
+      const next = this.waitingTasks.shift()
+      if (next) {
+        next()
+      }
+    }
+  }
+
+  /**
+   * Get metadata from a file.
+   *
+   * @param input - The file input to probe.
+   * @returns A promise that resolves to the file metadata.
+   */
+  async getMetadata(input: FileInput): Promise<Record<string, unknown>> {
+    const processor = await this.getProcessor(input)
+    return await processor.getMetadata(input)
   }
 
   /**
@@ -143,9 +197,16 @@ export class ForgeService {
    * @returns Reference to the created job and its initial state
    * @throws {Error} If statusStore is not configured
    */
-  async processAsync(_input: FileInput, _options: ProcessOptions = {}): Promise<ProcessingJob> {
+  async processAsync(input: FileInput, options: ProcessOptions = {}): Promise<ProcessingJob> {
     if (!this.statusStore) {
       throw new Error('Status store is required for async processing')
+    }
+
+    // Check disk space if configured
+    if (this.minAvailableSpace) {
+      const processor = await this.getProcessor(input)
+      const tempDir = (processor as any).tempDir || '/tmp'
+      await DiskSpaceGuard.check(tempDir, this.minAvailableSpace)
     }
 
     const jobId = randomUUID()

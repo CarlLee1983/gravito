@@ -155,27 +155,26 @@ export class RollbackManager {
         }
 
         if (action?.type === 'abort') {
-          currentCtx = updateWorkflowContext(currentCtx, { status: 'failed' })
+          currentCtx = updateWorkflowContext(currentCtx, { status: 'compensation_failed' })
           await this.traceEmitter.emit({
             type: 'workflow:error',
             timestamp: Date.now(),
             workflowId: currentCtx.id,
             workflowName: currentCtx.name,
-            status: 'failed',
+            status: 'compensation_failed',
             error: `Compensation aborted at step "${step.name}": ${error.message}`,
           })
           return currentCtx
         }
 
         await this.recoveryManager.notifyRecoveryNeeded(currentCtx, step.name, error)
-
-        currentCtx = updateWorkflowContext(currentCtx, { status: 'failed' })
+        currentCtx = updateWorkflowContext(currentCtx, { status: 'compensation_failed' })
         await this.traceEmitter.emit({
           type: 'workflow:error',
           timestamp: Date.now(),
           workflowId: currentCtx.id,
           workflowName: currentCtx.name,
-          status: 'failed',
+          status: 'compensation_failed',
           error: `Compensation failed at step "${step.name}": ${error.message}`,
         })
         return currentCtx

@@ -29,6 +29,7 @@
 // Builder
 export { createWorkflow, WorkflowBuilder } from './builder/WorkflowBuilder'
 export { ContextManager } from './core/ContextManager'
+export { type Lock, type LockProvider, MemoryLockProvider } from './core/LockProvider'
 // Core (for advanced usage)
 export { StateMachine } from './core/StateMachine'
 export { StepExecutor } from './core/StepExecutor'
@@ -55,6 +56,7 @@ export {
 } from './errors'
 // Logger
 export { FluxConsoleLogger, FluxSilentLogger } from './logger/FluxLogger'
+export { CronTrigger } from './orbit/CronTrigger'
 // Gravito Integration
 export { OrbitFlux, type OrbitFluxOptions } from './orbit/OrbitFlux'
 // Profiler
@@ -71,6 +73,7 @@ export { PostgreSQLStorage, type PostgreSQLStorageOptions } from './storage/Post
 export { JsonFileTraceSink } from './trace/JsonFileTraceSink'
 // Types
 export type {
+  CronScheduleOptions,
   // Config
   FluxConfig,
   // Logger

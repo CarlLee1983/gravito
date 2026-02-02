@@ -53,8 +53,33 @@ export interface ProcessOptions {
   rotate?: number
   /** Specific media codec to use for encoding (e.g., 'h264', 'av1') */
   codec?: string
+  /** Video watermark options */
+  watermark?: WatermarkOptions
+  /** Use GPU acceleration (NVENC/VAAPI) if available */
+  gpu?: boolean
+  /** Generate HLS segments (m3u8) */
+  hls?: boolean | { segmentTime?: number; playlistSize?: number }
   /** Additional specialized options for specific processors */
   [key: string]: unknown
+}
+
+/**
+ * Watermark configuration for video/image processing.
+ * @public
+ */
+export interface WatermarkOptions {
+  /** The source of the watermark (file path or Blob) */
+  source: string | Blob | File
+  /** Position of the watermark: 'top-left', 'top-right', 'bottom-left', 'bottom-right', 'center' */
+  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center'
+  /** X offset from the position in pixels */
+  x?: number
+  /** Y offset from the position in pixels */
+  y?: number
+  /** Opacity of the watermark (0.0 to 1.0) */
+  opacity?: number
+  /** Scale of the watermark (e.g., 0.2 means 20% of original size) */
+  scale?: number
 }
 
 /**
