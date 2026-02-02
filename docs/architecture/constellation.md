@@ -100,20 +100,56 @@ interface ShardManifest {
 
 ## 4. 潛在風險與效能評估
 
-### 4.1 鎖定機制 (Distributed Locking)
+### 4.1 鎖定機制 (Distributed Locking) ✅ 已實作
 在 `Dynamic Mode` 下，若多個請求同時觸發生成，會導致 CPU 飆升。
-- **解決方案**：`OrbitSitemap` 內建 `SitemapLock` 介面。
+- **解決方案**：`OrbitSitemap` 內建 `SitemapLock` 介面，提供兩種實作：
+  - **`MemoryLock`**：記憶體鎖定，適用於單實例環境（開發、測試）
+  - **`RedisLock`**：Redis 分散式鎖定，適用於多實例環境（Kubernetes、生產環境）
 - **風險**：若使用 `MemoryLock` 且部署在多實例 (Kubernetes) 環境，鎖將失效。
 - **建議**：在多實例環境必須配置 `RedisLock`。
+
+**使用範例**：
+```typescript
+import { OrbitSitemap, RedisLock } from '@gravito/constellation'
+import { createClient } from 'redis'
+
+const redisClient = createClient({ url: process.env.REDIS_URL })
+await redisClient.connect()
+
+const sitemap = OrbitSitemap.dynamic({
+  baseUrl: 'https://example.com',
+  providers: [/* ... */],
+  lock: new RedisLock({
+    client: redisClient,
+    keyPrefix: 'sitemap:lock:',
+    retryCount: 3,
+    retryDelay: 100
+  })
+})
+```
 
 ### 4.2 記憶體消耗 (Large Buffer)
 雖然採用串流，但 `SitemapStream.toXML()` 目前實作是將所有字串 `join('')`。
 - **風險**：若單一分片極大 (接近 50MB)，字串串接仍可能導致記憶體壓力。
 - **優化**：未來可改寫 `SitemapStorage.write` 介面支援 `ReadableStream`，實現真正的全鏈路串流寫入。
 
-### 4.3 連結權重 (Link Equity) 稀釋
+### 4.3 連結權重 (Link Equity) 稀釋 ✅ 已實作
 頻繁的重定向處理 (`RedirectHandler`) 若未設定得當，可能產生長鏈重定向 (Chain Redirects)。
-- **限制**：Constellation 預設限制重定向深度 (預設 5 層)，超過則中斷並記錄錯誤。
+- **保護機制**：`RedirectHandler` 實作了重定向深度限制（`maxChainLength`）。
+- **預設值**：預設限制為 5 層，超過則中斷並記錄錯誤。
+- **配置範例**：
+```typescript
+const sitemap = OrbitSitemap.static({
+  baseUrl: 'https://example.com',
+  redirect: {
+    enabled: true,
+    manager: redirectManager,
+    followChains: true,
+    maxChainLength: 5  // 最多追蹤 5 層重定向
+  },
+  // ...
+})
+```
 
 ---
 
