@@ -304,6 +304,80 @@ const hookManager = new HookManager({
 // 當隊列超過 1000，會丟棄最舊的低優先級事件
 ```
 
+## 自動檢測 API
+
+### 檢測事件派發模式
+
+使用 `detectMode()` 檢測事件實際使用的派發模式：
+
+```typescript
+const mode = hookManager.detectMode('user:registered')
+// 'sync' 或 'async'
+
+if (mode === 'async') {
+  console.log('此事件使用異步派發')
+} else {
+  console.log('此事件使用同步派發')
+}
+```
+
+支持傳遞選項覆蓋全局配置：
+
+```typescript
+// 檢測在 'hybrid' 模式下是否會異步執行
+const mode = hookManager.detectMode('user:registered', {
+  migrationMode: 'hybrid'
+})
+
+// 檢測是否啟用了 asyncByDefault
+const mode = hookManager.detectMode('order:created', {
+  asyncByDefault: true
+})
+```
+
+### 檢測監聽器是否為異步
+
+使用 `isAsyncListener()` 檢查回調是否為異步函數：
+
+```typescript
+const isAsync = hookManager.isAsyncListener(callback)
+
+// 有用於診斷自動檢測行為
+hookManager.addAction('event:test', async () => {
+  console.log('異步監聽器')
+}, {
+  onAdded: (listener) => {
+    console.log(`監聽器是異步: ${hookManager.isAsyncListener(listener)}`)
+  }
+})
+```
+
+### 抑制遷移警告
+
+使用 `suppressMigrationWarning()` 抑制特定事件的警告：
+
+```typescript
+// 抑制 'email:send' 事件的遷移警告
+hookManager.suppressMigrationWarning('email:send')
+
+// 之後 'email:send' 不會再顯示警告
+hookManager.doAction('email:send', data)
+```
+
+也可以通過環境變數全局抑制所有警告：
+
+```bash
+# 禁用所有遷移警告
+export GRAVITO_SUPPRESS_MIGRATION_WARNING=true
+```
+
+或抑制特定事件（逗號分隔）：
+
+```bash
+# 只抑制這些事件的警告
+export GRAVITO_SUPPRESS_MIGRATION_WARNING=email:send,log:write
+```
+
 ## 最佳實踐
 
 ### 1. 選擇合適的遷移模式
@@ -403,6 +477,38 @@ await hookManager.doActionAsync('external:api', data, {
 })
 ```
 
+### 7. 使用自動檢測 API 診斷行為
+
+```typescript
+// 在 hybrid 模式下診斷事件實際使用的派發方式
+const hookManager = new HookManager({ migrationMode: 'hybrid' })
+
+hookManager.addAction('user:registered', async (user) => {
+  await sendEmail(user)
+})
+
+// 檢查此事件實際使用的派發模式
+const mode = hookManager.detectMode('user:registered')
+console.log(`user:registered 使用 ${mode} 派發`)
+// 輸出：user:registered 使用 async 派發（因為監聽器是異步的）
+```
+
+### 8. 在遷移過程中抑制警告
+
+```typescript
+// 在逐步遷移中，為已驗證的事件抑制警告
+const hookManager = new HookManager({
+  migrationMode: 'hybrid',
+  showDeprecationWarnings: true
+})
+
+// 標記已驗證的事件
+const verifiedEvents = ['order:created', 'payment:processed', 'user:registered']
+verifiedEvents.forEach(event => hookManager.suppressMigrationWarning(event))
+
+// 已驗證的事件不會顯示警告，其他事件仍會顯示
+```
+
 ## 性能基準
 
 ### 吞吐量對比
@@ -483,6 +589,55 @@ const dlqCount = hookManager.getDLQCount('event:name')
 - `migrationMode: 'hybrid'` 自動檢測
 - 明確指定 `async: true/false` 覆蓋配置
 - 同一事件可有同步和異步監聽器
+
+### Q9. 如何檢測事件實際使用的派發模式？
+
+**A:** 使用 `detectMode()` 檢測事件的派發方式：
+
+```typescript
+const mode = hookManager.detectMode('user:registered')
+if (mode === 'async') {
+  console.log('事件使用異步派發')
+}
+```
+
+配置選項會影響檢測結果：
+- `migrationMode: 'sync'` → 總是 'sync'
+- `migrationMode: 'async'` → 總是 'async'
+- `migrationMode: 'hybrid'` → 根據監聽器自動檢測
+- 可傳遞選項覆蓋全局配置
+
+### Q10. 如何檢查監聽器是否為異步函數？
+
+**A:** 使用 `isAsyncListener()` 檢查：
+
+```typescript
+const isAsync = hookManager.isAsyncListener(myCallback)
+console.log(`監聽器是異步: ${isAsync}`)
+```
+
+用於診斷自動檢測行為。在 `hybrid` 模式下，異步監聽器會觸發異步派發。
+
+### Q11. 如何在遷移期間抑制警告？
+
+**A:** 使用 `suppressMigrationWarning()` 抑制特定事件的警告：
+
+```typescript
+// 抑制單個事件
+hookManager.suppressMigrationWarning('email:send')
+
+// 或批量抑制已驗證的事件
+['order:created', 'payment:processed'].forEach(e =>
+  hookManager.suppressMigrationWarning(e)
+)
+```
+
+也可通過環境變數全局抑制：
+```bash
+export GRAVITO_SUPPRESS_MIGRATION_WARNING=true
+# 或指定特定事件
+export GRAVITO_SUPPRESS_MIGRATION_WARNING=email:send,log:write
+```
 
 ## 遷移檢查清單
 

@@ -67,6 +67,39 @@ export interface HookManagerConfig {
  * Manager for WordPress-style hooks (actions and filters).
  * @public
  */
+/**
+ * Migration warning manager for deprecation warnings.
+ * @internal
+ */
+class MigrationWarner {
+  private suppressedWarnings: Set<string> = new Set()
+
+  constructor() {
+    // Load suppressed warnings from environment variable
+    const suppressed = process.env.GRAVITO_SUPPRESS_MIGRATION_WARNING
+    if (suppressed) {
+      suppressed.split(',').forEach((event) => {
+        this.suppressedWarnings.add(event.trim())
+      })
+    }
+  }
+
+  warn(eventName: string, message: string): void {
+    if (this.suppressedWarnings.has(eventName)) {
+      return
+    }
+
+    console.warn(`[Gravito Migration] Event "${eventName}" using synchronous dispatch`)
+    console.warn(`  ${message}`)
+    console.warn(`  Reference: https://gravito.dev/docs/events/async-migration`)
+    console.warn(`  To suppress this warning: GRAVITO_SUPPRESS_MIGRATION_WARNING="${eventName}"`)
+  }
+
+  suppress(eventName: string): void {
+    this.suppressedWarnings.add(eventName)
+  }
+}
+
 export class HookManager {
   private filters: Map<string, FilterCallback[]> = new Map()
   private actions: Map<string, ActionCallback[]> = new Map()
@@ -75,6 +108,7 @@ export class HookManager {
   private dlq?: DeadLetterQueue
   private idempotencyCache: IdempotencyCache
   private config: HookManagerConfig
+  private migrationWarner: MigrationWarner
 
   constructor(config: HookManagerConfig = {}) {
     this.config = {
@@ -87,6 +121,7 @@ export class HookManager {
     this.eventQueue = new EventPriorityQueue(config.queue)
     this.backend = config.backend || this.eventQueue
     this.idempotencyCache = new IdempotencyCache()
+    this.migrationWarner = new MigrationWarner()
 
     if (config.enableDLQ ?? true) {
       if (this.backend instanceof EventPriorityQueue) {
@@ -231,12 +266,14 @@ export class HookManager {
     }
 
     // Synchronous dispatch (legacy mode)
-    if (this.config.showDeprecationWarnings && this.config.migrationMode === 'hybrid') {
-      console.warn(
-        `[HookManager] Event "${hook}" is using synchronous dispatch. ` +
-          `Consider migrating to async mode for better performance. ` +
-          `See: https://gravito.dev/docs/events/async-migration`
-      )
+    if (this.config.showDeprecationWarnings || this.config.migrationMode === 'hybrid') {
+      // Show migration warning in hybrid mode or when explicitly enabled
+      if (this.config.migrationMode === 'hybrid' || this.config.showDeprecationWarnings) {
+        this.migrationWarner.warn(
+          hook,
+          'Consider migrating to async mode for better performance and reliability.'
+        )
+      }
     }
 
     return this.doActionSync(hook, args)
@@ -347,6 +384,31 @@ export class HookManager {
    * @returns True if async dispatch should be used
    * @internal
    */
+  /**
+   * Determine the dispatch mode for an event.
+   *
+   * @param eventName - The name of the event
+   * @param options - Optional event options
+   * @returns The dispatch mode: 'sync' or 'async'
+   * @public
+   */
+  detectMode(eventName: string, options?: EventOptions): 'sync' | 'async' {
+    const callbacks = this.getListeners(eventName)
+    const shouldUseAsync = this.shouldUseAsyncDispatch(callbacks, options)
+    return shouldUseAsync ? 'async' : 'sync'
+  }
+
+  /**
+   * Check if a callback is an async function.
+   *
+   * @param callback - The callback to check
+   * @returns True if the callback is async
+   * @public
+   */
+  isAsyncListener(callback: ActionCallback): boolean {
+    return callback.constructor.name === 'AsyncFunction'
+  }
+
   private shouldUseAsyncDispatch(callbacks: ActionCallback[], options?: EventOptions): boolean {
     // Explicit async option
     if (options?.async === true) {
@@ -371,7 +433,7 @@ export class HookManager {
     // Migration mode: hybrid (auto-detect)
     if (this.config.migrationMode === 'hybrid') {
       // Check if any callback is async
-      const hasAsyncListeners = callbacks.some((cb) => cb.constructor.name === 'AsyncFunction')
+      const hasAsyncListeners = callbacks.some((cb) => this.isAsyncListener(cb))
       return hasAsyncListeners || this.config.asyncByDefault === true
     }
 
@@ -427,6 +489,16 @@ export class HookManager {
    */
   getConfig(): HookManagerConfig {
     return { ...this.config }
+  }
+
+  /**
+   * Suppress migration warnings for a specific event.
+   *
+   * @param eventName - The name of the event to suppress warnings for
+   * @public
+   */
+  suppressMigrationWarning(eventName: string): void {
+    this.migrationWarner.suppress(eventName)
   }
 
   /**
