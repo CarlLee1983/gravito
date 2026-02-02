@@ -1,10 +1,13 @@
 import type { WorkflowBuilder } from '../builder/WorkflowBuilder'
 import { ContextManager } from '../core/ContextManager'
+import { DataOptimizer } from '../core/DataOptimizer'
 import { StateMachine } from '../core/StateMachine'
 import { CompensationRetryPolicy } from '../engine/CompensationRetryPolicy'
 import * as Errors from '../errors'
+import { CronTrigger } from '../orbit/CronTrigger'
 import { MemoryStorage } from '../storage/MemoryStorage'
 import type {
+  CronScheduleOptions,
   FluxConfig,
   FluxResult,
   WorkflowContext,
@@ -48,6 +51,8 @@ export class FluxEngine {
   private traceEmitter: TraceEmitter
   private executor: WorkflowExecutor
   private rollbackManager: RollbackManager
+  private cronTrigger: CronTrigger
+  private dataOptimizer?: DataOptimizer
 
   /**
    * Initializes a new instance of the FluxEngine.
@@ -59,6 +64,13 @@ export class FluxEngine {
     this.contextManager = new ContextManager()
     this.traceEmitter = new TraceEmitter(config.trace)
 
+    if (config.optimizer?.enabled) {
+      this.dataOptimizer = new DataOptimizer({
+        threshold: config.optimizer.threshold,
+        defaultLocation: config.optimizer.defaultLocation,
+      })
+    }
+
     const stepExecutor = createStepExecutor(config, this.traceEmitter)
     const persist = (ctx: WorkflowContext<any, any>) => this.persist(ctx)
 
@@ -68,7 +80,8 @@ export class FluxEngine {
       stepExecutor,
       this.traceEmitter,
       config,
-      persist
+      persist,
+      this.dataOptimizer
     )
 
     this.rollbackManager = new RollbackManager(
@@ -82,7 +95,12 @@ export class FluxEngine {
         }),
       }
     )
+
+    this.cronTrigger = new CronTrigger(this)
+    this.config = config
   }
+
+  private config: FluxConfig
 
   /**
    * Starts the execution of a workflow from the beginning.
@@ -110,15 +128,20 @@ export class FluxEngine {
 
     ctx = await this.persist(ctx)
 
-    const result = await this.executor.execute(definition, ctx, new StateMachine(), startTime, 0)
-    return handleExecutionResult(
-      definition,
-      ctx,
-      result,
-      this.contextManager,
-      this.rollbackManager,
-      this.storage
-    )
+    const lock = await this.acquireLock(ctx.id)
+    try {
+      const result = await this.executor.execute(definition, ctx, new StateMachine(), startTime, 0)
+      return handleExecutionResult(
+        definition,
+        ctx,
+        result,
+        this.contextManager,
+        this.rollbackManager,
+        this.storage
+      )
+    } finally {
+      await lock?.release()
+    }
   }
 
   /**
@@ -155,25 +178,30 @@ export class FluxEngine {
 
     ctx = await this.persist(ctx)
 
-    const result = await this.executor.execute(
-      definition,
-      ctx,
-      new StateMachine(),
-      Date.now(),
-      startIndex,
-      {
-        resume: true,
-        fromStep: startIndex,
-      }
-    )
-    return handleExecutionResult(
-      definition,
-      ctx,
-      result,
-      this.contextManager,
-      this.rollbackManager,
-      this.storage
-    )
+    const lock = await this.acquireLock(ctx.id)
+    try {
+      const result = await this.executor.execute(
+        definition,
+        ctx,
+        new StateMachine(),
+        Date.now(),
+        startIndex,
+        {
+          resume: true,
+          fromStep: startIndex,
+        }
+      )
+      return handleExecutionResult(
+        definition,
+        ctx,
+        result,
+        this.contextManager,
+        this.rollbackManager,
+        this.storage
+      )
+    } finally {
+      await lock?.release()
+    }
   }
 
   /**
@@ -349,16 +377,79 @@ export class FluxEngine {
   }
 
   /**
-   * Initializes the engine and its underlying storage.
+   * Schedules a workflow to run periodically according to a cron expression.
+   *
+   * @param cron - The cron expression (e.g., "* * * * *").
+   * @param workflow - The workflow definition or builder.
+   * @param input - The input data for each execution.
+   * @param id - Optional unique identifier for the schedule.
+   * @returns The ID of the created schedule.
+   */
+  schedule<TInput, TData extends Record<string, any>>(
+    cron: string,
+    workflow: WorkflowBuilder<TInput, TData> | WorkflowDefinition<TInput, TData>,
+    input: TInput,
+    id = `schedule_${Date.now()}`
+  ): string {
+    this.cronTrigger.addSchedule({
+      id,
+      cron,
+      workflow: resolveDefinition(workflow) as any,
+      input,
+      enabled: true,
+    })
+    return id
+  }
+
+  /**
+   * Removes a scheduled workflow execution.
+   *
+   * @param id - The ID of the schedule to remove.
+   */
+  unschedule(id: string): void {
+    this.cronTrigger.removeSchedule(id)
+  }
+
+  /**
+   * Lists all active workflow schedules.
+   */
+  listSchedules(): CronScheduleOptions[] {
+    return this.cronTrigger.listSchedules()
+  }
+
+  /**
+   * Gets the recovery manager for handling manual intervention.
+   */
+  getRecoveryManager() {
+    return this.rollbackManager.getRecoveryManager()
+  }
+
+  /**
+   * Gets the lock provider used for cluster mode.
+   */
+  getLockProvider() {
+    return this.config.lockProvider
+  }
+
+  private async acquireLock(workflowId: string) {
+    if (!this.config.lockProvider) return null
+    const owner = `node_${Math.random().toString(36).substring(7)}`
+    return await this.config.lockProvider.acquire(workflowId, owner, 30000)
+  }
+
+  /**
+   * Initializes the engine and its underlying storage, and starts the scheduler.
    */
   async init(): Promise<void> {
     await this.storage.init?.()
+    this.cronTrigger.start()
   }
 
   /**
    * Closes the engine and releases storage resources.
    */
   async close(): Promise<void> {
+    this.cronTrigger.stop()
     await this.storage.close?.()
   }
 
