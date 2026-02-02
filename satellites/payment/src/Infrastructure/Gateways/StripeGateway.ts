@@ -25,6 +25,8 @@ export class StripeGateway implements IPaymentGateway {
       metadata: {
         orderId: transaction.orderId,
         transactionId: transaction.id,
+        // 包含自定義 metadata（如 lockId）
+        ...rawProps.metadata,
       },
       automatic_payment_methods: {
         enabled: true,

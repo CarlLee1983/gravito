@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "bun run src/app.ts",
+    "consumer": "bun run scripts/start-consumer.ts",
     "test": "bun test",
     "test:load": "k6 run load-tests/k6-test.js",
+    "test:queue": "bun run scripts/test-queue.ts",
     "build": "bun run build.ts",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
@@ -15,8 +17,11 @@
     "@gravito/photon": "workspace:*",
     "@gravito/atlas": "workspace:*",
     "@gravito/signal": "workspace:*",
+    "@gravito/stream": "workspace:*",
     "@gravito/satellite-flash-sale": "workspace:*",
     "@gravito/satellite-inventory-lock": "workspace:*",
+    "@gravito/satellite-payment": "workspace:*",
+    "ioredis": "^5.4.1",
     "redis": "^4.6.10"
   },
   "devDependencies": {

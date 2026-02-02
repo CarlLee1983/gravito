@@ -9,25 +9,11 @@ import type { GravitoConfig as Config } from '@gravito/core'
 /**
  * 應用配置
  */
-export const GravitoConfig: Config = {
+export const GravitoConfig: Config & any = {
   // ─────────────────────────────────────────────────────────────────────────
-  // 基礎配置
+  // 基礎應用配置
   // ─────────────────────────────────────────────────────────────────────────
-
-  app: {
-    name: 'Flash Sale System',
-    version: '0.1.0',
-    description: '搶購系統 - Gravito 框架演示',
-  },
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // HTTP 伺服器配置
-  // ─────────────────────────────────────────────────────────────────────────
-
-  server: {
-    host: process.env.HTTP_HOST || '0.0.0.0',
-    port: parseInt(process.env.HTTP_PORT || '3000', 10),
-  },
+  port: parseInt(process.env.HTTP_PORT || '3000', 10),
 
   // ─────────────────────────────────────────────────────────────────────────
   // 資料庫配置
@@ -80,11 +66,11 @@ export const GravitoConfig: Config = {
   // Satellite 與 Provider
   // ─────────────────────────────────────────────────────────────────────────
 
-  // 此部分會在 Phase 1 開發時填充
-  // satellites: [
-  //   '@gravito/satellite-flash-sale',
-  //   '@gravito/satellite-inventory-lock',
-  // ],
+  satellites: [
+    '@gravito/satellite-flash-sale',
+    '@gravito/satellite-inventory-lock',
+    '@gravito/satellite-payment',
+  ],
 
   // ─────────────────────────────────────────────────────────────────────────
   // 中間件配置
@@ -93,18 +79,18 @@ export const GravitoConfig: Config = {
   middleware: {
     // 全局中間件
     global: [
-      'cors',        // CORS 支持
-      'logging',     // 請求日誌
+      'cors', // CORS 支持
+      'logging', // 請求日誌
       'errorHandler', // 錯誤處理
     ],
 
     // 限流中間件（搶購系統特定）
     rateLimiter: {
       enabled: true,
-      windowMs: 60000,      // 1 分鐘
-      maxRequests: 100,     // 單個 IP 最多 100 請求
+      windowMs: 60000, // 1 分鐘
+      maxRequests: 100, // 單個 IP 最多 100 請求
       endpoints: {
-        '/api/orders': 10,   // POST /api/orders 限制更嚴
+        '/api/orders': 10, // POST /api/orders 限制更嚴
       },
     },
   },

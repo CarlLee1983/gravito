@@ -7,10 +7,10 @@
  * 3. 發送事件通知其他模塊
  */
 
-import type { IProductRepository } from '../Contracts/IProductRepository'
-import type { IOrderRepository } from '../Contracts/IOrderRepository'
 import type { CreateOrderRequest, Order } from '../../Domain/Models'
 import { OrderStatus } from '../../Domain/Models'
+import type { IOrderRepository } from '../Contracts/IOrderRepository'
+import type { IProductRepository } from '../Contracts/IProductRepository'
 
 export interface CreateOrderResponse {
   order: Order
@@ -25,7 +25,8 @@ export interface CreateOrderResponse {
 export class CreateOrder {
   constructor(
     private productRepository: IProductRepository,
-    private orderRepository: IOrderRepository
+    private orderRepository: IOrderRepository,
+    private eventBus?: any // 可選的事件總線，用於發送事件
   ) {}
 
   /**
@@ -69,8 +70,19 @@ export class CreateOrder {
       totalAmount: product.price * request.quantity,
     })
 
-    // TODO: 發送 OrderCreated 事件
-    // TODO: 發送庫存鎖定請求到 Inventory-Lock Satellite
+    // 5. 發送 OrderCreated 事件（用於觸發庫存鎖定）
+    if (this.eventBus) {
+      await this.eventBus.dispatch({
+        event: 'order:created',
+        data: {
+          orderId: order.id,
+          userId: request.userId,
+          productId: request.productId,
+          quantity: request.quantity,
+          totalAmount: order.totalAmount,
+        },
+      })
+    }
 
     return {
       order,
