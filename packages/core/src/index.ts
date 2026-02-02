@@ -69,8 +69,14 @@ export {
 // Events
 export { EventManager } from './EventManager'
 // Event System
-export type { DLQEntry, DLQFilter, EventOptions, EventTask } from './events'
-export { DEFAULT_EVENT_OPTIONS, DeadLetterQueue, EventPriorityQueue } from './events'
+export type { CircuitBreakerOptions, DLQEntry, DLQFilter, EventOptions, EventTask } from './events'
+export {
+  CircuitBreaker,
+  CircuitBreakerState,
+  DEFAULT_EVENT_OPTIONS,
+  DeadLetterQueue,
+  EventPriorityQueue,
+} from './events'
 // Exceptions
 export * from './exceptions'
 // Global Error Handlers
@@ -131,12 +137,7 @@ export {
   type RouteOptions,
   Router,
 } from './Router'
-// Resilience Utilities
-export {
-  CircuitBreaker,
-  type CircuitBreakerOptions,
-  type CircuitState,
-} from './resilience/CircuitBreaker'
+
 // Service Provider
 export { ServiceProvider } from './ServiceProvider'
 // Security

@@ -1,3 +1,4 @@
+import { CircuitBreaker, type CircuitBreakerOptions } from './events/CircuitBreaker'
 import { DeadLetterQueue } from './events/DeadLetterQueue'
 import type { EventOptions } from './events/EventOptions'
 import { DEFAULT_EVENT_OPTIONS } from './events/EventOptions'
@@ -151,12 +152,34 @@ export class HookManager {
    * });
    * ```
    */
-  addAction<TArgs = unknown>(hook: string, callback: ActionCallback<TArgs>): void {
+  addAction<TArgs = unknown>(
+    hook: string,
+    callback: ActionCallback<TArgs>,
+    options?: {
+      circuitBreaker?: CircuitBreakerOptions
+    }
+  ): void {
     if (!this.actions.has(hook)) {
       this.actions.set(hook, [])
     }
+
+    let finalCallback = callback
+
+    if (options?.circuitBreaker) {
+      const breaker = new CircuitBreaker(options.circuitBreaker)
+
+      finalCallback = async (args: TArgs) => {
+        return breaker.execute(async () => {
+          const result = callback(args)
+          if (result instanceof Promise) {
+            await result
+          }
+        })
+      }
+    }
+
     // Generic type erasure for storage
-    this.actions.get(hook)?.push(callback as unknown as ActionCallback)
+    this.actions.get(hook)?.push(finalCallback as unknown as ActionCallback)
   }
 
   /**

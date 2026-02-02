@@ -3,8 +3,11 @@
  * @packageDocumentation
  */
 
+export type { CircuitBreakerOptions } from './CircuitBreaker'
+export { CircuitBreaker, CircuitBreakerState } from './CircuitBreaker'
 export type { DLQEntry, DLQFilter } from './DeadLetterQueue'
 export { DeadLetterQueue } from './DeadLetterQueue'
+
 export type { EventOptions } from './EventOptions'
 export { DEFAULT_EVENT_OPTIONS } from './EventOptions'
 export type { EventTask } from './EventPriorityQueue'
