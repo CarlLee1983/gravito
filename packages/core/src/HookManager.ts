@@ -4,6 +4,7 @@ import type { EventBackend } from './events/EventBackend'
 import type { EventOptions } from './events/EventOptions'
 import { DEFAULT_EVENT_OPTIONS } from './events/EventOptions'
 import { EventPriorityQueue, type EventQueueConfig } from './events/EventPriorityQueue'
+import { IdempotencyCache } from './events/IdempotencyCache'
 import type { EventTask } from './events/types'
 
 /**
@@ -72,6 +73,7 @@ export class HookManager {
   private eventQueue: EventPriorityQueue
   private backend: EventBackend
   private dlq?: DeadLetterQueue
+  private idempotencyCache: IdempotencyCache
   private config: HookManagerConfig
 
   constructor(config: HookManagerConfig = {}) {
@@ -84,6 +86,7 @@ export class HookManager {
     }
     this.eventQueue = new EventPriorityQueue(config.queue)
     this.backend = config.backend || this.eventQueue
+    this.idempotencyCache = new IdempotencyCache()
 
     if (config.enableDLQ ?? true) {
       if (this.backend instanceof EventPriorityQueue) {
@@ -299,6 +302,19 @@ export class HookManager {
       ...DEFAULT_EVENT_OPTIONS,
       ...options,
       async: true,
+    }
+
+    // Check for idempotency
+    if (mergedOptions.idempotencyKey) {
+      const ttl = mergedOptions.ttl || DEFAULT_EVENT_OPTIONS.ttl
+      const isDuplicate = this.idempotencyCache.isDuplicate(mergedOptions.idempotencyKey, ttl)
+
+      if (isDuplicate) {
+        console.warn(
+          `[HookManager] Event '${hook}' with idempotency key '${mergedOptions.idempotencyKey}' was skipped (duplicate within TTL window)`
+        )
+        return
+      }
     }
 
     // Use backend to enqueue

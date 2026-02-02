@@ -23,6 +23,7 @@ export class EventPriorityQueue implements EventBackend {
   private taskIdCounter = 0
   private dlq?: DeadLetterQueue
   private config: EventQueueConfig
+  private processingPartitions: Set<string> = new Set()
 
   constructor(config: EventQueueConfig = {}) {
     this.config = config
@@ -188,100 +189,130 @@ export class EventPriorityQueue implements EventBackend {
   }
 
   /**
-   * Dequeue the next task based on priority.
+   * Dequeue the next task based on priority and partition ordering.
    *
    * @returns Next task to process, or undefined if queue is empty
    * @internal
    */
   private dequeue(): EventTask | undefined {
-    // High priority first
-    if (this.highPriority.length > 0) {
-      return this.highPriority.shift()
+    // Try to find a task that respects partition ordering
+    return (
+      this.dequeueFromPriority(this.highPriority) ||
+      this.dequeueFromPriority(this.normalPriority) ||
+      this.dequeueFromPriority(this.lowPriority)
+    )
+  }
+
+  /**
+   * Dequeue a task from a priority queue, respecting partition ordering.
+   *
+   * @param queue - Priority queue to dequeue from
+   * @returns Next task to process, or undefined if all tasks are blocked by partition locks
+   * @internal
+   */
+  private dequeueFromPriority(queue: EventTask[]): EventTask | undefined {
+    // Find the first task that either has no partition ordering or has an available partition
+    const taskIndex = queue.findIndex((task) => {
+      // If no partition ordering, task can be processed
+      if (task.options.ordering !== 'partition' || !task.partitionKey) {
+        return true
+      }
+
+      // If partition ordering, check if partition is available (not currently processing)
+      return !this.processingPartitions.has(task.partitionKey)
+    })
+
+    if (taskIndex === -1) {
+      return undefined // No available task
     }
 
-    // Normal priority second
-    if (this.normalPriority.length > 0) {
-      return this.normalPriority.shift()
-    }
-
-    // Low priority last
-    if (this.lowPriority.length > 0) {
-      return this.lowPriority.shift()
-    }
-
-    return undefined
+    // Remove and return the task
+    return queue.splice(taskIndex, 1)[0]
   }
 
   /**
    * Execute an event task by running all its callbacks.
    * Implements retry logic with exponential backoff and DLQ integration.
+   * Also handles partition ordering by acquiring and releasing partition locks.
    *
    * @param task - Event task to execute
    * @internal
    */
   private async executeTask(task: EventTask): Promise<void> {
-    const { callbacks, args, options, hook } = task
+    const { callbacks, args, options, hook, partitionKey } = task
     const timeout = options.timeout || 5000
     const retryConfig = options.retry || {}
     const maxRetries = retryConfig.maxRetries || 0
 
-    let lastError: Error | undefined
+    // Acquire partition lock if needed
+    if (options.ordering === 'partition' && partitionKey) {
+      this.processingPartitions.add(partitionKey)
+    }
 
-    for (const callback of callbacks) {
-      try {
-        // Execute callback with timeout
-        await this.executeWithTimeout(callback, args, timeout)
-      } catch (error) {
-        lastError = error as Error
+    try {
+      let lastError: Error | undefined
 
-        console.error(`[EventPriorityQueue] Error in callback for event '${hook}':`, error)
+      for (const callback of callbacks) {
+        try {
+          // Execute callback with timeout
+          await this.executeWithTimeout(callback, args, timeout)
+        } catch (error) {
+          lastError = error as Error
 
-        // Track first failure timestamp
-        if (!task.firstFailedAt) {
-          task.firstFailedAt = Date.now()
+          console.error(`[EventPriorityQueue] Error in callback for event '${hook}':`, error)
+
+          // Track first failure timestamp
+          if (!task.firstFailedAt) {
+            task.firstFailedAt = Date.now()
+          }
+
+          task.lastError = lastError
+          task.retryCount = (task.retryCount || 0) + 1
+
+          // Check if we should retry
+          if (task.retryCount <= maxRetries) {
+            // Calculate retry delay with exponential backoff
+            const delay = this.calculateRetryDelay(
+              task.retryCount,
+              retryConfig.backoff || 'exponential',
+              retryConfig.initialDelayMs || 1000,
+              retryConfig.maxDelayMs || 30000
+            )
+
+            console.warn(
+              `[EventPriorityQueue] Retrying event '${hook}' (attempt ${task.retryCount}/${maxRetries}) after ${delay}ms`
+            )
+
+            // Schedule retry
+            setTimeout(() => {
+              this.enqueueRetry(task)
+            }, delay)
+
+            return
+          }
+
+          // Max retries exceeded
+          if (retryConfig.dlqAfterMaxRetries && this.dlq) {
+            // Send to DLQ
+            this.dlq.add(hook, args, options, lastError, task.retryCount, task.firstFailedAt!)
+
+            console.error(
+              `[EventPriorityQueue] Event '${hook}' sent to DLQ after ${task.retryCount} failed attempts`
+            )
+          } else {
+            console.error(
+              `[EventPriorityQueue] Event '${hook}' permanently failed after ${task.retryCount} attempts`
+            )
+          }
+
+          // Don't continue with other callbacks if one fails
+          break
         }
-
-        task.lastError = lastError
-        task.retryCount = (task.retryCount || 0) + 1
-
-        // Check if we should retry
-        if (task.retryCount <= maxRetries) {
-          // Calculate retry delay with exponential backoff
-          const delay = this.calculateRetryDelay(
-            task.retryCount,
-            retryConfig.backoff || 'exponential',
-            retryConfig.initialDelayMs || 1000,
-            retryConfig.maxDelayMs || 30000
-          )
-
-          console.warn(
-            `[EventPriorityQueue] Retrying event '${hook}' (attempt ${task.retryCount}/${maxRetries}) after ${delay}ms`
-          )
-
-          // Schedule retry
-          setTimeout(() => {
-            this.enqueueRetry(task)
-          }, delay)
-
-          return
-        }
-
-        // Max retries exceeded
-        if (retryConfig.dlqAfterMaxRetries && this.dlq) {
-          // Send to DLQ
-          this.dlq.add(hook, args, options, lastError, task.retryCount, task.firstFailedAt!)
-
-          console.error(
-            `[EventPriorityQueue] Event '${hook}' sent to DLQ after ${task.retryCount} failed attempts`
-          )
-        } else {
-          console.error(
-            `[EventPriorityQueue] Event '${hook}' permanently failed after ${task.retryCount} attempts`
-          )
-        }
-
-        // Don't continue with other callbacks if one fails
-        break
+      }
+    } finally {
+      // Release partition lock if needed
+      if (options.ordering === 'partition' && partitionKey) {
+        this.processingPartitions.delete(partitionKey)
       }
     }
   }
