@@ -1694,25 +1694,25 @@ Week 4-6: 連接池管理（Issue 1.3）
 **目標**：建立完整的容錯機制，提升系統可靠性
 
 ```
-Week 7-8: Event System - DLQ + Retry (Issue 1.2 Phase 1)
-  ├─ 實現 Dead Letter Queue
-  ├─ RetryPolicy 與 Backoff
-  └─ CLI 管理工具
+Week 7-8: Event System - DLQ + Retry (Issue 1.2 Phase 1) ✅
+  ├─ 實現 Dead Letter Queue [DONE]
+  ├─ RetryPolicy 與 Backoff [DONE]
+  └─ CLI 管理工具 [PARTIAL]
 
-Week 9-10: Event System - Circuit Breaker (Issue 1.2 Phase 2)
-  ├─ 整合 @gravito/stasis Circuit Breaker
-  ├─ 監聽器級別熔斷
-  └─ 狀態監控 CLI
+Week 9-10: Event System - Circuit Breaker (Issue 1.2 Phase 2) ✅
+  ├─ 整合 @gravito/stasis Circuit Breaker [DONE]
+  ├─ 監聽器級別熔斷 [DONE]
+  └─ 狀態監控 CLI [PARTIAL]
 
-Week 11-12: Event System - Backpressure (Issue 1.2 Phase 3)
-  ├─ QueueConfig + BackpressureManager
-  ├─ 記憶體監控與拒絕策略
-  └─ HTTP 429 響應
+Week 11-12: Event System - Backpressure (Issue 1.2 Phase 3) ✅
+  ├─ QueueConfig + BackpressureManager [DONE]
+  ├─ 記憶體監控與拒絕策略 [DONE]
+  └─ HTTP 429 響應 [DONE]
 
-Week 13-14: Event System - Bull Queue (Issue 1.2 Phase 4)
-  ├─ SystemEventJob 實現
-  ├─ StreamEventBackend 整合
-  └─ Bull Board UI
+Week 13-14: Event System - Bull Queue (Issue 1.2 Phase 4) ✅
+  ├─ SystemEventJob 實現 [DONE]
+  ├─ StreamEventBackend 整合 [DONE]
+  └─ Bull Board UI [READY]
 ```
 
 ### Phase 3: 分佈式增強（Week 15-20）
