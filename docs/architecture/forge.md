@@ -101,18 +101,21 @@ FFmpeg 的進度輸出是「當前時間」，而非百分比。
 
 ---
 
-## 5. 後續優化建議
+## 5. 發展路線圖 (Roadmap)
 
-### 短期 (v1.1)
-1. **Metadata Extraction**：新增 `getMetadata()` API，獲取影片時長、解析度、編碼等資訊。
-2. **Watermarking**：在 Pipeline 中支援浮水印 (Overlay) 功能。
+### ✅ 已實作 (Done)
+- [x] **Fluent Pipeline API**: 鏈式調用 API。
+- [x] **Real-time Feedback**: SSE 進度追蹤。
+- [x] **Dual Mode**: 同步與非同步處理架構。
+- [x] **WASM Mode (v2.0 提前實作)**: 支援 `ffmpeg.wasm` 在 Serverless 環境運行。
 
-### 中期 (v1.2)
-1. **GPU Acceleration**：支援 FFmpeg 的 NVENC/VAAPI 硬體加速參數。
-2. **HLS/DASH**：支援生成串流媒體切片 (m3u8)。
+### ⏳ 短期目標 (v1.1)
+- [ ] **Metadata Extraction**: 新增 `getMetadata()` API，獲取影片時長、解析度、編碼等資訊。
+- [ ] **Watermarking**: 在 Pipeline 中支援浮水印 (Overlay) 功能。
 
-### 長期 (v2.0)
-1. **WASM Mode**：探索 `ffmpeg.wasm`，在不依賴系統二進制的情況下運行 (適用於 Serverless 環境)。
+### 📅 中期目標 (v1.2)
+- [ ] **GPU Acceleration**: 支援 FFmpeg 的 NVENC/VAAPI 硬體加速參數。
+- [ ] **HLS/DASH**: 支援生成串流媒體切片 (m3u8)。
 
 ---
 *Created by Gravito Architect.*
