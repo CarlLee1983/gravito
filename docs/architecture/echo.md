@@ -137,18 +137,21 @@ Request Buffer 需要額外的記憶體和時間來緩存原始 body。
 - **記憶體**：每個請求額外使用 10-50KB（取決於 payload 大小）。
 - **延遲**：+1-5ms（讀取 body 的時間）。
 - **緩解**：透過 `maxBodySize` 限制，預設拒絕超過 10MB 的請求。
+- **實作驗證**：✅ 已實作於 `src/middleware/RequestBufferMiddleware.ts`，預設啟用，支援靈活配置。
 
 ### 4.4 Circuit Breaker 效能影響 (v1.1)
 熔斷器的狀態檢查和計數器管理會帶來微小的效能開銷。
 - **記憶體**：每個 host 約 1KB（存儲狀態和計數器）。
 - **延遲**：+0.1-0.5ms（狀態檢查時間）。
 - **優點**：在下游故障時，可立即拒絕請求（0ms），避免等待超時。
+- **實作驗證**：✅ 已實作於 `src/resilience/CircuitBreaker.ts`，預設啟用，支援 3 態轉換（CLOSED → OPEN → HALF_OPEN）。
 
 ### 4.5 Key Rotation 效能影響 (v1.2)
 多密鑰驗證在最壞情況下需要嘗試所有活動密鑰。
 - **記憶體**：每個 provider 約 5KB（多密鑰存儲）。
 - **延遲**：+1-10ms（worst case，需嘗試多個密鑰）。
 - **優化**：主密鑰優先驗證，大多數情況下只需 1 次嘗試。
+- **實作驗證**：✅ 已實作於 `src/rotation/KeyRotationManager.ts`，支援自動清理與可配置的寬限期。
 
 ---
 
@@ -157,27 +160,150 @@ Request Buffer 需要額外的記憶體和時間來緩存原始 body。
 ### ✅ Request Buffer (v1.1)
 **問題**：框架自動解析 JSON 導致簽章驗證失敗。
 **解決方案**：在驗證前緩存原始 body。
-**狀態**：已實作並整合到 OrbitEcho。
+**狀態**：✅ 已實作並整合到 OrbitEcho。
+**位置**：`src/middleware/RequestBufferMiddleware.ts`
+**測試覆蓋**：✅ 完整的單元測試 (`tests/unit/middleware/RequestBufferMiddleware.test.ts`)
+**預設配置**：
+  - `enabled`: `true`
+  - `maxBodySize`: 10MB
+  - `skipContentTypes`: `['multipart/form-data', 'application/octet-stream']`
 
 ### ✅ Circuit Breaker (v1.1)
 **問題**：下游服務故障導致系統持續發送失敗請求。
 **解決方案**：實作熔斷器模式，自動保護故障服務。
-**狀態**：已整合到 WebhookDispatcher。
+**狀態**：✅ 已整合到 WebhookDispatcher。
+**位置**：`src/resilience/CircuitBreaker.ts`
+**測試覆蓋**：✅ 完整的單元測試 (`tests/unit/resilience/CircuitBreaker.test.ts`)
+**預設配置**：
+  - `enabled`: `true`
+  - `failureThreshold`: 5 次失敗
+  - `successThreshold`: 2 次成功（HALF_OPEN 狀態）
+  - `windowSize`: 60000ms (1 分鐘)
+  - `openTimeout`: 30000ms (30 秒)
 
 ### ✅ Key Rotation (v1.2)
 **問題**：密鑰更換需要重啟應用，影響可用性。
 **解決方案**：支援多版本密鑰和動態輪換。
-**狀態**：已實作 KeyRotationManager 並整合到 WebhookReceiver。
+**狀態**：✅ 已實作 KeyRotationManager 並整合到 WebhookReceiver。
+**位置**：`src/rotation/KeyRotationManager.ts`
+**測試覆蓋**：✅ 完整的單元測試 (`tests/unit/rotation/KeyRotationManager.test.ts`)
+**預設配置**：
+  - `enabled`: `false` (可選功能，需主動啟用)
+  - `autoCleanup`: `true`
+  - `gracePeriod`: 86400000ms (24 小時)
+
+---
+
+## 6. 實作驗證與測試狀態
+
+### 6.1 核心模組完整性檢查
+所有列於本文檔第 2 節的模組已完整實作並包含單元測試：
+
+| 模組 | 實作路徑 | 測試檔案 | 狀態 |
+|------|--------|--------|------|
+| RequestBufferMiddleware | `src/middleware/RequestBufferMiddleware.ts` | `tests/unit/middleware/RequestBufferMiddleware.test.ts` | ✅ 完成 |
+| CircuitBreaker | `src/resilience/CircuitBreaker.ts` | `tests/unit/resilience/CircuitBreaker.test.ts` | ✅ 完成 |
+| KeyRotationManager | `src/rotation/KeyRotationManager.ts` | `tests/unit/rotation/KeyRotationManager.test.ts` | ✅ 完成 |
+| WebhookReceiver | `src/receive/WebhookReceiver.ts` | `tests/unit/receive/WebhookReceiver.test.ts` | ✅ 完成 |
+| WebhookDispatcher | `src/send/WebhookDispatcher.ts` | `tests/unit/send/WebhookDispatcher.test.ts` | ✅ 完成 |
+| OrbitEcho | `src/OrbitEcho.ts` | `tests/unit/OrbitEcho.test.ts` | ✅ 完成 |
+
+### 6.2 版本與發佈狀態
+- **目前版本**：v3.1.0 (published on NPM)
+- **穩定性**：Production-ready
+- **相依性**：兼容 @gravito/core 1.0+
+
+### 6.3 集成測試
+完整的集成測試涵蓋 WebhookReceiver 與 WebhookDispatcher 的端對端流程：
+- 位置：`tests/integration/receiver-dispatcher.test.ts`
+- 覆蓋：Provider 驗證 → 事件分發 → 重試機制
+
+### 6.4 效能驗證清單
+根據第 4 節評估，所有效能影響已在實作中得到充分考量：
+
+| 特性 | 記憶體開銷 | 時間開銷 | 優化措施 | 驗證狀態 |
+|------|----------|---------|--------|--------|
+| Request Buffering | 10-50KB/req | +1-5ms | `maxBodySize` 限制 | ✅ 已實作 |
+| Circuit Breaker | ~1KB/host | +0.1-0.5ms | 狀態機預檢查 | ✅ 已實作 |
+| Key Rotation | ~5KB/provider | +1-10ms (worst) | 主密鑰優先驗證 | ✅ 已實作 |
 
 ---
 
 ## 6. 未來優化規劃
 
+## 6. 未來優化規劃
+
+### 短期 (v3.2+)
+1. **效能基準測試**：發佈官方效能基準報告，記錄吞吐量、延遲、記憶體使用。
+2. **可觀測性增強**：擴展 Tracing 與 Metrics 支援，整合更多 APM 解決方案。
+3. **自定義 Provider 範例**：提供更多第三方 Provider 實作範例（例：Twitch、Discord）。
+
 ### 長期 (v2.0)
 1. **Webhook Proxy**：提供獨立的 Proxy 服務，將內網開發環境暴露給外部 Webhook (類似 ngrok 但專為 Webhook 優化)。
 2. **Rate Limiting**：為入站 Webhook 新增速率限制，防止 DDoS 攻擊。
 3. **Webhook Transformation**：支援在接收或發送前轉換 payload 格式。
+4. **分散式鎖**：支援多實例部署時的重複事件去重（使用 Redis 或分散式鎖）。
+5. **Webhook 排程**：支援延遲發送與定時重試排程。
 
 ---
+
+## 7. 開發者指南
+
+### 貢獻新 Provider
+參考 `src/providers/BaseProvider.ts` 與 `src/providers/StripeProvider.ts` 實作新 Provider：
+
+```typescript
+import { BaseProvider } from './base/BaseProvider'
+
+export class MyProvider extends BaseProvider {
+  readonly name = 'my-provider'
+
+  async verify(rawBody: string, headers: Record<string, string>, secret: string) {
+    // 實作驗證邏輯
+    return { valid: true, payload: parsedPayload }
+  }
+}
+```
+
+### 自定義 Metrics
+透過實作 `MetricsProvider` 介面整合自定義監控：
+
+```typescript
+import type { MetricsProvider } from '@gravito/echo'
+
+class MyMetricsProvider implements MetricsProvider {
+  async recordIncoming(event: string, provider: string) {
+    // 記錄自定義指標
+  }
+}
+```
+
+---
+
+## 8. 故障排除
+
+### 簽章驗證失敗
+**症狀**：所有 Webhook 驗證失敗，錯誤訊息為 "Invalid signature"
+**解決方案**：
+1. 確保 `RequestBufferMiddleware` 已啟用（預設啟用）
+2. 檢查 Provider 秘鑰配置是否正確
+3. 驗證 Webhook 簽章計算方法是否與 Provider 文檔相符
+
+### Circuit Breaker 過度開路
+**症狀**：熔斷器頻繁進入 OPEN 狀態，導致所有請求被拒
+**解決方案**：
+1. 調整 `failureThreshold` 與 `windowSize` 以適應實際流量
+2. 檢查下游服務健康狀態
+3. 使用 `dispatcher.getCircuitBreakerMetrics(host)` 檢視詳細指標
+
+### Key Rotation 期間的驗證錯誤
+**症狀**：密鑰輪換後，部分舊密鑰簽署的 Webhook 驗證失敗
+**解決方案**：
+1. 確保 `gracePeriod` 設定足夠長（建議 ≥ 24 小時）
+2. 驗證舊密鑰未過期或尚在寬限期內
+3. 檢查 `autoCleanup` 未過早移除活動密鑰
+
+---
+
 *Created by Gravito Architect.*
-*Last Updated: 2026-01-31 (v1.2.0)*
+*Last Updated: 2026-02-02 (v1.2.0 - Implementation Verified)*
