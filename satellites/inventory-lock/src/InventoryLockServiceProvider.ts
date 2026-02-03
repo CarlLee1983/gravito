@@ -39,7 +39,9 @@ export class InventoryLockServiceProvider {
     logger.info('[Inventory-Lock] Starting service')
 
     // 1. 啟動超時清理定時任務（每 5 分鐘執行一次）
-    const detectDeadlock = core.container.make('inventoryLock.usecase.detectDeadlock')
+    const detectDeadlock = core.container.make<DetectDeadlock>(
+      'inventoryLock.usecase.detectDeadlock'
+    )
     const cleanupInterval = setInterval(
       async () => {
         try {

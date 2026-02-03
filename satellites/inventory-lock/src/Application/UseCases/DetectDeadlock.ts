@@ -10,6 +10,7 @@
 
 import type { PlanetCore } from '@gravito/core'
 import { LockStatus } from '../../Domain/Models'
+import type { IInventoryLockRepository } from '../Contracts/IInventoryLockRepository'
 
 export class DetectDeadlock {
   constructor(private core: PlanetCore) {}
@@ -21,7 +22,7 @@ export class DetectDeadlock {
     const scanDate = beforeDate || new Date()
 
     // 2. 取得 Repository
-    const repository = core.container.make('inventoryLock.repository')
+    const repository = core.container.make<IInventoryLockRepository>('inventoryLock.repository')
 
     try {
       // 3. 查詢所有過期的鎖定

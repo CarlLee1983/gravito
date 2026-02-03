@@ -50,7 +50,7 @@ export class GetOrder {
     // 如果訂單存在，保存到快取（60 秒）
     if (order && this.cache) {
       const cacheKey = this.getCacheKey(orderId)
-      await this.cache.set(cacheKey, order, { ttl: 60 })
+      await this.cache.set(cacheKey, order, 60)
     }
 
     return order

@@ -25,7 +25,7 @@ export class OrderController {
   async store(ctx: GravitoContext): Promise<void> {
     try {
       // 解析請求體
-      const body = await ctx.req.json()
+      const body = (await ctx.req.json()) as any
       const { userId, productId, quantity } = body
 
       // 建立請求對象
@@ -85,7 +85,13 @@ export class OrderController {
    */
   async show(ctx: GravitoContext): Promise<void> {
     try {
-      const { id } = ctx.req.param()
+      const id = ctx.req.param('id')
+
+      if (!id) {
+        ctx.status(400)
+        ctx.json({ success: false, error: 'Order ID is required' })
+        return
+      }
 
       const orderRepository = this.core.container.make<IOrderRepository>('order.repository')
 

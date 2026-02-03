@@ -65,7 +65,13 @@ export class ProductController {
    */
   async show(ctx: GravitoContext): Promise<void> {
     try {
-      const { id } = ctx.req.param()
+      const id = ctx.req.param('id')
+
+      if (!id) {
+        ctx.status(400)
+        ctx.json({ success: false, error: 'Product ID is required' })
+        return
+      }
 
       const productRepository = this.core.container.make<IProductRepository>('product.repository')
 

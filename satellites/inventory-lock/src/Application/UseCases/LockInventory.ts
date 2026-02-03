@@ -17,6 +17,7 @@ import {
   type LockInventoryRequest,
   LockStatus,
 } from '../../Domain/Models'
+import type { IInventoryLockRepository } from '../Contracts/IInventoryLockRepository'
 
 export class LockInventory {
   constructor(private core: PlanetCore) {}
@@ -32,7 +33,7 @@ export class LockInventory {
     }
 
     // 2. 取得 Repository
-    const repository = core.container.make('inventoryLock.repository')
+    const repository = core.container.make<IInventoryLockRepository>('inventoryLock.repository')
 
     try {
       // 3. 檢查該訂單是否已有鎖定（避免重複鎖定）

@@ -4,7 +4,7 @@
  * 專注於高併發場景下的庫存鎖定與管理
  */
 
-import type { Event } from '@gravito/core'
+import { Event } from '@gravito/core'
 
 /**
  * 鎖定狀態
@@ -100,47 +100,55 @@ export class ReleaseLockRequest {
 /**
  * 庫存鎖定事件
  */
-export class InventoryLocked implements Event {
+export class InventoryLocked extends Event {
   constructor(
     public lockId: string,
     public productId: string,
     public quantity: number,
     public expiresAt: Date
-  ) {}
+  ) {
+    super()
+  }
 }
 
 /**
  * 庫存已釋放事件
  */
-export class InventoryReleased implements Event {
+export class InventoryReleased extends Event {
   constructor(
     public lockId: string,
     public productId: string,
     public quantity: number,
     public reason: string
-  ) {}
+  ) {
+    super()
+  }
 }
 
 /**
  * 庫存已扣減事件
  */
-export class InventoryDeducted implements Event {
+export class InventoryDeducted extends Event {
   constructor(
     public orderId: string,
     public productId: string,
     public quantity: number,
     public success: boolean
-  ) {}
+  ) {
+    super()
+  }
 }
 
 /**
  * 鎖定失敗事件（庫存不足）
  */
-export class LockFailed implements Event {
+export class LockFailed extends Event {
   constructor(
     public productId: string,
     public requestedQuantity: number,
     public availableQuantity: number,
     public reason: string
-  ) {}
+  ) {
+    super()
+  }
 }

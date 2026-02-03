@@ -85,7 +85,7 @@ export class ListProducts {
     // 保存到快取（5 分鐘）
     if (this.cache) {
       const cacheKey = this.getCacheKey(request)
-      await this.cache.set(cacheKey, response, { ttl: 300 })
+      await this.cache.set(cacheKey, response, 300)
     }
 
     return response
