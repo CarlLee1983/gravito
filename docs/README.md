@@ -16,7 +16,7 @@ Gravito is a modular, high-performance framework built on the principles of **Do
 ## 📚 Guides & Specifications
 
 ### 🚀 Getting Started & Architecture
-- [1.0 Integration Guide](./spec/GUIDE_1.0_INTEGRATION.md) - Deep dive into the Galaxy Architecture and MDD.
+- [2.0 Integration Guide](./spec/GUIDE_2.0_INTEGRATION.md) - Deep dive into the Galaxy Architecture and MDD.
 - [Satellite Specification](./spec/SATELLITE_SPEC.md) - Standards for building domain modules.
 - [Architecture Spec](./spec/ARCHITECTURE_SPEC.md) - Core system design specifications.
 
