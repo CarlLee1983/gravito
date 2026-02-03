@@ -46,11 +46,21 @@ Gravito 的啟動過程分為兩個關鍵階段：
 3.  **Booting Phase**：呼叫所有 `ServiceProvider` 的 `boot()`，此時所有依賴已就緒。
 
 ### 3.2 Liftoff (升空)
-這是最終的執行階段，`liftoff()` 會返回一個相容於 `Bun.serve` 的物件，並觸發 `app:liftoff` 動作。
+這是最終的執行階段，`liftoff()` 會返回一個相容於 `Bun.serve` 的物件，並觸發 `app:liftoff` 動作。在 2.0 中，此階段會執行 AOT 路由優化。
 
 ---
 
-## 4. 清單驅動開發 (Manifest-Driven Development)
+## 4. 2.0 效能引擎 (Standalone Engine)
+
+Gravito 2.0 引入了獨立的 Web 引擎，旨在為 Bun 提供極致效能：
+
+1.  **AOT Router (預編譯路由)**：啟動時將路由編譯為最佳化的判斷邏輯。
+2.  **FastContext (物件池)**：重複使用 Context 物件，將 GC 壓力降至最低。
+3.  **Zero-copy Bridge**：直接處理 Bun 的原始 Request，避免資料拷貝。
+
+---
+
+## 5. 清單驅動開發 (Manifest-Driven Development)
 
 MDD 是 Gravito 1.0 引入的核心特性，透過 `gravito.config.ts` 宣告式地組裝系統：
 
