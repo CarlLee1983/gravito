@@ -178,24 +178,90 @@ export class DocsService {
    * Get parsed documentation page
    */
   static async getPage(locale: string, slug: string): Promise<DocPage | null> {
-    // Handle locale mapping (zh -> zh-TW, en -> en)
     const fsLocale = locale === 'zh' ? 'zh-TW' : 'en'
+    const categories = [
+      'getting-started',
+      'architecture',
+      'basics',
+      'frontend',
+      'security',
+      'services',
+      'advanced',
+      'deployment',
+      'specialized',
+      'database',
+    ]
 
-    // Construct file path: docs/{locale}/{slug}.md
-    let filePath = path.join(DOCS_ROOT, fsLocale, `${slug}.md`)
+    // Directories that do NOT have locale subfolders
+    const sharedDirs = ['internal', 'spec', 'operations', 'benchmarks', 'sessions']
 
-    // Fallback logic
+    let filePath = ''
+
+    const slugParts = slug.split('/')
+
+    // Priority 1: Check shared directories (root/shared/...)
+    if (sharedDirs.includes(slugParts[0])) {
+      filePath = path.join(DOCS_ROOT, `${slug}.md`)
+    } else {
+      // Priority 2: Categorized Guide docs (root/locale/guide/category/...)
+      let cleanSlug = slug
+      if (cleanSlug.startsWith('guide/')) {
+        cleanSlug = cleanSlug.replace(/^guide\//, '')
+      }
+
+      const cleanSlugParts = cleanSlug.split('/')
+
+      if (categories.includes(cleanSlugParts[0])) {
+        filePath = path.join(DOCS_ROOT, fsLocale, 'guide', `${cleanSlug}.md`)
+      } else {
+        // Try to find which category the file belongs to
+        let found = false
+        for (const cat of categories) {
+          const checkPath = path.join(DOCS_ROOT, fsLocale, 'guide', cat, `${cleanSlug}.md`)
+          try {
+            await fs.access(checkPath)
+            filePath = checkPath
+            found = true
+            break
+          } catch {}
+        }
+
+        if (!found) {
+          // Fallback to direct path under locale (API docs, etc)
+          filePath = path.join(DOCS_ROOT, fsLocale, `${slug}.md`)
+        }
+      }
+    }
+
+    // Fallback logic for English
     try {
       await fs.access(filePath)
     } catch {
-      if (fsLocale !== 'en') {
-        // Fallback to English
-        const fallbackPath = path.join(DOCS_ROOT, 'en', `${slug}.md`)
-        try {
-          await fs.access(fallbackPath)
-          filePath = fallbackPath
-        } catch {
-          // Both missing, return null (handled by catch below)
+      if (fsLocale !== 'en' && !sharedDirs.includes(slugParts[0])) {
+        // Only fallback if not in shared directories (which are shared anyway)
+        let fallbackSlug = slug
+        if (fallbackSlug.startsWith('guide/')) {
+          fallbackSlug = fallbackSlug.replace(/^guide\//, '')
+        }
+
+        const fallbackSlugParts = fallbackSlug.split('/')
+
+        if (categories.includes(fallbackSlugParts[0])) {
+          filePath = path.join(DOCS_ROOT, 'en', 'guide', `${fallbackSlug}.md`)
+        } else {
+          let foundFallback = false
+          for (const cat of categories) {
+            const checkPath = path.join(DOCS_ROOT, 'en', 'guide', cat, `${fallbackSlug}.md`)
+            try {
+              await fs.access(checkPath)
+              filePath = checkPath
+              foundFallback = true
+              break
+            } catch {}
+          }
+          if (!foundFallback) {
+            filePath = path.join(DOCS_ROOT, 'en', `${slug}.md`)
+          }
         }
       }
     }
@@ -204,10 +270,8 @@ export class DocsService {
       const raw = await fs.readFile(filePath, 'utf-8')
       const { data, content } = matter(raw)
 
-      // Get singleton highlighter
       const highlighter = await DocsService.getHighlighter()
 
-      // Configure marked with shiki
       const markedOptions = {
         async: true,
         highlight: (code: string, lang: string) => {
@@ -219,7 +283,6 @@ export class DocsService {
       } as MarkedOptions
       marked.setOptions(markedOptions)
 
-      // Helper to escape HTML
       const escapeHtml = (str: string): string => {
         return str
           .replace(/&/g, '&amp;')
@@ -229,10 +292,8 @@ export class DocsService {
           .replace(/'/g, '&#039;')
       }
 
-      // Add custom renderer for code blocks, links, and images
       const renderer = new marked.Renderer()
 
-      // Use ImageService for optimized markdown images
       const imageService = await import('@gravito/prism').then((m) => new m.ImageService())
 
       renderer.image = ({
@@ -245,7 +306,6 @@ export class DocsService {
         text: string
       }) => {
         try {
-          // If it's a local path, try to optimize it
           if (!href.startsWith('http') && !href.startsWith('//')) {
             return imageService.generateImageTag({
               src: href,
@@ -258,11 +318,9 @@ export class DocsService {
           console.warn(`[DocsService] Failed to optimize image: ${href}`, e)
         }
 
-        // Fallback to standard img tag
         return `<img src="${href}" alt="${text}"${title ? ` title="${title}"` : ''} />`
       }
 
-      // Transform Markdown links to SPA routes
       renderer.link = ({
         href,
         text,
@@ -274,32 +332,27 @@ export class DocsService {
       }) => {
         let finalHref = href
 
-        // 1. Handle .md relative links (e.g., ./routing.md -> routing)
         if (finalHref.endsWith('.md')) {
           finalHref = finalHref.replace(/\.md$/, '')
         }
 
-        // 2. Ensure relative paths work within the /docs/ context
-        if (finalHref.startsWith('./')) {
-          const currentDir = slug.includes('/') ? slug.split('/').slice(0, -1).join('/') : ''
-          const target = finalHref.replace(/^\.\//, '')
+        if (finalHref.startsWith('./') || finalHref.startsWith('../')) {
           const prefix = locale === 'zh' ? '/zh/docs' : '/en/docs'
-          finalHref = currentDir ? `${prefix}/${currentDir}/${target}` : `${prefix}/${target}`
-        } else if (finalHref.startsWith('../')) {
-          // Basic parent dir support
-          const prefix = locale === 'zh' ? '/zh/docs' : '/en/docs'
-          finalHref = finalHref.replace(/^\.\.\//, `${prefix}/`)
+
+          // Use path.join to resolve relative links within the slug context
+          const slugDir = slug.includes('/') ? slug.split('/').slice(0, -1).join('/') : ''
+          const resolvedPath = path.join(slugDir, finalHref)
+
+          finalHref = `${prefix}/${resolvedPath}`
         } else if (
           !finalHref.startsWith('http') &&
           !finalHref.startsWith('/') &&
           !finalHref.startsWith('#')
         ) {
-          // Case: "routing" instead of "./routing"
           const prefix = locale === 'zh' ? '/zh/docs' : '/en/docs'
           finalHref = `${prefix}/${finalHref}`
         }
 
-        // Escape href and title for HTML attributes
         const escapedHref = escapeHtml(finalHref)
         const escapedTitle = title ? escapeHtml(title) : null
 
@@ -308,7 +361,6 @@ export class DocsService {
 
       renderer.code = ({ text, lang }: { text: string; lang?: string }) => {
         if (lang === 'mermaid') {
-          // ... mermaid logic remains same
           const configHeader = `%%{init: { 
             'theme': 'base', 
             'themeVariables': {
@@ -372,9 +424,9 @@ export class DocsService {
   </div>
 </div>`
         } catch (_e) {
-          const escapedText = escapeHtml(text)
-          const langClass = lang ? `language-${lang}` : ''
-          return `<pre class="${langClass}"><code class="${langClass}">${escapedText}</code></pre>`
+          const _escapedText = escapeHtml(text)
+          const _langClass = lang ? `language-${lang}` : ''
+          return `<pre class="${_langClass}"><code class="${_langClass}">${_escapedText}</code></pre>`
         }
       }
 
@@ -594,18 +646,21 @@ export class DocsService {
         title: trans.getting_started,
         path: '#',
         children: [
-          { title: trans.quick_start, path: `${prefix}/guide/getting-started` },
-          { title: trans.architectural_patterns, path: `${prefix}/guide/cli-init` },
-          { title: trans.structure, path: `${prefix}/guide/project-structure` },
+          { title: trans.quick_start, path: `${prefix}/guide/getting-started/introduction` },
+          { title: trans.architectural_patterns, path: `${prefix}/guide/specialized/cli-init` },
+          { title: trans.structure, path: `${prefix}/guide/getting-started/project-structure` },
         ],
       },
       {
         title: trans.core_concepts,
         path: '#',
         children: [
-          { title: trans.architecture, path: `${prefix}/guide/core-concepts` },
-          { title: trans.official_site_arch, path: `${prefix}/guide/official-site-architecture` },
-          { title: trans.ecosystem, path: `${prefix}/guide/ecosystem` },
+          { title: trans.architecture, path: `${prefix}/guide/architecture/core-concepts` },
+          {
+            title: trans.official_site_arch,
+            path: `${prefix}/guide/architecture/official-site-architecture`,
+          },
+          { title: trans.ecosystem, path: `${prefix}/guide/specialized/ecosystem` },
           // Placeholder for now
           // { title: trans.lifecycle, path: `${prefix}/guide/lifecycle` },
         ],
@@ -614,37 +669,40 @@ export class DocsService {
         title: trans.first_build,
         path: '#',
         children: [
-          { title: trans.photon_core, path: `${prefix}/guide/photon-core` },
-          { title: trans.routing, path: `${prefix}/guide/routing` },
-          { title: trans.rest_api, path: `${prefix}/guide/rest-api` },
-          { title: trans.middleware, path: `${prefix}/guide/middleware` },
-          { title: trans.controllers, path: `${prefix}/guide/controllers` },
-          { title: trans.requests, path: `${prefix}/guide/requests` },
-          { title: trans.responses, path: `${prefix}/guide/responses` },
-          { title: trans.validation, path: `${prefix}/guide/validation` },
-          { title: trans.helpers, path: `${prefix}/guide/helpers` },
-          { title: trans.static_site, path: `${prefix}/guide/static-site-development` },
+          { title: trans.photon_core, path: `${prefix}/guide/architecture/photon-core` },
+          { title: trans.routing, path: `${prefix}/guide/basics/routing` },
+          { title: trans.rest_api, path: `${prefix}/guide/advanced/rest-api` },
+          { title: trans.middleware, path: `${prefix}/guide/basics/middleware` },
+          { title: trans.controllers, path: `${prefix}/guide/basics/controllers` },
+          { title: trans.requests, path: `${prefix}/guide/basics/requests` },
+          { title: trans.responses, path: `${prefix}/guide/basics/responses` },
+          { title: trans.validation, path: `${prefix}/guide/basics/validation` },
+          { title: trans.helpers, path: `${prefix}/guide/basics/helpers` },
+          { title: trans.static_site, path: `${prefix}/guide/specialized/static-site-development` },
         ],
       },
       {
         title: trans.modules,
         path: '#',
         children: [
-          { title: trans.plasma_redis, path: `${prefix}/guide/plasma-redis` },
-          { title: trans.plugins, path: `${prefix}/guide/plugin-development` },
-          { title: trans.beam_client, path: `${prefix}/guide/beam-client` },
-          { title: trans.flux_workflow, path: `${prefix}/guide/flux-workflow` },
-          { title: trans.forge_media, path: `${prefix}/guide/forge-media` },
-          { title: trans.monolith_cms, path: `${prefix}/guide/monolith-cms` },
-          { title: trans.scaffold_generator, path: `${prefix}/guide/scaffold-generator` },
-          { title: trans.site_toolkit, path: `${prefix}/guide/site-toolkit` },
-          { title: trans.ripple_broadcasting, path: `${prefix}/guide/ripple-broadcasting` },
-          { title: trans.freeze_react, path: `${prefix}/guide/freeze-react` },
-          { title: trans.freeze_vue, path: `${prefix}/guide/freeze-vue` },
-          { title: trans.luminosity_cli, path: `${prefix}/guide/luminosity-cli` },
-          { title: trans.create_app, path: `${prefix}/guide/create-gravito-app` },
-          { title: trans.graphql, path: `${prefix}/guide/graphql` },
-          { title: trans.astral, path: `${prefix}/guide/astral` },
+          { title: trans.plasma_redis, path: `${prefix}/guide/services/plasma-redis` },
+          { title: trans.plugins, path: `${prefix}/guide/advanced/plugin-development` },
+          { title: trans.beam_client, path: `${prefix}/guide/specialized/beam-client` },
+          { title: trans.flux_workflow, path: `${prefix}/guide/architecture/flux-workflow` },
+          { title: trans.forge_media, path: `${prefix}/guide/specialized/forge-media` },
+          { title: trans.monolith_cms, path: `${prefix}/guide/specialized/monolith-cms` },
+          { title: trans.scaffold_generator, path: `${prefix}/guide/advanced/scaffold-generator` },
+          { title: trans.site_toolkit, path: `${prefix}/guide/advanced/site-toolkit` },
+          {
+            title: trans.ripple_broadcasting,
+            path: `${prefix}/guide/services/ripple-broadcasting`,
+          },
+          { title: trans.freeze_react, path: `${prefix}/guide/frontend/freeze-react` },
+          { title: trans.freeze_vue, path: `${prefix}/guide/frontend/freeze-vue` },
+          { title: trans.luminosity_cli, path: `${prefix}/guide/specialized/pulse-cli` },
+          { title: trans.create_app, path: `${prefix}/guide/getting-started/create-gravito-app` },
+          { title: trans.graphql, path: `${prefix}/guide/advanced/graphql` },
+          { title: trans.astral, path: `${prefix}/guide/specialized/astral` },
         ],
       },
       {
@@ -665,7 +723,7 @@ export class DocsService {
         title: trans.orm,
         path: '#',
         children: [
-          { title: trans.orm_usage, path: `${prefix}/guide/orm-usage` },
+          { title: trans.orm_usage, path: `${prefix}/guide/database/orm-usage` },
           { title: trans.orm_getting_started, path: `${prefix}/guide/database/orm-quick-start` },
           { title: trans.orm_relationships, path: `${prefix}/guide/database/atlas-relationships` },
           { title: trans.orm_collections, path: `${prefix}/guide/database/atlas-collections` },
@@ -679,59 +737,62 @@ export class DocsService {
         title: trans.auth,
         path: '#',
         children: [
-          { title: trans.auth_fortify, path: `${prefix}/guide/authentication` },
-          { title: trans.auth_sentinel, path: `${prefix}/guide/sentinel-auth` },
-          { title: trans.security, path: `${prefix}/guide/security` },
+          { title: trans.auth_fortify, path: `${prefix}/guide/security/authentication` },
+          { title: trans.auth_sentinel, path: `${prefix}/guide/security/sentinel-auth` },
+          { title: trans.security, path: `${prefix}/guide/security/security` },
         ],
       },
       {
         title: trans.storage,
         path: '#',
         children: [
-          { title: trans.nebula_storage, path: `${prefix}/guide/nebula-storage` },
-          { title: trans.image_opt, path: `${prefix}/guide/image-optimization` },
+          { title: trans.nebula_storage, path: `${prefix}/guide/services/nebula-storage` },
+          { title: trans.image_opt, path: `${prefix}/guide/frontend/image-optimization` },
         ],
       },
       {
         title: trans.cache_queue,
         path: '#',
         children: [
-          { title: trans.stasis_cache, path: `${prefix}/guide/stasis-cache` },
-          { title: trans.queues, path: `${prefix}/guide/queues` },
+          { title: trans.stasis_cache, path: `${prefix}/guide/services/stasis-cache` },
+          { title: trans.queues, path: `${prefix}/guide/services/queues` },
         ],
       },
       {
         title: trans.seo,
         path: '#',
         children: [
-          { title: trans.seo_overview, path: `${prefix}/guide/seo-engine` },
-          { title: trans.route_scanner, path: `${prefix}/guide/seo-route-scanner` },
-          { title: trans.sitemap_basic, path: `${prefix}/guide/sitemap-guide` },
+          { title: trans.seo_overview, path: `${prefix}/guide/specialized/seo-engine` },
+          { title: trans.route_scanner, path: `${prefix}/guide/specialized/seo-route-scanner` },
+          { title: trans.sitemap_basic, path: `${prefix}/guide/specialized/sitemap-guide` },
         ],
       },
       {
         title: trans.frontend,
         path: '#',
         children: [
-          { title: trans.inertia_react, path: `${prefix}/guide/inertia-react` },
-          { title: trans.inertia_vue, path: `${prefix}/guide/inertia-vue` },
-          { title: trans.view_engine, path: `${prefix}/guide/template-engine` },
-          { title: trans.i18n, path: `${prefix}/guide/i18n-guide` },
+          { title: trans.inertia_react, path: `${prefix}/guide/frontend/inertia-react` },
+          { title: trans.inertia_vue, path: `${prefix}/guide/frontend/inertia-vue` },
+          { title: trans.view_engine, path: `${prefix}/guide/frontend/template-engine` },
+          { title: trans.i18n, path: `${prefix}/guide/specialized/i18n-guide` },
         ],
       },
       {
         title: trans.advanced,
         path: '#',
         children: [
-          { title: trans.deployment, path: `${prefix}/guide/deployment` },
-          { title: trans.enterprise_integration, path: `${prefix}/guide/enterprise-integration` },
-          { title: trans.monitor, path: `${prefix}/guide/monitor` },
+          { title: trans.deployment, path: `${prefix}/guide/deployment/deployment` },
+          {
+            title: trans.enterprise_integration,
+            path: `${prefix}/guide/advanced/enterprise-integration`,
+          },
+          { title: trans.monitor, path: `${prefix}/guide/deployment/monitor` },
         ],
       },
       {
         title: trans.testing,
         path: '#',
-        children: [{ title: trans.testing_harness, path: `${prefix}/guide/testing` }],
+        children: [{ title: trans.testing_harness, path: `${prefix}/guide/deployment/testing` }],
       },
     ]
   }
