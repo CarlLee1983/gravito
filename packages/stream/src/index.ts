@@ -55,6 +55,8 @@ export type { Queueable } from './Queueable'
 export { QueueManager } from './QueueManager'
 export type { ScheduledJobConfig, SchedulerOptions } from './Scheduler'
 export { Scheduler } from './Scheduler'
+export { StreamEventBackend } from './StreamEventBackend'
+export { SystemEventJob } from './SystemEventJob'
 export { ClassNameSerializer } from './serializers/ClassNameSerializer'
 // Serializers
 export type { JobSerializer } from './serializers/JobSerializer'

@@ -8,6 +8,7 @@
     "emitDecoratorMetadata": true,
     "declaration": true,
     "skipLibCheck": true,
+    "types": ["node"],
     "esModuleInterop": true,
     "jsx": "react-jsx",
     "allowSyntheticDefaultImports": true,

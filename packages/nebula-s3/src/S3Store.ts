@@ -358,7 +358,9 @@ export class S3Store implements StorageStore {
     try {
       while (true) {
         const { done, value } = await reader.read()
-        if (done) break
+        if (done) {
+          break
+        }
         chunks.push(value)
       }
 
@@ -431,7 +433,7 @@ export class S3Store implements StorageStore {
 
     const items: StorageItem[] = (response.Contents ?? []).map((obj) => ({
       key: obj.Key!,
-      isDirectory: obj.Key!.endsWith('/'),
+      isDirectory: obj.Key?.endsWith('/') === true,
       size: obj.Size,
       lastModified: obj.LastModified,
     }))

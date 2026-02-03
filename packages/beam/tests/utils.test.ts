@@ -165,10 +165,11 @@ describe('executeWithRetry', () => {
     await executeWithRetry(mockFetch, {
       count: 2,
       delay: 100,
+      jitter: false,
       statusCodes: [500],
     })
 
-    // 驗證延遲時間（允許一些誤差）
+    // 驗證延遲時間（無 jitter 時為 100ms，允許計時誤差）
     if (timestamps.length >= 2) {
       const delay1 = timestamps[1] - timestamps[0]
       expect(delay1).toBeGreaterThanOrEqual(90) // 100ms - 10% 誤差

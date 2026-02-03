@@ -1,3 +1,4 @@
+/// <reference types="bun-types" />
 /**
  * @gravito/core
  *
@@ -68,6 +69,41 @@ export {
 } from './ErrorHandler'
 // Events
 export { EventManager } from './EventManager'
+// Event System
+export type {
+  CircuitBreakerOptions,
+  DLQEntry,
+  DLQFilter,
+  EventBackend,
+  EventOptions,
+  EventTask,
+} from './events'
+export {
+  CircuitBreaker,
+  CircuitBreakerState,
+  DEFAULT_EVENT_OPTIONS,
+  DeadLetterQueue,
+  EventPriorityQueue,
+} from './events'
+// Event System Observability
+export type {
+  EventTracingConfig,
+  ObservabilityConfig,
+  QueueDepthCallback,
+} from './events/observability'
+export {
+  EventMetrics,
+  EventTracer,
+  EventTracing,
+  getEventTracing,
+  ObservableHookManager,
+  OTelEventMetrics,
+} from './events/observability'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OpenTelemetry Instrumentation
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Exceptions
 export * from './exceptions'
 // Global Error Handlers
@@ -80,8 +116,8 @@ export {
 } from './GlobalErrorHandlers'
 export { type GravitoManifest, GravitoServer } from './GravitoServer'
 // Hooks
-export type { ActionCallback, FilterCallback } from './HookManager'
-export { HookManager } from './HookManager'
+export type { ActionCallback, FilterCallback, ListenerInfo, ListenerOptions } from './HookManager'
+export { HookManager, type HookManagerConfig } from './HookManager'
 // Helpers
 export * from './helpers'
 // HTTP / Security utilities
@@ -102,6 +138,25 @@ export {
   securityHeaders,
 } from './http/middleware/SecurityHeaders'
 export { ThrottleRequests } from './http/middleware/ThrottleRequests'
+// Re-export instrumentation module for subpath import
+export * as instrumentation from './instrumentation'
+export {
+  DEFAULT_CONFIG as OTEL_DEFAULT_CONFIG,
+  getMeter,
+  getOpenTelemetrySDK,
+  getTracer as getOtelTracer,
+  isOpenTelemetryInitialized,
+  type MetricsConfig as OtelMetricsConfig,
+  type MetricsExporter,
+  type OpenTelemetryConfig,
+  type OpenTelemetrySDK,
+  OTEL_ENV_VARS,
+  resetOpenTelemetry,
+  setupOpenTelemetry,
+  shutdownOpenTelemetry,
+  type TracingConfig as OtelTracingConfig,
+  type TracingExporter,
+} from './instrumentation'
 // Listeners
 export type { Listener, ShouldQueue } from './Listener'
 // Logger
@@ -128,9 +183,17 @@ export {
   type RouteOptions,
   Router,
 } from './Router'
+// Reliability
+export type { DLQManagerFilter, DLQRecord, DLQStats, RetryPolicy } from './reliability'
+export {
+  DeadLetterQueueManager,
+  getDefaultRetryPolicy,
+  getPresetRetryPolicy,
+  RetryEngine,
+} from './reliability'
+
 // Service Provider
 export { ServiceProvider } from './ServiceProvider'
-
 // Security
 export { Encrypter, type EncrypterOptions } from './security/Encrypter'
 

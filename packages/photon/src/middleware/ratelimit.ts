@@ -275,7 +275,7 @@ export function rateLimit(config: RateLimitConfig): MiddlewareHandler {
       return await onRateLimitExceeded(c, retryAfter)
     }
 
-    await next()
+    return await next()
   }
 }
 

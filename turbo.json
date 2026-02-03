@@ -24,7 +24,7 @@
     "typecheck": {
       "dependsOn": ["^build"],
       "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json"],
-      "outputs": ["tsconfig.tsbuildinfo"]
+      "outputs": []
     },
     "lint": {
       "inputs": ["src/**", "tests/**", "package.json", "biome.json"],

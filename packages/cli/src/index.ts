@@ -83,7 +83,7 @@ cli
   .option('--entry <file>', 'Entry file (default: src/index.ts)', { default: 'src/index.ts' })
   .action(async (options) => {
     try {
-      const entryPath = path.resolve(process.cwd(), options.entry)
+      const entryPath = validateEntryPath(options.entry)
       const app = await import(entryPath)
       const core = app.default?.core
 
@@ -129,7 +129,7 @@ cli
   .option('--entry <file>', 'Entry file (default: src/index.ts)', { default: 'src/index.ts' })
   .action(async (options) => {
     try {
-      const entryPath = path.resolve(process.cwd(), options.entry)
+      const entryPath = validateEntryPath(options.entry)
       const app = await import(entryPath)
       const core = app.default?.core
 
@@ -950,6 +950,322 @@ cli
   .command('db:schema:refresh', 'Refresh schema cache (invalidate all)')
   .option('--entry <file>', 'Entry file (default: src/index.ts)', { default: 'src/index.ts' })
   .action((options) => schemaRefresh(options))
+
+// --- Event DLQ Commands ---
+import { EventDLQCommand } from './commands/EventDLQCommand'
+
+/**
+ * 驗證進入點檔案路徑安全性
+ * 確保路徑在專案目錄內，防止路徑遍歷攻擊
+ *
+ * @param entryFile - 進入點檔案相對路徑
+ * @throws Error 如果路徑無效或試圖逃脫專案目錄
+ * @returns 驗證後的絕對路徑
+ */
+function validateEntryPath(entryFile: string): string {
+  const projectRoot = process.cwd()
+  const resolved = path.resolve(projectRoot, entryFile)
+
+  // 確保路徑在專案目錄內
+  if (!resolved.startsWith(projectRoot)) {
+    throw new Error(
+      `Entry file must be within the project directory. ` + `Attempted path: ${resolved}`
+    )
+  }
+
+  // 驗證檔案存在
+  if (!existsSync(resolved)) {
+    throw new Error(`Entry file not found: ${resolved}`)
+  }
+
+  // 驗證檔案副檔名
+  const ext = path.extname(resolved)
+  if (!['.ts', '.js', '.mts', '.mjs'].includes(ext)) {
+    throw new Error(`Invalid entry file type: ${ext}. ` + `Supported types: .ts, .js, .mts, .mjs`)
+  }
+
+  return resolved
+}
+
+cli
+  .command('event:dlq:list', 'List Dead Letter Queue entries')
+  .option('--entry <file>', 'Entry file (default: src/index.ts)', { default: 'src/index.ts' })
+  .option('--event <name>', 'Filter by event name')
+  .option('--status <status>', 'Filter by status (pending, requeued, resolved, abandoned)')
+  .option('--from <date>', 'Filter by start date (ISO format)')
+  .option('--to <date>', 'Filter by end date (ISO format)')
+  .option('--limit <n>', 'Limit results (default: 100)')
+  .option('--offset <n>', 'Offset for pagination')
+  .option('--json', 'Output in JSON format')
+  .action(async (options) => {
+    try {
+      const entryPath = validateEntryPath(options.entry)
+      const app = await import(entryPath)
+      const core = app.default?.core
+
+      if (!core) {
+        console.error(pc.red('Could not find Gravito PlanetCore instance.'))
+        process.exit(1)
+      }
+
+      const dlqManager = core.container.make('dlqManager')
+      if (!dlqManager) {
+        console.error(pc.yellow('DeadLetterQueueManager is not available.'))
+        process.exit(1)
+      }
+
+      const cmd = new EventDLQCommand(dlqManager)
+      await cmd.list(
+        {
+          eventName: options.event,
+          status: options.status,
+          from: options.from ? new Date(options.from) : undefined,
+          to: options.to ? new Date(options.to) : undefined,
+          limit: options.limit ? Number.parseInt(options.limit, 10) : undefined,
+          offset: options.offset ? Number.parseInt(options.offset, 10) : undefined,
+        },
+        { json: options.json }
+      )
+    } catch (err) {
+      console.error(pc.red('Failed to list DLQ entries:'), err)
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('event:dlq:show <id>', 'Show details of a DLQ entry')
+  .option('--entry <file>', 'Entry file (default: src/index.ts)', { default: 'src/index.ts' })
+  .option('--json', 'Output in JSON format')
+  .action(async (id, options) => {
+    try {
+      const entryPath = validateEntryPath(options.entry)
+      const app = await import(entryPath)
+      const core = app.default?.core
+
+      if (!core) {
+        console.error(pc.red('Could not find Gravito PlanetCore instance.'))
+        process.exit(1)
+      }
+
+      const dlqManager = core.container.make('dlqManager')
+      if (!dlqManager) {
+        console.error(pc.yellow('DeadLetterQueueManager is not available.'))
+        process.exit(1)
+      }
+
+      const cmd = new EventDLQCommand(dlqManager)
+      await cmd.show(id, { json: options.json })
+    } catch (err) {
+      console.error(pc.red('Failed to show DLQ entry:'), err)
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('event:dlq:requeue <id>', 'Requeue a DLQ entry')
+  .option('--entry <file>', 'Entry file (default: src/index.ts)', { default: 'src/index.ts' })
+  .action(async (id, options) => {
+    try {
+      const entryPath = validateEntryPath(options.entry)
+      const app = await import(entryPath)
+      const core = app.default?.core
+
+      if (!core) {
+        console.error(pc.red('Could not find Gravito PlanetCore instance.'))
+        process.exit(1)
+      }
+
+      const dlqManager = core.container.make('dlqManager')
+      if (!dlqManager) {
+        console.error(pc.yellow('DeadLetterQueueManager is not available.'))
+        process.exit(1)
+      }
+
+      const cmd = new EventDLQCommand(dlqManager)
+      await cmd.requeue(id)
+    } catch (err) {
+      console.error(pc.red('Failed to requeue DLQ entry:'), err)
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('event:dlq:requeue-all', 'Requeue all DLQ entries matching filter')
+  .option('--entry <file>', 'Entry file (default: src/index.ts)', { default: 'src/index.ts' })
+  .option('--event <name>', 'Filter by event name')
+  .option('--status <status>', 'Filter by status')
+  .action(async (options) => {
+    try {
+      const entryPath = validateEntryPath(options.entry)
+      const app = await import(entryPath)
+      const core = app.default?.core
+
+      if (!core) {
+        console.error(pc.red('Could not find Gravito PlanetCore instance.'))
+        process.exit(1)
+      }
+
+      const dlqManager = core.container.make('dlqManager')
+      if (!dlqManager) {
+        console.error(pc.yellow('DeadLetterQueueManager is not available.'))
+        process.exit(1)
+      }
+
+      const cmd = new EventDLQCommand(dlqManager)
+      await cmd.requeueAll({
+        eventName: options.event,
+        status: options.status,
+      })
+    } catch (err) {
+      console.error(pc.red('Failed to requeue DLQ entries:'), err)
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('event:dlq:stats', 'Show DLQ statistics')
+  .option('--entry <file>', 'Entry file (default: src/index.ts)', { default: 'src/index.ts' })
+  .option('--json', 'Output in JSON format')
+  .action(async (options) => {
+    try {
+      const entryPath = validateEntryPath(options.entry)
+      const app = await import(entryPath)
+      const core = app.default?.core
+
+      if (!core) {
+        console.error(pc.red('Could not find Gravito PlanetCore instance.'))
+        process.exit(1)
+      }
+
+      const dlqManager = core.container.make('dlqManager')
+      if (!dlqManager) {
+        console.error(pc.yellow('DeadLetterQueueManager is not available.'))
+        process.exit(1)
+      }
+
+      const cmd = new EventDLQCommand(dlqManager)
+      await cmd.stats({ json: options.json })
+    } catch (err) {
+      console.error(pc.red('Failed to get DLQ stats:'), err)
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('event:dlq:resolve <id>', 'Mark a DLQ entry as resolved')
+  .option('--entry <file>', 'Entry file (default: src/index.ts)', { default: 'src/index.ts' })
+  .option('--notes <notes>', 'Resolution notes')
+  .action(async (id, options) => {
+    try {
+      const entryPath = validateEntryPath(options.entry)
+      const app = await import(entryPath)
+      const core = app.default?.core
+
+      if (!core) {
+        console.error(pc.red('Could not find Gravito PlanetCore instance.'))
+        process.exit(1)
+      }
+
+      const dlqManager = core.container.make('dlqManager')
+      if (!dlqManager) {
+        console.error(pc.yellow('DeadLetterQueueManager is not available.'))
+        process.exit(1)
+      }
+
+      const cmd = new EventDLQCommand(dlqManager)
+      await cmd.resolve(id, options.notes)
+    } catch (err) {
+      console.error(pc.red('Failed to resolve DLQ entry:'), err)
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('event:dlq:abandon <id>', 'Abandon a DLQ entry (stop retrying)')
+  .option('--entry <file>', 'Entry file (default: src/index.ts)', { default: 'src/index.ts' })
+  .option('--reason <reason>', 'Abandon reason')
+  .action(async (id, options) => {
+    try {
+      const entryPath = validateEntryPath(options.entry)
+      const app = await import(entryPath)
+      const core = app.default?.core
+
+      if (!core) {
+        console.error(pc.red('Could not find Gravito PlanetCore instance.'))
+        process.exit(1)
+      }
+
+      const dlqManager = core.container.make('dlqManager')
+      if (!dlqManager) {
+        console.error(pc.yellow('DeadLetterQueueManager is not available.'))
+        process.exit(1)
+      }
+
+      const cmd = new EventDLQCommand(dlqManager)
+      await cmd.abandon(id, options.reason)
+    } catch (err) {
+      console.error(pc.red('Failed to abandon DLQ entry:'), err)
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('event:dlq:delete <id>', 'Delete a DLQ entry')
+  .option('--entry <file>', 'Entry file (default: src/index.ts)', { default: 'src/index.ts' })
+  .action(async (id, options) => {
+    try {
+      const entryPath = validateEntryPath(options.entry)
+      const app = await import(entryPath)
+      const core = app.default?.core
+
+      if (!core) {
+        console.error(pc.red('Could not find Gravito PlanetCore instance.'))
+        process.exit(1)
+      }
+
+      const dlqManager = core.container.make('dlqManager')
+      if (!dlqManager) {
+        console.error(pc.yellow('DeadLetterQueueManager is not available.'))
+        process.exit(1)
+      }
+
+      const cmd = new EventDLQCommand(dlqManager)
+      await cmd.delete(id)
+    } catch (err) {
+      console.error(pc.red('Failed to delete DLQ entry:'), err)
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('event:dlq:clear', 'Clear all DLQ entries')
+  .option('--entry <file>', 'Entry file (default: src/index.ts)', { default: 'src/index.ts' })
+  .option('--event <name>', 'Filter by event name')
+  .option('--force', 'Skip confirmation')
+  .action(async (options) => {
+    try {
+      const entryPath = validateEntryPath(options.entry)
+      const app = await import(entryPath)
+      const core = app.default?.core
+
+      if (!core) {
+        console.error(pc.red('Could not find Gravito PlanetCore instance.'))
+        process.exit(1)
+      }
+
+      const dlqManager = core.container.make('dlqManager')
+      if (!dlqManager) {
+        console.error(pc.yellow('DeadLetterQueueManager is not available.'))
+        process.exit(1)
+      }
+
+      const cmd = new EventDLQCommand(dlqManager)
+      await cmd.deleteAll({ eventName: options.event }, options.force)
+    } catch (err) {
+      console.error(pc.red('Failed to clear DLQ:'), err)
+      process.exit(1)
+    }
+  })
 
 // --- Fortify Commands ---
 import { type FortifyStack, installFortify } from './commands/fortify'

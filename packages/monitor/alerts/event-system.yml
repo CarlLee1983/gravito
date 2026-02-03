@@ -1,0 +1,113 @@
+groups:
+  - name: gravito_event_system
+    interval: 30s
+    rules:
+      - alert: HighEventDispatchLatency
+        expr: |
+          histogram_quantile(0.99,
+            rate(gravito_event_dispatch_latency_seconds_bucket[5m])
+          ) > 0.8
+        for: 5m
+        labels:
+          severity: critical
+          component: event-system
+        annotations:
+          summary: "Event dispatch P99 latency exceeds 800ms"
+          description: "P99 latency for event dispatch is {{ $value | humanizeDuration }}, exceeding 800ms threshold"
+          dashboard: "Gravito Event System"
+          runbook: "https://gravito.dev/docs/monitoring/event-dispatch-latency"
+
+      - alert: EventQueueDepthHigh
+        expr: |
+          gravito_event_queue_depth{priority="high"} > 1000
+        for: 2m
+        labels:
+          severity: warning
+          component: event-system
+        annotations:
+          summary: "High priority event queue backlog detected"
+          description: "High priority queue depth is {{ $value | humanize }}, exceeding 1000 threshold"
+          dashboard: "Gravito Event System"
+          runbook: "https://gravito.dev/docs/monitoring/queue-depth"
+
+      - alert: EventQueueDepthNormal
+        expr: |
+          gravito_event_queue_depth{priority="normal"} > 5000
+        for: 5m
+        labels:
+          severity: warning
+          component: event-system
+        annotations:
+          summary: "Normal priority event queue backlog detected"
+          description: "Normal priority queue depth is {{ $value | humanize }}, exceeding 5000 threshold"
+          dashboard: "Gravito Event System"
+
+      - alert: EventTimeoutRate
+        expr: |
+          rate(gravito_event_timeouts_total[5m]) /
+          rate(gravito_event_processed_total[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          component: event-system
+        annotations:
+          summary: "Event timeout rate exceeds 1%"
+          description: "Event timeout rate is {{ $value | humanizePercentage }}, exceeding 1% threshold"
+          dashboard: "Gravito Event System"
+          runbook: "https://gravito.dev/docs/monitoring/timeout-rate"
+
+      - alert: EventFailureRate
+        expr: |
+          rate(gravito_event_failures_total[5m]) /
+          rate(gravito_event_processed_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          component: event-system
+        annotations:
+          summary: "Event failure rate exceeds 5%"
+          description: "Event failure rate is {{ $value | humanizePercentage }}, exceeding 5% threshold"
+          dashboard: "Gravito Event System"
+          runbook: "https://gravito.dev/docs/monitoring/failure-rate"
+
+      - alert: HighEventDispatchLatencyP95
+        expr: |
+          histogram_quantile(0.95,
+            rate(gravito_event_dispatch_latency_seconds_bucket[5m])
+          ) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          component: event-system
+        annotations:
+          summary: "Event dispatch P95 latency elevated"
+          description: "P95 latency for event dispatch is {{ $value | humanizeDuration }}, elevated above 500ms"
+          dashboard: "Gravito Event System"
+
+      - alert: EventListenerSlowExecution
+        expr: |
+          histogram_quantile(0.95,
+            rate(gravito_event_listener_execution_seconds_bucket[5m])
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+          component: event-system
+        annotations:
+          summary: "Slow listener execution detected"
+          description: "P95 listener execution time is {{ $value | humanizeDuration }}, exceeding 1 second"
+          dashboard: "Gravito Event System"
+          runbook: "https://gravito.dev/docs/monitoring/slow-listeners"
+
+      - alert: EventSystemNoActivity
+        expr: |
+          increase(gravito_event_processed_total[5m]) == 0
+        for: 15m
+        labels:
+          severity: warning
+          component: event-system
+        annotations:
+          summary: "Event system showing no activity"
+          description: "No events have been processed in the last 5 minutes"
+          dashboard: "Gravito Event System"
+          runbook: "https://gravito.dev/docs/monitoring/no-activity"

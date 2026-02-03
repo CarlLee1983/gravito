@@ -82,17 +82,30 @@ export class FortifyOrbit implements GravitoOrbit {
     const rateLimiterStorage = new MemoryRateLimiterStorage()
     const loginRateLimiter = new RateLimiter(
       rateLimiterStorage,
-      this.config.security?.rateLimit?.login ?? defaultFortifyConfig.security!.rateLimit!.login!
+      this.config.security?.rateLimit?.login ??
+        defaultFortifyConfig.security?.rateLimit?.login ?? {
+          maxAttempts: 5,
+          decayMinutes: 15,
+          lockoutMinutes: 30,
+        }
     )
     const passwordResetRateLimiter = new RateLimiter(
       rateLimiterStorage,
       this.config.security?.rateLimit?.passwordReset ??
-        defaultFortifyConfig.security!.rateLimit!.passwordReset!
+        defaultFortifyConfig.security?.rateLimit?.passwordReset ?? {
+          maxAttempts: 3,
+          decayMinutes: 60,
+          lockoutMinutes: 60,
+        }
     )
     const emailVerificationRateLimiter = new RateLimiter(
       rateLimiterStorage,
       this.config.security?.rateLimit?.emailVerification ??
-        defaultFortifyConfig.security!.rateLimit!.emailVerification!
+        defaultFortifyConfig.security?.rateLimit?.emailVerification ?? {
+          maxAttempts: 5,
+          decayMinutes: 60,
+          lockoutMinutes: 30,
+        }
     )
 
     core.container.singleton('fortify.rateLimiter.login', () => loginRateLimiter)
@@ -103,7 +116,17 @@ export class FortifyOrbit implements GravitoOrbit {
     )
 
     const strengthValidator = new StrengthValidator(
-      this.config.security?.passwordRules ?? defaultFortifyConfig.security!.passwordRules!
+      this.config.security?.passwordRules ??
+        defaultFortifyConfig.security?.passwordRules ?? {
+          minLength: 8,
+          maxLength: 128,
+          requireUppercase: true,
+          requireLowercase: true,
+          requireNumbers: true,
+          requireSymbols: false,
+          preventCommon: true,
+          preventReuse: 5,
+        }
     )
     core.container.singleton('fortify.strengthValidator', () => strengthValidator)
 

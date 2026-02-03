@@ -2,6 +2,7 @@ import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gra
 import type { ConsumerOptions } from './Consumer'
 import { Consumer } from './Consumer'
 import { QueueManager } from './QueueManager'
+import { StreamEventBackend } from './StreamEventBackend'
 import type { QueueConfig } from './types'
 
 /**
@@ -155,6 +156,13 @@ export class OrbitStream implements GravitoOrbit {
     })
 
     core.logger.info('[OrbitStream] Installed')
+
+    // Replace default event backend with Stream backend
+    if (this.queueManager) {
+      const backend = new StreamEventBackend(this.queueManager)
+      core.hooks.setBackend(backend)
+      core.logger.info('[OrbitStream] HookManager backend switched to StreamEventBackend')
+    }
 
     if (this.options.dashboard) {
       const { DashboardProvider } = require('./DashboardProvider')

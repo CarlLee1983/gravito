@@ -48,7 +48,12 @@
       "Bash(git worktree:*)",
       "Bash(git rev-parse:*)",
       "Bash(tsc:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(bunx tsc:*)",
+      "Bash(biome check:*)",
+      "Bash(git stash:*)"
     ]
   },
   "enabledMcpjsonServers": ["pencil", "context7"]
