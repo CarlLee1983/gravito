@@ -31,8 +31,8 @@ Gravito 內建輕量級的依賴注入容器，支援：
 
 ### 2.3 配接器模式 (HttpAdapter)
 為了支援多種執行環境 (Bun, Node.js)，Gravito 抽象了 HTTP 引擎：
-- **BunNativeAdapter**：利用 Bun 的原生 `fetch` 達成極限效能。
-- **PhotonAdapter**：基於 Hono 的高效能配接器。
+- **GravitoEngineAdapter**：利用 Bun 的原生 `fetch` 與 AOT 路由達成極限效能（僅限 Bun 執行環境）。
+- **PhotonAdapter**：基於 Hono 的高效能配接器，提供更廣泛的兼容性。
 
 ---
 
@@ -52,11 +52,13 @@ Gravito 的啟動過程分為兩個關鍵階段：
 
 ## 4. 2.0 效能引擎 (Standalone Engine)
 
-Gravito 2.0 引入了獨立的 Web 引擎，旨在為 Bun 提供極致效能：
+Gravito 2.0 引入了獨立的 Web 引擎，旨在為 Bun 提供極致效能（位於 `@gravito/core/engine`）：
 
-1.  **AOT Router (預編譯路由)**：啟動時將路由編譯為最佳化的判斷邏輯。
-2.  **FastContext (物件池)**：重複使用 Context 物件，將 GC 壓力降至最低。
+1.  **AOT Router (預編譯路由)**：啟動時將路由編譯為最佳化的判斷邏輯，靜態路由達成 O(1) 查詢。
+2.  **FastContext (物件池)**：預設使用大小為 256 的物件池重複使用 Context 物件，將 GC 壓力降至最低。
 3.  **Zero-copy Bridge**：直接處理 Bun 的原始 Request，避免資料拷貝。
+
+> **注意**：Standalone Engine 為 Bun-Only 設計。在 Node.js 或 Deno 環境下，系統會自動降級使用相容適配器。
 
 ---
 

@@ -26,38 +26,56 @@ Gravito 2.0 核心推崇「清單驅動開發」，透過 `gravito.config.ts` �
     - `boot()`: 掛載路由、註冊事件監聽器。
 4.  **升空 (Liftoff)**: 呼叫 `liftoff()` 啟動 Bun.serve，並觸發 AOT (Ahead-Of-Time) 路由預編譯。
 
-## 3. 2.0 黑科技：Standalone Engine
+## 3. 2.0 核心技術：Standalone Engine
 
-在 2.0 中，您可以選擇使用輕量級的 `Gravito Engine`：
-
+### 3.1 核心特性
 - **AOT Router**: 啟動時預編譯路由，靜態路徑達成 O(1) 匹配。
-- **FastContext**: 實作內部資源池，將每個請求的記憶體分配降至最低。
+- **FastContext**: 實作內部資源池（預設 256 個實例），將每個請求的記憶體分配降至最低。
 - **零拷貝 (Zero-copy)**: 直接橋接 `Bun.serve` 原始 Request，減少中間轉換損耗。
 
-```typescript
-import { Gravito } from '@gravito/core/engine'
-const app = new Gravito()
+### 3.2 Adapter 選擇矩陣
+| 場景 | 建議 Adapter | 理由 |
+| :--- | :--- | :--- |
+| **極致效能 (API/Microservice)** | `GravitoEngineAdapter` | Bun 原生優化，AOT 路由速度最快。 |
+| **高度兼容 (Middleware 重度使用)** | `PhotonAdapter` | 基於 Hono，支援所有 Hono 生態系插件。 |
+| **Node.js 部署** | `PhotonAdapter` | 提供跨 Runtime 的穩定性。 |
 
-app.get('/api/v2/performance', (c) => {
-  return c.json({ status: 'warpspeed' })
-})
+## 4. 效能調優指引 (Performance Tuning)
+
+### 4.1 物件池調整
+若您的應用面臨極高併發（High Concurrency），可在啟動時調整池大小：
+```typescript
+const core = new PlanetCore({
+  engineOptions: {
+    poolSize: 512 // 針對高併發環境擴大 Context 池
+  }
+});
 ```
 
-## 4. 跨衛星溝通
+### 4.2 JIT 預熱 (Predictive Warming)
+使用 `core.warmup()` 在 `liftoff` 之前預熱熱點端點，避免首個請求的冷啟動延遲。
+
+## 5. 跨衛星溝通
 
 **情境**: 當訂單支付成功時，通知發票衛星開立發票。
 
 ```typescript
 // 在 Order Satellite 中 (UseCase)
-this.events.emit('order:paid', { orderId: '123' });
+await this.core.hooks.doAction('order:paid', { orderId: '123' });
 
 // 在 Invoice Satellite 中 (ServiceProvider.boot)
-this.events.on('order:paid', (payload) => {
-  this.container.make(CreateInvoiceUseCase).execute(payload);
+this.core.hooks.addAction('order:paid', async (payload) => {
+  await this.container.make(CreateInvoiceUseCase).execute(payload);
 });
 ```
 
-這種方式確保了 `Order` 與 `Invoice` 在實體層面完全解耦。
+## 6. 整合檢查清單 (Integration Checklist)
+
+- [ ] 所有的衛星依賴是否使用了 `workspace:*`？
+- [ ] 所有的 `UseCase` 是否已正確注入 `PlanetCore`？
+- [ ] 跨衛星通訊是否已從「直接引用」重構為「Hook/Event」？
+- [ ] 是否已針對核心 API 執行了 `core.warmup()`？
+- [ ] 資料庫遷移是否已遷移至衛星內部的 `Infrastructure` 目錄？
 
 ---
 *Last Updated: 2026-02-03 | Gravito Architecture Team*

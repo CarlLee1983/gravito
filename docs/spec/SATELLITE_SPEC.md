@@ -69,14 +69,23 @@ async queue(job) {
   - 禁止在 `.ts` 檔案中使用 `require()`，這會導致某些打包工具（如 tsup）在處理 CJS/ESM 混用時發生崩潰。
 
 ### C. 依賴規範 (Monorepo)
-- **規範**: 所有的 `@gravito/*` 或 `@gravito/core` 依賴必須標註為 `workspace:*`。
+- **規範**: 所有的 `@gravito/*` 或 `@gravito/core` 依賴必須標註為 `workspace:*` 並放入 `dependencies` 而非 `devDependencies`。
 - **優點**: 確保測試與建置時始終連結到專案內最新的原始碼，而非 NPM 上的舊版本。
 
 ### D. 類型與值 (Imports)
 - **陷阱**: 僅以 `import type` 導入類別（如 Mapper），但在代碼中將其作為實體調用，會導致 `ReferenceError`。
 - **規範**: 若需要調用靜態方法或實例化，請確保使用標準 `import`。
 
-### E. 資料庫 Schema 一致性
+### E. UseCase 實作規範
+- **規範**: `UseCase` 的建構子應接收必要的 Repository 介面，並建議傳入 `PlanetCore` 實例以存取全域服務（如 `hasher`, `hooks`, `logger`）。
+- **範例**:
+  ```typescript
+  export class RegisterMember extends UseCase<Input, Output> {
+    constructor(private repository: IRepo, private core: PlanetCore) { super() }
+  }
+  ```
+
+### F. 資料庫 Schema 一致性
 - **陷阱**: 手動寫測試 Schema 時漏掉欄位（如 `email_verified_at`）。
 - **規範**: 測試中的 `Schema.create` 應與 `Domain/Entities` 的屬性完全對齊，建議定期執行 `grand-review.ts` 進行全量欄位檢查。
 
