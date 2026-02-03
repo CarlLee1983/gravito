@@ -5,7 +5,7 @@ import type { Transport } from './transports/Transport'
  * Interface for Webhook Drivers.
  */
 export interface WebhookDriver {
-  handle(c: GravitoContext): Promise<{ event: string; payload: any } | null>
+  handle(c: GravitoContext): Promise<{ event: string; payload: any }[] | null>
 }
 
 /**

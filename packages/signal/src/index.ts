@@ -25,7 +25,6 @@ export { LogTransport } from './transports/LogTransport'
 export { MemoryTransport } from './transports/MemoryTransport'
 export { SesTransport } from './transports/SesTransport'
 export { SmtpTransport } from './transports/SmtpTransport'
-
 export type { Transport } from './transports/Transport'
 export type {
   Address,
@@ -34,3 +33,4 @@ export type {
   MailConfig,
   Message,
 } from './types'
+export { type SendGridWebhookConfig, SendGridWebhookDriver } from './webhooks/SendGridWebhookDriver'

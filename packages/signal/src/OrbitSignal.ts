@@ -251,9 +251,11 @@ export class OrbitSignal implements GravitoOrbit {
         }
 
         try {
-          const result = await driver.handle(c)
-          if (result) {
-            await this.handleWebhook(driverName as string, result.event, result.payload)
+          const results = await driver.handle(c)
+          if (results && Array.isArray(results)) {
+            for (const result of results) {
+              await this.handleWebhook(driverName as string, result.event, result.payload)
+            }
           }
           return c.json({ success: true })
         } catch (error) {
