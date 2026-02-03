@@ -88,6 +88,17 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
 
     if (id) {
       this.userInstance = (await this.provider.retrieveById(id)) as User | null
+
+      if (this.userInstance?.getTenantId) {
+        const tenantId = this.ctx.get(
+          'tenantId' as keyof import('@gravito/core').GravitoVariables
+        ) as string | number | undefined
+        if (tenantId && String(this.userInstance.getTenantId()) !== String(tenantId)) {
+          this.userInstance = null
+          return null
+        }
+      }
+
       return this.userInstance
     }
 

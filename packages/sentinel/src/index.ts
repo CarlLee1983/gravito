@@ -25,6 +25,7 @@ import {
 export * from './AuthManager'
 export * from './contracts/Authenticatable'
 export * from './contracts/Guard'
+export * from './contracts/SocialUserProvider'
 export * from './contracts/UserProvider'
 export * from './EmailVerification'
 export * from './Gate'
@@ -35,8 +36,10 @@ export * from './HashManager'
 export * from './middleware/auth'
 export * from './middleware/can'
 export * from './middleware/guest'
+export * from './middleware/throttleAuth'
 export * from './PasswordBroker'
 export * from './providers/CallbackUserProvider'
+export * from './RedisTokenBlacklist'
 
 /**
  * Options for configuring the OrbitSentinel service.

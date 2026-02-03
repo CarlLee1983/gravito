@@ -83,6 +83,16 @@ export class JwtGuard<User extends Authenticatable = Authenticatable> implements
       )
       if (payload?.sub) {
         this.userInstance = await this.provider.retrieveById(payload.sub as string)
+
+        if (this.userInstance?.getTenantId) {
+          const tenantId = this.ctx.get(
+            'tenantId' as keyof import('@gravito/core').GravitoVariables
+          ) as string | number | undefined
+          if (tenantId && String(this.userInstance.getTenantId()) !== String(tenantId)) {
+            this.userInstance = null
+            return null
+          }
+        }
       }
     } catch (_e) {
       return null
