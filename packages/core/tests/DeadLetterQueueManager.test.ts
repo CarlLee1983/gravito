@@ -12,56 +12,175 @@ import { DeadLetterQueueManager } from '../src/reliability/DeadLetterQueueManage
  * Mock 數據庫連接
  */
 class MockConnection implements ConnectionContract {
-  private store: Map<string, any> = new Map()
   private tableData: Record<string, any[]> = { event_dlq: [] }
 
   table(name: string) {
-    const self = this
-    return {
-      where(column: string, value: any) {
-        return {
-          first: async () => {
-            const rows = self.tableData[name] || []
-            return rows.find((r) => r[column] === value) || null
-          },
-          delete: async () => {
-            const rows = self.tableData[name] || []
-            const initialLength = rows.length
-            self.tableData[name] = rows.filter((r) => r[column] !== value)
-            return initialLength - self.tableData[name].length
-          },
-          update: async (data: any) => {
-            const rows = self.tableData[name] || []
-            const index = rows.findIndex((r) => r[column] === value)
+    const tableData = this.tableData
+
+    const applyConditions = (rows: any[], conditions: [string, string, any][]) => {
+      let filtered = [...rows]
+      for (const [column, operator, value] of conditions) {
+        if (operator === '=') {
+          filtered = filtered.filter((r) => r[column] === value)
+        } else if (operator === '<=') {
+          filtered = filtered.filter(
+            (r) => new Date(r[column]).getTime() <= new Date(value).getTime()
+          )
+        } else if (operator === '>=') {
+          filtered = filtered.filter(
+            (r) => new Date(r[column]).getTime() >= new Date(value).getTime()
+          )
+        }
+      }
+      return filtered
+    }
+
+    const createChain = (conditions: [string, string, any][] = []): any => {
+      return {
+        where(column: string, operatorOrValue: string | any, maybeValue?: any) {
+          const [op, val] =
+            maybeValue === undefined ? ['=', operatorOrValue] : [operatorOrValue, maybeValue]
+          return createChain([...conditions, [column, op, val]])
+        },
+        delete: async () => {
+          const rows = tableData[name] || []
+          const filtered = applyConditions(rows, conditions)
+          const initialLength = rows.length
+          tableData[name] = rows.filter((r) => !filtered.includes(r))
+          return initialLength - tableData[name].length
+        },
+        update: async (data: any) => {
+          const rows = tableData[name] || []
+          const filtered = applyConditions(rows, conditions)
+          let updated = 0
+          for (const row of filtered) {
+            const index = rows.indexOf(row)
             if (index >= 0) {
               rows[index] = { ...rows[index], ...data }
+              updated++
             }
-            return index >= 0 ? 1 : 0
-          },
-          count: async () => {
-            const rows = self.tableData[name] || []
-            return rows.filter((r) => r[column] === value).length
-          },
-        }
+          }
+          return updated
+        },
+        count: async () => {
+          const rows = tableData[name] || []
+          return applyConditions(rows, conditions).length
+        },
+        first: async () => {
+          const rows = tableData[name] || []
+          const filtered = applyConditions(rows, conditions)
+          return filtered[0] || null
+        },
+        orderBy(column: string, dir = 'asc'): any {
+          return {
+            ...createChain(conditions),
+            limit(n: number) {
+              return {
+                offset(offset: number) {
+                  return {
+                    get: async () => {
+                      let rows = (tableData[name] || []).slice()
+                      rows = applyConditions(rows, conditions)
+                      rows.sort((a, b) => {
+                        const aVal = a[column]
+                        const bVal = b[column]
+                        let aTime: number
+                        let bTime: number
+                        try {
+                          aTime = new Date(aVal).getTime()
+                          bTime = new Date(bVal).getTime()
+                        } catch {
+                          aTime = aVal < bVal ? -1 : 1
+                          bTime = 0
+                        }
+                        return dir === 'desc' ? bTime - aTime : aTime - bTime
+                      })
+                      return rows.slice(offset, offset + n)
+                    },
+                  }
+                },
+              }
+            },
+          }
+        },
+      }
+    }
+
+    const baseChain = createChain([])
+
+    return {
+      ...baseChain,
+      where(column: string, operatorOrValue: string | any, maybeValue?: any) {
+        const [op, val] =
+          maybeValue === undefined ? ['=', operatorOrValue] : [operatorOrValue, maybeValue]
+        return createChain([[column, op, val]])
       },
       whereIn(column: string, values: any[]) {
         return {
           delete: async () => {
-            const rows = self.tableData[name] || []
+            const rows = tableData[name] || []
             const initialLength = rows.length
-            self.tableData[name] = rows.filter((r) => !values.includes(r[column]))
-            return initialLength - self.tableData[name].length
+            tableData[name] = rows.filter((r) => !values.includes(r[column]))
+            return initialLength - tableData[name].length
           },
         }
       },
       insert: async (data: any) => {
-        const rows = self.tableData[name] || []
+        const rows = tableData[name] || []
         rows.push(data)
-        self.tableData[name] = rows
+        tableData[name] = rows
         return rows.length
       },
       count: async () => {
-        return (self.tableData[name] || []).length
+        return (tableData[name] || []).length
+      },
+      get: async () => {
+        return tableData[name] || []
+      },
+      select(...cols: string[]) {
+        const selectedData = tableData[name] || []
+        return {
+          selectRaw(sql: string) {
+            return {
+              groupBy(groupColumn: string) {
+                return {
+                  get: async () => {
+                    const rows = selectedData.slice()
+                    const grouped: Record<string, any> = {}
+                    for (const row of rows) {
+                      const key = row[groupColumn]
+                      if (!grouped[key]) {
+                        grouped[key] = { [groupColumn]: key, count: 0 }
+                      }
+                      grouped[key].count++
+                    }
+                    return Object.values(grouped)
+                  },
+                }
+              },
+            }
+          },
+          groupBy(groupColumn: string) {
+            return {
+              selectRaw(sql: string) {
+                return {
+                  get: async () => {
+                    const rows = selectedData.slice()
+                    const grouped: Record<string, any> = {}
+                    for (const row of rows) {
+                      const key = row[groupColumn]
+                      if (!grouped[key]) {
+                        grouped[key] = { [groupColumn]: key, count: 0 }
+                      }
+                      grouped[key].count++
+                    }
+                    return Object.values(grouped)
+                  },
+                }
+              },
+            }
+          },
+        }
       },
       groupBy(column: string) {
         return {
@@ -70,7 +189,7 @@ class MockConnection implements ConnectionContract {
               selectRaw(sql: string) {
                 return {
                   get: async () => {
-                    const rows = self.tableData[name] || []
+                    const rows = tableData[name] || []
                     const grouped: Record<string, number> = {}
                     for (const row of rows) {
                       const key = row[column]
@@ -80,28 +199,6 @@ class MockConnection implements ConnectionContract {
                       [column]: key,
                       count,
                     }))
-                  },
-                }
-              },
-            }
-          },
-        }
-      },
-      orderBy(column: string, dir: string) {
-        return {
-          limit(n: number) {
-            return {
-              offset(n: number) {
-                return {
-                  get: async () => {
-                    const rows = (self.tableData[name] || []).slice()
-                    rows.sort((a, b) => {
-                      if (dir === 'desc') {
-                        return new Date(b[column]).getTime() - new Date(a[column]).getTime()
-                      }
-                      return new Date(a[column]).getTime() - new Date(b[column]).getTime()
-                    })
-                    return rows.slice(n, n + 100)
                   },
                 }
               },
@@ -348,9 +445,9 @@ describe('DeadLetterQueueManager', () => {
 
   describe('clear', () => {
     beforeEach(async () => {
-      await manager.moveToDlq('order:created', { id: 1 }, {}, new Error('E1'), 1)
-      await manager.moveToDlq('order:created', { id: 2 }, {}, new Error('E2'), 1)
-      await manager.resolve('dlq-id-for-resolved', 'Manual fix')
+      const dlqId1 = await manager.moveToDlq('order:created', { id: 1 }, {}, new Error('E1'), 1)
+      const _dlqId2 = await manager.moveToDlq('order:created', { id: 2 }, {}, new Error('E2'), 1)
+      await manager.resolve(dlqId1, 'Manual fix')
     })
 
     it('應該清空待處理的記錄', async () => {
