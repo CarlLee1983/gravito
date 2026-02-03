@@ -112,7 +112,7 @@ Luminosity supports three operational modes to suit different environments:
 | :--- | :--- | :--- | :--- | :--- |
 | **Dynamic** | Small sites (< 1k pages) | None (Runtime) | Simple, stateless | High CPU on every request |
 | **Cached** | Mid-sized sites (< 50k pages) | Memory + TTL | Fast response | Memory usage, data lost on restart |
-| **Incremental** | Large sites (> 1M pages) | **LSM-Tree (Disk)** | **Infinite scaling**, fast writes | Requires persistent storage (EFS/Volume) |
+| **Incremental** | Large sites (> 1M pages) | **LSM-Tree (Disk)** | **Infinite scaling**, fast writes | Requires persistent storage (EFS/Persistent Volume) |
 
 ---
 

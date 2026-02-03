@@ -11,7 +11,7 @@
 Gravito Core 是專為 **Bun Runtime** 設計的微內核架構。它不直接綁定特定的 HTTP Server 實現，而是透過 **Adapter Pattern (適配器模式)** 來驅動底層引擎。
 
 其核心職責為：
-1.  **抽象化**: 抹平不同 Runtime (Bun, Node/Photon) 的差異。
+1.  **抽象化**: 抹平不同 Runtime (Bun, Node) 的差異。
 2.  **生命週期管理**: 管理 Service Providers 的註冊與啟動。
 3.  **依賴注入**: 提供輕量級的 IoC 容器。
 4.  **請求分發**: 將 HTTP 請求路由至對應的控制器。
@@ -121,7 +121,7 @@ Gravito 使用自研的 **Radix Tree (基數樹)** 進行路由匹配，針對 A
 *   `children`: 子節點 Map
 *   `paramChild`: 參數子節點 (e.g., `:id`)
 *   `wildcardChild`: 通配符節點 (e.g., `*`)
-*   `handlers`: HTTP Method 到 Handler 的映射
+*   `handlers`: HTTP Method 到 Handler 的對映
 *   **`regex`**: (Gravito 獨有) 參數正則約束
 
 ### 匹配演算法流程
