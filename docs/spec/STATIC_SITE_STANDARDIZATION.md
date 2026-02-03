@@ -6,13 +6,13 @@ This document outlines the standardized approach for building static websites wi
 
 We've established a standardized SSG (Static Site Generation) workflow to ensure:
 
-1. [Complete] Consistent behavior across React and Vue frameworks
-2. [Complete] Unified API for SSG detection and navigation
-3. [Complete] Built-in i18n (internationalization) support
-4. [Complete] Automatic environment detection
-5. [Complete] Prevention of common pitfalls
+1. Consistent behavior across React and Vue frameworks
+2. Unified API for SSG detection and navigation
+3. Built-in i18n (internationalization) support
+4. Automatic environment detection
+5. Prevention of common pitfalls
 
-## � Package Architecture
+## 📦 Package Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -40,9 +40,9 @@ We've established a standardized SSG (Static Site Generation) workflow to ensure
 
 | Document | Description |
 |----------|-------------|
-| [SSG Guide (English)](./en/guide/static-site-development.md) | Complete development guide |
-| [SSG Guide (中文)](./zh-TW/guide/static-site-development.md) | 完整開發指南 |
-| [Quick Reference](./STATIC_SITE_QUICK_REFERENCE.md) | TL;DR guide |
+| [SSG Guide (English)](../en/guide/specialized/static-site-development.md) | Complete development guide |
+| [SSG Guide (中文)](../zh-TW/guide/specialized/static-site-development.md) | 完整開發指南 |
+| Quick Reference | (Coming Soon) |
 
 ## Key Principles
 
@@ -105,7 +105,7 @@ app.use(FreezePlugin, freezeConfig)
 import { Link } from '@inertiajs/react'
 <Link href="/about">About</Link>
 
-// [Complete] Correct
+// ✅ Correct
 import { StaticLink } from '@gravito/freeze-react'
 <StaticLink href="/about">About</StaticLink>
 ```
@@ -186,6 +186,7 @@ import {
 import { freezeConfig } from './freeze.config'
 
 // Generate localized routes
+// 'abstractRoutes' should be your application's route definition
 const routes = generateLocalizedRoutes(abstractRoutes, freezeConfig.locales)
 
 // Generate redirect HTML files
@@ -199,14 +200,14 @@ const sitemap = generateSitemapEntries(routes, freezeConfig)
 
 A static site is properly configured when:
 
-- [Complete] Using `@gravito/freeze-*` packages
-- [Complete] `freeze.config.ts` created with all domains
-- [Complete] All navigation uses `StaticLink`
-- [Complete] Locale switching works correctly
-- [Complete] Abstract routes redirect properly
-- [Complete] No black overlay on navigation
-- [Complete] No console errors
-- [Complete] Sitemap includes i18n alternates
+- Using `@gravito/freeze-*` packages
+- `freeze.config.ts` created with all domains
+- All navigation uses `StaticLink`
+- Locale switching works correctly
+- Abstract routes redirect properly
+- No black overlay on navigation
+- No console errors
+- Sitemap includes i18n alternates
 
 ## Common Issues
 
