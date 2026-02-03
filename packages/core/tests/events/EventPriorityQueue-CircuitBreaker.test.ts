@@ -7,8 +7,66 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
 import type { EventOptions } from '../../src/events/EventOptions'
 import { EventPriorityQueue } from '../../src/events/EventPriorityQueue'
+import { EventMetrics } from '../../src/events/observability/EventMetrics'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+/**
+ * 模擬 Metrics Registry
+ */
+class MockMetricsRegistry {
+  private histograms: Map<string, any> = new Map()
+  private gauges: Map<string, any> = new Map()
+  private counters: Map<string, any> = new Map()
+
+  histogram(config: any) {
+    const mock = {
+      observe: (value: number, labels: any) => {
+        if (!this.histograms.has(config.name)) {
+          this.histograms.set(config.name, [])
+        }
+        this.histograms.get(config.name)!.push({ value, labels })
+      },
+    }
+    return mock
+  }
+
+  gauge(config: any) {
+    const mock = {
+      set: (value: number, labels: any) => {
+        if (!this.gauges.has(config.name)) {
+          this.gauges.set(config.name, [])
+        }
+        this.gauges.get(config.name)!.push({ value, labels })
+      },
+    }
+    return mock
+  }
+
+  counter(config: any) {
+    const mock = {
+      inc: (labels: any) => {
+        if (!this.counters.has(config.name)) {
+          this.counters.set(config.name, [])
+        }
+        this.counters.get(config.name)!.push(labels)
+      },
+    }
+    return mock
+  }
+
+  getHistograms() {
+    return this.histograms
+  }
+
+  getGauges() {
+    return this.gauges
+  }
+
+  getCounters() {
+    return this.counters
+  }
+}
 
 describe('EventPriorityQueue - Circuit Breaker Integration', () => {
   let queue: EventPriorityQueue
@@ -253,6 +311,100 @@ describe('EventPriorityQueue - Circuit Breaker Integration', () => {
       expect(events).toContain('event:1')
       expect(events).toContain('event:2')
       expect(events).toContain('event:3')
+    })
+  })
+
+  describe('熔斷器 Metrics 整合', () => {
+    it('應該記錄熔斷器失敗和成功', async () => {
+      const registry = new MockMetricsRegistry()
+      const metrics = new EventMetrics(registry, 'test_')
+      queue.setEventMetrics(metrics)
+
+      const successCallback = async () => {
+        // Callback for testing metrics recording
+      }
+
+      const options: EventOptions = {
+        async: true,
+        circuitBreaker: {
+          failureThreshold: 100, // 高閾值避免開啟
+        },
+      }
+
+      queue.enqueue('test:event', {}, [successCallback], options)
+      await sleep(100)
+
+      const counters = registry.getCounters()
+      const successes = counters.get('test_circuit_breaker_successes_total')
+
+      expect(successes).toBeDefined()
+      expect(successes.length).toBeGreaterThan(0)
+    })
+
+    it('應該在狀態轉換時記錄 Metrics', async () => {
+      const registry = new MockMetricsRegistry()
+      const metrics = new EventMetrics(registry, 'test_')
+      queue.setEventMetrics(metrics)
+
+      const failCallback = async () => {
+        throw new Error('Failure')
+      }
+
+      const options: EventOptions = {
+        async: true,
+        circuitBreaker: {
+          failureThreshold: 1,
+          resetTimeout: 200,
+        },
+      }
+
+      // 觸發一次失敗以開啟熔斷器
+      queue.enqueue('test:transition', {}, [failCallback], options)
+      await sleep(100)
+
+      // 檢查轉換 Metrics
+      const counters = registry.getCounters()
+      const transitions = counters.get('test_circuit_breaker_transitions_total')
+
+      expect(transitions).toBeDefined()
+      expect(transitions.length).toBeGreaterThan(0)
+    })
+
+    it('應該隔離不同事件的 Metrics', async () => {
+      const registry = new MockMetricsRegistry()
+      const metrics = new EventMetrics(registry, 'test_')
+      queue.setEventMetrics(metrics)
+
+      const callback1 = async () => {
+        // Callback for event 1
+      }
+
+      const callback2 = async () => {
+        // Callback for event 2
+      }
+
+      const options: EventOptions = {
+        async: true,
+        circuitBreaker: {
+          failureThreshold: 100,
+        },
+      }
+
+      queue.enqueue('event:1', {}, [callback1], options)
+      queue.enqueue('event:2', {}, [callback2], options)
+
+      await sleep(150)
+
+      const counters = registry.getCounters()
+      const successes = counters.get('test_circuit_breaker_successes_total')
+
+      // 應該有兩個不同事件的成功記錄
+      expect(successes).toBeDefined()
+      if (successes) {
+        const eventNames = successes.map((s: any) => s.event_name)
+        expect(eventNames).toContain('event:1')
+        expect(eventNames).toContain('event:2')
+      }
     })
   })
 })

@@ -487,6 +487,16 @@ export class HookManager {
   }
 
   /**
+   * Get the EventPriorityQueue instance.
+   *
+   * @returns EventPriorityQueue instance
+   * @protected
+   */
+  protected getEventQueue(): EventPriorityQueue {
+    return this.eventQueue
+  }
+
+  /**
    * Get all registered listeners for a hook.
    *
    * @param hook - Hook name

@@ -3,6 +3,7 @@ import { CircuitBreaker } from './CircuitBreaker'
 import type { DeadLetterQueue } from './DeadLetterQueue'
 import type { EventBackend } from './EventBackend'
 import type { EventOptions } from './EventOptions'
+import type { EventMetrics } from './observability/EventMetrics'
 import type { BackpressureStrategy, EventQueueConfig, EventTask } from './types'
 
 export type { EventTask, EventQueueConfig, BackpressureStrategy }
@@ -34,6 +35,7 @@ export class EventPriorityQueue implements EventBackend {
   private config: EventQueueConfig
   private processingPartitions: Set<string> = new Set()
   private eventCircuitBreakers: Map<string, CircuitBreaker> = new Map()
+  private eventMetrics?: EventMetrics
 
   constructor(config: EventQueueConfig = {}) {
     this.config = config
@@ -64,6 +66,16 @@ export class EventPriorityQueue implements EventBackend {
     ) => Promise<void>
   ): void {
     this.persistentDLQHandler = handler
+  }
+
+  /**
+   * Set the EventMetrics instance for recording circuit breaker metrics.
+   *
+   * @param metrics - EventMetrics instance
+   * @internal
+   */
+  setEventMetrics(metrics: EventMetrics): void {
+    this.eventMetrics = metrics
   }
 
   /**
@@ -102,6 +114,17 @@ export class EventPriorityQueue implements EventBackend {
       onClose: () => {
         console.info(`[EventPriorityQueue] Circuit breaker closed for event '${hook}'`)
       },
+      metricsRecorder: this.eventMetrics
+        ? {
+            recordState: (name, state) => this.eventMetrics!.recordCircuitBreakerState(name, state),
+            recordTransition: (name, from, to) =>
+              this.eventMetrics!.recordCircuitBreakerTransition(name, from, to),
+            recordFailure: (name) => this.eventMetrics!.recordCircuitBreakerFailure(name),
+            recordSuccess: (name) => this.eventMetrics!.recordCircuitBreakerSuccess(name),
+            recordOpenDuration: (name, seconds) =>
+              this.eventMetrics!.recordCircuitBreakerOpenDuration(name, seconds),
+          }
+        : undefined,
     })
 
     this.eventCircuitBreakers.set(hook, breaker)

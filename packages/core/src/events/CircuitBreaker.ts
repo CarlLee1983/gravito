@@ -60,6 +60,39 @@ export interface CircuitBreakerMetrics {
 }
 
 /**
+ * Circuit Breaker metrics recorder interface.
+ * @public
+ */
+export interface CircuitBreakerMetricsRecorder {
+  /**
+   * Record current state of the circuit breaker.
+   * @param eventName - Name of the event
+   * @param state - State as number (0=CLOSED, 1=HALF_OPEN, 2=OPEN)
+   */
+  recordState: (eventName: string, state: number) => void
+
+  /**
+   * Record state transition.
+   */
+  recordTransition: (eventName: string, fromState: string, toState: string) => void
+
+  /**
+   * Record a failure.
+   */
+  recordFailure: (eventName: string) => void
+
+  /**
+   * Record a success.
+   */
+  recordSuccess: (eventName: string) => void
+
+  /**
+   * Record OPEN state duration.
+   */
+  recordOpenDuration: (eventName: string, seconds: number) => void
+}
+
+/**
  * Circuit Breaker configuration options.
  * @public
  */
@@ -116,6 +149,21 @@ export interface CircuitBreakerOptions {
    * Callback when circuit closes.
    */
   onClose?: (name?: string) => void
+
+  /**
+   * Metrics recorder for recording circuit breaker events.
+   * Optional - if not provided, metrics will not be recorded.
+   */
+  metricsRecorder?: CircuitBreakerMetricsRecorder | undefined
+}
+
+/**
+ * Required Circuit Breaker configuration (with defaults applied).
+ * @internal
+ */
+export interface RequiredCircuitBreakerOptions
+  extends Required<Omit<CircuitBreakerOptions, 'metricsRecorder'>> {
+  metricsRecorder?: CircuitBreakerMetricsRecorder
 }
 
 /**
@@ -134,7 +182,8 @@ export class CircuitBreaker {
   private successCount = 0
   private nextAttempt = 0
   private name: string
-  private config: Required<CircuitBreakerOptions>
+  private config: RequiredCircuitBreakerOptions
+  private metricsRecorder?: CircuitBreakerMetricsRecorder
 
   // Advanced tracking
   private lastFailureAt?: Date
@@ -171,6 +220,9 @@ export class CircuitBreaker {
     } else {
       this.name = 'circuit-breaker'
     }
+
+    // Store metrics recorder if provided
+    this.metricsRecorder = options.metricsRecorder
 
     // Apply defaults
     this.config = {
@@ -306,6 +358,9 @@ export class CircuitBreaker {
     this.successCount++
     this.totalSuccesses++
 
+    // Record success metric
+    this.metricsRecorder?.recordSuccess(this.name)
+
     if (this.state === CircuitBreakerState.HALF_OPEN) {
       this.halfOpenAttempts++
       if (this.halfOpenAttempts >= this.config.successThreshold) {
@@ -323,6 +378,9 @@ export class CircuitBreaker {
     this.totalFailures++
     this.failureCount++
 
+    // Record failure metric
+    this.metricsRecorder?.recordFailure(this.name)
+
     if (this.state === CircuitBreakerState.HALF_OPEN) {
       // Any failure in HALF_OPEN immediately trips back to OPEN
       this.transitionTo(CircuitBreakerState.OPEN)
@@ -337,6 +395,20 @@ export class CircuitBreaker {
   }
 
   private transitionTo(newState: CircuitBreakerState): void {
+    const oldState = this.state
+
+    // Record state transition
+    if (this.metricsRecorder && oldState !== newState) {
+      this.metricsRecorder.recordTransition(this.name, oldState, newState)
+      this.metricsRecorder.recordState(this.name, this.stateToNumber(newState))
+    }
+
+    // Record OPEN duration when transitioning from OPEN
+    if (oldState === CircuitBreakerState.OPEN && this.openedAt && this.metricsRecorder) {
+      const duration = (Date.now() - this.openedAt.getTime()) / 1000
+      this.metricsRecorder.recordOpenDuration(this.name, duration)
+    }
+
     this.state = newState
 
     switch (newState) {
@@ -355,6 +427,23 @@ export class CircuitBreaker {
         this.openedAt = undefined
         this.config.onClose(this.name)
         break
+    }
+  }
+
+  /**
+   * Convert circuit breaker state to numeric value for Prometheus gauge.
+   * @private
+   */
+  private stateToNumber(state: CircuitBreakerState): number {
+    switch (state) {
+      case CircuitBreakerState.CLOSED:
+        return 0
+      case CircuitBreakerState.HALF_OPEN:
+        return 1
+      case CircuitBreakerState.OPEN:
+        return 2
+      default:
+        return 0
     }
   }
 }

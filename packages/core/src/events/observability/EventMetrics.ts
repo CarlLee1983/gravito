@@ -27,6 +27,13 @@ export class EventMetrics {
   private timeoutCounter: Counter
   private processedCounter: Counter
 
+  // CircuitBreaker metrics
+  private circuitBreakerStateGauge: Gauge
+  private circuitBreakerTransitionsCounter: Counter
+  private circuitBreakerFailuresCounter: Counter
+  private circuitBreakerSuccessesCounter: Counter
+  private circuitBreakerOpenDurationHistogram: Histogram
+
   /**
    * Create a new EventMetrics instance.
    *
@@ -79,6 +86,38 @@ export class EventMetrics {
       name: `${prefix}processed_total`,
       help: 'Total number of processed events',
       labels: ['event_name', 'status'],
+    })
+
+    // Initialize CircuitBreaker metrics
+    this.circuitBreakerStateGauge = registry.gauge({
+      name: `${prefix}circuit_breaker_state`,
+      help: 'Current circuit breaker state (0=CLOSED, 1=HALF_OPEN, 2=OPEN)',
+      labels: ['event_name'],
+    })
+
+    this.circuitBreakerTransitionsCounter = registry.counter({
+      name: `${prefix}circuit_breaker_transitions_total`,
+      help: 'Total number of circuit breaker state transitions',
+      labels: ['event_name', 'from_state', 'to_state'],
+    })
+
+    this.circuitBreakerFailuresCounter = registry.counter({
+      name: `${prefix}circuit_breaker_failures_total`,
+      help: 'Total number of failures tracked by circuit breaker',
+      labels: ['event_name'],
+    })
+
+    this.circuitBreakerSuccessesCounter = registry.counter({
+      name: `${prefix}circuit_breaker_successes_total`,
+      help: 'Total number of successes tracked by circuit breaker',
+      labels: ['event_name'],
+    })
+
+    this.circuitBreakerOpenDurationHistogram = registry.histogram({
+      name: `${prefix}circuit_breaker_open_duration_seconds`,
+      help: 'Duration of circuit breaker OPEN state in seconds',
+      labels: ['event_name'],
+      buckets: [1, 5, 10, 30, 60, 120, 300],
     })
   }
 
@@ -181,5 +220,66 @@ export class EventMetrics {
    */
   getQueueDepthGauge(): Gauge {
     return this.queueDepthGauge
+  }
+
+  /**
+   * Record circuit breaker state change.
+   *
+   * @param eventName - Name of the event
+   * @param state - Circuit breaker state (0=CLOSED, 1=HALF_OPEN, 2=OPEN)
+   */
+  recordCircuitBreakerState(eventName: string, state: number): void {
+    this.circuitBreakerStateGauge.set(state, {
+      event_name: eventName,
+    })
+  }
+
+  /**
+   * Record circuit breaker state transition.
+   *
+   * @param eventName - Name of the event
+   * @param fromState - Previous state
+   * @param toState - New state
+   */
+  recordCircuitBreakerTransition(eventName: string, fromState: string, toState: string): void {
+    this.circuitBreakerTransitionsCounter.inc({
+      event_name: eventName,
+      from_state: fromState,
+      to_state: toState,
+    })
+  }
+
+  /**
+   * Record circuit breaker failure.
+   *
+   * @param eventName - Name of the event
+   */
+  recordCircuitBreakerFailure(eventName: string): void {
+    this.circuitBreakerFailuresCounter.inc({
+      event_name: eventName,
+    })
+  }
+
+  /**
+   * Record circuit breaker success.
+   *
+   * @param eventName - Name of the event
+   */
+  recordCircuitBreakerSuccess(eventName: string): void {
+    this.circuitBreakerSuccessesCounter.inc({
+      event_name: eventName,
+    })
+  }
+
+  /**
+   * Record circuit breaker OPEN duration.
+   *
+   * @param eventName - Name of the event
+   * @param seconds - Duration in seconds
+   */
+  recordCircuitBreakerOpenDuration(eventName: string, seconds: number): void {
+    this.circuitBreakerOpenDurationHistogram.observe(seconds, {
+      event_name: eventName,
+    })
   }
 }

@@ -66,6 +66,9 @@ export class ObservableHookManager extends HookManager {
     // Initialize metrics if enabled and registry is provided
     if (obsConfig.enabled && obsConfig.metrics) {
       this.eventMetrics = new EventMetrics(obsConfig.metrics, obsConfig.metricsPrefix)
+
+      // Set EventMetrics on the event queue so circuit breakers can record metrics
+      this.getEventQueue().setEventMetrics(this.eventMetrics)
     }
 
     // Initialize tracer if enabled
@@ -172,6 +175,9 @@ export class ObservableHookManager extends HookManager {
     // Reinitialize metrics if enabled and registry is provided
     if (this.obsConfig.enabled && this.obsConfig.metrics && !this.eventMetrics) {
       this.eventMetrics = new EventMetrics(this.obsConfig.metrics, this.obsConfig.metricsPrefix)
+
+      // Set EventMetrics on the event queue so circuit breakers can record metrics
+      this.getEventQueue().setEventMetrics(this.eventMetrics)
     }
 
     // Reinitialize tracer if enabled

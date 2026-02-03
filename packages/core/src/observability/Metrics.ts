@@ -156,6 +156,42 @@ export interface EventMetricsDefinition {
     help: string
     labels: string[]
   }
+
+  /** 熔斷器狀態（量表） */
+  circuitBreakerState: {
+    name: string
+    help: string
+    labels: string[]
+  }
+
+  /** 熔斷器狀態轉換（計數器） */
+  circuitBreakerTransitions: {
+    name: string
+    help: string
+    labels: string[]
+  }
+
+  /** 熔斷器失敗計數（計數器） */
+  circuitBreakerFailures: {
+    name: string
+    help: string
+    labels: string[]
+  }
+
+  /** 熔斷器成功計數（計數器） */
+  circuitBreakerSuccesses: {
+    name: string
+    help: string
+    labels: string[]
+  }
+
+  /** 熔斷器 OPEN 持續時間（直方圖） */
+  circuitBreakerOpenDuration: {
+    name: string
+    help: string
+    labels: string[]
+    buckets: number[]
+  }
 }
 
 /**
@@ -213,6 +249,37 @@ export function getEventMetricsDefinition(prefix = DEFAULTS.prefix): EventMetric
       help: 'Total events processed',
       labels: ['event_name', 'status'],
     },
+
+    circuitBreakerState: {
+      name: `${prefix}circuit_breaker_state`,
+      help: 'Current circuit breaker state (0=CLOSED, 1=HALF_OPEN, 2=OPEN)',
+      labels: ['event_name'],
+    },
+
+    circuitBreakerTransitions: {
+      name: `${prefix}circuit_breaker_transitions_total`,
+      help: 'Total number of circuit breaker state transitions',
+      labels: ['event_name', 'from_state', 'to_state'],
+    },
+
+    circuitBreakerFailures: {
+      name: `${prefix}circuit_breaker_failures_total`,
+      help: 'Total number of failures tracked by circuit breaker',
+      labels: ['event_name'],
+    },
+
+    circuitBreakerSuccesses: {
+      name: `${prefix}circuit_breaker_successes_total`,
+      help: 'Total number of successes tracked by circuit breaker',
+      labels: ['event_name'],
+    },
+
+    circuitBreakerOpenDuration: {
+      name: `${prefix}circuit_breaker_open_duration_seconds`,
+      help: 'Duration of circuit breaker OPEN state in seconds',
+      labels: ['event_name'],
+      buckets: [1, 5, 10, 30, 60, 120, 300],
+    },
   }
 }
 
@@ -250,6 +317,28 @@ export const PROMETHEUS_QUERIES = {
 
   /** 吞吐量異常檢測 */
   throughputAnomaly: 'rate(gravito_event_throughput_total[5m]) < 100',
+
+  /** 熔斷器狀態（0=CLOSED, 1=HALF_OPEN, 2=OPEN） */
+  circuitBreakerState: 'gravito_event_circuit_breaker_state',
+
+  /** 熔斷器開啟率 */
+  circuitBreakerOpenRate:
+    'rate(gravito_event_circuit_breaker_transitions_total{to_state="OPEN"}[5m])',
+
+  /** 熔斷器恢復率 */
+  circuitBreakerRecoveryRate:
+    'rate(gravito_event_circuit_breaker_transitions_total{to_state="CLOSED"}[5m])',
+
+  /** 熔斷器失敗率 */
+  circuitBreakerFailureRate: 'rate(gravito_event_circuit_breaker_failures_total[5m])',
+
+  /** 熔斷器 OPEN 持續時間 P95 */
+  circuitBreakerOpenDurationP95:
+    'histogram_quantile(0.95, rate(gravito_event_circuit_breaker_open_duration_seconds_bucket[5m]))',
+
+  /** 熔斷器 OPEN 持續時間 P99 */
+  circuitBreakerOpenDurationP99:
+    'histogram_quantile(0.99, rate(gravito_event_circuit_breaker_open_duration_seconds_bucket[5m]))',
 }
 
 /**
@@ -303,5 +392,32 @@ export const PROMETHEUS_ALERT_RULES = {
     severity: 'critical',
     summary: '事件吞吐量異常下降',
     description: '當前吞吐: {{ $value | humanize }} events/sec',
+  },
+
+  /** 熔斷器持續開啟 */
+  CircuitBreakerOpen: {
+    expr: 'gravito_event_circuit_breaker_state{event_name=~".+"} == 2',
+    for: '5m',
+    severity: 'warning',
+    summary: '熔斷器持續開啟',
+    description: '事件 {{ $labels.event_name }} 熔斷器已開啟超過 5 分鐘',
+  },
+
+  /** 熔斷器頻繁切換 */
+  CircuitBreakerFlapping: {
+    expr: 'rate(gravito_event_circuit_breaker_transitions_total[5m]) > 10',
+    for: '2m',
+    severity: 'critical',
+    summary: '熔斷器頻繁切換',
+    description: '事件 {{ $labels.event_name }} 熔斷器狀態切換過於頻繁，切換速率: {{ $value }}/sec',
+  },
+
+  /** 熔斷器故障率過高 */
+  CircuitBreakerHighFailureRate: {
+    expr: 'rate(gravito_event_circuit_breaker_failures_total[5m]) > rate(gravito_event_circuit_breaker_successes_total[5m])',
+    for: '3m',
+    severity: 'critical',
+    summary: '熔斷器故障率超過成功率',
+    description: '事件 {{ $labels.event_name }} 的失敗率已超過成功率',
   },
 }

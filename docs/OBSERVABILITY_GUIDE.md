@@ -30,6 +30,7 @@ Gravito 事件系統提供完整的可觀測性支持，包括：
 
 ### 核心指標
 
+**事件派發系統**：
 | 指標 | 類型 | 描述 |
 |------|------|------|
 | `gravito_event_dispatch_latency_seconds` | Histogram | 事件派發延遲分佈 |
@@ -38,6 +39,15 @@ Gravito 事件系統提供完整的可觀測性支持，包括：
 | `gravito_event_failures_total` | Counter | 失敗計數 |
 | `gravito_event_timeouts_total` | Counter | 超時計數 |
 | `gravito_event_throughput_total` | Counter | 吞吐量 |
+
+**熔斷器（CircuitBreaker）**：
+| 指標 | 類型 | 描述 |
+|------|------|------|
+| `gravito_event_circuit_breaker_state` | Gauge | 熔斷器狀態（0=CLOSED, 1=HALF_OPEN, 2=OPEN） |
+| `gravito_event_circuit_breaker_transitions_total` | Counter | 狀態轉換計數 |
+| `gravito_event_circuit_breaker_failures_total` | Counter | 累計失敗次數 |
+| `gravito_event_circuit_breaker_successes_total` | Counter | 累計成功次數 |
+| `gravito_event_circuit_breaker_open_duration_seconds` | Histogram | OPEN 狀態持續時間分佈 |
 
 ---
 
@@ -181,6 +191,71 @@ rate(gravito_event_throughput_total[1m])
 rate(gravito_event_throughput_total[5m:1d])
 ```
 
+### CircuitBreaker 熔斷器監控
+
+Gravito 支持對 CircuitBreaker 熔斷器的完整 Prometheus Metrics 監控，包括狀態、轉換、失敗率和持續時間分析。
+
+#### 熔斷器狀態監控
+
+```typescript
+// 查看所有開啟的熔斷器
+gravito_event_circuit_breaker_state == 2
+
+// 特定事件的狀態
+gravito_event_circuit_breaker_state{event_name="order:created"}
+```
+
+#### 熔斷器轉換分析
+
+```typescript
+// 開啟率（transitions to OPEN per second）
+rate(gravito_event_circuit_breaker_transitions_total{to_state="OPEN"}[5m])
+
+// 恢復率（transitions to CLOSED per second）
+rate(gravito_event_circuit_breaker_transitions_total{to_state="CLOSED"}[5m])
+
+// 狀態切換頻率（Flapping 檢測）
+rate(gravito_event_circuit_breaker_transitions_total[5m])
+```
+
+#### 失敗與成功率
+
+```typescript
+// 熔斷器追蹤的失敗率
+(rate(gravito_event_circuit_breaker_failures_total[5m]) /
+ (rate(gravito_event_circuit_breaker_failures_total[5m]) +
+  rate(gravito_event_circuit_breaker_successes_total[5m]))) * 100
+
+// 特定事件的失敗計數
+rate(gravito_event_circuit_breaker_failures_total{event_name="order:created"}[5m])
+```
+
+#### OPEN 持續時間分析
+
+```typescript
+// 平均 OPEN 持續時間
+rate(gravito_event_circuit_breaker_open_duration_seconds_sum[5m]) /
+rate(gravito_event_circuit_breaker_open_duration_seconds_count[5m])
+
+// P95 OPEN 持續時間
+histogram_quantile(0.95, rate(gravito_event_circuit_breaker_open_duration_seconds_bucket[5m]))
+
+// P99 OPEN 持續時間
+histogram_quantile(0.99, rate(gravito_event_circuit_breaker_open_duration_seconds_bucket[5m]))
+```
+
+#### 核心熔斷器指標
+
+| 指標 | 類型 | 標籤 | 說明 |
+|------|------|------|------|
+| `gravito_event_circuit_breaker_state` | Gauge | event_name | 當前狀態（0=CLOSED, 1=HALF_OPEN, 2=OPEN） |
+| `gravito_event_circuit_breaker_transitions_total` | Counter | event_name, from_state, to_state | 狀態轉換計數 |
+| `gravito_event_circuit_breaker_failures_total` | Counter | event_name | 累計失敗次數 |
+| `gravito_event_circuit_breaker_successes_total` | Counter | event_name | 累計成功次數 |
+| `gravito_event_circuit_breaker_open_duration_seconds` | Histogram | event_name | OPEN 狀態持續時間分佈 |
+
+詳細內容見 [CircuitBreaker Metrics 完整指南](./CIRCUIT_BREAKER_METRICS_GUIDE.md)
+
 ---
 
 ## Grafana 監控面板
@@ -255,6 +330,7 @@ rule_files:
 
 ### 告警規則清單
 
+**事件派發系統**：
 | 告警 | 嚴重性 | 條件 | 持續時間 |
 |------|--------|------|---------|
 | HighEventDispatchLatency | Critical | P99 > 800ms | 5 分鐘 |
@@ -262,6 +338,13 @@ rule_files:
 | HighEventFailureRate | Critical | 失敗率 > 5% | 3 分鐘 |
 | SlowEventListener | Warning | 監聽器 P99 > 1s | 5 分鐘 |
 | EventThroughputDrop | Critical | 吞吐 < 100 | 2 分鐘 |
+
+**熔斷器（CircuitBreaker）**：
+| 告警 | 嚴重性 | 條件 | 持續時間 |
+|------|--------|------|---------|
+| CircuitBreakerOpen | Warning | 狀態 == OPEN | 5 分鐘 |
+| CircuitBreakerFlapping | Critical | 轉換速率 > 10/sec | 2 分鐘 |
+| CircuitBreakerHighFailureRate | Critical | 失敗率 > 成功率 | 3 分鐘 |
 
 ### 集成 Alertmanager
 
