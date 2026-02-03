@@ -192,35 +192,44 @@ export class DocsService {
       'database',
     ]
 
+    // Directories that do NOT have locale subfolders
+    const sharedDirs = ['internal', 'spec', 'operations', 'benchmarks', 'sessions']
+
     let filePath = ''
 
-    // Normalize slug: remove leading guide/ if present for easier matching
-    let cleanSlug = slug
-    if (cleanSlug.startsWith('guide/')) {
-      cleanSlug = cleanSlug.replace(/^guide\//, '')
-    }
+    const slugParts = slug.split('/')
 
-    const slugParts = cleanSlug.split('/')
-
-    // Check if it's already a categorized path (either guide/category/... or category/...)
-    if (categories.includes(slugParts[0])) {
-      filePath = path.join(DOCS_ROOT, fsLocale, 'guide', `${cleanSlug}.md`)
+    // Priority 1: Check shared directories (root/shared/...)
+    if (sharedDirs.includes(slugParts[0])) {
+      filePath = path.join(DOCS_ROOT, `${slug}.md`)
     } else {
-      // Try to find which category the file belongs to
-      let found = false
-      for (const cat of categories) {
-        const checkPath = path.join(DOCS_ROOT, fsLocale, 'guide', cat, `${cleanSlug}.md`)
-        try {
-          await fs.access(checkPath)
-          filePath = checkPath
-          found = true
-          break
-        } catch {}
+      // Priority 2: Categorized Guide docs (root/locale/guide/category/...)
+      let cleanSlug = slug
+      if (cleanSlug.startsWith('guide/')) {
+        cleanSlug = cleanSlug.replace(/^guide\//, '')
       }
 
-      if (!found) {
-        // Fallback or legacy root path (or api paths)
-        filePath = path.join(DOCS_ROOT, fsLocale, `${slug}.md`)
+      const cleanSlugParts = cleanSlug.split('/')
+
+      if (categories.includes(cleanSlugParts[0])) {
+        filePath = path.join(DOCS_ROOT, fsLocale, 'guide', `${cleanSlug}.md`)
+      } else {
+        // Try to find which category the file belongs to
+        let found = false
+        for (const cat of categories) {
+          const checkPath = path.join(DOCS_ROOT, fsLocale, 'guide', cat, `${cleanSlug}.md`)
+          try {
+            await fs.access(checkPath)
+            filePath = checkPath
+            found = true
+            break
+          } catch {}
+        }
+
+        if (!found) {
+          // Fallback to direct path under locale (API docs, etc)
+          filePath = path.join(DOCS_ROOT, fsLocale, `${slug}.md`)
+        }
       }
     }
 
@@ -228,8 +237,13 @@ export class DocsService {
     try {
       await fs.access(filePath)
     } catch {
-      if (fsLocale !== 'en') {
-        const fallbackSlug = cleanSlug
+      if (fsLocale !== 'en' && !sharedDirs.includes(slugParts[0])) {
+        // Only fallback if not in shared directories (which are shared anyway)
+        let fallbackSlug = slug
+        if (fallbackSlug.startsWith('guide/')) {
+          fallbackSlug = fallbackSlug.replace(/^guide\//, '')
+        }
+
         const fallbackSlugParts = fallbackSlug.split('/')
 
         if (categories.includes(fallbackSlugParts[0])) {
@@ -256,10 +270,8 @@ export class DocsService {
       const raw = await fs.readFile(filePath, 'utf-8')
       const { data, content } = matter(raw)
 
-      // Get singleton highlighter
       const highlighter = await DocsService.getHighlighter()
 
-      // Configure marked with shiki
       const markedOptions = {
         async: true,
         highlight: (code: string, lang: string) => {
@@ -271,7 +283,6 @@ export class DocsService {
       } as MarkedOptions
       marked.setOptions(markedOptions)
 
-      // Helper to escape HTML
       const escapeHtml = (str: string): string => {
         return str
           .replace(/&/g, '&amp;')
@@ -281,10 +292,8 @@ export class DocsService {
           .replace(/'/g, '&#039;')
       }
 
-      // Add custom renderer for code blocks, links, and images
       const renderer = new marked.Renderer()
 
-      // Use ImageService for optimized markdown images
       const imageService = await import('@gravito/prism').then((m) => new m.ImageService())
 
       renderer.image = ({
@@ -297,7 +306,6 @@ export class DocsService {
         text: string
       }) => {
         try {
-          // If it's a local path, try to optimize it
           if (!href.startsWith('http') && !href.startsWith('//')) {
             return imageService.generateImageTag({
               src: href,
@@ -310,11 +318,9 @@ export class DocsService {
           console.warn(`[DocsService] Failed to optimize image: ${href}`, e)
         }
 
-        // Fallback to standard img tag
         return `<img src="${href}" alt="${text}"${title ? ` title="${title}"` : ''} />`
       }
 
-      // Transform Markdown links to SPA routes
       renderer.link = ({
         href,
         text,
@@ -326,32 +332,27 @@ export class DocsService {
       }) => {
         let finalHref = href
 
-        // 1. Handle .md relative links (e.g., ./routing.md -> routing)
         if (finalHref.endsWith('.md')) {
           finalHref = finalHref.replace(/\.md$/, '')
         }
 
-        // 2. Ensure relative paths work within the /docs/ context
-        if (finalHref.startsWith('./')) {
-          const currentDir = slug.includes('/') ? slug.split('/').slice(0, -1).join('/') : ''
-          const target = finalHref.replace(/^\.\//, '')
+        if (finalHref.startsWith('./') || finalHref.startsWith('../')) {
           const prefix = locale === 'zh' ? '/zh/docs' : '/en/docs'
-          finalHref = currentDir ? `${prefix}/${currentDir}/${target}` : `${prefix}/${target}`
-        } else if (finalHref.startsWith('../')) {
-          // Basic parent dir support
-          const prefix = locale === 'zh' ? '/zh/docs' : '/en/docs'
-          finalHref = finalHref.replace(/^\.\.\//, `${prefix}/`)
+
+          // Use path.join to resolve relative links within the slug context
+          const slugDir = slug.includes('/') ? slug.split('/').slice(0, -1).join('/') : ''
+          const resolvedPath = path.join(slugDir, finalHref)
+
+          finalHref = `${prefix}/${resolvedPath}`
         } else if (
           !finalHref.startsWith('http') &&
           !finalHref.startsWith('/') &&
           !finalHref.startsWith('#')
         ) {
-          // Case: "routing" instead of "./routing"
           const prefix = locale === 'zh' ? '/zh/docs' : '/en/docs'
           finalHref = `${prefix}/${finalHref}`
         }
 
-        // Escape href and title for HTML attributes
         const escapedHref = escapeHtml(finalHref)
         const escapedTitle = title ? escapeHtml(title) : null
 
@@ -360,7 +361,6 @@ export class DocsService {
 
       renderer.code = ({ text, lang }: { text: string; lang?: string }) => {
         if (lang === 'mermaid') {
-          // ... mermaid logic remains same
           const configHeader = `%%{init: { 
             'theme': 'base', 
             'themeVariables': {
@@ -678,10 +678,7 @@ export class DocsService {
           { title: trans.responses, path: `${prefix}/guide/basics/responses` },
           { title: trans.validation, path: `${prefix}/guide/basics/validation` },
           { title: trans.helpers, path: `${prefix}/guide/basics/helpers` },
-          {
-            title: trans.static_site,
-            path: `${prefix}/guide/specialized/static-site-development`,
-          },
+          { title: trans.static_site, path: `${prefix}/guide/specialized/static-site-development` },
         ],
       },
       {
