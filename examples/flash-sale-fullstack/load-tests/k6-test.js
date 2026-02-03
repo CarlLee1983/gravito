@@ -25,6 +25,28 @@ const activeConnections = new Gauge('active_connections')
 const totalRequests = new Counter('total_requests')
 
 // ─────────────────────────────────────────────────────────────────────────
+// 輔助函數
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * 生成指定範圍內的隨機整數
+ * @param {number} min - 最小值（包含）
+ * @param {number} max - 最大值（包含）
+ * @returns {number} 隨機整數
+ */
+function randomIntBetween(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min
+}
+
+/**
+ * 生成隨機浮點數（0 到 1 之間）
+ * @returns {number} 隨機浮點數
+ */
+function randomFloat() {
+  return Math.random()
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // 測試配置
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -86,9 +108,9 @@ export function scenarioListProducts() {
  */
 export function scenarioCreateOrder() {
   const payload = JSON.stringify({
-    productId: `product-${Math.floor(Math.random() * 10)}`,
+    productId: `product-${randomIntBetween(0, 9)}`,
     quantity: 1,
-    userId: `user-${Math.floor(Math.random() * 1000)}`,
+    userId: `user-${randomIntBetween(0, 999)}`,
   })
 
   const response = http.post(`${API_BASE}/api/orders`, payload, {
@@ -113,7 +135,7 @@ export function scenarioCreateOrder() {
  * 場景 3：查詢訂單
  */
 export function scenarioGetOrder() {
-  const orderId = `order-${Math.floor(Math.random() * 10000)}`
+  const orderId = `order-${randomIntBetween(0, 9999)}`
 
   const response = http.get(`${API_BASE}/api/orders/${orderId}`)
 
@@ -140,7 +162,7 @@ export default function main() {
   activeConnections.add(__VU)
 
   // 分配測試流量
-  const randomScenario = Math.random()
+  const randomScenario = randomFloat()
 
   if (randomScenario < 0.3) {
     // 30% 查詢商品
