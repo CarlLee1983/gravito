@@ -69,7 +69,14 @@ export {
 // Events
 export { EventManager } from './EventManager'
 // Event System
-export type { CircuitBreakerOptions, DLQEntry, DLQFilter, EventOptions, EventTask } from './events'
+export type {
+  CircuitBreakerOptions,
+  DLQEntry,
+  DLQFilter,
+  EventBackend,
+  EventOptions,
+  EventTask,
+} from './events'
 export {
   CircuitBreaker,
   CircuitBreakerState,
