@@ -178,24 +178,76 @@ export class DocsService {
    * Get parsed documentation page
    */
   static async getPage(locale: string, slug: string): Promise<DocPage | null> {
-    // Handle locale mapping (zh -> zh-TW, en -> en)
     const fsLocale = locale === 'zh' ? 'zh-TW' : 'en'
+    const categories = [
+      'getting-started',
+      'architecture',
+      'basics',
+      'frontend',
+      'security',
+      'services',
+      'advanced',
+      'deployment',
+      'specialized',
+      'database',
+    ]
 
-    // Construct file path: docs/{locale}/{slug}.md
-    let filePath = path.join(DOCS_ROOT, fsLocale, `${slug}.md`)
+    let filePath = ''
 
-    // Fallback logic
+    // Normalize slug: remove leading guide/ if present for easier matching
+    let cleanSlug = slug
+    if (cleanSlug.startsWith('guide/')) {
+      cleanSlug = cleanSlug.replace(/^guide\//, '')
+    }
+
+    const slugParts = cleanSlug.split('/')
+
+    // Check if it's already a categorized path (either guide/category/... or category/...)
+    if (categories.includes(slugParts[0])) {
+      filePath = path.join(DOCS_ROOT, fsLocale, 'guide', `${cleanSlug}.md`)
+    } else {
+      // Try to find which category the file belongs to
+      let found = false
+      for (const cat of categories) {
+        const checkPath = path.join(DOCS_ROOT, fsLocale, 'guide', cat, `${cleanSlug}.md`)
+        try {
+          await fs.access(checkPath)
+          filePath = checkPath
+          found = true
+          break
+        } catch {}
+      }
+
+      if (!found) {
+        // Fallback or legacy root path (or api paths)
+        filePath = path.join(DOCS_ROOT, fsLocale, `${slug}.md`)
+      }
+    }
+
+    // Fallback logic for English
     try {
       await fs.access(filePath)
     } catch {
       if (fsLocale !== 'en') {
-        // Fallback to English
-        const fallbackPath = path.join(DOCS_ROOT, 'en', `${slug}.md`)
-        try {
-          await fs.access(fallbackPath)
-          filePath = fallbackPath
-        } catch {
-          // Both missing, return null (handled by catch below)
+        const fallbackSlug = cleanSlug
+        const fallbackSlugParts = fallbackSlug.split('/')
+
+        if (categories.includes(fallbackSlugParts[0])) {
+          filePath = path.join(DOCS_ROOT, 'en', 'guide', `${fallbackSlug}.md`)
+        } else {
+          let foundFallback = false
+          for (const cat of categories) {
+            const checkPath = path.join(DOCS_ROOT, 'en', 'guide', cat, `${fallbackSlug}.md`)
+            try {
+              await fs.access(checkPath)
+              filePath = checkPath
+              foundFallback = true
+              break
+            } catch {}
+          }
+          if (!foundFallback) {
+            filePath = path.join(DOCS_ROOT, 'en', `${slug}.md`)
+          }
         }
       }
     }
@@ -372,9 +424,9 @@ export class DocsService {
   </div>
 </div>`
         } catch (_e) {
-          const escapedText = escapeHtml(text)
-          const langClass = lang ? `language-${lang}` : ''
-          return `<pre class="${langClass}"><code class="${langClass}">${escapedText}</code></pre>`
+          const _escapedText = escapeHtml(text)
+          const _langClass = lang ? `language-${lang}` : ''
+          return `<pre class="${_langClass}"><code class="${_langClass}">${_escapedText}</code></pre>`
         }
       }
 
@@ -594,18 +646,21 @@ export class DocsService {
         title: trans.getting_started,
         path: '#',
         children: [
-          { title: trans.quick_start, path: `${prefix}/guide/getting-started` },
-          { title: trans.architectural_patterns, path: `${prefix}/guide/cli-init` },
-          { title: trans.structure, path: `${prefix}/guide/project-structure` },
+          { title: trans.quick_start, path: `${prefix}/guide/getting-started/introduction` },
+          { title: trans.architectural_patterns, path: `${prefix}/guide/specialized/cli-init` },
+          { title: trans.structure, path: `${prefix}/guide/getting-started/project-structure` },
         ],
       },
       {
         title: trans.core_concepts,
         path: '#',
         children: [
-          { title: trans.architecture, path: `${prefix}/guide/core-concepts` },
-          { title: trans.official_site_arch, path: `${prefix}/guide/official-site-architecture` },
-          { title: trans.ecosystem, path: `${prefix}/guide/ecosystem` },
+          { title: trans.architecture, path: `${prefix}/guide/architecture/core-concepts` },
+          {
+            title: trans.official_site_arch,
+            path: `${prefix}/guide/architecture/official-site-architecture`,
+          },
+          { title: trans.ecosystem, path: `${prefix}/guide/specialized/ecosystem` },
           // Placeholder for now
           // { title: trans.lifecycle, path: `${prefix}/guide/lifecycle` },
         ],
@@ -614,37 +669,43 @@ export class DocsService {
         title: trans.first_build,
         path: '#',
         children: [
-          { title: trans.photon_core, path: `${prefix}/guide/photon-core` },
-          { title: trans.routing, path: `${prefix}/guide/routing` },
-          { title: trans.rest_api, path: `${prefix}/guide/rest-api` },
-          { title: trans.middleware, path: `${prefix}/guide/middleware` },
-          { title: trans.controllers, path: `${prefix}/guide/controllers` },
-          { title: trans.requests, path: `${prefix}/guide/requests` },
-          { title: trans.responses, path: `${prefix}/guide/responses` },
-          { title: trans.validation, path: `${prefix}/guide/validation` },
-          { title: trans.helpers, path: `${prefix}/guide/helpers` },
-          { title: trans.static_site, path: `${prefix}/guide/static-site-development` },
+          { title: trans.photon_core, path: `${prefix}/guide/architecture/photon-core` },
+          { title: trans.routing, path: `${prefix}/guide/basics/routing` },
+          { title: trans.rest_api, path: `${prefix}/guide/advanced/rest-api` },
+          { title: trans.middleware, path: `${prefix}/guide/basics/middleware` },
+          { title: trans.controllers, path: `${prefix}/guide/basics/controllers` },
+          { title: trans.requests, path: `${prefix}/guide/basics/requests` },
+          { title: trans.responses, path: `${prefix}/guide/basics/responses` },
+          { title: trans.validation, path: `${prefix}/guide/basics/validation` },
+          { title: trans.helpers, path: `${prefix}/guide/basics/helpers` },
+          {
+            title: trans.static_site,
+            path: `${prefix}/guide/specialized/static-site-development`,
+          },
         ],
       },
       {
         title: trans.modules,
         path: '#',
         children: [
-          { title: trans.plasma_redis, path: `${prefix}/guide/plasma-redis` },
-          { title: trans.plugins, path: `${prefix}/guide/plugin-development` },
-          { title: trans.beam_client, path: `${prefix}/guide/beam-client` },
-          { title: trans.flux_workflow, path: `${prefix}/guide/flux-workflow` },
-          { title: trans.forge_media, path: `${prefix}/guide/forge-media` },
-          { title: trans.monolith_cms, path: `${prefix}/guide/monolith-cms` },
-          { title: trans.scaffold_generator, path: `${prefix}/guide/scaffold-generator` },
-          { title: trans.site_toolkit, path: `${prefix}/guide/site-toolkit` },
-          { title: trans.ripple_broadcasting, path: `${prefix}/guide/ripple-broadcasting` },
-          { title: trans.freeze_react, path: `${prefix}/guide/freeze-react` },
-          { title: trans.freeze_vue, path: `${prefix}/guide/freeze-vue` },
-          { title: trans.luminosity_cli, path: `${prefix}/guide/luminosity-cli` },
-          { title: trans.create_app, path: `${prefix}/guide/create-gravito-app` },
-          { title: trans.graphql, path: `${prefix}/guide/graphql` },
-          { title: trans.astral, path: `${prefix}/guide/astral` },
+          { title: trans.plasma_redis, path: `${prefix}/guide/services/plasma-redis` },
+          { title: trans.plugins, path: `${prefix}/guide/advanced/plugin-development` },
+          { title: trans.beam_client, path: `${prefix}/guide/specialized/beam-client` },
+          { title: trans.flux_workflow, path: `${prefix}/guide/architecture/flux-workflow` },
+          { title: trans.forge_media, path: `${prefix}/guide/specialized/forge-media` },
+          { title: trans.monolith_cms, path: `${prefix}/guide/specialized/monolith-cms` },
+          { title: trans.scaffold_generator, path: `${prefix}/guide/advanced/scaffold-generator` },
+          { title: trans.site_toolkit, path: `${prefix}/guide/advanced/site-toolkit` },
+          {
+            title: trans.ripple_broadcasting,
+            path: `${prefix}/guide/services/ripple-broadcasting`,
+          },
+          { title: trans.freeze_react, path: `${prefix}/guide/frontend/freeze-react` },
+          { title: trans.freeze_vue, path: `${prefix}/guide/frontend/freeze-vue` },
+          { title: trans.luminosity_cli, path: `${prefix}/guide/specialized/pulse-cli` },
+          { title: trans.create_app, path: `${prefix}/guide/getting-started/create-gravito-app` },
+          { title: trans.graphql, path: `${prefix}/guide/advanced/graphql` },
+          { title: trans.astral, path: `${prefix}/guide/specialized/astral` },
         ],
       },
       {
@@ -665,7 +726,7 @@ export class DocsService {
         title: trans.orm,
         path: '#',
         children: [
-          { title: trans.orm_usage, path: `${prefix}/guide/orm-usage` },
+          { title: trans.orm_usage, path: `${prefix}/guide/database/orm-usage` },
           { title: trans.orm_getting_started, path: `${prefix}/guide/database/orm-quick-start` },
           { title: trans.orm_relationships, path: `${prefix}/guide/database/atlas-relationships` },
           { title: trans.orm_collections, path: `${prefix}/guide/database/atlas-collections` },
@@ -679,59 +740,62 @@ export class DocsService {
         title: trans.auth,
         path: '#',
         children: [
-          { title: trans.auth_fortify, path: `${prefix}/guide/authentication` },
-          { title: trans.auth_sentinel, path: `${prefix}/guide/sentinel-auth` },
-          { title: trans.security, path: `${prefix}/guide/security` },
+          { title: trans.auth_fortify, path: `${prefix}/guide/security/authentication` },
+          { title: trans.auth_sentinel, path: `${prefix}/guide/security/sentinel-auth` },
+          { title: trans.security, path: `${prefix}/guide/security/security` },
         ],
       },
       {
         title: trans.storage,
         path: '#',
         children: [
-          { title: trans.nebula_storage, path: `${prefix}/guide/nebula-storage` },
-          { title: trans.image_opt, path: `${prefix}/guide/image-optimization` },
+          { title: trans.nebula_storage, path: `${prefix}/guide/services/nebula-storage` },
+          { title: trans.image_opt, path: `${prefix}/guide/frontend/image-optimization` },
         ],
       },
       {
         title: trans.cache_queue,
         path: '#',
         children: [
-          { title: trans.stasis_cache, path: `${prefix}/guide/stasis-cache` },
-          { title: trans.queues, path: `${prefix}/guide/queues` },
+          { title: trans.stasis_cache, path: `${prefix}/guide/services/stasis-cache` },
+          { title: trans.queues, path: `${prefix}/guide/services/queues` },
         ],
       },
       {
         title: trans.seo,
         path: '#',
         children: [
-          { title: trans.seo_overview, path: `${prefix}/guide/seo-engine` },
-          { title: trans.route_scanner, path: `${prefix}/guide/seo-route-scanner` },
-          { title: trans.sitemap_basic, path: `${prefix}/guide/sitemap-guide` },
+          { title: trans.seo_overview, path: `${prefix}/guide/specialized/seo-engine` },
+          { title: trans.route_scanner, path: `${prefix}/guide/specialized/seo-route-scanner` },
+          { title: trans.sitemap_basic, path: `${prefix}/guide/specialized/sitemap-guide` },
         ],
       },
       {
         title: trans.frontend,
         path: '#',
         children: [
-          { title: trans.inertia_react, path: `${prefix}/guide/inertia-react` },
-          { title: trans.inertia_vue, path: `${prefix}/guide/inertia-vue` },
-          { title: trans.view_engine, path: `${prefix}/guide/template-engine` },
-          { title: trans.i18n, path: `${prefix}/guide/i18n-guide` },
+          { title: trans.inertia_react, path: `${prefix}/guide/frontend/inertia-react` },
+          { title: trans.inertia_vue, path: `${prefix}/guide/frontend/inertia-vue` },
+          { title: trans.view_engine, path: `${prefix}/guide/frontend/template-engine` },
+          { title: trans.i18n, path: `${prefix}/guide/specialized/i18n-guide` },
         ],
       },
       {
         title: trans.advanced,
         path: '#',
         children: [
-          { title: trans.deployment, path: `${prefix}/guide/deployment` },
-          { title: trans.enterprise_integration, path: `${prefix}/guide/enterprise-integration` },
-          { title: trans.monitor, path: `${prefix}/guide/monitor` },
+          { title: trans.deployment, path: `${prefix}/guide/deployment/deployment` },
+          {
+            title: trans.enterprise_integration,
+            path: `${prefix}/guide/advanced/enterprise-integration`,
+          },
+          { title: trans.monitor, path: `${prefix}/guide/deployment/monitor` },
         ],
       },
       {
         title: trans.testing,
         path: '#',
-        children: [{ title: trans.testing_harness, path: `${prefix}/guide/testing` }],
+        children: [{ title: trans.testing_harness, path: `${prefix}/guide/deployment/testing` }],
       },
     ]
   }
