@@ -22,9 +22,13 @@ Gravito is a modular, high-performance framework built on the principles of **Do
 
 ### 🛠️ Infrastructure & Operations
 - [Development Guide](./operations/DEVELOPMENT_GUIDE.md) - Best practices for contributing to the monorepo.
+- [Extending Atlas](./operations/EXTENDING_ATLAS_GUIDE.md) - Guide for extending the ORM.
 - [Monorepo / Turborepo](./operations/TURBOREPO_INTEGRATION_GUIDE.md) - Tooling and build system guide.
 - [NPM Publishing Guide](./operations/NPM_PUBLISHING_GUIDE.md) - Comprehensive package publishing workflow.
 - [Local CI Validation](./operations/LOCAL_CI_VALIDATION.md) - Verifying changes before pushing.
+- [Changesets Integration](./operations/CHANGESETS_INTEGRATION_GUIDE.md) - Versioning and changelog management.
+- [Migration Guide](./operations/MIGRATION.md) - Moving to modern APIs.
+- [Hono Migration](./operations/MIGRATION_FROM_HONO.md) - Migrating from Hono to Gravito.
 
 ### ⚡ Performance & Benchmarks
 - [Atlas Performance Whitepaper](./benchmarks/ATLAS_PERFORMANCE_WHITEPAPER.md) - Benchmarks for the custom ORM.

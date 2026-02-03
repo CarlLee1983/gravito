@@ -1,3 +1,7 @@
+---
+title: 本地 CI 驗證指南
+---
+
 # 本地 CI 驗證指南
 
 為了避免 CI 環境一直出錯，我們提供了多個本地驗證工具，幫助你在推送前發現問題。
@@ -72,7 +76,7 @@ bun run ci:simulate
 "pre-push": "bun run check && bun run typecheck:validate && bun run typecheck:verify && bun run typecheck:full && turbo run test --filter=[HEAD^1]"
 ```
 
-這意味著每次 `git push` 時，會自動執行：
+這意指每次 `git push` 時，會自動執行：
 - ✅ Biome 檢查
 - ✅ Typecheck 配置驗證
 - ✅ Typecheck 實際驗證（使用 bunx）
