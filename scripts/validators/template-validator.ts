@@ -223,6 +223,33 @@ function isLineInCodeBlock(content: string, targetLine: number): boolean {
     }
 
     if (i + 1 === targetLine) {
+      // 如果行在程式碼區塊內，直接返回 true
+      if (inCodeBlock) {
+        return true
+      }
+
+      // 檢查該行是否包含反引號中的行內程式碼
+      // 移除所有反引號包圍的內容，然後檢查剩餘部分是否有佔位符
+      const lineWithoutInlineCode = line.replace(/`[^`]*`/g, '')
+
+      // 檢查移除行內程式碼後的行是否還有佔位符
+      const placeholderPatterns = [
+        /\{\{\s*\w+\s*\}\}/, // {{ PLACEHOLDER }}
+        /\[\[.*?\]\]/, // [[PLACEHOLDER]]
+        /TODO:\s*\w+/i, // TODO: something
+        /FIXME:\s*\w+/i, // FIXME: something
+        /\[待補充\]/, // [待補充]
+        /\[TBD\]/i, // [TBD]
+      ]
+
+      // 如果原始行有佔位符但移除行內程式碼後沒有了，說明該佔位符在行內程式碼中
+      for (const pattern of placeholderPatterns) {
+        if (pattern.test(line) && !pattern.test(lineWithoutInlineCode)) {
+          // 佔位符只在行內程式碼中，標記為在程式碼區塊內
+          return true
+        }
+      }
+
       return inCodeBlock
     }
   }
