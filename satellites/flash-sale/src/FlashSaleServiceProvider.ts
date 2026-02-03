@@ -6,8 +6,8 @@
 
 import type { Container, PlanetCore } from '@gravito/core'
 import { ServiceProvider } from '@gravito/core'
-import { ProductController } from './Interface/Http/Controllers/ProductController'
 import { OrderController } from './Interface/Http/Controllers/OrderController'
+import { ProductController } from './Interface/Http/Controllers/ProductController'
 
 /**
  * FlashSaleServiceProvider
@@ -25,11 +25,9 @@ export class FlashSaleServiceProvider extends ServiceProvider {
     // container.singleton('product.repository', () => {
     //   return new AtlasProductRepository()
     // })
-
     // container.singleton('order.repository', () => {
     //   return new AtlasOrderRepository()
     // })
-
     // 暫時：註冊控制器（供 boot 階段使用）
     // 實際應在 boot 階段動態註冊
   }

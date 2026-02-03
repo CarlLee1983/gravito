@@ -10,9 +10,9 @@
  * 或：k6 run load-tests/k6-test.js
  */
 
-import http from 'k6/http'
 import { check, sleep } from 'k6'
-import { Rate, Trend, Counter, Gauge } from 'k6/metrics'
+import http from 'k6/http'
+import { Counter, Gauge, Rate, Trend } from 'k6/metrics'
 
 // ─────────────────────────────────────────────────────────────────────────
 // 自訂指標
@@ -48,9 +48,9 @@ export const options = {
 
   // 阈值設定
   thresholds: {
-    'http_req_duration': ['p(99)<500', 'p(95)<300'],  // P99 < 500ms, P95 < 300ms
-    'http_req_failed': ['rate<0.1'],                   // 失敗率 < 10%
-    'errors': ['rate<0.05'],                           // 錯誤率 < 5%
+    http_req_duration: ['p(99)<500', 'p(95)<300'], // P99 < 500ms, P95 < 300ms
+    http_req_failed: ['rate<0.1'], // 失敗率 < 10%
+    errors: ['rate<0.05'], // 錯誤率 < 5%
   },
 }
 
@@ -58,6 +58,7 @@ export const options = {
 // 測試場景
 // ─────────────────────────────────────────────────────────────────────────
 
+// biome-ignore lint/correctness/noUndeclaredVariables: K6 globals
 const API_BASE = __ENV.API_BASE || 'http://localhost:3000'
 
 /**
@@ -135,6 +136,7 @@ export function scenarioGetOrder() {
 
 export default function main() {
   // 更新活躍連線數
+  // biome-ignore lint/correctness/noUndeclaredVariables: K6 globals
   activeConnections.add(__VU)
 
   // 分配測試流量

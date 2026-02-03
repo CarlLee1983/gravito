@@ -47,9 +47,7 @@ export class DeductInventory {
       throw new Error(`Validation failed: ${validationErrors.join(', ')}`)
     }
 
-    this.core.logger.info(
-      `[Commerce] Starting inventory deduction for order ${orderId}`
-    )
+    this.core.logger.info(`[Commerce] Starting inventory deduction for order ${orderId}`)
 
     // 2. TODO: 查詢訂單驗證狀態為 PAID
     // const order = await this.orderRepository.findById(orderId)

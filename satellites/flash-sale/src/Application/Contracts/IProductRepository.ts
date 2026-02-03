@@ -21,11 +21,7 @@ export interface IProductRepository {
   /**
    * 查詢所有商品（可選過濾）
    */
-  findAll(filters?: {
-    status?: string
-    page?: number
-    limit?: number
-  }): Promise<{
+  findAll(filters?: { status?: string; page?: number; limit?: number }): Promise<{
     items: Product[]
     total: number
     page: number

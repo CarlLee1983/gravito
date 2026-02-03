@@ -24,7 +24,6 @@ export class CommerceServiceProvider extends ServiceProvider {
     // container.singleton('order.repository', () => {
     //   return new AtlasOrderRepository()
     // })
-
     // TODO: 註冊 Use Cases
     // container.bind('commerce.usecase.deductInventory', (c) => {
     //   return new DeductInventory(this.core!)

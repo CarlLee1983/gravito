@@ -16,11 +16,14 @@ export interface IOrderRepository {
   /**
    * 根據用戶 ID 查詢訂單列表
    */
-  findByUserId(userId: string, options?: {
-    status?: OrderStatus
-    page?: number
-    limit?: number
-  }): Promise<{
+  findByUserId(
+    userId: string,
+    options?: {
+      status?: OrderStatus
+      page?: number
+      limit?: number
+    }
+  ): Promise<{
     items: Order[]
     total: number
     page: number

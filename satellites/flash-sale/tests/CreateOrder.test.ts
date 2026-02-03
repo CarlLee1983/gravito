@@ -2,11 +2,17 @@
  * CreateOrder Use Case 單元測試
  */
 
-import { describe, it, expect, beforeEach } from 'bun:test'
-import { CreateOrder } from '../src/Application/UseCases/CreateOrder'
-import { CreateOrderRequest, OrderStatus, ProductStatus, type Product, type Order } from '../src/Domain/Models'
-import type { IProductRepository } from '../src/Application/Contracts/IProductRepository'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import type { IOrderRepository } from '../src/Application/Contracts/IOrderRepository'
+import type { IProductRepository } from '../src/Application/Contracts/IProductRepository'
+import { CreateOrder } from '../src/Application/UseCases/CreateOrder'
+import {
+  CreateOrderRequest,
+  type Order,
+  OrderStatus,
+  type Product,
+  ProductStatus,
+} from '../src/Domain/Models'
 
 /**
  * Mock ProductRepository

@@ -5,8 +5,8 @@
  */
 
 import type { GravitoContext, PlanetCore } from '@gravito/core'
-import { ListProducts } from '../../../Application/UseCases/ListProducts'
 import type { IProductRepository } from '../../../Application/Contracts/IProductRepository'
+import { ListProducts } from '../../../Application/UseCases/ListProducts'
 
 /**
  * ProductController
@@ -27,9 +27,7 @@ export class ProductController {
       const status = ctx.req.query('status')
 
       // 取得 Repository
-      const productRepository = this.core.container.make<IProductRepository>(
-        'product.repository'
-      )
+      const productRepository = this.core.container.make<IProductRepository>('product.repository')
 
       // 執行 Use Case
       const useCase = new ListProducts(productRepository)
@@ -69,9 +67,7 @@ export class ProductController {
     try {
       const { id } = ctx.req.param()
 
-      const productRepository = this.core.container.make<IProductRepository>(
-        'product.repository'
-      )
+      const productRepository = this.core.container.make<IProductRepository>('product.repository')
 
       const product = await productRepository.findById(id)
 

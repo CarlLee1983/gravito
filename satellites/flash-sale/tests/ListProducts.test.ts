@@ -2,9 +2,9 @@
  * ListProducts Use Case 單元測試
  */
 
-import { describe, it, expect, beforeEach } from 'bun:test'
-import { ListProducts } from '../src/Application/UseCases/ListProducts'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import type { IProductRepository } from '../src/Application/Contracts/IProductRepository'
+import { ListProducts } from '../src/Application/UseCases/ListProducts'
 import type { Product } from '../src/Domain/Models'
 import { ProductStatus } from '../src/Domain/Models'
 
@@ -49,9 +49,11 @@ class MockProductRepository implements IProductRepository {
     return this.products.find((p) => p.sku === sku) || null
   }
 
-  async findAll(
-    filters?: { status?: string; page?: number; limit?: number }
-  ): Promise<{ items: Product[]; total: number; page: number; limit: number }> {
+  async findAll(filters?: {
+    status?: string
+    page?: number
+    limit?: number
+  }): Promise<{ items: Product[]; total: number; page: number; limit: number }> {
     const page = filters?.page || 1
     const limit = filters?.limit || 20
 

@@ -5,11 +5,11 @@
  */
 
 import type { GravitoContext, PlanetCore } from '@gravito/core'
+import type { IOrderRepository } from '../../../Application/Contracts/IOrderRepository'
+import type { IProductRepository } from '../../../Application/Contracts/IProductRepository'
 import { CreateOrder } from '../../../Application/UseCases/CreateOrder'
 import { GetOrder } from '../../../Application/UseCases/GetOrder'
 import { CreateOrderRequest } from '../../../Domain/Models'
-import type { IProductRepository } from '../../../Application/Contracts/IProductRepository'
-import type { IOrderRepository } from '../../../Application/Contracts/IOrderRepository'
 
 /**
  * OrderController
@@ -32,12 +32,8 @@ export class OrderController {
       const request = new CreateOrderRequest(userId, productId, quantity)
 
       // 取得 Repositories
-      const productRepository = this.core.container.make<IProductRepository>(
-        'product.repository'
-      )
-      const orderRepository = this.core.container.make<IOrderRepository>(
-        'order.repository'
-      )
+      const productRepository = this.core.container.make<IProductRepository>('product.repository')
+      const orderRepository = this.core.container.make<IOrderRepository>('order.repository')
 
       // 執行 Use Case
       const useCase = new CreateOrder(productRepository, orderRepository)
@@ -91,9 +87,7 @@ export class OrderController {
     try {
       const { id } = ctx.req.param()
 
-      const orderRepository = this.core.container.make<IOrderRepository>(
-        'order.repository'
-      )
+      const orderRepository = this.core.container.make<IOrderRepository>('order.repository')
 
       const useCase = new GetOrder(orderRepository)
       const order = await useCase.execute(id)
@@ -141,9 +135,7 @@ export class OrderController {
         return
       }
 
-      const orderRepository = this.core.container.make<IOrderRepository>(
-        'order.repository'
-      )
+      const orderRepository = this.core.container.make<IOrderRepository>('order.repository')
 
       const result = await orderRepository.findByUserId(userId, {
         page,

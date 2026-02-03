@@ -32,13 +32,13 @@ export interface Product {
  * 訂單狀態
  */
 export enum OrderStatus {
-  PENDING = 'PENDING',        // 待支付
-  PAID = 'PAID',              // 已支付
-  CONFIRMED = 'CONFIRMED',    // 已確認
-  SHIPPED = 'SHIPPED',        // 已發貨
-  DELIVERED = 'DELIVERED',    // 已送達
-  CANCELLED = 'CANCELLED',    // 已取消
-  REFUNDED = 'REFUNDED',      // 已退款
+  PENDING = 'PENDING', // 待支付
+  PAID = 'PAID', // 已支付
+  CONFIRMED = 'CONFIRMED', // 已確認
+  SHIPPED = 'SHIPPED', // 已發貨
+  DELIVERED = 'DELIVERED', // 已送達
+  CANCELLED = 'CANCELLED', // 已取消
+  REFUNDED = 'REFUNDED', // 已退款
 }
 
 /**

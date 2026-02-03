@@ -76,7 +76,7 @@ export class RefundOrderRequest {
   constructor(
     public orderId: string,
     public reason: string,
-    public restoreInventory: boolean = true
+    public restoreInventory = true
   ) {}
 
   validate(): string[] {
