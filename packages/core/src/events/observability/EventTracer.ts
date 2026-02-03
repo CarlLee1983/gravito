@@ -51,12 +51,12 @@ export class EventTracer {
   /**
    * Start a span for listener execution.
    *
-   * @param parentSpan - Parent span for this listener
+   * @param _parentSpan - Parent span for this listener
    * @param eventName - Name of the event
    * @param listenerIndex - Index of the listener in the callback list
    * @returns Child span for the listener execution
    */
-  startListenerSpan(parentSpan: Span, eventName: string, listenerIndex: number): Span {
+  startListenerSpan(_parentSpan: Span, eventName: string, listenerIndex: number): Span {
     return this.tracer.startSpan(`event.listener.${eventName}`, {
       attributes: {
         'event.name': eventName,

@@ -110,14 +110,14 @@ export class EventTracing {
   /**
    * 為監聽器執行創建追蹤 Span
    *
-   * @param parentSpan - 父 Span
+   * @param _parentSpan - 父 Span
    * @param eventName - 事件名稱
    * @param listenerName - 監聽器名稱/標識
    * @param listenerIndex - 監聽器索引
    * @returns 子 Span 實例
    */
   startListenerSpan(
-    parentSpan: Span,
+    _parentSpan: Span,
     eventName: string,
     listenerName: string,
     listenerIndex: number
@@ -139,14 +139,14 @@ export class EventTracing {
   /**
    * 為隊列操作創建追蹤 Span
    *
-   * @param parentSpan - 父 Span
+   * @param _parentSpan - 父 Span
    * @param operationType - 操作類型（enqueue, dequeue, requeue）
    * @param eventName - 事件名稱
    * @param priority - 優先級
    * @returns Span 實例
    */
   startQueueOperationSpan(
-    parentSpan: Span,
+    _parentSpan: Span,
     operationType: 'enqueue' | 'dequeue' | 'requeue',
     eventName: string,
     priority: 'high' | 'normal' | 'low'

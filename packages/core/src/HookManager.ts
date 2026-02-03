@@ -961,7 +961,7 @@ export class HookManager {
       options: EventOptions,
       error: Error,
       retryCount: number,
-      firstFailedAt: number
+      _firstFailedAt: number
     ) => {
       if (!this.persistentDlqManager) {
         return
