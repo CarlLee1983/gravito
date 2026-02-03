@@ -3,20 +3,21 @@ title: OrbitSignal 架構技術規格書
 version: 1.0.0
 status: Stable
 tier: C
-last_updated: 2026-01-29
+last_updated: 2026-02-04
 ---
 
 # OrbitSignal 架構技術規格書
 
 ## 模組概覽
 
-**OrbitSignal** (`@gravito/signal`) 是 Gravito 框架中的通訊核心（Communications Orbit），專注於電子郵件的發送、模板渲染與測試開發。
+**OrbitSignal** (`@gravito/signal`) 是 Gravito 框架中的通訊核心（Communications Orbit），專注於電子郵件的發送、模板渲染、Webhooks 整合與測試開發。
 
 ### 核心職責
 - **Fluent Email API**：提供 `Mailable` 類別，以物件導向方式建構信件。
 - **Multi-Driver Transport**：支援多種傳輸協定（SMTP, SES, Log, Memory），並具備自動重試機制。
-- **Template Rendering**：支援 HTML, React, Vue, Prism 等多種渲染引擎。
-- **Development Experience**：內建 `DevMailbox` 與預覽 UI，攔截並展示開發環境的信件。
+- **Template Rendering**：支援 HTML, React, Vue, Prism 以及 **MJML** 等多種渲染引擎。
+- **Webhook Integration**：內建 Webhook 接收與處理機制，支援 SendGrid 等主流 ESP 事件。
+- **Development Experience**：內建具備容量限制的 `DevMailbox` 與預覽 UI，攔截並展示開發環境的信件。
 
 ## 快速開始
 
@@ -74,8 +75,11 @@ OrbitSignal 採用了經典的 Strategy Pattern 與 Factory Pattern 組合：
     -   **SmtpTransport**：基於 `nodemailer`，支援 Connection Pooling。
     -   **SesTransport**：AWS SES 整合。
 4.  **Dev Tools** (`src/dev/*`)
-    -   **DevMailbox**：記憶體內的信件儲存。
+    -   **DevMailbox**：記憶體內的信件儲存，具備 Ring Buffer 容量限制。
     -   **DevServer**：提供 `/__mail` 介面，即時預覽信件內容。
+5.  **Webhook Layer** (`src/webhooks/*`)
+    -   **WebhookDriver**：處理傳入 Webhook 請求的介面。
+    -   **SendGridWebhookDriver**：實作 SendGrid 事件 Webhook 處理。
 
 ### 2. 信件發送流程
 
@@ -139,11 +143,18 @@ class Mailable {
 -   提供類似 MailHog 的本地體驗，無需外部依賴。
 
 ### 4.3 渲染引擎抽象化
-**決策**：支援 React/Vue 作為郵件模板引擎。
+**決策**：支援 React/Vue/MJML 作為郵件模板引擎。
 **原因**：
 -   傳統模板（EJS）缺乏組件化能力。
 -   允許前後端共用 UI 組件（例如 Header, Footer）。
 -   利用 `renderToStaticMarkup` (React) 生成靜態 HTML。
+-   **MJML**：解決 Email Client 響應式佈局與相容性痛點。
+
+### 4.4 Webhook 統一處理
+**決策**：提供 `/webhook/:driver` 標準端點與事件機制。
+**原因**：
+-   簡化與電子郵件服務商（ESP）的雙向整合。
+-   統一異步事件（如送達、退信、點擊）的處理流程。
 
 ---
 
@@ -158,16 +169,16 @@ class Mailable {
 - `to(address: string | string[]): this`
 - `subject(subject: string): this`
 - `view(template: string, data?: object): this`
+- `mjml(content: string, options?: object): this`
 - `attach(path: string, options?: object): this`
 
 ---
 
 ## 風險分析與潛在問題
 
-### 5.1 記憶體洩漏風險 (DevMailbox)
--   **問題**：`DevMailbox` 將所有攔截的信件儲存在陣列中。
--   **風險**：長時間運行的開發伺服器中，若發送大量測試信件，可能導致 OOM。
--   **建議**：實作環形緩衝區（Ring Buffer），限制最大保留數量（如 100 封）。
+### 5.1 記憶體管理
+-   **現況**：`DevMailbox` 使用 Ring Buffer 限制最大保留數量（預設 50 封）。
+-   **優點**：有效防止長時間運行的開發伺服器發生 OOM。
 
 ### 5.2 隱式依賴注入
 -   **問題**：`Mailable.queue()` 嘗試透過動態 import 獲取全域 `app()` 來解析 `mail` 服務。
@@ -195,12 +206,12 @@ class Mailable {
 
 ## 後續優化建議
 
-1.  **DevMailbox 容量限制** (Priority: Medium)
-    -   限制記憶體中保留的信件數量。
+1.  **DevMailbox 持久化** (Priority: Low)
+    -   可選支援檔案系統儲存，避免重啟伺服器時信件消失。
 
-2.  **Webhooks 整合** (Priority: Low)
-    -   增加處理 ESP (Email Service Provider) Webhooks 的能力。
+2.  **更多 Webhook Driver** (Priority: Medium)
+    -   增加 AWS SES、Mailgun 等主流服務商的實作。
 
-3.  **MJML 支援** (Priority: Medium)
-    -   增加 `mjml` 渲染器，解決 Email Client 相容性問題。
+3.  **MJML 組件庫** (Priority: Medium)
+    -   內建常用的 MJML 組件（如標準收據、密碼重設模板）。
 
