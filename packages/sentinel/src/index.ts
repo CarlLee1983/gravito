@@ -38,6 +38,7 @@ export * from './middleware/can'
 export * from './middleware/guest'
 export * from './middleware/throttleAuth'
 export * from './PasswordBroker'
+export * from './providers/CallbackSocialUserProvider'
 export * from './providers/CallbackUserProvider'
 export * from './RedisTokenBlacklist'
 
