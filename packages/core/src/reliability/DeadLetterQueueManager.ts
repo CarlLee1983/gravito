@@ -5,8 +5,8 @@
  * 支持 CRUD、重新入隊、批量重試和統計功能
  */
 
+import { randomUUID } from 'node:crypto'
 import type { ConnectionContract } from '@gravito/atlas'
-import { randomUUID } from 'crypto'
 import type { EventOptions } from '../events/EventOptions'
 import type { RetryPolicy } from './RetryPolicy'
 import { RetryEngine } from './RetryPolicy'
@@ -446,29 +446,23 @@ export class DeadLetterQueueManager {
     // 獲取總數
     const total = await this.db.table('event_dlq').count()
 
-    // 按事件名稱分組統計
-    const byEventResults = (await this.db
-      .table('event_dlq')
-      .select('event_name')
-      .selectRaw('COUNT(*) as count')
-      .groupBy('event_name')
-      .get()) as Array<{ event_name: string; count: number }>
+    // 按事件名稱分組統計（使用 raw SQL 以確保跨數據庫兼容）
+    const byEventResult = await this.db.raw<{ event_name: string; count: number }>(
+      'SELECT event_name, COUNT(*) as count FROM event_dlq GROUP BY event_name'
+    )
 
     const byEvent: Record<string, number> = {}
-    for (const row of byEventResults) {
+    for (const row of byEventResult.rows) {
       byEvent[row.event_name] = Number(row.count)
     }
 
-    // 按狀態分組統計
-    const byStatusResults = (await this.db
-      .table('event_dlq')
-      .select('status')
-      .selectRaw('COUNT(*) as count')
-      .groupBy('status')
-      .get()) as Array<{ status: string; count: number }>
+    // 按狀態分組統計（使用 raw SQL 以確保跨數據庫兼容）
+    const byStatusResult = await this.db.raw<{ status: string; count: number }>(
+      'SELECT status, COUNT(*) as count FROM event_dlq GROUP BY status'
+    )
 
     const byStatus: Record<string, number> = {}
-    for (const row of byStatusResults) {
+    for (const row of byStatusResult.rows) {
       byStatus[row.status] = Number(row.count)
     }
 

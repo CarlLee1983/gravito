@@ -4,7 +4,7 @@
  * 測試 DeadLetterQueueManager 的所有功能
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import type { ConnectionContract } from '@gravito/atlas'
 import { DeadLetterQueueManager } from '../src/reliability/DeadLetterQueueManager'
 
@@ -13,6 +13,46 @@ import { DeadLetterQueueManager } from '../src/reliability/DeadLetterQueueManage
  */
 class MockConnection implements ConnectionContract {
   private tableData: Record<string, any[]> = { event_dlq: [] }
+
+  /**
+   * 模擬 raw SQL 查詢
+   * 支持 getStats() 方法使用的 GROUP BY 查詢
+   */
+  async raw<T = Record<string, unknown>>(
+    sql: string,
+    _bindings?: unknown[]
+  ): Promise<{ rows: T[]; rowCount: number; insertId: number }> {
+    const rows = this.tableData.event_dlq || []
+
+    // 解析 GROUP BY 查詢
+    if (sql.includes('GROUP BY event_name')) {
+      const grouped: Record<string, number> = {}
+      for (const row of rows) {
+        const key = row.event_name
+        grouped[key] = (grouped[key] || 0) + 1
+      }
+      const result = Object.entries(grouped).map(([event_name, count]) => ({
+        event_name,
+        count,
+      }))
+      return { rows: result as T[], rowCount: result.length, insertId: 0 }
+    }
+
+    if (sql.includes('GROUP BY status')) {
+      const grouped: Record<string, number> = {}
+      for (const row of rows) {
+        const key = row.status
+        grouped[key] = (grouped[key] || 0) + 1
+      }
+      const result = Object.entries(grouped).map(([status, count]) => ({
+        status,
+        count,
+      }))
+      return { rows: result as T[], rowCount: result.length, insertId: 0 }
+    }
+
+    return { rows: [], rowCount: 0, insertId: 0 }
+  }
 
   table(name: string) {
     const tableData = this.tableData
@@ -137,10 +177,10 @@ class MockConnection implements ConnectionContract {
       get: async () => {
         return tableData[name] || []
       },
-      select(...cols: string[]) {
+      select(..._cols: string[]) {
         const selectedData = tableData[name] || []
         return {
-          selectRaw(sql: string) {
+          selectRaw(_sql: string) {
             return {
               groupBy(groupColumn: string) {
                 return {
@@ -162,7 +202,7 @@ class MockConnection implements ConnectionContract {
           },
           groupBy(groupColumn: string) {
             return {
-              selectRaw(sql: string) {
+              selectRaw(_sql: string) {
                 return {
                   get: async () => {
                     const rows = selectedData.slice()
@@ -184,9 +224,9 @@ class MockConnection implements ConnectionContract {
       },
       groupBy(column: string) {
         return {
-          select(...columns: string[]) {
+          select(..._columns: string[]) {
             return {
-              selectRaw(sql: string) {
+              selectRaw(_sql: string) {
                 return {
                   get: async () => {
                     const rows = tableData[name] || []

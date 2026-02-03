@@ -78,8 +78,19 @@ export {
   EventPriorityQueue,
 } from './events'
 // Event System Observability
-export type { ObservabilityConfig } from './events/observability'
-export { EventMetrics, EventTracer, ObservableHookManager } from './events/observability'
+export type {
+  EventTracingConfig,
+  ObservabilityConfig,
+  QueueDepthCallback,
+} from './events/observability'
+export {
+  EventMetrics,
+  EventTracer,
+  EventTracing,
+  getEventTracing,
+  ObservableHookManager,
+  OTelEventMetrics,
+} from './events/observability'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // OpenTelemetry Instrumentation

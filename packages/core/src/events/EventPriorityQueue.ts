@@ -1,9 +1,11 @@
+import type { Span } from '@opentelemetry/api'
 import type { ActionCallback } from '../HookManager'
 import { CircuitBreaker } from './CircuitBreaker'
 import type { DeadLetterQueue } from './DeadLetterQueue'
 import type { EventBackend } from './EventBackend'
 import type { EventOptions } from './EventOptions'
 import type { EventMetrics } from './observability/EventMetrics'
+import type { EventTracing } from './observability/EventTracing'
 import type { BackpressureStrategy, EventQueueConfig, EventTask } from './types'
 
 export type { EventTask, EventQueueConfig, BackpressureStrategy }
@@ -36,6 +38,8 @@ export class EventPriorityQueue implements EventBackend {
   private processingPartitions: Set<string> = new Set()
   private eventCircuitBreakers: Map<string, CircuitBreaker> = new Map()
   private eventMetrics?: EventMetrics
+  private eventTracing?: EventTracing
+  private currentDispatchSpan?: Span
 
   constructor(config: EventQueueConfig = {}) {
     this.config = config
@@ -76,6 +80,36 @@ export class EventPriorityQueue implements EventBackend {
    */
   setEventMetrics(metrics: EventMetrics): void {
     this.eventMetrics = metrics
+  }
+
+  /**
+   * Set the EventTracing instance for distributed tracing.
+   *
+   * @param tracing - EventTracing instance
+   * @internal
+   */
+  setEventTracing(tracing: EventTracing): void {
+    this.eventTracing = tracing
+  }
+
+  /**
+   * Set the current dispatch span for creating child spans.
+   *
+   * @param span - Parent dispatch span
+   * @internal
+   */
+  setCurrentDispatchSpan(span: Span | undefined): void {
+    this.currentDispatchSpan = span
+  }
+
+  /**
+   * Get the current dispatch span.
+   *
+   * @returns Current dispatch span or undefined
+   * @internal
+   */
+  getCurrentDispatchSpan(): Span | undefined {
+    return this.currentDispatchSpan
   }
 
   /**
@@ -348,8 +382,23 @@ export class EventPriorityQueue implements EventBackend {
 
     try {
       let lastError: Error | undefined
+      let listenerIndex = 0
 
       for (const callback of callbacks) {
+        // Create listener span if tracing is enabled
+        let listenerSpan: Span | undefined
+        const listenerStartTime = performance.now()
+
+        if (this.eventTracing && this.currentDispatchSpan) {
+          const listenerName = callback.name || `listener_${listenerIndex}`
+          listenerSpan = this.eventTracing.startListenerSpan(
+            this.currentDispatchSpan,
+            hook,
+            listenerName,
+            listenerIndex
+          )
+        }
+
         try {
           // Execute callback with circuit breaker protection and timeout
           if (circuitBreaker) {
@@ -360,7 +409,18 @@ export class EventPriorityQueue implements EventBackend {
             // No circuit breaker, execute directly
             await this.executeWithTimeout(callback, args, timeout)
           }
+
+          // End listener span with success
+          if (listenerSpan && this.eventTracing) {
+            const duration = performance.now() - listenerStartTime
+            this.eventTracing.endListenerSpan(listenerSpan, 'ok', duration)
+          }
         } catch (error) {
+          // Record error in listener span
+          if (listenerSpan && this.eventTracing) {
+            const duration = performance.now() - listenerStartTime
+            this.eventTracing.endListenerSpan(listenerSpan, 'error', duration, error as Error)
+          }
           lastError = error as Error
 
           // Check if error is from circuit breaker being open
@@ -489,6 +549,9 @@ export class EventPriorityQueue implements EventBackend {
           // Don't continue with other callbacks if one fails
           break
         }
+
+        // Increment listener index for next iteration
+        listenerIndex++
       }
     } finally {
       // Release partition lock if needed

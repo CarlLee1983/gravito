@@ -6,9 +6,9 @@
 
 import { HookManager, type HookManagerConfig } from '../../HookManager'
 import type { EventOptions } from '../EventOptions'
-import type { EventTask } from '../types'
 import { EventMetrics } from './EventMetrics'
 import { EventTracer } from './EventTracer'
+import { EventTracing } from './EventTracing'
 
 /**
  * Configuration for observability features.
@@ -51,6 +51,7 @@ export interface ObservabilityConfig {
 export class ObservableHookManager extends HookManager {
   private eventMetrics?: EventMetrics
   private eventTracer?: EventTracer
+  private eventTracing?: EventTracing
   private obsConfig: ObservabilityConfig
 
   /**
@@ -74,6 +75,10 @@ export class ObservableHookManager extends HookManager {
     // Initialize tracer if enabled
     if (obsConfig.enabled && obsConfig.tracing) {
       this.eventTracer = new EventTracer()
+      this.eventTracing = new EventTracing()
+
+      // Set EventTracing on the event queue so it can create listener spans
+      this.getEventQueue().setEventTracing(this.eventTracing)
     }
   }
 
@@ -101,8 +106,17 @@ export class ObservableHookManager extends HookManager {
     const priority = options.priority || 'normal'
     const callbacks = this.getListeners(hook)
 
+    // Create dispatch span using EventTracing (preferred) or EventTracer (fallback)
     let span: any
-    if (this.eventTracer) {
+    if (this.eventTracing) {
+      span = this.eventTracing.startDispatchSpan(
+        hook,
+        callbacks.length,
+        priority as 'high' | 'normal' | 'low'
+      )
+      // Set the dispatch span on the queue for child span creation
+      this.getEventQueue().setCurrentDispatchSpan(span)
+    } else if (this.eventTracer) {
       span = this.eventTracer.startDispatchSpan(hook, callbacks.length, priority)
     }
 
@@ -122,7 +136,9 @@ export class ObservableHookManager extends HookManager {
       }
 
       // Set span status to OK
-      if (span && this.eventTracer) {
+      if (span && this.eventTracing) {
+        this.eventTracing.endDispatchSpan(span, 'ok')
+      } else if (span && this.eventTracer) {
         this.eventTracer.endSpan(span, 'ok')
       }
     } catch (error) {
@@ -134,12 +150,90 @@ export class ObservableHookManager extends HookManager {
       }
 
       // Record error in span
-      if (span && this.eventTracer && error instanceof Error) {
+      if (span && this.eventTracing && error instanceof Error) {
+        this.eventTracing.endDispatchSpan(span, 'error', error)
+      } else if (span && this.eventTracer && error instanceof Error) {
         this.eventTracer.recordError(span, error)
         this.eventTracer.endSpan(span, 'error')
       }
 
       throw error
+    } finally {
+      // Clear the dispatch span from the queue
+      if (this.eventTracing) {
+        this.getEventQueue().setCurrentDispatchSpan(undefined)
+      }
+    }
+  }
+
+  /**
+   * Run all registered actions synchronously with observability.
+   *
+   * This override adds metrics and tracing to the base implementation.
+   *
+   * @template TArgs - The type of arguments passed to the action.
+   * @param hook - The name of the hook.
+   * @param args - The arguments to pass to the callbacks.
+   */
+  async doActionSync<TArgs = unknown>(hook: string, args: TArgs): Promise<void> {
+    // If observability is disabled, use parent implementation directly
+    if (!this.obsConfig.enabled) {
+      return super.doActionSync(hook, args)
+    }
+
+    const startTime = performance.now()
+    const callbacks = this.getListeners(hook)
+
+    // Create dispatch span using EventTracing (preferred) or EventTracer (fallback)
+    let span: any
+    if (this.eventTracing) {
+      span = this.eventTracing.startDispatchSpan(hook, callbacks.length, 'normal')
+      // Add sync dispatch mode attribute
+      span.setAttributes({ 'event.dispatch_mode': 'sync' })
+    } else if (this.eventTracer) {
+      span = this.eventTracer.startDispatchSpan(hook, callbacks.length, 'normal')
+    }
+
+    let hasError = false
+    let lastError: Error | undefined
+
+    try {
+      // Call parent implementation
+      await super.doActionSync(hook, args)
+    } catch (error) {
+      // Note: doActionSync catches errors internally, so this is unlikely to be reached
+      // But we handle it for completeness
+      hasError = true
+      lastError = error instanceof Error ? error : new Error(String(error))
+    }
+
+    // Calculate duration
+    const duration = (performance.now() - startTime) / 1000
+
+    // Record metrics for sync dispatch
+    if (this.eventMetrics) {
+      this.eventMetrics.recordDispatchLatency(hook, 'normal', duration)
+      this.eventMetrics.recordProcessed(hook, hasError ? 'failure' : 'success')
+
+      if (hasError && lastError) {
+        this.eventMetrics.recordFailure(hook, lastError.constructor.name)
+      }
+    }
+
+    // End span
+    if (span && this.eventTracing) {
+      if (hasError && lastError) {
+        this.eventTracing.endDispatchSpan(span, 'error', lastError)
+      } else {
+        this.eventTracing.endDispatchSpan(span, 'ok')
+      }
+    } else if (span && this.eventTracer) {
+      if (hasError && lastError) {
+        this.eventTracer.recordError(span, lastError)
+        this.eventTracer.endSpan(span, 'error')
+      } else {
+        this.eventTracer.endSpan(span, 'ok')
+      }
     }
   }
 
@@ -183,7 +277,20 @@ export class ObservableHookManager extends HookManager {
     // Reinitialize tracer if enabled
     if (this.obsConfig.enabled && this.obsConfig.tracing && !this.eventTracer) {
       this.eventTracer = new EventTracer()
+      this.eventTracing = new EventTracing()
+
+      // Set EventTracing on the event queue so it can create listener spans
+      this.getEventQueue().setEventTracing(this.eventTracing)
     }
+  }
+
+  /**
+   * Get the EventTracing instance.
+   *
+   * @returns EventTracing instance if tracing is enabled, undefined otherwise
+   */
+  getEventTracing(): EventTracing | undefined {
+    return this.eventTracing
   }
 
   /**

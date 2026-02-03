@@ -2,7 +2,7 @@
 
 **建立日期**: 2026-02-03
 **優化方式**: 按依賴關係與優先級重新排序
-**進度**: 14/55 完成（25%）
+**進度**: 15/55 完成（27%）
 
 ---
 
@@ -36,10 +36,15 @@
   - 測試文件: `packages/core/tests/instrumentation/opentelemetry.test.ts`
   - 測試覆蓋率: 86.20%（34 測試用例）
 
-- [ ] 1.1.2.2 實現事件追蹤（Tracing）
-  - 在 HookManager 中添加 span 記錄
-  - 追蹤指標: event.name, event.priority, listener.count
-  - 工作量: 小 (1-2 hours)
+- [x] 1.1.2.2 實現事件追蹤（Tracing）（已完成 2026-02-03）
+  - 在 HookManager 和 EventPriorityQueue 中添加 span 記錄
+  - 追蹤指標: event.name, event.priority, listener.count, dispatch_mode
+  - 相關文件:
+    - `packages/core/src/events/observability/EventTracing.ts`
+    - `packages/core/src/events/observability/ObservableHookManager.ts`
+    - `packages/core/src/events/EventPriorityQueue.ts`
+  - 測試文件: `packages/core/tests/events/observability/tracing-integration.test.ts`
+  - 測試覆蓋: 27 測試用例（dispatch span、listener span、同步/異步追蹤、錯誤記錄）
 
 - [ ] 1.1.2.3 實現 Prometheus 指標導出
   - 指標: `gravito_event_dispatch_duration_seconds`, `gravito_event_queue_depth`, `gravito_event_listener_duration_seconds`
@@ -260,17 +265,17 @@
 
 | Phase | 完成 | 待做 | 完成度 | 預計工時 |
 |-------|------|------|--------|---------|
-| Phase 0 | 3 | 6 | 33% | 10-12 hours |
+| Phase 0 | 4 | 5 | 44% | 10-12 hours |
 | Phase 1 | 0 | 19 | 0% | 35-45 hours |
 | Phase 2 | 0 | 14 | 0% | 35-45 hours |
 | Phase 3 | 0 | 10 | 0% | 30-40 hours |
-| **總計** | **3** | **49** | **6%** | **110-140 hours** |
+| **總計** | **4** | **48** | **8%** | **110-140 hours** |
 
 ### 按 Issue 統計
 
 | Issue | Phase | 完成 | 待做 | 完成度 |
 |-------|-------|------|------|--------|
-| 1.1 | 1-3 | 5 | 10 | 33% |
+| 1.1 | 1-3 | 6 | 9 | 40% |
 | 1.2 | 1-4 | 8 | 12 | 40% |
 | 1.3 | - | 0 | 4 | 0% |
 | 1.4 | - | 0 | 4 | 0% |
@@ -312,5 +317,9 @@
 
 ## 📝 更新日誌
 
+- **2026-02-03**: 完成 Task 1.1.2.2 事件追蹤（Tracing）實現
+  - 新增 doActionSync 追蹤支援
+  - 補充 27 個追蹤整合測試
+  - 追蹤指標: event.name, event.priority, listener.count, dispatch_mode
 - **2026-02-03**: 初版清單建立，基於 FRAMEWORK_IMPROVEMENTS.md 優化排序
 
