@@ -29,20 +29,22 @@ const totalRequests = new Counter('total_requests')
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * 生成指定範圍內的隨機整數
+ * 生成指定範圍內的隨機整數（負載測試用，非安全關鍵場景）
  * @param {number} min - 最小值（包含）
  * @param {number} max - 最大值（包含）
  * @returns {number} 隨機整數
  */
 function randomIntBetween(min, max) {
+  // 負載測試場景：使用 Math.random() 生成測試數據，非安全關鍵用途
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
 
 /**
- * 生成隨機浮點數（0 到 1 之間）
+ * 生成隨機浮點數（0 到 1 之間，負載測試用，非安全關鍵場景）
  * @returns {number} 隨機浮點數
  */
 function randomFloat() {
+  // 負載測試場景：使用 Math.random() 分配測試流量，非安全關鍵用途
   return Math.random()
 }
 
