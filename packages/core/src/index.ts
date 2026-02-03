@@ -140,6 +140,14 @@ export {
   type RouteOptions,
   Router,
 } from './Router'
+// Reliability
+export type { DLQManagerFilter, DLQRecord, DLQStats, RetryPolicy } from './reliability'
+export {
+  DeadLetterQueueManager,
+  getDefaultRetryPolicy,
+  getPresetRetryPolicy,
+  RetryEngine,
+} from './reliability'
 
 // Service Provider
 export { ServiceProvider } from './ServiceProvider'

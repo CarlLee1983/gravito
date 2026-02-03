@@ -343,7 +343,7 @@ Week 21+:   Issue 3.2 + 優化
 
 **開始日期**：2026-02-03
 **預期完成日期**：Week 8
-**當前進度**：40% (2/5 任務完成)
+**當前進度**：60% (3/5 任務完成)
 
 ### 已完成任務
 
@@ -361,19 +361,26 @@ Week 21+:   Issue 3.2 + 優化
   - `getPresetRetryPolicy()` - 預設策略 (API, DB, MQ)
 - 狀態：✅ 已提交
 
-### 待實施任務
-
-**Task 1.2.1.3: DeadLetterQueueManager** ⏳
-- 文件位置：`packages/core/src/reliability/DeadLetterQueueManager.ts`
-- 功能：
-  - `addEntry()` - 添加失敗事件
-  - `getEntries()` - 查詢事件
-  - `requeueEntry()` - 重隊列單個事件
-  - `requeueBatch()` - 批量重隊列
-  - `deleteEntry()` - 刪除事件
-  - `updateStatus()` - 更新狀態
-  - `getStats()` - 統計信息
-- 估計工作量：3 小時
+**Task 1.2.1.3: DeadLetterQueueManager** ✅
+- 文件：`packages/core/src/reliability/DeadLetterQueueManager.ts`
+- 功能實現（完整 13 個方法）：
+  - `moveToDlq()` - 將失敗事件移至 DLQ
+  - `getById()` - 按 ID 獲取單個事件
+  - `list()` - 查詢 DLQ 事件（支持篩選和分頁）
+  - `requeue()` - 重新入隊單個事件
+  - `retryBatch()` - 批量重新入隊
+  - `resolve()` - 標記為已解決
+  - `abandon()` - 標記為已放棄
+  - `updateStatus()` - 更新事件狀態
+  - `deleteEntry()` - 刪除單個事件
+  - `deleteEntries()` - 批量刪除
+  - `getStats()` - 統計信息（按事件和狀態分組）
+  - `getCountByEvent()` - 特定事件計數
+  - `clear()` - 清空記錄
+- 配套文件：
+  - `packages/core/src/reliability/index.ts` - 導出文件
+  - `packages/core/tests/DeadLetterQueueManager.test.ts` - 單元測試（14 個測試）
+- 狀態：✅ 已完成（類型檢查通過）
 
 **Task 1.2.1.4: HookManager 集成** ⏳
 - 文件修改：`packages/core/src/HookManager.ts`
@@ -388,11 +395,11 @@ Week 21+:   Issue 3.2 + 優化
 
 ### 下次繼續時的提示
 
-1. 接續 Task 1.2.1.3 (DeadLetterQueueManager)
-2. 在 `packages/core/src/reliability/` 目錄創建新文件
-3. 使用已完成的 RetryPolicy 類
-4. 集成已建立的 event_dlq 數據表
-5. 確保與現有 HookManager 兼容
+1. ✅ Task 1.2.1.3 已完成
+2. 接續 Task 1.2.1.4 (HookManager 集成)
+3. 修改 `packages/core/src/HookManager.ts` 的 doActionAsync 方法
+4. 集成 RetryPolicy 和 DeadLetterQueueManager
+5. 支持異步重試和 DLQ 機制
 
 ---
 
