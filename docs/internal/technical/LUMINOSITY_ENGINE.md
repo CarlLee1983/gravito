@@ -112,7 +112,7 @@ Luminosity 支援三種運行模式以適應不同環境：
 | :--- | :--- | :--- | :--- | :--- |
 | **Dynamic** | 小型網站 (< 1k Pages) | 無 (Runtime計算) | 簡單，無狀態 | 每次請求都需重算，CPU 消耗大 |
 | **Cached** | 中型網站 (< 50k Pages) | 記憶體 + 定時刷新 | 響應快 | 佔用記憶體，重啟後資料丟失 |
-| **Incremental** | 大型網站 (> 1M Pages) | **LSM-Tree (Disk)** | **無限擴展**，寫入極快，記憶體佔用低 | 依賴持久化文件系統 (EFS/Volume) |
+| **Incremental** | 大型網站 (> 1M Pages) | **LSM-Tree (Disk)** | **無限擴展**，寫入極快，記憶體佔用低 | 依賴持久化文件系統 (EFS/Persistent Volume) |
 
 ---
 
@@ -121,4 +121,4 @@ Luminosity 支援三種運行模式以適應不同環境：
 遵循 Sitemap Protocol 標準，單個 XML 文件限制為 50,000 URLs。
 
 *   **Sitemap Index**: 當 URL 數量 > 50k 時，Luminosity 自動生成 `<sitemapindex>`。
-*   **Query-based Pagination**: 實際的 URL 列表通過 `/sitemap.xml?page=N` 獲取。LSM 引擎在 Read Merge 階段會自動執行 `skip(page * limit)` 與 `take(limit)` 操作。
+*   **Query-based Pagination**: 實際的 URL 列表透過 `/sitemap.xml?page=N` 獲取。LSM 引擎在 Read Merge 階段會自動執行 `skip(page * limit)` 與 `take(limit)` 操作。

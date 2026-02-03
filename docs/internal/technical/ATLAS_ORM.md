@@ -160,7 +160,7 @@ await DB.transaction(async (trx) => {
 
 *   **Why Not Drizzle?**
     *   Drizzle 非常優秀，但其 API 設計極度依賴 TypeScript 類型推斷與 Schema 定義。
-    *   Atlas 的目標是提供更**語義化**的高層封裝 (High-Level Abstraction)，例如 `scopeActive()`, `with('posts')` 等 Active Record 風格的便利性，這在快速開發 API 時能大幅減少心智負擔。我們希望寫代碼像寫文章一樣流暢，而不僅僅是寫「類型安全的 SQL」。
+    *   Atlas 的目標是提供更**語義化**的高層封裝 (High-Level Abstraction)，例如 `scopeActive()`, `with('posts')` 等 Active Record 風格的便利性，這在快速開發 API 時能大幅減少心智負擔。我們希望提供更具語義化 (Semantic) 的 API，而不僅僅是寫「類型安全的 SQL」。
 
 ### 6.2 效能分析 (Performance)
 
@@ -186,7 +186,7 @@ Atlas 的 Runtime 效能處於 **Tier 0** (與 Drizzle 持平，遠快於 Prisma
 
 在早期實作中，Raw SQL 依賴開發者自覺地使用第二個參數進行綁定：
 ```typescript
-// 舊版：依賴開發者手動輸入 '?' 並確保與數組對應
+// 舊版：依賴開發者手動輸入 '?' 並確保與陣列對映
 .whereRaw('status = ? AND level > ?', [status, level])
 ```
 這種做法雖然安全，但容易產生**人為疏失**（如參數順序錯誤或遺漏綁定），且在處理複雜的動態查詢時極易出錯。
@@ -198,7 +198,7 @@ Atlas 的 Runtime 效能處於 **Tier 0** (與 Drizzle 持平，遠快於 Prisma
 #### 底層運作邏輯：
 1.  **參數提取**: `sql` 標籤會將模板字串中的變數自動分離。
 2.  **預佔位符化**: 將所有變數位置自動替換為 `?` 佔位符。
-3.  **封裝為 Expression**: 返回一個內建 `sql` 字串與 `bindings` 數組的 `Expression` 物件。
+3.  **封裝為 Expression**: 返回一個內建 `sql` 字串與 `bindings` 陣列的 `Expression` 物件。
 
 ```mermaid
 graph LR
