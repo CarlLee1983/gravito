@@ -343,7 +343,7 @@ Week 21+:   Issue 3.2 + 優化
 
 **開始日期**：2026-02-03
 **預期完成日期**：Week 8
-**當前進度**：60% (3/5 任務完成)
+**當前進度**：80% (4/5 任務完成)
 
 ### 已完成任務
 
@@ -382,10 +382,19 @@ Week 21+:   Issue 3.2 + 優化
   - `packages/core/tests/DeadLetterQueueManager.test.ts` - 單元測試（14 個測試）
 - 狀態：✅ 已完成（類型檢查通過）
 
-**Task 1.2.1.4: HookManager 集成** ⏳
-- 文件修改：`packages/core/src/HookManager.ts`
-- 功能：集成重試和 DLQ 到 doActionAsync
-- 估計工作量：3 小時
+**Task 1.2.1.4: HookManager 集成** ✅
+- 文件修改：
+  - `packages/core/src/HookManager.ts` - 添加持久化 DLQ 支持
+  - `packages/core/src/events/EventPriorityQueue.ts` - DLQ 處理器集成
+- 功能實現（6 個新方法）：
+  - `getPersistentDLQManager()` - 獲取 DLQ 管理器
+  - `createPersistentDLQHandler()` - 創建 DLQ 處理器
+  - `requeuePersistentDLQEntry()` - 重新入隊單個事件
+  - `requeuePersistentDLQBatch()` - 批量重新入隊
+  - `getPersistentDLQStats()` - 獲取統計信息
+  - `setPersistentDLQHandler()` (in EventPriorityQueue)
+- 配置選項：db 和 enablePersistentDLQ
+- 狀態：✅ 已完成
 
 **Task 1.2.1.5: 測試與文檔** ⏳
 - 單元測試：RetryPolicy、DeadLetterQueueManager
@@ -396,10 +405,10 @@ Week 21+:   Issue 3.2 + 優化
 ### 下次繼續時的提示
 
 1. ✅ Task 1.2.1.3 已完成
-2. 接續 Task 1.2.1.4 (HookManager 集成)
-3. 修改 `packages/core/src/HookManager.ts` 的 doActionAsync 方法
-4. 集成 RetryPolicy 和 DeadLetterQueueManager
-5. 支持異步重試和 DLQ 機制
+2. ✅ Task 1.2.1.4 已完成
+3. 接續 Task 1.2.1.5 (測試與文檔)
+4. 編寫集成測試驗證 DLQ 和重試機制
+5. 生成完整的 DLQ_AND_RETRY_GUIDE.md 文檔
 
 ---
 
