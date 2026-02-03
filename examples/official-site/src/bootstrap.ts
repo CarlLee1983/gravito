@@ -6,7 +6,7 @@ import { OrbitCache } from '@gravito/stasis'
 import type { Context, Next } from 'hono'
 import { registerHooks } from './hooks'
 import { registerRoutes } from './routes'
-import { setupViteProxy } from './utils/vite'
+import { proxyToVite } from './utils/vite'
 
 export interface AppConfig {
   port?: number
@@ -43,17 +43,37 @@ export async function bootstrap(options: AppConfig = {}): Promise<PlanetCore> {
   const core = await PlanetCore.boot(config)
   core.registerGlobalErrorHandlers()
 
-  const app = core.app as any // Gravito instance
+  const app = (core as any).app
 
-  // 4. Set isDev flag for development mode (Vite proxy will be set up later)
+  // 4. Setup Vite Proxy IMMEDIATELY (Using bottom-level adapter for reliability)
   if (process.env.NODE_ENV !== 'production') {
-    // Use .use('*') to register as middleware, not route handler
+    core.adapter.use('*', async (c: any, next: any) => {
+      const url = new URL(c.req.url)
+      const p = url.pathname
+
+      const isViteAsset =
+        p.startsWith('/@') ||
+        p.startsWith('/node_modules/') ||
+        p.startsWith('/src/') ||
+        p.includes('react-refresh') ||
+        ['/app.tsx', '/styles.css', '/freeze.config.ts'].includes(p) ||
+        (/\.(ts|tsx|js|jsx|css|json|wasm|png|jpg|jpeg|gif|svg|ico)$/.test(p) &&
+          !p.startsWith('/static/'))
+
+      if (isViteAsset) {
+        const result = await proxyToVite(c, core)
+        if (result) return result
+      }
+
+      return await next()
+    })
+  }
+
+  // 5. Set isDev flag
+  if (process.env.NODE_ENV !== 'production') {
     app.use('*', async (c: any, next: any) => {
       c.set('isDev', true)
-      if (next) {
-        return await next()
-      }
-      return undefined
+      return await next()
     })
   }
 
@@ -80,14 +100,12 @@ export async function bootstrap(options: AppConfig = {}): Promise<PlanetCore> {
     return c.notFound()
   })
 
-  // 3.1 SEO Middleware (Eat our own dog food)
+  // 3.1 SEO Middleware
   const { gravitoSeo } = await import('@gravito/luminosity-adapter-photon')
   const { seoConfig } = await import('./config/seo')
-
-  // Mounted at root to catch /sitemap.xml and /robots.txt
   app.use('*', gravitoSeo(seoConfig))
 
-  // 3.2 Google Analytics Injection (for SSG and Production)
+  // 3.2 Google Analytics Injection
   app.use('*', async (c: Context, next: Next) => {
     await next()
     const gaId = process.env.VITE_GA_ID
@@ -99,21 +117,16 @@ export async function bootstrap(options: AppConfig = {}): Promise<PlanetCore> {
           '<!-- Google Analytics Placeholder -->',
           `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
              <script>
-               window.dataLayer = window.dataLayer || [];
-               function gtag(){dataLayer.push(arguments);}
-               gtag('js', new Date());
-               gtag('config', '${gaId}');
-             </script>`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${gaId}');
+              </script>`
         )
         c.res = new Response(html, c.res)
       }
     }
   })
-
-  // 5. Setup Vite Proxy BEFORE routes (so Vite requests are proxied first)
-  if (process.env.NODE_ENV !== 'production') {
-    setupViteProxy(core)
-  }
 
   // 6. Hooks
   registerHooks(core)
@@ -121,6 +134,5 @@ export async function bootstrap(options: AppConfig = {}): Promise<PlanetCore> {
   // 7. Routes (registered after Vite proxy to avoid 404 on Vite assets)
   registerRoutes(core)
 
-  // 7. Ready (but not liftoff)
   return core
 }
