@@ -84,27 +84,33 @@ GraphQL 的查詢能力取決於 Filter 的設計。
 
 ## 4. 潛在風險與效能評估
 
-### 4.1 Schema 膨脹
+### 4.1 Schema 膨脹與 Introspection 控制
 若模型數量巨大，自動生成的 Schema 可能會非常龐大，導致客戶端 Introspection 變慢。
-- **解法**：建議在生產環境禁用 Introspection，或使用 Persisted Queries。
+- **解法**：可透過 `introspection: false` 在生產環境禁用 Introspection。
+- **效能**：預設支援 APQ (Automatic Persisted Queries)，有效減少查詢傳輸量。
 
-### 4.2 關聯深度攻擊
-惡意用戶可能構造深層巢狀查詢 (`author { posts { author { posts ... } } }`)。
-- **防護**：預設啟用了 `depthLimit` (建議值 10) 與 `complexityLimit` (建議值 1000)。
+### 4.2 安全防護 (Security)
+為防止資源耗盡攻擊，系統內建了多重防護機制：
+- **深度限制 (Depth Limit)**：預設啟用，最大深度為 10，防止巢狀查詢過深。
+- **複雜度限制 (Complexity Limit)**：預設啟用，最大複雜度為 1000，防止過於昂貴的查詢。
+- **速率限制 (Rate Limiting)**：支援透過 `@rateLimit` 指令或全域配置進行權杖桶 (Token Bucket) 限流。
 
 ---
 
 ## 5. 後續優化建議
 
-### 短期 (v1.1)
-1. **Custom Scalars**：新增更多實用的 Scalars (JSON, Email, URL, DateTime)。
-2. **Middleware Support**：允許為特定的 Resolver 添加中間件 (如 `auth` guard)。
+### v1.1 (已完成)
+1. **Custom Scalars**：已實作 JSON, Email, URL, DateTime, BigInt, UUID。
+2. **Middleware Support**：支援 `middlewares` 配置，可為特定 Resolver 添加中間件 (如 `auth` guard)。
+3. **Security Defaults**：深度與複雜度限制已設為預設開啟。
 
-### 中期 (v1.2)
-1. **Code-First Schema**：整合 Pothos，提供更靈活的 Code-First Schema 定義方式 (目前主要是 Schema-First 或 Auto-Generated)。
+### v1.2 (已完成)
+1. **Code-First Schema**：已整合 Pothos，提供更靈活的類型定義方式 (詳見 `docs/POTHOS_INTEGRATION.md`)。
+2. **Subscription**：支援基於 Bun Native WebSocket 的實時訂閱。
 
-### 長期 (v2.0)
-1. **Deferred/Stream**：支援 GraphQL `@defer` 與 `@stream` 指令，優化慢速欄位的傳輸體驗。
+### v2.0 (已完成)
+1. **Deferred/Stream**：完全支援 GraphQL `@defer` 與 `@stream` 指令。
+2. **Response Cache**：支援回應層級快取，並提供自訂 Store 介面。
 
 ---
 *Created by Gravito Architect.*

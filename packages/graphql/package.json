@@ -26,6 +26,7 @@
     "dataloader": "^2.2.3",
     "graphql": "^16.8.1",
     "graphql-complexity-validation": "^1.0.4",
+    "graphql-middleware": "^6.1.35",
     "graphql-ws": "^6.0.6",
     "graphql-yoga": "^5.1.1"
   },

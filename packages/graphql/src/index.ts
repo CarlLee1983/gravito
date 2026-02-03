@@ -3,8 +3,14 @@ import { useRateLimiter } from '@envelop/rate-limiter'
 import { useResponseCache } from '@envelop/response-cache'
 import { useAPQ } from '@graphql-yoga/plugin-apq'
 import type { GravitoContext, GravitoOrbit, PlanetCore } from '@gravito/core'
-import type { GraphQLError, GraphQLFormattedError, GraphQLSchema } from 'graphql'
+import {
+  type GraphQLError,
+  type GraphQLFormattedError,
+  type GraphQLSchema,
+  NoSchemaIntrospectionCustomRule,
+} from 'graphql'
 import { createComplexityLimitRule } from 'graphql-complexity-validation'
+import { applyMiddleware, type IMiddleware } from 'graphql-middleware'
 import { makeHandler } from 'graphql-ws/use/bun'
 import {
   createSchema,
@@ -167,6 +173,13 @@ export interface GraphQLConfig {
   plugins?: Plugin[]
 
   /**
+   * Enables or disables Introspection.
+   * Recommended to be set to false in production.
+   * @default true
+   */
+  introspection?: boolean
+
+  /**
    * Custom error formatter to sanitize errors before sending them to the client.
    *
    * @param error - The original GraphQL error.
@@ -174,6 +187,12 @@ export interface GraphQLConfig {
    * @returns The formatted error object.
    */
   formatError?: (error: GraphQLError, context: GraphQLContext) => GraphQLFormattedError
+
+  /**
+   * Resolver-level middleware to wrap resolvers.
+   * Useful for authentication guards, logging, or input validation.
+   */
+  middlewares?: IMiddleware[]
 
   /**
    * Determines if error details should be masked for security.
@@ -209,9 +228,9 @@ export interface GraphQLConfig {
    * Security constraints to protect against resource exhaustion attacks.
    */
   security?: {
-    /** Maximum allowed depth of a query selection set. */
+    /** Maximum allowed depth of a query selection set. @default 10 */
     depthLimit?: number
-    /** Maximum allowed complexity score for a query. */
+    /** Maximum allowed complexity score for a query. @default 1000 */
     complexityLimit?: number
     /** Rate limiting configuration using the Token Bucket algorithm. */
     rateLimit?: {
@@ -356,28 +375,28 @@ export class OrbitGraphQL implements GravitoOrbit {
       }
     }
 
+    // Apply Middleware if provided
+    if (this.config.middlewares && this.config.middlewares.length > 0 && schema) {
+      schema = applyMiddleware(schema, ...this.config.middlewares)
+    }
+
     // 2. Create Yoga Instance
     const plugins: Plugin[] = this.config.plugins || []
 
     // Add Security Plugins
-    if (this.config.security?.depthLimit) {
-      plugins.push(
-        useDepthLimit({ maxDepth: this.config.security.depthLimit }) as unknown as Plugin
-      )
-    }
+    const depthLimit = this.config.security?.depthLimit ?? 10
+    plugins.push(useDepthLimit({ maxDepth: depthLimit }) as unknown as Plugin)
 
-    if (this.config.security?.complexityLimit) {
-      const maxComplexity = this.config.security.complexityLimit
-      plugins.push({
-        onValidate({ params, addValidationRule }) {
-          addValidationRule(
-            createComplexityLimitRule({
-              maxComplexity,
-            })
-          )
-        },
-      } as Plugin)
-    }
+    const maxComplexity = this.config.security?.complexityLimit ?? 1000
+    plugins.push({
+      onValidate({ params, addValidationRule }) {
+        addValidationRule(
+          createComplexityLimitRule({
+            maxComplexity,
+          })
+        )
+      },
+    } as Plugin)
 
     if (this.config.security?.rateLimit) {
       plugins.push(
@@ -421,8 +440,16 @@ export class OrbitGraphQL implements GravitoOrbit {
       )
     }
 
+    if (this.config.introspection === false) {
+      plugins.push({
+        onValidate({ addValidationRule }) {
+          addValidationRule(NoSchemaIntrospectionCustomRule)
+        },
+      } as Plugin)
+    }
+
     this.yoga = createYoga<Record<string, unknown>, GraphQLContext>({
-      schema,
+      schema: schema as GraphQLSchema,
       graphqlEndpoint: this.config.path || '/graphql',
       graphiql: this.config.graphiql ?? true,
       // biome-ignore lint/suspicious/noExplicitAny: Temporary cast to avoid strict type mismatch with Yoga's CORS types
@@ -467,7 +494,7 @@ export class OrbitGraphQL implements GravitoOrbit {
       const wsPath = this.config.subscriptions.path || '/graphql/ws'
 
       const websocketHandler = makeHandler({
-        schema,
+        schema: schema as GraphQLSchema,
         context: (ctx) => {
           const req = ctx.extra.request as unknown as Request
           return {
