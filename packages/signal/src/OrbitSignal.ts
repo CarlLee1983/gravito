@@ -241,8 +241,8 @@ export class OrbitSignal implements GravitoOrbit {
 
     // 5. Register Webhook Endpoint
     if (this.config.webhookPrefix) {
-      const adapter = core.adapter as any
-      adapter.post(`${this.config.webhookPrefix}/:driver`, async (c: GravitoContext) => {
+      // @ts-expect-error: Accessing internal adapter methods
+      core.adapter.post(`${this.config.webhookPrefix}/:driver`, async (c: GravitoContext) => {
         const driverName = c.req.param('driver')
         const driver = this.config.webhookDrivers?.[driverName as string]
 
