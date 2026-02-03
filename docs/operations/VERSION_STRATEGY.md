@@ -1,3 +1,7 @@
+---
+title: 版本策略說明
+---
+
 # 版本策略說明
 
 ## 版本分類
@@ -58,6 +62,10 @@ bun run publish:all
 - **Beta 版本** → `npm publish --tag beta`
 - **Alpha 版本** → `npm publish --tag alpha`
 - **穩定版本** → `npm publish` (使用 `latest` tag)
+
+### 注意事項
+- 內部依賴版本更新時，腳本會自動同步 `workspace:*` 協定。
+- 若要鎖定特定核心套件的版本同步，請參考 `scripts/update-package-versions.ts` 中的 `SYNC_VERSION_GROUPS`。
 
 ## 版本升級路徑
 

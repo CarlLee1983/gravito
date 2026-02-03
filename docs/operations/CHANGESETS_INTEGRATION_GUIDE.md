@@ -1,3 +1,7 @@
+---
+title: Changesets 整合指南
+---
+
 # Changesets 整合指南
 
 本指南展示如何將 Changesets 整合到 Gravito monorepo 中。
@@ -42,6 +46,8 @@ bunx changeset init
 - `baseBranch: "main"`：主分支名稱
 - `updateInternalDependencies: "patch"`：內部依賴自動更新 patch 版本
 - `ignore`：忽略私有套件（不需要發布）
+- `fixed`: 確保特定套件組版本同步發布 (例如 `@gravito/core` 和核心 Orbit 套件)
+- `linked`: 關聯套件版本，確保它們始終具有相同的版本號
 
 ## 使用流程
 

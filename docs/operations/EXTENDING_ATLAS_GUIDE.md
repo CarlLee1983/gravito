@@ -1,3 +1,7 @@
+---
+title: Extending Gravito Atlas
+---
+
 # Extending Gravito Atlas
 
 Gravito Atlas is designed to be extensible. This guide covers how to extend the ORM with custom capabilities, including adding new database drivers, extending models, and creating custom query macros.
