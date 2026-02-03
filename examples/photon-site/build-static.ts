@@ -35,6 +35,17 @@ async function build() {
     }
   }
 
+  // Ensure config exists for IncrementalBuilder
+  if (!appInstance.config) {
+    appInstance.config = {
+      get: (key: string, defaultValue: any) => {
+        if (key === 'VIEW_DIR') return 'src/views'
+        return defaultValue
+      },
+      has: (key: string) => key === 'VIEW_DIR',
+    }
+  }
+
   const ssg = new StaticSiteGenerator(appInstance)
 
   // 1. Dynamic Docs Routes
