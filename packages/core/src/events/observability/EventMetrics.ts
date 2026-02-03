@@ -4,7 +4,7 @@
  * Manages metric collection for event dispatch and listener execution.
  */
 
-import type { Counter, Gauge, Histogram } from '@gravito/monitor'
+import type { EventMetricCounter, EventMetricGauge, EventMetricHistogram } from './metrics-types'
 
 /**
  * Event metrics collector for monitoring and observability.
@@ -20,19 +20,19 @@ import type { Counter, Gauge, Histogram } from '@gravito/monitor'
  * @public
  */
 export class EventMetrics {
-  private dispatchLatency: Histogram
-  private listenerExecutionTime: Histogram
-  private queueDepthGauge: Gauge
-  private failureCounter: Counter
-  private timeoutCounter: Counter
-  private processedCounter: Counter
+  private dispatchLatency: EventMetricHistogram
+  private listenerExecutionTime: EventMetricHistogram
+  private queueDepthGauge: EventMetricGauge
+  private failureCounter: EventMetricCounter
+  private timeoutCounter: EventMetricCounter
+  private processedCounter: EventMetricCounter
 
   // CircuitBreaker metrics
-  private circuitBreakerStateGauge: Gauge
-  private circuitBreakerTransitionsCounter: Counter
-  private circuitBreakerFailuresCounter: Counter
-  private circuitBreakerSuccessesCounter: Counter
-  private circuitBreakerOpenDurationHistogram: Histogram
+  private circuitBreakerStateGauge: EventMetricGauge
+  private circuitBreakerTransitionsCounter: EventMetricCounter
+  private circuitBreakerFailuresCounter: EventMetricCounter
+  private circuitBreakerSuccessesCounter: EventMetricCounter
+  private circuitBreakerOpenDurationHistogram: EventMetricHistogram
 
   /**
    * Create a new EventMetrics instance.
@@ -202,7 +202,7 @@ export class EventMetrics {
    * Get reference to dispatch latency histogram.
    * @internal
    */
-  getDispatchLatencyHistogram(): Histogram {
+  getDispatchLatencyHistogram(): EventMetricHistogram {
     return this.dispatchLatency
   }
 
@@ -210,7 +210,7 @@ export class EventMetrics {
    * Get reference to listener execution time histogram.
    * @internal
    */
-  getListenerExecutionHistogram(): Histogram {
+  getListenerExecutionHistogram(): EventMetricHistogram {
     return this.listenerExecutionTime
   }
 
@@ -218,7 +218,7 @@ export class EventMetrics {
    * Get reference to queue depth gauge.
    * @internal
    */
-  getQueueDepthGauge(): Gauge {
+  getQueueDepthGauge(): EventMetricGauge {
     return this.queueDepthGauge
   }
 

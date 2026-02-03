@@ -25,7 +25,7 @@ export class OrderController {
   async store(ctx: GravitoContext): Promise<void> {
     try {
       // 解析請求體
-      const body = (await ctx.req.json()) as any
+      const body = (await ctx.req.json()) as { userId: string; productId: string; quantity: number }
       const { userId, productId, quantity } = body
 
       // 建立請求對象

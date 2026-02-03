@@ -17,6 +17,11 @@ export interface CreateOrderResponse {
   message: string
 }
 
+/** 可選的事件總線介面（用於發送 OrderCreated 等事件） */
+export interface CreateOrderEventBus {
+  dispatch(payload: { event: string; data: unknown }): Promise<void>
+}
+
 /**
  * CreateOrder Use Case
  *
@@ -26,7 +31,7 @@ export class CreateOrder {
   constructor(
     private productRepository: IProductRepository,
     private orderRepository: IOrderRepository,
-    private eventBus?: any // 可選的事件總線，用於發送事件
+    private eventBus?: CreateOrderEventBus
   ) {}
 
   /**

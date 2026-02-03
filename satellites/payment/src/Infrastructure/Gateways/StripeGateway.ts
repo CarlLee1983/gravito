@@ -7,7 +7,7 @@ export class StripeGateway implements IPaymentGateway {
 
   constructor(apiKey: string) {
     this.stripe = new Stripe(apiKey, {
-      apiVersion: '2025-01-27' as any,
+      apiVersion: '2025-01-27' as never,
     })
   }
 
@@ -16,8 +16,10 @@ export class StripeGateway implements IPaymentGateway {
   }
 
   async createIntent(transaction: Transaction): Promise<PaymentIntent> {
-    // 透過 any 訪問私有屬性以解決跨包訪問問題
-    const rawProps = (transaction as any).props
+    // 透過類型斷言訪問私有屬性以解決跨包訪問問題
+    const rawProps = (
+      transaction as unknown as { props: { currency: string; metadata?: Record<string, unknown> } }
+    ).props
 
     const intent = await this.stripe.paymentIntents.create({
       amount: Math.round(transaction.amount * 100),
