@@ -1,3 +1,4 @@
+import type { ConnectionContract } from '@gravito/atlas'
 import { CircuitBreaker, type CircuitBreakerOptions } from './events/CircuitBreaker'
 import { DeadLetterQueue } from './events/DeadLetterQueue'
 import type { EventBackend } from './events/EventBackend'
@@ -6,6 +7,7 @@ import { DEFAULT_EVENT_OPTIONS } from './events/EventOptions'
 import { EventPriorityQueue, type EventQueueConfig } from './events/EventPriorityQueue'
 import { IdempotencyCache } from './events/IdempotencyCache'
 import type { EventTask } from './events/types'
+import { DeadLetterQueueManager } from './reliability/DeadLetterQueueManager'
 
 /**
  * Callback function for filters (transforms values).
@@ -61,6 +63,18 @@ export interface HookManagerConfig {
    * Custom event backend for distributed processing.
    */
   backend?: EventBackend
+
+  /**
+   * Database connection for persistent DLQ (optional).
+   * If provided, failed events after max retries will be persisted to database.
+   */
+  db?: ConnectionContract
+
+  /**
+   * Enable persistent DLQ for failed events (requires db).
+   * @default false
+   */
+  enablePersistentDLQ?: boolean
 }
 
 /**
@@ -106,6 +120,7 @@ export class HookManager {
   private eventQueue: EventPriorityQueue
   private backend: EventBackend
   private dlq?: DeadLetterQueue
+  private persistentDlqManager?: DeadLetterQueueManager
   private idempotencyCache: IdempotencyCache
   private config: HookManagerConfig
   private migrationWarner: MigrationWarner
@@ -116,6 +131,7 @@ export class HookManager {
       migrationMode: 'sync',
       showDeprecationWarnings: false,
       enableDLQ: true,
+      enablePersistentDLQ: false,
       ...config,
     }
     this.eventQueue = new EventPriorityQueue(config.queue)
@@ -123,11 +139,22 @@ export class HookManager {
     this.idempotencyCache = new IdempotencyCache()
     this.migrationWarner = new MigrationWarner()
 
+    // Initialize in-memory DLQ
     if (config.enableDLQ ?? true) {
       if (this.backend instanceof EventPriorityQueue) {
         this.dlq = new DeadLetterQueue()
         this.eventQueue.setDeadLetterQueue(this.dlq)
       }
+    }
+
+    // Initialize persistent DLQ if enabled
+    if (config.enablePersistentDLQ && config.db) {
+      this.persistentDlqManager = new DeadLetterQueueManager(config.db)
+    }
+
+    // Set persistent DLQ handler on EventPriorityQueue if available
+    if (this.persistentDlqManager && this.backend instanceof EventPriorityQueue) {
+      this.eventQueue.setPersistentDLQHandler(this.createPersistentDLQHandler())
     }
   }
 
@@ -606,5 +633,138 @@ export class HookManager {
    */
   removeAction(hook: string): void {
     this.actions.delete(hook)
+  }
+
+  /**
+   * Get the persistent DLQ manager instance.
+   *
+   * @returns DeadLetterQueueManager or undefined if not configured
+   * @public
+   */
+  getPersistentDLQManager(): DeadLetterQueueManager | undefined {
+    return this.persistentDlqManager
+  }
+
+  /**
+   * Create a handler function for persistent DLQ.
+   * This handler is used by EventPriorityQueue to persist failed events.
+   *
+   * @returns Handler function
+   * @internal
+   */
+  private createPersistentDLQHandler() {
+    return async (
+      hook: string,
+      args: unknown,
+      options: EventOptions,
+      error: Error,
+      retryCount: number,
+      firstFailedAt: number
+    ) => {
+      if (!this.persistentDlqManager) {
+        return
+      }
+
+      try {
+        // Convert event options to retry policy
+        const retryPolicy = options.retry
+          ? {
+              maxRetries: options.retry.maxRetries || 3,
+              backoff: options.retry.backoff || 'exponential',
+              initialDelayMs: options.retry.initialDelayMs || 1000,
+              maxDelayMs: options.retry.maxDelayMs || 30000,
+            }
+          : undefined
+
+        // Move to persistent DLQ
+        await this.persistentDlqManager.moveToDlq(
+          hook,
+          args,
+          options,
+          error,
+          retryCount,
+          retryPolicy
+        )
+      } catch (dlqError) {
+        console.error(`[HookManager] Error moving event to persistent DLQ:`, dlqError)
+      }
+    }
+  }
+
+  /**
+   * Requeue a failed event from the persistent DLQ.
+   *
+   * @param dlqId - DLQ entry UUID
+   * @returns True if requeued successfully
+   * @public
+   */
+  async requeuePersistentDLQEntry(dlqId: string): Promise<boolean> {
+    if (!this.persistentDlqManager) {
+      return false
+    }
+
+    try {
+      const event = await this.persistentDlqManager.getById(dlqId)
+      if (!event) {
+        return false
+      }
+
+      // Requeue the event
+      await this.doActionAsync(
+        event.event_name,
+        event.event_payload,
+        event.event_options as EventOptions
+      )
+
+      // Mark as requeued
+      await this.persistentDlqManager.requeue(dlqId)
+
+      return true
+    } catch (error) {
+      console.error(`[HookManager] Error requeuing persistent DLQ entry:`, error)
+      return false
+    }
+  }
+
+  /**
+   * Requeue multiple events from persistent DLQ.
+   *
+   * @param filter - Filter criteria
+   * @returns Result statistics
+   * @public
+   */
+  async requeuePersistentDLQBatch(filter?: {
+    eventName?: string
+    status?: 'pending' | 'requeued' | 'resolved' | 'abandoned'
+  }): Promise<{ total: number; succeeded: number; failed: number }> {
+    if (!this.persistentDlqManager) {
+      return { total: 0, succeeded: 0, failed: 0 }
+    }
+
+    try {
+      return await this.persistentDlqManager.retryBatch(filter)
+    } catch (error) {
+      console.error(`[HookManager] Error in persistent DLQ batch retry:`, error)
+      return { total: 0, succeeded: 0, failed: 0 }
+    }
+  }
+
+  /**
+   * Get persistent DLQ statistics.
+   *
+   * @returns Statistics object with total, byEvent, and byStatus counts
+   * @public
+   */
+  async getPersistentDLQStats() {
+    if (!this.persistentDlqManager) {
+      return undefined
+    }
+
+    try {
+      return await this.persistentDlqManager.getStats()
+    } catch (error) {
+      console.error(`[HookManager] Error getting persistent DLQ stats:`, error)
+      return undefined
+    }
   }
 }

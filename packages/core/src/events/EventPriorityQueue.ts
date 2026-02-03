@@ -22,6 +22,14 @@ export class EventPriorityQueue implements EventBackend {
   private processing = false
   private taskIdCounter = 0
   private dlq?: DeadLetterQueue
+  private persistentDLQHandler?: (
+    hook: string,
+    args: unknown,
+    options: EventOptions,
+    error: Error,
+    retryCount: number,
+    firstFailedAt: number
+  ) => Promise<void>
   private config: EventQueueConfig
   private processingPartitions: Set<string> = new Set()
 
@@ -36,6 +44,24 @@ export class EventPriorityQueue implements EventBackend {
    */
   setDeadLetterQueue(dlq: DeadLetterQueue): void {
     this.dlq = dlq
+  }
+
+  /**
+   * Set the persistent DLQ handler for failed events.
+   *
+   * @param handler - Async handler function for persistent DLQ
+   */
+  setPersistentDLQHandler(
+    handler: (
+      hook: string,
+      args: unknown,
+      options: EventOptions,
+      error: Error,
+      retryCount: number,
+      firstFailedAt: number
+    ) => Promise<void>
+  ): void {
+    this.persistentDLQHandler = handler
   }
 
   /**
@@ -292,9 +318,30 @@ export class EventPriorityQueue implements EventBackend {
           }
 
           // Max retries exceeded
-          if (retryConfig.dlqAfterMaxRetries && this.dlq) {
-            // Send to DLQ
-            this.dlq.add(hook, args, options, lastError, task.retryCount, task.firstFailedAt!)
+          if (retryConfig.dlqAfterMaxRetries) {
+            // Send to in-memory DLQ
+            if (this.dlq) {
+              this.dlq.add(hook, args, options, lastError, task.retryCount, task.firstFailedAt!)
+            }
+
+            // Send to persistent DLQ if handler is provided
+            if (this.persistentDLQHandler) {
+              try {
+                await this.persistentDLQHandler(
+                  hook,
+                  args,
+                  options,
+                  lastError,
+                  task.retryCount,
+                  task.firstFailedAt!
+                )
+              } catch (dlqHandlerError) {
+                console.error(
+                  `[EventPriorityQueue] Error handling persistent DLQ:`,
+                  dlqHandlerError
+                )
+              }
+            }
 
             console.error(
               `[EventPriorityQueue] Event '${hook}' sent to DLQ after ${task.retryCount} failed attempts`
