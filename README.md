@@ -83,7 +83,7 @@ bun add @gravito/core @gravito/photon @gravito/monolith
 ### Development
 For a full-stack integrated example, check out:
 - [Commerce Fullstack Example](./examples/commerce-fullstack)
-- [1.0 Integration Guide](./docs/GUIDE_1.0_INTEGRATION.md)
+- [2.0 Integration Guide](./docs/spec/GUIDE_2.0_INTEGRATION.md)
 
 ---
 
@@ -95,4 +95,4 @@ For a full-stack integrated example, check out:
 
 ---
 
-*(繁體中文說明已整合至各模組文件與 [整合指南](./docs/GUIDE_1.0_INTEGRATION.md))*
+*(繁體中文說明已整合至各模組文件與 [整合指南](./docs/spec/GUIDE_2.0_INTEGRATION.md))*

@@ -385,7 +385,7 @@ graph TB
 
 
 
-- [整合指南](../GUIDE_1.0_INTEGRATION.md)
+- [整合指南](../spec/GUIDE_2.0_INTEGRATION.md)
 
 ---
 
