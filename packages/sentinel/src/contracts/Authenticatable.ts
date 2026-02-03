@@ -51,4 +51,20 @@ export interface Authenticatable {
    * @returns The tenant ID
    */
   getTenantId?(): string | number
+
+  /**
+   * Check if the user has a specific role.
+   *
+   * @param role - The role name to check
+   * @returns True if the user has the role
+   */
+  hasRole?(role: string): boolean | Promise<boolean>
+
+  /**
+   * Check if the user has a specific permission.
+   *
+   * @param permission - The permission name to check
+   * @returns True if the user has the permission
+   */
+  hasPermission?(permission: string): boolean | Promise<boolean>
 }
