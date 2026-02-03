@@ -1,4 +1,5 @@
 import type { ActionCallback } from '../HookManager'
+import { CircuitBreaker } from './CircuitBreaker'
 import type { DeadLetterQueue } from './DeadLetterQueue'
 import type { EventBackend } from './EventBackend'
 import type { EventOptions } from './EventOptions'
@@ -32,6 +33,7 @@ export class EventPriorityQueue implements EventBackend {
   ) => Promise<void>
   private config: EventQueueConfig
   private processingPartitions: Set<string> = new Set()
+  private eventCircuitBreakers: Map<string, CircuitBreaker> = new Map()
 
   constructor(config: EventQueueConfig = {}) {
     this.config = config
@@ -62,6 +64,48 @@ export class EventPriorityQueue implements EventBackend {
     ) => Promise<void>
   ): void {
     this.persistentDLQHandler = handler
+  }
+
+  /**
+   * Get or create a circuit breaker for an event hook.
+   *
+   * @param hook - Event hook name
+   * @param config - Circuit breaker configuration
+   * @returns Circuit breaker instance or undefined if not configured
+   * @internal
+   */
+  private getOrCreateEventCircuitBreaker(
+    hook: string,
+    config?: EventOptions['circuitBreaker']
+  ): CircuitBreaker | undefined {
+    // Return undefined if circuit breaker is not configured
+    if (!config) {
+      return undefined
+    }
+
+    // Return existing breaker if available
+    if (this.eventCircuitBreakers.has(hook)) {
+      return this.eventCircuitBreakers.get(hook)!
+    }
+
+    // Create new circuit breaker for this event
+    const breaker = new CircuitBreaker(hook, {
+      failureThreshold: config.failureThreshold,
+      resetTimeout: config.resetTimeout,
+      halfOpenRequests: config.halfOpenRequests,
+      onOpen: () => {
+        console.warn(`[EventPriorityQueue] Circuit breaker opened for event '${hook}'`)
+      },
+      onHalfOpen: () => {
+        console.info(`[EventPriorityQueue] Circuit breaker half-open for event '${hook}'`)
+      },
+      onClose: () => {
+        console.info(`[EventPriorityQueue] Circuit breaker closed for event '${hook}'`)
+      },
+    })
+
+    this.eventCircuitBreakers.set(hook, breaker)
+    return breaker
   }
 
   /**
@@ -258,7 +302,7 @@ export class EventPriorityQueue implements EventBackend {
 
   /**
    * Execute an event task by running all its callbacks.
-   * Implements retry logic with exponential backoff and DLQ integration.
+   * Implements circuit breaker protection, retry logic with exponential backoff, and DLQ integration.
    * Also handles partition ordering by acquiring and releasing partition locks.
    *
    * @param task - Event task to execute
@@ -269,6 +313,10 @@ export class EventPriorityQueue implements EventBackend {
     const timeout = options.timeout || 5000
     const retryConfig = options.retry || {}
     const maxRetries = retryConfig.maxRetries || 0
+    const circuitBreakerConfig = options.circuitBreaker
+
+    // Get or create circuit breaker for this event
+    const circuitBreaker = this.getOrCreateEventCircuitBreaker(hook, circuitBreakerConfig)
 
     // Acquire partition lock if needed
     if (options.ordering === 'partition' && partitionKey) {
@@ -280,10 +328,73 @@ export class EventPriorityQueue implements EventBackend {
 
       for (const callback of callbacks) {
         try {
-          // Execute callback with timeout
-          await this.executeWithTimeout(callback, args, timeout)
+          // Execute callback with circuit breaker protection and timeout
+          if (circuitBreaker) {
+            await circuitBreaker.execute(async () => {
+              return await this.executeWithTimeout(callback, args, timeout)
+            })
+          } else {
+            // No circuit breaker, execute directly
+            await this.executeWithTimeout(callback, args, timeout)
+          }
         } catch (error) {
           lastError = error as Error
+
+          // Check if error is from circuit breaker being open
+          const isCircuitBreakerOpen = lastError.message.includes('Circuit is OPEN')
+
+          if (isCircuitBreakerOpen) {
+            console.warn(
+              `[EventPriorityQueue] Circuit breaker is open for event '${hook}'. Rejecting event.`
+            )
+
+            // If circuit breaker is open, check if we should send to DLQ
+            // By default, we reject the event (don't retry, don't DLQ)
+            // User can configure dlqAfterMaxRetries to allow DLQ routing
+            if (retryConfig.dlqAfterMaxRetries) {
+              if (!task.firstFailedAt) {
+                task.firstFailedAt = Date.now()
+              }
+
+              // Send to in-memory DLQ
+              if (this.dlq) {
+                this.dlq.add(
+                  hook,
+                  args,
+                  options,
+                  lastError,
+                  task.retryCount || 0,
+                  task.firstFailedAt!
+                )
+              }
+
+              // Send to persistent DLQ if handler is provided
+              if (this.persistentDLQHandler) {
+                try {
+                  await this.persistentDLQHandler(
+                    hook,
+                    args,
+                    options,
+                    lastError,
+                    task.retryCount || 0,
+                    task.firstFailedAt!
+                  )
+                } catch (dlqHandlerError) {
+                  console.error(
+                    `[EventPriorityQueue] Error handling persistent DLQ:`,
+                    dlqHandlerError
+                  )
+                }
+              }
+
+              console.error(
+                `[EventPriorityQueue] Event '${hook}' sent to DLQ due to circuit breaker`
+              )
+            }
+
+            // Don't continue with other callbacks if circuit breaker is open
+            break
+          }
 
           console.error(`[EventPriorityQueue] Error in callback for event '${hook}':`, error)
 
@@ -484,5 +595,43 @@ export class EventPriorityQueue implements EventBackend {
     this.highPriority = []
     this.normalPriority = []
     this.lowPriority = []
+  }
+
+  /**
+   * Get circuit breaker for an event hook.
+   *
+   * @param hook - Event hook name
+   * @returns Circuit breaker instance or undefined
+   * @internal
+   */
+  getCircuitBreaker(hook: string) {
+    return this.eventCircuitBreakers.get(hook)
+  }
+
+  /**
+   * Get all circuit breakers.
+   *
+   * @returns Map of circuit breakers keyed by hook name
+   * @internal
+   */
+  getCircuitBreakers() {
+    return this.eventCircuitBreakers
+  }
+
+  /**
+   * Reset a circuit breaker for an event hook.
+   *
+   * @param hook - Event hook name
+   * @returns True if reset, false if circuit breaker not found
+   * @internal
+   */
+  resetCircuitBreaker(hook: string): boolean {
+    const breaker = this.eventCircuitBreakers.get(hook)
+    if (!breaker) {
+      return false
+    }
+
+    breaker.reset()
+    return true
   }
 }

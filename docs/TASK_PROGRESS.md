@@ -2,7 +2,7 @@
 
 **項目啟動日期**：2026-02-02
 **計劃完成日期**：Week 28+
-**當前狀態**：✅ Issue 1.2 Phase 1 實施完成（整體進度 77% - Issue 1.1: 100%, Issue 1.2 P1: 100%）
+**當前狀態**：⏳ Issue 1.2 Phase 2 進行中（整體進度 85% - Issue 1.1: 100%, Issue 1.2 P1: 100%, Issue 1.2 P2: 60%）
 
 ---
 
@@ -72,22 +72,40 @@ Phase 4: 長期優化               [██░░░░░░░░░░░░�
 | Phase | 狀態 | 任務 | 文檔 | 進度 |
 |-------|------|------|------|------|
 | Phase 1 | ✅ 完成 | 5 個 | [Phase1-DLQ-And-Retry.md](./priority-1-critical/Issue1.2-Event-System-Reliability/Phase1-DLQ-And-Retry.md) | 100% ✅ (5/5 任務完成) |
-| Phase 2 | 🗓️ 待規劃 | 5 個 | [Phase2-熔断器.md](./priority-1-critical/Issue1.2-Event-System-Reliability/Phase2-熔断器.md) | 0% 🗓️ |
+| Phase 2 | ⏳ 進行中 | 5 個 | [Phase2-熔断器.md](./priority-1-critical/Issue1.2-Event-System-Reliability/Phase2-熔断器.md) | 60% ⏳ (3/5 任務完成) |
 | Phase 3 | 🗓️ 待規劃 | 5 個 | Phase3-背压机制.md | 0% 🗓️ |
 | Phase 4 | 🗓️ 待規劃 | 5 個 | Phase4-BullQueue整合.md | 0% 🗓️ |
-| **小計** | | **20 個任務** | | **25% (5/20 任務完成)** |
+| **小計** | | **20 個任務** | | **40% (8/20 任務完成)** |
 
 **前置條件**：✅ Issue 1.1 完成
 
-**交付物清單**（✅ Phase 1 完成）：
+**交付物清單**（✅ Phase 1 完成 + ⏳ Phase 2 進行中）：
+
+**Phase 1 已完成**：
 - [x] `packages/atlas/migrations/create_event_dlq_table.ts` - Atlas DLQ 表遷移
 - [x] `packages/core/src/reliability/RetryPolicy.ts` - 重試引擎 (88.89% 覆蓋)
 - [x] `packages/core/src/reliability/DeadLetterQueueManager.ts` - 持久化 DLQ (100% 覆蓋)
 - [x] `packages/core/src/HookManager.ts` - HookManager 整合 (支援持久化 DLQ)
 - [x] `packages/core/src/events/EventPriorityQueue.ts` - 事件隊列整合
-- [x] `tests/reliability/RetryPolicy.test.ts` - 重試策略單元測試
+- [x] `tests/reliability/RetryPolicy.test.ts` - 重試策略單元測試 (17 個測試)
 - [x] `tests/reliability/dlq-hook-integration.test.ts` - 完整集成測試
 - [x] `docs/DLQ_AND_RETRY_GUIDE.md` - 完整用戶指南
+
+**Phase 2 進行中**（3/5 任務完成）：
+- [x] **Task 1.2.2.1** - 增強 Core CircuitBreaker
+  - [x] `packages/core/src/events/CircuitBreaker.ts` - 遷移 Echo 進階功能 (110% 功能完整)
+  - [x] `packages/core/tests/events/CircuitBreaker.test.ts` - 24 個單元測試 (100% 覆蓋)
+
+- [x] **Task 1.2.2.2** - EventPriorityQueue 事件層級整合
+  - [x] `packages/core/src/events/EventPriorityQueue.ts` - 事件層級熔斷器整合
+  - [x] `packages/core/tests/events/EventPriorityQueue-CircuitBreaker.test.ts` - 7 個整合測試
+
+- [x] **Task 1.2.2.3** - CLI 工具增強
+  - [x] `packages/core/src/HookManager.ts` - 新增 5 個公開 API
+  - [x] `packages/core/src/events/EventPriorityQueue.ts` - 熔斷器管理方法
+
+- ⏳ **Task 1.2.2.4** - Prometheus Metrics 整合 (待開始)
+- ⏳ **Task 1.2.2.5** - 完整測試套件 (部分完成：31/∞ 測試)
 
 ---
 

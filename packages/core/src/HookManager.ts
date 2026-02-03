@@ -627,6 +627,74 @@ export class HookManager {
   }
 
   /**
+   * Get circuit breaker statistics for all events.
+   *
+   * @returns Array of circuit breaker statistics
+   */
+  getCircuitBreakerStats(): Array<{
+    eventName: string
+    state: string
+    failureCount: number
+    successCount: number
+    lastFailureAt?: Date
+    lastSuccessAt?: Date
+    openedAt?: Date
+    totalRequests: number
+    totalFailures: number
+    totalSuccesses: number
+  }> {
+    if (!(this.backend instanceof EventPriorityQueue)) {
+      return []
+    }
+
+    const breakers = this.backend.getCircuitBreakers()
+    const stats: Array<{
+      eventName: string
+      state: string
+      failureCount: number
+      successCount: number
+      lastFailureAt?: Date
+      lastSuccessAt?: Date
+      openedAt?: Date
+      totalRequests: number
+      totalFailures: number
+      totalSuccesses: number
+    }> = []
+
+    for (const [eventName, breaker] of breakers) {
+      const metrics = breaker.getMetrics()
+      stats.push({
+        eventName,
+        state: metrics.state,
+        failureCount: metrics.failures,
+        successCount: metrics.successes,
+        lastFailureAt: metrics.lastFailureAt,
+        lastSuccessAt: metrics.lastSuccessAt,
+        openedAt: metrics.openedAt,
+        totalRequests: metrics.totalRequests,
+        totalFailures: metrics.totalFailures,
+        totalSuccesses: metrics.totalSuccesses,
+      })
+    }
+
+    return stats
+  }
+
+  /**
+   * Reset a circuit breaker for an event.
+   *
+   * @param eventName - Event name
+   * @returns True if reset, false if circuit breaker not found
+   */
+  resetCircuitBreaker(eventName: string): boolean {
+    if (!(this.backend instanceof EventPriorityQueue)) {
+      return false
+    }
+
+    return this.backend.resetCircuitBreaker(eventName)
+  }
+
+  /**
    * Remove all listeners for a specific action hook.
    *
    * @param hook - Hook name
