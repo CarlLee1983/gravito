@@ -111,7 +111,7 @@ const AdvancedHero = ({ t, locale }: { t: Translation; locale: string }) => {
           className="mt-12 flex flex-col md:flex-row gap-6 items-center"
         >
           <StaticLink
-            href={`/${locale}/docs/guide/getting-started`}
+            href={`/${locale}/docs/guide/getting-started/introduction`}
             className="group relative px-8 py-4 bg-white text-void font-bold rounded-full overflow-hidden transition-all hover:scale-110 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.3)]"
           >
             <span className="relative z-10 flex items-center gap-2">
