@@ -44,15 +44,10 @@ export class ConfirmOrder {
     }
 
     // 3. 更新訂單狀態為 CONFIRMED
-    // 注意：lockId 應該存儲在訂單的元數據或單獨的欄位中
     const updatedOrder = {
       ...order,
       status: OrderStatus.CONFIRMED,
-      metadata: {
-        ...order.metadata,
-        lockId: request.lockId,
-        confirmedAt: new Date().toISOString(),
-      },
+      confirmedAt: new Date(),
     }
 
     await this.orderRepository.update(request.orderId, updatedOrder)

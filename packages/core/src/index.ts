@@ -1,3 +1,4 @@
+/// <reference types="bun-types" />
 /**
  * @gravito/core
  *
