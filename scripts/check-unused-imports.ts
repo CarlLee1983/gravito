@@ -20,6 +20,7 @@ const args = parseArgs({
   options: {
     all: { type: 'boolean', default: false },
     fix: { type: 'boolean', default: false },
+    concurrency: { type: 'string', default: '4' },
   },
 })
 
@@ -117,10 +118,12 @@ async function getAllPackages(): Promise<string[]> {
 
 /**
  * 找出變更的包
+ * 若環境變數 CHANGED_PACKAGES_BASE 已設定（如 CI 的 origin/main），則與 HEAD 比較；否則用 HEAD~1..HEAD
  */
 async function getChangedPackages(): Promise<string[]> {
   try {
-    const { stdout } = await $`git diff --name-only HEAD~1 HEAD`.quiet()
+    const baseRef = (process.env.CHANGED_PACKAGES_BASE ?? '').trim() || 'HEAD~1'
+    const { stdout } = await $`git diff --name-only ${baseRef} HEAD`.quiet()
     const changedFiles = stdout.toString().trim().split('\n').filter(Boolean)
 
     const changedPackages = new Set<string>()
@@ -154,20 +157,41 @@ async function main() {
     process.exit(0)
   }
 
-  console.log(`📦 檢查 ${packages.length} 個包\n`)
+  const concurrency = Math.max(1, Number.parseInt(args.values.concurrency ?? '4', 10) || 4)
+  const runParallel = packages.length > 3 && concurrency > 1
+  console.log(`📦 檢查 ${packages.length} 個包${runParallel ? `（並行 ${concurrency}）` : ''}\n`)
 
   let hasIssues = false
+  const results: {
+    pkgPath: string
+    pkgName: string
+    tsResult: { hasUnused: boolean; errors: string[] }
+  }[] = []
 
-  for (const pkgPath of packages) {
-    const pkgName = pkgPath.split('/').pop() || pkgPath
-    console.log(`檢查 ${pkgName}...`)
+  if (runParallel) {
+    for (let i = 0; i < packages.length; i += concurrency) {
+      const batch = packages.slice(i, i + concurrency)
+      const batchResults = await Promise.all(
+        batch.map(async (pkgPath) => {
+          const pkgName = pkgPath.split('/').pop() || pkgPath
+          const tsResult = await checkWithTypeScript(pkgPath)
+          return { pkgPath, pkgName, tsResult }
+        })
+      )
+      results.push(...batchResults)
+    }
+  } else {
+    for (const pkgPath of packages) {
+      const pkgName = pkgPath.split('/').pop() || pkgPath
+      const tsResult = await checkWithTypeScript(pkgPath)
+      results.push({ pkgPath, pkgName, tsResult })
+    }
+  }
 
-    // 使用 TypeScript 檢查（更準確）
-    const tsResult = await checkWithTypeScript(pkgPath)
-
+  for (const { pkgName, tsResult } of results) {
     if (tsResult.hasUnused) {
       hasIssues = true
-      console.log(`  ❌ 發現未使用的導入/變數：`)
+      console.log(`❌ ${pkgName}: 發現未使用的導入/變數`)
       for (const error of tsResult.errors.slice(0, 5)) {
         console.log(`    ${error}`)
       }
@@ -175,7 +199,7 @@ async function main() {
         console.log(`    ... 還有 ${tsResult.errors.length - 5} 個問題`)
       }
     } else {
-      console.log(`  ✅ 沒有未使用的導入`)
+      console.log(`✅ ${pkgName}`)
     }
   }
 

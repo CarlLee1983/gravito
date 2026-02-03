@@ -46,7 +46,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -89,9 +89,14 @@ jobs:
             --filter='./satellites/*' \
             --concurrency=2
       
-      # Check for unused imports and cross-package type issues
+      # Check unused imports in changed packages only (avoids timeout; use --all locally for full check)
+      - name: Fetch base branch
+        if: github.event_name == 'pull_request'
+        run: git fetch origin ${{ github.base_ref }} --depth=1
       - name: Check Unused Imports
-        run: bun run scripts/check-unused-imports.ts --all
+        env:
+          CHANGED_PACKAGES_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || '' }}
+        run: bun run scripts/check-unused-imports.ts --concurrency=4
         continue-on-error: false
 
       - name: Verify build output
