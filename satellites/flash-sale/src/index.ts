@@ -6,27 +6,23 @@
  * @packageDocumentation
  */
 
-export { FlashSaleServiceProvider } from './FlashSaleServiceProvider'
-
-// Domain Models
-export type { Product, Order, OrderItem } from './Domain/Models'
-export { CreateOrderRequest, OrderStatus } from './Domain/Models'
-
-// Use Cases
-export { ListProducts } from './Application/UseCases/ListProducts'
+export type { IOrderRepository } from './Application/Contracts/IOrderRepository'
+// Repository Contracts
+export type { IProductRepository } from './Application/Contracts/IProductRepository'
 export { CreateOrder } from './Application/UseCases/CreateOrder'
 export { GetOrder } from './Application/UseCases/GetOrder'
+// Use Cases
+export { ListProducts } from './Application/UseCases/ListProducts'
+export { OrderConfirmed } from './Domain/Events/OrderConfirmed'
 
 // Events
 export { OrderCreated } from './Domain/Events/OrderCreated'
-export { PaymentSucceeded } from './Domain/Events/PaymentSucceeded'
-export { OrderConfirmed } from './Domain/Events/OrderConfirmed'
 export { OrderRefunded } from './Domain/Events/OrderRefunded'
-
+export { PaymentSucceeded } from './Domain/Events/PaymentSucceeded'
+// Domain Models
+export type { Order, OrderItem, Product } from './Domain/Models'
+export { CreateOrderRequest, OrderStatus } from './Domain/Models'
+export { FlashSaleServiceProvider } from './FlashSaleServiceProvider'
+export { OrderController } from './Interface/Http/Controllers/OrderController'
 // Controllers
 export { ProductController } from './Interface/Http/Controllers/ProductController'
-export { OrderController } from './Interface/Http/Controllers/OrderController'
-
-// Repository Contracts
-export type { IProductRepository } from './Application/Contracts/IProductRepository'
-export type { IOrderRepository } from './Application/Contracts/IOrderRepository'

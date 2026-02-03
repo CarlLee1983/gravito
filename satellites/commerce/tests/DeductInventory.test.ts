@@ -2,10 +2,10 @@
  * DeductInventory Use Case 單元測試
  */
 
-import { describe, it, expect, beforeEach } from 'bun:test'
+import { beforeEach, describe, expect, it } from 'bun:test'
+import type { PlanetCore } from '@gravito/core'
 import { DeductInventory } from '../src/Application/UseCases/DeductInventory'
 import { DeductInventoryRequest } from '../src/Domain/Models'
-import type { PlanetCore } from '@gravito/core'
 
 /**
  * Mock PlanetCore

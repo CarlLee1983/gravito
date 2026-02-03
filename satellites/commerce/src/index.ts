@@ -6,11 +6,9 @@
  * @packageDocumentation
  */
 
-export { CommerceServiceProvider } from './CommerceServiceProvider'
-
-// Domain Models
-export { DeductInventoryRequest, ConfirmOrderRequest, RefundOrderRequest } from './Domain/Models'
-export type { OrderStatusTransition } from './Domain/Models'
-
 // Use Cases
 export { DeductInventory } from './Application/UseCases/DeductInventory'
+export { CommerceServiceProvider } from './CommerceServiceProvider'
+export type { OrderStatusTransition } from './Domain/Models'
+// Domain Models
+export { ConfirmOrderRequest, DeductInventoryRequest, RefundOrderRequest } from './Domain/Models'
