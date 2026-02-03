@@ -56,9 +56,7 @@ export async function setupPrometheusMetrics(
   try {
     // 動態導入 OpenTelemetry Prometheus 導出器
     const { metrics } = await import('@opentelemetry/api')
-    // @ts-expect-error - OpenTelemetry 模塊是可選的
     const { MeterProvider } = await import('@opentelemetry/sdk-metrics')
-    // @ts-expect-error - OpenTelemetry 模塊是可選的
     const { PrometheusExporter } = await import('@opentelemetry/exporter-prometheus')
 
     // 創建 Prometheus 導出器

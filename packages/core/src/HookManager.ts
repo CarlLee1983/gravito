@@ -22,6 +22,47 @@ export type FilterCallback<T = unknown> = (value: T, ...args: unknown[]) => Prom
 export type ActionCallback<TArgs = unknown> = (args: TArgs) => Promise<void> | void
 
 /**
+ * Options for listener registration.
+ * @public
+ */
+export interface ListenerOptions {
+  /**
+   * Explicitly specify the listener type.
+   * - 'sync': Force synchronous dispatch for this listener
+   * - 'async': Force asynchronous dispatch for this listener
+   * - 'auto': Auto-detect based on function signature (default)
+   * @default 'auto'
+   */
+  type?: 'sync' | 'async' | 'auto'
+
+  /**
+   * Circuit breaker configuration for this listener.
+   */
+  circuitBreaker?: CircuitBreakerOptions
+}
+
+/**
+ * Information about a registered listener.
+ * @public
+ */
+export interface ListenerInfo {
+  /**
+   * The callback function.
+   */
+  callback: ActionCallback
+
+  /**
+   * Whether the listener is considered async.
+   */
+  isAsync: boolean
+
+  /**
+   * The explicit type override, if any.
+   */
+  typeOverride?: 'sync' | 'async' | 'auto'
+}
+
+/**
  * Configuration for HookManager.
  * @public
  */
@@ -125,6 +166,24 @@ export class HookManager {
   private config: HookManagerConfig
   private migrationWarner: MigrationWarner
 
+  /**
+   * Cache for async detection results (WeakMap for automatic garbage collection).
+   * @internal
+   */
+  private asyncDetectionCache: WeakMap<ActionCallback, boolean> = new WeakMap()
+
+  /**
+   * Count of items in the async detection cache (for testing/debugging).
+   * @internal
+   */
+  private asyncDetectionCacheCount = 0
+
+  /**
+   * Map of listener type overrides (callback -> type).
+   * @internal
+   */
+  private listenerTypeOverrides: WeakMap<ActionCallback, 'sync' | 'async' | 'auto'> = new WeakMap()
+
   constructor(config: HookManagerConfig = {}) {
     this.config = {
       asyncByDefault: false,
@@ -224,20 +283,22 @@ export class HookManager {
    * @template TArgs - The type of arguments passed to the action.
    * @param hook - The unique name of the hook.
    * @param callback - The callback function to execute.
+   * @param options - Optional listener options (type override, circuit breaker).
    *
    * @example
    * ```typescript
    * core.hooks.addAction('user_registered', async (user: User) => {
    *   await sendWelcomeEmail(user);
    * });
+   *
+   * // With explicit type override
+   * core.hooks.addAction('sync_handler', handler, { type: 'async' });
    * ```
    */
   addAction<TArgs = unknown>(
     hook: string,
     callback: ActionCallback<TArgs>,
-    options?: {
-      circuitBreaker?: CircuitBreakerOptions
-    }
+    options?: ListenerOptions
   ): void {
     if (!this.actions.has(hook)) {
       this.actions.set(hook, [])
@@ -256,6 +317,11 @@ export class HookManager {
           }
         })
       }
+    }
+
+    // Store type override if specified
+    if (options?.type && options.type !== 'auto') {
+      this.listenerTypeOverrides.set(finalCallback as unknown as ActionCallback, options.type)
     }
 
     // Generic type erasure for storage
@@ -426,14 +492,172 @@ export class HookManager {
   }
 
   /**
-   * Check if a callback is an async function.
+   * Check if a callback is an async function (with caching).
+   *
+   * Detection methods:
+   * 1. Check cache first
+   * 2. Check type override
+   * 3. Check constructor.name === 'AsyncFunction'
+   * 4. Fallback: Check function string representation
    *
    * @param callback - The callback to check
    * @returns True if the callback is async
    * @public
    */
   isAsyncListener(callback: ActionCallback): boolean {
-    return callback.constructor.name === 'AsyncFunction'
+    // Check cache first
+    const cachedResult = this.asyncDetectionCache.get(callback)
+    if (cachedResult !== undefined) {
+      return cachedResult
+    }
+
+    // Check type override
+    const typeOverride = this.listenerTypeOverrides.get(callback)
+    if (typeOverride === 'async') {
+      this.cacheAsyncResult(callback, true)
+      return true
+    }
+    if (typeOverride === 'sync') {
+      this.cacheAsyncResult(callback, false)
+      return false
+    }
+
+    // Primary detection: constructor name
+    let isAsync = callback.constructor.name === 'AsyncFunction'
+
+    // Fallback detection: function string representation
+    // This handles edge cases like transpiled code or bound functions
+    if (!isAsync) {
+      const fnStr = callback.toString()
+      // Check for async keyword at the start (handles async arrow functions and async function expressions)
+      isAsync = /^async\s/.test(fnStr) || fnStr.startsWith('async ')
+    }
+
+    // Cache result
+    this.cacheAsyncResult(callback, isAsync)
+
+    return isAsync
+  }
+
+  /**
+   * Cache async detection result.
+   * @internal
+   */
+  private cacheAsyncResult(callback: ActionCallback, isAsync: boolean): void {
+    if (!this.asyncDetectionCache.has(callback)) {
+      this.asyncDetectionCacheCount++
+    }
+    this.asyncDetectionCache.set(callback, isAsync)
+  }
+
+  /**
+   * Runtime detection for functions that return Promises but aren't declared async.
+   *
+   * This method executes the callback with test args and checks if the result is a Promise.
+   * Use with caution as it actually invokes the callback.
+   *
+   * @param callback - The callback to check
+   * @param testArgs - Arguments to pass to the callback for testing
+   * @returns True if the callback returns a Promise
+   * @public
+   */
+  async isAsyncListenerRuntime<TArgs = unknown>(
+    callback: ActionCallback<TArgs>,
+    testArgs: TArgs
+  ): Promise<boolean> {
+    try {
+      const result = callback(testArgs)
+      const isPromise = result instanceof Promise
+
+      // Update cache with runtime result
+      if (isPromise) {
+        this.cacheAsyncResult(callback as ActionCallback, true)
+        // Wait for the promise to settle (don't leave hanging promises)
+        await result.catch(() => {
+          // Intentionally swallow error - we only care about Promise detection
+        })
+      }
+
+      return isPromise
+    } catch {
+      // If the callback throws, treat it as sync (error will be handled by normal flow)
+      return false
+    }
+  }
+
+  /**
+   * Get the size of the async detection cache (for testing/debugging).
+   *
+   * @returns Number of cached detection results
+   * @public
+   */
+  getAsyncDetectionCacheSize(): number {
+    return this.asyncDetectionCacheCount
+  }
+
+  /**
+   * Clear the async detection cache.
+   *
+   * @public
+   */
+  clearAsyncDetectionCache(): void {
+    this.asyncDetectionCache = new WeakMap()
+    this.asyncDetectionCacheCount = 0
+  }
+
+  /**
+   * Check if any listener for a hook is async (including type overrides).
+   *
+   * @param hook - Hook name
+   * @returns True if any listener is async
+   * @public
+   */
+  hasAsyncListeners(hook: string): boolean {
+    const callbacks = this.getListeners(hook)
+    return callbacks.some((cb) => this.isListenerEffectivelyAsync(cb))
+  }
+
+  /**
+   * Check if a listener is effectively async (considering type override).
+   *
+   * @param callback - The callback to check
+   * @returns True if the listener should be treated as async
+   * @internal
+   */
+  private isListenerEffectivelyAsync(callback: ActionCallback): boolean {
+    const typeOverride = this.listenerTypeOverrides.get(callback)
+
+    if (typeOverride === 'async') {
+      return true
+    }
+    if (typeOverride === 'sync') {
+      return false
+    }
+
+    // Auto detection
+    return this.isAsyncListener(callback)
+  }
+
+  /**
+   * Get detailed information about all listeners for a hook.
+   *
+   * @param hook - Hook name
+   * @returns Array of listener info objects
+   * @public
+   */
+  getListenerInfo(hook: string): ListenerInfo[] {
+    const callbacks = this.getListeners(hook)
+
+    return callbacks.map((callback) => {
+      const typeOverride = this.listenerTypeOverrides.get(callback)
+      const isAsync = this.isListenerEffectivelyAsync(callback)
+
+      return {
+        callback,
+        isAsync,
+        typeOverride,
+      }
+    })
   }
 
   private shouldUseAsyncDispatch(callbacks: ActionCallback[], options?: EventOptions): boolean {
@@ -459,8 +683,8 @@ export class HookManager {
 
     // Migration mode: hybrid (auto-detect)
     if (this.config.migrationMode === 'hybrid') {
-      // Check if any callback is async
-      const hasAsyncListeners = callbacks.some((cb) => this.isAsyncListener(cb))
+      // Check if any callback is async (considering type overrides)
+      const hasAsyncListeners = callbacks.some((cb) => this.isListenerEffectivelyAsync(cb))
       return hasAsyncListeners || this.config.asyncByDefault === true
     }
 

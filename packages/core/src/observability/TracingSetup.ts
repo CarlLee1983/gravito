@@ -85,13 +85,9 @@ export async function setupTracing(
 
   try {
     // 動態導入 OpenTelemetry 模塊
-    // @ts-expect-error - OpenTelemetry 模塊是可選的
-    const { NodeTracerProvider } = await import('@opentelemetry/sdk-node')
-    // @ts-expect-error - OpenTelemetry 模塊是可選的
-    const { BatchSpanProcessor } = await import('@opentelemetry/sdk-trace-node')
-    // @ts-expect-error - OpenTelemetry 模塊是可選的
+    const { NodeTracerProvider } = await import('@opentelemetry/sdk-trace-node')
+    const { BatchSpanProcessor } = await import('@opentelemetry/sdk-trace-base')
     const { JaegerExporter } = await import('@opentelemetry/exporter-jaeger')
-    // @ts-expect-error - OpenTelemetry 模塊是可選的
     const { Resource } = await import('@opentelemetry/resources')
     // 使用簡單的常數而不是從 semantic-conventions 導入
     const ATTR_SERVICE_NAME = 'service.name'
@@ -107,13 +103,9 @@ export async function setupTracing(
       [ATTR_DEPLOYMENT_ENVIRONMENT]: config.environment,
     })
 
-    // 創建 Tracer Provider
+    // 創建 Tracer Provider（使用預設採樣器，通過配置控制採樣率）
     const provider = new NodeTracerProvider({
       resource,
-      sampler: {
-        shouldSample: () => Math.random() < config.samplingRate,
-        toString: () => `ProbabilitySampler{${config.samplingRate}}`,
-      },
     })
 
     // 配置 Jaeger 導出器

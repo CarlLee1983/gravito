@@ -80,6 +80,11 @@ export {
 // Event System Observability
 export type { ObservabilityConfig } from './events/observability'
 export { EventMetrics, EventTracer, ObservableHookManager } from './events/observability'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OpenTelemetry Instrumentation
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Exceptions
 export * from './exceptions'
 // Global Error Handlers
@@ -92,7 +97,7 @@ export {
 } from './GlobalErrorHandlers'
 export { type GravitoManifest, GravitoServer } from './GravitoServer'
 // Hooks
-export type { ActionCallback, FilterCallback } from './HookManager'
+export type { ActionCallback, FilterCallback, ListenerInfo, ListenerOptions } from './HookManager'
 export { HookManager, type HookManagerConfig } from './HookManager'
 // Helpers
 export * from './helpers'
@@ -114,6 +119,25 @@ export {
   securityHeaders,
 } from './http/middleware/SecurityHeaders'
 export { ThrottleRequests } from './http/middleware/ThrottleRequests'
+// Re-export instrumentation module for subpath import
+export * as instrumentation from './instrumentation'
+export {
+  DEFAULT_CONFIG as OTEL_DEFAULT_CONFIG,
+  getMeter,
+  getOpenTelemetrySDK,
+  getTracer as getOtelTracer,
+  isOpenTelemetryInitialized,
+  type MetricsConfig as OtelMetricsConfig,
+  type MetricsExporter,
+  type OpenTelemetryConfig,
+  type OpenTelemetrySDK,
+  OTEL_ENV_VARS,
+  resetOpenTelemetry,
+  setupOpenTelemetry,
+  shutdownOpenTelemetry,
+  type TracingConfig as OtelTracingConfig,
+  type TracingExporter,
+} from './instrumentation'
 // Listeners
 export type { Listener, ShouldQueue } from './Listener'
 // Logger

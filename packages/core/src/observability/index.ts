@@ -17,6 +17,24 @@ export {
   type ObservabilityConfig,
   ObservableHookManager,
 } from '../events/observability/ObservableHookManager'
+// OpenTelemetry SDK Integration (新增)
+export {
+  DEFAULT_CONFIG as OTEL_DEFAULT_CONFIG,
+  getMeter,
+  getOpenTelemetrySDK,
+  getTracer as getOtelTracer,
+  isOpenTelemetryInitialized,
+  type MetricsConfig as OtelMetricsConfig,
+  type MetricsExporter,
+  type OpenTelemetryConfig,
+  type OpenTelemetrySDK,
+  OTEL_ENV_VARS,
+  resetOpenTelemetry,
+  setupOpenTelemetry,
+  shutdownOpenTelemetry,
+  type TracingConfig as OtelTracingConfig,
+  type TracingExporter,
+} from '../instrumentation'
 export {
   type EventMetricsDefinition,
   getEventMetricsDefinition,
