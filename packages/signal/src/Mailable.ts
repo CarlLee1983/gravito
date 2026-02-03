@@ -326,6 +326,28 @@ export abstract class Mailable implements Queueable {
     return this
   }
 
+  /**
+   * Set the content using an MJML markup string.
+   *
+   * MJML ensures responsive email compatibility across various clients.
+   *
+   * @param content - The MJML markup string.
+   * @param options - Optional MJML transformation options.
+   * @returns The current mailable instance for chaining.
+   *
+   * @example
+   * ```typescript
+   * mailable.mjml('<mjml><mj-body>...</mj-body></mjml>')
+   * ```
+   */
+  mjml(content: string, options?: Record<string, any>): this {
+    this.rendererResolver = async () => {
+      const { MjmlRenderer } = await import('./renderers/MjmlRenderer')
+      return new MjmlRenderer(content, options)
+    }
+    return this
+  }
+
   // ===== Life Cycle =====
 
   /**

@@ -5,7 +5,7 @@ import type { MailEvent, MailEventHandler, MailEventType } from './events'
 import type { Mailable } from './Mailable'
 import { LogTransport } from './transports/LogTransport'
 import { MemoryTransport } from './transports/MemoryTransport'
-import type { MailConfig, Message } from './types'
+import type { MailConfig, Message, WebhookDriver } from './types'
 
 /**
  * OrbitSignal - Mail service orbit for Gravito framework.
@@ -237,6 +237,48 @@ export class OrbitSignal implements GravitoOrbit {
     core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       c.set('mail', this)
       return await next()
+    })
+
+    // 5. Register Webhook Endpoint
+    if (this.config.webhookPrefix) {
+      const adapter = core.adapter as any
+      adapter.post(`${this.config.webhookPrefix}/:driver`, async (c: GravitoContext) => {
+        const driverName = c.req.param('driver')
+        const driver = this.config.webhookDrivers?.[driverName as string]
+
+        if (!driver) {
+          return c.json({ error: `Webhook driver "${driverName}" not found` }, 404)
+        }
+
+        try {
+          const result = await driver.handle(c)
+          if (result) {
+            await this.handleWebhook(driverName as string, result.event, result.payload)
+          }
+          return c.json({ success: true })
+        } catch (error) {
+          core.logger.error(`[OrbitSignal] Webhook error (${driverName}):`, error)
+          return c.json({ error: 'Webhook processing failed' }, 500)
+        }
+      })
+    }
+  }
+
+  /**
+   * Internal: Handle processed webhook.
+   */
+  private async handleWebhook(driver: string, event: string, payload: any): Promise<void> {
+    // We don't have a specific mailable for generic webhooks, so we create a dummy or pass null
+    // But since MailEvent requires a mailable, we might need to adjust the interface or pass a Proxy
+    // For now, let's assume it's acceptable to emit with a partial event if types allow,
+    // or we might need to add a specialized emitWebhook method.
+
+    await this.emit({
+      type: 'webhookReceived',
+      // biome-ignore lint/suspicious/noExplicitAny: Dummy mailable for webhook events
+      mailable: {} as any,
+      timestamp: new Date(),
+      webhook: { driver, event, payload },
     })
   }
 

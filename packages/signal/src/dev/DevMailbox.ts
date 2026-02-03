@@ -37,8 +37,24 @@ export interface MailboxEntry {
  */
 export class DevMailbox {
   private entries: MailboxEntry[] = []
-  private maxEntries = 50
+  private _maxEntries = 50
 
+  /**
+   * Creates an instance of DevMailbox.
+   *
+   * @param maxEntries - Maximum number of emails to store (default: 50)
+   */
+  constructor(maxEntries?: number) {
+    if (maxEntries !== undefined) {
+      this._maxEntries = maxEntries
+    }
+  }
+
+  /**
+   * Adds a new message to the mailbox.
+   *
+   * If the mailbox exceeds the maximum capacity, the oldest messages are removed.
+   */
   add(message: Message): MailboxEntry {
     const entry: MailboxEntry = {
       id: randomUUID(),
@@ -60,11 +76,30 @@ export class DevMailbox {
     this.entries.unshift(entry)
 
     // Limit size
-    if (this.entries.length > this.maxEntries) {
-      this.entries = this.entries.slice(0, this.maxEntries)
+    if (this.entries.length > this._maxEntries) {
+      this.entries = this.entries.slice(0, this._maxEntries)
     }
 
     return entry
+  }
+
+  /**
+   * Sets the maximum number of emails to store.
+   *
+   * If the current mailbox exceeds the new capacity, the oldest messages are removed.
+   */
+  setMaxEntries(count: number): void {
+    this._maxEntries = count
+    if (this.entries.length > this._maxEntries) {
+      this.entries = this.entries.slice(0, this._maxEntries)
+    }
+  }
+
+  /**
+   * Returns the maximum capacity of the mailbox.
+   */
+  get maxEntries(): number {
+    return this._maxEntries
   }
 
   list(): MailboxEntry[] {

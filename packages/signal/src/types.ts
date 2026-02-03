@@ -2,6 +2,13 @@ import type { GravitoContext } from '@gravito/core'
 import type { Transport } from './transports/Transport'
 
 /**
+ * Interface for Webhook Drivers.
+ */
+export interface WebhookDriver {
+  handle(c: GravitoContext): Promise<{ event: string; payload: any } | null>
+}
+
+/**
  * Transport interface for sending email messages.
  *
  * Defines the contract for different delivery mechanisms (SMTP, SES, etc.).
@@ -289,4 +296,14 @@ export interface MailConfig {
   translator?:
     | ((key: string, replace?: Record<string, unknown>, locale?: string) => string)
     | undefined
+
+  /**
+   * URL prefix for Webhook endpoints.
+   */
+  webhookPrefix?: string | undefined
+
+  /**
+   * Dictionary of registered webhook drivers.
+   */
+  webhookDrivers?: Record<string, WebhookDriver> | undefined
 }
