@@ -120,4 +120,4 @@ Freeze 在構建時會自動生成符合 Google 規範的多語言 Sitemap。
 
 ## 6. 總結 (Summary)
 
-Freeze 是 Gravito "大一統" 願景的最後一塊拼圖。它讓開發者能夠使用熟悉的 **Monolith** 模式開發，最後卻能交付出 **Serverless** 甚至 **Static** 的產品，極大降低了維運成本與部署門檻。
+Freeze 是 Gravito "全棧整合 (Full-stack Integration)" 願景的最後一塊拼圖。它讓開發者能夠使用熟悉的 **Monolith** 模式開發，最後卻能交付出 **Serverless** 甚至 **Static** 的產品，極大降低了維運成本與部署門檻。

@@ -8,7 +8,7 @@
 
 ## 1. 核心設計哲學 (Core Philosophy)
 
-在傳統的前後端分離架構中，保持 API 接口與前端調用的一致性是一大痛點。通常需要引入 OpenAPI (Swagger) 生成工具或 GraphQL。
+在傳統的前後端分離架構中，保持 API 介面與前端調用的一致性是一大痛點。通常需要引入 OpenAPI (Swagger) 生成工具或 GraphQL。
 
 Beam 選擇了一種更輕量、更適合 TypeScript Monorepo 的路徑：**Shared Type Inference (共享類型推斷)**。
 
@@ -94,7 +94,7 @@ await client.api.users.$get();
 
 | 特性 | REST (Axios) | GraphQL (Apollo) | tRPC | **Beam (Gravito)** |
 | :--- | :--- | :--- | :--- | :--- |
-| **類型安全** | ❌ (需手動定義) | [Complete] (Codegen) | [Complete] (Native) | **[Complete] (Native)** |
+| **類型安全** | ❌ (需手動定義) | [Complete] (Codegen) | [Complete] (Native) | **✅ (Native)** |
 | **Runtime 開銷** | 低 | 高 (Parsing) | 中 (Adapter) | **極低 (Zero)** |
 | **前後端耦合** | 低 | 中 | 高 | **高 (Type-level)** |
 | **適用場景** | 公共 API | 複雜查詢 | Next.js 全棧 | **Gravito 全棧** |

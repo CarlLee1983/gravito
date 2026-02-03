@@ -1,3 +1,7 @@
+---
+title: NPM 發布指南
+---
+
 # NPM 發布指南
 
 本指南說明如何將 Gravito monorepo 中的所有套件發布到 NPM。
@@ -26,9 +30,13 @@ npm config set registry https://registry.npmjs.org/
 
 ### 3. 確認套件版本
 
-所有套件應該已經更新到目標版本（目前是 `1.0.0`）。如果需要更新版本：
+所有套件應該已經更新到目標版本。如果需要更新版本：
 
 ```bash
+# 根據預設策略更新版本
+bun run version:update
+
+# 或使用 release-all 手動控制
 bun run scripts/release-all.ts
 ```
 

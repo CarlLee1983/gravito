@@ -53,9 +53,8 @@ Cosmos 利用 Gravito Core 的適配器機制，將 `I18nManager` 實例注入�
 ```typescript
 // 內部實作
 core.adapter.use('*', async (c, next) => {
-  // 每個請求共享同一個 Manager 實例，但可能有不同的 Locale 狀態 (需注意)
-  // *註: 目前實作中 Locale 是 Manager 的屬性，這在單例模式下會有併發問題。
-  // 未來版本將改為 Per-Request State。
+> [!WARNING]
+> 每個請求共享同一個 Manager 實例，但可能有不同的 Locale 狀態 (需注意)。目前實作中 Locale 是 Manager 的屬性，這在單例模式下會有併發問題。未來版本將改為 Per-Request State。
   c.set('i18n', i18n); 
   await next();
 });
@@ -85,4 +84,4 @@ Cosmos 包含一個基於 Node.js `fs/promises` 的輕量級加載器。
 
 基於目前的代碼分析，我們識別出以下改進空間：
 1.  **Scope Isolation**: 目前 `I18nManager` 是一個單例，`setLocale` 會修改全域狀態。在併發請求下，Request A 的 Locale 可能會被 Request B 覆蓋。需改為 **Clone-per-request** 模式。
-2.  **Performance**: 對於超大型語言包，可以引入 Lazy Loading 機制。
+2.  **Performance**: 對於超大型語言檔，可以引入 Lazy Loading 機制。

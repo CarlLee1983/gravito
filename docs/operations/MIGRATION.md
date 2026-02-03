@@ -1,3 +1,7 @@
+---
+title: Gravito Migration Guide
+---
+
 # Gravito Migration Guide
 
 This guide helps you migrate from deprecated APIs to their modern equivalents.

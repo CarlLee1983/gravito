@@ -31,8 +31,8 @@ Gravito 內建輕量級的依賴注入容器，支援：
 
 ### 2.3 配接器模式 (HttpAdapter)
 為了支援多種執行環境 (Bun, Node.js)，Gravito 抽象了 HTTP 引擎：
-- **BunNativeAdapter**：利用 Bun 的原生 `fetch` 達成極限效能。
-- **PhotonAdapter**：基於 Hono 的高效能配接器。
+- **GravitoEngineAdapter**：利用 Bun 的原生 `fetch` 與 AOT 路由達成極限效能（僅限 Bun 執行環境）。
+- **PhotonAdapter**：基於 Hono 的高效能配接器，提供更廣泛的兼容性。
 
 ---
 
@@ -46,11 +46,23 @@ Gravito 的啟動過程分為兩個關鍵階段：
 3.  **Booting Phase**：呼叫所有 `ServiceProvider` 的 `boot()`，此時所有依賴已就緒。
 
 ### 3.2 Liftoff (升空)
-這是最終的執行階段，`liftoff()` 會返回一個相容於 `Bun.serve` 的物件，並觸發 `app:liftoff` 動作。
+這是最終的執行階段，`liftoff()` 會返回一個相容於 `Bun.serve` 的物件，並觸發 `app:liftoff` 動作。在 2.0 中，此階段會執行 AOT 路由優化。
 
 ---
 
-## 4. 清單驅動開發 (Manifest-Driven Development)
+## 4. 2.0 效能引擎 (Standalone Engine)
+
+Gravito 2.0 引入了獨立的 Web 引擎，旨在為 Bun 提供極致效能（位於 `@gravito/core/engine`）：
+
+1.  **AOT Router (預編譯路由)**：啟動時將路由編譯為最佳化的判斷邏輯，靜態路由達成 O(1) 查詢。
+2.  **FastContext (物件池)**：預設使用大小為 256 的物件池重複使用 Context 物件，將 GC 壓力降至最低。
+3.  **Zero-copy Bridge**：直接處理 Bun 的原始 Request，避免資料拷貝。
+
+> **注意**：Standalone Engine 為 Bun-Only 設計。在 Node.js 或 Deno 環境下，系統會自動降級使用相容適配器。
+
+---
+
+## 5. 清單驅動開發 (Manifest-Driven Development)
 
 MDD 是 Gravito 1.0 引入的核心特性，透過 `gravito.config.ts` 宣告式地組裝系統：
 
