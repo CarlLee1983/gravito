@@ -8,29 +8,29 @@
 
 import type { Server } from 'bun'
 import { ChannelManager, requiresAuth } from './channels'
-import { LocalDriver, RedisDriver, NATSDriver } from './drivers'
+import { LocalDriver, NATSDriver, RedisDriver } from './drivers'
 import { HealthChecker } from './health/HealthChecker'
 import type { RippleLogger } from './logging/Logger'
 import { createLogger } from './logging/Logger'
+import { InterceptorManager } from './middleware/InterceptorManager'
+import { RippleMetrics } from './observability/RippleMetrics'
+import { AckManager } from './reliability/AckManager'
 import type { ConnectionTracker } from './tracking/ConnectionTracker'
 import { DefaultConnectionTracker } from './tracking/ConnectionTracker'
-import { SessionManager, type SessionData } from './tracking/SessionManager'
+import { type SessionData, SessionManager } from './tracking/SessionManager'
 import type {
   ChannelAuthorizer,
   ClientData,
   ClientMessage,
   RippleConfig,
   RippleDriver,
+  RippleInterceptor,
   RippleWebSocket,
   ServerMessage,
   WebSocketHandlerConfig,
 } from './types'
 import { MessageSerializer } from './utils/MessageSerializer'
 import { TokenBucket } from './utils/TokenBucket'
-import { AckManager } from './reliability/AckManager'
-import { RippleMetrics } from './observability/RippleMetrics'
-import { InterceptorManager } from './middleware/InterceptorManager'
-import type { RippleInterceptor } from './types'
 
 /**
  * Ripple WebSocket Server
@@ -109,6 +109,13 @@ export class RippleServer {
       this.eventListeners.set(event, [])
     }
     this.eventListeners.get(event)?.push(handler)
+  }
+
+  /**
+   * Get the name of the active message driver.
+   */
+  get driverName(): string {
+    return this.driver.name
   }
 
   to(channel: string) {
@@ -212,32 +219,29 @@ export class RippleServer {
 
       const data: ClientMessage = JSON.parse(message.toString())
 
-      await this.interceptors.execute(
-        { ws, message: data, direction: 'incoming' },
-        async () => {
-          switch (data.type) {
-            case 'subscribe':
-              await this.handleSubscribe(ws, data.channel, data.auth)
-              break
+      await this.interceptors.execute({ ws, message: data, direction: 'incoming' }, async () => {
+        switch (data.type) {
+          case 'subscribe':
+            await this.handleSubscribe(ws, data.channel, data.auth)
+            break
 
-            case 'unsubscribe':
-              await this.handleUnsubscribe(ws, data.channel)
-              break
+          case 'unsubscribe':
+            await this.handleUnsubscribe(ws, data.channel)
+            break
 
-            case 'whisper':
-              this.handleWhisper(ws, data.channel, data.event, data.data)
-              break
+          case 'whisper':
+            this.handleWhisper(ws, data.channel, data.event, data.data)
+            break
 
-            case 'ping':
-              this.send(ws, { type: 'pong' })
-              break
+          case 'ping':
+            this.send(ws, { type: 'pong' })
+            break
 
-            case 'ack':
-              this.ackManager.confirm(ws.data.id, data.seq)
-              break
-          }
+          case 'ack':
+            this.ackManager.confirm(ws.data.id, data.seq)
+            break
         }
-      )
+      })
     } catch (error) {
       this.logger.error('Failed to parse message', {
         clientId: ws.data.id,
@@ -384,12 +388,7 @@ export class RippleServer {
         await this.channels.subscribe(ws.data.id, channel, result)
         this.tracker.onSubscribe(ws.data.id, channel)
 
-        this.broadcastToChannel(
-          channel,
-          'presence',
-          { event: 'join', data: result },
-          ws.data.id
-        )
+        this.broadcastToChannel(channel, 'presence', { event: 'join', data: result }, ws.data.id)
 
         this.send(ws, {
           type: 'presence',
@@ -446,7 +445,9 @@ export class RippleServer {
 
     const listeners = this.eventListeners.get(event)
     if (listeners) {
-      listeners.forEach((handler) => handler(ws, data))
+      listeners.forEach((handler) => {
+        handler(ws, data)
+      })
     }
 
     this.emit('whisper', ws, { channel, event, data })
@@ -490,11 +491,11 @@ export class RippleServer {
     const message: ServerMessage =
       event === 'presence'
         ? {
-          type: 'presence',
-          channel,
-          event: (data as { event: 'join' | 'leave' | 'members' }).event,
-          data: (data as { data: unknown }).data,
-        }
+            type: 'presence',
+            channel,
+            event: (data as { event: 'join' | 'leave' | 'members' }).event,
+            data: (data as { data: unknown }).data,
+          }
         : { type: 'event', channel, event, data }
 
     const serialized = this.serializer.serializeForBroadcast(message)
@@ -592,7 +593,9 @@ export class RippleServer {
       const pong = this.serializer.getPongMessage()
       this.pingInterval = setInterval(() => {
         for (const ws of this.channels.getAllClients()) {
-          try { ws.send(pong) } catch { }
+          try {
+            ws.send(pong)
+          } catch {}
         }
       }, this.config.pingInterval)
     }

@@ -4,8 +4,8 @@
  */
 
 import type { Server, ServerWebSocket } from 'bun'
-import type { RedisDriverConfig } from './drivers/RedisDriver'
 import type { NATSDriverConfig } from './drivers/NATSDriver'
+import type { RedisDriverConfig } from './drivers/RedisDriver'
 
 // ─────────────────────────────────────────────────────────────
 // Client Data
@@ -196,7 +196,7 @@ export type ChannelAuthorizer = (
   channelName: string,
   userId: string | number | undefined,
   socketId: string
-) => boolean | Promise<boolean> | PresenceUserInfo | Promise<PresenceUserInfo | false>
+) => boolean | PresenceUserInfo | Promise<boolean | PresenceUserInfo>
 
 // ─────────────────────────────────────────────────────────────
 // Events
@@ -365,11 +365,32 @@ export type ServerMessage =
   | { type: 'subscribed'; channel: string }
   | { type: 'unsubscribed'; channel: string }
   | { type: 'error'; message: string; channel?: string; code?: RippleErrorCode }
-  | { type: 'event'; channel: string; event: string; data: unknown; seq?: number; needAck?: boolean } // seq/needAck v3.7+
-  | { type: 'presence'; channel: string; event: 'join' | 'leave' | 'members'; data: unknown; seq?: number; needAck?: boolean } // seq/needAck v3.7+
+  | {
+      type: 'event'
+      channel: string
+      event: string
+      data: unknown
+      seq?: number
+      needAck?: boolean
+    } // seq/needAck v3.7+
+  | {
+      type: 'presence'
+      channel: string
+      event: 'join' | 'leave' | 'members'
+      data: unknown
+      seq?: number
+      needAck?: boolean
+    } // seq/needAck v3.7+
   | { type: 'pong' }
   | { type: 'connected'; socketId: string }
-  | { type: 'binary'; channel: string; event: string; data: ArrayBuffer; seq?: number; needAck?: boolean } // seq/needAck v3.7+
+  | {
+      type: 'binary'
+      channel: string
+      event: string
+      data: ArrayBuffer
+      seq?: number
+      needAck?: boolean
+    } // seq/needAck v3.7+
   | { type: 'ack_received'; seq: number } // v3.7+
 
 /**

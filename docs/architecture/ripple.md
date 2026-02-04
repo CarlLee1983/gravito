@@ -115,7 +115,8 @@ Bun.serve({
 - **NATSDriver (v4.0 Implemented)**：
   - **機制**：使用 NATS JetStream 實現高性能分佈式廣播。
   - **優勢**：極低延遲（百萬級 QPS）、原生 Message Persistence 與 Replay 機制。
-  - **⚠️ 已知限制**：v4.0-alpha 版本的 Presence 持久化功能尚未實作（計劃使用 NATS KV Store），僅支援基本 Pub/Sub。
+  - **Presence 支持**：使用 NATS KV Store 實現 Presence 持久化，支援 TTL（5 分鐘）與跨節點同步。
+  - **Bucket 管理**：自動創建和管理 KV bucket，每個 presence channel 對應一個 bucket。
 - **LocalDriver**：僅在單機記憶體內廣播，適合開發環境。
 
 #### 4. BroadcastManager (API)

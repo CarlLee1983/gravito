@@ -69,7 +69,9 @@ export { HealthChecker } from './health/HealthChecker'
 export type { LogContext, LogLevel, RippleLogger } from './logging/Logger'
 export { ConsoleLogger, createLogger } from './logging/Logger'
 export { OrbitRipple } from './OrbitRipple'
+export { RippleMetrics } from './observability/RippleMetrics'
 export { RippleServer } from './RippleServer'
+export { AckManager } from './reliability/AckManager'
 export type { ConnectionEvent, ConnectionTracker } from './tracking/ConnectionTracker'
 export { DefaultConnectionTracker } from './tracking/ConnectionTracker'
 export type {
@@ -90,6 +92,4 @@ export type {
   ServerMessage,
   WebSocketHandlerConfig,
 } from './types'
-export { AckManager } from './reliability/AckManager'
-export { RippleMetrics } from './observability/RippleMetrics'
 export { MessageSerializer } from './utils/MessageSerializer'

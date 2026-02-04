@@ -65,8 +65,5 @@
       "Bash(__NEW_LINE_35cfa30f2b973b8a__ echo \"Task 1.2.3.5 - 背壓性能基準測試與文檔\")"
     ]
   },
-  "enabledMcpjsonServers": [
-    "pencil",
-    "context7"
-  ]
+  "enabledMcpjsonServers": ["pencil", "context7"]
 }

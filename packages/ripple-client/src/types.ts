@@ -55,12 +55,33 @@ export type ServerMessage =
   | { type: 'subscribed'; channel: string }
   | { type: 'unsubscribed'; channel: string }
   | { type: 'error'; message: string; channel?: string }
-  | { type: 'event'; channel: string; event: string; data: unknown; seq?: number; needAck?: boolean }
-  | { type: 'presence'; channel: string; event: 'join' | 'leave' | 'members'; data: unknown; seq?: number; needAck?: boolean }
+  | {
+      type: 'event'
+      channel: string
+      event: string
+      data: unknown
+      seq?: number
+      needAck?: boolean
+    }
+  | {
+      type: 'presence'
+      channel: string
+      event: 'join' | 'leave' | 'members'
+      data: unknown
+      seq?: number
+      needAck?: boolean
+    }
   | { type: 'pong' }
   | { type: 'connected'; socketId: string; reconnectionToken?: string }
   | { type: 'ack_received'; seq: number }
-  | { type: 'binary'; channel: string; event: string; data: ArrayBuffer; seq?: number; needAck?: boolean }
+  | {
+      type: 'binary'
+      channel: string
+      event: string
+      data: ArrayBuffer
+      seq?: number
+      needAck?: boolean
+    }
 
 // ─────────────────────────────────────────────────────────────
 // Event Handlers

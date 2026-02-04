@@ -115,9 +115,9 @@ const PORT = 3456
 
 Bun.serve({
   port: PORT,
-  fetch(req, server) {
+  fetch(req, bunServer) {
     // Handle WebSocket upgrade
-    if (server.upgrade(req)) {
+    if (server.upgrade(req, bunServer)) {
       return // Handled by WebSocket
     }
 
@@ -125,7 +125,7 @@ Bun.serve({
     const url = new URL(req.url)
 
     if (url.pathname === '/health') {
-      return new Response(JSON.stringify({ status: 'ok', driver: server.driver }), {
+      return new Response(JSON.stringify({ status: 'ok', driver: server.driverName }), {
         headers: { 'Content-Type': 'application/json' },
       })
     }
@@ -142,20 +142,20 @@ console.log(`✅ WebSocket endpoint: ws://localhost:${PORT}\n`)
 // 3. Event Listeners
 // ─────────────────────────────────────────────────────────────
 
-server.on('connection', ({ clientId }) => {
-  console.log(`🔌 Client connected: ${clientId}`)
+server.on('connection', (ws) => {
+  console.log(`🔌 Client connected: ${ws.data.id}`)
 })
 
-server.on('disconnect', ({ clientId }) => {
-  console.log(`❌ Client disconnected: ${clientId}`)
+server.on('disconnect', (ws) => {
+  console.log(`❌ Client disconnected: ${ws.data.id}`)
 })
 
-server.on('subscribe', ({ clientId, channel }) => {
-  console.log(`📡 Client ${clientId} subscribed to ${channel}`)
+server.on('subscribe', (ws, { channel }) => {
+  console.log(`📡 Client ${ws.data.id} subscribed to ${channel}`)
 })
 
-server.on('unsubscribe', ({ clientId, channel }) => {
-  console.log(`📴 Client ${clientId} unsubscribed from ${channel}`)
+server.on('unsubscribe', (ws, { channel }) => {
+  console.log(`📴 Client ${ws.data.id} unsubscribed from ${channel}`)
 })
 
 // ─────────────────────────────────────────────────────────────

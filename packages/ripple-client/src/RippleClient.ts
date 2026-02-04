@@ -330,14 +330,11 @@ export class RippleClient {
   }
 
   private send(message: object): void {
-    this.interceptors.execute(
-      { message: message as any, direction: 'outgoing' },
-      async () => {
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-          this.ws.send(JSON.stringify(message))
-        }
+    this.interceptors.execute({ message: message as any, direction: 'outgoing' }, async () => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify(message))
       }
-    )
+    })
   }
 
   /**
@@ -397,62 +394,59 @@ export class RippleClient {
     try {
       const message: ServerMessage = JSON.parse(raw)
 
-      this.interceptors.execute(
-        { message, direction: 'incoming' },
-        async () => {
-          switch (message.type) {
-            case 'connected':
-              this.socketId = message.socketId
-              if (message.reconnectionToken) {
-                this.reconnectionToken = message.reconnectionToken
-              }
-              this.processPendingSubscriptions()
-              break
-
-            case 'subscribed':
-              // Channel subscription confirmed
-              break
-
-            case 'unsubscribed':
-              // Channel unsubscription confirmed
-              break
-
-            case 'event': {
-              if (message.needAck && message.seq !== undefined) {
-                this.send({ type: 'ack', seq: message.seq })
-              }
-              const channel = this.channels.get(message.channel)
-              if (channel) {
-                channel._dispatch(message.event, message.data)
-              }
-              break
+      this.interceptors.execute({ message, direction: 'incoming' }, async () => {
+        switch (message.type) {
+          case 'connected':
+            this.socketId = message.socketId
+            if (message.reconnectionToken) {
+              this.reconnectionToken = message.reconnectionToken
             }
+            this.processPendingSubscriptions()
+            break
 
-            case 'presence': {
-              if (message.needAck && message.seq !== undefined) {
-                this.send({ type: 'ack', seq: message.seq })
-              }
-              const presenceChannel = this.channels.get(message.channel)
-              if (presenceChannel instanceof PresenceChannel) {
-                presenceChannel._handlePresence(message.event, message.data)
-              }
-              break
+          case 'subscribed':
+            // Channel subscription confirmed
+            break
+
+          case 'unsubscribed':
+            // Channel unsubscription confirmed
+            break
+
+          case 'event': {
+            if (message.needAck && message.seq !== undefined) {
+              this.send({ type: 'ack', seq: message.seq })
             }
-
-            case 'ack_received':
-              // Message confirmed by server
-              break
-
-            case 'error':
-              console.error('[Ripple] Server error:', message.message, message.channel)
-              break
-
-            case 'pong':
-              // Heartbeat response
-              break
+            const channel = this.channels.get(message.channel)
+            if (channel) {
+              channel._dispatch(message.event, message.data)
+            }
+            break
           }
+
+          case 'presence': {
+            if (message.needAck && message.seq !== undefined) {
+              this.send({ type: 'ack', seq: message.seq })
+            }
+            const presenceChannel = this.channels.get(message.channel)
+            if (presenceChannel instanceof PresenceChannel) {
+              presenceChannel._handlePresence(message.event, message.data)
+            }
+            break
+          }
+
+          case 'ack_received':
+            // Message confirmed by server
+            break
+
+          case 'error':
+            console.error('[Ripple] Server error:', message.message, message.channel)
+            break
+
+          case 'pong':
+            // Heartbeat response
+            break
         }
-      )
+      })
     } catch (_error) {
       console.error('[Ripple] Failed to parse message:', raw)
     }
