@@ -25,7 +25,13 @@
       "Bash(ls:*)",
       "Bash(node -e:*)",
       "Bash(bun -e:*)",
-      "Bash(bun tsc:*)"
+      "Bash(bun tsc:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\ntest: 提升 astral、impulse 和 dark-matter 包的測試覆蓋率\n\n改進了三個關鍵包的測試覆蓋率以符合 CI 要求：\n\n**@gravito/astral**：83.61% → 100% \\(746/746 行\\)\n- 新增 errors.test.ts 完整覆蓋所有錯誤類\n- 擴充 hash.test.ts 支援複雜 Zod 類型\n- 新增 index.test.ts 測試 install 方法和驗證邏輯\n- 165 個測試全部通過\n\n**@gravito/impulse**：77.69% → 96.96% \\(734/757 行\\)\n- 新增 valibot-form-request.test.ts 涵蓋 37 個測試\n- 新增 zod-form-request.test.ts 補充缺失分支\n- 104 個測試全部通過\n\n**@gravito/dark-matter**：25.56% → 預期 85%+\n- 在 CI 工作流中新增 MongoDB 服務容器\n- 設置 MONGODB_URI 環境變數\n- 使集成測試不再被跳過\n\nCI 改進：\n- 添加 MongoDB 7 服務以支援集成測試\n- 配置健康檢查確保服務就緒\n\n🤖 Generated with Claude Code\nEOF\n\\)\")",
+      "Bash(gh api:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh pr create:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)"
     ]
   }
 }
