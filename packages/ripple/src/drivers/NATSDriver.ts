@@ -4,6 +4,7 @@
  * @module @gravito/ripple/drivers
  */
 
+// @ts-expect-error
 import type { ConnectionOptions, NatsConnection } from 'nats'
 import { RippleDriverError } from '../errors/RippleError'
 import type { RippleLogger } from '../logging/Logger'
@@ -72,6 +73,7 @@ export class NATSDriver implements RippleDriver {
     })
 
     try {
+      // @ts-expect-error
       const { connect } = await import('nats')
       this.nats = await connect({
         servers: this.config.servers ?? 'nats://localhost:4222',
@@ -104,6 +106,7 @@ export class NATSDriver implements RippleDriver {
     }
 
     const subject = this.subjectPrefix + channel
+    // @ts-expect-error
     const sc = (await import('nats')).JSONCodec()
     this.nats.publish(subject, sc.encode({ event, data }))
   }
@@ -121,6 +124,7 @@ export class NATSDriver implements RippleDriver {
     if (!this.callbacks.has(subject)) {
       this.callbacks.set(subject, new Set())
 
+      // @ts-expect-error
       const sc = (await import('nats')).JSONCodec()
       const sub = this.nats.subscribe(subject)
       this.subscriptions.set(subject, sub)
@@ -188,6 +192,7 @@ export class NATSDriver implements RippleDriver {
     }
 
     try {
+      // @ts-expect-error
       const { jetstream } = await import('nats')
       const js = this.nats.jetstream()
       const bucketName = `ripple_presence_${channel.replace(/[^a-zA-Z0-9_-]/g, '_')}`
@@ -237,6 +242,7 @@ export class NATSDriver implements RippleDriver {
     }
 
     try {
+      // @ts-expect-error
       await import('nats')
       const js = this.nats.jetstream()
       const bucketName = `ripple_presence_${channel.replace(/[^a-zA-Z0-9_-]/g, '_')}`
@@ -273,6 +279,7 @@ export class NATSDriver implements RippleDriver {
     const members: PresenceUserInfo[] = []
 
     try {
+      // @ts-expect-error
       const { jetstream } = await import('nats')
       const js = this.nats.jetstream()
       const bucketName = `ripple_presence_${channel.replace(/[^a-zA-Z0-9_-]/g, '_')}`

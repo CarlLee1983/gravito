@@ -44,7 +44,7 @@
   "peerDependencies": {
     "@gravito/core": "workspace:*",
     "ioredis": "^5.0.0",
-    "nats": "^2.0.0"
+    "nats": "^2.23.0"
   },
   "peerDependenciesMeta": {
     "ioredis": {
