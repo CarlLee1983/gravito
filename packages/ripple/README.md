@@ -324,6 +324,44 @@ bun test --coverage
 
 ## Changelog
 
+### v4.0.0-alpha.1 (2026-02-04)
+
+**🚀 Major Features**
+
+- ✅ **NATS Driver**: High-performance distributed broadcasting with NATS JetStream
+  - Sub-millisecond latency for million-level QPS
+  - Native message persistence and replay support
+  - ⚠️ Note: Presence persistence (NATS KV Store) planned for beta release
+- ✅ **Message Interceptors**: Server and client-side middleware system
+  - Onion model execution pattern (like Koa.js)
+  - Use cases: logging, data masking, authentication, rate limiting
+  - Full TypeScript support with async/await
+- ✅ **Enhanced Client SDK** (`@gravito/ripple-client` v4.0.0-alpha.1)
+  - Interceptor support with `.use()` API
+  - Automatic reconnection with session token recovery
+  - ACK confirmation for reliable message delivery
+  - Binary message support
+
+**🔧 Improvements**
+
+- ✅ **ACK Manager**: Ensures critical messages are delivered and confirmed
+- ✅ **Session Manager**: Server-assisted reconnection with state recovery
+- ✅ **Metrics**: Enhanced observability with RippleMetrics
+- ✅ **Redis Driver**: Presence persistence across multiple nodes
+
+**📚 Documentation**
+
+- ✅ Updated architecture specs to v4.0.0-alpha
+- ✅ Added NATS driver configuration examples
+- ✅ Documented interceptor patterns and use cases
+- ✅ Added limitations and known issues section
+
+**🧪 Testing**
+
+- ✅ New test suites: NATS driver, interceptors, session management
+- ✅ Integration tests for reconnection flows
+- ✅ Redis presence persistence tests
+
 ### v3.0.0 (2025-01-24)
 
 **Phase 1: Type Safety & Architecture**

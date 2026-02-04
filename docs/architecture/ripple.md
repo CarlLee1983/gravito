@@ -1,9 +1,9 @@
 ---
 title: Ripple 架構技術規格書
-version: 3.6.0
-status: Stable
+version: 4.0.0-alpha
+status: Alpha
 tier: B
-last_updated: 2026-01-28
+last_updated: 2026-02-04
 dependencies:
   bun: ">=1.0.0"
   core: "^1.5.0"
@@ -12,7 +12,7 @@ related_orbits:
   - radiance
 ---
 
-# Ripple Architecture 技術架構規格書 (v3.6.0)
+# Ripple Architecture 技術架構規格書 (v4.0.0-alpha)
 
 ## 📖 目錄
 
@@ -111,7 +111,12 @@ Bun.serve({
   - **機制**：利用 Redis 的 Pub/Sub 機制實現跨伺服器通訊。
   - **Publisher**：當 A 節點廣播訊息時，發佈到 Redis Channel `ripple:{channel}`。
   - **Subscriber**：B 節點收到 Redis 訊息後，轉發給本地的 WebSocket 客戶端。
-  - **LocalDriver**：僅在單機記憶體內廣播，適合開發環境。
+  - **Presence 支持**：使用 Redis Hash 儲存 Presence 資料，支援跨節點成員列表同步。
+- **NATSDriver (v4.0 Implemented)**：
+  - **機制**：使用 NATS JetStream 實現高性能分佈式廣播。
+  - **優勢**：極低延遲（百萬級 QPS）、原生 Message Persistence 與 Replay 機制。
+  - **⚠️ 已知限制**：v4.0-alpha 版本的 Presence 持久化功能尚未實作（計劃使用 NATS KV Store），僅支援基本 Pub/Sub。
+- **LocalDriver**：僅在單機記憶體內廣播，適合開發環境。
 
 #### 4. BroadcastManager (API)
 - **職責**：提供開發者友善的 Fluent API。

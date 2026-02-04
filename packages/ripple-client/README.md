@@ -7,7 +7,9 @@
 - **Framework Agnostic** - Works with any JavaScript frontend
 - **React Hooks** - `useChannel`, `usePresence`, `usePrivateChannel`
 - **Vue Composables** - Same API patterns for Vue 3
-- **Auto Reconnect** - Handles disconnections gracefully
+- **Auto Reconnect** - Handles disconnections gracefully with session recovery
+- **Message Interceptors (v4.0)** - Client-side middleware for logging, transformation, and validation
+- **ACK Support (v4.0)** - Automatic message acknowledgement for reliable delivery
 - **TypeScript First** - Full type safety with ChannelEventMap
 
 ## Type Safety
@@ -66,6 +68,12 @@ client.join('chat.lobby')
   .here((users) => console.log('Online:', users))
   .joining((user) => console.log(`${user.info.name} joined`))
   .leaving((user) => console.log(`${user.info.name} left`))
+
+// Use interceptors (v4.0)
+client.use(async (ctx, next) => {
+  console.log(`[${ctx.direction}]`, ctx.message.type)
+  await next()
+})
 ```
 
 ### React
