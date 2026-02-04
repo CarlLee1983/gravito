@@ -68,7 +68,7 @@ OrbitSignal 採用了經典的 Strategy Pattern 與 Factory Pattern 組合：
     -   處理生命週期事件 (`beforeSend`, `afterSend`)。
 2.  **Mailable (Builder)** (`src/Mailable.ts`)
     -   抽象基底類別，使用者透過繼承此類別來定義信件邏輯。
-    -   提供 Fluent API (`to`, `from`, `subject`, `view`) 設定信封。
+    -   提供 Fluent API (`to`, `subject`, `view`, `mjmlReact`, `mjmlVue`) 設定信封。
     -   封裝了渲染邏輯與佇列整合 (`Queueable`)。
 3.  **Transport Layer** (`src/transports/*`)
     -   **BaseTransport**：實作自動重試與指數退避 (Backoff)。
@@ -145,12 +145,13 @@ class Mailable {
 -   提供類似 MailHog 的本地體驗，無需外部依賴。
 
 ### 4.3 渲染引擎抽象化
-**決策**：支援 React/Vue/MJML 作為郵件模板引擎。
+**決策**：支援 React/Vue/MJML 以及 **組件化 MJML** 作為郵件模板引擎。
 **原因**：
 -   傳統模板（EJS）缺乏組件化能力。
 -   允許前後端共用 UI 組件（例如 Header, Footer）。
 -   利用 `renderToStaticMarkup` (React) 生成靜態 HTML。
 -   **MJML**：解決 Email Client 響應式佈局與相容性痛點。
+-   **MJML Components**：允許使用 React/Vue 編寫 MJML 標記，享有完整的組件化邏輯與類型安全。
 
 ### 4.4 Webhook 統一處理
 **決策**：提供 `/webhook/:driver` 標準端點與事件機制。
@@ -172,6 +173,8 @@ class Mailable {
 - `subject(subject: string): this`
 - `view(template: string, data?: object): this`
 - `mjml(content: string, options?: object): this`
+- `mjmlReact(component: any, props?: object): this`
+- `mjmlVue(component: any, props?: object): this`
 - `attach(path: string, options?: object): this`
 
 ---
@@ -212,6 +215,6 @@ class Mailable {
 1.  **更多 Webhook Driver** (Priority: Medium)
     -   增加 Mailgun、Postmark 等主流服務商的實作。
 
-2.  **MJML 動態組件** (Priority: Medium)
-    -   結合 React/Vue 與 MJML，實現具備邏輯的響應式郵件組件。
+2.  **附件預覽優化** (Priority: Low)
+    -   在 `DevServer` 中直接預覽常見附件格式（PDF, Image）。
 
