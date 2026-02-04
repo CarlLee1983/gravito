@@ -18,8 +18,8 @@
   "scripts": {
     "build": "bun run build.ts",
     "test": "bun test --max-concurrency=1",
-    "test:coverage": "bun test --coverage --coverage-threshold=75 --max-concurrency=1",
-    "test:ci": "bun test --coverage --coverage-threshold=75 --max-concurrency=1",
+    "test:coverage": "bun test --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
+    "test:ci": "bun test --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
     "docs:generate": "typedoc --out docs/api src/index.ts"
   },
   "files": [

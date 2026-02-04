@@ -32,8 +32,8 @@
   "scripts": {
     "build": "bun run build.ts",
     "test": "bun test",
-    "test:coverage": "bun test --coverage --coverage-threshold=75",
-    "test:ci": "bun test --coverage --coverage-threshold=75",
+    "test:coverage": "bun test --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
+    "test:ci": "bun test --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
     "benchmark:event-system": "bun run benchmarks/event-system.bench.ts",
     "lint": "biome lint ./src ./tests",
     "lint:fix": "biome lint --write ./src ./tests",

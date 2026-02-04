@@ -19,8 +19,8 @@
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test": "bun test",
     "prepublishOnly": "bun run build",
-    "test:coverage": "bun test --coverage --coverage-threshold=80",
-    "test:ci": "bun test --coverage --coverage-threshold=80"
+    "test:coverage": "bun test --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
+    "test:ci": "bun test --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts"
   },
   "publishConfig": {
     "access": "public"

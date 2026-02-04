@@ -29,8 +29,8 @@
     "build": "bun run build.ts",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test": "bun test",
-    "test:coverage": "bun test --coverage --coverage-threshold=80",
-    "test:ci": "bun test --coverage --coverage-threshold=80"
+    "test:coverage": "bun test --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
+    "test:ci": "bun test --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts"
   },
   "peerDependencies": {
     "@gravito/core": "workspace:*",
