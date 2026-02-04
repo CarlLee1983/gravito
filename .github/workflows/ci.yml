@@ -40,8 +40,19 @@ jobs:
   pipeline:
     name: Build, Typecheck & Test
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ping:1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       NODE_OPTIONS: "--max-old-space-size=6144"
+      MONGODB_URI: mongodb://localhost:27017
     steps:
       - name: Checkout
         uses: actions/checkout@v4
