@@ -284,7 +284,7 @@ export class OTelEventMetrics implements CircuitBreakerMetricsRecorder {
    * @param name - Name of the circuit breaker (usually event name)
    * @param state - State as number (0=CLOSED, 1=HALF_OPEN, 2=OPEN)
    */
-  recordState(name: string, state: number): void {}
+  recordState(_name: string, _state: number): void {}
 
   /**
    * Record circuit breaker state transition.

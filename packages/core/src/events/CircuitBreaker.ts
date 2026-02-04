@@ -180,7 +180,6 @@ export class CircuitBreaker {
   private state: CircuitBreakerState = CircuitBreakerState.CLOSED
   private failureCount = 0
   private successCount = 0
-  private nextAttempt = 0
   private name: string
   private config: RequiredCircuitBreakerOptions
   private metricsRecorder?: CircuitBreakerMetricsRecorder
@@ -438,7 +437,6 @@ export class CircuitBreaker {
 
     switch (newState) {
       case CircuitBreakerState.OPEN:
-        this.nextAttempt = Date.now() + this.config.resetTimeout
         this.config.onOpen(this.name)
         break
       case CircuitBreakerState.HALF_OPEN:
