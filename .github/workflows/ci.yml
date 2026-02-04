@@ -46,10 +46,11 @@ jobs:
         ports:
           - 27017:27017
         options: >-
-          --health-cmd "mongosh --eval 'db.runCommand({ping:1})'"
+          --health-cmd "echo 'db.runCommand(\"ping\")' | mongosh --quiet"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+          --start-period 30s
     env:
       NODE_OPTIONS: "--max-old-space-size=6144"
       MONGODB_URI: mongodb://localhost:27017
