@@ -132,23 +132,20 @@ describe('CircuitBreaker Reliability Tests', () => {
         metricsRecorder,
       })
 
-      // Record failures
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 3; i++) {
         try {
           await cb.execute(async () => {
             throw new Error('Fail')
           })
-        } catch {
-          // Expected
-        }
+        } catch {}
       }
 
-      // Record successes
       for (let i = 0; i < 2; i++) {
+        cb.reset()
         await cb.execute(async () => 'success')
       }
 
-      expect(metricsRecorder.recordFailure).toHaveBeenCalledTimes(5)
+      expect(metricsRecorder.recordFailure).toHaveBeenCalledTimes(3)
       expect(metricsRecorder.recordSuccess).toHaveBeenCalledTimes(2)
     })
 

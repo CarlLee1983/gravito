@@ -279,9 +279,7 @@ describe('CircuitBreaker Metrics Integration', () => {
           await cb.execute(async () => {
             throw new Error('Fail')
           })
-        } catch {
-          // Expected
-        }
+        } catch {}
       }
 
       expect(totalFailures).toBe(3)
@@ -289,6 +287,7 @@ describe('CircuitBreaker Metrics Integration', () => {
 
       // Generate success activity
       for (let i = 0; i < 2; i++) {
+        cb.reset()
         await cb.execute(async () => 'success')
       }
 

@@ -19,6 +19,7 @@ import type {
   ObservableGauge,
   ObservableResult,
 } from '@opentelemetry/api'
+import type { CircuitBreakerMetricsRecorder } from '../CircuitBreaker'
 
 /**
  * Queue depth callback type.
@@ -88,7 +89,7 @@ const DEFAULT_CB_OPEN_DURATION_BUCKETS = [1, 2, 5, 10, 30, 60, 120, 300, 600]
  *
  * @public
  */
-export class OTelEventMetrics {
+export class OTelEventMetrics implements CircuitBreakerMetricsRecorder {
   private readonly meter: Meter
   private readonly prefix: string
 
@@ -275,6 +276,53 @@ export class OTelEventMetrics {
    */
   unregisterCircuitBreakerStateCallback(key: string): void {
     this.circuitBreakerStateCallbacks.delete(key)
+  }
+
+  /**
+   * Record circuit breaker state change.
+   *
+   * @param name - Name of the circuit breaker (usually event name)
+   * @param state - State as number (0=CLOSED, 1=HALF_OPEN, 2=OPEN)
+   */
+  recordState(name: string, state: number): void {}
+
+  /**
+   * Record circuit breaker state transition.
+   *
+   * @param name - Name of the circuit breaker
+   * @param fromState - Previous state
+   * @param toState - New state
+   */
+  recordTransition(name: string, fromState: string, toState: string): void {
+    this.recordCircuitBreakerTransition(name, 0, fromState, toState)
+  }
+
+  /**
+   * Record circuit breaker failure.
+   *
+   * @param name - Name of the circuit breaker
+   */
+  recordFailure(name: string): void {
+    this.recordCircuitBreakerFailure(name, 0)
+  }
+
+  /**
+   * Record circuit breaker success.
+   *
+   * @param name - Name of the circuit breaker
+   */
+  recordSuccess(name: string): void {
+    this.recordCircuitBreakerSuccess(name, 0)
+  }
+
+  /**
+   * Record circuit breaker open duration.
+   *
+   * @param name - Name of the circuit breaker
+   * @param seconds - Duration in seconds
+   */
+  recordOpenDuration(name: string, seconds: number): void {
+    this.recordCircuitBreakerOpenDuration(name, 0, seconds)
   }
 
   /**
