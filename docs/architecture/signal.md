@@ -75,11 +75,13 @@ OrbitSignal 採用了經典的 Strategy Pattern 與 Factory Pattern 組合：
     -   **SmtpTransport**：基於 `nodemailer`，支援 Connection Pooling。
     -   **SesTransport**：AWS SES 整合。
 4.  **Dev Tools** (`src/dev/*`)
-    -   **DevMailbox**：記憶體內的信件儲存，具備 Ring Buffer 容量限制。
+    -   **DevMailbox**：郵件攔截器，具備 Ring Buffer 容量限制與持久化驅動支援。
+    -   **MailboxStorage**：儲存驅動介面（Memory, FileSystem）。
     -   **DevServer**：提供 `/__mail` 介面，即時預覽信件內容。
 5.  **Webhook Layer** (`src/webhooks/*`)
     -   **WebhookDriver**：處理傳入 Webhook 請求的介面。
     -   **SendGridWebhookDriver**：實作 SendGrid 事件 Webhook 處理。
+    -   **SesWebhookDriver**：實作 AWS SES (via SNS) 通知處理。
 
 ### 2. 信件發送流程
 
@@ -176,9 +178,10 @@ class Mailable {
 
 ## 風險分析與潛在問題
 
-### 5.1 記憶體管理
+### 5.1 記憶體與持久化
 -   **現況**：`DevMailbox` 使用 Ring Buffer 限制最大保留數量（預設 50 封）。
--   **優點**：有效防止長時間運行的開發伺服器發生 OOM。
+-   **持久化**：支援 `FileMailboxStorage`，讓開發郵件在伺服器重啟後依然保留。
+-   **優點**：兼顧效能與開發便利性，防止 OOM。
 
 ### 5.2 隱式依賴注入
 -   **問題**：`Mailable.queue()` 嘗試透過動態 import 獲取全域 `app()` 來解析 `mail` 服務。
@@ -206,12 +209,9 @@ class Mailable {
 
 ## 後續優化建議
 
-1.  **DevMailbox 持久化** (Priority: Low)
-    -   可選支援檔案系統儲存，避免重啟伺服器時信件消失。
+1.  **更多 Webhook Driver** (Priority: Medium)
+    -   增加 Mailgun、Postmark 等主流服務商的實作。
 
-2.  **更多 Webhook Driver** (Priority: Medium)
-    -   增加 AWS SES、Mailgun 等主流服務商的實作。
-
-3.  **MJML 組件庫** (Priority: Medium)
-    -   內建常用的 MJML 組件（如標準收據、密碼重設模板）。
+2.  **MJML 動態組件** (Priority: Medium)
+    -   結合 React/Vue 與 MJML，實現具備邏輯的響應式郵件組件。
 
