@@ -1250,13 +1250,13 @@ Ripple 不會啟動自己的 HTTP 伺服器，而是掛載在現有的 `Bun.serv
 - [x] **Message Interceptors**: 實作 Server 與 Client 雙端 Middleware 系統，支援數據脫敏、日誌追蹤與動態權限。
 
 ### 🚀 長期目標 (v5.0)
-- [ ] **Multi-Runtime Support**: 透過 uWebSockets.js 核心提供 Node.js 與 Bun 的一致性高效能表現。
-- [ ] **Protocol Buffers**: 內建 Protobuf 序列化支持，極大化行動端傳輸效率。
-- [ ] **Cluster Auto-Scaling**: 深度整合 K8s Operator，根據連線數與 CPU 負載自動調整 Ripple 實例。
+- [ ] **Multi-Runtime Support**: 透過 uWebSockets.js 核心提供 Node.js 與 Bun 的一致性高效能表現 (Status: Planned)。
+- [x] **Protocol Buffers**: 內建 Protobuf 序列化支持，極大化行動端傳輸效率 (Status: Completed v4.1)。
+- [ ] **Cluster Auto-Scaling**: 深度整合 K8s Operator，根據連線數與 CPU 負載自動調整 Ripple 實例 (Status: De-prioritized)。
 
 ---
-*最後更新：2026-02-04*
-*版本：v4.0.0 (Alpha)*
+*最後更新：2026-02-05*
+*版本：v4.0.0 (Beta)*
 
 ---
 

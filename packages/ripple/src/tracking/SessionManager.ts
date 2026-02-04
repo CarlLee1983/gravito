@@ -74,11 +74,12 @@ export class SessionManager {
    * Create a new session for a disconnected client.
    *
    * @param data - Session data to store
+   * @param token - Optional specific token to use (otherwise generates new UUID)
    * @returns Reconnection token
    */
-  createSession(data: Omit<SessionData, 'expiresAt'>): string {
-    // Generate reconnection token
-    const token = crypto.randomUUID()
+  createSession(data: Omit<SessionData, 'expiresAt'>, token?: string): string {
+    // Generate reconnection token if not provided
+    const sessionToken = token ?? crypto.randomUUID()
 
     // Check session limit
     if (this.sessions.size >= this.config.maxSessions) {
@@ -87,18 +88,18 @@ export class SessionManager {
     }
 
     // Store session
-    this.sessions.set(token, {
+    this.sessions.set(sessionToken, {
       ...data,
       expiresAt: Date.now() + this.config.sessionTTL,
     })
 
     this.logger.debug('Created session', {
-      token,
+      token: sessionToken,
       clientId: data.clientId,
       channels: data.channels.length,
     })
 
-    return token
+    return sessionToken
   }
 
   /**

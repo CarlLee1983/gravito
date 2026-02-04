@@ -392,6 +392,7 @@ export type ServerMessage =
       needAck?: boolean
     } // seq/needAck v3.7+
   | { type: 'ack_received'; seq: number } // v3.7+
+  | { type: 'reconnection_token'; token: string } // v4.0+
 
 /**
  * Context for Ripple Message Interceptors (v4.0+).
@@ -470,6 +471,7 @@ export const SERVER_MESSAGE_TYPES = {
   PONG: 'pong',
   CONNECTED: 'connected',
   BINARY: 'binary',
+  RECONNECTION_TOKEN: 'reconnection_token',
 } as const
 
 /**
@@ -797,6 +799,12 @@ export interface RippleConfig {
     /** Maximum number of stored sessions (default: 10000) */
     maxSessions?: number
   }
+
+  /**
+   * Serializer to use for messages (default: 'json').
+   * 'protobuf' requires 'protobufjs' peer dependency.
+   */
+  serializer?: 'json' | 'protobuf'
 
   /**
    * Performance & Backpressure (v3.7+).

@@ -33,6 +33,22 @@ describe('SessionManager', () => {
       expect(token.length).toBeGreaterThan(0)
     })
 
+    it('should create a session with a specific token', () => {
+      const customToken = 'custom-uuid-123'
+      const token = sessionManager.createSession(
+        {
+          clientId: 'client-custom',
+          channels: ['news'],
+        },
+        customToken
+      )
+
+      expect(token).toBe(customToken)
+
+      const retrieved = sessionManager.getSession(customToken)
+      expect(retrieved?.clientId).toBe('client-custom')
+    })
+
     it('should store session data correctly', () => {
       const sessionData = {
         clientId: 'client-123',

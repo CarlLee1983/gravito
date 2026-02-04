@@ -1,0 +1,120 @@
+syntax = "proto3";
+
+package ripple;
+
+// -------------------------------------------------------------------
+// Client -> Server Messages
+// -------------------------------------------------------------------
+
+message ClientMessage {
+  string req_id = 1; // Optional request ID for troubleshooting
+
+  oneof payload {
+    SubscribeRequest subscribe = 10;
+    UnsubscribeRequest unsubscribe = 11;
+    WhisperRequest whisper = 12;
+    PingRequest ping = 13;
+    BinaryRequest binary = 14;
+    AckRequest ack = 15;
+  }
+}
+
+message SubscribeRequest {
+  string channel = 1;
+  optional AuthData auth = 2;
+}
+
+message UnsubscribeRequest {
+  string channel = 1;
+}
+
+message WhisperRequest {
+  string channel = 1;
+  string event = 2;
+  // Payload is generic bytes, application needs to decode based on event
+  bytes data = 3; 
+}
+
+message PingRequest {}
+
+message BinaryRequest {
+  string channel = 1;
+  string event = 2;
+  bytes data = 3;
+}
+
+message AckRequest {
+  int32 seq = 1;
+}
+
+message AuthData {
+  string socket_id = 1;
+  string signature = 2;
+}
+
+// -------------------------------------------------------------------
+// Server -> Client Messages
+// -------------------------------------------------------------------
+
+message ServerMessage {
+  oneof payload {
+    ConnectedResponse connected = 10;
+    SubscribedResponse subscribed = 11;
+    UnsubscribedResponse unsubscribed = 12;
+    ErrorResponse error = 13;
+    EventMessage event = 14;
+    PresenceMessage presence = 15;
+    PongResponse pong = 16;
+    BinaryMessage binary = 17;
+    AckReceivedResponse ack_received = 18;
+    ReconnectionTokenMessage reconnection_token = 19;
+  }
+}
+
+message ConnectedResponse {
+  string socket_id = 1;
+}
+
+message SubscribedResponse {
+  string channel = 1;
+}
+
+message UnsubscribedResponse {
+  string channel = 1;
+}
+
+message ErrorResponse {
+  string code = 1;
+  string message = 2;
+  optional string channel = 3;
+}
+
+message EventMessage {
+  string channel = 1;
+  string event = 2;
+  bytes data = 3; // JSON encoded string or raw bytes
+  optional int32 seq = 4;
+  optional bool need_ack = 5;
+}
+
+message PresenceMessage {
+  string channel = 1;
+  string event = 2; // "join", "leave", "members"
+  bytes data = 3;   // JSON encoded user info
+}
+
+message PongResponse {}
+
+message BinaryMessage {
+  string channel = 1;
+  string event = 2;
+  bytes data = 3;
+}
+
+message AckReceivedResponse {
+  int32 seq = 1;
+}
+
+message ReconnectionTokenMessage {
+  string token = 1;
+}

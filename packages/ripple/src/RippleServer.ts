@@ -15,6 +15,9 @@ import { createLogger } from './logging/Logger'
 import { InterceptorManager } from './middleware/InterceptorManager'
 import { RippleMetrics } from './observability/RippleMetrics'
 import { AckManager } from './reliability/AckManager'
+import type { ISerializer } from './serializers/ISerializer'
+import { JsonSerializer } from './serializers/JsonSerializer'
+import { ProtobufSerializer } from './serializers/ProtobufSerializer'
 import type { ConnectionTracker } from './tracking/ConnectionTracker'
 import { DefaultConnectionTracker } from './tracking/ConnectionTracker'
 import { type SessionData, SessionManager } from './tracking/SessionManager'
@@ -29,7 +32,6 @@ import type {
   ServerMessage,
   WebSocketHandlerConfig,
 } from './types'
-import { MessageSerializer } from './utils/MessageSerializer'
 import { TokenBucket } from './utils/TokenBucket'
 
 /**
@@ -46,7 +48,7 @@ export class RippleServer {
   private logger: RippleLogger
   private tracker: ConnectionTracker
   private healthChecker: HealthChecker
-  private serializer: MessageSerializer
+  private serializer: ISerializer
   private whisperLimiters: Map<string, TokenBucket> = new Map()
   private sessionManager?: SessionManager
   private ackManager: AckManager
@@ -75,7 +77,10 @@ export class RippleServer {
     this.authorizer = config.authorizer
     this.tracker = config.connectionTracker ?? new DefaultConnectionTracker(this.logger)
     this.healthChecker = new HealthChecker(this, this.driver)
-    this.serializer = new MessageSerializer()
+
+    // Initialize serializer based on config
+    this.serializer =
+      config.serializer === 'protobuf' ? new ProtobufSerializer() : new JsonSerializer()
 
     // Initialize session manager if reconnection is enabled
     if (config.reconnection?.enabled) {
@@ -145,13 +150,21 @@ export class RippleServer {
       }
     }
 
+    // Generate new token if session manager is active but no valid session found
+    const finalToken =
+      sessionData && reconnectionToken
+        ? reconnectionToken
+        : this.sessionManager
+          ? crypto.randomUUID()
+          : undefined
+
     const success = server.upgrade(req, {
       data: {
         id: sessionData?.clientId ?? crypto.randomUUID(),
         channels: new Set<string>(),
         userId: sessionData?.userId ?? options?.userId,
         userInfo: sessionData?.userInfo,
-        reconnectionToken: sessionData && reconnectionToken ? reconnectionToken : undefined,
+        reconnectionToken: finalToken,
       } satisfies ClientData,
     })
 
@@ -180,6 +193,13 @@ export class RippleServer {
       type: 'connected',
       socketId: ws.data.id,
     })
+
+    if (ws.data.reconnectionToken) {
+      this.send(ws, {
+        type: 'reconnection_token',
+        token: ws.data.reconnectionToken,
+      })
+    }
 
     if (ws.data.reconnectionToken && this.sessionManager) {
       const session = this.sessionManager.getSession(ws.data.reconnectionToken)
@@ -213,11 +233,15 @@ export class RippleServer {
   ): Promise<void> {
     try {
       if (message instanceof ArrayBuffer || Buffer.isBuffer(message)) {
+        // Check if it's a raw binary message or a serialized message
+        // For now, we assume raw binary if it starts with header, but we should let serializer handle it eventually
+        // or keep separate binary path.
+        // Existing logic:
         await this.handleBinaryMessage(ws, message)
         return
       }
 
-      const data: ClientMessage = JSON.parse(message.toString())
+      const data = this.serializer.deserialize(message)
 
       await this.interceptors.execute({ ws, message: data, direction: 'incoming' }, async () => {
         switch (data.type) {
@@ -322,12 +346,15 @@ export class RippleServer {
 
   private handleClose(ws: RippleWebSocket, code: number, reason: string): void {
     if (this.sessionManager && ws.data.channels.size > 0) {
-      const token = this.sessionManager.createSession({
-        clientId: ws.data.id,
-        userId: ws.data.userId,
-        channels: Array.from(ws.data.channels),
-        userInfo: ws.data.userInfo,
-      })
+      const token = this.sessionManager.createSession(
+        {
+          clientId: ws.data.id,
+          userId: ws.data.userId,
+          channels: Array.from(ws.data.channels),
+          userInfo: ws.data.userInfo,
+        },
+        ws.data.reconnectionToken
+      )
 
       this.logger.info('Created reconnection session', {
         clientId: ws.data.id,
@@ -533,7 +560,7 @@ export class RippleServer {
     this.serializer.clearBroadcastCache()
   }
 
-  private sendRaw(ws: RippleWebSocket, serialized: string): boolean {
+  private sendRaw(ws: RippleWebSocket, serialized: string | Buffer | Uint8Array): boolean {
     const config = this.config.backpressure
     if (config?.enabled) {
       const buffered = ws.getBufferedAmount()
@@ -590,8 +617,17 @@ export class RippleServer {
   }
 
   async init(): Promise<void> {
-    this.logger.info('Initializing RippleServer', { driver: this.driver.name })
+    this.logger.info('Initializing RippleServer', {
+      driver: this.driver.name,
+      serializer: this.serializer.contentType,
+    })
+
     await this.driver.init?.()
+
+    // Initialize serializer if needed (e.g. loading proto files)
+    if ('init' in this.serializer) {
+      await (this.serializer as any).init()
+    }
 
     if (this.config.pingInterval > 0) {
       const pong = this.serializer.getPongMessage()
