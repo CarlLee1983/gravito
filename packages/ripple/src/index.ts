@@ -90,4 +90,6 @@ export type {
   ServerMessage,
   WebSocketHandlerConfig,
 } from './types'
+export { AckManager } from './reliability/AckManager'
+export { RippleMetrics } from './observability/RippleMetrics'
 export { MessageSerializer } from './utils/MessageSerializer'

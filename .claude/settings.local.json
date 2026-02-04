@@ -55,7 +55,14 @@
       "Bash(biome check:*)",
       "Bash(tsc:*)",
       "Bash(bunx tsup:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(__NEW_LINE_cb38be22b94e4a9c__ echo \"\")",
+      "Bash(git rev-list:*)",
+      "Bash(__NEW_LINE_35cfa30f2b973b8a__ echo \"=== Phase 3 背壓機制實作 - 提交摘要 ===\")",
+      "Bash(__NEW_LINE_35cfa30f2b973b8a__ echo \"Task 1.2.3.2 - EventPriorityQueue 背壓整合\")",
+      "Bash(__NEW_LINE_35cfa30f2b973b8a__ echo \"Task 1.2.3.3 - MemoryMonitor 與背壓指標\")",
+      "Bash(__NEW_LINE_35cfa30f2b973b8a__ echo \"Task 1.2.3.4 - 拒絕策略\")",
+      "Bash(__NEW_LINE_35cfa30f2b973b8a__ echo \"Task 1.2.3.5 - 背壓性能基準測試與文檔\")"
     ]
   },
   "enabledMcpjsonServers": [

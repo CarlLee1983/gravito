@@ -1,6 +1,6 @@
 ---
 title: Ripple 架構技術規格書
-version: 3.4.0
+version: 3.6.0
 status: Stable
 tier: B
 last_updated: 2026-01-28
@@ -12,7 +12,7 @@ related_orbits:
   - radiance
 ---
 
-# Ripple Architecture 技術架構規格書 (v3.4.0)
+# Ripple Architecture 技術架構規格書 (v3.6.0)
 
 ## 📖 目錄
 
@@ -139,6 +139,140 @@ sequenceDiagram
     Redis->>RippleB: Subscribe callback
     RippleB->>Client2: WebSocket message
 ```
+
+---
+
+---
+
+## v3.6 新功能
+
+### 🔄 伺服器端輔助重連 (Server-Assisted Reconnection)
+
+當客戶端意外斷線時，伺服器會自動保存其訂閱狀態，允許客戶端在短時間內重新連線並自動恢復所有頻道訂閱。
+
+#### 啟用重連功能
+
+```typescript
+const ripple = new RippleServer({
+  path: '/ws',
+  driver: 'redis', // 可選，但建議用於多節點部署
+  reconnection: {
+    enabled: true,
+    sessionTTL: 60000,      // Session 有效期 (預設: 60秒)
+    maxSessions: 10000      // 最大 Session 數量 (預設: 10000)
+  }
+})
+```
+
+#### 客戶端重連流程
+
+1. **正常連線**：客戶端首次連線並訂閱頻道
+2. **意外斷線**：伺服器自動建立 Session，保存訂閱狀態
+3. **重新連線**：客戶端使用 `reconnection_token` 參數重連
+4. **自動恢復**：伺服器自動恢復所有頻道訂閱
+
+```typescript
+// 客戶端範例 (使用 WebSocket API)
+let reconnectionToken: string | null = null
+
+const ws = new WebSocket('ws://localhost:3000/ws')
+
+ws.onmessage = (event) => {
+  const message = JSON.parse(event.data)
+  
+  // 伺服器會在斷線時透過其他方式傳送 token
+  // 或者客戶端可以從 localStorage 讀取
+  if (message.type === 'reconnection_token') {
+    reconnectionToken = message.token
+    localStorage.setItem('reconnection_token', token)
+  }
+}
+
+ws.onclose = () => {
+  // 嘗試重連
+  const token = localStorage.getItem('reconnection_token')
+  if (token) {
+    const reconnectWs = new WebSocket(`ws://localhost:3000/ws?reconnection_token=${token}`)
+    // 伺服器會自動恢復訂閱
+  }
+}
+```
+
+#### Session 管理
+
+- **自動清理**：過期的 Session 會每 30 秒自動清理
+- **容量限制**：達到 `maxSessions` 時，最舊的 Session 會被移除
+- **安全性**：使用 `crypto.randomUUID()` 生成安全的 Token
+
+---
+
+### 👥 Presence 持久化 (Presence Persistence)
+
+在多節點部署時，Presence 資料會透過 Redis 共享，確保所有伺服器實例都能看到相同的線上成員列表。
+
+#### 啟用 Presence 持久化
+
+```typescript
+const ripple = new RippleServer({
+  driver: 'redis',  // 必須使用 Redis Driver
+  redis: {
+    host: 'localhost',
+    port: 6379
+  }
+})
+```
+
+#### 使用範例
+
+```typescript
+// 客戶端訂閱 Presence 頻道
+ws.send(JSON.stringify({
+  type: 'subscribe',
+  channel: 'presence-lobby',
+  auth: {
+    socketId: 'socket-123',
+    signature: 'auth-signature'
+  }
+}))
+
+// 伺服器端授權
+ripple.config.authorizer = async (channel, userId, socketId) => {
+  if (channel.startsWith('presence-')) {
+    return {
+      id: userId,
+      info: {
+        name: 'User Name',
+        avatar: 'https://example.com/avatar.jpg',
+        status: 'online'
+      }
+    }
+  }
+  return true
+}
+
+// 查詢線上成員 (跨所有節點)
+const members = await ripple.channels.getPresenceMembers('presence-lobby')
+console.log(`Online members: ${members.length}`)
+```
+
+#### Redis 資料結構
+
+Presence 資料使用 Redis Hash 儲存：
+
+```
+Key: ripple:presence:presence-lobby
+Hash:
+  user-123 -> {"id":"user-123","info":{"name":"Alice"}}
+  user-456 -> {"id":"user-456","info":{"name":"Bob"}}
+TTL: 300 seconds (5 minutes)
+```
+
+#### 特性
+
+- **跨節點同步**：所有伺服器實例共享相同的 Presence 資料
+- **自動清理**：使用 Redis TTL 自動清理過期資料
+- **效能優化**：本地記憶體快取 + Redis 持久化
+- **容錯機制**：Redis 不可用時自動降級為本地記憶體模式
 
 ---
 
@@ -1096,19 +1230,68 @@ Ripple 不會啟動自己的 HTTP 伺服器，而是掛載在現有的 `Bun.serv
 - [x] **Message Serialization Caching**: 減少 60% CPU 序列化開銷。
 - [x] **Rate Limiting (v3.5 提前實作)**: 內建 Token Bucket 演算法實現 Whisper 頻率限制。
 - [x] **Full Observability**: 內建 Health Checks、Logging 與連線追蹤。
+- [x] **Reconnection 邏輯 (v3.6)**: 伺服器端輔助的斷線重連與狀態恢復。
+- [x] **Presence 持久化 (v3.6)**: 支援在 Redis Driver 下跨節點共享 Presence 成員列表。
 
-### ⏳ 短期目標 (v3.6)
-- [ ] **Reconnection 邏輯**: 伺服器端輔助的斷線偵測與狀態保持。
-- [ ] **Presence 持久化**: 支援在 Redis Driver 下跨節點共享 Presence 成員列表。
+### ✅ 短期目標 (v3.7) [已完成]
+- [x] **Message Acknowledgement (ACK)**: 支援服務端與客戶端雙向確認機制，確保訊息可靠送達。
+- [x] **Slow Client Isolation**: 實作遺下連線 (Slow Client) 自動斷開策略，防止背壓作用影響整體叢集。
+- [x] **Prometheus Exporter**: 整合標準監控格式，提供訊息延遲、丟包率與佇列長度等關鍵指標。
 
-### 📅 中期目標 (v4.0)
-- [ ] **NATS / Kafka Driver**: 提供比 Redis 更高吞吐量的後端驅動。
-- [ ] **Client SDK**: 發佈 `@gravito/ripple-client`，提供自動重連與頻道訂閱封裝。
+### ✅ 中期目標 (v4.0) [已完成]
+- [x] **NATS Driver**: 實作高品質 NATS 數據總線支持，支援超大規模分佈式廣播（NATS JetStream 已整合）。
+- [x] **Client SDK**: 升級 `@gravito/ripple-client`，整合 v3.6/v3.7 可靠性功能與 v4.0 攔截器支持。
+- [x] **Message Interceptors**: 實作 Server 與 Client 雙端 Middleware 系統，支援數據脫敏、日誌追蹤與動態權限。
 
 ### 🚀 長期目標 (v5.0)
-- [ ] **uWebSockets.js**: 探索 Node.js 環境下的跨 Runtime 高效能支援。
-- [ ] **Protocol Buffers**: 支援 Protobuf 序列化提升效能。
+- [ ] **Multi-Runtime Support**: 透過 uWebSockets.js 核心提供 Node.js 與 Bun 的一致性高效能表現。
+- [ ] **Protocol Buffers**: 內建 Protobuf 序列化支持，極大化行動端傳輸效率。
+- [ ] **Cluster Auto-Scaling**: 深度整合 K8s Operator，根據連線數與 CPU 負載自動調整 Ripple 實例。
 
 ---
-*最後更新：2026-02-02*
-*版本：v3.5.0*
+*最後更新：2026-02-04*
+*版本：v4.0.0 (Alpha)*
+
+---
+
+## 12. 預計功能技術規格 (Technical Specifications)
+
+### 12.1 Message Acknowledgement (ACK) - v3.7
+**場景**：確保關鍵通知（如付款成功、系統關機提醒）確實抵達客戶端。
+
+- **協定異動**：
+  ```json
+  // 伺服器發送
+  { "event": "invoice.paid", "data": { ... }, "seq": 1024, "needAck": true }
+  
+  // 客戶端回覆
+  { "event": "ack", "seq": 1024 }
+  ```
+- **追蹤機制**：`RippleServer` 會為每個 `needAck` 訊息維護一個 `PendingACK` 映射區（TTL 預設 5s）。
+- **超時處理**：若在 TTL 內未收到 ACK，系統將觸發 `ack:timeout` 事件，供應用層決定重發或記錄失敗。
+
+### 12.2 Slow Client Isolation - v3.7
+**場景**：防止網路環境極差的單一客戶端佔用伺服器緩存，拖慢整體廣播效率。
+
+- **背壓偵測 (Backpressure)**：利用 `ws.getBufferedAmount()` 監控單一 Socket 的積壓資料量。
+- **降級策略**：
+  1. **警告階段**：資料量超過 `HWM_LOW` (如 1MB)，跳過該客戶端的非關鍵事件（如 Presence 更新）。
+  2. **斷開階段**：資料量超過 `HWM_HIGH` (如 5MB)，強制中斷連線並標記為 `SLOW_CLIENT_CLOSED`。
+
+### 12.3 Client SDK (@gravito/ripple-client) - v4.0
+**核心功能**：
+- **自動狀態恢復**：斷線後自動發送最後收到的 `seqId`，請求伺服器補發（由伺服器端緩存支援）。
+- **頻道訂閱封裝**：
+  ```typescript
+  const channel = ripple.subscribe('private-orders');
+  channel.on('paid', (data) => console.log(data));
+  ```
+- **離線排隊**：當 WebSocket 斷開時，`emit()` 調用將排入佇列，連線恢復後自動按序發送。
+
+### 12.4 NATS Driver - v4.0
+**架構設計**：
+- **取代 Redis Pub/Sub**：使用 NATS JetStream 進行廣播數據分發。
+- **優勢**：NATS 提供極低的延遲與更大的訊息吞吐量（百萬級 QPS），且原生支持 Message Persistence 與 Replay 機制，與 Ripple 的 ACK 需求完美契合。
+
+---
+*Created by Antigravity Architect.*
