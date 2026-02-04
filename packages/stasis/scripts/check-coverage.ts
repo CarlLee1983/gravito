@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const lcovPath = process.argv[2] ?? 'coverage/lcov.info'
@@ -7,7 +7,20 @@ const threshold = Number.parseFloat(process.env.COVERAGE_THRESHOLD ?? '80')
 const root = resolve(process.cwd())
 const srcRoot = `${resolve(root, 'src')}/`
 
-const content = readFileSync(lcovPath, 'utf-8')
+// 檢查 lcov.info 是否存在
+if (!existsSync(lcovPath)) {
+  console.error(`Coverage file not found: ${lcovPath}`)
+  process.exit(1)
+}
+
+let content: string
+try {
+  content = readFileSync(lcovPath, 'utf-8')
+} catch (error) {
+  console.error(`Failed to read coverage file: ${error}`)
+  process.exit(1)
+}
+
 const lines = content.split('\n')
 
 let currentFile: string | null = null
