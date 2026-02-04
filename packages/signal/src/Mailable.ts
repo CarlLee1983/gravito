@@ -355,6 +355,46 @@ export abstract class Mailable implements Queueable {
     return this
   }
 
+  /**
+   * Set the content using a React component that outputs MJML.
+   *
+   * @param component - The React component.
+   * @param props - Component properties.
+   * @param options - MJML options.
+   * @returns The current mailable instance for chaining.
+   */
+  mjmlReact<P extends object>(
+    component: ComponentType,
+    props?: P,
+    options?: Record<string, any>
+  ): this {
+    this.rendererResolver = async () => {
+      const { ReactMjmlRenderer } = await import('./renderers/ReactMjmlRenderer')
+      return new ReactMjmlRenderer(component, props, options)
+    }
+    return this
+  }
+
+  /**
+   * Set the content using a Vue component that outputs MJML.
+   *
+   * @param component - The Vue component.
+   * @param props - Component properties.
+   * @param options - MJML options.
+   * @returns The current mailable instance for chaining.
+   */
+  mjmlVue<P extends object>(
+    component: ComponentType,
+    props?: P,
+    options?: Record<string, any>
+  ): this {
+    this.rendererResolver = async () => {
+      const { VueMjmlRenderer } = await import('./renderers/VueMjmlRenderer')
+      return new VueMjmlRenderer(component, props, options)
+    }
+    return this
+  }
+
   // ===== Life Cycle =====
 
   /**
