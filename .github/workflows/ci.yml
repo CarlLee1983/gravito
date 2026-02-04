@@ -51,9 +51,37 @@ jobs:
           --health-timeout 5s
           --health-retries 5
           --start-period 30s
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          --start-period 10s
+      postgres:
+        image: postgres:16-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: flux_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          --start-period 10s
     env:
       NODE_OPTIONS: "--max-old-space-size=6144"
       MONGODB_URI: mongodb://localhost:27017
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/flux_test
+      TEST_POSTGRESQL: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -93,12 +121,15 @@ jobs:
       # Run these in parallel on the same machine using Turbo
       - name: Run Typecheck & Tests
         run: |
-          # Use turbo to run both typecheck and tests in parallel on the runner
-          # Filter to only packages and satellites (exclude examples to avoid CI failures)
-          # This is faster than separate steps because it utilizes multiple cores
-          bunx turbo run typecheck test:coverage \
+          # Typecheck both packages and satellites
+          bunx turbo run typecheck \
             --filter='./packages/*' \
             --filter='./satellites/*' \
+            --concurrency=2
+
+          # Test coverage only for packages (satellites don't have tests)
+          bunx turbo run test:coverage \
+            --filter='./packages/*' \
             --concurrency=2
       
       # Check unused imports in changed packages only (avoids timeout; use --all locally for full check)
