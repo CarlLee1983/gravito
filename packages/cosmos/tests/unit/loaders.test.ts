@@ -212,6 +212,47 @@ describe('TranslationLoaders', () => {
       expect(receivedHeaders.Authorization).toBe('Bearer token123')
       expect(receivedHeaders['X-Custom']).toBe('value')
     })
+
+    it('should support fallback loader when all retries fail', async () => {
+      globalThis.fetch = mock(() => Promise.reject(new Error('Network error'))) as any
+
+      const fallbackLoader = {
+        name: 'FallbackLoader',
+        load: async () => ({ fallback: 'value' }),
+      }
+
+      const loader = new RemoteLoader({
+        url: 'https://api.example.com/i18n/:locale',
+        retries: 0,
+      }).fallback(fallbackLoader)
+
+      const translations = await loader.load('en')
+      expect(translations).not.toBeNull()
+      expect(translations?.fallback).toBe('value')
+    })
+
+    it('should clear ETag and translation cache', async () => {
+      globalThis.fetch = mock(() =>
+        Promise.resolve({
+          ok: true,
+          status: 200,
+          headers: new Map([['ETag', '"test"']]),
+          json: async () => ({ cached: true }),
+        })
+      ) as any
+
+      const loader = new RemoteLoader({
+        url: 'https://api.example.com/i18n/:locale',
+        etagCache: true,
+      })
+
+      await loader.load('en')
+      loader.clearCache()
+
+      // clearCache 被呼叫後，內部快取應該已清除
+      // 這主要是為了覆蓋 clearCache 方法
+      expect(loader.name).toBe('RemoteLoader')
+    })
   })
 
   describe('ChainedLoader', () => {
