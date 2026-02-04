@@ -373,7 +373,11 @@ export class RippleServer {
   ): Promise<void> {
     if (requiresAuth(channel)) {
       if (!this.authorizer) {
-        this.send(ws, { type: 'error', message: 'No authorizer configured', channel })
+        this.send(ws, {
+          type: 'error',
+          message: 'No authorizer configured for private channels',
+          channel,
+        })
         return
       }
 

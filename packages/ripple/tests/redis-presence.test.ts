@@ -13,6 +13,7 @@ describe('RedisDriver - Presence Persistence', () => {
     driver = new RedisDriver({
       host: process.env.REDIS_HOST || 'localhost',
       port: Number(process.env.REDIS_PORT) || 6379,
+      keyPrefix: `test:${Math.random().toString(36).substring(7)}:`,
     })
     await driver.init?.()
   })

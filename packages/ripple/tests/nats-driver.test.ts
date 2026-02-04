@@ -175,4 +175,17 @@ describe('NATSDriver', () => {
       'Failed to track presence'
     )
   })
+
+  it('should shutdown successfully', async () => {
+    await driver.init()
+    await driver.shutdown()
+    expect(driver.isInitialized).toBe(false)
+  })
+
+  it('should return status', async () => {
+    await driver.init()
+    const status = driver.getStatus()
+    expect(status.name).toBe('nats')
+    expect(status.initialized).toBe(true)
+  })
 })
