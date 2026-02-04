@@ -122,7 +122,7 @@ export class Gate {
       if (typeof policyClass === 'function' && 'model' in policyClass) {
         const model = (policyClass as any).model
         if (model) {
-          this.policy(model as Constructor, new (policyClass as Constructor)())
+          this.policy(model as Constructor, new (policyClass as any)())
         }
       }
     }
@@ -241,9 +241,7 @@ export class Gate {
       const policy = guesser(modelConstructor)
       if (policy) {
         const instance =
-          typeof policy === 'function'
-            ? new (policy as Constructor)()
-            : (policy as Record<string, unknown>)
+          typeof policy === 'function' ? new (policy as any)() : (policy as Record<string, unknown>)
         this.policy(modelConstructor, instance)
         return instance
       }

@@ -276,7 +276,6 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
 
   protected getSession(): SessionContract | undefined {
     return this.ctx.get('session' as keyof import('@gravito/core').GravitoVariables) as
-      | unknown
       | SessionContract
       | undefined
   }
