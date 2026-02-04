@@ -1,9 +1,11 @@
 import type { GravitoContext } from '@gravito/core'
 import type { Authenticatable } from '../contracts/Authenticatable'
 import type { StatefulGuard } from '../contracts/Guard'
+import type { SessionRepository } from '../contracts/SessionRepository'
 import type { UserProvider } from '../contracts/UserProvider'
 
 interface SessionContract {
+  id?(): string
   get(key: string): string | number | undefined
   put(key: string, value: unknown): void
   forget(key: string): void
@@ -33,6 +35,7 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
   protected loggedOut = false
   protected rememberCookieName = 'remember_token'
   protected rememberDuration = 60 * 60 * 24 * 30
+  protected sessionRepository?: SessionRepository
 
   /**
    * Create a new session guard instance.
@@ -48,6 +51,16 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
     protected ctx: GravitoContext,
     protected sessionKey = 'auth_session'
   ) {}
+
+  /**
+   * Set the session repository for multi-device management.
+   *
+   * @param repository - The session repository implementation
+   */
+  public setSessionRepository(repository: SessionRepository): this {
+    this.sessionRepository = repository
+    return this
+  }
 
   /**
    * Determine if the current user is authenticated.
@@ -81,9 +94,7 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
       return this.userInstance
     }
 
-    const session = this.ctx.get(
-      'session' as keyof import('@gravito/core').GravitoVariables
-    ) as unknown as SessionContract | undefined
+    const session = this.getSession()
     const id = session?.get(this.getName())
 
     if (id) {
@@ -174,9 +185,7 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
 
     this.userInstance = user
 
-    const session = this.ctx.get(
-      'session' as keyof import('@gravito/core').GravitoVariables
-    ) as unknown as SessionContract | undefined
+    const session = this.getSession()
     if (session) {
       if (typeof session.regenerate === 'function') {
         await session.regenerate()
@@ -202,9 +211,7 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
   async logout(): Promise<void> {
     this.userInstance = null
     this.loggedOut = true
-    const session = this.ctx.get(
-      'session' as keyof import('@gravito/core').GravitoVariables
-    ) as unknown as SessionContract | undefined
+    const session = this.getSession()
     if (session) {
       session.forget(this.getName())
       if (typeof session.regenerate === 'function') {
@@ -212,6 +219,66 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
       }
     }
     this.ctx.header('Set-Cookie', `${this.rememberCookieName}=; Path=/; HttpOnly; Max-Age=0`)
+  }
+
+  /**
+   * Log the user out of all devices/sessions.
+   *
+   * Requires a SessionRepository to be configured.
+   */
+  async logoutOtherDevices(currentPassword?: string): Promise<void> {
+    if (!this.sessionRepository) {
+      throw new Error('SessionRepository is not configured.')
+    }
+
+    const user = await this.user()
+    if (!user) {
+      return
+    }
+
+    // Verify password if provided
+    if (currentPassword) {
+      const valid = await this.provider.validateCredentials(user, {
+        password: currentPassword,
+      })
+      if (!valid) {
+        throw new Error('Invalid password.')
+      }
+    }
+
+    const session = this.getSession()
+    const currentSessionId = session?.id ? session.id() : null
+
+    if (currentSessionId) {
+      await this.sessionRepository.destroyAllByUserIdExcept(
+        user.getAuthIdentifier(),
+        currentSessionId
+      )
+    }
+  }
+
+  /**
+   * Log the user out of all devices including the current one.
+   */
+  async logoutAllDevices(): Promise<void> {
+    if (!this.sessionRepository) {
+      throw new Error('SessionRepository is not configured.')
+    }
+
+    const user = await this.user()
+    if (!user) {
+      return
+    }
+
+    await this.sessionRepository.destroyAllByUserId(user.getAuthIdentifier())
+    await this.logout()
+  }
+
+  protected getSession(): SessionContract | undefined {
+    return this.ctx.get('session' as keyof import('@gravito/core').GravitoVariables) as
+      | unknown
+      | SessionContract
+      | undefined
   }
 
   /**
