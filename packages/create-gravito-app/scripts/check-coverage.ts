@@ -6,6 +6,7 @@ const threshold = Number.parseFloat(process.env.COVERAGE_THRESHOLD ?? '80')
 
 const root = resolve(process.cwd())
 const srcRoot = `${resolve(root, 'src')}/`
+const rootIndexPath = `${resolve(root)}/index.`
 
 // 檢查 lcov.info 是否存在
 if (!existsSync(lcovPath)) {
@@ -31,7 +32,8 @@ for (const line of lines) {
   if (line.startsWith('SF:')) {
     const filePath = line.slice(3).trim()
     const abs = resolve(root, filePath)
-    currentFile = abs.startsWith(srcRoot) ? abs : null
+    // 接受 src/ 目錄或根目錄的 index.* 檔案
+    currentFile = abs.startsWith(srcRoot) || abs.startsWith(rootIndexPath) ? abs : null
     continue
   }
 
