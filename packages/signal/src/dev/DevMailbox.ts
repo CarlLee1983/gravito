@@ -120,12 +120,13 @@ export class DevMailbox {
    * Deletes a specific message by ID.
    */
   async delete(id: string): Promise<boolean> {
+    if (this.storage.delete) {
+      return await this.storage.delete(id)
+    }
+
     const entries = await this.storage.all()
     const index = entries.findIndex((e) => e.id === id)
     if (index !== -1) {
-      // Note: This logic assumes simple array rewrite for storage engines.
-      // In more complex ones, we might need a dedicated delete method in MailboxStorage.
-      // But for now, let's keep it simple.
       await this.clear()
       entries.splice(index, 1)
       for (const entry of entries.reverse()) {

@@ -39,16 +39,36 @@ export class ReactMjmlRenderer<P extends object = object> implements Renderer {
    * @throws {Error} If MJML rendering fails.
    */
   async render(data: Record<string, unknown>): Promise<RenderResult> {
-    const createElement = this.deps.createElement ?? (await import('react')).createElement
-    const renderToStaticMarkup =
-      this.deps.renderToStaticMarkup ?? (await import('react-dom/server')).renderToStaticMarkup
-    const mjml2html = this.deps.mjml2html ?? (await import('mjml')).default
+    let { createElement, renderToStaticMarkup, mjml2html } = this.deps
+
+    if (!createElement || !renderToStaticMarkup) {
+      try {
+        const react = await import('react')
+        const reactDomServer = await import('react-dom/server')
+        createElement ??= react.createElement
+        renderToStaticMarkup ??= reactDomServer.renderToStaticMarkup
+      } catch (_e) {
+        throw new Error(
+          '[OrbitSignal] The "react" and "react-dom" packages are required for ReactMjmlRenderer. Please install them using "bun add react react-dom".'
+        )
+      }
+    }
+
+    if (!mjml2html) {
+      try {
+        mjml2html = (await import('mjml')).default
+      } catch (_e) {
+        throw new Error(
+          '[OrbitSignal] The "mjml" package is required for ReactMjmlRenderer. Please install it using "bun add mjml".'
+        )
+      }
+    }
 
     const mergedProps = { ...this.props, ...data } as P
-    const element = createElement(this.component, mergedProps)
-    const mjml = renderToStaticMarkup(element)
+    const element = createElement!(this.component, mergedProps)
+    const mjml = renderToStaticMarkup!(element)
 
-    const { html, errors } = mjml2html(mjml, {
+    const { html, errors } = mjml2html!(mjml, {
       validationLevel: 'soft',
       ...this.options,
     })

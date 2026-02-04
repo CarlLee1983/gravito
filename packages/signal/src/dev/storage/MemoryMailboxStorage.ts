@@ -24,4 +24,13 @@ export class MemoryMailboxStorage implements MailboxStorage {
   async clear(): Promise<void> {
     this.entries = []
   }
+
+  async delete(id: string): Promise<boolean> {
+    const index = this.entries.findIndex((e) => e.id === id)
+    if (index !== -1) {
+      this.entries.splice(index, 1)
+      return true
+    }
+    return false
+  }
 }

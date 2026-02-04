@@ -44,6 +44,17 @@ export class FileMailboxStorage implements MailboxStorage {
     }
   }
 
+  async delete(id: string): Promise<boolean> {
+    const entries = await this.all()
+    const index = entries.findIndex((e) => e.id === id)
+    if (index !== -1) {
+      entries.splice(index, 1)
+      await this.save(entries)
+      return true
+    }
+    return false
+  }
+
   private async save(entries: MailboxEntry[]): Promise<void> {
     try {
       await mkdir(join(this.filePath, '..'), { recursive: true })

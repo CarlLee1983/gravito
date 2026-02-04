@@ -10,6 +10,6 @@ export interface MailboxStorage {
   push(entry: MailboxEntry): Promise<void>
   /** Trim entries to a specific count. */
   trim(max: number): Promise<void>
-  /** Clear all entries. */
   clear(): Promise<void>
+  delete?(id: string): Promise<boolean>
 }

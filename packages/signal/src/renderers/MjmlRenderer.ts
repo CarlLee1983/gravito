@@ -42,7 +42,17 @@ export class MjmlRenderer implements Renderer {
    * @throws {Error} If MJML dependencies cannot be loaded or rendering fails.
    */
   async render(): Promise<RenderResult> {
-    const mjml2html = this.deps.mjml2html ?? (await import('mjml')).default
+    let mjml2html = this.deps.mjml2html
+
+    if (!mjml2html) {
+      try {
+        mjml2html = (await import('mjml')).default
+      } catch (_e) {
+        throw new Error(
+          '[OrbitSignal] The "mjml" package is required for MjmlRenderer. Please install it using "bun add mjml".'
+        )
+      }
+    }
 
     const { html, errors } = mjml2html(this.content, {
       validationLevel: 'soft',

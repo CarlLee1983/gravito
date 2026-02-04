@@ -28,20 +28,7 @@ export class SesWebhookDriver implements WebhookDriver {
 
     // Handle SNS Notifications
     if (body.Type === 'Notification') {
-      const message = JSON.parse(body.Message as string)
-      const eventType = message.notificationType?.toLowerCase() || 'unknown'
-
-      return [
-        {
-          event: eventType,
-          payload: message,
-        },
-      ]
-    }
-
-    // Handle SNS Notifications
-    if (body.Type === 'Notification') {
-      const message = JSON.parse(body.Message)
+      const message = typeof body.Message === 'string' ? JSON.parse(body.Message) : body.Message
       const eventType = message.notificationType?.toLowerCase() || 'unknown'
 
       return [

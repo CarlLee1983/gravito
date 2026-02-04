@@ -40,20 +40,40 @@ export class VueMjmlRenderer<P extends object = object> implements Renderer {
    * @throws {Error} If MJML rendering fails.
    */
   async render(data: Record<string, unknown>): Promise<RenderResult> {
-    const createSSRApp = this.deps.createSSRApp ?? (await import('vue')).createSSRApp
-    const h = this.deps.h ?? (await import('vue')).h
-    const renderToString =
-      this.deps.renderToString ?? (await import('@vue/server-renderer')).renderToString
-    const mjml2html = this.deps.mjml2html ?? (await import('mjml')).default
+    let { createSSRApp, h, renderToString, mjml2html } = this.deps
+
+    if (!createSSRApp || !h || !renderToString) {
+      try {
+        const vue = await import('vue')
+        const vueServerRenderer = await import('@vue/server-renderer')
+        createSSRApp ??= vue.createSSRApp
+        h ??= vue.h
+        renderToString ??= vueServerRenderer.renderToString
+      } catch (_e) {
+        throw new Error(
+          '[OrbitSignal] The "vue" and "@vue/server-renderer" packages are required for VueMjmlRenderer. Please install them using "bun add vue @vue/server-renderer".'
+        )
+      }
+    }
+
+    if (!mjml2html) {
+      try {
+        mjml2html = (await import('mjml')).default
+      } catch (_e) {
+        throw new Error(
+          '[OrbitSignal] The "mjml" package is required for VueMjmlRenderer. Please install it using "bun add mjml".'
+        )
+      }
+    }
 
     const mergedProps = { ...this.props, ...data }
-    const app = createSSRApp({
-      render: () => h(this.component, mergedProps),
+    const app = createSSRApp!({
+      render: () => h!(this.component, mergedProps),
     })
 
-    const mjml = await renderToString(app)
+    const mjml = await renderToString!(app)
 
-    const { html, errors } = mjml2html(mjml, {
+    const { html, errors } = mjml2html!(mjml, {
       validationLevel: 'soft',
       ...this.options,
     })
