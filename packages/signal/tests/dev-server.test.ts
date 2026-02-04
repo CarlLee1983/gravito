@@ -20,7 +20,7 @@ const createCore = () => {
 describe('DevServer', () => {
   it('registers mailbox routes and serves entries', async () => {
     const mailbox = new DevMailbox()
-    const entry = mailbox.add({
+    const entry = await mailbox.add({
       from: { address: 'from@example.com' },
       to: [{ address: 'to@example.com' }],
       subject: 'Hello',

@@ -10,15 +10,15 @@ describe('DevMailbox', () => {
     html: '<h1>Hello</h1>',
   }
 
-  it('should respect the default maximum entries (50)', () => {
+  it('should respect the default maximum entries (50)', async () => {
     const mailbox = new DevMailbox()
 
     // Add 60 messages
     for (let i = 0; i < 60; i++) {
-      mailbox.add({ ...mockMessage, subject: `Test ${i}` })
+      await mailbox.add({ ...mockMessage, subject: `Test ${i}` })
     }
 
-    const list = mailbox.list()
+    const list = await mailbox.list()
     expect(list.length).toBe(50)
     // Should keep the newest (Test 59)
     expect(list[0].envelope.subject).toBe('Test 59')
@@ -26,27 +26,29 @@ describe('DevMailbox', () => {
     expect(list[49].envelope.subject).toBe('Test 10')
   })
 
-  it('should respect custom maximum entries via constructor', () => {
+  it('should respect custom maximum entries via constructor', async () => {
     const mailbox = new DevMailbox(10)
 
     for (let i = 0; i < 15; i++) {
-      mailbox.add(mockMessage)
+      await mailbox.add(mockMessage)
     }
 
-    expect(mailbox.list().length).toBe(10)
+    const list = await mailbox.list()
+    expect(list.length).toBe(10)
   })
 
-  it('should respect setMaxEntries and trim existing entries', () => {
+  it('should respect setMaxEntries and trim existing entries', async () => {
     const mailbox = new DevMailbox(20)
 
     for (let i = 0; i < 20; i++) {
-      mailbox.add({ ...mockMessage, subject: `Test ${i}` })
+      await mailbox.add({ ...mockMessage, subject: `Test ${i}` })
     }
 
-    expect(mailbox.list().length).toBe(20)
+    expect((await mailbox.list()).length).toBe(20)
 
-    mailbox.setMaxEntries(5)
-    expect(mailbox.list().length).toBe(5)
-    expect(mailbox.list()[0].envelope.subject).toBe('Test 19')
+    await mailbox.setMaxEntries(5)
+    const list = await mailbox.list()
+    expect(list.length).toBe(5)
+    expect(list[0].envelope.subject).toBe('Test 19')
   })
 })
