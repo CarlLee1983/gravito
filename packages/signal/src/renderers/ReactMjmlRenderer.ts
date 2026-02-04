@@ -7,10 +7,19 @@ import type { Renderer, RenderResult } from './Renderer'
  * Renders React components to MJML string using SSR, then converts
  * the MJML to responsive HTML.
  *
+ * @typeParam P - Props type for the React component.
  * @public
  * @since 1.1.0
  */
 export class ReactMjmlRenderer<P extends object = object> implements Renderer {
+  /**
+   * Creates an instance of ReactMjmlRenderer.
+   *
+   * @param component - The React component to render.
+   * @param props - Initial props for the component.
+   * @param options - Optional MJML transformation options.
+   * @param deps - Optional dependency injection for testing.
+   */
   constructor(
     private component: any,
     private props?: P,
@@ -22,6 +31,13 @@ export class ReactMjmlRenderer<P extends object = object> implements Renderer {
     } = {}
   ) {}
 
+  /**
+   * Renders the React component to a static HTML string via MJML.
+   *
+   * @param data - Runtime data to be merged with initial props.
+   * @returns A promise resolving to the rendered content.
+   * @throws {Error} If MJML rendering fails.
+   */
   async render(data: Record<string, unknown>): Promise<RenderResult> {
     const createElement = this.deps.createElement ?? (await import('react')).createElement
     const renderToStaticMarkup =

@@ -13,6 +13,9 @@ import type { WebhookDriver } from '../types'
 export class SesWebhookDriver implements WebhookDriver {
   /**
    * Handles the AWS SES/SNS webhook request.
+   *
+   * @param c - The Gravito request context.
+   * @returns Array of processed events or null if ignored.
    */
   async handle(c: GravitoContext): Promise<{ event: string; payload: any }[] | null> {
     const body = (await c.req.json()) as any

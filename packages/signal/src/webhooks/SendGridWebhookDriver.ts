@@ -59,7 +59,14 @@ export class SendGridWebhookDriver implements WebhookDriver {
 
   /**
    * Verifies the SendGrid webhook signature.
-   * Note: Real SendGrid validation uses Elliptic Curve (ECDSA).
+   *
+   * @param payload - Raw request body string.
+   * @param signature - Signature from X-Twilio-Email-Event-Webhook-Signature header.
+   * @param timestamp - Timestamp from X-Twilio-Email-Event-Webhook-Timestamp header.
+   * @returns True if signature is valid.
+   *
+   * @remarks
+   * Real SendGrid validation uses Elliptic Curve (ECDSA).
    * This is a placeholder for the logic structure.
    */
   private verifySignature(payload: string, signature: string, timestamp: string): boolean {

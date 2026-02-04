@@ -7,10 +7,19 @@ import type { Renderer, RenderResult } from './Renderer'
  * Renders Vue 3 components to MJML string using SSR, then converts
  * the MJML to responsive HTML.
  *
+ * @typeParam P - Props type for the Vue component.
  * @public
  * @since 1.1.0
  */
 export class VueMjmlRenderer<P extends object = object> implements Renderer {
+  /**
+   * Creates an instance of VueMjmlRenderer.
+   *
+   * @param component - The Vue component to render.
+   * @param props - Initial props for the component.
+   * @param options - Optional MJML transformation options.
+   * @param deps - Optional dependency injection for testing.
+   */
   constructor(
     private component: any,
     private props?: P,
@@ -23,6 +32,13 @@ export class VueMjmlRenderer<P extends object = object> implements Renderer {
     } = {}
   ) {}
 
+  /**
+   * Renders the Vue component to a static HTML string via MJML.
+   *
+   * @param data - Runtime data to be merged with initial props.
+   * @returns A promise resolving to the rendered content.
+   * @throws {Error} If MJML rendering fails.
+   */
   async render(data: Record<string, unknown>): Promise<RenderResult> {
     const createSSRApp = this.deps.createSSRApp ?? (await import('vue')).createSSRApp
     const h = this.deps.h ?? (await import('vue')).h
