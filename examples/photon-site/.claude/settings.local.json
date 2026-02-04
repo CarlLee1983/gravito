@@ -31,7 +31,10 @@
       "Bash(gh run view:*)",
       "Bash(gh pr create:*)",
       "Bash(git commit:*)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(for:*)",
+      "Bash(done)",
+      "Bash(bunx biome check:*)"
     ]
   }
 }
