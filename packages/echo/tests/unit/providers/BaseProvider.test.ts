@@ -74,9 +74,31 @@ class TestProvider extends BaseProvider {
   public testPayloadToString(payload: string | Buffer) {
     return this.payloadToString(payload)
   }
+
+  // Expose tolerance for testing
+  public getTolerance() {
+    return (this as any).tolerance
+  }
 }
 
 describe('BaseProvider', () => {
+  describe('constructor options', () => {
+    it('should use default tolerance of 300', () => {
+      const provider = new TestProvider()
+      expect(provider.getTolerance()).toBe(300)
+    })
+
+    it('should accept custom tolerance', () => {
+      const provider = new TestProvider({ tolerance: 600 })
+      expect(provider.getTolerance()).toBe(600)
+    })
+
+    it('should allow zero tolerance', () => {
+      const provider = new TestProvider({ tolerance: 0 })
+      expect(provider.getTolerance()).toBe(0)
+    })
+  })
+
   describe('createFailure', () => {
     it('should return valid:false with error message', () => {
       const provider = new TestProvider()
