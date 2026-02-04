@@ -1,12 +1,12 @@
 ---
 title: Sentinel Architecture 技術架構規格書
-version: 1.0.0
+version: 2.0.0
 status: Stable
 tier: C
-last_updated: 2026-01-29
+last_updated: 2026-02-04
 ---
 
-# 🌌 Sentinel Architecture 技術架構規格書 (v1.0)
+# 🌌 Sentinel Architecture 技術架構規格書 (v2.0)
 
 本文件詳述 `@gravito/sentinel` 的內部架構、多重 Guard 系統設計以及與核心安全機制的整合。
 
@@ -51,8 +51,8 @@ Sentinel 受到 Laravel Auth 的啟發，旨在提供一個靈活、可擴展的
 - **職責**：執行具體的驗證邏輯。
 - **位置**：`src/guards/`
 - **內建 Guards**：
-  - **`SessionGuard`**: 基於 Session ID 與 `OrbitPulsar` 整合，支援 "Remember Me" (長期 Cookie)。
-    - 方法：`attempt(credentials, remember)`, `login(user, remember)`, `logout()`, `user()`, `check()`, `guest()`
+  - **`SessionGuard`**: 基於 Session ID 與 `OrbitPulsar` 整合，支援 "Remember Me" (長期 Cookie) 與多裝置登出 (v2.0)。
+    - 方法：`attempt`, `login`, `logout`, `logoutOtherDevices`, `logoutAllDevices`
   - **`JwtGuard`**: 驗證 `Authorization: Bearer` 標頭中的 JWT，支援 `HS256`/`RS256`。
     - 可選的查詢參數令牌支援 (`allowQueryToken`)。
   - **`JwtRefreshGuard` (NEW)**：支援訪問令牌和刷新令牌對的 JWT 驗證。
@@ -66,6 +66,7 @@ Sentinel 受到 Laravel Auth 的啟發，旨在提供一個靈活、可擴展的
 - **位置**：`src/providers/`
 - **核心實作**：
   - **`CallbackUserProvider`**: 最通用的 Provider，透過回調函數 (`retrieveById`, `retrieveByCredentials`) 橋接任意 ORM (Atlas, Prisma, TypeORM)。
+  - **`CallbackSocialUserProvider` (v1.1)**: 擴展自 CallbackUserProvider，支援 OIDC/OAuth2 社交登入 (`retrieveBySocialId`, `mapUserFromSocialProfile`)。
   - **`CachedUserProvider`**: 裝飾器模式，包裝其他 Provider，利用內存快取減少資料庫查詢。
     - 支援 TTL 快取（預設 60 秒）。
     - LRU 驅逐策略（預設最多快取 100 個用戶）。
@@ -79,7 +80,7 @@ Sentinel 受到 Laravel Auth 的啟發，旨在提供一個靈活、可擴展的
   - `allows(ability, ...args)`: 檢查權限（返回 boolean）。
   - `denies(ability, ...args)`: 反向檢查權限。
   - `forUser(userResolver)`: 為特定用戶上下文創建 Gate 實例。
-  - **Auto-Discovery** (Future): 未來將支援自動掃描 Policy 類別並綁定到 Model。
+  - **Auto-Discovery** (v1.2): 支援透過 `gate.discover()` 自動註冊 Model 對應的 Policy，或透過 `gate.guessPolicyUsing()` 自定義解析邏輯。
 
 ### 2.6 Email Verification (新增)
 - **職責**：支援電子郵件地址驗證流程。
@@ -88,6 +89,13 @@ Sentinel 受到 Laravel Auth 的啟發，旨在提供一個靈活、可擴展的
   - 生成驗證令牌並將其編碼為 URL 安全的簽名。
   - 驗證令牌簽名的完整性。
   - 支援自定義驗證 URL 和電子郵件模板。
+
+### 2.7 Multi-Device & Session Management (v2.0)
+- **職責**：管理用戶跨裝置的 Session 狀態。
+- **介面**：`SessionRepository` 用於定義後端儲存合約。
+- **功能**：
+  - `logoutOtherDevices(password?)`: 登出除當前 Session 外的所有裝置。
+  - `logoutAllDevices()`: 登出所有裝置。
 
 ---
 
@@ -128,8 +136,7 @@ Sentinel 內建了完整的密碼重設流程 (`PasswordBroker`)。
 - **風險**：若用戶權限被移除或帳號被盜，無法立即失效。
 - **解法**：Sentinel 提供多層吊銷機制：
   - **`JwtRefreshGuard` 與 `TokenBlacklist`**：允許將特定 JWT 加入黑名單 (JTI Claim)，實現即時吊銷。
-  - **目前實現**：`InMemoryTokenBlacklist` 適用於單一進程應用。
-  - **未來增強**：支援 Redis 分佈式黑名單，用於多進程/多伺服器部署。
+  - **目前實現**：`RedisTokenBlacklist` (v1.1) 支援分散式黑名單，適用於多進程/多伺服器部署。
 
 ### 4.2 暴力破解 (Brute Force)
 `throttleAuth` 中間件提供了登入頻率限制。
@@ -156,7 +163,7 @@ Sentinel 內建了完整的密碼重設流程 (`PasswordBroker`)。
 
 ### 5.1 OrbitSentinel 配置示例
 ```typescript
-import { OrbitSentinel } from '@gravito/sentinel'
+import { OrbitSentinel, CallbackSocialUserProvider } from '@gravito/sentinel'
 import type { AuthConfig } from '@gravito/sentinel'
 
 const authConfig: AuthConfig = {
@@ -174,11 +181,6 @@ const authConfig: AuthConfig = {
       provider: 'users',
       secret: process.env.JWT_SECRET,
       algo: 'HS256'
-    },
-    'api-token': {
-      driver: 'token',
-      provider: 'users',
-      hash: true
     }
   },
   providers: {
@@ -193,13 +195,16 @@ const sentinel = new OrbitSentinel({
   hash: {
     default: 'bcrypt'
   },
-  passwordReset: {
-    enabled: true,
-    ttlMinutes: 60
-  },
-  emailVerification: {
-    enabled: true,
-    secret: process.env.APP_KEY
+  bindings: {
+    providers: {
+      // 註冊 Social Provider (v1.1)
+      'social': (config) => new CallbackSocialUserProvider(
+        async (id) => findUser(id),
+        async (u, c) => validate(u, c),
+        async (provider, socialId) => findSocialUser(provider, socialId),
+        async (provider, profile) => mapSocialUser(provider, profile)
+      )
+    }
   }
 })
 
@@ -208,122 +213,46 @@ core.install(sentinel)
 
 ### 5.2 中間件使用
 ```typescript
-import { auth, guest, can, throttleAuth } from '@gravito/sentinel'
+import { auth, guest, can, role, permission, throttleAuth } from '@gravito/sentinel'
 
-// 驗證用戶
-app.post('/profile', auth(), async (c) => {
-  const user = await c.get('auth').user()
-  return c.json({ user })
+// 1. RBAC (v1.2) - 基於角色的存取控制
+app.delete('/users/:id', role('admin'), async (c) => {
+  // 僅 Admin 可訪問
 })
 
-// 訪客路由
-app.get('/login', guest(), async (c) => {
-  return c.html(renderLogin())
+// 2. Permission (v1.2) - 基於權限的存取控制
+app.post('/posts', permission('create-post'), async (c) => {
+  // 僅有 create-post 權限者可訪問
 })
 
-// 權限檢查
-app.delete('/post/:id', can('delete-post'), async (c) => {
-  // 僅具有 'delete-post' 能力的用戶可訪問
+// 3. Gate Policy (v1.0) - 細粒度邏輯
+app.patch('/posts/:id', can('update'), async (c) => {
+  // 透過 Gate/Policy 檢查 update 權限 (例如: 僅作者可編輯)
 })
 
-// 速率限制登入
+// 4. Rate Limiting
 app.post('/login', throttleAuth({ maxAttempts: 5 }), async (c) => {
   // 登入邏輯
 })
 ```
 
-### 5.3 Authorization Gates 定義
-```typescript
-const gate = c.get('gate')
-
-gate.define('view-post', (user, post) => {
-  return user.id === post.author_id || user.role === 'admin'
-})
-
-gate.define('delete-post', (user, post) => {
-  return user.id === post.author_id && user.role !== 'banned'
-})
-
-// 使用 Gate
-if (await gate.allows('view-post', currentUser, post)) {
-  // 用戶有權限
-}
-```
-
 ---
 
-## 6. 版本變更與遷移指南
+## 6. 版本歷史與變更
 
-### v3 → v4 重大變更 (Breaking Changes)
+### v2.0 (Latest)
+- **Multi-Device Session**: `SessionGuard` 支援 `logoutOtherDevices` 與 `logoutAllDevices`。
+- **SessionRepository**: 定義了 Session 儲存合約，供多裝置管理使用。
+- **FIDO2 / WebAuthn**: 引入 `WebAuthnService` 合約介面，為未來的無密碼登入鋪路。
 
-#### 1. CallbackUserProvider 移除默認 Mock
-**v3**:
-```typescript
-// 曾默認回退到 global.MOCK_USERS
-```
+### v1.2
+- **RBAC Middleware**: 新增 `role()` 與 `permission()` 中間件。
+- **Policy Discovery**: `Gate` 支援自動發現與猜測 Policy 類別。
 
-**v4** (必須提供回調):
-```typescript
-const auth = new AuthManager(ctx, config, {
-  users: (cfg) => new CallbackUserProvider({
-    async retrieveById(id) { /* ... */ },
-    async retrieveByCredentials(creds) { /* ... */ }
-  })
-})
-```
-
-#### 2. 中間件類型簽名
-**v3**:
-```typescript
-app.get('/admin', auth(), async (c: any, next: any) => { ... })
-```
-
-**v4**:
-```typescript
-import type { GravitoContext, GravitoNext } from '@gravito/core'
-app.get('/admin', auth(), async (c: GravitoContext, next: GravitoNext) => { ... })
-```
-
-### v4 新功能
-
-#### 1. Remember Me 支援
-```typescript
-// SessionGuard 現已支援持久化會話
-await auth.attempt(credentials, true) // 啟用 Remember Me
-```
-
-#### 2. JWT 刷新令牌
-```typescript
-// 使用 JwtRefreshGuard 實現訪問/刷新令牌對
-const tokens = await guard.createTokenPair(user)
-// { accessToken, refreshToken, expiresIn }
-
-const newTokens = await guard.refreshTokens(refreshToken)
-```
-
-#### 3. 電子郵件驗證
-```typescript
-const emailVerification = c.get('emailVerification')
-const token = await emailVerification.generate(user.id, user.email)
-// 發送驗證連結，用戶點擊後呼叫 verify()
-```
-
----
-
-## 6. 後續優化建議
-
-### 短期 (v1.1)
-1. **OIDC / OAuth2 Support**：整合 Social Login (Google, GitHub)，提供統一的 `SocialUserProvider`。
-2. **Multi-Tenancy**：增強 Guard 以支援多租戶架構 (自動過濾 Tenant ID)。
-3. **Redis Token Blacklist**：支援分佈式 Redis 令牌黑名單實現。
-
-### 中期 (v1.2)
-1. **RBAC Middleware**：提供 `role:admin` 與 `permission:edit-post` 中間件，簡化路由權限控制。
-2. **Policy Auto-Discovery**：自動掃描並註冊 Policy 類別。
-
-### 長期 (v2.0)
-1. **FIDO2 / WebAuthn**：原生支援 Passkeys 無密碼登入。
-2. **Multi-Device Session Management**：支援多設備登入和遠程登出。
+### v1.1
+- **Social Login**: 新增 `CallbackSocialUserProvider` 支援 OIDC/OAuth2。
+- **Redis Token Blacklist**: 支援分散式 JWT 黑名單。
+- **Multi-Tenancy**: Guard 內建 Tenant ID 隔離檢查。
 
 ---
 *Created by Gravito Architect.*
