@@ -106,6 +106,7 @@ export class OTelEventMetrics implements CircuitBreakerMetricsRecorder {
 
   private queueDepthCallback?: QueueDepthCallback
   private circuitBreakerStateCallbacks: Map<string, CircuitBreakerStateCallback> = new Map()
+  private recordedCircuitBreakerStates: Map<string, number> = new Map()
 
   /**
    * Bucket boundaries for dispatch duration histogram.
@@ -178,6 +179,12 @@ export class OTelEventMetrics implements CircuitBreakerMetricsRecorder {
         observableResult.observe(state.state, {
           event_name: state.eventName,
           listener_index: String(state.listenerIndex),
+        })
+      }
+      for (const [name, state] of this.recordedCircuitBreakerStates.entries()) {
+        observableResult.observe(state, {
+          event_name: name,
+          listener_index: '0',
         })
       }
     })
@@ -284,7 +291,9 @@ export class OTelEventMetrics implements CircuitBreakerMetricsRecorder {
    * @param name - Name of the circuit breaker (usually event name)
    * @param state - State as number (0=CLOSED, 1=HALF_OPEN, 2=OPEN)
    */
-  recordState(_name: string, _state: number): void {}
+  recordState(name: string, state: number): void {
+    this.recordedCircuitBreakerStates.set(name, state)
+  }
 
   /**
    * Record circuit breaker state transition.

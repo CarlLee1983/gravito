@@ -255,12 +255,7 @@ export class CircuitBreaker {
     const now = Date.now()
 
     if (this.state === CircuitBreakerState.OPEN) {
-      const resetTimeout = this.config.resetTimeout
-      const remaining = this.openedAt
-        ? Math.ceil((this.openedAt.getTime() + resetTimeout - now) / 1000)
-        : Math.ceil(resetTimeout / 1000)
-
-      throw new Error(`Circuit breaker is OPEN for ${this.name}. Retry in ${remaining}s`)
+      throw new Error(`Circuit is OPEN for ${this.name}`)
     }
 
     this.totalRequests++
