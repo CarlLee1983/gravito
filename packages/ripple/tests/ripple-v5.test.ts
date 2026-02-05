@@ -251,25 +251,35 @@ describe('Engine Abstraction', () => {
     expect(server).toBeDefined()
   })
 
-  it('should throw for unimplemented runtimes', () => {
+  it('should support node-uws runtime (Phase 2)', () => {
+    // uWebSockets.js engine is now implemented
+    const server = new RippleServer({
+      port: 3018,
+      runtime: 'node-uws',
+    })
+    expect(server).toBeDefined()
+    // Engine will be created, but listen() will fail if uWS not installed in Bun environment
+  })
+
+  it('should throw for node-ws runtime (Phase 3 - not yet implemented)', () => {
     expect(() => {
       new RippleServer({
-        port: 3018,
-        runtime: 'node-uws',
+        port: 3019,
+        runtime: 'node-ws',
       })
-    }).toThrow('uWebSockets.js engine not yet implemented')
+    }).toThrow('ws engine not yet implemented')
   })
 })
 
 describe('Driver Selection', () => {
   it('should use LocalDriver by default', () => {
-    const server = new RippleServer({ port: 3019 })
+    const server = new RippleServer({ port: 3020 })
     expect(server.driverName).toBe('local')
   })
 
   it('should support Redis driver when configured', () => {
     const server = new RippleServer({
-      port: 3020,
+      port: 3021,
       driver: 'redis',
       redis: {
         host: 'localhost',
@@ -281,7 +291,7 @@ describe('Driver Selection', () => {
 
   it('should support NATS driver when configured', () => {
     const server = new RippleServer({
-      port: 3021,
+      port: 3022,
       driver: 'nats',
       nats: {
         servers: ['nats://localhost:4222'],
