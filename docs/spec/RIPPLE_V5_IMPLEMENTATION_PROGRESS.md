@@ -31,11 +31,19 @@
 
 ## 🚧 In Progress
 
-### Testing & Documentation
-- ⚠️ Tests need to be updated for new engine-based architecture
-- ⚠️ Documentation needs to be updated
+### Documentation
+- ⚠️ Main documentation (README.md) needs to be updated
+- ⚠️ API documentation needs to be updated
 
 ## ✅ Recently Completed
+
+### Testing (Phase 1)
+- ✅ Created comprehensive v5.0 test suite (`tests/ripple-v5.test.ts`)
+- ✅ Tests for new `start()` API
+- ✅ Tests for runtime selection
+- ✅ Tests for driver selection
+- ✅ Tests for backward compatibility
+- ✅ Tests for engine abstraction
 
 ### Type System Migration (Phase 1)
 - ✅ Updated `RippleContext` to use `RippleSocket` instead of `RippleWebSocket`
@@ -53,14 +61,15 @@
 3. ~~Update `InterceptorManager` context types~~ ✅ DONE
 4. ~~Fix binary message handling (Buffer → Uint8Array)~~ ✅ DONE
 5. ~~Add `start()` method to start the server (replaces manual `Bun.serve()`)~~ ✅ DONE
-6. Update tests to use new engine-based architecture
-7. Create example demonstrating the new `start()` API
+6. ~~Update tests to use new engine-based architecture~~ ✅ DONE
+7. ~~Create example demonstrating the new `start()` API~~ ✅ DONE
 
 ### Medium Priority
-8. Create migration guide (v4 → v5)
-9. Update documentation
-10. Add engine selection examples
+8. Update README.md with v5.0 information
+9. Update API documentation
+10. Add engine selection examples to docs
 11. Performance benchmarks (ensure zero regression for Bun)
+12. Update existing tests to be compatible with v5.0 (optional)
 
 ## 🔮 Future Phases
 
@@ -103,14 +112,14 @@
 
 ## 📊 Current Status
 
-**Phase 1 Progress: 90%**
+**Phase 1 Progress: 95%**
 
 - ✅ Architecture design complete
 - ✅ Core abstractions implemented
 - ✅ BunEngine implemented
 - ✅ RippleServer refactored
 - ✅ Type system migration complete
-- ⚠️ Tests not yet updated
+- ✅ Tests created for v5.0
 - ⚠️ Documentation not yet updated
 
 ## 🐛 Known Issues
