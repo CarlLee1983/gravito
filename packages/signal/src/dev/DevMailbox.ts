@@ -1,45 +1,66 @@
 import { randomUUID } from 'node:crypto'
-import type { Envelope, Message } from '../types'
+import type { Message } from '../types'
+import type { MailboxStorage } from './storage/MailboxStorage'
+import { MemoryMailboxStorage } from './storage/MemoryMailboxStorage'
 
 /**
- * Represents a captured email in the development mailbox.
- *
- * @public
+ * Entry structure for messages stored in DevMailbox.
  */
 export interface MailboxEntry {
-  /** Unique identifier for the email */
+  /** Unique identifier for the entry. */
   id: string
-  /** Email envelope information (from, to, subject, etc.) */
-  envelope: Envelope
-  /** HTML content of the email */
+  /** The email envelope metadata. */
+  envelope: any
+  /** The rendered HTML content. */
   html: string
-  /** Plain text content of the email (optional) */
+  /** Optional plain text content. */
   text?: string
-  /** Timestamp when the email was captured */
+  /** Timestamp when the message was captured. */
   sentAt: Date
 }
 
 /**
- * In-memory mailbox for capturing emails during development.
+ * Capture and store emails during development for preview and testing.
  *
- * Stores up to 50 recent emails and provides methods to list,
- * retrieve, and delete captured messages.
+ * Supports different storage engines (Memory, FileSystem) and implements
+ * capacity limits via a Ring Buffer strategy.
  *
  * @example
  * ```typescript
+ * // Default memory mailbox
  * const mailbox = new DevMailbox()
- * mailbox.add(message)
- * const emails = mailbox.list()
+ *
+ * // Persistent file mailbox
+ * const storage = new FileMailboxStorage('./storage/mail')
+ * const persistentMailbox = new DevMailbox(100, storage)
  * ```
  *
  * @since 3.0.0
  * @public
  */
 export class DevMailbox {
-  private entries: MailboxEntry[] = []
-  private maxEntries = 50
+  private storage: MailboxStorage
+  private _maxEntries = 50
 
-  add(message: Message): MailboxEntry {
+  /**
+   * Creates an instance of DevMailbox.
+   *
+   * @param maxEntries - Maximum number of emails to store (default: 50)
+   * @param storage - Optional custom storage engine (defaults to Memory)
+   */
+  constructor(maxEntries?: number, storage?: MailboxStorage) {
+    if (maxEntries !== undefined) {
+      this._maxEntries = maxEntries
+    }
+    this.storage = storage ?? new MemoryMailboxStorage()
+  }
+
+  /**
+   * Adds a new message to the mailbox.
+   *
+   * If the mailbox exceeds the maximum capacity, the oldest messages are removed.
+   */
+  async add(message: Message): Promise<MailboxEntry> {
     const entry: MailboxEntry = {
       id: randomUUID(),
       envelope: {
@@ -57,34 +78,69 @@ export class DevMailbox {
       sentAt: new Date(),
     }
 
-    this.entries.unshift(entry)
-
-    // Limit size
-    if (this.entries.length > this.maxEntries) {
-      this.entries = this.entries.slice(0, this.maxEntries)
-    }
+    await this.storage.push(entry)
+    await this.storage.trim(this._maxEntries)
 
     return entry
   }
 
-  list(): MailboxEntry[] {
-    return this.entries
+  /**
+   * Sets the maximum number of emails to store.
+   *
+   * If the current mailbox exceeds the new capacity, the oldest messages are removed.
+   */
+  async setMaxEntries(count: number): Promise<void> {
+    this._maxEntries = count
+    await this.storage.trim(this._maxEntries)
   }
 
-  get(id: string): MailboxEntry | undefined {
-    return this.entries.find((e) => e.id === id)
+  /**
+   * Returns the maximum capacity of the mailbox.
+   */
+  get maxEntries(): number {
+    return this._maxEntries
   }
 
-  delete(id: string): boolean {
-    const index = this.entries.findIndex((e) => e.id === id)
+  /**
+   * Lists all messages in the mailbox.
+   */
+  async list(): Promise<MailboxEntry[]> {
+    return await this.storage.all()
+  }
+
+  /**
+   * Retrieves a specific message by ID.
+   */
+  async get(id: string): Promise<MailboxEntry | undefined> {
+    const entries = await this.storage.all()
+    return entries.find((e) => e.id === id)
+  }
+
+  /**
+   * Deletes a specific message by ID.
+   */
+  async delete(id: string): Promise<boolean> {
+    if (this.storage.delete) {
+      return await this.storage.delete(id)
+    }
+
+    const entries = await this.storage.all()
+    const index = entries.findIndex((e) => e.id === id)
     if (index !== -1) {
-      this.entries.splice(index, 1)
+      await this.clear()
+      entries.splice(index, 1)
+      for (const entry of entries.reverse()) {
+        await this.storage.push(entry)
+      }
       return true
     }
     return false
   }
 
-  clear(): void {
-    this.entries = []
+  /**
+   * Clears all messages from the mailbox.
+   */
+  async clear(): Promise<void> {
+    await this.storage.clear()
   }
 }

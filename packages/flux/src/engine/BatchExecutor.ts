@@ -63,8 +63,12 @@ class Semaphore {
       this.current++
       return
     }
-    await new Promise<void>((resolve) => this.queue.push(resolve))
-    this.current++
+    await new Promise<void>((resolve) => {
+      this.queue.push(() => {
+        this.current++
+        resolve()
+      })
+    })
   }
 
   release(): void {
@@ -126,6 +130,7 @@ export class BatchExecutor {
     let shouldStop = false
 
     const executeOne = async (input: TInput, index: number): Promise<void> => {
+      // Early exit check without acquiring semaphore
       if (options?.signal?.aborted || shouldStop) {
         results[index] = {
           index,
@@ -135,12 +140,16 @@ export class BatchExecutor {
           success: false,
         }
         failed++
+        completed++
+        options?.onProgress?.(completed, inputs.length, results[index]!)
         return
       }
 
+      // Acquire semaphore for actual execution
       await semaphore.acquire()
 
       try {
+        // Check again after acquiring
         if (options?.signal?.aborted || shouldStop) {
           results[index] = {
             index,
@@ -150,31 +159,30 @@ export class BatchExecutor {
             success: false,
           }
           failed++
-          return
-        }
-
-        const result = await this.engine.execute(
-          workflow as
-            | WorkflowBuilder<TInput, Record<string, any>>
-            | WorkflowDefinition<TInput, Record<string, any>>,
-          input
-        )
-        const success = result.status === 'completed'
-
-        results[index] = {
-          index,
-          input,
-          result: result as FluxResult<TData>,
-          error: result.error,
-          success,
-        }
-
-        if (success) {
-          succeeded++
         } else {
-          failed++
-          if (!continueOnError) {
-            shouldStop = true
+          const result = await this.engine.execute(
+            workflow as
+              | WorkflowBuilder<TInput, Record<string, any>>
+              | WorkflowDefinition<TInput, Record<string, any>>,
+            input
+          )
+          const success = result.status === 'completed'
+
+          results[index] = {
+            index,
+            input,
+            result: result as FluxResult<TData>,
+            error: result.error,
+            success,
+          }
+
+          if (success) {
+            succeeded++
+          } else {
+            failed++
+            if (!continueOnError) {
+              shouldStop = true
+            }
           }
         }
       } catch (error) {
@@ -237,6 +245,7 @@ export class BatchExecutor {
       item: { workflow: WorkflowDefinition<any, any>; input: any },
       index: number
     ): Promise<void> => {
+      // Early exit check without acquiring semaphore
       if (options?.signal?.aborted || shouldStop) {
         results[index] = {
           index,
@@ -246,12 +255,16 @@ export class BatchExecutor {
           success: false,
         }
         failed++
+        completed++
+        options?.onProgress?.(completed, items.length, results[index]!)
         return
       }
 
+      // Acquire semaphore for actual execution
       await semaphore.acquire()
 
       try {
+        // Check again after acquiring
         if (options?.signal?.aborted || shouldStop) {
           results[index] = {
             index,
@@ -261,26 +274,25 @@ export class BatchExecutor {
             success: false,
           }
           failed++
-          return
-        }
-
-        const result = await this.engine.execute(item.workflow, item.input)
-        const success = result.status === 'completed'
-
-        results[index] = {
-          index,
-          input: item.input,
-          result,
-          error: result.error,
-          success,
-        }
-
-        if (success) {
-          succeeded++
         } else {
-          failed++
-          if (!continueOnError) {
-            shouldStop = true
+          const result = await this.engine.execute(item.workflow, item.input)
+          const success = result.status === 'completed'
+
+          results[index] = {
+            index,
+            input: item.input,
+            result,
+            error: result.error,
+            success,
+          }
+
+          if (success) {
+            succeeded++
+          } else {
+            failed++
+            if (!continueOnError) {
+              shouldStop = true
+            }
           }
         }
       } catch (error) {

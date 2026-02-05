@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { MetricsRegistry } from '@gravito/monitor'
 import { ObservableHookManager } from '../../../src/events/observability/ObservableHookManager'
-import { HookManager } from '../../../src/HookManager'
 
 describe('Observable Event System Performance', () => {
   describe('overhead verification', () => {

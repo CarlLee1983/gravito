@@ -288,7 +288,7 @@ describe('錯誤處理', () => {
 
     const worker = new Worker({
       maxAttempts: 1,
-      onFailed: async (job, error) => {
+      onFailed: async (_job, error) => {
         failedCalled = true
         errorMessage = error.message
       },

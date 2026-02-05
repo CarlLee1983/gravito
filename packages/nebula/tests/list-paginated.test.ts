@@ -130,7 +130,9 @@ describe('MemoryStore - listPaginated', () => {
       pageCount++
 
       // 防止無限迴圈
-      if (pageCount > 10) break
+      if (pageCount > 10) {
+        break
+      }
     } while (cursor !== null)
 
     expect(allFiles).toHaveLength(25)

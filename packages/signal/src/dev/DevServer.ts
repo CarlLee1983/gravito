@@ -78,8 +78,8 @@ export class DevServer {
     // 1. Mailbox List
     router.get(
       prefix,
-      wrap((ctx) => {
-        const entries = this.mailbox.list()
+      wrap(async (ctx) => {
+        const entries = await this.mailbox.list()
         ctx.header('Content-Type', 'text/html; charset=utf-8')
         return ctx.html(getMailboxHtml(entries, prefix))
       })
@@ -88,13 +88,13 @@ export class DevServer {
     // 2. Single Email Preview
     router.get(
       `${prefix}/:id`,
-      wrap((ctx) => {
+      wrap(async (ctx) => {
         const id = ctx.req.param('id')
         if (!id) {
           return ctx.text('Bad Request', 400)
         }
 
-        const entry = this.mailbox.get(id)
+        const entry = await this.mailbox.get(id)
         if (!entry) {
           return ctx.text('Email not found', 404)
         }
@@ -106,13 +106,13 @@ export class DevServer {
     // 3. Iframe Content: HTML
     router.get(
       `${prefix}/:id/html`,
-      wrap((ctx) => {
+      wrap(async (ctx) => {
         const id = ctx.req.param('id')
         if (!id) {
           return ctx.text('Bad Request', 400)
         }
 
-        const entry = this.mailbox.get(id)
+        const entry = await this.mailbox.get(id)
         if (!entry) {
           return ctx.text('Not found', 404)
         }
@@ -124,13 +124,13 @@ export class DevServer {
     // 4. Iframe Content: Text
     router.get(
       `${prefix}/:id/text`,
-      wrap((ctx) => {
+      wrap(async (ctx) => {
         const id = ctx.req.param('id')
         if (!id) {
           return ctx.text('Bad Request', 400)
         }
 
-        const entry = this.mailbox.get(id)
+        const entry = await this.mailbox.get(id)
         if (!entry) {
           return ctx.text('Not found', 404)
         }
@@ -143,13 +143,13 @@ export class DevServer {
     // 5. Raw JSON
     router.get(
       `${prefix}/:id/raw`,
-      wrap((ctx) => {
+      wrap(async (ctx) => {
         const id = ctx.req.param('id')
         if (!id) {
           return ctx.json({ error: 'Bad Request' }, 400)
         }
 
-        const entry = this.mailbox.get(id)
+        const entry = await this.mailbox.get(id)
         if (!entry) {
           return ctx.json({ error: 'Not found' }, 404)
         }
@@ -167,13 +167,13 @@ export class DevServer {
 
     router.delete(
       `${prefix}/:id`,
-      wrap((ctx) => {
+      wrap(async (ctx) => {
         const id = ctx.req.param('id')
         if (!id) {
           return ctx.json({ success: false, error: 'Bad Request' }, 400)
         }
 
-        const success = this.mailbox.delete(id)
+        const success = await this.mailbox.delete(id)
         return ctx.json({ success })
       })
     )
@@ -181,8 +181,8 @@ export class DevServer {
     // 7. API: Clear All
     router.delete(
       prefix,
-      wrap((ctx) => {
-        this.mailbox.clear()
+      wrap(async (ctx) => {
+        await this.mailbox.clear()
         return ctx.json({ success: true })
       })
     )

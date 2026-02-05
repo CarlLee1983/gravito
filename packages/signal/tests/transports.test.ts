@@ -19,7 +19,7 @@ describe('Transports', () => {
 
       await transport.send(message)
 
-      const entries = mailbox.list()
+      const entries = await mailbox.list()
       expect(entries).toHaveLength(1)
 
       const entry = entries[0]
@@ -44,9 +44,9 @@ describe('Transports', () => {
         })
       }
 
-      expect(mailbox.list().length).toBeLessThanOrEqual(50)
+      expect((await mailbox.list()).length).toBeLessThanOrEqual(50)
       // Should be the latest ones (last one added is index 0)
-      expect(mailbox.list()[0].envelope.subject).toBe('Msg 59')
+      expect((await mailbox.list())[0].envelope.subject).toBe('Msg 59')
     })
   })
 })

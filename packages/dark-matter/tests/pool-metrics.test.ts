@@ -265,4 +265,55 @@ describe('MongoPoolMonitor', () => {
       // 這種情況表示需要增加 maxPoolSize 或優化查詢
     })
   })
+
+  describe('多次呼叫一致性', () => {
+    it('連續呼叫 getMetrics 應該返回一致結果', () => {
+      const topology = new MockTopology()
+      topology.addServer('server1', new MockPool(10, 8, 0, 2))
+
+      const mockClient = new MockMongoClient(topology) as any
+      const monitor = new MongoPoolMonitor(mockClient)
+
+      const m1 = monitor.getMetrics()
+      const m2 = monitor.getMetrics()
+
+      expect(m1).toEqual(m2)
+      expect(m1).not.toBe(m2) // 不同物件參照
+    })
+
+    it('應該正確處理高負載的多 server 場景', () => {
+      const topology = new MockTopology()
+      // 模擬 5 個 shard 的高負載
+      for (let i = 0; i < 5; i++) {
+        topology.addServer(`shard${i}`, new MockPool(100, 10, 20, 90))
+      }
+
+      const mockClient = new MockMongoClient(topology) as any
+      const monitor = new MongoPoolMonitor(mockClient)
+
+      const metrics = monitor.getMetrics()
+
+      expect(metrics).not.toBeNull()
+      expect(metrics?.totalConnections).toBe(500)
+      expect(metrics?.availableConnections).toBe(50)
+      expect(metrics?.waitQueueSize).toBe(100)
+      expect(metrics?.currentCheckedOutCount).toBe(450)
+    })
+
+    it('應該正確處理所有 pool 值為 0 的情況', () => {
+      const topology = new MockTopology()
+      topology.addServer('server1', new MockPool(0, 0, 0, 0))
+
+      const mockClient = new MockMongoClient(topology) as any
+      const monitor = new MongoPoolMonitor(mockClient)
+
+      const metrics = monitor.getMetrics()
+
+      expect(metrics).not.toBeNull()
+      expect(metrics?.totalConnections).toBe(0)
+      expect(metrics?.availableConnections).toBe(0)
+      expect(metrics?.waitQueueSize).toBe(0)
+      expect(metrics?.currentCheckedOutCount).toBe(0)
+    })
+  })
 })

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import { MetricsRegistry } from '@gravito/monitor'
 import { ObservableHookManager } from '../../../src/events/observability/ObservableHookManager'
 

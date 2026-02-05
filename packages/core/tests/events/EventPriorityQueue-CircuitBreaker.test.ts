@@ -25,7 +25,7 @@ class MockMetricsRegistry {
         if (!this.histograms.has(config.name)) {
           this.histograms.set(config.name, [])
         }
-        this.histograms.get(config.name)!.push({ value, labels })
+        this.histograms.get(config.name)?.push({ value, labels })
       },
     }
     return mock
@@ -37,7 +37,7 @@ class MockMetricsRegistry {
         if (!this.gauges.has(config.name)) {
           this.gauges.set(config.name, [])
         }
-        this.gauges.get(config.name)!.push({ value, labels })
+        this.gauges.get(config.name)?.push({ value, labels })
       },
     }
     return mock
@@ -49,7 +49,7 @@ class MockMetricsRegistry {
         if (!this.counters.has(config.name)) {
           this.counters.set(config.name, [])
         }
-        this.counters.get(config.name)!.push(labels)
+        this.counters.get(config.name)?.push(labels)
       },
     }
     return mock

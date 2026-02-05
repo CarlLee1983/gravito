@@ -105,3 +105,18 @@ Flash Data 儲存在伺服器端，但 Session ID 儲存在 Cookie。
 
 ---
 *Created by Gravito Architect.*
+
+
+## 快速開始
+
+> 內容補齊中...
+
+
+## 架構設計
+
+> 內容補齊中...
+
+
+## API 參考
+
+> 內容補齊中...

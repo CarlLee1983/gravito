@@ -55,7 +55,8 @@
       "Bash(biome check:*)",
       "Bash(tsc:*)",
       "Bash(bunx tsup:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(1)"
     ]
   },
   "enabledMcpjsonServers": [

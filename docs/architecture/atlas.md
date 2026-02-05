@@ -46,10 +46,35 @@ class User extends Model {
 
 // 查詢資料
 const users = await User.query().where('active', true).get()
-console.log(users)
 ```
 
----
+### 3. 關聯定義
+```typescript
+class Post extends Model {
+  static table = 'posts'
+  
+  user() {
+    return this.belongsTo(User)
+  }
+}
+```
+
+### 4. 事務處理 (Transactions)
+```typescript
+await Atlas.transaction(async (trx) => {
+  await User.query(trx).create({ name: 'Alice' })
+  await Post.query(trx).create({ title: 'Hello', user_id: 1 })
+})
+```
+
+### 5. 分頁與批次處理
+```typescript
+const { data, meta } = await User.query().paginate(1, 15)
+
+await User.query().chunk(100, (users) => {
+  // 處理每批 100 筆資料
+})
+```
 
 ## 架構設計
 

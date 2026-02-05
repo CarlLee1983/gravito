@@ -70,7 +70,9 @@ async function streamToString(stream: ReadableStream<Uint8Array>): Promise<strin
 
   while (true) {
     const { done, value } = await reader.read()
-    if (done) break
+    if (done) {
+      break
+    }
     result += decoder.decode(value, { stream: true })
   }
 
@@ -194,12 +196,14 @@ describe('MemoryStore - Stream Operations', () => {
     expect(resultStream).not.toBeNull()
 
     // 讀取並驗證二進位資料
-    const reader = resultStream!.getReader()
+    const reader = resultStream?.getReader()
     const chunks: Uint8Array[] = []
 
     while (true) {
       const { done, value } = await reader.read()
-      if (done) break
+      if (done) {
+        break
+      }
       chunks.push(value)
     }
 

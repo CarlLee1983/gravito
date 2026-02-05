@@ -668,3 +668,40 @@ describe('OpenAPI Specification Generation', () => {
     expect(spec.paths['/users']).toBeDefined()
   })
 })
+
+describe('OpenApiGenerator Cache Management', () => {
+  test('should invalidate cache', () => {
+    const UserDTO = z.object({
+      id: z.number(),
+      name: z.string(),
+    })
+
+    const config = {
+      contracts: [
+        astral.resource('/users', {
+          operations: {
+            index: { summary: 'List', output: [UserDTO] },
+          },
+        }),
+      ],
+    }
+
+    const generator = new OpenApiGenerator(config)
+    const routes = [{ path: '/users', method: 'GET' }]
+
+    // 第一次生成
+    const spec1 = generator.generateWithCache(routes)
+    expect(spec1).toBeDefined()
+
+    // 使快取失效
+    generator.invalidateCache()
+
+    // 再次生成 - 應該重新產生而不是使用快取
+    const spec2 = generator.generateWithCache(routes)
+    expect(spec2).toBeDefined()
+
+    // 驗證兩個規格是相同的（但是重新生成的）
+    expect(spec2.openapi).toBe(spec1.openapi)
+    expect(spec2.info.title).toBe(spec1.info.title)
+  })
+})

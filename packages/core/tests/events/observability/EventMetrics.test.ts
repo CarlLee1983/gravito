@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { Counter, Gauge, Histogram, MetricsRegistry } from '@gravito/monitor'
+import { MetricsRegistry } from '@gravito/monitor'
 import { EventMetrics } from '../../../src/events/observability/EventMetrics'
 
 describe('EventMetrics', () => {

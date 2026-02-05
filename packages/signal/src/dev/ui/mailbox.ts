@@ -47,7 +47,7 @@ export function getMailboxHtml(entries: MailboxEntry[], prefix: string): string 
           ${entry.envelope.subject || '(No Subject)'}
         </div>
         <div class="meta" style="margin-top: 4px;">
-           To: ${entry.envelope.to?.map((t) => t.address).join(', ')}
+           To: ${entry.envelope.to?.map((t: any) => t.address).join(', ')}
         </div>
       </a>
     `

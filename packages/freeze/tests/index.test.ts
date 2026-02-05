@@ -4,11 +4,17 @@ import {
   asLocale,
   createDetector,
   defineConfig,
+  generate404Html,
   generateLocalizedRoutes,
   generateRedirectHtml,
   generateRedirects,
+  generateRobotsTxt,
   generateSitemapEntries,
+  generateSitemapXml,
+  getLocalizedPath,
   inferRedirects,
+  isLocalizedPath,
+  validateRoutes,
 } from '../src'
 
 describe('@gravito/freeze', () => {
@@ -270,6 +276,166 @@ describe('@gravito/freeze', () => {
       const aboutEntry = entries.find((e) => e.url === 'https://example.com/en/about')
       expect(aboutEntry?.alternates?.length).toBe(3)
       expect(aboutEntry?.alternates?.some((alt) => alt.hreflang === 'x-default')).toBe(true)
+    })
+  })
+
+  describe('generateSitemapXml', () => {
+    it('should generate basic sitemap XML', () => {
+      const entries = [{ url: 'https://example.com/' }, { url: 'https://example.com/about' }]
+      const xml = generateSitemapXml(entries)
+
+      expect(xml).toContain('<?xml version="1.0" encoding="UTF-8"?>')
+      expect(xml).toContain('<urlset')
+      expect(xml).toContain('<loc>https://example.com/</loc>')
+      expect(xml).toContain('<loc>https://example.com/about</loc>')
+      expect(xml).toContain('</urlset>')
+    })
+
+    it('should include optional fields when present', () => {
+      const entries = [
+        {
+          url: 'https://example.com/about',
+          lastmod: '2024-01-01',
+          changefreq: 'weekly',
+          priority: 0.8,
+        },
+      ]
+      const xml = generateSitemapXml(entries)
+
+      expect(xml).toContain('<lastmod>2024-01-01</lastmod>')
+      expect(xml).toContain('<changefreq>weekly</changefreq>')
+      expect(xml).toContain('<priority>0.8</priority>')
+    })
+
+    it('should include alternates when present', () => {
+      const entries = [
+        {
+          url: 'https://example.com/en/about',
+          alternates: [
+            { hreflang: 'en', href: 'https://example.com/en/about' },
+            { hreflang: 'zh', href: 'https://example.com/zh/about' },
+          ],
+        },
+      ]
+      const xml = generateSitemapXml(entries)
+
+      expect(xml).toContain('hreflang="en"')
+      expect(xml).toContain('hreflang="zh"')
+      expect(xml).toContain('https://example.com/zh/about')
+    })
+  })
+
+  describe('generateRobotsTxt', () => {
+    it('should generate robots.txt with sitemap reference', () => {
+      const config = defineConfig({
+        staticDomains: ['example.com'],
+        baseUrl: 'https://example.com',
+      })
+      const robots = generateRobotsTxt(config)
+
+      expect(robots).toContain('User-agent: *')
+      expect(robots).toContain('Allow: /')
+      expect(robots).toContain('Sitemap: https://example.com/sitemap.xml')
+    })
+
+    it('should handle base URL with trailing slash', () => {
+      const config = defineConfig({
+        staticDomains: ['example.com'],
+        baseUrl: 'https://example.com/',
+      })
+      const robots = generateRobotsTxt(config)
+
+      expect(robots).toContain('Sitemap: https://example.com/sitemap.xml')
+    })
+  })
+
+  describe('generate404Html', () => {
+    it('should generate redirect HTML when targetUrl provided', () => {
+      const html = generate404Html('/en/docs')
+
+      expect(html).toContain('http-equiv="refresh"')
+      expect(html).toContain('url=/en/docs')
+      expect(html).toContain("window.location.href='/en/docs'")
+    })
+
+    it('should generate 404 page when no targetUrl', () => {
+      const html = generate404Html()
+
+      expect(html).toContain('404')
+      expect(html).toContain('<!DOCTYPE html>')
+    })
+  })
+
+  describe('validateRoutes', () => {
+    it('should return empty array for valid routes', () => {
+      const errors = validateRoutes(['/', '/about', '/docs/guide', '/en', '/zh'])
+
+      expect(errors).toEqual([])
+    })
+
+    it('should detect routes not starting with /', () => {
+      const errors = validateRoutes(['about', 'docs/guide'])
+
+      expect(errors.length).toBe(2)
+      expect(errors[0]).toContain("must start with '/'")
+      expect(errors[1]).toContain("must start with '/'")
+    })
+
+    it('should detect routes ending with /', () => {
+      const errors = validateRoutes(['/about/', '/docs/'])
+
+      expect(errors.length).toBe(2)
+      expect(errors[0]).toContain("should not end with '/'")
+      expect(errors[1]).toContain("should not end with '/'")
+    })
+
+    it('should allow root path to end with /', () => {
+      const errors = validateRoutes(['/'])
+
+      expect(errors).toEqual([])
+    })
+  })
+
+  describe('path-utils - isLocalizedPath', () => {
+    const locales = [asLocale('en'), asLocale('zh')]
+
+    it('should return true for localized paths', () => {
+      expect(isLocalizedPath(asAbsolutePath('/en/docs'), locales)).toBe(true)
+      expect(isLocalizedPath(asAbsolutePath('/zh/about'), locales)).toBe(true)
+      expect(isLocalizedPath(asAbsolutePath('/en'), locales)).toBe(true)
+      expect(isLocalizedPath(asAbsolutePath('/zh'), locales)).toBe(true)
+    })
+
+    it('should return false for non-localized paths', () => {
+      expect(isLocalizedPath(asAbsolutePath('/docs'), locales)).toBe(false)
+      expect(isLocalizedPath(asAbsolutePath('/about'), locales)).toBe(false)
+      expect(isLocalizedPath(asAbsolutePath('/'), locales)).toBe(false)
+    })
+  })
+
+  describe('path-utils - getLocalizedPath direct', () => {
+    it('should switch locale correctly', () => {
+      const locales = ['en', 'zh']
+      const defaultLocale = 'en'
+
+      expect(
+        getLocalizedPath(asAbsolutePath('/en/docs'), asLocale('zh'), locales, defaultLocale)
+      ).toBe(asAbsolutePath('/zh/docs'))
+      expect(
+        getLocalizedPath(asAbsolutePath('/zh/about'), asLocale('en'), locales, defaultLocale)
+      ).toBe(asAbsolutePath('/about'))
+    })
+
+    it('should handle root path', () => {
+      const locales = ['en', 'zh']
+      const defaultLocale = 'en'
+
+      expect(getLocalizedPath(asAbsolutePath('/'), asLocale('zh'), locales, defaultLocale)).toBe(
+        asAbsolutePath('/zh')
+      )
+      expect(getLocalizedPath(asAbsolutePath('/'), asLocale('en'), locales, defaultLocale)).toBe(
+        asAbsolutePath('/')
+      )
     })
   })
 })

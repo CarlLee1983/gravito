@@ -326,6 +326,75 @@ export abstract class Mailable implements Queueable {
     return this
   }
 
+  /**
+   * Set the content using an MJML markup string.
+   *
+   * MJML ensures responsive email compatibility across various clients.
+   *
+   * @param content - The MJML markup string or inner content.
+   * @param options - MJML transformation options.
+   * @param options.layout - Optional full MJML layout string. Use '{{content}}' as placeholder.
+   * @returns The current mailable instance for chaining.
+   *
+   * @example
+   * ```typescript
+   * mailable.mjml('<mj-text>Hello</mj-text>', {
+   *   layout: '<mjml><mj-body>{{content}}</mj-body></mjml>'
+   * })
+   * ```
+   */
+  mjml(content: string, options?: Record<string, any> & { layout?: string }): this {
+    const finalContent = options?.layout?.includes('{{content}}')
+      ? options.layout.replace('{{content}}', content)
+      : content
+
+    this.rendererResolver = async () => {
+      const { MjmlRenderer } = await import('./renderers/MjmlRenderer')
+      return new MjmlRenderer(finalContent, options)
+    }
+    return this
+  }
+
+  /**
+   * Set the content using a React component that outputs MJML.
+   *
+   * @param component - The React component.
+   * @param props - Component properties.
+   * @param options - MJML options.
+   * @returns The current mailable instance for chaining.
+   */
+  mjmlReact<P extends object>(
+    component: ComponentType,
+    props?: P,
+    options?: Record<string, any>
+  ): this {
+    this.rendererResolver = async () => {
+      const { ReactMjmlRenderer } = await import('./renderers/ReactMjmlRenderer')
+      return new ReactMjmlRenderer(component, props, options)
+    }
+    return this
+  }
+
+  /**
+   * Set the content using a Vue component that outputs MJML.
+   *
+   * @param component - The Vue component.
+   * @param props - Component properties.
+   * @param options - MJML options.
+   * @returns The current mailable instance for chaining.
+   */
+  mjmlVue<P extends object>(
+    component: ComponentType,
+    props?: P,
+    options?: Record<string, any>
+  ): this {
+    this.rendererResolver = async () => {
+      const { VueMjmlRenderer } = await import('./renderers/VueMjmlRenderer')
+      return new VueMjmlRenderer(component, props, options)
+    }
+    return this
+  }
+
   // ===== Life Cycle =====
 
   /**

@@ -14,7 +14,7 @@ export function getPreviewHtml(entry: MailboxEntry, prefix: string): string {
   const from = entry.envelope.from
     ? `${entry.envelope.from.name || ''} &lt;${entry.envelope.from.address}&gt;`
     : 'Unknown'
-  const to = entry.envelope.to?.map((t) => t.address).join(', ') || 'Unknown'
+  const to = entry.envelope.to?.map((t: any) => t.address).join(', ') || 'Unknown'
 
   const content = `
     <div class="header">
@@ -31,12 +31,12 @@ export function getPreviewHtml(entry: MailboxEntry, prefix: string): string {
       <div class="meta" style="margin-bottom: 5px;">To: ${to}</div>
       ${
         entry.envelope.cc
-          ? `<div class="meta" style="margin-bottom: 5px;">CC: ${entry.envelope.cc.map((t) => t.address).join(', ')}</div>`
+          ? `<div class="meta" style="margin-bottom: 5px;">CC: ${entry.envelope.cc.map((t: any) => t.address).join(', ')}</div>`
           : ''
       }
       ${
         entry.envelope.bcc
-          ? `<div class="meta" style="margin-bottom: 5px;">BCC: ${entry.envelope.bcc.map((t) => t.address).join(', ')}</div>`
+          ? `<div class="meta" style="margin-bottom: 5px;">BCC: ${entry.envelope.bcc.map((t: any) => t.address).join(', ')}</div>`
           : ''
       }
       ${entry.envelope.priority ? `<div class="meta" style="margin-bottom: 5px;">Priority: ${entry.envelope.priority}</div>` : ''}
@@ -49,7 +49,7 @@ export function getPreviewHtml(entry: MailboxEntry, prefix: string): string {
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             ${entry.envelope.attachments
               .map(
-                (att) => `
+                (att: any) => `
               <div style="background: var(--bg-dark); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 20px;">📎</span>
                 <div>
