@@ -399,7 +399,7 @@ export type ServerMessage =
  */
 export interface RippleContext {
   /** The WebSocket client connection */
-  ws: RippleWebSocket
+  ws: import('./engines/IRippleEngine').RippleSocket
   /** The message being processed */
   message: ClientMessage | ServerMessage
   /** Direction of the message flow */
@@ -832,6 +832,36 @@ export interface RippleConfig {
    * Message Interceptors (v4.0+).
    */
   interceptors?: RippleInterceptor[]
+
+  /**
+   * WebSocket runtime/engine to use (v5.0+).
+   *
+   * - 'bun': Bun native WebSocket (default, highest performance)
+   * - 'node-uws': uWebSockets.js for Node.js (high performance, requires peer dep)
+   * - 'node-ws': ws package for Node.js (standard, best compatibility)
+   *
+   * If not specified, Ripple will auto-detect the runtime.
+   *
+   * @since 5.0.0
+   */
+  runtime?: 'bun' | 'node-uws' | 'node-ws'
+
+  /**
+   * Server port to listen on (v5.0+).
+   *
+   * Required when using the engine-based architecture.
+   *
+   * @since 5.0.0
+   */
+  port?: number
+
+  /**
+   * Hostname to bind to (v5.0+).
+   *
+   * @default '0.0.0.0'
+   * @since 5.0.0
+   */
+  hostname?: string
 }
 
 // ─────────────────────────────────────────────────────────────

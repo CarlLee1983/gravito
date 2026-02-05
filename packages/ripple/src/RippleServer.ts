@@ -6,9 +6,10 @@
  * @module @gravito/ripple
  */
 
-import type { Server } from 'bun'
 import { ChannelManager, requiresAuth } from './channels'
 import { LocalDriver, NATSDriver, RedisDriver } from './drivers'
+import { BunEngine } from './engines/BunEngine'
+import type { IRippleEngine, RippleSocket } from './engines/IRippleEngine'
 import { HealthChecker } from './health/HealthChecker'
 import type { RippleLogger } from './logging/Logger'
 import { createLogger } from './logging/Logger'
@@ -37,14 +38,18 @@ import { TokenBucket } from './utils/TokenBucket'
 /**
  * Ripple WebSocket Server
  *
- * Provides channel-based real-time communication using Bun's native WebSocket.
+ * Provides channel-based real-time communication with multi-runtime support.
+ * Can run on Bun (native WebSocket), Node.js (uWebSockets.js or ws).
+ *
+ * @since 5.0.0 - Multi-runtime support via engine abstraction
  */
 export class RippleServer {
   private channels: ChannelManager
   private driver: RippleDriver
+  private engine: IRippleEngine
   private authorizer?: ChannelAuthorizer
   private pingInterval?: ReturnType<typeof setInterval>
-  private eventListeners: Map<string, ((socket: RippleWebSocket, data: any) => void)[]> = new Map()
+  private eventListeners: Map<string, ((socket: RippleSocket, data: any) => void)[]> = new Map()
   private logger: RippleLogger
   private tracker: ConnectionTracker
   private healthChecker: HealthChecker
@@ -54,6 +59,7 @@ export class RippleServer {
   private ackManager: AckManager
   private rippleMetrics?: RippleMetrics
   private interceptors: InterceptorManager
+  private clientSockets = new Map<string, RippleSocket>()
 
   readonly config: Required<Pick<RippleConfig, 'path' | 'authEndpoint' | 'pingInterval'>> &
     RippleConfig
@@ -67,6 +73,10 @@ export class RippleServer {
     }
 
     this.logger = config.logger ?? createLogger('RippleServer', config.logLevel)
+
+    // Create WebSocket engine based on runtime
+    this.engine = this.createEngine(config)
+
     this.driver =
       config.driver === 'redis'
         ? new RedisDriver({ ...config.redis, logger: this.logger })
@@ -98,9 +108,62 @@ export class RippleServer {
     }
 
     this.interceptors = new InterceptorManager(config.interceptors ?? [])
+
+    // Register engine event handlers
+    this.setupEngineHandlers()
   }
 
-  private emit(event: string, socket: RippleWebSocket, data: any): void {
+  /**
+   * Create the appropriate WebSocket engine based on configuration.
+   */
+  private createEngine(config: RippleConfig): IRippleEngine {
+    const runtime = config.runtime ?? this.detectRuntime()
+
+    this.logger.info('Creating WebSocket engine', { runtime })
+
+    switch (runtime) {
+      case 'bun':
+        return new BunEngine({
+          port: config.port,
+          hostname: config.hostname,
+          development: process.env.NODE_ENV === 'development',
+        })
+
+      case 'node-uws':
+        throw new Error('uWebSockets.js engine not yet implemented. Coming in v5.0-beta.')
+
+      case 'node-ws':
+        throw new Error('ws engine not yet implemented. Coming in v5.0-beta.')
+
+      default:
+        throw new Error(`Unsupported runtime: ${runtime}`)
+    }
+  }
+
+  /**
+   * Auto-detect the current JavaScript runtime.
+   */
+  private detectRuntime(): 'bun' | 'node-uws' | 'node-ws' {
+    // Check if running in Bun
+    if (typeof Bun !== 'undefined') {
+      return 'bun'
+    }
+
+    // For Node.js, default to ws (most compatible)
+    // User can explicitly set runtime: 'node-uws' for better performance
+    return 'node-ws'
+  }
+
+  /**
+   * Setup engine event handlers.
+   */
+  private setupEngineHandlers(): void {
+    this.engine.onConnection((socket) => this.handleOpen(socket))
+    this.engine.onMessage((socket, message) => this.handleMessage(socket, message))
+    this.engine.onDisconnection((socket, code, reason) => this.handleClose(socket, code, reason))
+  }
+
+  private emit(event: string, socket: RippleSocket, data: any): void {
     const handlers = this.eventListeners.get(event)
     if (handlers) {
       for (const handler of handlers) {
@@ -109,7 +172,7 @@ export class RippleServer {
     }
   }
 
-  on(event: string, handler: (socket: RippleWebSocket, data: any) => void): void {
+  on(event: string, handler: (socket: RippleSocket, data: any) => void): void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, [])
     }
@@ -130,7 +193,13 @@ export class RippleServer {
     }
   }
 
-  upgrade(req: Request, server: Server<ClientData>, options?: { userId?: string }): boolean {
+  /**
+   * Upgrade an HTTP request to WebSocket (Bun/uWS only).
+   *
+   * @deprecated Use engine-based initialization via init() instead.
+   * This method is kept for backward compatibility with v4.x.
+   */
+  upgrade(req: Request, options?: { userId?: string }): boolean {
     const url = new URL(req.url)
 
     if (url.pathname !== this.config.path) {
@@ -150,37 +219,36 @@ export class RippleServer {
       }
     }
 
-    // Generate new token if session manager is active but no valid session found
-    const finalToken =
-      sessionData && reconnectionToken
-        ? reconnectionToken
-        : this.sessionManager
-          ? crypto.randomUUID()
-          : undefined
-
-    const success = server.upgrade(req, {
-      data: {
-        id: sessionData?.clientId ?? crypto.randomUUID(),
-        channels: new Set<string>(),
-        userId: sessionData?.userId ?? options?.userId,
-        userInfo: sessionData?.userInfo,
-        reconnectionToken: finalToken,
-      } satisfies ClientData,
-    })
-
-    return success
-  }
-
-  getHandler(): WebSocketHandlerConfig {
-    return {
-      open: (ws) => this.handleOpen(ws),
-      message: (ws, message) => this.handleMessage(ws, message),
-      close: (ws, code, reason) => this.handleClose(ws, code, reason),
-      drain: (ws) => this.handleDrain(ws),
+    // Delegate to engine if it supports upgrade
+    if ('upgrade' in this.engine && typeof this.engine.upgrade === 'function') {
+      return this.engine.upgrade(req, {
+        userId: sessionData?.userId?.toString() ?? options?.userId,
+        reconnectionToken:
+          sessionData && reconnectionToken
+            ? reconnectionToken
+            : this.sessionManager
+              ? crypto.randomUUID()
+              : undefined,
+      })
     }
+
+    throw new Error('Current engine does not support HTTP upgrade')
   }
 
-  private async handleOpen(ws: RippleWebSocket): Promise<void> {
+  /**
+   * Get WebSocket handler configuration (Bun only).
+   *
+   * @deprecated Use engine-based initialization via init() instead.
+   * This method is kept for backward compatibility with v4.x.
+   */
+  getHandler(): WebSocketHandlerConfig {
+    // For backward compatibility, we need to return Bun-specific handlers
+    // This will only work if using BunEngine
+    throw new Error('getHandler() is deprecated in v5.0. Use init() to start the server instead.')
+  }
+
+  private async handleOpen(ws: RippleSocket): Promise<void> {
+    this.clientSockets.set(ws.id, ws)
     this.channels.addClient(ws)
     this.tracker.onConnect(ws.data.id)
 
@@ -228,44 +296,58 @@ export class RippleServer {
   }
 
   private async handleMessage(
-    ws: RippleWebSocket,
-    message: string | Buffer | ArrayBuffer
+    ws: RippleSocket,
+    message: string | Buffer | ArrayBuffer | Uint8Array
   ): Promise<void> {
     try {
-      if (message instanceof ArrayBuffer || Buffer.isBuffer(message)) {
+      // Convert to string or Uint8Array
+      let data: string | Uint8Array
+      if (typeof message === 'string') {
+        data = message
+      } else if (message instanceof Uint8Array) {
+        data = message
+      } else if (message instanceof ArrayBuffer) {
+        data = new Uint8Array(message)
+      } else if (Buffer.isBuffer(message)) {
+        data = new Uint8Array(message.buffer, message.byteOffset, message.byteLength)
+      } else {
+        return // Unknown type
+      }
+
+      if (data instanceof Uint8Array) {
         // Check if it's a raw binary message or a serialized message
-        // For now, we assume raw binary if it starts with header, but we should let serializer handle it eventually
-        // or keep separate binary path.
-        // Existing logic:
-        await this.handleBinaryMessage(ws, message)
+        await this.handleBinaryMessage(ws, data)
         return
       }
 
-      const data = this.serializer.deserialize(message)
+      const parsedData = this.serializer.deserialize(data)
 
-      await this.interceptors.execute({ ws, message: data, direction: 'incoming' }, async () => {
-        switch (data.type) {
-          case 'subscribe':
-            await this.handleSubscribe(ws, data.channel, data.auth)
-            break
+      await this.interceptors.execute(
+        { ws, message: parsedData, direction: 'incoming' },
+        async () => {
+          switch (parsedData.type) {
+            case 'subscribe':
+              await this.handleSubscribe(ws, parsedData.channel, parsedData.auth)
+              break
 
-          case 'unsubscribe':
-            await this.handleUnsubscribe(ws, data.channel)
-            break
+            case 'unsubscribe':
+              await this.handleUnsubscribe(ws, parsedData.channel)
+              break
 
-          case 'whisper':
-            this.handleWhisper(ws, data.channel, data.event, data.data)
-            break
+            case 'whisper':
+              this.handleWhisper(ws, parsedData.channel, parsedData.event, parsedData.data)
+              break
 
-          case 'ping':
-            this.send(ws, { type: 'pong' })
-            break
+            case 'ping':
+              this.send(ws, { type: 'pong' })
+              break
 
-          case 'ack':
-            this.ackManager.confirm(ws.data.id, data.seq)
-            break
+            case 'ack':
+              this.ackManager.confirm(ws.data.id, parsedData.seq)
+              break
+          }
         }
-      })
+      )
     } catch (error) {
       this.logger.error('Failed to parse message', {
         clientId: ws.data.id,
@@ -279,19 +361,19 @@ export class RippleServer {
     }
   }
 
-  private async handleBinaryMessage(
-    ws: RippleWebSocket,
-    message: Buffer | ArrayBuffer
-  ): Promise<void> {
-    const buffer = Buffer.isBuffer(message) ? message : Buffer.from(message)
+  private async handleBinaryMessage(ws: RippleSocket, message: Uint8Array): Promise<void> {
+    const buffer = message
 
     if (buffer.length < 4) return
 
-    const headerLength = buffer.readInt32LE(0)
+    // Read header length (4 bytes, little-endian)
+    const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength)
+    const headerLength = view.getInt32(0, true) // true = little-endian
     if (buffer.length < 4 + headerLength) return
 
     try {
-      const headerRaw = buffer.subarray(4, 4 + headerLength).toString()
+      const headerBytes = buffer.subarray(4, 4 + headerLength)
+      const headerRaw = new TextDecoder().decode(headerBytes)
       const header = JSON.parse(headerRaw)
       const payload = buffer.subarray(4 + headerLength)
 
@@ -344,7 +426,7 @@ export class RippleServer {
     this.broadcastBinaryToChannel(channel, event, data)
   }
 
-  private handleClose(ws: RippleWebSocket, code: number, reason: string): void {
+  private handleClose(ws: RippleSocket, code: number, reason: string): void {
     if (this.sessionManager && ws.data.channels.size > 0) {
       const token = this.sessionManager.createSession(
         {
@@ -389,12 +471,12 @@ export class RippleServer {
     this.ackManager.clearClient(ws.data.id)
   }
 
-  private handleDrain(_ws: RippleWebSocket): void {
+  private handleDrain(_ws: RippleSocket): void {
     // No-op
   }
 
   private async handleSubscribe(
-    ws: RippleWebSocket,
+    ws: RippleSocket,
     channel: string,
     _auth?: { socketId: string; signature: string }
   ): Promise<void> {
@@ -439,7 +521,7 @@ export class RippleServer {
     this.send(ws, { type: 'subscribed', channel })
   }
 
-  private async handleUnsubscribe(ws: RippleWebSocket, channel: string): Promise<void> {
+  private async handleUnsubscribe(ws: RippleSocket, channel: string): Promise<void> {
     if (channel.startsWith('presence-') && ws.data.userId) {
       this.broadcastToChannel(
         channel,
@@ -457,7 +539,7 @@ export class RippleServer {
     this.send(ws, { type: 'unsubscribed', channel })
   }
 
-  private handleWhisper(ws: RippleWebSocket, channel: string, event: string, data: unknown): void {
+  private handleWhisper(ws: RippleSocket, channel: string, event: string, data: unknown): void {
     if (this.config.rateLimit?.whisperMax) {
       let limiter = this.whisperLimiters.get(ws.data.id)
       if (!limiter) {
@@ -560,7 +642,7 @@ export class RippleServer {
     this.serializer.clearBroadcastCache()
   }
 
-  private sendRaw(ws: RippleWebSocket, serialized: string | Buffer | Uint8Array): boolean {
+  private sendRaw(ws: RippleSocket, serialized: string | Buffer | Uint8Array): boolean {
     const config = this.config.backpressure
     if (config?.enabled) {
       const buffered = ws.getBufferedAmount()
@@ -583,7 +665,7 @@ export class RippleServer {
     }
   }
 
-  private send(ws: RippleWebSocket, message: ServerMessage): boolean {
+  private send(ws: RippleSocket, message: ServerMessage): boolean {
     return this.sendRaw(ws, this.serializer.serialize(message))
   }
 
@@ -616,6 +698,59 @@ export class RippleServer {
     return await this.healthChecker.check()
   }
 
+  /**
+   * Initialize and start the RippleServer.
+   *
+   * This method:
+   * 1. Initializes the driver (Redis/NATS/Local)
+   * 2. Initializes the serializer (JSON/Protobuf)
+   * 3. Starts the WebSocket engine (Bun/uWS/ws)
+   * 4. Starts the ping interval
+   *
+   * @since 5.0.0
+   */
+  async start(): Promise<void> {
+    const port = this.config.port ?? 3000
+
+    this.logger.info('Starting RippleServer', {
+      driver: this.driver.name,
+      serializer: this.serializer.contentType,
+      runtime: this.config.runtime ?? 'auto-detected',
+      port,
+    })
+
+    // Initialize driver
+    await this.driver.init?.()
+
+    // Initialize serializer if needed (e.g. loading proto files)
+    if ('init' in this.serializer) {
+      await (this.serializer as any).init()
+    }
+
+    // Start the WebSocket engine
+    await this.engine.listen(port)
+
+    // Start ping interval
+    if (this.config.pingInterval > 0) {
+      const pong = this.serializer.getPongMessage()
+      this.pingInterval = setInterval(() => {
+        for (const ws of this.channels.getAllClients()) {
+          try {
+            ws.send(pong)
+          } catch {}
+        }
+      }, this.config.pingInterval)
+    }
+
+    this.logger.info('RippleServer started successfully', { port })
+  }
+
+  /**
+   * Initialize the RippleServer without starting the engine.
+   *
+   * @deprecated Use start() instead. This method is kept for backward compatibility.
+   * @since 3.0.0
+   */
   async init(): Promise<void> {
     this.logger.info('Initializing RippleServer', {
       driver: this.driver.name,

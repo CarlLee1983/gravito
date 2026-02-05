@@ -6,7 +6,8 @@
  * @module @gravito/ripple/channels
  */
 
-import type { PresenceUserInfo, RippleDriver, RippleWebSocket } from '../types'
+import type { RippleSocket } from '../engines/IRippleEngine'
+import type { PresenceUserInfo, RippleDriver } from '../types'
 import { CHANNEL_PREFIXES } from './Channel'
 
 /**
@@ -47,7 +48,7 @@ export class ChannelManager {
   private subscriptions = new Map<string, Set<string>>()
 
   /** Map of client ID -> WebSocket */
-  private clients = new Map<string, RippleWebSocket>()
+  private clients = new Map<string, RippleSocket>()
 
   /** Map of presence channel -> Map of user ID -> user info */
   private presenceMembers = new Map<string, Map<string | number, PresenceUserInfo>>()
@@ -85,7 +86,7 @@ export class ChannelManager {
    * }
    * ```
    */
-  addClient(ws: RippleWebSocket): void {
+  addClient(ws: RippleSocket): void {
     this.clients.set(ws.data.id, ws)
   }
 
@@ -138,7 +139,7 @@ export class ChannelManager {
    * @param clientId - The client identifier
    * @returns The WebSocket connection, or undefined if not found
    */
-  getClient(clientId: string): RippleWebSocket | undefined {
+  getClient(clientId: string): RippleSocket | undefined {
     return this.clients.get(clientId)
   }
 
@@ -147,7 +148,7 @@ export class ChannelManager {
    *
    * @returns Array of all connected WebSocket instances
    */
-  getAllClients(): RippleWebSocket[] {
+  getAllClients(): RippleSocket[] {
     return Array.from(this.clients.values())
   }
 
@@ -231,7 +232,7 @@ export class ChannelManager {
    * @param channel - The channel name
    * @returns Array of WebSocket connections subscribed to the channel
    */
-  getSubscribers(channel: string): RippleWebSocket[] {
+  getSubscribers(channel: string): RippleSocket[] {
     const clientIds = this.subscriptions.get(channel)
     if (!clientIds) {
       return []
@@ -239,7 +240,7 @@ export class ChannelManager {
 
     return Array.from(clientIds)
       .map((id) => this.clients.get(id))
-      .filter((ws): ws is RippleWebSocket => ws !== undefined)
+      .filter((ws): ws is RippleSocket => ws !== undefined)
   }
 
   /**
