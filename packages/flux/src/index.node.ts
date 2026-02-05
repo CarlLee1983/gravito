@@ -9,6 +9,12 @@
 
 // Builder
 export { createWorkflow, WorkflowBuilder } from './builder/WorkflowBuilder'
+export {
+  type BatchExecutionOptions,
+  BatchExecutor,
+  type BatchItemResult,
+  type BatchResult,
+} from './engine/BatchExecutor'
 // Core
 export { FluxEngine } from './engine/FluxEngine'
 
@@ -21,6 +27,12 @@ export { JsonFileTraceSink } from './trace/JsonFileTraceSink'
 // Note: BunSQLiteStorage is NOT exported here (Bun-only)
 
 export { ContextManager } from './core/ContextManager'
+export { type Lock, type LockProvider, MemoryLockProvider } from './core/LockProvider'
+export {
+  type RedisClient,
+  RedisLockProvider,
+  type RedisLockProviderOptions,
+} from './core/RedisLockProvider'
 // Core (for advanced usage)
 export { StateMachine } from './core/StateMachine'
 export { StepExecutor } from './core/StepExecutor'

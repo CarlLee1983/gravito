@@ -71,7 +71,8 @@ export class BunSQLiteStorage implements WorkflowStorage {
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         completed_at TEXT,
-        version INTEGER NOT NULL DEFAULT 1
+        version INTEGER NOT NULL DEFAULT 1,
+        definition_version TEXT
       )
     `)
 
@@ -104,8 +105,8 @@ export class BunSQLiteStorage implements WorkflowStorage {
 
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO ${this.tableName} 
-      (id, name, status, input, data, current_step, history, error, created_at, updated_at, completed_at, version)
-      VALUES ($id, $name, $status, $input, $data, $currentStep, $history, $error, $createdAt, $updatedAt, $completedAt, $version)
+      (id, name, status, input, data, current_step, history, error, created_at, updated_at, completed_at, version, definition_version)
+      VALUES ($id, $name, $status, $input, $data, $currentStep, $history, $error, $createdAt, $updatedAt, $completedAt, $version, $definitionVersion)
     `)
 
     stmt.run({
@@ -121,6 +122,7 @@ export class BunSQLiteStorage implements WorkflowStorage {
       $updatedAt: state.updatedAt.toISOString(),
       $completedAt: state.completedAt?.toISOString() ?? null,
       $version: state.version,
+      $definitionVersion: state.definitionVersion ?? null,
     })
   }
 
@@ -178,6 +180,11 @@ export class BunSQLiteStorage implements WorkflowStorage {
         query += ' AND status = $status'
         params.$status = filter.status
       }
+    }
+
+    if (filter?.version) {
+      query += ' AND definition_version = $version'
+      params.$version = filter.version
     }
 
     query += ' ORDER BY created_at DESC'
@@ -245,6 +252,7 @@ export class BunSQLiteStorage implements WorkflowStorage {
       updatedAt: new Date(row.updated_at),
       completedAt: row.completed_at ? new Date(row.completed_at) : undefined,
       version: row.version,
+      definitionVersion: row.definition_version ?? undefined,
     }
   }
 
@@ -285,4 +293,5 @@ interface SQLiteRow {
   updated_at: string
   completed_at: string | null
   version: number
+  definition_version: string | null
 }

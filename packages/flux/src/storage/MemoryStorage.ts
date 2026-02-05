@@ -70,6 +70,10 @@ export class MemoryStorage implements WorkflowStorage {
       results = results.filter((s) => statuses.includes(s.status))
     }
 
+    if (filter?.version) {
+      results = results.filter((s) => s.definitionVersion === filter.version)
+    }
+
     // Sort by createdAt desc
     results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 
