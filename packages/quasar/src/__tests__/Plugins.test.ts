@@ -351,7 +351,7 @@ describe('SentryPlugin', () => {
     events.emit('error', {})
 
     expect(captureExceptionSpy).toHaveBeenCalled()
-    const errorArg = captureExceptionSpy.mock.calls[0][0]
+    const errorArg = captureExceptionSpy.mock.calls[0][0] as any
     expect(errorArg.message).toBe('Unknown Job Error')
     consoleSpy.mockRestore()
   })
@@ -540,7 +540,7 @@ describe('WebhookPlugin', () => {
   it('should call fetch for relevant webhooks on event', async () => {
     const { agent, events } = createMockAgent()
 
-    const fetchMock = spyOn(globalThis, 'fetch').mockImplementation(() =>
+    const fetchMock = spyOn(globalThis, 'fetch' as any).mockImplementation(() =>
       Promise.resolve(new Response(null, { status: 200 }))
     )
 
@@ -618,7 +618,7 @@ describe('WebhookPlugin', () => {
   it('should not call fetch for unrelated events', async () => {
     const { agent } = createMockAgent()
 
-    const fetchMock = spyOn(globalThis, 'fetch').mockImplementation(() =>
+    const fetchMock = spyOn(globalThis, 'fetch' as any).mockImplementation(() =>
       Promise.resolve(new Response(null, { status: 200 }))
     )
 
