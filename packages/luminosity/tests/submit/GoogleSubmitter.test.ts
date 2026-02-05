@@ -108,12 +108,13 @@ describe('GoogleSubmitter', () => {
 
       let _fetchCallCount = 0
 
-      globalThis.fetch = async (url, _init) => {
+      const mockFetch: any = async (url: RequestInfo | URL, _init: RequestInit) => {
         _fetchCallCount++
         const urlStr = typeof url === 'string' ? url : url.toString()
+        const parsedUrl = new URL(urlStr)
 
         // 第一次呼叫：OAuth token 交換
-        if (urlStr.includes('oauth2.googleapis.com')) {
+        if (parsedUrl.hostname === 'oauth2.googleapis.com') {
           return new Response(
             JSON.stringify({
               access_token: 'mock-access-token',
@@ -125,7 +126,7 @@ describe('GoogleSubmitter', () => {
         }
 
         // 第二次呼叫：實際提交
-        if (urlStr.includes('mock.api/publish')) {
+        if (parsedUrl.hostname === 'mock.api' && parsedUrl.pathname === '/publish') {
           return new Response(JSON.stringify({ urlNotificationMetadata: {} }), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
@@ -134,6 +135,7 @@ describe('GoogleSubmitter', () => {
 
         return new Response('Not found', { status: 404 })
       }
+      globalThis.fetch = mockFetch
 
       // signJWT 仍然會拋錯，所以直接設定 token
       // 使用反射來注入 token 避免 signJWT 的限制

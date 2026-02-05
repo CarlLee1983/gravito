@@ -214,4 +214,82 @@ describe('LogRotator', () => {
       expect(rotator).toBeDefined()
     })
   })
+
+  describe('rotate() with FileSystemAdapter (compression)', () => {
+    it('should compress backup when using FileSystemAdapter', async () => {
+      const { existsSync, rmSync, mkdirSync, writeFileSync } = await import('node:fs')
+      const { join } = await import('node:path')
+
+      const tmpDir = join(import.meta.dir, '.tmp-logrotator-compress')
+      if (existsSync(tmpDir)) {
+        rmSync(tmpDir, { recursive: true, force: true })
+      }
+      mkdirSync(tmpDir, { recursive: true })
+
+      const snapshotPath = join(tmpDir, 'snapshot.json')
+      writeFileSync(snapshotPath, '{"test": true}', 'utf-8')
+
+      // 使用真實的 FileSystemAdapter（預設）
+      const rotator = new LogRotator({
+        compress: true, // 啟用壓縮
+      })
+
+      const backupPath = await rotator.rotate(snapshotPath)
+
+      expect(backupPath).toMatch(/\.bak$/)
+      expect(existsSync(backupPath)).toBe(true)
+
+      // 等待壓縮完成
+      await new Promise((resolve) => setTimeout(resolve, 200))
+
+      // 應該有 .gz 檔案
+      expect(existsSync(`${backupPath}.gz`)).toBe(true)
+
+      // 清理
+      rmSync(tmpDir, { recursive: true, force: true })
+    })
+
+    it('should not create .gz when compress is false with FileSystemAdapter', async () => {
+      const { existsSync, rmSync, mkdirSync, writeFileSync } = await import('node:fs')
+      const { join } = await import('node:path')
+
+      const tmpDir = join(import.meta.dir, '.tmp-logrotator-nocompress')
+      if (existsSync(tmpDir)) {
+        rmSync(tmpDir, { recursive: true, force: true })
+      }
+      mkdirSync(tmpDir, { recursive: true })
+
+      const snapshotPath = join(tmpDir, 'snapshot.json')
+      writeFileSync(snapshotPath, '{"test": true}', 'utf-8')
+
+      const rotator = new LogRotator({
+        compress: false,
+      })
+
+      const backupPath = await rotator.rotate(snapshotPath)
+
+      expect(existsSync(backupPath)).toBe(true)
+      expect(existsSync(`${backupPath}.gz`)).toBe(false)
+
+      // 清理
+      rmSync(tmpDir, { recursive: true, force: true })
+    })
+  })
+
+  describe('getStats() edge cases', () => {
+    it('should return zero stats consistently', async () => {
+      const rotator = new LogRotator({
+        storage,
+        compress: false,
+      })
+
+      // listBackups 回傳空陣列
+      const stats = await rotator.getStats('/data/any.json')
+
+      expect(stats.backupCount).toBe(0)
+      expect(stats.totalSize).toBe(0)
+      expect(stats.oldestBackup).toBeNull()
+      expect(stats.newestBackup).toBeNull()
+    })
+  })
 })
