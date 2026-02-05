@@ -7,10 +7,11 @@
 - **Pure State Machine** - No runtime dependencies, Web Standard APIs only
 - **Fluent Builder API** - Type-safe, chainable workflow definitions
 - **Storage Adapters** - Memory, SQLite (Bun), PostgreSQL (coming soon)
+- **Distributed Locking** - Redis-based locking for multi-node deployments
 - **Retry & Timeout** - Automatic retry with exponential backoff
 - **Event Hooks** - Subscribe to workflow/step lifecycle events
 - **Dual Platform** - Works with both Bun and Node.js
-- **Well-Tested** - 87% function coverage, 92% line coverage, 257 passing tests
+- **Well-Tested** - 87% function coverage, 92% line coverage, 277 passing tests
 
 ## Installation
 
@@ -238,6 +239,113 @@ Commit steps are marked to always execute, even on workflow replay:
 })
 ```
 
+## Workflow Versioning
+
+Track workflow definition versions for migration and compatibility management:
+
+### Setting Version
+
+```typescript
+const workflow = createWorkflow('order-process')
+  .version('2.0.0')
+  .input<OrderInput>()
+  .step('validate', async (ctx) => { /* ... */ })
+  .build()
+```
+
+### Filtering by Version
+
+```typescript
+// List workflows by version
+const v1Workflows = await engine.list({ version: '1.0.0' })
+
+// Combine with other filters
+const results = await engine.list({
+  name: 'order-process',
+  version: '2.0.0',
+  status: 'completed',
+  limit: 10,
+})
+```
+
+### Version Mismatch Warning
+
+When resuming a workflow with a different definition version, Flux logs a warning:
+
+```typescript
+// Original execution with v1.0.0
+const result = await engine.execute(workflowV1, input)
+
+// Resume with v2.0.0 - warns about mismatch
+await engine.resume(workflowV2, result.id, { fromStep: 1 })
+// ⚠️ Warning: version mismatch (stored: 1.0.0, current: 2.0.0)
+```
+
+## Batch Execution
+
+Execute multiple workflow instances efficiently with controlled concurrency:
+
+### Basic Usage
+
+```typescript
+const results = await engine.executeBatch(
+  orderWorkflow,
+  orders.map(o => ({ orderId: o.id })),
+  { 
+    concurrency: 10,
+    continueOnError: true,
+    onProgress: (completed, total) => console.log(`${completed}/${total}`)
+  }
+)
+
+console.log(`Succeeded: ${results.succeeded}, Failed: ${results.failed}`)
+```
+
+### Using BatchExecutor
+
+For more control, use `BatchExecutor` directly:
+
+```typescript
+import { BatchExecutor } from '@gravito/flux'
+
+const executor = new BatchExecutor(engine)
+
+// Same workflow, multiple inputs
+const result = await executor.execute(workflow, inputs, {
+  concurrency: 5,        // Max parallel executions (default: 10)
+  continueOnError: true, // Continue if one fails (default: false)
+  signal: controller.signal, // AbortSignal for cancellation
+  onProgress: (completed, total, lastResult) => {
+    updateProgressBar(completed / total)
+  }
+})
+
+// Different workflows
+const result = await executor.executeMany([
+  { workflow: orderWorkflow, input: { orderId: '1' } },
+  { workflow: notifyWorkflow, input: { userId: '2' } },
+  { workflow: orderWorkflow, input: { orderId: '3' } },
+])
+```
+
+### Result Structure
+
+```typescript
+interface BatchResult<T> {
+  total: number        // Total items processed
+  succeeded: number    // Successful executions
+  failed: number       // Failed executions
+  duration: number     // Total execution time (ms)
+  results: Array<{
+    index: number
+    input: T
+    success: boolean
+    result?: WorkflowState
+    error?: Error
+  }>
+}
+```
+
 ## Storage Adapters
 
 ### MemoryStorage (Default)
@@ -313,6 +421,103 @@ interface WorkflowStorage {
 }
 ```
 
+## Distributed Locking
+
+For multi-node deployments, Flux provides a Redis-based distributed locking mechanism to prevent concurrent execution of the same workflow across multiple nodes.
+
+### RedisLockProvider
+
+Use Redis for distributed locking in production clusters:
+
+```typescript
+import { FluxEngine, RedisLockProvider } from '@gravito/flux'
+import Redis from 'ioredis'
+
+const redis = new Redis({
+  host: 'localhost',
+  port: 6379,
+})
+
+const lockProvider = new RedisLockProvider({
+  client: redis,
+  keyPrefix: 'myapp:locks:',  // Default: 'flux:lock:'
+  defaultTtl: 30000,           // Default: 30000ms (30s)
+  retryDelay: 100,             // Default: 100ms
+  maxRetries: 3,               // Default: 0 (no retries)
+})
+
+const engine = new FluxEngine({
+  storage: new PostgreSQLStorage({ /* ... */ }),
+  lockProvider,
+})
+```
+
+### Features
+
+- **Atomic Acquisition**: Uses Redis `SET NX PX` for atomic lock acquisition
+- **Safe Release**: Lua scripts ensure only the lock owner can release
+- **Auto-Expiration**: Locks automatically expire if a node crashes
+- **Retry Support**: Configurable retry with exponential backoff
+- **Idempotent**: Same owner can refresh an existing lock
+
+### Usage
+
+Locks are automatically acquired and released during workflow execution:
+
+```typescript
+// Flux automatically acquires lock before execution
+const result = await engine.execute(workflow, input)
+// Lock is automatically released after completion
+```
+
+Manual lock management:
+
+```typescript
+const lock = await lockProvider.acquire('workflow-123', 'node-1', 30000)
+
+if (lock) {
+  try {
+    // Critical section - only one node can execute
+    await doWork()
+  } finally {
+    await lock.release()
+  }
+} else {
+  console.log('Another node is processing this workflow')
+}
+```
+
+### MemoryLockProvider (Development)
+
+For single-node development environments:
+
+```typescript
+import { FluxEngine, MemoryLockProvider } from '@gravito/flux'
+
+const engine = new FluxEngine({
+  lockProvider: new MemoryLockProvider(),
+})
+```
+
+### Custom Lock Providers
+
+Implement the `LockProvider` interface for custom backends:
+
+```typescript
+interface LockProvider {
+  acquire(resourceId: string, owner: string, ttl: number): Promise<Lock | null>
+  refresh(resourceId: string, owner: string, ttl: number): Promise<boolean>
+  release(resourceId: string): Promise<void>
+}
+
+interface Lock {
+  id: string
+  owner: string
+  expiresAt: number
+  release(): Promise<void>
+}
+```
+
 ## Gravito Integration
 
 ```typescript
@@ -365,7 +570,7 @@ POSTGRES_URL="postgresql://localhost:5432/flux_demo" bun run examples/postgresql
 
 ## Testing
 
-Flux has comprehensive test coverage with 269 total tests across 22 test files:
+Flux has comprehensive test coverage with 300 total tests across 26 test files:
 
 ```bash
 # Run all tests
@@ -384,7 +589,7 @@ bun test tests/workflow-builder.test.ts
 
 - **Function Coverage:** 87% (86.98%)
 - **Line Coverage:** 92% (92.49%)
-- **Total Tests:** 257 passing, 12 skipped (PostgreSQL integration tests)
+- **Total Tests:** 300 passing, 12 skipped (PostgreSQL integration tests)
 
 ### What's Tested
 
@@ -400,6 +605,9 @@ bun test tests/workflow-builder.test.ts
 - ✅ Visualization (MermaidGenerator with all diagram variations)
 - ✅ Profiling & tracing (WorkflowProfiler, TraceEmitter, JsonFileTraceSink)
 - ✅ Gravito integration (OrbitFlux lifecycle)
+- ✅ Workflow versioning (.version(), version filtering, mismatch warnings)
+- ✅ Batch execution (BatchExecutor, executeBatch, concurrency control)
+- ✅ Redis distributed locking (RedisLockProvider with mocked Redis)
 
 ### Skipped Tests
 

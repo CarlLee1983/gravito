@@ -30,9 +30,20 @@
 export { createWorkflow, WorkflowBuilder } from './builder/WorkflowBuilder'
 export { ContextManager } from './core/ContextManager'
 export { type Lock, type LockProvider, MemoryLockProvider } from './core/LockProvider'
+export {
+  type RedisClient,
+  RedisLockProvider,
+  type RedisLockProviderOptions,
+} from './core/RedisLockProvider'
 // Core (for advanced usage)
 export { StateMachine } from './core/StateMachine'
 export { StepExecutor } from './core/StepExecutor'
+export {
+  type BatchExecutionOptions,
+  BatchExecutor,
+  type BatchItemResult,
+  type BatchResult,
+} from './engine/BatchExecutor'
 // Core
 export { FluxEngine } from './engine/FluxEngine'
 // Errors
