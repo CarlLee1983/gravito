@@ -63,8 +63,12 @@ class Semaphore {
       this.current++
       return
     }
-    await new Promise<void>((resolve) => this.queue.push(resolve))
-    this.current++
+    await new Promise<void>((resolve) => {
+      this.queue.push(() => {
+        this.current++
+        resolve()
+      })
+    })
   }
 
   release(): void {
