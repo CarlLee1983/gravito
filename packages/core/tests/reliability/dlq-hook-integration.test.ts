@@ -6,7 +6,6 @@
 
 import { beforeEach, describe, expect, it } from 'bun:test'
 import { HookManager } from '../../src/HookManager'
-import { getDefaultRetryPolicy, RetryEngine } from '../../src/reliability/RetryPolicy'
 
 describe('DLQ + HookManager Integration', () => {
   let manager: HookManager

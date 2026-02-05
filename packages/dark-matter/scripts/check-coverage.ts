@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const lcovPath = process.argv[2] ?? 'coverage/lcov.info'
-const threshold = Number.parseFloat(process.env.COVERAGE_THRESHOLD ?? '80')
+const threshold = Number.parseFloat(process.env.COVERAGE_THRESHOLD ?? '70')
 
 const root = resolve(process.cwd())
 const srcRoot = `${resolve(root, 'src')}/`

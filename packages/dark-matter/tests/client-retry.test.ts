@@ -36,7 +36,19 @@ class MongoClientMock {
   }
 }
 
-mock.module('mongodb', () => ({ MongoClient: MongoClientMock }))
+mock.module('mongodb', () => ({
+  MongoClient: MongoClientMock,
+  ObjectId: class {
+    _id: string
+    constructor(id: string) {
+      this._id = id
+    }
+    toString() {
+      return this._id
+    }
+  },
+  GridFSBucket: class {},
+}))
 
 let MongoClient: typeof import('../src/MongoClient').MongoClient
 

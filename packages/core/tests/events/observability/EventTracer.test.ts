@@ -1,6 +1,4 @@
-import { describe, expect, it, mock, spyOn } from 'bun:test'
-import type { Span } from '@opentelemetry/api'
-import { trace } from '@opentelemetry/api'
+import { describe, expect, it } from 'bun:test'
 import { EventTracer } from '../../../src/events/observability/EventTracer'
 
 // Note: Real Span interface is provided by @opentelemetry/api

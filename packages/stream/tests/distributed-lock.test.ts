@@ -31,7 +31,7 @@ function createMockRedisClient(): GroupRedisClient {
       return 'OK'
     }),
 
-    eval: mock(async (script: string, numKeys: number, ...args: any[]) => {
+    eval: mock(async (script: string, _numKeys: number, ...args: any[]) => {
       const key = args[0] as string
       const expectedValue = args[1] as string
 
@@ -80,7 +80,9 @@ function createMockRedisClient(): GroupRedisClient {
     // 測試輔助方法：檢查鍵是否存在
     _hasKey: (key: string): boolean => {
       const entry = storage.get(key)
-      if (!entry) return false
+      if (!entry) {
+        return false
+      }
       if (entry.expiresAt < Date.now()) {
         storage.delete(key)
         return false

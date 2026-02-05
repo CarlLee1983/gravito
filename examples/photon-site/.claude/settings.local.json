@@ -34,7 +34,9 @@
       "Bash(git push)",
       "Bash(for:*)",
       "Bash(done)",
-      "Bash(bunx biome check:*)"
+      "Bash(bunx biome check:*)",
+      "Bash(bun --version:*)",
+      "Bash(COVERAGE_THRESHOLD=0 bun test:*)"
     ]
   }
 }

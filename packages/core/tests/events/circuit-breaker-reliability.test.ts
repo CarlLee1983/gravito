@@ -265,7 +265,7 @@ describe('CircuitBreaker Reliability Tests', () => {
       const transitions: [string, string][] = []
       const metricsRecorder = {
         recordState: mock(() => {}),
-        recordTransition: mock((eventName: string, from: string, to: string) => {
+        recordTransition: mock((_eventName: string, from: string, to: string) => {
           transitions.push([from, to])
         }),
         recordFailure: mock(() => {}),

@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'bun:test'
-import type { DLQEntry } from '../../../src/events/DeadLetterQueue'
 import { HookManager } from '../../../src/HookManager'
 
 describe('Dead Letter Queue Integration', () => {
