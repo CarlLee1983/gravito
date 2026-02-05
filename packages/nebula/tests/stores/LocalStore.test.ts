@@ -121,6 +121,16 @@ describe('LocalStore - URL Generation', () => {
   })
 })
 
+describe('LocalStore - list (not implemented)', () => {
+  it('should throw "not yet implemented" error when calling list()', () => {
+    expect(() => store.list()).toThrow('[LocalStore] list() is not yet implemented.')
+  })
+
+  it('should throw "not yet implemented" error when calling list() with prefix', () => {
+    expect(() => store.list('some/prefix')).toThrow('[LocalStore] list() is not yet implemented.')
+  })
+})
+
 describe('LocalStore - Nested Directories', () => {
   it('should handle nested directory structures', async () => {
     await store.put('deep/nested/dir/file.txt', 'deep content')
