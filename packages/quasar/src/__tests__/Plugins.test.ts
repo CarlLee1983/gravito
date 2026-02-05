@@ -573,7 +573,7 @@ describe('WebhookPlugin', () => {
     const { agent, events } = createMockAgent()
     const consoleSpy = spyOn(console, 'error').mockImplementation(() => {})
 
-    const fetchMock = spyOn(globalThis, 'fetch').mockImplementation(() =>
+    const fetchMock = spyOn(globalThis, 'fetch' as any).mockImplementation(() =>
       Promise.reject(new Error('Network error'))
     )
 
@@ -596,7 +596,7 @@ describe('WebhookPlugin', () => {
     const { agent, events } = createMockAgent()
     const consoleSpy = spyOn(console, 'error').mockImplementation(() => {})
 
-    const fetchMock = spyOn(globalThis, 'fetch').mockImplementation(() =>
+    const fetchMock = spyOn(globalThis, 'fetch' as any).mockImplementation(() =>
       Promise.resolve(new Response(null, { status: 500, statusText: 'Internal Server Error' }))
     )
 
