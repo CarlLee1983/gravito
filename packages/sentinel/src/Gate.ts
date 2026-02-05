@@ -17,6 +17,12 @@ export type PolicyCallback = (
 ) => boolean | Promise<boolean>
 
 /**
+ * Callback function to guess policy class name/type from a model class.
+ * @public
+ */
+export type PolicyGuesser = (model: Constructor) => unknown
+
+/**
  * Authorization Gate for permission management.
  * @public
  * @since 1.0.0
@@ -26,6 +32,7 @@ export class Gate {
   protected policies = new Map<Constructor, Record<string, unknown>>()
   protected beforeCallbacks: PolicyCallback[] = []
   protected afterCallbacks: PolicyCallback[] = []
+  protected policyGuessers: PolicyGuesser[] = []
 
   protected userResolver?: () => Promise<Authenticatable | null>
 
@@ -35,6 +42,7 @@ export class Gate {
       this.policies = parent.policies
       this.beforeCallbacks = parent.beforeCallbacks
       this.afterCallbacks = parent.afterCallbacks
+      this.policyGuessers = parent.policyGuessers
     }
   }
 
@@ -81,6 +89,44 @@ export class Gate {
    */
   after(callback: PolicyCallback): this {
     this.afterCallbacks.push(callback)
+    return this
+  }
+
+  /**
+   * Register a callback to guess the policy for a given model.
+   *
+   * @param guesser - The guessing logic
+   */
+  guessPolicyUsing(guesser: PolicyGuesser): this {
+    this.policyGuessers.push(guesser)
+    return this
+  }
+
+  /**
+   * Discover and register policies from a list of classes.
+   *
+   * This method inspects each provided class for a static `model` property.
+   * If found, it registers the class as a policy for that model.
+   *
+   * @param policies - List of policy classes or modules
+   * @example
+   * ```typescript
+   * import * as policies from './policies';
+   * gate.discover(Object.values(policies));
+   * ```
+   */
+  discover(policies: unknown[] | Record<string, unknown>): this {
+    const list = Array.isArray(policies) ? policies : Object.values(policies)
+
+    for (const policyClass of list) {
+      if (typeof policyClass === 'function' && 'model' in policyClass) {
+        const model = (policyClass as any).model
+        if (model) {
+          this.policy(model as Constructor, new (policyClass as any)())
+        }
+      }
+    }
+
     return this
   }
 
@@ -174,17 +220,31 @@ export class Gate {
    * Get the policy instance for a given target.
    */
   protected getPolicyFor(target: unknown): Record<string, unknown> | null {
-    if (this.policies.has(target as Constructor)) {
-      return this.policies.get(target as Constructor) ?? null
+    let modelConstructor: Constructor | null = null
+
+    if (typeof target === 'function') {
+      modelConstructor = target as Constructor
+    } else if (target && typeof target === 'object' && 'constructor' in target) {
+      modelConstructor = (target as { constructor: Constructor }).constructor
     }
 
-    if (
-      target &&
-      typeof target === 'object' &&
-      'constructor' in target &&
-      this.policies.has((target as { constructor: Constructor }).constructor)
-    ) {
-      return this.policies.get((target as { constructor: Constructor }).constructor) ?? null
+    if (!modelConstructor) {
+      return null
+    }
+
+    if (this.policies.has(modelConstructor)) {
+      return this.policies.get(modelConstructor) ?? null
+    }
+
+    // Try to guess the policy
+    for (const guesser of this.policyGuessers) {
+      const policy = guesser(modelConstructor)
+      if (policy) {
+        const instance =
+          typeof policy === 'function' ? new (policy as any)() : (policy as Record<string, unknown>)
+        this.policy(modelConstructor, instance)
+        return instance
+      }
     }
 
     return null

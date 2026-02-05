@@ -8,5 +8,10 @@
  */
 
 export { ContextManager } from './ContextManager'
+export {
+  type RedisClient,
+  RedisLockProvider,
+  type RedisLockProviderOptions,
+} from './RedisLockProvider'
 export { StateMachine } from './StateMachine'
 export { StepExecutor } from './StepExecutor'

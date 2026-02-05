@@ -15,6 +15,7 @@ import type {
   WorkflowState,
   WorkflowStorage,
 } from '../types'
+import { type BatchExecutionOptions, BatchExecutor, type BatchResult } from './BatchExecutor'
 import {
   acquireEngineLock,
   createStepExecutor,
@@ -115,7 +116,7 @@ export class FluxEngine {
       definition.steps.length
     ) as WorkflowContext<TInput, TData>
 
-    ctx = await this.persist(ctx)
+    ctx = await this.persist(ctx, definition.version)
 
     const lock = await acquireEngineLock(this.config, ctx.id)
     try {
@@ -133,6 +134,15 @@ export class FluxEngine {
     }
   }
 
+  async executeBatch<TInput, TData extends Record<string, any> = Record<string, any>>(
+    workflow: WorkflowBuilder<TInput, TData> | WorkflowDefinition<TInput, TData>,
+    inputs: TInput[],
+    options?: BatchExecutionOptions
+  ): Promise<BatchResult<TData>> {
+    const executor = new BatchExecutor(this)
+    return executor.execute(workflow, inputs, options)
+  }
+
   async resume<TInput, TData extends Record<string, any> = Record<string, any>>(
     workflow: WorkflowBuilder<TInput, TData> | WorkflowDefinition<TInput, TData>,
     workflowId: string,
@@ -148,6 +158,18 @@ export class FluxEngine {
     }
     if (state.history.length !== definition.steps.length) {
       throw Errors.workflowDefinitionChanged()
+    }
+
+    // Warn on version mismatch (lenient mode - continue execution)
+    if (
+      state.definitionVersion &&
+      definition.version &&
+      state.definitionVersion !== definition.version
+    ) {
+      this.config.logger?.warn(
+        `Workflow version mismatch: instance was created with v${state.definitionVersion}, ` +
+          `but current definition is v${definition.version}. Continuing execution.`
+      )
     }
 
     let ctx = this.contextManager.restore<TInput, TData>(
@@ -386,8 +408,9 @@ export class FluxEngine {
   }
 
   private async persist<TInput, TData extends Record<string, any>>(
-    ctx: WorkflowContext<TInput, TData>
+    ctx: WorkflowContext<TInput, TData>,
+    definitionVersion?: string
   ): Promise<WorkflowContext<TInput, TData>> {
-    return persistContext(ctx, this.storage, this.contextManager)
+    return persistContext(ctx, this.storage, this.contextManager, definitionVersion)
   }
 }

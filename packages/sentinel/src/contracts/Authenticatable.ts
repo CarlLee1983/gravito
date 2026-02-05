@@ -41,4 +41,30 @@ export interface Authenticatable {
    * @returns The field name (e.g., 'id', 'uuid', or 'email')
    */
   getAuthIdentifierName?(): string
+
+  /**
+   * Get the tenant identifier for the user.
+   *
+   * Used for multi-tenancy support to ensure users can only access resources
+   * within their own tenant.
+   *
+   * @returns The tenant ID
+   */
+  getTenantId?(): string | number
+
+  /**
+   * Check if the user has a specific role.
+   *
+   * @param role - The role name to check
+   * @returns True if the user has the role
+   */
+  hasRole?(role: string): boolean | Promise<boolean>
+
+  /**
+   * Check if the user has a specific permission.
+   *
+   * @param permission - The permission name to check
+   * @returns True if the user has the permission
+   */
+  hasPermission?(permission: string): boolean | Promise<boolean>
 }
