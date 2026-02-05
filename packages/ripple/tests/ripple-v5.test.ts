@@ -96,7 +96,7 @@ describe('RippleServer v5.0', () => {
       const health = await server.getHealth()
 
       expect(health.status).toBeDefined()
-      expect(health.driver).toBeDefined()
+      expect(health.checks.driver).toBeDefined()
 
       await server.shutdown()
     })
@@ -261,13 +261,12 @@ describe('Engine Abstraction', () => {
     // Engine will be created, but listen() will fail if uWS not installed in Bun environment
   })
 
-  it('should throw for node-ws runtime (Phase 3 - not yet implemented)', () => {
-    expect(() => {
-      new RippleServer({
-        port: 3019,
-        runtime: 'node-ws',
-      })
-    }).toThrow('ws engine not yet implemented')
+  it('should support node-ws runtime (Phase 3)', () => {
+    const server = new RippleServer({
+      port: 3019,
+      runtime: 'node-ws',
+    })
+    expect(server).toBeDefined()
   })
 })
 

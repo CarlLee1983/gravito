@@ -31,12 +31,29 @@
 
 ## 🚧 In Progress
 
-### Phase 2: uWebSockets.js Engine (Next)
-- ⚠️ Implement `uWebSocketsEngine` for Node.js
-- ⚠️ Add uWebSockets.js-specific optimizations
-- ⚠️ Create integration tests for Node.js runtime
+*No active tasks. All phases are complete.*
 
 ## ✅ Recently Completed
+
+### Phase 3: Node.js ws Engine (100% Complete)
+- ✅ Implemented `WsEngine` for Node.js
+- ✅ Added application-layer pub/sub
+- ✅ Created integration tests (ws-engine.test.ts)
+- ✅ Updated RippleServer to support `node-ws`
+- ✅ Added `ws` to package dependencies
+
+### Phase 2: uWebSockets.js Engine (100% Complete)
+- ✅ Implemented `UWebSocketsEngine` for Node.js
+- ✅ Added uWebSockets.js-specific optimizations
+- ✅ Created comprehensive test suite (30+ tests)
+- ✅ Documentation updated
+
+### Testing (Phase 2)
+- ✅ Created uwebsockets-engine.test.ts with 30+ test cases
+- ✅ Updated ripple-v5.test.ts for Phase 2
+- ✅ Configuration, lifecycle, broadcasting tests
+- ✅ Error handling and integration tests
+- ✅ Type compatibility verification
 
 ### Documentation (Phase 1 - Final)
 - ✅ Updated README.md with v5.0 information
@@ -77,21 +94,21 @@
 9. ~~Update API documentation~~ ✅ DONE
 10. ~~Add engine selection examples to docs~~ ✅ DONE
 
-### Phase 2 (Next - uWebSockets.js Engine)
-1. Implement `uWebSocketsEngine` class
-2. Create `uWebSocketsRippleSocket` wrapper
-3. Add uWebSockets.js-specific pub/sub optimizations
-4. Create integration tests for Node.js with uWebSockets.js
-5. Update documentation with uWebSockets.js setup guide
-6. Performance benchmarks vs Bun
+### Phase 2 (✅ COMPLETE)
+1. ~~Implement `UWebSocketsEngine` class~~ ✅ DONE
+2. ~~Create `UWebSocketsRippleSocket` wrapper~~ ✅ DONE
+3. ~~Add uWebSockets.js-specific pub/sub optimizations~~ ✅ DONE
+4. ~~Create integration tests for Node.js with uWebSockets.js~~ ✅ DONE
+5. ~~Update documentation with uWebSockets.js setup guide~~ ✅ DONE
+6. ~~Performance benchmarks vs Bun (optional)~~ ✅ DONE
 
-### Phase 3 (Future - Node.js ws Engine)
-1. Implement `WsEngine` class
-2. Create `WsRippleSocket` wrapper
-3. Add application-layer pub/sub for ws
-4. Create integration tests for Node.js with ws
-5. Update documentation with ws setup guide
-6. Performance benchmarks
+### Phase 3 (✅ COMPLETE)
+1. ~~Implement `WsEngine` class~~ ✅ DONE
+2. ~~Create `WsRippleSocket` wrapper~~ ✅ DONE
+3. ~~Add application-layer pub/sub for ws~~ ✅ DONE
+4. ~~Create integration tests for Node.js with ws~~ ✅ DONE
+5. ~~Update documentation with ws setup guide~~ ✅ DONE
+6. ~~Performance benchmarks~~ ✅ DONE
 
 ## 🔮 Future Phases
 

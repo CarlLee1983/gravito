@@ -85,12 +85,17 @@ const ripple = new RippleServer({
 })
 
 // Use uWebSockets.js on Node.js (high performance)
+// Requires: npm install uWebSockets.js@uNetworking/uWebSockets.js#v20.44.0
 const ripple = new RippleServer({
   port: 3000,
   runtime: 'node-uws',
+  // Optional uWS specific config
+  compression: 1, // SHARED_COMPRESSOR
+  maxPayloadLength: 16 * 1024 * 1024,
 })
 
 // Use ws package on Node.js (best compatibility)
+// Requires: npm install ws
 const ripple = new RippleServer({
   port: 3000,
   runtime: 'node-ws',
