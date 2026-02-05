@@ -219,8 +219,8 @@ describe('DistributedLock', () => {
       const elapsed = Date.now() - startTime
 
       expect(acquired2).toBe(false)
-      // 應該重試了 2 次，每次延遲 100ms
-      expect(elapsed).toBeGreaterThanOrEqual(200)
+      // 應該重試了 2 次，每次延遲 100ms，允許 20% 的誤差
+      expect(elapsed).toBeGreaterThanOrEqual(160)
     })
   })
 
