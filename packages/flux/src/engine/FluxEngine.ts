@@ -103,9 +103,7 @@ export class FluxEngine {
     workflow: WorkflowBuilder<TInput, TData> | WorkflowDefinition<TInput, TData>,
     input: TInput
   ): Promise<FluxResult<TData>> {
-    const startTime = Date.now()
     const definition = resolveDefinition(workflow)
-
     if (definition.validateInput && !definition.validateInput(input)) {
       throw Errors.invalidInput(definition.name)
     }
@@ -117,10 +115,35 @@ export class FluxEngine {
     ) as WorkflowContext<TInput, TData>
 
     ctx = await this.persist(ctx, definition.version)
+    return this.executeWithLock(definition, ctx, 0, {}, Date.now())
+  }
 
+  async executeBatch<TInput, TData extends Record<string, any> = Record<string, any>>(
+    workflow: WorkflowBuilder<TInput, TData> | WorkflowDefinition<TInput, TData>,
+    inputs: TInput[],
+    options?: BatchExecutionOptions
+  ): Promise<BatchResult<TData>> {
+    const executor = new BatchExecutor(this)
+    return executor.execute(workflow, inputs, options)
+  }
+
+  private async executeWithLock<TInput, TData extends Record<string, any>>(
+    definition: WorkflowDefinition<TInput, TData>,
+    ctx: WorkflowContext<TInput, TData>,
+    startIndex: number,
+    options: any,
+    startTime?: number
+  ): Promise<FluxResult<TData>> {
     const lock = await acquireEngineLock(this.config, ctx.id)
     try {
-      const result = await this.executor.execute(definition, ctx, new StateMachine(), startTime, 0)
+      const result = await this.executor.execute(
+        definition,
+        ctx,
+        new StateMachine(),
+        startTime ?? Date.now(),
+        startIndex,
+        options
+      )
       return handleExecutionResult(
         definition,
         ctx,
@@ -134,15 +157,6 @@ export class FluxEngine {
     }
   }
 
-  async executeBatch<TInput, TData extends Record<string, any> = Record<string, any>>(
-    workflow: WorkflowBuilder<TInput, TData> | WorkflowDefinition<TInput, TData>,
-    inputs: TInput[],
-    options?: BatchExecutionOptions
-  ): Promise<BatchResult<TData>> {
-    const executor = new BatchExecutor(this)
-    return executor.execute(workflow, inputs, options)
-  }
-
   async resume<TInput, TData extends Record<string, any> = Record<string, any>>(
     workflow: WorkflowBuilder<TInput, TData> | WorkflowDefinition<TInput, TData>,
     workflowId: string,
@@ -151,16 +165,13 @@ export class FluxEngine {
     const definition = resolveDefinition(workflow)
     const state = await this.storage.load(workflowId)
     if (!state || state.name !== definition.name) {
-      if (!state) {
-        return null
-      }
+      if (!state) return null
       throw Errors.workflowNameMismatch(definition.name, state.name)
     }
     if (state.history.length !== definition.steps.length) {
       throw Errors.workflowDefinitionChanged()
     }
 
-    // Warn on version mismatch (lenient mode - continue execution)
     if (
       state.definitionVersion &&
       definition.version &&
@@ -178,33 +189,9 @@ export class FluxEngine {
     const startIndex = resolveStartIndex(definition, options?.fromStep, ctx.currentStep)
     resetHistoryFrom(ctx, startIndex)
     ctx = updateWorkflowContext(ctx, { status: 'pending', currentStep: startIndex })
-
     ctx = await this.persist(ctx)
 
-    const lock = await acquireEngineLock(this.config, ctx.id)
-    try {
-      const result = await this.executor.execute(
-        definition,
-        ctx,
-        new StateMachine(),
-        Date.now(),
-        startIndex,
-        {
-          resume: true,
-          fromStep: startIndex,
-        }
-      )
-      return handleExecutionResult(
-        definition,
-        ctx,
-        result,
-        this.contextManager,
-        this.rollbackManager,
-        this.storage
-      )
-    } finally {
-      await lock?.release()
-    }
+    return this.executeWithLock(definition, ctx, startIndex, { resume: true, fromStep: startIndex })
   }
 
   async signal<TInput, TData extends Record<string, any> = Record<string, any>>(
@@ -215,33 +202,33 @@ export class FluxEngine {
   ): Promise<FluxResult<TData>> {
     const definition = resolveDefinition(workflow)
     const state = await this.storage.load(workflowId)
-    if (!state) {
-      throw Errors.workflowNotFound(workflowId)
-    }
-    if (state.status !== 'suspended') {
-      throw Errors.workflowNotSuspended(state.status)
-    }
+    if (!state) throw Errors.workflowNotFound(workflowId)
+    if (state.status !== 'suspended') throw Errors.workflowNotSuspended(state.status)
 
     let ctx = this.contextManager.restore<TInput, TData>(
       state as unknown as WorkflowState<TInput, TData>
     )
-    const currentStepIndex = ctx.currentStep
-    let execution = ctx.history[currentStepIndex]
+    const idx = ctx.currentStep
+    const exec = ctx.history[idx]
 
-    if (!execution || execution.status !== 'suspended' || execution.waitingFor !== signalName) {
+    if (!exec || exec.status !== 'suspended' || exec.waitingFor !== signalName) {
+      const isSuspended = exec?.status === 'suspended'
       throw new Errors.FluxError(
-        !execution || execution.status !== 'suspended'
-          ? 'Workflow state invalid: no suspended step found'
-          : `Workflow waiting for signal "${execution.waitingFor}", received "${signalName}"`,
-        !execution || execution.status !== 'suspended'
-          ? Errors.FluxErrorCode.STEP_NOT_FOUND
-          : Errors.FluxErrorCode.INVALID_STATE_TRANSITION
+        isSuspended
+          ? `Workflow waiting for signal "${exec.waitingFor}", received "${signalName}"`
+          : 'Workflow state invalid: no suspended step found',
+        isSuspended
+          ? Errors.FluxErrorCode.INVALID_STATE_TRANSITION
+          : Errors.FluxErrorCode.STEP_NOT_FOUND
       )
     }
 
-    execution = { ...execution, status: 'completed', completedAt: new Date(), output: payload }
     ctx = updateWorkflowContext(ctx, {
-      history: ctx.history.map((h, i) => (i === currentStepIndex ? execution : h)),
+      history: ctx.history.map((h, i) =>
+        i === idx
+          ? { ...h, status: 'completed' as const, completedAt: new Date(), output: payload }
+          : h
+      ),
     })
 
     await this.traceEmitter.emit({
@@ -253,26 +240,7 @@ export class FluxEngine {
       input: payload,
     })
 
-    const nextStepIndex = currentStepIndex + 1
-    const result = await this.executor.execute(
-      definition,
-      ctx,
-      new StateMachine(),
-      Date.now(),
-      nextStepIndex,
-      {
-        resume: true,
-        fromStep: nextStepIndex,
-      }
-    )
-    return handleExecutionResult(
-      definition,
-      ctx,
-      result,
-      this.contextManager,
-      this.rollbackManager,
-      this.storage
-    )
+    return this.executeWithLock(definition, ctx, idx + 1, { resume: true, fromStep: idx + 1 })
   }
 
   async retryStep<TInput, TData extends Record<string, any> = Record<string, any>>(
@@ -283,9 +251,7 @@ export class FluxEngine {
     const definition = resolveDefinition(workflow)
     const state = await this.storage.load(workflowId)
     if (!state || state.name !== definition.name) {
-      if (!state) {
-        return null
-      }
+      if (!state) return null
       throw Errors.workflowNameMismatch(definition.name, state.name)
     }
     if (state.history.length !== definition.steps.length) {
@@ -295,30 +261,12 @@ export class FluxEngine {
     let ctx = this.contextManager.restore<TInput, TData>(
       state as unknown as WorkflowState<TInput, TData>
     )
-    const startIndex = resolveStartIndex(definition, stepName, ctx.currentStep)
-    resetHistoryFrom(ctx, startIndex)
-    ctx = updateWorkflowContext(ctx, { status: 'pending', currentStep: startIndex })
+    const idx = resolveStartIndex(definition, stepName, ctx.currentStep)
+    resetHistoryFrom(ctx, idx)
+    ctx = updateWorkflowContext(ctx, { status: 'pending', currentStep: idx })
     ctx = await this.persist(ctx)
 
-    const result = await this.executor.execute(
-      definition,
-      ctx,
-      new StateMachine(),
-      Date.now(),
-      startIndex,
-      {
-        retry: true,
-        fromStep: startIndex,
-      }
-    )
-    return handleExecutionResult(
-      definition,
-      ctx,
-      result,
-      this.contextManager,
-      this.rollbackManager,
-      this.storage
-    )
+    return this.executeWithLock(definition, ctx, idx, { retry: true, fromStep: idx })
   }
 
   /**
