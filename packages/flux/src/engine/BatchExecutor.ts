@@ -109,7 +109,7 @@ export class BatchExecutor {
    * @param options - Execution options (concurrency, error handling, etc.).
    * @returns Batch result containing all individual execution results.
    */
-  async execute<TInput, TData>(
+  async execute<TInput, TData extends Record<string, any> = Record<string, any>>(
     workflow: WorkflowBuilder<TInput, TData> | WorkflowDefinition<TInput, TData>,
     inputs: TInput[],
     options?: BatchExecutionOptions
