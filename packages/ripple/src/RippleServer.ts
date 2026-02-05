@@ -10,6 +10,7 @@ import { ChannelManager, requiresAuth } from './channels'
 import { LocalDriver, NATSDriver, RedisDriver } from './drivers'
 import { BunEngine } from './engines/BunEngine'
 import type { IRippleEngine, RippleSocket } from './engines/IRippleEngine'
+import { UWebSocketsEngine } from './engines/UWebSocketsEngine'
 import { HealthChecker } from './health/HealthChecker'
 import type { RippleLogger } from './logging/Logger'
 import { createLogger } from './logging/Logger'
@@ -130,10 +131,14 @@ export class RippleServer {
         })
 
       case 'node-uws':
-        throw new Error('uWebSockets.js engine not yet implemented. Coming in v5.0-beta.')
+        return new UWebSocketsEngine({
+          port: config.port,
+          hostname: config.hostname,
+          development: process.env.NODE_ENV === 'development',
+        })
 
       case 'node-ws':
-        throw new Error('ws engine not yet implemented. Coming in v5.0-beta.')
+        throw new Error('ws engine not yet implemented. Coming in Phase 3.')
 
       default:
         throw new Error(`Unsupported runtime: ${runtime}`)

@@ -10,3 +10,5 @@
 export type { BunEngineConfig } from './BunEngine'
 export { BunEngine, BunRippleSocket } from './BunEngine'
 export type { EngineFactory, IRippleEngine, RippleSocket } from './IRippleEngine'
+export type { UWebSocketsEngineConfig } from './UWebSocketsEngine'
+export { UWebSocketsEngine, UWebSocketsRippleSocket } from './UWebSocketsEngine'
