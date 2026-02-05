@@ -54,8 +54,6 @@ const mail = core.container.make('mail')
 await mail.send(new WelcomeEmail())
 ```
 
----
-
 ## 架構設計
 
 ### 1. 技術規格與核心元件

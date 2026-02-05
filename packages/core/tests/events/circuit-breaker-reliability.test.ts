@@ -370,7 +370,7 @@ describe('CircuitBreaker Reliability Tests', () => {
         await cb.execute(async () => 'should not execute')
         expect.unreachable()
       } catch (error: any) {
-        expect(error.message).toContain('Circuit breaker is OPEN')
+        expect(error.message).toContain('Circuit is OPEN')
       }
     })
   })

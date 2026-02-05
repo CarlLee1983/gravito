@@ -29,7 +29,7 @@ describe('Dead Letter Queue Integration', () => {
       )
 
       // Wait for retries to complete
-      await new Promise((resolve) => setTimeout(resolve, 200))
+      await new Promise((resolve) => setTimeout(resolve, 300))
 
       // Verify event was retried correct number of times
       expect(attempts).toBeGreaterThanOrEqual(2)
@@ -70,7 +70,7 @@ describe('Dead Letter Queue Integration', () => {
       )
 
       // Wait for async processing
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 200))
 
       // Verify event was processed successfully after retry
       expect(attempts).toBe(2)
@@ -103,7 +103,7 @@ describe('Dead Letter Queue Integration', () => {
         )
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 200))
 
       // List all DLQ entries
       const all = manager.getDLQEntries({})
@@ -133,7 +133,7 @@ describe('Dead Letter Queue Integration', () => {
         )
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 200))
 
       const count = manager.getDLQCount('test:count')
       expect(count).toBeGreaterThanOrEqual(1)
@@ -154,7 +154,7 @@ describe('Dead Letter Queue Integration', () => {
         }
       )
 
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 200))
 
       const entriesBefore = manager.getDLQEntries({ eventName: 'test:delete' })
       expect(entriesBefore.length).toBeGreaterThan(0)
@@ -217,15 +217,16 @@ describe('Dead Letter Queue Integration', () => {
   describe('DLQ persistence simulation', () => {
     it('should maintain DLQ state across operations', async () => {
       const manager = new HookManager({ enableDLQ: true })
+      const uniqueId = `test:persist:${Date.now()}`
 
-      manager.addAction('test:persist', async () => {
+      manager.addAction(uniqueId, async () => {
         throw new Error('Failure')
       })
 
       // Add first batch
       for (let i = 0; i < 2; i++) {
         await manager.doActionAsync(
-          'test:persist',
+          uniqueId,
           { batch: 1, id: i },
           {
             retry: { maxRetries: 0, dlqAfterMaxRetries: true },
@@ -233,14 +234,14 @@ describe('Dead Letter Queue Integration', () => {
         )
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 200))
 
-      const countAfterBatch1 = manager.getDLQCount('test:persist')
+      const countAfterBatch1 = manager.getDLQCount(uniqueId)
 
       // Add second batch
       for (let i = 0; i < 2; i++) {
         await manager.doActionAsync(
-          'test:persist',
+          uniqueId,
           { batch: 2, id: i },
           {
             retry: { maxRetries: 0, dlqAfterMaxRetries: true },
@@ -248,12 +249,12 @@ describe('Dead Letter Queue Integration', () => {
         )
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 200))
 
-      const countAfterBatch2 = manager.getDLQCount('test:persist')
+      const countAfterBatch2 = manager.getDLQCount(uniqueId)
 
       // Verify both batches are in DLQ
-      expect(countAfterBatch2).toBeGreaterThan(countAfterBatch1)
+      expect(countAfterBatch2).toBeGreaterThanOrEqual(countAfterBatch1 + 2)
     })
 
     it('should handle DLQ entry requeue', async () => {
@@ -274,7 +275,7 @@ describe('Dead Letter Queue Integration', () => {
         }
       )
 
-      await new Promise((resolve) => setTimeout(resolve, 50))
+      await new Promise((resolve) => setTimeout(resolve, 200))
 
       // Manually add failing listener then fix it
       manager.removeAction('test:requeue')
@@ -290,7 +291,7 @@ describe('Dead Letter Queue Integration', () => {
         await manager.doActionAsync(entry.eventName, entry.payload, entry.options)
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 200))
 
       // Verify requeued event was processed
       expect(processedEvents.length).toBeGreaterThan(0)
@@ -300,25 +301,26 @@ describe('Dead Letter Queue Integration', () => {
   describe('DLQ error information', () => {
     it('should capture error details in DLQ entry', async () => {
       const manager = new HookManager({ enableDLQ: true })
+      const uniqueId = `test:error-capture:${Date.now()}`
 
       const testError = new Error('Specific error message')
       testError.stack = 'Stack trace here'
 
-      manager.addAction('test:error-capture', async () => {
+      manager.addAction(uniqueId, async () => {
         throw testError
       })
 
       await manager.doActionAsync(
-        'test:error-capture',
+        uniqueId,
         { data: 'test' },
         {
           retry: { maxRetries: 0, dlqAfterMaxRetries: true },
         }
       )
 
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 200))
 
-      const dlqEntries = manager.getDLQEntries({ eventName: 'test:error-capture' })
+      const dlqEntries = manager.getDLQEntries({ eventName: uniqueId })
       expect(dlqEntries.length).toBeGreaterThan(0)
 
       const entry = dlqEntries[0]

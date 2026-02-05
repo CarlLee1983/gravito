@@ -40,7 +40,27 @@ await app.boot()
 app.listen(3000)
 ```
 
----
+### 3. IoC 容器綁定
+```typescript
+app.singleton('logger', () => new ConsoleLogger())
+const logger = app.make('logger')
+```
+
+### 4. Hook 攔截
+```typescript
+app.on('http:request', (ctx) => {
+  console.log(`Incoming request: ${ctx.req.url}`)
+})
+```
+
+### 5. 自定義 Orbit
+```typescript
+class MyOrbit extends Orbit {
+  async install(app) {
+    app.singleton('my-service', () => new MyService())
+  }
+}
+```
 
 ## 架構設計
 
