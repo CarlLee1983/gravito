@@ -31,11 +31,21 @@
 
 ## 🚧 In Progress
 
-### Documentation
-- ⚠️ Main documentation (README.md) needs to be updated
-- ⚠️ API documentation needs to be updated
+### Phase 2: uWebSockets.js Engine (Next)
+- ⚠️ Implement `uWebSocketsEngine` for Node.js
+- ⚠️ Add uWebSockets.js-specific optimizations
+- ⚠️ Create integration tests for Node.js runtime
 
 ## ✅ Recently Completed
+
+### Documentation (Phase 1 - Final)
+- ✅ Updated README.md with v5.0 information
+- ✅ Added multi-runtime support section
+- ✅ Added runtime performance comparison
+- ✅ Updated configuration documentation
+- ✅ Added v5.0 changelog entry
+- ✅ Updated Quick Start with new `start()` API
+- ✅ Added runtime selection examples
 
 ### Testing (Phase 1)
 - ✅ Created comprehensive v5.0 test suite (`tests/ripple-v5.test.ts`)
@@ -53,9 +63,9 @@
 - ✅ Added `start()` method to initialize and start the server via engine
 - ✅ Deprecated `init()` method in favor of `start()`
 
-## 📋 TODO (Phase 1 Completion)
+## 📋 TODO
 
-### High Priority
+### Phase 1 (✅ COMPLETE)
 1. ~~Fix remaining type errors in `RippleServer.ts`~~ ✅ DONE
 2. ~~Update `ChannelManager` to accept `RippleSocket` instead of `RippleWebSocket`~~ ✅ DONE
 3. ~~Update `InterceptorManager` context types~~ ✅ DONE
@@ -63,13 +73,25 @@
 5. ~~Add `start()` method to start the server (replaces manual `Bun.serve()`)~~ ✅ DONE
 6. ~~Update tests to use new engine-based architecture~~ ✅ DONE
 7. ~~Create example demonstrating the new `start()` API~~ ✅ DONE
+8. ~~Update README.md with v5.0 information~~ ✅ DONE
+9. ~~Update API documentation~~ ✅ DONE
+10. ~~Add engine selection examples to docs~~ ✅ DONE
 
-### Medium Priority
-8. Update README.md with v5.0 information
-9. Update API documentation
-10. Add engine selection examples to docs
-11. Performance benchmarks (ensure zero regression for Bun)
-12. Update existing tests to be compatible with v5.0 (optional)
+### Phase 2 (Next - uWebSockets.js Engine)
+1. Implement `uWebSocketsEngine` class
+2. Create `uWebSocketsRippleSocket` wrapper
+3. Add uWebSockets.js-specific pub/sub optimizations
+4. Create integration tests for Node.js with uWebSockets.js
+5. Update documentation with uWebSockets.js setup guide
+6. Performance benchmarks vs Bun
+
+### Phase 3 (Future - Node.js ws Engine)
+1. Implement `WsEngine` class
+2. Create `WsRippleSocket` wrapper
+3. Add application-layer pub/sub for ws
+4. Create integration tests for Node.js with ws
+5. Update documentation with ws setup guide
+6. Performance benchmarks
 
 ## 🔮 Future Phases
 
@@ -112,7 +134,7 @@
 
 ## 📊 Current Status
 
-**Phase 1 Progress: 95%**
+**Phase 1 Progress: 100% ✅ COMPLETE**
 
 - ✅ Architecture design complete
 - ✅ Core abstractions implemented
@@ -120,7 +142,7 @@
 - ✅ RippleServer refactored
 - ✅ Type system migration complete
 - ✅ Tests created for v5.0
-- ⚠️ Documentation not yet updated
+- ✅ Documentation updated
 
 ## 🐛 Known Issues
 
