@@ -579,7 +579,8 @@ describe('RateLimitMiddleware', () => {
       }
 
       const status = middleware.getStatus('email')
-      expect(status.second).toBe(2) // 剩下 2 個
+      // 由於時間測量精度，允許 0.01 的誤差
+      expect(status.second).toBeCloseTo(2, 2)
     })
 
     it('getStatus 應該為未配置的通道返回空物件', () => {
