@@ -1,7 +1,7 @@
 ---
 title: Ripple 架構技術規格書
 version: 4.0.0-alpha
-status: Alpha
+status: Beta
 tier: B
 last_updated: 2026-02-04
 dependencies:
@@ -265,7 +265,7 @@ console.log(`Online members: ${members.length}`)
 
 Presence 資料使用 Redis Hash 儲存：
 
-```
+```text
 Key: ripple:presence:presence-lobby
 Hash:
   user-123 -> {"id":"user-123","info":{"name":"Alice"}}

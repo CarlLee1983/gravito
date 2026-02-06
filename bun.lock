@@ -1620,15 +1620,18 @@
         "ioredis": "^5.4.2",
         "tinybench": "^6.0.0",
         "typescript": "^5.9.3",
+        "ws": "^8.18.0",
       },
       "peerDependencies": {
         "@gravito/core": "workspace:*",
         "ioredis": "^5.0.0",
         "nats": "^2.23.0",
+        "ws": "^8.18.0",
       },
       "optionalPeers": [
         "ioredis",
         "nats",
+        "ws",
       ],
     },
     "packages/ripple-client": {

@@ -10,8 +10,6 @@ import { ChannelManager, requiresAuth } from './channels'
 import { LocalDriver, NATSDriver, RedisDriver } from './drivers'
 import { BunEngine } from './engines/BunEngine'
 import type { IRippleEngine, RippleSocket } from './engines/IRippleEngine'
-import { UWebSocketsEngine } from './engines/UWebSocketsEngine'
-import { WsEngine } from './engines/WsEngine'
 import { HealthChecker } from './health/HealthChecker'
 import type { RippleLogger } from './logging/Logger'
 import { createLogger } from './logging/Logger'
@@ -131,21 +129,21 @@ export class RippleServer {
           development: process.env.NODE_ENV === 'development',
         })
 
-      case 'node-uws':
-        return new UWebSocketsEngine({
-          port: config.port,
-          hostname: config.hostname,
-          development: process.env.NODE_ENV === 'development',
-        })
-
-      case 'node-ws':
-        return new WsEngine({
-          port: config.port,
-          hostname: config.hostname,
-          path: config.path,
-          development: process.env.NODE_ENV === 'development',
-        })
-
+      // TODO: Enable for Node.js support (v5.0)
+      // case 'node-uws':
+      // return new UWebSocketsEngine({
+      // port: config.port,
+      // hostname: config.hostname,
+      // development: process.env.NODE_ENV === 'development',
+      // })
+      // TODO: Enable for Node.js support (v5.0)
+      // case 'node-ws':
+      // return new WsEngine({
+      // port: config.port,
+      // hostname: config.hostname,
+      // path: config.path,
+      // development: process.env.NODE_ENV === 'development',
+      // })
       default:
         throw new Error(`Unsupported runtime: ${runtime}`)
     }
@@ -320,7 +318,12 @@ export class RippleServer {
       } else if (message instanceof ArrayBuffer) {
         data = new Uint8Array(message)
       } else if (Buffer.isBuffer(message)) {
-        data = new Uint8Array(message.buffer, message.byteOffset, message.byteLength)
+        const buf = message as any as {
+          buffer: ArrayBuffer
+          byteOffset: number
+          byteLength: number
+        }
+        data = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength)
       } else {
         return // Unknown type
       }
