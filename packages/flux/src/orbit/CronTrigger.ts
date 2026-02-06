@@ -24,7 +24,9 @@ export class CronTrigger {
    * Starts the scheduler.
    */
   start(): void {
-    if (this.running) return
+    if (this.running) {
+      return
+    }
     this.running = true
     this.refreshAll()
   }
@@ -84,7 +86,9 @@ export class CronTrigger {
    */
   private refreshSchedule(id: string): void {
     const schedule = this.schedules.get(id)
-    if (!schedule || schedule.enabled === false) return
+    if (!schedule || schedule.enabled === false) {
+      return
+    }
 
     // Clear existing timer if any
     const existingTimer = this.timers.get(id)
@@ -106,7 +110,9 @@ export class CronTrigger {
       }
 
       const timer = setTimeout(async () => {
-        if (!this.running) return
+        if (!this.running) {
+          return
+        }
 
         try {
           // Trigger the workflow

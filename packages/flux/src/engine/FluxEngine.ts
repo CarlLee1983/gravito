@@ -165,7 +165,9 @@ export class FluxEngine {
     const definition = resolveDefinition(workflow)
     const state = await this.storage.load(workflowId)
     if (!state || state.name !== definition.name) {
-      if (!state) return null
+      if (!state) {
+        return null
+      }
       throw Errors.workflowNameMismatch(definition.name, state.name)
     }
     if (state.history.length !== definition.steps.length) {
@@ -202,8 +204,12 @@ export class FluxEngine {
   ): Promise<FluxResult<TData>> {
     const definition = resolveDefinition(workflow)
     const state = await this.storage.load(workflowId)
-    if (!state) throw Errors.workflowNotFound(workflowId)
-    if (state.status !== 'suspended') throw Errors.workflowNotSuspended(state.status)
+    if (!state) {
+      throw Errors.workflowNotFound(workflowId)
+    }
+    if (state.status !== 'suspended') {
+      throw Errors.workflowNotSuspended(state.status)
+    }
 
     let ctx = this.contextManager.restore<TInput, TData>(
       state as unknown as WorkflowState<TInput, TData>
@@ -251,7 +257,9 @@ export class FluxEngine {
     const definition = resolveDefinition(workflow)
     const state = await this.storage.load(workflowId)
     if (!state || state.name !== definition.name) {
-      if (!state) return null
+      if (!state) {
+        return null
+      }
       throw Errors.workflowNameMismatch(definition.name, state.name)
     }
     if (state.history.length !== definition.steps.length) {
