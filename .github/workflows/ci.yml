@@ -96,6 +96,10 @@ jobs:
       REDIS_PORT: 6379
       POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/flux_test
       TEST_POSTGRESQL: "true"
+      # 並發度優化：資料庫連接池設定
+      DB_POOL_SIZE: "3"
+      REDIS_MAX_CLIENTS: "5"
+      POSTGRES_MAX_CONNECTIONS: "5"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -153,18 +157,28 @@ jobs:
       # Run these in parallel on the same machine using Turbo
       - name: Run Typecheck & Tests
         run: |
-          # Typecheck both packages and satellites
+          # Typecheck both packages and satellites (concurrency 4 → 6 優化)
           bunx turbo run typecheck \
             --filter='./packages/*' \
             --filter='./satellites/*' \
-            --concurrency=4
+            --concurrency=6
 
           # Test coverage only for packages (satellites don't have tests)
+          # 並發度 4（考慮資料庫連接池限制）
           bunx turbo run test:coverage \
             --filter='./packages/*' \
             --concurrency=4 \
             --continue
-      
+
+      # Monitor system resources for optimization baseline
+      - name: Monitor System Resources
+        if: always()
+        run: |
+          echo "=== 系統資源使用情況 ===" >> $GITHUB_STEP_SUMMARY
+          echo "記憶體使用：$(free -h | grep Mem)" >> $GITHUB_STEP_SUMMARY
+          echo "磁碟使用：$(df -h / | tail -1)" >> $GITHUB_STEP_SUMMARY
+          echo "並發度：Typecheck=6, Test=4" >> $GITHUB_STEP_SUMMARY
+
       # Check unused imports in changed packages only (avoids timeout; use --all locally for full check)
       - name: Fetch base branch
         if: github.event_name == 'pull_request'
