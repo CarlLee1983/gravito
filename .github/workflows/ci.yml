@@ -120,7 +120,7 @@ jobs:
     name: Build, Typecheck & Test
     needs: quick-validation
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     services:
       mongodb:
         image: mongo:7
@@ -250,16 +250,22 @@ jobs:
 
           # 後台執行 typecheck
           if [ -n "$TYPECHECK_FILTERS" ]; then
-            (bunx turbo run typecheck $TYPECHECK_FILTERS --concurrency=6) &
+            (bunx turbo run typecheck $TYPECHECK_FILTERS --concurrency=8) &
             PID_TYPECHECK=$!
-            echo "  ✓ Typecheck (PID: $PID_TYPECHECK)"
+            echo "  ✓ Typecheck (PID: $PID_TYPECHECK, concurrency=8)"
           fi
 
-          # 並行執行 test
+          # 並行執行 test（核心包執行 coverage，衛星包執行快速測試）
           if [ -n "$TEST_FILTERS" ]; then
-            (bunx turbo run test:coverage $TEST_FILTERS --concurrency=4 --continue) &
+            # 核心包執行完整覆蓋率檢查
+            (bunx turbo run test:coverage --filter='./packages/*' --concurrency=4 --continue) &
             PID_TEST=$!
-            echo "  ✓ Test (PID: $PID_TEST)"
+            echo "  ✓ Test:Coverage (packages, PID: $PID_TEST)"
+
+            # 衛星包只執行快速測試（無覆蓋率開銷）
+            (bunx turbo run test --filter='./satellites/*' --concurrency=6 --continue) &
+            PID_TEST_SAT=$!
+            echo "  ✓ Test:Quick (satellites, PID: $PID_TEST_SAT)"
           fi
 
           # 等待並檢查結果
@@ -278,9 +284,18 @@ jobs:
 
           if [ -n "$PID_TEST" ]; then
             if wait $PID_TEST; then
-              echo "✅ Test 完成"
+              echo "✅ Test:Coverage (packages) 完成"
             else
-              echo "❌ Test 失敗"
+              echo "❌ Test:Coverage (packages) 失敗"
+              FAILED=1
+            fi
+          fi
+
+          if [ -n "$PID_TEST_SAT" ]; then
+            if wait $PID_TEST_SAT; then
+              echo "✅ Test:Quick (satellites) 完成"
+            else
+              echo "❌ Test:Quick (satellites) 失敗"
               FAILED=1
             fi
           fi
@@ -292,7 +307,9 @@ jobs:
           fi
 
           echo ""
-          echo "✅ Typecheck & Test 並行完成（Phase 3A + 3B）"
+          echo "✅ Typecheck & Test 並行完成（Phase 3A + 3B - 優化版）"
+          echo "   📊 核心包：覆蓋率檢查（coverage）"
+          echo "   📊 衛星包：快速測試（無覆蓋率開銷）"
 
       # Monitor system resources for optimization baseline
       - name: Monitor System Resources
