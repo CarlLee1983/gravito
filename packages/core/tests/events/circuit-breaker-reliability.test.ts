@@ -374,4 +374,160 @@ describe('CircuitBreaker Reliability Tests', () => {
       }
     })
   })
+
+  describe('Disabled Circuit Breaker', () => {
+    it('should pass through operations without circuit breaking when disabled', async () => {
+      const cb = new CircuitBreaker('disabled:test', {
+        enabled: false,
+        failureThreshold: 1,
+      })
+
+      // 即使失敗次數超過閾值，操作仍應直接執行
+      for (let i = 0; i < 5; i++) {
+        try {
+          await cb.execute(async () => {
+            throw new Error('Service error')
+          })
+        } catch (error: any) {
+          // 應收到原始錯誤，而非 "Circuit is OPEN"
+          expect(error.message).toBe('Service error')
+        }
+      }
+
+      // 停用時不追蹤狀態，電路應保持 CLOSED
+      expect(cb.isOpen()).toBe(false)
+      expect(cb.isClosed()).toBe(true)
+
+      // 成功操作仍應正常運作
+      const result = await cb.execute(async () => 'success')
+      expect(result).toBe('success')
+
+      // getMetrics 不應有任何計數（旁路跳過了所有追蹤邏輯）
+      const metrics = cb.getMetrics()
+      expect(metrics.totalRequests).toBe(0)
+      expect(metrics.totalFailures).toBe(0)
+      expect(metrics.totalSuccesses).toBe(0)
+    })
+  })
+
+  describe('Half-Open Success Flow', () => {
+    it('should transition OPEN -> HALF_OPEN -> CLOSED when successThreshold is met', async () => {
+      const transitions: [string, string][] = []
+      const metricsRecorder = {
+        recordState: mock(() => {}),
+        recordTransition: mock((_eventName: string, from: string, to: string) => {
+          transitions.push([from, to])
+        }),
+        recordFailure: mock(() => {}),
+        recordSuccess: mock(() => {}),
+        recordOpenDuration: mock(() => {}),
+      }
+
+      const cb = new CircuitBreaker('half-open-success:test', {
+        failureThreshold: 2,
+        successThreshold: 3,
+        resetTimeout: 50,
+        metricsRecorder,
+      })
+
+      // 階段 1：透過失敗打開電路
+      for (let i = 0; i < 2; i++) {
+        try {
+          await cb.execute(async () => {
+            throw new Error('Fail')
+          })
+        } catch {
+          // 預期
+        }
+      }
+      expect(cb.getState()).toBe(CircuitBreakerState.OPEN)
+
+      // 階段 2：等待 HALF_OPEN 轉換
+      await new Promise((resolve) => setTimeout(resolve, 100))
+      expect(cb.isHalfOpen()).toBe(true)
+
+      // 階段 3：逐步發送成功請求，驗證 successThreshold 遞增過程
+      // 第 1 次成功：halfOpenAttempts=1，需要 3
+      await cb.execute(async () => 'ok1')
+      expect(cb.getState()).toBe(CircuitBreakerState.HALF_OPEN)
+
+      // 第 2 次成功：halfOpenAttempts=2，仍需 3
+      await cb.execute(async () => 'ok2')
+      expect(cb.getState()).toBe(CircuitBreakerState.HALF_OPEN)
+
+      // 第 3 次成功：halfOpenAttempts=3，達到閾值 -> CLOSED
+      await cb.execute(async () => 'ok3')
+      expect(cb.isClosed()).toBe(true)
+
+      // 驗證完整轉換路徑
+      expect(transitions).toContainEqual(['CLOSED', 'OPEN'])
+      expect(transitions).toContainEqual(['OPEN', 'HALF_OPEN'])
+      expect(transitions).toContainEqual(['HALF_OPEN', 'CLOSED'])
+
+      // 驗證 recordOpenDuration 被呼叫（從 OPEN 轉出時記錄）
+      expect(metricsRecorder.recordOpenDuration).toHaveBeenCalled()
+    })
+  })
+
+  describe('Half-Open Failure Flow', () => {
+    it('should transition OPEN -> HALF_OPEN -> OPEN when test request fails', async () => {
+      const transitions: [string, string][] = []
+      const metricsRecorder = {
+        recordState: mock(() => {}),
+        recordTransition: mock((_eventName: string, from: string, to: string) => {
+          transitions.push([from, to])
+        }),
+        recordFailure: mock(() => {}),
+        recordSuccess: mock(() => {}),
+        recordOpenDuration: mock(() => {}),
+      }
+
+      const cb = new CircuitBreaker('half-open-fail:test', {
+        failureThreshold: 1,
+        successThreshold: 2,
+        resetTimeout: 50,
+        metricsRecorder,
+      })
+
+      // 打開電路
+      try {
+        await cb.execute(async () => {
+          throw new Error('Initial failure')
+        })
+      } catch {
+        // 預期
+      }
+      expect(cb.isOpen()).toBe(true)
+
+      // 等待轉換到 HALF_OPEN
+      await new Promise((resolve) => setTimeout(resolve, 100))
+      expect(cb.isHalfOpen()).toBe(true)
+
+      // 在 HALF_OPEN 中失敗 -- 應立即回到 OPEN
+      try {
+        await cb.execute(async () => {
+          throw new Error('Half-open failure')
+        })
+      } catch (error: any) {
+        // 應收到操作的原始錯誤，不是 "Circuit is OPEN"
+        expect(error.message).toBe('Half-open failure')
+      }
+
+      // 電路應回到 OPEN
+      expect(cb.isOpen()).toBe(true)
+
+      // 在 OPEN 狀態下嘗試執行應拋出電路開啟錯誤
+      try {
+        await cb.execute(async () => 'should not run')
+        expect.unreachable()
+      } catch (error: any) {
+        expect(error.message).toContain('Circuit is OPEN')
+      }
+
+      // 驗證完整轉換路徑：CLOSED->OPEN, OPEN->HALF_OPEN, HALF_OPEN->OPEN
+      expect(transitions).toContainEqual(['CLOSED', 'OPEN'])
+      expect(transitions).toContainEqual(['OPEN', 'HALF_OPEN'])
+      expect(transitions).toContainEqual(['HALF_OPEN', 'OPEN'])
+    })
+  })
 })

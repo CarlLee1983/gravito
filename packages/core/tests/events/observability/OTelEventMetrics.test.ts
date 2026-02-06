@@ -18,9 +18,14 @@ interface MockObservableGauge {
   removeCallback: ReturnType<typeof mock>
 }
 
+interface MockCounter {
+  add: ReturnType<typeof mock>
+}
+
 interface MockMeter {
   createHistogram: ReturnType<typeof mock>
   createObservableGauge: ReturnType<typeof mock>
+  createCounter: ReturnType<typeof mock>
 }
 
 // Mock OpenTelemetry API
@@ -39,9 +44,16 @@ const mockObservableGauge: MockObservableGauge = {
   }),
 }
 
+const mockCounter: MockCounter = {
+  add: mock(() => {
+    // noop - mock implementation
+  }),
+}
+
 const mockMeter: MockMeter = {
   createHistogram: mock(() => mockHistogram),
   createObservableGauge: mock(() => mockObservableGauge),
+  createCounter: mock(() => mockCounter),
 }
 
 describe('OTelEventMetrics', () => {
@@ -56,6 +68,32 @@ describe('OTelEventMetrics', () => {
     getDispatchDurationBuckets(): number[]
     getListenerDurationBuckets(): number[]
     getMeter(): MockMeter
+    recordCircuitBreakerFailure(eventName: string, listenerIndex: number): void
+    recordCircuitBreakerSuccess(eventName: string, listenerIndex: number): void
+    recordCircuitBreakerTransition(
+      eventName: string,
+      listenerIndex: number,
+      fromState: string,
+      toState: string
+    ): void
+    recordCircuitBreakerOpenDuration(
+      eventName: string,
+      listenerIndex: number,
+      durationSeconds: number
+    ): void
+    registerCircuitBreakerStateCallback(
+      key: string,
+      callback: () => { eventName: string; listenerIndex: number; state: 0 | 1 | 2 }
+    ): void
+    unregisterCircuitBreakerStateCallback(key: string): void
+    recordState(name: string, state: number): void
+    recordTransition(name: string, fromState: string, toState: string): void
+    recordFailure(name: string): void
+    recordSuccess(name: string): void
+    recordOpenDuration(name: string, seconds: number): void
+    getRegisteredCircuitBreakers(): string[]
+    clearCircuitBreakerCallbacks(): void
+    getCircuitBreakerOpenDurationBuckets(): number[]
   }
 
   let OTelEventMetrics: OTelEventMetricsType
@@ -65,8 +103,10 @@ describe('OTelEventMetrics', () => {
     mockHistogram.record.mockClear()
     mockObservableGauge.addCallback.mockClear()
     mockObservableGauge.removeCallback.mockClear()
+    mockCounter.add.mockClear()
     mockMeter.createHistogram.mockClear()
     mockMeter.createObservableGauge.mockClear()
+    mockMeter.createCounter.mockClear()
 
     // Import the module fresh for each test
     const module = await import('../../../src/events/observability/OTelEventMetrics')
@@ -289,6 +329,268 @@ describe('OTelEventMetrics', () => {
 
       await Promise.all(promises)
       expect(mockHistogram.record).toHaveBeenCalled()
+    })
+  })
+
+  describe('Circuit Breaker Metrics Initialization', () => {
+    it('should create circuit breaker state gauge', () => {
+      new OTelEventMetrics(mockMeter)
+
+      expect(mockMeter.createObservableGauge).toHaveBeenCalledWith(
+        'gravito_event_circuit_breaker_state',
+        expect.objectContaining({
+          description: expect.any(String),
+          unit: '{state}',
+        })
+      )
+    })
+
+    it('should create circuit breaker counters', () => {
+      new OTelEventMetrics(mockMeter)
+
+      expect(mockMeter.createCounter).toHaveBeenCalledWith(
+        'gravito_event_circuit_breaker_failures_total',
+        expect.objectContaining({
+          description: expect.any(String),
+          unit: '{failures}',
+        })
+      )
+
+      expect(mockMeter.createCounter).toHaveBeenCalledWith(
+        'gravito_event_circuit_breaker_successes_total',
+        expect.objectContaining({
+          description: expect.any(String),
+          unit: '{successes}',
+        })
+      )
+
+      expect(mockMeter.createCounter).toHaveBeenCalledWith(
+        'gravito_event_circuit_breaker_transitions_total',
+        expect.objectContaining({
+          description: expect.any(String),
+          unit: '{transitions}',
+        })
+      )
+    })
+
+    it('should create circuit breaker open duration histogram', () => {
+      new OTelEventMetrics(mockMeter)
+
+      expect(mockMeter.createHistogram).toHaveBeenCalledWith(
+        'gravito_event_circuit_breaker_open_duration_seconds',
+        expect.objectContaining({
+          description: expect.any(String),
+          unit: 's',
+        })
+      )
+    })
+  })
+
+  describe('recordCircuitBreakerFailure', () => {
+    it('should record circuit breaker failure with labels', () => {
+      const metrics = new OTelEventMetrics(mockMeter)
+
+      metrics.recordCircuitBreakerFailure('order:created', 0)
+
+      expect(mockCounter.add).toHaveBeenCalledWith(1, {
+        event_name: 'order:created',
+        listener_index: '0',
+      })
+    })
+
+    it('should record multiple failures for different listeners', () => {
+      const metrics = new OTelEventMetrics(mockMeter)
+
+      metrics.recordCircuitBreakerFailure('order:created', 0)
+      metrics.recordCircuitBreakerFailure('order:created', 1)
+      metrics.recordCircuitBreakerFailure('user:registered', 0)
+
+      expect(mockCounter.add).toHaveBeenCalledTimes(3)
+    })
+  })
+
+  describe('recordCircuitBreakerSuccess', () => {
+    it('should record circuit breaker success with labels', () => {
+      const metrics = new OTelEventMetrics(mockMeter)
+
+      metrics.recordCircuitBreakerSuccess('order:created', 0)
+
+      expect(mockCounter.add).toHaveBeenCalledWith(1, {
+        event_name: 'order:created',
+        listener_index: '0',
+      })
+    })
+
+    it('should record multiple successes', () => {
+      const metrics = new OTelEventMetrics(mockMeter)
+
+      metrics.recordCircuitBreakerSuccess('order:created', 0)
+      metrics.recordCircuitBreakerSuccess('order:created', 0)
+      metrics.recordCircuitBreakerSuccess('order:created', 1)
+
+      expect(mockCounter.add).toHaveBeenCalledTimes(3)
+    })
+  })
+
+  describe('recordCircuitBreakerTransition', () => {
+    it('should record state transition with all labels', () => {
+      const metrics = new OTelEventMetrics(mockMeter)
+
+      metrics.recordCircuitBreakerTransition('order:created', 0, 'CLOSED', 'OPEN')
+
+      expect(mockCounter.add).toHaveBeenCalledWith(1, {
+        event_name: 'order:created',
+        listener_index: '0',
+        from_state: 'CLOSED',
+        to_state: 'OPEN',
+      })
+    })
+
+    it('should record different transition types', () => {
+      const metrics = new OTelEventMetrics(mockMeter)
+
+      metrics.recordCircuitBreakerTransition('order:created', 0, 'CLOSED', 'OPEN')
+      metrics.recordCircuitBreakerTransition('order:created', 0, 'OPEN', 'HALF_OPEN')
+      metrics.recordCircuitBreakerTransition('order:created', 0, 'HALF_OPEN', 'CLOSED')
+
+      expect(mockCounter.add).toHaveBeenCalledTimes(3)
+    })
+  })
+
+  describe('recordCircuitBreakerOpenDuration', () => {
+    it('should record open duration with labels', () => {
+      const metrics = new OTelEventMetrics(mockMeter)
+
+      metrics.recordCircuitBreakerOpenDuration('order:created', 0, 30.5)
+
+      expect(mockHistogram.record).toHaveBeenCalledWith(30.5, {
+        event_name: 'order:created',
+        listener_index: '0',
+      })
+    })
+  })
+
+  describe('Circuit Breaker State Callbacks', () => {
+    it('should register and track circuit breaker state callbacks', () => {
+      const metrics = new OTelEventMetrics(mockMeter)
+
+      const callback = () => ({
+        eventName: 'order:created',
+        listenerIndex: 0,
+        state: 0 as const,
+      })
+
+      metrics.registerCircuitBreakerStateCallback('order:created-0', callback)
+
+      const registered = metrics.getRegisteredCircuitBreakers()
+      expect(registered).toContain('order:created-0')
+    })
+
+    it('should unregister circuit breaker state callbacks', () => {
+      const metrics = new OTelEventMetrics(mockMeter)
+
+      const callback = () => ({
+        eventName: 'order:created',
+        listenerIndex: 0,
+        state: 0 as const,
+      })
+
+      metrics.registerCircuitBreakerStateCallback('order:created-0', callback)
+      metrics.unregisterCircuitBreakerStateCallback('order:created-0')
+
+      const registered = metrics.getRegisteredCircuitBreakers()
+      expect(registered).not.toContain('order:created-0')
+    })
+
+    it('should clear all circuit breaker callbacks', () => {
+      const metrics = new OTelEventMetrics(mockMeter)
+
+      const callback1 = () => ({
+        eventName: 'order:created',
+        listenerIndex: 0,
+        state: 0 as const,
+      })
+
+      const callback2 = () => ({
+        eventName: 'user:registered',
+        listenerIndex: 0,
+        state: 1 as const,
+      })
+
+      metrics.registerCircuitBreakerStateCallback('order:created-0', callback1)
+      metrics.registerCircuitBreakerStateCallback('user:registered-0', callback2)
+
+      expect(metrics.getRegisteredCircuitBreakers()).toHaveLength(2)
+
+      metrics.clearCircuitBreakerCallbacks()
+
+      expect(metrics.getRegisteredCircuitBreakers()).toHaveLength(0)
+    })
+  })
+
+  describe('CircuitBreakerMetricsRecorder Interface', () => {
+    it('should implement recordState adapter method', () => {
+      const metrics = new OTelEventMetrics(mockMeter)
+
+      expect(() => {
+        metrics.recordState('order:created', 2)
+      }).not.toThrow()
+    })
+
+    it('should implement recordTransition adapter method', () => {
+      const metrics = new OTelEventMetrics(mockMeter)
+
+      metrics.recordTransition('order:created', 'CLOSED', 'OPEN')
+
+      expect(mockCounter.add).toHaveBeenCalledWith(1, {
+        event_name: 'order:created',
+        listener_index: '0',
+        from_state: 'CLOSED',
+        to_state: 'OPEN',
+      })
+    })
+
+    it('should implement recordFailure adapter method', () => {
+      const metrics = new OTelEventMetrics(mockMeter)
+
+      metrics.recordFailure('order:created')
+
+      expect(mockCounter.add).toHaveBeenCalledWith(1, {
+        event_name: 'order:created',
+        listener_index: '0',
+      })
+    })
+
+    it('should implement recordSuccess adapter method', () => {
+      const metrics = new OTelEventMetrics(mockMeter)
+
+      metrics.recordSuccess('order:created')
+
+      expect(mockCounter.add).toHaveBeenCalledWith(1, {
+        event_name: 'order:created',
+        listener_index: '0',
+      })
+    })
+
+    it('should implement recordOpenDuration adapter method', () => {
+      const metrics = new OTelEventMetrics(mockMeter)
+
+      metrics.recordOpenDuration('order:created', 60)
+
+      expect(mockHistogram.record).toHaveBeenCalledWith(60, {
+        event_name: 'order:created',
+        listener_index: '0',
+      })
+    })
+
+    it('should return circuit breaker open duration buckets', () => {
+      const metrics = new OTelEventMetrics(mockMeter)
+      const buckets = metrics.getCircuitBreakerOpenDurationBuckets()
+
+      expect(buckets).toContain(1) // 1s
+      expect(buckets).toContain(30) // 30s
+      expect(buckets).toContain(60) // 1m
+      expect(buckets).toContain(300) // 5m
     })
   })
 })

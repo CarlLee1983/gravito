@@ -2,7 +2,7 @@
 
 **項目啟動日期**：2026-02-02
 **計劃完成日期**：Week 28+
-**當前狀態**：⏳ Issue 1.2 Phase 2 進行中（整體進度 85% - Issue 1.1: 100%, Issue 1.2 P1: 100%, Issue 1.2 P2: 60%）
+**當前狀態**：✅ Issue 1.2 Phase 2 完成（整體進度 90% - Issue 1.1: 100%, Issue 1.2 P1: 100%, Issue 1.2 P2: 100%）
 
 ---
 
@@ -72,10 +72,10 @@ Phase 4: 長期優化               [██░░░░░░░░░░░░�
 | Phase | 狀態 | 任務 | 文檔 | 進度 |
 |-------|------|------|------|------|
 | Phase 1 | ✅ 完成 | 5 個 | [Phase1-DLQ-And-Retry.md](./priority-1-critical/Issue1.2-Event-System-Reliability/Phase1-DLQ-And-Retry.md) | 100% ✅ (5/5 任務完成) |
-| Phase 2 | ⏳ 即完成 | 5 個 | [Phase2-熔断器.md](./priority-1-critical/Issue1.2-Event-System-Reliability/Phase2-熔断器.md) | 95% ⏳ (4.75/5 任務) |
+| Phase 2 | ✅ 完成 | 5 個 | [Phase2-熔断器.md](./priority-1-critical/Issue1.2-Event-System-Reliability/Phase2-熔断器.md) | 100% ✅ (5/5 任務完成) |
 | Phase 3 | 🗓️ 待規劃 | 5 個 | Phase3-背压机制.md | 0% 🗓️ |
 | Phase 4 | 🗓️ 待規劃 | 5 個 | Phase4-BullQueue整合.md | 0% 🗓️ |
-| **小計** | | **20 個任務** | | **47.5% (9.5/20 任務完成)** |
+| **小計** | | **20 個任務** | | **50% (10/20 任務完成)** |
 
 **前置條件**：✅ Issue 1.1 完成
 
@@ -91,7 +91,7 @@ Phase 4: 長期優化               [██░░░░░░░░░░░░�
 - [x] `tests/reliability/dlq-hook-integration.test.ts` - 完整集成測試
 - [x] `docs/DLQ_AND_RETRY_GUIDE.md` - 完整用戶指南
 
-**Phase 2 進行中**（3/5 任務完成）：
+**Phase 2 已完成**（5/5 任務完成）：
 - [x] **Task 1.2.2.1** - 增強 Core CircuitBreaker
   - [x] `packages/core/src/events/CircuitBreaker.ts` - 遷移 Echo 進階功能 (110% 功能完整)
   - [x] `packages/core/tests/events/CircuitBreaker.test.ts` - 24 個單元測試 (100% 覆蓋)
@@ -104,8 +104,15 @@ Phase 4: 長期優化               [██░░░░░░░░░░░░�
   - [x] `packages/core/src/HookManager.ts` - 新增 5 個公開 API
   - [x] `packages/core/src/events/EventPriorityQueue.ts` - 熔斷器管理方法
 
-- ⏳ **Task 1.2.2.4** - Prometheus Metrics 整合 (待開始)
-- ⏳ **Task 1.2.2.5** - 完整測試套件 (部分完成：31/∞ 測試)
+- [x] **Task 1.2.2.4** - Prometheus Metrics 整合
+  - [x] `packages/core/src/events/observability/OTelEventMetrics.ts` - CB 指標方法
+  - [x] `packages/core/tests/events/observability/OTelEventMetrics.test.ts` - 40 個測試
+
+- [x] **Task 1.2.2.5** - 完整測試套件 (全部完成：33 個測試)
+  - [x] `packages/core/tests/events/circuit-breaker-reliability.test.ts` - 16 個可靠性測試
+  - [x] `packages/core/tests/events/circuit-breaker-metrics.test.ts` - 17 個指標整合測試
+  - [x] `docs/CIRCUIT_BREAKER_GUIDE.md` - 電路斷路器完整指南（280+ 行）
+  - [x] 新增 9 個測試覆蓋 3 個 HIGH 優先級缺口
 
 ---
 
