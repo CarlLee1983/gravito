@@ -11,5 +11,11 @@
     "baseUrl": "."
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests", "src/engines/UWebSocketsEngine.ts", "src/engines/WsEngine.ts"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests",
+    "src/engines/UWebSocketsEngine.ts",
+    "src/engines/WsEngine.ts"
+  ]
 }
