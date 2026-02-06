@@ -1,5 +1,5 @@
 [test]
-timeout = "30000ms"
+timeout = "10000ms"
 root = "."
 
 [install]
