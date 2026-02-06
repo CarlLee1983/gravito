@@ -92,13 +92,12 @@ async function getAllPackages(): Promise<Map<string, PackageInfo>> {
 /**
  * 找出變更的包
  */
-async function getChangedPackages(): Promise<string[]> {
+async function getChangedPackages(allPackages: Map<string, PackageInfo>): Promise<string[]> {
   try {
     const { stdout } = await $`git diff --name-only ${BASE_REF} HEAD`.quiet()
     const changedFiles = stdout.toString().trim().split('\n').filter(Boolean)
 
     const changedPackages = new Set<string>()
-    const allPackages = await getAllPackages()
 
     for (const file of changedFiles) {
       for (const [name, pkg] of allPackages) {
@@ -213,7 +212,7 @@ async function main() {
   const allPackages = await getAllPackages()
 
   // 找出變更的包
-  const changedPackages = await getChangedPackages()
+  const changedPackages = await getChangedPackages(allPackages)
 
   if (changedPackages.length === 0) {
     // 沒有變更的包，輸出空字符串

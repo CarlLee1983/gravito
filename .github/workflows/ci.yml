@@ -8,117 +8,86 @@ on:
 
 jobs:
   # --------------------------------------------------------------------------
-  # Lint Job (Parallel, fast)
+  # Validate (Fast Fail) - Lint + Build, no DB services needed
   # --------------------------------------------------------------------------
-  lint:
-    name: Lint & Style
+  validate:
+    name: Lint & Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.4
+
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
           restore-keys: |
             ${{ runner.os }}-bun-
+
+      - name: Turbo Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .turbo
+            node_modules/.cache/turbo
+            **/tsconfig.tsbuildinfo
+          key: turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-
+            turbo-${{ runner.os }}-
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
         env:
           SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
+
       - name: Fetch base branch (for PR)
         if: github.event_name == 'pull_request'
         run: git fetch origin ${{ github.base_ref }} --depth=1
-      - name: Run linting
+
+      - name: Lint
         env:
           BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || '' }}
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ] && [ -n "$BASE_REF" ]; then
-            # PR: 增量 lint
             PATHS=$(bun run scripts/get-affected-packages.ts --base "$BASE_REF" --mode lint --output-paths)
             if [ -n "$PATHS" ]; then
               bunx biome check $PATHS --diagnostic-level=error
             else
-              echo "✅ 沒有檔案變更，跳過 lint 檢查"
+              echo "No file changes, skipping lint"
             fi
           else
-            # Main: 全量 lint
             bunx biome check packages satellites --diagnostic-level=error
           fi
 
-  # --------------------------------------------------------------------------
-  # Quick Validation (Fast Fail) - Phase 3D
-  # 快速執行 Lint + Build，失敗時立即反饋
-  # 其他 jobs 依賴此 job，實現快速失敗
-  # --------------------------------------------------------------------------
-  quick-validation:
-    name: Quick Validation (Fast Fail)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.4
-      - name: Cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-        env:
-          SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
-      - name: Fetch base branch (for PR)
-        if: github.event_name == 'pull_request'
-        run: git fetch origin ${{ github.base_ref }} --depth=1
-      - name: Quick Lint Check (Fast)
+      - name: Build
         env:
           BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || '' }}
         run: |
-          echo "🏃 快速 Lint 檢查..."
-          if [ "${{ github.event_name }}" == "pull_request" ] && [ -n "$BASE_REF" ]; then
-            PATHS=$(bun run scripts/get-affected-packages.ts --base "$BASE_REF" --mode lint --output-paths)
-            if [ -n "$PATHS" ]; then
-              bunx biome check $PATHS --diagnostic-level=error
-            else
-              echo "✅ 沒有檔案變更，跳過 lint 檢查"
-            fi
-          else
-            bunx biome check packages satellites --diagnostic-level=error
-          fi
-          echo "✅ Lint 檢查通過"
-      - name: Quick Build Check (Fast)
-        env:
-          BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || '' }}
-        run: |
-          echo "🏗️ 快速 Build 檢查..."
           if [ "${{ github.event_name }}" == "pull_request" ] && [ -n "$BASE_REF" ]; then
             FILTERS=$(bun run scripts/get-affected-packages.ts --base "$BASE_REF" --mode build)
             if [ -n "$FILTERS" ]; then
               bunx turbo run build $FILTERS --concurrency=4
             else
-              echo "✅ 沒有包變更，跳過 build"
+              echo "No package changes, skipping build"
             fi
           else
             bun run build
           fi
-          echo "✅ Build 檢查通過"
 
   # --------------------------------------------------------------------------
-  # Main Pipeline (Combined to avoid artifact overhead while maintaining speed)
+  # Typecheck & Test (depends on validate, has DB services)
+  # Build step relies on turbo cache from validate job
   # --------------------------------------------------------------------------
-  pipeline:
-    name: Build, Typecheck & Test
-    needs: quick-validation
+  test:
+    name: Typecheck & Test
+    needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
@@ -160,43 +129,43 @@ jobs:
       REDIS_PORT: 6379
       POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/flux_test
       TEST_POSTGRESQL: "true"
-      # 並發度優化：資料庫連接池設定
       DB_POOL_SIZE: "3"
       REDIS_MAX_CLIENTS: "5"
       POSTGRES_MAX_CONNECTIONS: "5"
-      # Phase 3：整合測試條件化控制（預設關閉以加速 CI）
       RUN_DLQ_INTEGRATION: "false"
       RUN_TRACING_INTEGRATION: "false"
       RUN_PROMETHEUS_INTEGRATION: "false"
-      # Phase 2：atlas 包並發度優化（默認 2，本地可調整）
       TEST_CONCURRENCY: "2"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.4
+
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
           restore-keys: |
             ${{ runner.os }}-bun-
+
       - name: Turbo Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             .turbo
             node_modules/.cache/turbo
             **/tsconfig.tsbuildinfo
-          key: turbo-full-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-${{ github.sha }}
+          key: turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-${{ github.sha }}
           restore-keys: |
-            turbo-full-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-
-            turbo-full-${{ runner.os }}-
+            turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-
+            turbo-${{ runner.os }}-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -213,199 +182,83 @@ jobs:
             echo "RUN_DLQ_INTEGRATION=true" >> $GITHUB_ENV
             echo "RUN_TRACING_INTEGRATION=true" >> $GITHUB_ENV
             echo "RUN_PROMETHEUS_INTEGRATION=true" >> $GITHUB_ENV
-            echo "✅ 在 main/release 分支上啟用完整整合測試"
-          else
-            echo "⏭️ PR CI 模式：跳過大型整合測試以加速構建"
           fi
 
-      - name: Run Build
+      - name: Build
         env:
           BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || '' }}
         run: |
+          # Turbo cache from validate job should make this near-instant
           if [ "${{ github.event_name }}" == "pull_request" ] && [ -n "$BASE_REF" ]; then
-            # PR: 增量 build
             FILTERS=$(bun run scripts/get-affected-packages.ts --base "$BASE_REF" --mode build)
             if [ -n "$FILTERS" ]; then
               bunx turbo run build $FILTERS
             else
-              echo "✅ 沒有包變更，跳過 build"
+              echo "No package changes, skipping build"
             fi
           else
-            # Main: 全量 build (安全網)
             bun run build
           fi
 
-      # Run Typecheck & Tests (Parallel + Incremental) - Phase 3A + 3B
       - name: Prepare Incremental Filters
         id: filters
         env:
           BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || '' }}
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ] && [ -n "$BASE_REF" ]; then
-            # PR 模式：增量化
             TYPECHECK_FILTERS=$(bun run scripts/get-affected-packages.ts --base "$BASE_REF" --mode typecheck)
             TEST_FILTERS=$(bun run scripts/get-affected-packages.ts --base "$BASE_REF" --mode test)
+            echo "mode=incremental" >> $GITHUB_OUTPUT
           else
-            # Main 模式：全量檢查
-            TYPECHECK_FILTERS="--filter='./packages/*' --filter='./satellites/*'"
-            TEST_FILTERS="--filter='./packages/*'"
+            echo "mode=full" >> $GITHUB_OUTPUT
           fi
+          echo "typecheck_filters=${TYPECHECK_FILTERS:-}" >> $GITHUB_OUTPUT
+          echo "test_filters=${TEST_FILTERS:-}" >> $GITHUB_OUTPUT
 
-          # 輸出為環境變數（用於下一步）
-          echo "typecheck_filters=$TYPECHECK_FILTERS" >> $GITHUB_OUTPUT
-          echo "test_filters=$TEST_FILTERS" >> $GITHUB_OUTPUT
-
-      - name: Run Typecheck & Tests (Parallel - Phase 3A + 3B)
+      - name: Typecheck & Test (Parallel)
         run: |
-          TYPECHECK_FILTERS="${{ steps.filters.outputs.typecheck_filters }}"
-          TEST_FILTERS="${{ steps.filters.outputs.test_filters }}"
-
-          echo "🎯 Phase 3A + 3B：並行執行增量化 typecheck & test"
-
-          # Phase 3A：並行執行 typecheck 和 test
-          echo "⚡ 啟動並行任務..."
-
-          # 後台執行 typecheck
-          if [ -n "$TYPECHECK_FILTERS" ]; then
-            (bunx turbo run typecheck $TYPECHECK_FILTERS --concurrency=8) &
-            PID_TYPECHECK=$!
-            echo "  ✓ Typecheck (PID: $PID_TYPECHECK, concurrency=8)"
-          fi
-
-          # 並行執行 test（核心包執行 coverage，輕量級包執行快速測試，衛星包執行快速測試）
-          if [ -n "$TEST_FILTERS" ]; then
-            # 核心包執行完整覆蓋率檢查
-            (bunx turbo run test:coverage \
-              --filter='./packages/core' \
-              --filter='./packages/atlas' \
-              --filter='./packages/dark-matter' \
-              --filter='./packages/plasma' \
-              --filter='./packages/flux' \
-              --filter='./packages/stream' \
-              --filter='./packages/astral' \
-              --filter='./packages/graphql' \
-              --concurrency=4 --continue) &
-            PID_TEST=$!
-            echo "  ✓ Test:Coverage (core packages, PID: $PID_TEST)"
-
-            # 輕量級包執行快速測試（無覆蓋率開銷）
-            (bunx turbo run test \
-              --filter='./packages/photon' \
-              --filter='./packages/echo' \
-              --filter='./packages/monitor' \
-              --filter='./packages/mass' \
-              --filter='./packages/signal' \
-              --filter='./packages/nebula' \
-              --filter='./packages/stasis' \
-              --concurrency=8 --continue) &
-            PID_TEST_LITE=$!
-            echo "  ✓ Test:Quick (lightweight packages, PID: $PID_TEST_LITE)"
-
-            # 其他核心包執行完整覆蓋率檢查
-            (bunx turbo run test:coverage \
-              --filter='./packages/*' \
-              --filter='!./packages/core' \
-              --filter='!./packages/atlas' \
-              --filter='!./packages/dark-matter' \
-              --filter='!./packages/plasma' \
-              --filter='!./packages/flux' \
-              --filter='!./packages/stream' \
-              --filter='!./packages/astral' \
-              --filter='!./packages/graphql' \
-              --filter='!./packages/photon' \
-              --filter='!./packages/echo' \
-              --filter='!./packages/monitor' \
-              --filter='!./packages/mass' \
-              --filter='!./packages/signal' \
-              --filter='!./packages/nebula' \
-              --filter='!./packages/stasis' \
-              --concurrency=4 --continue) &
-            PID_TEST_OTHER=$!
-            echo "  ✓ Test:Coverage (other packages, PID: $PID_TEST_OTHER)"
-
-            # 衛星包只執行快速測試（無覆蓋率開銷）
-            (bunx turbo run test --filter='./satellites/*' --concurrency=6 --continue) &
-            PID_TEST_SAT=$!
-            echo "  ✓ Test:Quick (satellites, PID: $PID_TEST_SAT)"
-          fi
-
-          # 等待並檢查結果
-          echo ""
-          echo "⏳ 等待任務完成..."
+          MODE="${{ steps.filters.outputs.mode }}"
           FAILED=0
 
-          if [ -n "$PID_TYPECHECK" ]; then
-            if wait $PID_TYPECHECK; then
-              echo "✅ Typecheck 完成"
-            else
-              echo "❌ Typecheck 失敗"
-              FAILED=1
+          if [ "$MODE" == "full" ]; then
+            # Main: full typecheck + full coverage tests
+            (bunx turbo run typecheck --filter='./packages/*' --filter='./satellites/*' --concurrency=6) &
+            PID_TYPECHECK=$!
+            (bunx turbo run test:coverage --filter='./packages/*' --concurrency=4 --continue) &
+            PID_TEST_PKG=$!
+            (bunx turbo run test --filter='./satellites/*' --concurrency=4 --continue) &
+            PID_TEST_SAT=$!
+          else
+            # PR: incremental - only affected packages
+            TYPECHECK_FILTERS="${{ steps.filters.outputs.typecheck_filters }}"
+            TEST_FILTERS="${{ steps.filters.outputs.test_filters }}"
+
+            if [ -n "$TYPECHECK_FILTERS" ]; then
+              (bunx turbo run typecheck $TYPECHECK_FILTERS --concurrency=6) &
+              PID_TYPECHECK=$!
+            fi
+            if [ -n "$TEST_FILTERS" ]; then
+              (bunx turbo run test $TEST_FILTERS --concurrency=4 --continue) &
+              PID_TEST_PR=$!
             fi
           fi
 
-          if [ -n "$PID_TEST" ]; then
-            if wait $PID_TEST; then
-              echo "✅ Test:Coverage (core packages) 完成"
-            else
-              echo "❌ Test:Coverage (core packages) 失敗"
-              FAILED=1
-            fi
+          # Wait for all background processes
+          if [ -n "${PID_TYPECHECK:-}" ]; then
+            if wait $PID_TYPECHECK; then echo "Typecheck passed"; else echo "Typecheck failed"; FAILED=1; fi
+          fi
+          if [ -n "${PID_TEST_PKG:-}" ]; then
+            if wait $PID_TEST_PKG; then echo "Test:coverage (packages) passed"; else echo "Test:coverage (packages) failed"; FAILED=1; fi
+          fi
+          if [ -n "${PID_TEST_SAT:-}" ]; then
+            if wait $PID_TEST_SAT; then echo "Test (satellites) passed"; else echo "Test (satellites) failed"; FAILED=1; fi
+          fi
+          if [ -n "${PID_TEST_PR:-}" ]; then
+            if wait $PID_TEST_PR; then echo "Test (incremental) passed"; else echo "Test (incremental) failed"; FAILED=1; fi
           fi
 
-          if [ -n "$PID_TEST_LITE" ]; then
-            if wait $PID_TEST_LITE; then
-              echo "✅ Test:Quick (lightweight packages) 完成"
-            else
-              echo "❌ Test:Quick (lightweight packages) 失敗"
-              FAILED=1
-            fi
-          fi
+          if [ $FAILED -eq 1 ]; then exit 1; fi
 
-          if [ -n "$PID_TEST_OTHER" ]; then
-            if wait $PID_TEST_OTHER; then
-              echo "✅ Test:Coverage (other packages) 完成"
-            else
-              echo "❌ Test:Coverage (other packages) 失敗"
-              FAILED=1
-            fi
-          fi
-
-          if [ -n "$PID_TEST_SAT" ]; then
-            if wait $PID_TEST_SAT; then
-              echo "✅ Test:Quick (satellites) 完成"
-            else
-              echo "❌ Test:Quick (satellites) 失敗"
-              FAILED=1
-            fi
-          fi
-
-          if [ $FAILED -eq 1 ]; then
-            echo ""
-            echo "❌ Typecheck & Test 失敗"
-            exit 1
-          fi
-
-          echo ""
-          echo "✅ Typecheck & Test 並行完成（Phase 3A + 3B - CI 優化版）"
-          echo "   📊 核心包（8 個）：覆蓋率檢查（coverage，concurrency=4）"
-          echo "   📊 輕量級包（7 個）：快速測試（無覆蓋率，concurrency=8）"
-          echo "   📊 其他包：覆蓋率檢查（coverage，concurrency=4）"
-          echo "   📊 衛星包：快速測試（無覆蓋率，concurrency=6）"
-
-      # Monitor system resources for optimization baseline
-      - name: Monitor System Resources
-        if: always()
-        run: |
-          echo "=== 系統資源使用情況 ===" >> $GITHUB_STEP_SUMMARY
-          echo "記憶體使用：$(free -h | grep Mem)" >> $GITHUB_STEP_SUMMARY
-          echo "磁碟使用：$(df -h / | tail -1)" >> $GITHUB_STEP_SUMMARY
-          echo "並發度：Typecheck=6, Test=4（並行執行）" >> $GITHUB_STEP_SUMMARY
-          echo "優化：Phase 1+2+3A+3B - 增量化 + 並行化" >> $GITHUB_STEP_SUMMARY
-
-      # Check unused imports in changed packages only (avoids timeout; use --all locally for full check)
-      - name: Fetch base branch
-        if: github.event_name == 'pull_request'
-        run: git fetch origin ${{ github.base_ref }} --depth=1
       - name: Check Unused Imports
         env:
           CHANGED_PACKAGES_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || '' }}
@@ -415,42 +268,10 @@ jobs:
       - name: Verify build output
         run: |
           test -f packages/core/dist/index.js || (echo "Missing ESM bundle" && exit 1)
-          echo "✅ Build outputs verified"
 
-  # --------------------------------------------------------------------------
-  # Quality Checks (Independent)
-  # --------------------------------------------------------------------------
-  quality:
-    name: Code Quality
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.4
-      - name: Cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-        env:
-          SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
-      - name: Run Quality Checks
+      - name: Monitor System Resources
+        if: always()
         run: |
-          # Check for console.log in production code
-          LOG_COUNT=$(grep -r "console.log" packages --include="*.ts" --exclude="*.test.ts" --exclude="*.bench.ts" | wc -l || echo "0")
-          if [ "$LOG_COUNT" -gt 0 ]; then
-            echo "⚠️ Found $LOG_COUNT console.log statements in production code"
-          fi
-          
-          # Check for TODOs
-          grep -r "TODO\|FIXME" packages --include="*.ts" --exclude="*.test.ts" | head -10 || true
-          
-          # Depcheck
-          bunx depcheck || echo "⚠️ Some potential unused dependencies found"
+          echo "=== System Resources ===" >> $GITHUB_STEP_SUMMARY
+          echo "Memory: $(free -h | grep Mem)" >> $GITHUB_STEP_SUMMARY
+          echo "Disk: $(df -h / | tail -1)" >> $GITHUB_STEP_SUMMARY
