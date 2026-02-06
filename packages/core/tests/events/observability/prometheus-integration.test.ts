@@ -20,7 +20,10 @@ interface OTelEventMetricsInstance {
 
 type OTelEventMetricsClass = new (meter: unknown, prefix?: string) => OTelEventMetricsInstance
 
-describe('Prometheus Integration', () => {
+// CI 優化：条件化执行可觀測性整合測試
+const shouldRunPrometheusIntegration = process.env.RUN_PROMETHEUS_INTEGRATION !== 'false'
+
+describe.skipIf(!shouldRunPrometheusIntegration)('Prometheus Integration', () => {
   describe('OTelEventMetrics with OpenTelemetry SDK', () => {
     let resetOpenTelemetry: () => Promise<void>
     let setupOpenTelemetry: (config: OpenTelemetryConfig) => Promise<OpenTelemetrySDK | null>

@@ -95,7 +95,10 @@ function createMockTracer() {
   return tracer
 }
 
-describe('Event Tracing Integration', () => {
+// CI 優化：条件化执行可觀測性整合測試
+const shouldRunTracingIntegration = process.env.RUN_TRACING_INTEGRATION !== 'false'
+
+describe.skipIf(!shouldRunTracingIntegration)('Event Tracing Integration', () => {
   let mockTracer: ReturnType<typeof createMockTracer>
   let originalGetTracer: typeof trace.getTracer
 

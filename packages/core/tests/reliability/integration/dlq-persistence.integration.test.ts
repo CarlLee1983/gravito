@@ -23,7 +23,10 @@ import {
   getRecordCount,
 } from './helpers/dlq-test-db'
 
-describe('DLQ Persistence Integration Tests', () => {
+// CI 優化：条件化执行 DLQ 整合测试
+const shouldRunDLQIntegration = process.env.RUN_DLQ_INTEGRATION !== 'false'
+
+describe.skipIf(!shouldRunDLQIntegration)('DLQ Persistence Integration Tests', () => {
   let connectionName: string
   let connection: ConnectionContract
   let manager: DeadLetterQueueManager
