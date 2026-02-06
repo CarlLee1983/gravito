@@ -40,7 +40,7 @@ describe('FluxEngine Extended', () => {
 
       const loaded = await engine.get('wf-save-test')
       expect(loaded).not.toBeNull()
-      expect(loaded!.version).toBe(2)
+      expect(loaded?.version).toBe(2)
     })
 
     it('should throw on concurrent modification', async () => {
@@ -121,7 +121,7 @@ describe('FluxEngine Extended', () => {
 
       const state = await engine.get(result.id)
       expect(state).not.toBeNull()
-      expect(state!.name).toBe('get-test')
+      expect(state?.name).toBe('get-test')
     })
 
     it('should return null for non-existent workflow', async () => {

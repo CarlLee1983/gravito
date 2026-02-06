@@ -6,13 +6,7 @@
  * @module @gravito/flux/core
  */
 
-import type {
-  FluxWaitResult,
-  StepDefinition,
-  StepExecution,
-  StepResult,
-  WorkflowContext,
-} from '../types'
+import type { StepDefinition, StepExecution, StepResult, WorkflowContext } from '../types'
 import { updateStepExecution } from './executionUpdater'
 
 /**
@@ -211,7 +205,7 @@ export class StepExecutor {
     handler: StepDefinition<TInput, TData>['handler'],
     ctx: WorkflowContext<TInput, TData>,
     timeout: number
-  ): Promise<undefined | undefined | FluxWaitResult> {
+  ): Promise<import('../types').StepHandlerResult> {
     let timer: ReturnType<typeof setTimeout> | null = null
     try {
       const timeoutPromise = new Promise<never>((_, reject) => {

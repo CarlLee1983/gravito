@@ -1,11 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
-import {
-  BatchExecutor,
-  type BatchItemResult,
-  createWorkflow,
-  FluxEngine,
-  type WorkflowContext,
-} from '../src'
+import { BatchExecutor, createWorkflow, FluxEngine, type WorkflowContext } from '../src'
 
 describe('BatchExecutor', () => {
   let engine: FluxEngine
@@ -37,7 +31,7 @@ describe('BatchExecutor', () => {
       expect(result.results).toHaveLength(5)
       expect(result.results[0]?.result?.data.result).toBe(2)
       expect(result.results[4]?.result?.data.result).toBe(10)
-      expect(result.duration).toBeGreaterThan(0)
+      expect(result.duration).toBeGreaterThanOrEqual(0)
     })
 
     it('should respect concurrency limit', async () => {

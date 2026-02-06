@@ -15,7 +15,9 @@ describe('OrbitFlux Extended', () => {
       },
       hooks: {
         doAction: jest.fn((action: string, payload: any) => {
-          if (!hooks[action]) hooks[action] = []
+          if (!hooks[action]) {
+            hooks[action] = []
+          }
           hooks[action].push(payload)
         }),
       },
