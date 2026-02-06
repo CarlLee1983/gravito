@@ -8,7 +8,7 @@ import type { Redis as RedisClient, RedisOptions } from 'ioredis'
 import { RippleDriverError } from '../errors/RippleError'
 import type { RippleLogger } from '../logging/Logger'
 import { createLogger } from '../logging/Logger'
-import type { DriverStatus, RippleDriver } from '../types'
+import type { DriverStatus, PresenceUserInfo, RippleDriver } from '../types'
 
 /**
  * Configuration for the RedisDriver.
@@ -283,6 +283,93 @@ export class RedisDriver implements RippleDriver {
       connected: this._connected,
       lastError: this._lastError,
     }
+  }
+
+  /**
+   * Track a presence member in a channel.
+   *
+   * Stores presence information in Redis Hash for cross-node sharing.
+   * Sets TTL on the hash to prevent stale data.
+   *
+   * @param channel - Presence channel name
+   * @param userInfo - User information to track
+   * @since 3.6.0
+   */
+  async trackPresence(channel: string, userInfo: PresenceUserInfo): Promise<void> {
+    if (!this.redis || !this._initialized) {
+      throw new RippleDriverError(
+        'DRIVER_NOT_INITIALIZED',
+        'RedisDriver not initialized. Call init() first.'
+      )
+    }
+
+    const presenceKey = `${this.channelPrefix}presence:${channel}`
+    const userId = String(userInfo.id)
+
+    // Store user info as JSON in hash field
+    await this.redis.hset(presenceKey, userId, JSON.stringify(userInfo))
+
+    // Set TTL on the presence hash (5 minutes)
+    await this.redis.expire(presenceKey, 300)
+
+    this.logger.debug('Tracked presence member', { channel, userId })
+  }
+
+  /**
+   * Remove a presence member from a channel.
+   *
+   * @param channel - Presence channel name
+   * @param userId - User ID to remove
+   * @since 3.6.0
+   */
+  async untrackPresence(channel: string, userId: string | number): Promise<void> {
+    if (!this.redis || !this._initialized) {
+      throw new RippleDriverError(
+        'DRIVER_NOT_INITIALIZED',
+        'RedisDriver not initialized. Call init() first.'
+      )
+    }
+
+    const presenceKey = `${this.channelPrefix}presence:${channel}`
+    await this.redis.hdel(presenceKey, String(userId))
+
+    this.logger.debug('Untracked presence member', { channel, userId })
+  }
+
+  /**
+   * Get all presence members for a channel.
+   *
+   * Retrieves all members from the Redis Hash.
+   *
+   * @param channel - Presence channel name
+   * @returns Array of presence user information
+   * @since 3.6.0
+   */
+  async getPresenceMembers(channel: string): Promise<PresenceUserInfo[]> {
+    if (!this.redis || !this._initialized) {
+      throw new RippleDriverError(
+        'DRIVER_NOT_INITIALIZED',
+        'RedisDriver not initialized. Call init() first.'
+      )
+    }
+
+    const presenceKey = `${this.channelPrefix}presence:${channel}`
+    const membersHash = await this.redis.hgetall(presenceKey)
+
+    const members: PresenceUserInfo[] = []
+    for (const [_userId, userInfoJson] of Object.entries(membersHash)) {
+      try {
+        const userInfo = JSON.parse(userInfoJson)
+        members.push(userInfo)
+      } catch (error) {
+        this.logger.error('Failed to parse presence member data', {
+          channel,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      }
+    }
+
+    return members
   }
 
   /**

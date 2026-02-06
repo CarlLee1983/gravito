@@ -101,7 +101,7 @@ describe('ChannelManager', () => {
     expect(stats.channels).toEqual([])
   })
 
-  it('should track stats with active subscriptions', () => {
+  it('should track stats with active subscriptions', async () => {
     const ws1 = {
       data: { id: 'client-1', channels: new Set<string>() },
     } as any
@@ -111,9 +111,9 @@ describe('ChannelManager', () => {
 
     manager.addClient(ws1)
     manager.addClient(ws2)
-    manager.subscribe('client-1', 'channel-a')
-    manager.subscribe('client-2', 'channel-a')
-    manager.subscribe('client-1', 'channel-b')
+    await manager.subscribe('client-1', 'channel-a')
+    await manager.subscribe('client-2', 'channel-a')
+    await manager.subscribe('client-1', 'channel-b')
 
     const stats = manager.getStats()
     expect(stats.totalClients).toBe(2)
@@ -123,7 +123,7 @@ describe('ChannelManager', () => {
     expect(stats.channels.find((c) => c.name === 'channel-b')?.subscribers).toBe(1)
   })
 
-  it('manages subscriptions and presence members', () => {
+  it('manages subscriptions and presence members', async () => {
     const ws = {
       data: {
         id: 'client-1',
@@ -134,16 +134,16 @@ describe('ChannelManager', () => {
     manager.addClient(ws)
     expect(manager.getAllClients().length).toBe(1)
 
-    manager.subscribe('client-1', 'public-room')
+    await manager.subscribe('client-1', 'public-room')
     expect(manager.isSubscribed('client-1', 'public-room')).toBe(true)
     expect(manager.getSubscribers('public-room').length).toBe(1)
 
-    manager.subscribe('client-1', 'presence-room', { id: 'user-1', info: { name: 'Ada' } })
-    expect(manager.getPresenceMembers('presence-room').length).toBe(1)
+    await manager.subscribe('client-1', 'presence-room', { id: 'user-1', info: { name: 'Ada' } })
+    expect((await manager.getPresenceMembers('presence-room')).length).toBe(1)
     expect(manager.getMemberCount('presence-room')).toBe(1)
 
-    manager.unsubscribe('client-1', 'presence-room')
-    expect(manager.getPresenceMembers('presence-room').length).toBe(0)
+    await manager.unsubscribe('client-1', 'presence-room')
+    expect((await manager.getPresenceMembers('presence-room')).length).toBe(0)
 
     const left = manager.removeClient('client-1')
     expect(left).toContain('public-room')

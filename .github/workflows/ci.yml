@@ -120,6 +120,7 @@ jobs:
     name: Build, Typecheck & Test
     needs: quick-validation
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       mongodb:
         image: mongo:7
@@ -163,6 +164,12 @@ jobs:
       DB_POOL_SIZE: "3"
       REDIS_MAX_CLIENTS: "5"
       POSTGRES_MAX_CONNECTIONS: "5"
+      # Phase 3：整合測試條件化控制（預設關閉以加速 CI）
+      RUN_DLQ_INTEGRATION: "false"
+      RUN_TRACING_INTEGRATION: "false"
+      RUN_PROMETHEUS_INTEGRATION: "false"
+      # Phase 2：atlas 包並發度優化（默認 2，本地可調整）
+      TEST_CONCURRENCY: "2"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -199,6 +206,17 @@ jobs:
       - name: Fetch base branch (for PR)
         if: github.event_name == 'pull_request'
         run: git fetch origin ${{ github.base_ref }} --depth=1
+
+      - name: Enable Integration Tests (Main/Release)
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]] || [[ "${{ github.event_name }}" == "release" ]]; then
+            echo "RUN_DLQ_INTEGRATION=true" >> $GITHUB_ENV
+            echo "RUN_TRACING_INTEGRATION=true" >> $GITHUB_ENV
+            echo "RUN_PROMETHEUS_INTEGRATION=true" >> $GITHUB_ENV
+            echo "✅ 在 main/release 分支上啟用完整整合測試"
+          else
+            echo "⏭️ PR CI 模式：跳過大型整合測試以加速構建"
+          fi
 
       - name: Run Build
         env:
@@ -249,16 +267,66 @@ jobs:
 
           # 後台執行 typecheck
           if [ -n "$TYPECHECK_FILTERS" ]; then
-            (bunx turbo run typecheck $TYPECHECK_FILTERS --concurrency=6) &
+            (bunx turbo run typecheck $TYPECHECK_FILTERS --concurrency=8) &
             PID_TYPECHECK=$!
-            echo "  ✓ Typecheck (PID: $PID_TYPECHECK)"
+            echo "  ✓ Typecheck (PID: $PID_TYPECHECK, concurrency=8)"
           fi
 
-          # 並行執行 test
+          # 並行執行 test（核心包執行 coverage，輕量級包執行快速測試，衛星包執行快速測試）
           if [ -n "$TEST_FILTERS" ]; then
-            (bunx turbo run test:coverage $TEST_FILTERS --concurrency=4 --continue) &
+            # 核心包執行完整覆蓋率檢查
+            (bunx turbo run test:coverage \
+              --filter='./packages/core' \
+              --filter='./packages/atlas' \
+              --filter='./packages/dark-matter' \
+              --filter='./packages/plasma' \
+              --filter='./packages/flux' \
+              --filter='./packages/stream' \
+              --filter='./packages/astral' \
+              --filter='./packages/graphql' \
+              --concurrency=4 --continue) &
             PID_TEST=$!
-            echo "  ✓ Test (PID: $PID_TEST)"
+            echo "  ✓ Test:Coverage (core packages, PID: $PID_TEST)"
+
+            # 輕量級包執行快速測試（無覆蓋率開銷）
+            (bunx turbo run test \
+              --filter='./packages/photon' \
+              --filter='./packages/echo' \
+              --filter='./packages/monitor' \
+              --filter='./packages/mass' \
+              --filter='./packages/signal' \
+              --filter='./packages/nebula' \
+              --filter='./packages/stasis' \
+              --concurrency=8 --continue) &
+            PID_TEST_LITE=$!
+            echo "  ✓ Test:Quick (lightweight packages, PID: $PID_TEST_LITE)"
+
+            # 其他核心包執行完整覆蓋率檢查
+            (bunx turbo run test:coverage \
+              --filter='./packages/*' \
+              --filter='!./packages/core' \
+              --filter='!./packages/atlas' \
+              --filter='!./packages/dark-matter' \
+              --filter='!./packages/plasma' \
+              --filter='!./packages/flux' \
+              --filter='!./packages/stream' \
+              --filter='!./packages/astral' \
+              --filter='!./packages/graphql' \
+              --filter='!./packages/photon' \
+              --filter='!./packages/echo' \
+              --filter='!./packages/monitor' \
+              --filter='!./packages/mass' \
+              --filter='!./packages/signal' \
+              --filter='!./packages/nebula' \
+              --filter='!./packages/stasis' \
+              --concurrency=4 --continue) &
+            PID_TEST_OTHER=$!
+            echo "  ✓ Test:Coverage (other packages, PID: $PID_TEST_OTHER)"
+
+            # 衛星包只執行快速測試（無覆蓋率開銷）
+            (bunx turbo run test --filter='./satellites/*' --concurrency=6 --continue) &
+            PID_TEST_SAT=$!
+            echo "  ✓ Test:Quick (satellites, PID: $PID_TEST_SAT)"
           fi
 
           # 等待並檢查結果
@@ -277,9 +345,36 @@ jobs:
 
           if [ -n "$PID_TEST" ]; then
             if wait $PID_TEST; then
-              echo "✅ Test 完成"
+              echo "✅ Test:Coverage (core packages) 完成"
             else
-              echo "❌ Test 失敗"
+              echo "❌ Test:Coverage (core packages) 失敗"
+              FAILED=1
+            fi
+          fi
+
+          if [ -n "$PID_TEST_LITE" ]; then
+            if wait $PID_TEST_LITE; then
+              echo "✅ Test:Quick (lightweight packages) 完成"
+            else
+              echo "❌ Test:Quick (lightweight packages) 失敗"
+              FAILED=1
+            fi
+          fi
+
+          if [ -n "$PID_TEST_OTHER" ]; then
+            if wait $PID_TEST_OTHER; then
+              echo "✅ Test:Coverage (other packages) 完成"
+            else
+              echo "❌ Test:Coverage (other packages) 失敗"
+              FAILED=1
+            fi
+          fi
+
+          if [ -n "$PID_TEST_SAT" ]; then
+            if wait $PID_TEST_SAT; then
+              echo "✅ Test:Quick (satellites) 完成"
+            else
+              echo "❌ Test:Quick (satellites) 失敗"
               FAILED=1
             fi
           fi
@@ -291,7 +386,11 @@ jobs:
           fi
 
           echo ""
-          echo "✅ Typecheck & Test 並行完成（Phase 3A + 3B）"
+          echo "✅ Typecheck & Test 並行完成（Phase 3A + 3B - CI 優化版）"
+          echo "   📊 核心包（8 個）：覆蓋率檢查（coverage，concurrency=4）"
+          echo "   📊 輕量級包（7 個）：快速測試（無覆蓋率，concurrency=8）"
+          echo "   📊 其他包：覆蓋率檢查（coverage，concurrency=4）"
+          echo "   📊 衛星包：快速測試（無覆蓋率，concurrency=6）"
 
       # Monitor system resources for optimization baseline
       - name: Monitor System Resources

@@ -8,6 +8,7 @@
 
 import { Channel, PresenceChannel, PrivateChannel } from './Channel'
 import { ConnectionStateManager } from './ConnectionStateManager'
+import { InterceptorManager, type RippleInterceptor } from './InterceptorManager'
 import type { RippleClientConfig, ServerMessage } from './types'
 
 /**
@@ -42,9 +43,11 @@ export class RippleClient {
   private stateManager = new ConnectionStateManager()
   private reconnectAttempts = 0
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  private reconnectionToken: string | null = null
 
   private channels = new Map<string, Channel>()
   private pendingSubscriptions = new Set<string>()
+  private interceptors = new InterceptorManager()
 
   readonly config: Required<
     Pick<
@@ -67,6 +70,7 @@ export class RippleClient {
       maxReconnectAttempts: 10,
       ...config,
     }
+    this.reconnectionToken = config.reconnectionToken ?? null
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -90,7 +94,12 @@ export class RippleClient {
       this.stateManager.setState('connecting')
 
       try {
-        this.ws = new WebSocket(this.config.host)
+        const url = new URL(this.config.host)
+        if (this.reconnectionToken) {
+          url.searchParams.set('reconnection_token', this.reconnectionToken)
+        }
+
+        this.ws = new WebSocket(url.toString())
         this.ws.binaryType = 'arraybuffer'
 
         this.ws.onopen = () => {
@@ -160,6 +169,17 @@ export class RippleClient {
    */
   onStateChange(callback: (state: ConnectionState, prev: ConnectionState) => void): () => void {
     return this.stateManager.onStateChange(callback)
+  }
+
+  /**
+   * Add a middleware interceptor (v4.0+).
+   *
+   * @param interceptor - The interceptor function.
+   * @returns This client instance for chaining.
+   */
+  use(interceptor: RippleInterceptor): this {
+    this.interceptors.use(interceptor)
+    return this
   }
 
   /**
@@ -310,9 +330,11 @@ export class RippleClient {
   }
 
   private send(message: object): void {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(message))
-    }
+    this.interceptors.execute({ message: message as any, direction: 'outgoing' }, async () => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify(message))
+      }
+    })
   }
 
   /**
@@ -372,44 +394,59 @@ export class RippleClient {
     try {
       const message: ServerMessage = JSON.parse(raw)
 
-      switch (message.type) {
-        case 'connected':
-          this.socketId = message.socketId
-          this.processPendingSubscriptions()
-          break
+      this.interceptors.execute({ message, direction: 'incoming' }, async () => {
+        switch (message.type) {
+          case 'connected':
+            this.socketId = message.socketId
+            if (message.reconnectionToken) {
+              this.reconnectionToken = message.reconnectionToken
+            }
+            this.processPendingSubscriptions()
+            break
 
-        case 'subscribed':
-          // Channel subscription confirmed
-          break
+          case 'subscribed':
+            // Channel subscription confirmed
+            break
 
-        case 'unsubscribed':
-          // Channel unsubscription confirmed
-          break
+          case 'unsubscribed':
+            // Channel unsubscription confirmed
+            break
 
-        case 'event': {
-          const channel = this.channels.get(message.channel)
-          if (channel) {
-            channel._dispatch(message.event, message.data)
+          case 'event': {
+            if (message.needAck && message.seq !== undefined) {
+              this.send({ type: 'ack', seq: message.seq })
+            }
+            const channel = this.channels.get(message.channel)
+            if (channel) {
+              channel._dispatch(message.event, message.data)
+            }
+            break
           }
-          break
-        }
 
-        case 'presence': {
-          const presenceChannel = this.channels.get(message.channel)
-          if (presenceChannel instanceof PresenceChannel) {
-            presenceChannel._handlePresence(message.event, message.data)
+          case 'presence': {
+            if (message.needAck && message.seq !== undefined) {
+              this.send({ type: 'ack', seq: message.seq })
+            }
+            const presenceChannel = this.channels.get(message.channel)
+            if (presenceChannel instanceof PresenceChannel) {
+              presenceChannel._handlePresence(message.event, message.data)
+            }
+            break
           }
-          break
+
+          case 'ack_received':
+            // Message confirmed by server
+            break
+
+          case 'error':
+            console.error('[Ripple] Server error:', message.message, message.channel)
+            break
+
+          case 'pong':
+            // Heartbeat response
+            break
         }
-
-        case 'error':
-          console.error('[Ripple] Server error:', message.message, message.channel)
-          break
-
-        case 'pong':
-          // Heartbeat response
-          break
-      }
+      })
     } catch (_error) {
       console.error('[Ripple] Failed to parse message:', raw)
     }

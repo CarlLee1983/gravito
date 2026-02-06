@@ -56,11 +56,9 @@
       "Bash(tsc:*)",
       "Bash(bunx tsup:*)",
       "Bash(git stash:*)",
-      "Bash(1)"
+      "Bash(__NEW_LINE_cb38be22b94e4a9c__ echo \"\")",
+      "Bash(git rev-list:*)"
     ]
   },
-  "enabledMcpjsonServers": [
-    "pencil",
-    "context7"
-  ]
+  "enabledMcpjsonServers": ["pencil", "context7"]
 }

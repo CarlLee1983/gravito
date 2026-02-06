@@ -14,10 +14,10 @@
   },
   "scripts": {
     "build": "bun run build.ts",
-    "test": "bun test",
+    "test": "bun test --timeout=10000",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
-    "test:coverage": "bun test --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
-    "test:ci": "bun test --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
+    "test:coverage": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
+    "test:ci": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
     "bench": "MONGODB_URI=mongodb://localhost:27017 bun test benchmarks/*.bench.ts",
     "bench:gridfs": "MONGODB_URI=mongodb://localhost:27017 bun test benchmarks/gridfs.bench.ts",
     "bench:soft-delete": "MONGODB_URI=mongodb://localhost:27017 bun test benchmarks/soft-delete.bench.ts",

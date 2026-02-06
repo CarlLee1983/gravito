@@ -1,72 +1,81 @@
 /**
  * S3Store 整合測試
  *
- * 使用本地 MinIO 進行測試
+ * 需要 S3_TEST_BUCKET 環境變數才會執行
+ * 可使用本地 MinIO 進行測試
  *
  * 啟動 MinIO:
  * docker run -d --name nebula-minio-test -p 9000:9000 -p 9001:9001 \
  *   -e "MINIO_ROOT_USER=minioadmin" -e "MINIO_ROOT_PASSWORD=minioadmin" \
  *   minio/minio server /data --console-address ":9001"
+ *
+ * 執行整合測試:
+ * export S3_TEST_BUCKET=nebula-test-bucket
+ * export S3_TEST_ENDPOINT=http://localhost:9000
+ * export AWS_ACCESS_KEY_ID=minioadmin
+ * export AWS_SECRET_ACCESS_KEY=minioadmin
+ * bun test
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
 import { S3Store } from '../src/S3Store'
 
-const TEST_BUCKET = 'nebula-test-bucket'
-const MINIO_CONFIG = {
-  endpoint: 'http://localhost:9000',
-  region: 'us-east-1',
-  forcePathStyle: true,
-  credentials: {
-    accessKeyId: 'minioadmin',
-    secretAccessKey: 'minioadmin',
-  },
-}
+const shouldRunIntegrationTests = !!process.env.S3_TEST_BUCKET
 
-let s3Client: S3Client
-let store: S3Store
-
-beforeAll(async () => {
-  // 建立 S3 Client
-  s3Client = new S3Client(MINIO_CONFIG)
-
-  // 建立測試 bucket
-  try {
-    await s3Client.send(
-      new CreateBucketCommand({
-        Bucket: TEST_BUCKET,
-      })
-    )
-    console.log(`✅ Created test bucket: ${TEST_BUCKET}`)
-  } catch (error: any) {
-    if (error.name !== 'BucketAlreadyOwnedByYou') {
-      throw error
-    }
-    console.log(`ℹ️ Test bucket already exists: ${TEST_BUCKET}`)
+describe.skipIf(!shouldRunIntegrationTests)('S3Store - 整合測試', () => {
+  const TEST_BUCKET = process.env.S3_TEST_BUCKET!
+  const S3_CONFIG = {
+    endpoint: process.env.S3_TEST_ENDPOINT ?? 'http://localhost:9000',
+    region: process.env.S3_TEST_REGION ?? 'us-east-1',
+    forcePathStyle: true,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? 'minioadmin',
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? 'minioadmin',
+    },
   }
 
-  // 建立 S3Store
-  store = new S3Store({
-    bucket: TEST_BUCKET,
-    ...MINIO_CONFIG,
+  let s3Client: S3Client
+  let store: S3Store
+
+  beforeAll(async () => {
+    // 建立 S3 Client
+    s3Client = new S3Client(S3_CONFIG)
+
+    // 建立測試 bucket
+    try {
+      await s3Client.send(
+        new CreateBucketCommand({
+          Bucket: TEST_BUCKET,
+        })
+      )
+      console.log(`✅ Created test bucket: ${TEST_BUCKET}`)
+    } catch (error: any) {
+      if (error.name !== 'BucketAlreadyOwnedByYou') {
+        throw error
+      }
+      console.log(`ℹ️ Test bucket already exists: ${TEST_BUCKET}`)
+    }
+
+    // 建立 S3Store
+    store = new S3Store({
+      bucket: TEST_BUCKET,
+      ...S3_CONFIG,
+    })
   })
-})
 
-afterAll(async () => {
-  // 清理所有測試檔案
-  try {
-    const result = await store.listPaginated('', { maxResults: 1000 })
-    for (const item of result.items) {
-      await store.delete(item.key)
+  afterAll(async () => {
+    // 清理所有測試檔案
+    try {
+      const result = await store.listPaginated('', { maxResults: 1000 })
+      for (const item of result.items) {
+        await store.delete(item.key)
+      }
+      console.log(`🧹 Cleaned up ${result.count} test files`)
+    } catch (error) {
+      console.error('❌ Cleanup error:', error)
     }
-    console.log(`🧹 Cleaned up ${result.count} test files`)
-  } catch (error) {
-    console.error('❌ Cleanup error:', error)
-  }
-})
-
-describe('S3Store - MinIO 整合測試', () => {
+  })
   it('應該能夠上傳和下載文字檔案', async () => {
     const testKey = `test-text-${Date.now()}.txt`
     const testContent = 'Hello, MinIO Integration Test! 你好，世界！'

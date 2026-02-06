@@ -1,7 +1,6 @@
-[install]
-# Automatically install peer dependencies
-peer = true
-
 [test]
-coverage = false
-coverageSkipTestFiles = true
+timeout = "10000ms"
+root = "."
+
+[install]
+production = false

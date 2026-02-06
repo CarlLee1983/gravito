@@ -4,6 +4,8 @@
  */
 
 import type { Server, ServerWebSocket } from 'bun'
+import type { NATSDriverConfig } from './drivers/NATSDriver'
+import type { RedisDriverConfig } from './drivers/RedisDriver'
 
 // ─────────────────────────────────────────────────────────────
 // Client Data
@@ -34,6 +36,10 @@ export interface ClientData {
   channels: Set<string>
   /** Additional user info for presence channels */
   userInfo?: Record<string, unknown>
+  /** Reconnection token for session recovery (v3.6+) */
+  reconnectionToken?: string
+  /** Session expiry timestamp (v3.6+) */
+  sessionExpiry?: number
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -190,7 +196,7 @@ export type ChannelAuthorizer = (
   channelName: string,
   userId: string | number | undefined,
   socketId: string
-) => boolean | Promise<boolean> | PresenceUserInfo | Promise<PresenceUserInfo | false>
+) => boolean | PresenceUserInfo | Promise<boolean | PresenceUserInfo>
 
 // ─────────────────────────────────────────────────────────────
 // Events
@@ -273,6 +279,7 @@ export type ClientMessage =
   | { type: 'whisper'; channel: string; event: string; data: unknown }
   | { type: 'ping' }
   | { type: 'binary'; channel: string; event: string; data: ArrayBuffer }
+  | { type: 'ack'; seq: number } // v3.7+
 
 /**
  * Error codes for Ripple WebSocket protocol.
@@ -358,11 +365,59 @@ export type ServerMessage =
   | { type: 'subscribed'; channel: string }
   | { type: 'unsubscribed'; channel: string }
   | { type: 'error'; message: string; channel?: string; code?: RippleErrorCode }
-  | { type: 'event'; channel: string; event: string; data: unknown }
-  | { type: 'presence'; channel: string; event: 'join' | 'leave' | 'members'; data: unknown }
+  | {
+      type: 'event'
+      channel: string
+      event: string
+      data: unknown
+      seq?: number
+      needAck?: boolean
+    } // seq/needAck v3.7+
+  | {
+      type: 'presence'
+      channel: string
+      event: 'join' | 'leave' | 'members'
+      data: unknown
+      seq?: number
+      needAck?: boolean
+    } // seq/needAck v3.7+
   | { type: 'pong' }
   | { type: 'connected'; socketId: string }
-  | { type: 'binary'; channel: string; event: string; data: ArrayBuffer }
+  | {
+      type: 'binary'
+      channel: string
+      event: string
+      data: ArrayBuffer
+      seq?: number
+      needAck?: boolean
+    } // seq/needAck v3.7+
+  | { type: 'ack_received'; seq: number } // v3.7+
+  | { type: 'reconnection_token'; token: string } // v4.0+
+
+/**
+ * Context for Ripple Message Interceptors (v4.0+).
+ */
+export interface RippleContext {
+  /** The WebSocket client connection */
+  ws: import('./engines/IRippleEngine').RippleSocket
+  /** The message being processed */
+  message: ClientMessage | ServerMessage
+  /** Direction of the message flow */
+  direction: 'incoming' | 'outgoing'
+  /** Channel name (optional) */
+  channel?: string
+  /** Event name (optional) */
+  event?: string
+}
+
+/**
+ * Middleware function for intercepting Ripple messages.
+ * Next function must be called to continue the pipeline.
+ */
+export type RippleInterceptor = (
+  ctx: RippleContext,
+  next: () => Promise<void>
+) => Promise<void> | void
 
 /**
  * Driver health status information.
@@ -416,6 +471,7 @@ export const SERVER_MESSAGE_TYPES = {
   PONG: 'pong',
   CONNECTED: 'connected',
   BINARY: 'binary',
+  RECONNECTION_TOKEN: 'reconnection_token',
 } as const
 
 /**
@@ -440,6 +496,7 @@ export const CLIENT_MESSAGE_TYPES = {
   WHISPER: 'whisper',
   PING: 'ping',
   BINARY: 'binary',
+  ACK: 'ack',
 } as const
 
 // ─────────────────────────────────────────────────────────────
@@ -458,8 +515,10 @@ export const CLIENT_MESSAGE_TYPES = {
  * @example
  * ```typescript
  * // Example: Custom NATS driver implementation
- * import { RippleDriver, DriverStatus } from '@gravito/ripple'
- * import { connect, NatsConnection, Subscription } from 'nats'
+ * import type { RedisDriverConfig } from './drivers/RedisDriver'
+import type { NATSDriverConfig } from './drivers/NATSDriver'
+import type { ComponentHealth } from './health/HealthChecker'
+import { connect, NatsConnection, Subscription } from 'nats'
  *
  * export class NatsDriver implements RippleDriver {
  *   readonly name = 'nats'
@@ -568,6 +627,38 @@ export interface RippleDriver {
    * @returns Current driver status
    */
   getStatus?(): DriverStatus
+
+  /**
+   * Track a presence member in a channel (optional).
+   *
+   * For distributed drivers like Redis, this stores presence information
+   * in a shared backend so all server instances can see the same members.
+   *
+   * @param channel - Presence channel name
+   * @param userInfo - User information to track
+   * @since 3.6.0
+   */
+  trackPresence?(channel: string, userInfo: PresenceUserInfo): Promise<void>
+
+  /**
+   * Remove a presence member from a channel (optional).
+   *
+   * @param channel - Presence channel name
+   * @param userId - User ID to remove
+   * @since 3.6.0
+   */
+  untrackPresence?(channel: string, userId: string | number): Promise<void>
+
+  /**
+   * Get all presence members for a channel (optional).
+   *
+   * For distributed drivers, this retrieves members from the shared backend.
+   *
+   * @param channel - Presence channel name
+   * @returns Array of presence user information
+   * @since 3.6.0
+   */
+  getPresenceMembers?(channel: string): Promise<PresenceUserInfo[]>
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -657,16 +748,14 @@ export interface RippleConfig {
   /** Authentication endpoint for private/presence channels */
   authEndpoint?: string
 
-  /** Driver to use ('local' | 'redis') */
-  driver?: 'local' | 'redis'
+  /** Driver to use for scaling ('local' | 'redis' | 'nats') */
+  driver?: 'local' | 'redis' | 'nats'
 
-  /** Redis configuration (if using redis driver) */
-  redis?: {
-    host?: string
-    port?: number
-    password?: string
-    db?: number
-  }
+  /** Configuration for Redis driver */
+  redis?: RedisDriverConfig
+
+  /** Configuration for NATS driver (v4.0+) */
+  nats?: NATSDriverConfig
 
   /** Channel authorizer function */
   authorizer?: ChannelAuthorizer
@@ -698,6 +787,81 @@ export interface RippleConfig {
     /** Interval in milliseconds for whisper limit (default: 1000) */
     whisperInterval?: number
   }
+
+  /**
+   * Reconnection configuration (v3.6+).
+   */
+  reconnection?: {
+    /** Enable server-assisted reconnection (default: false) */
+    enabled?: boolean
+    /** Session TTL in milliseconds (default: 60000 = 1 minute) */
+    sessionTTL?: number
+    /** Maximum number of stored sessions (default: 10000) */
+    maxSessions?: number
+  }
+
+  /**
+   * Serializer to use for messages (default: 'json').
+   * 'protobuf' requires 'protobufjs' peer dependency.
+   */
+  serializer?: 'json' | 'protobuf'
+
+  /**
+   * Performance & Backpressure (v3.7+).
+   */
+  backpressure?: {
+    /** High Water Mark in bytes. Force disconnect if reached. (default: 5,242,880 = 5MB) */
+    hwmHigh?: number
+    /** Low Water Mark in bytes. Skip non-critical events if reached. (default: 1,048,576 = 1MB) */
+    hwmLow?: number
+    /** Whether to enable automatic slow client isolation (default: false) */
+    enabled?: boolean
+  }
+
+  /**
+   * Prometheus Metrics (v3.7+).
+   */
+  metrics?: {
+    /** Enable Prometheus metrics (default: false) */
+    enabled?: boolean
+    /** Metric name prefix (default: 'ripple') */
+    prefix?: string
+  }
+
+  /**
+   * Message Interceptors (v4.0+).
+   */
+  interceptors?: RippleInterceptor[]
+
+  /**
+   * WebSocket runtime/engine to use (v5.0+).
+   *
+   * - 'bun': Bun native WebSocket (default, highest performance)
+   * - 'node-uws': uWebSockets.js for Node.js (high performance, requires peer dep)
+   * - 'node-ws': ws package for Node.js (standard, best compatibility)
+   *
+   * If not specified, Ripple will auto-detect the runtime.
+   *
+   * @since 5.0.0
+   */
+  runtime?: 'bun' | 'node-uws' | 'node-ws'
+
+  /**
+   * Server port to listen on (v5.0+).
+   *
+   * Required when using the engine-based architecture.
+   *
+   * @since 5.0.0
+   */
+  port?: number
+
+  /**
+   * Hostname to bind to (v5.0+).
+   *
+   * @default '0.0.0.0'
+   * @since 5.0.0
+   */
+  hostname?: string
 }
 
 // ─────────────────────────────────────────────────────────────

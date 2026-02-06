@@ -6,7 +6,8 @@
  * @module @gravito/ripple/channels
  */
 
-import type { PresenceUserInfo, RippleWebSocket } from '../types'
+import type { RippleSocket } from '../engines/IRippleEngine'
+import type { PresenceUserInfo, RippleDriver } from '../types'
 import { CHANNEL_PREFIXES } from './Channel'
 
 /**
@@ -47,10 +48,22 @@ export class ChannelManager {
   private subscriptions = new Map<string, Set<string>>()
 
   /** Map of client ID -> WebSocket */
-  private clients = new Map<string, RippleWebSocket>()
+  private clients = new Map<string, RippleSocket>()
 
   /** Map of presence channel -> Map of user ID -> user info */
   private presenceMembers = new Map<string, Map<string | number, PresenceUserInfo>>()
+
+  /** Optional driver for distributed presence tracking */
+  private driver?: RippleDriver
+
+  /**
+   * Create a new ChannelManager.
+   *
+   * @param driver - Optional driver for distributed presence tracking
+   */
+  constructor(driver?: RippleDriver) {
+    this.driver = driver
+  }
 
   // ─────────────────────────────────────────────────────────────
   // Client Management
@@ -73,7 +86,7 @@ export class ChannelManager {
    * }
    * ```
    */
-  addClient(ws: RippleWebSocket): void {
+  addClient(ws: RippleSocket): void {
     this.clients.set(ws.data.id, ws)
   }
 
@@ -126,7 +139,7 @@ export class ChannelManager {
    * @param clientId - The client identifier
    * @returns The WebSocket connection, or undefined if not found
    */
-  getClient(clientId: string): RippleWebSocket | undefined {
+  getClient(clientId: string): RippleSocket | undefined {
     return this.clients.get(clientId)
   }
 
@@ -135,7 +148,7 @@ export class ChannelManager {
    *
    * @returns Array of all connected WebSocket instances
    */
-  getAllClients(): RippleWebSocket[] {
+  getAllClients(): RippleSocket[] {
     return Array.from(this.clients.values())
   }
 
@@ -151,7 +164,11 @@ export class ChannelManager {
    * @param userInfo - User information for presence channels (required for presence-* channels)
    * @returns true if subscription succeeded, false if client not found
    */
-  subscribe(clientId: string, channel: string, userInfo?: PresenceUserInfo): boolean {
+  async subscribe(
+    clientId: string,
+    channel: string,
+    userInfo?: PresenceUserInfo
+  ): Promise<boolean> {
     const ws = this.clients.get(clientId)
     if (!ws) {
       return false
@@ -168,7 +185,7 @@ export class ChannelManager {
 
     // Handle presence channel
     if (channel.startsWith(CHANNEL_PREFIXES.presence) && userInfo) {
-      this.addPresenceMember(channel, userInfo)
+      await this.addPresenceMember(channel, userInfo)
       ws.data.userId = userInfo.id
       ws.data.userInfo = userInfo.info
     }
@@ -183,7 +200,7 @@ export class ChannelManager {
    * @param channel - The channel name
    * @returns true if unsubscription succeeded, false if client not found
    */
-  unsubscribe(clientId: string, channel: string): boolean {
+  async unsubscribe(clientId: string, channel: string): Promise<boolean> {
     const ws = this.clients.get(clientId)
     if (!ws) {
       return false
@@ -203,7 +220,7 @@ export class ChannelManager {
 
     // Handle presence channel
     if (channel.startsWith(CHANNEL_PREFIXES.presence) && ws.data.userId) {
-      this.removePresenceMember(channel, ws.data.userId)
+      await this.removePresenceMember(channel, ws.data.userId)
     }
 
     return true
@@ -215,7 +232,7 @@ export class ChannelManager {
    * @param channel - The channel name
    * @returns Array of WebSocket connections subscribed to the channel
    */
-  getSubscribers(channel: string): RippleWebSocket[] {
+  getSubscribers(channel: string): RippleSocket[] {
     const clientIds = this.subscriptions.get(channel)
     if (!clientIds) {
       return []
@@ -223,7 +240,7 @@ export class ChannelManager {
 
     return Array.from(clientIds)
       .map((id) => this.clients.get(id))
-      .filter((ws): ws is RippleWebSocket => ws !== undefined)
+      .filter((ws): ws is RippleSocket => ws !== undefined)
   }
 
   /**
@@ -234,8 +251,7 @@ export class ChannelManager {
    * @returns true if subscribed, false otherwise
    */
   isSubscribed(clientId: string, channel: string): boolean {
-    const channelSubs = this.subscriptions.get(channel)
-    return channelSubs?.has(clientId) ?? false
+    return this.subscriptions.get(channel)?.has(clientId) ?? false
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -243,19 +259,30 @@ export class ChannelManager {
   // ─────────────────────────────────────────────────────────────
 
   /**
-   * Add a member to a presence channel
+   * Add a member to a presence channel.
+   *
+   * Uses driver for distributed tracking if available.
    */
-  private addPresenceMember(channel: string, userInfo: PresenceUserInfo): void {
+  private async addPresenceMember(channel: string, userInfo: PresenceUserInfo): Promise<void> {
+    // Track in local memory
     if (!this.presenceMembers.has(channel)) {
       this.presenceMembers.set(channel, new Map())
     }
     this.presenceMembers.get(channel)?.set(userInfo.id, userInfo)
+
+    // Track in driver if available
+    if (this.driver?.trackPresence) {
+      await this.driver.trackPresence(channel, userInfo)
+    }
   }
 
   /**
-   * Remove a member from a presence channel
+   * Remove a member from a presence channel.
+   *
+   * Uses driver for distributed tracking if available.
    */
-  private removePresenceMember(channel: string, userId: string | number): void {
+  private async removePresenceMember(channel: string, userId: string | number): Promise<void> {
+    // Remove from local memory
     const members = this.presenceMembers.get(channel)
     if (members) {
       members.delete(userId)
@@ -263,15 +290,28 @@ export class ChannelManager {
         this.presenceMembers.delete(channel)
       }
     }
+
+    // Remove from driver if available
+    if (this.driver?.untrackPresence) {
+      await this.driver.untrackPresence(channel, userId)
+    }
   }
 
   /**
    * Get all members of a presence channel.
    *
+   * Queries driver if available for distributed presence data.
+   *
    * @param channel - The presence channel name
    * @returns Array of user information for all members in the channel
    */
-  getPresenceMembers(channel: string): PresenceUserInfo[] {
+  async getPresenceMembers(channel: string): Promise<PresenceUserInfo[]> {
+    // Use driver if available for distributed presence
+    if (this.driver?.getPresenceMembers) {
+      return await this.driver.getPresenceMembers(channel)
+    }
+
+    // Fall back to local memory
     const members = this.presenceMembers.get(channel)
     return members ? Array.from(members.values()) : []
   }

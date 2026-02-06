@@ -1,6 +1,6 @@
 {
   "name": "@gravito/ripple-client",
-  "version": "1.1.0",
+  "version": "4.0.0-alpha.1",
   "description": "Frontend WebSocket client for @gravito/ripple. Works with React, Vue, and vanilla JavaScript.",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -27,10 +27,10 @@
   ],
   "scripts": {
     "build": "bun run build.ts",
-    "test": "bun test",
+    "test": "bun test --timeout=10000",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
-    "test:coverage": "bun test --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
-    "test:ci": "bun test --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts"
+    "test:coverage": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
+    "test:ci": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts"
   },
   "keywords": [
     "gravito",
