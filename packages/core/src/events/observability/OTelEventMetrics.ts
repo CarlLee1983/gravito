@@ -460,4 +460,44 @@ export class OTelEventMetrics implements CircuitBreakerMetricsRecorder {
   clearCircuitBreakerCallbacks(): void {
     this.circuitBreakerStateCallbacks.clear()
   }
+
+  /**
+   * Record a backpressure rejection event.
+   * (Stub for Phase 3 implementation - actual metrics collection to be implemented)
+   *
+   * @param eventName - Event name
+   * @param priority - Event priority
+   * @param reason - Rejection reason
+   * @internal
+   */
+  recordBackpressureRejection(eventName: string, priority: string, reason: string): void {
+    // TODO: Implement in Phase 3
+    // Will record background pressure rejections to metrics
+  }
+
+  /**
+   * Record a backpressure state change event.
+   * (Stub for Phase 3 implementation - actual metrics collection to be implemented)
+   *
+   * @param state - New backpressure state
+   * @internal
+   */
+  recordBackpressureState(state: string): void {
+    // TODO: Implement in Phase 3
+    // Will record background pressure state changes to metrics
+  }
+
+  /**
+   * Record a backpressure degradation event.
+   * (Stub for Phase 3 implementation - actual metrics collection to be implemented)
+   *
+   * @param eventName - Event name
+   * @param fromPriority - Original priority
+   * @param toPriority - Degraded priority
+   * @internal
+   */
+  recordBackpressureDegradation(eventName: string, fromPriority: string, toPriority: string): void {
+    // TODO: Implement in Phase 3
+    // Will record priority degradation events to metrics
+  }
 }

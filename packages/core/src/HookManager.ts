@@ -929,6 +929,34 @@ export class HookManager {
   }
 
   /**
+   * Get the current backpressure state.
+   *
+   * @returns Backpressure state ('NORMAL', 'WARNING', 'CRITICAL', 'OVERFLOW') or undefined if not enabled
+   */
+  getBackpressureState(): string | undefined {
+    if (!(this.backend instanceof EventPriorityQueue)) {
+      return undefined
+    }
+
+    const manager = this.backend.getBackpressureManager()
+    return manager ? manager.getState() : undefined
+  }
+
+  /**
+   * Get backpressure metrics snapshot.
+   *
+   * @returns Backpressure metrics snapshot or undefined if not enabled
+   */
+  getBackpressureMetrics(): object | undefined {
+    if (!(this.backend instanceof EventPriorityQueue)) {
+      return undefined
+    }
+
+    const manager = this.backend.getBackpressureManager()
+    return manager ? manager.getMetrics() : undefined
+  }
+
+  /**
    * Remove all listeners for a specific action hook.
    *
    * @param hook - Hook name

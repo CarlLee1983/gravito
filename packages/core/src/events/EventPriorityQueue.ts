@@ -1,5 +1,6 @@
 import type { Span } from '@opentelemetry/api'
 import type { ActionCallback } from '../HookManager'
+import { BackpressureManager } from './BackpressureManager'
 import { CircuitBreaker } from './CircuitBreaker'
 import type { DeadLetterQueue } from './DeadLetterQueue'
 import type { EventBackend } from './EventBackend'
@@ -40,9 +41,14 @@ export class EventPriorityQueue implements EventBackend {
   private eventMetrics?: EventMetrics
   private eventTracing?: EventTracing
   private currentDispatchSpan?: Span
+  private backpressureManager?: BackpressureManager
 
   constructor(config: EventQueueConfig = {}) {
     this.config = config
+    // Initialize BackpressureManager if configured
+    if (config.backpressure?.enabled !== false && config.backpressure) {
+      this.backpressureManager = new BackpressureManager(config.backpressure)
+    }
   }
 
   /**
@@ -203,7 +209,38 @@ export class EventPriorityQueue implements EventBackend {
       }
     }
 
-    // Check backpressure
+    // === Evaluate advanced backpressure if enabled ===
+    if (this.backpressureManager) {
+      const priority = task.options.priority || 'normal'
+      const decision = this.backpressureManager.evaluate(
+        task.hook,
+        priority as 'high' | 'normal' | 'low',
+        this.getDepth(),
+        {
+          high: this.highPriority.length,
+          normal: this.normalPriority.length,
+          low: this.lowPriority.length,
+        }
+      )
+
+      if (!decision.allowed) {
+        // Rejection: handle according to policy (throw/drop-silent/drop-with-callback)
+        if (this.config.backpressure?.rejectionPolicy === 'throw') {
+          throw new Error(`[BackpressureManager] Event rejected: ${decision.reason}`)
+        }
+        return 'dropped'
+      }
+
+      if (decision.delayed && decision.delayMs) {
+        // Delayed enqueue: schedule re-enqueue after delay
+        setTimeout(() => {
+          this.enqueue(task)
+        }, decision.delayMs)
+        return task.id
+      }
+    }
+
+    // === Fall back to simple backpressure (maxSize + strategy) ===
     if (this.config.maxSize && this.getDepth() >= this.config.maxSize) {
       if (!this.handleBackpressure(task.hook)) {
         return 'dropped'
@@ -672,6 +709,16 @@ export class EventPriorityQueue implements EventBackend {
       case 'low':
         return this.lowPriority.length
     }
+  }
+
+  /**
+   * Get the BackpressureManager instance if enabled.
+   *
+   * @returns BackpressureManager instance or undefined if not enabled
+   * @internal
+   */
+  getBackpressureManager(): BackpressureManager | undefined {
+    return this.backpressureManager
   }
 
   /**

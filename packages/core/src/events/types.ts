@@ -1,4 +1,5 @@
 import type { ActionCallback } from '../HookManager'
+import type { BackpressureConfig } from './BackpressureManager'
 import type { EventOptions } from './EventOptions'
 
 /**
@@ -85,4 +86,12 @@ export interface EventQueueConfig {
    * @default 'reject'
    */
   strategy?: BackpressureStrategy
+
+  /**
+   * Advanced backpressure management configuration.
+   * When enabled, provides state-based flow control with multi-strategy support.
+   * If not provided, falls back to simple strategy-based backpressure.
+   * @default undefined (disabled, uses simple strategy)
+   */
+  backpressure?: BackpressureConfig
 }
