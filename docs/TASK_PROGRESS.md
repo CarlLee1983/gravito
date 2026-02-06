@@ -65,16 +65,16 @@ Phase 4: 長期優化               [██░░░░░░░░░░░░�
 
 ### Issue 1.2: Event System - Reliability & Scalability
 
-**狀態**：✅ Phase 3 任務 100% 完成
-**預計開始**：Week 7
-**實際進度**：2026-02-07
+**狀態**：✅ Phase 3 完成 / 🗓️ Phase 4 規劃完成
+**預計開始**：Week 7 (Phase 1-3) / Week 11-12 (Phase 4)
+**實際進度**：2026-02-07 (Phase 3) / 2026-02-11 (Phase 4 開始)
 
 | Phase | 狀態 | 任務 | 文檔 | 進度 |
 |-------|------|------|------|------|
 | Phase 1 | ✅ 完成 | 5 個 | [Phase1-DLQ-And-Retry.md](./priority-1-critical/Issue1.2-Event-System-Reliability/Phase1-DLQ-And-Retry.md) | 100% ✅ (5/5 任務完成) |
 | Phase 2 | ✅ 完成 | 5 個 | [Phase2-熔断器.md](./priority-1-critical/Issue1.2-Event-System-Reliability/Phase2-熔断器.md) | 100% ✅ (5/5 任務完成) |
 | Phase 3 | ✅ 完成 | 5 個 | Phase3-背压机制.md | 100% ✅ (5/5 任務完成) |
-| Phase 4 | 🗓️ 待規劃 | 5 個 | Phase4-BullQueue整合.md | 0% 🗓️ |
+| Phase 4 | 🗓️ 規劃完成 | 5 個 | [Phase4-BullQueue整合.md](./priority-1-critical/Issue1.2-Event-System-Reliability/Phase4-BullQueue整合.md) | 0% 🗓️ |
 | **小計** | | **20 個任務** | | **75% (15/20 任務完成)** |
 
 **前置條件**：✅ Issue 1.1 完成
