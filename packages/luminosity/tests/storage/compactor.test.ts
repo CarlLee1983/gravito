@@ -186,4 +186,38 @@ describe('Compactor', () => {
       expect(result.length).toBe(0) // No crash, just empty
     })
   })
+
+  describe('repairLogs()', () => {
+    it('should return 0 when no log file exists', async () => {
+      const count = await compactor.repairLogs()
+      expect(count).toBe(0)
+    })
+
+    it('should return 0 when all lines are valid', async () => {
+      await logger.append({ op: 'add', timestamp: 1000, entry: { url: '/valid' } })
+      await logger.append({ op: 'remove', timestamp: 2000, url: '/other' })
+
+      const count = await compactor.repairLogs()
+      expect(count).toBe(0)
+    })
+
+    it('should remove corrupted lines and return count', async () => {
+      // 寫入有效和無效的行
+      await logger.append({ op: 'add', timestamp: 1000, entry: { url: '/valid' } })
+      // 手動寫入損壞的行
+      const { appendFile } = await import('node:fs/promises')
+      await appendFile(LOG_PATH, 'this is not valid json\n')
+      await appendFile(LOG_PATH, '{broken json\n')
+      await logger.append({ op: 'add', timestamp: 2000, entry: { url: '/also-valid' } })
+
+      const count = await compactor.repairLogs()
+      expect(count).toBe(2)
+
+      // 驗證修復後仍能讀取有效資料
+      const entries = await compactor.compact()
+      expect(entries.length).toBe(2)
+      expect(entries.map((e) => e.url)).toContain('/valid')
+      expect(entries.map((e) => e.url)).toContain('/also-valid')
+    })
+  })
 })

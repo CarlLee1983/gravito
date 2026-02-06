@@ -54,7 +54,26 @@ class MongoClientMock {
   }
 }
 
-mock.module('mongodb', () => ({ MongoClient: MongoClientMock }))
+mock.module('mongodb', () => {
+  // 定義在 factory 內部以避免 Bun mock.module 提升導致的時序問題
+  class _ObjectId {
+    private _id: string
+    constructor(id: string) {
+      this._id = id
+    }
+    toString() {
+      return this._id
+    }
+  }
+
+  class _GridFSBucket {}
+
+  return {
+    MongoClient: MongoClientMock,
+    ObjectId: _ObjectId,
+    GridFSBucket: _GridFSBucket,
+  }
+})
 mock.module('../src/MongoQueryBuilder', () => ({
   MongoQueryBuilder: MongoQueryBuilderMock,
   MongoAggregateBuilder: class {},

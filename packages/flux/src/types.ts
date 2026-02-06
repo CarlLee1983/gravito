@@ -175,6 +175,8 @@ export interface WorkflowState<TInput = unknown, TData = Record<string, any>> {
   error?: string
   /** Version number for concurrency control. */
   version: number
+  /** The version of the workflow definition used to create this instance */
+  definitionVersion?: string
 }
 
 /**
@@ -183,6 +185,8 @@ export interface WorkflowState<TInput = unknown, TData = Record<string, any>> {
 export interface WorkflowDefinition<TInput = unknown, TData = Record<string, any>> {
   /** Unique name for this workflow type. */
   name: string
+  /** Semantic version of this workflow definition (e.g., "1.0.0", "2.1.0") */
+  version?: string
   /** Ordered list of steps to execute. */
   steps: StepDefinition<TInput, TData>[]
   /** Optional runtime validation for the workflow input. */
@@ -195,6 +199,8 @@ export interface WorkflowDefinition<TInput = unknown, TData = Record<string, any
 export interface WorkflowDescriptor {
   /** Name of the workflow. */
   name: string
+  /** Semantic version of the workflow definition */
+  version?: string
   /** Metadata for each step in the workflow. */
   steps: StepDescriptor[]
 }
@@ -257,6 +263,8 @@ export interface WorkflowFilter {
   name?: string
   /** Filter by one or more lifecycle statuses. */
   status?: WorkflowStatus | WorkflowStatus[]
+  /** Filter by definition version */
+  version?: string
   /** Maximum number of results to return. */
   limit?: number
   /** Number of results to skip for pagination. */

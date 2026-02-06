@@ -94,3 +94,18 @@ Ripple Client 旨在提供一個通用的 WebSocket 客戶端，連接 Gravito �
 
 ---
 *Created by Gravito Architect.*
+
+
+## 快速開始
+
+> 內容補齊中...
+
+
+## 架構設計
+
+> 內容補齊中...
+
+
+## API 參考
+
+> 內容補齊中...

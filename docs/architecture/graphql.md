@@ -114,3 +114,18 @@ GraphQL 的查詢能力取決於 Filter 的設計。
 
 ---
 *Created by Gravito Architect.*
+
+
+## 快速開始
+
+> 內容補齊中...
+
+
+## 架構設計
+
+> 內容補齊中...
+
+
+## API 參考
+
+> 內容補齊中...

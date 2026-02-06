@@ -325,7 +325,7 @@ describe('Prometheus Integration', () => {
 
     it('should include priority label on queue depth', async () => {
       type ObserverCallback = (result: { observe: ReturnType<typeof mock> }) => void
-      let capturedCallback: ObserverCallback | undefined
+      const capturedCallbacks: ObserverCallback[] = []
       const mockMeter = {
         createHistogram: mock(() => ({
           record: mock(() => {
@@ -334,7 +334,7 @@ describe('Prometheus Integration', () => {
         })),
         createObservableGauge: mock(() => ({
           addCallback: mock((cb: ObserverCallback) => {
-            capturedCallback = cb
+            capturedCallbacks.push(cb)
           }),
         })),
       }
@@ -342,17 +342,17 @@ describe('Prometheus Integration', () => {
       const { OTelEventMetrics } = await import(
         '../../../src/events/observability/OTelEventMetrics'
       )
-      const metrics = new OTelEventMetrics(mockMeter)
+      const metrics = new OTelEventMetrics(mockMeter as any)
 
       const mockObserve = mock(() => {
         // noop - mock implementation
       })
       metrics.setQueueDepthCallback(() => ({ high: 5, normal: 10, low: 15 }))
 
-      // Trigger the callback
-      if (!capturedCallback) {
-        throw new Error('Callback was not captured')
-      }
+      // Find the queue depth callback
+      expect(capturedCallbacks.length).toBeGreaterThan(0)
+      const capturedCallback = capturedCallbacks[0]
+
       capturedCallback({ observe: mockObserve })
 
       expect(mockObserve).toHaveBeenCalledWith(5, { priority: 'high' })
@@ -364,7 +364,7 @@ describe('Prometheus Integration', () => {
   describe('Integration with EventPriorityQueue', () => {
     it('should report accurate queue depths', async () => {
       type ObserverCallback = (result: { observe: ReturnType<typeof mock> }) => void
-      let capturedCallback: ObserverCallback | undefined
+      const capturedCallbacks: ObserverCallback[] = []
       const mockMeter = {
         createHistogram: mock(() => ({
           record: mock(() => {
@@ -373,7 +373,7 @@ describe('Prometheus Integration', () => {
         })),
         createObservableGauge: mock(() => ({
           addCallback: mock((cb: ObserverCallback) => {
-            capturedCallback = cb
+            capturedCallbacks.push(cb)
           }),
         })),
       }
@@ -381,7 +381,7 @@ describe('Prometheus Integration', () => {
       const { OTelEventMetrics } = await import(
         '../../../src/events/observability/OTelEventMetrics'
       )
-      const metrics = new OTelEventMetrics(mockMeter)
+      const metrics = new OTelEventMetrics(mockMeter as any)
 
       // Simulate queue depths changing
       let queueState = { high: 0, normal: 0, low: 0 }
@@ -392,10 +392,11 @@ describe('Prometheus Integration', () => {
         // noop - mock implementation
       })
 
+      // Get the queue depth callback
+      expect(capturedCallbacks.length).toBeGreaterThan(0)
+      const capturedCallback = capturedCallbacks[0]
+
       // Initial state
-      if (!capturedCallback) {
-        throw new Error('Callback was not captured')
-      }
       capturedCallback({ observe: mockObserve })
       expect(mockObserve).toHaveBeenCalledWith(0, { priority: 'high' })
 

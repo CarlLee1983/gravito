@@ -4,13 +4,12 @@
  * 測試 OpenTelemetry SDK 初始化、配置合併、環境變數支援等功能。
  */
 
-import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
 // 導入要測試的模組
 import {
   getOpenTelemetrySDK,
   isOpenTelemetryInitialized,
-  type OpenTelemetryConfig,
   resetOpenTelemetry,
   setupOpenTelemetry,
   shutdownOpenTelemetry,

@@ -15,6 +15,7 @@ export type MailEventType =
   | 'sendFailed'
   | 'beforeRender'
   | 'afterRender'
+  | 'webhookReceived'
 
 /**
  * Mail lifecycle event.
@@ -43,6 +44,12 @@ export interface MailEvent {
   error?: Error
   /** Timestamp when event occurred */
   timestamp: Date
+  /** Webhook payload (available for webhookReceived event) */
+  webhook?: {
+    driver: string
+    event: string
+    payload: any
+  }
 }
 
 /**

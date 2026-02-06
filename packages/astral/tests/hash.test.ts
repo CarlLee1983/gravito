@@ -160,4 +160,227 @@ describe('Stable Schema Key', () => {
 
     expect(key).toMatch(/^hash:/)
   })
+
+  test('should handle ZodDate', () => {
+    const schema = z.date()
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toBe('date')
+  })
+
+  test('should handle ZodBigInt', () => {
+    const schema = z.bigint()
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toBe('bigint')
+  })
+
+  test('should handle ZodUndefined', () => {
+    const schema = z.undefined()
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toBe('undefined')
+  })
+
+  test('should handle ZodNull', () => {
+    const schema = z.null()
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toBe('null')
+  })
+
+  test('should handle ZodAny', () => {
+    const schema = z.any()
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toBe('any')
+  })
+
+  test('should handle ZodUnknown', () => {
+    const schema = z.unknown()
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toBe('unknown')
+  })
+
+  test('should handle ZodNever', () => {
+    const schema = z.never()
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toBe('never')
+  })
+
+  test('should handle ZodVoid', () => {
+    const schema = z.void()
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toBe('void')
+  })
+
+  test('should handle ZodLiteral', () => {
+    const stringLiteral = z.literal('active')
+    const numberLiteral = z.literal(42)
+    const booleanLiteral = z.literal(true)
+    const nullLiteral = z.literal(null)
+
+    expect(getStableSchemaKey(stringLiteral)).toBe('literal:active')
+    expect(getStableSchemaKey(numberLiteral)).toBe('literal:42')
+    expect(getStableSchemaKey(booleanLiteral)).toBe('literal:true')
+    expect(getStableSchemaKey(nullLiteral)).toBe('literal:null')
+  })
+
+  test('should handle ZodEnum', () => {
+    const schema = z.enum(['active', 'inactive', 'pending'])
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toBe('enum:[active|inactive|pending]')
+  })
+
+  test('should handle ZodEnum with sorted values', () => {
+    const schema1 = z.enum(['c', 'a', 'b'])
+    const schema2 = z.enum(['a', 'b', 'c'])
+
+    const key1 = getStableSchemaKey(schema1)
+    const key2 = getStableSchemaKey(schema2)
+
+    expect(key1).toBe(key2)
+    expect(key1).toBe('enum:[a|b|c]')
+  })
+
+  test('should handle ZodTuple', () => {
+    const schema = z.tuple([z.string(), z.number(), z.boolean()])
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toBe('tuple:[str,num,bool]')
+  })
+
+  test('should handle ZodTuple with complex items', () => {
+    const schema = z.tuple([z.object({ id: z.number() }), z.array(z.string())])
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toContain('tuple:')
+    expect(key).toContain('obj:{id:num}')
+    expect(key).toContain('arr:str')
+  })
+
+  test('should handle ZodRecord', () => {
+    const schema = z.record(z.string())
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toBe('record:str')
+  })
+
+  test('should handle ZodRecord with complex value type', () => {
+    const schema = z.record(z.object({ count: z.number() }))
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toBe('record:obj:{count:num}')
+  })
+
+  test('should handle ZodMap', () => {
+    const schema = z.map(z.string(), z.number())
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toBe('map:str->num')
+  })
+
+  test('should handle ZodMap with complex types', () => {
+    const schema = z.map(z.string(), z.object({ value: z.boolean() }))
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toBe('map:str->obj:{value:bool}')
+  })
+
+  test('should handle ZodSet', () => {
+    const schema = z.set(z.string())
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toBe('set:str')
+  })
+
+  test('should handle ZodSet with complex value type', () => {
+    const schema = z.set(z.object({ id: z.number() }))
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toBe('set:obj:{id:num}')
+  })
+
+  test('should handle ZodIntersection', () => {
+    const schema = z.intersection(z.object({ id: z.number() }), z.object({ name: z.string() }))
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toContain('intersect:')
+    expect(key).toContain('obj:{id:num}')
+    expect(key).toContain('obj:{name:str}')
+  })
+
+  test('should handle ZodDiscriminatedUnion with Map options', () => {
+    // 創建一個模擬的 ZodDiscriminatedUnion schema 結構
+    // 源代碼期望 options 是一個 Map<string, ZodSchema>
+    const mockOptionA = z.object({ type: z.literal('a'), value: z.string() })
+    const mockOptionB = z.object({ type: z.literal('b'), count: z.number() })
+
+    const mockDiscriminatedUnion = {
+      _def: {
+        typeName: 'ZodDiscriminatedUnion',
+        discriminator: 'type',
+        options: new Map([
+          ['a', mockOptionA],
+          ['b', mockOptionB],
+        ]),
+      },
+    }
+
+    const key = getStableSchemaKey(mockDiscriminatedUnion)
+
+    expect(key).toContain('discriminated:type:')
+    expect(key).toContain('obj:')
+  })
+
+  test('should handle array input (non-Zod)', () => {
+    const schema = [z.string()]
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toBe('array:str')
+  })
+
+  test('should handle array with single element input', () => {
+    const schema = [z.number()]
+    const key = getStableSchemaKey(schema)
+
+    expect(key).toBe('array:num')
+  })
+
+  test('should handle deeply nested schemas', () => {
+    const schema = z.object({
+      user: z.object({
+        profile: z.object({
+          settings: z.object({
+            notifications: z.object({
+              email: z.boolean(),
+              push: z.boolean(),
+            }),
+          }),
+        }),
+      }),
+    })
+
+    const key1 = getStableSchemaKey(schema)
+    const key2 = getStableSchemaKey(schema)
+
+    expect(key1).toBe(key2)
+    expect(key1).toContain('obj:')
+  })
+
+  test('should handle unknown typeName with fallback', () => {
+    // 模擬未知的 Zod 類型
+    const mockSchema = {
+      _def: {
+        typeName: 'ZodCustomUnknownType',
+      },
+    }
+    const key = getStableSchemaKey(mockSchema)
+
+    expect(key).toMatch(/^hash:/)
+  })
 })

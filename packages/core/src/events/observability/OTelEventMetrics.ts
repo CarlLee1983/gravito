@@ -12,7 +12,14 @@
  * @packageDocumentation
  */
 
-import type { Histogram, Meter, ObservableGauge, ObservableResult } from '@opentelemetry/api'
+import type {
+  Counter,
+  Histogram,
+  Meter,
+  ObservableGauge,
+  ObservableResult,
+} from '@opentelemetry/api'
+import type { CircuitBreakerMetricsRecorder } from '../CircuitBreaker'
 
 /**
  * Queue depth callback type.
@@ -22,6 +29,16 @@ export type QueueDepthCallback = () => {
   high: number
   normal: number
   low: number
+}
+
+/**
+ * Circuit breaker state callback type.
+ * Returns the current state of a circuit breaker.
+ */
+export type CircuitBreakerStateCallback = () => {
+  eventName: string
+  listenerIndex: number
+  state: 0 | 1 | 2 // 0=CLOSED, 1=HALF_OPEN, 2=OPEN
 }
 
 /**
@@ -35,6 +52,12 @@ const DEFAULT_DISPATCH_BUCKETS = [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.
  * Covers from 1ms to 5s with exponential distribution.
  */
 const DEFAULT_LISTENER_BUCKETS = [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5]
+
+/**
+ * Default histogram buckets for circuit breaker open duration.
+ * Covers from 1s to 10m with exponential distribution.
+ */
+const DEFAULT_CB_OPEN_DURATION_BUCKETS = [1, 2, 5, 10, 30, 60, 120, 300, 600]
 
 /**
  * OpenTelemetry-based Event Metrics collector.
@@ -66,7 +89,7 @@ const DEFAULT_LISTENER_BUCKETS = [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.
  *
  * @public
  */
-export class OTelEventMetrics {
+export class OTelEventMetrics implements CircuitBreakerMetricsRecorder {
   private readonly meter: Meter
   private readonly prefix: string
 
@@ -74,7 +97,16 @@ export class OTelEventMetrics {
   private readonly listenerDurationHistogram: Histogram
   private readonly queueDepthGauge: ObservableGauge
 
+  // Circuit breaker metrics (new in Phase 2)
+  private readonly cbStateGauge: ObservableGauge
+  private readonly cbFailuresCounter: Counter
+  private readonly cbSuccessesCounter: Counter
+  private readonly cbTransitionsCounter: Counter
+  private readonly cbOpenDurationHistogram: Histogram
+
   private queueDepthCallback?: QueueDepthCallback
+  private circuitBreakerStateCallbacks: Map<string, CircuitBreakerStateCallback> = new Map()
+  private recordedCircuitBreakerStates: Map<string, number> = new Map()
 
   /**
    * Bucket boundaries for dispatch duration histogram.
@@ -85,6 +117,11 @@ export class OTelEventMetrics {
    * Bucket boundaries for listener duration histogram.
    */
   private readonly listenerDurationBuckets: number[] = DEFAULT_LISTENER_BUCKETS
+
+  /**
+   * Bucket boundaries for circuit breaker open duration histogram.
+   */
+  private readonly cbOpenDurationBuckets: number[] = DEFAULT_CB_OPEN_DURATION_BUCKETS
 
   /**
    * Create a new OTelEventMetrics instance.
@@ -129,6 +166,64 @@ export class OTelEventMetrics {
         observableResult.observe(depths.low, { priority: 'low' })
       }
     })
+
+    // Create circuit breaker state gauge (0=CLOSED, 1=HALF_OPEN, 2=OPEN)
+    this.cbStateGauge = meter.createObservableGauge(`${prefix}circuit_breaker_state`, {
+      description: 'Circuit breaker state (0=CLOSED, 1=HALF_OPEN, 2=OPEN)',
+      unit: '{state}',
+    })
+
+    this.cbStateGauge.addCallback((observableResult: ObservableResult) => {
+      for (const callback of this.circuitBreakerStateCallbacks.values()) {
+        const state = callback()
+        observableResult.observe(state.state, {
+          event_name: state.eventName,
+          listener_index: String(state.listenerIndex),
+        })
+      }
+      for (const [name, state] of this.recordedCircuitBreakerStates.entries()) {
+        observableResult.observe(state, {
+          event_name: name,
+          listener_index: '0',
+        })
+      }
+    })
+
+    // Create circuit breaker failures counter (with graceful fallback for testing)
+    this.cbFailuresCounter = (meter as any).createCounter
+      ? (meter as any).createCounter(`${prefix}circuit_breaker_failures_total`, {
+          description: 'Total number of failures recorded by circuit breakers',
+          unit: '{failures}',
+        })
+      : ({ add: () => {} } as any)
+
+    // Create circuit breaker successes counter
+    this.cbSuccessesCounter = (meter as any).createCounter
+      ? (meter as any).createCounter(`${prefix}circuit_breaker_successes_total`, {
+          description: 'Total number of successes recorded by circuit breakers',
+          unit: '{successes}',
+        })
+      : ({ add: () => {} } as any)
+
+    // Create circuit breaker transitions counter
+    this.cbTransitionsCounter = (meter as any).createCounter
+      ? (meter as any).createCounter(`${prefix}circuit_breaker_transitions_total`, {
+          description: 'Total number of state transitions in circuit breakers',
+          unit: '{transitions}',
+        })
+      : ({ add: () => {} } as any)
+
+    // Create circuit breaker open duration histogram
+    this.cbOpenDurationHistogram = meter.createHistogram(
+      `${prefix}circuit_breaker_open_duration_seconds`,
+      {
+        description: 'Duration that circuit breakers remain in OPEN state',
+        unit: 's',
+        advice: {
+          explicitBucketBoundaries: this.cbOpenDurationBuckets,
+        },
+      }
+    )
   }
 
   /**
@@ -172,6 +267,140 @@ export class OTelEventMetrics {
   }
 
   /**
+   * Register a circuit breaker state callback for monitoring.
+   *
+   * @param key - Unique identifier for the circuit breaker (e.g., "order:created-0")
+   * @param callback - Function returning current circuit breaker state
+   */
+  registerCircuitBreakerStateCallback(key: string, callback: CircuitBreakerStateCallback): void {
+    this.circuitBreakerStateCallbacks.set(key, callback)
+  }
+
+  /**
+   * Unregister a circuit breaker state callback.
+   *
+   * @param key - Unique identifier for the circuit breaker
+   */
+  unregisterCircuitBreakerStateCallback(key: string): void {
+    this.circuitBreakerStateCallbacks.delete(key)
+  }
+
+  /**
+   * Record circuit breaker state change.
+   *
+   * @param name - Name of the circuit breaker (usually event name)
+   * @param state - State as number (0=CLOSED, 1=HALF_OPEN, 2=OPEN)
+   */
+  recordState(name: string, state: number): void {
+    this.recordedCircuitBreakerStates.set(name, state)
+  }
+
+  /**
+   * Record circuit breaker state transition.
+   *
+   * @param name - Name of the circuit breaker
+   * @param fromState - Previous state
+   * @param toState - New state
+   */
+  recordTransition(name: string, fromState: string, toState: string): void {
+    this.recordCircuitBreakerTransition(name, 0, fromState, toState)
+  }
+
+  /**
+   * Record circuit breaker failure.
+   *
+   * @param name - Name of the circuit breaker
+   */
+  recordFailure(name: string): void {
+    this.recordCircuitBreakerFailure(name, 0)
+  }
+
+  /**
+   * Record circuit breaker success.
+   *
+   * @param name - Name of the circuit breaker
+   */
+  recordSuccess(name: string): void {
+    this.recordCircuitBreakerSuccess(name, 0)
+  }
+
+  /**
+   * Record circuit breaker open duration.
+   *
+   * @param name - Name of the circuit breaker
+   * @param seconds - Duration in seconds
+   */
+  recordOpenDuration(name: string, seconds: number): void {
+    this.recordCircuitBreakerOpenDuration(name, 0, seconds)
+  }
+
+  /**
+   * Record circuit breaker failure.
+   *
+   * @param eventName - Name of the event
+   * @param listenerIndex - Index of the listener
+   */
+  recordCircuitBreakerFailure(eventName: string, listenerIndex: number): void {
+    this.cbFailuresCounter.add(1, {
+      event_name: eventName,
+      listener_index: String(listenerIndex),
+    })
+  }
+
+  /**
+   * Record circuit breaker success.
+   *
+   * @param eventName - Name of the event
+   * @param listenerIndex - Index of the listener
+   */
+  recordCircuitBreakerSuccess(eventName: string, listenerIndex: number): void {
+    this.cbSuccessesCounter.add(1, {
+      event_name: eventName,
+      listener_index: String(listenerIndex),
+    })
+  }
+
+  /**
+   * Record circuit breaker state transition.
+   *
+   * @param eventName - Name of the event
+   * @param listenerIndex - Index of the listener
+   * @param fromState - Previous state (CLOSED, HALF_OPEN, OPEN)
+   * @param toState - New state (CLOSED, HALF_OPEN, OPEN)
+   */
+  recordCircuitBreakerTransition(
+    eventName: string,
+    listenerIndex: number,
+    fromState: string,
+    toState: string
+  ): void {
+    this.cbTransitionsCounter.add(1, {
+      event_name: eventName,
+      listener_index: String(listenerIndex),
+      from_state: fromState,
+      to_state: toState,
+    })
+  }
+
+  /**
+   * Record circuit breaker open duration.
+   *
+   * @param eventName - Name of the event
+   * @param listenerIndex - Index of the listener
+   * @param durationSeconds - Duration in seconds
+   */
+  recordCircuitBreakerOpenDuration(
+    eventName: string,
+    listenerIndex: number,
+    durationSeconds: number
+  ): void {
+    this.cbOpenDurationHistogram.record(durationSeconds, {
+      event_name: eventName,
+      listener_index: String(listenerIndex),
+    })
+  }
+
+  /**
    * Get the bucket boundaries for dispatch duration histogram.
    *
    * @returns Array of bucket boundaries in seconds
@@ -205,5 +434,30 @@ export class OTelEventMetrics {
    */
   getPrefix(): string {
     return this.prefix
+  }
+
+  /**
+   * Get the bucket boundaries for circuit breaker open duration histogram.
+   *
+   * @returns Array of bucket boundaries in seconds
+   */
+  getCircuitBreakerOpenDurationBuckets(): number[] {
+    return [...this.cbOpenDurationBuckets]
+  }
+
+  /**
+   * Get all registered circuit breaker state callback keys.
+   *
+   * @returns Array of registered keys
+   */
+  getRegisteredCircuitBreakers(): string[] {
+    return Array.from(this.circuitBreakerStateCallbacks.keys())
+  }
+
+  /**
+   * Clear all circuit breaker state callbacks.
+   */
+  clearCircuitBreakerCallbacks(): void {
+    this.circuitBreakerStateCallbacks.clear()
   }
 }

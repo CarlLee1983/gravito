@@ -23,8 +23,8 @@
     "test:unit": "bun test tests/unit",
     "test:integration": "bun test tests/integration",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
-    "test:coverage": "bun test --coverage --coverage-threshold=90",
-    "test:ci": "bun test --coverage --coverage-threshold=90"
+    "test:coverage": "bun test --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
+    "test:ci": "bun test --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts"
   },
   "keywords": [
     "gravito",

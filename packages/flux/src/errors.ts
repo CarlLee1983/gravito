@@ -156,6 +156,26 @@ export function workflowDefinitionChanged(): FluxError {
 }
 
 /**
+ * Creates a FluxError for a workflow version mismatch.
+ *
+ * @param stored - The version stored in the workflow instance.
+ * @param current - The version in the current workflow definition.
+ * @returns A FluxError with the WORKFLOW_DEFINITION_CHANGED code.
+ *
+ * @example
+ * ```typescript
+ * throw workflowVersionMismatch('1.0.0', '2.0.0');
+ * ```
+ */
+export function workflowVersionMismatch(stored: string, current: string): FluxError {
+  return new FluxError(
+    `Workflow version mismatch: stored version "${stored}" does not match current "${current}"`,
+    FluxErrorCode.WORKFLOW_DEFINITION_CHANGED,
+    { storedVersion: stored, currentVersion: current }
+  )
+}
+
+/**
  * Creates a FluxError when an operation requires a suspended workflow.
  *
  * @param status - The current status of the workflow.

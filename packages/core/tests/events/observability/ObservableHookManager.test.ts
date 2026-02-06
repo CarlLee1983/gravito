@@ -1,7 +1,5 @@
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import { MetricsRegistry } from '@gravito/monitor'
-import { EventMetrics } from '../../../src/events/observability/EventMetrics'
-import { EventTracer } from '../../../src/events/observability/EventTracer'
 import { ObservableHookManager } from '../../../src/events/observability/ObservableHookManager'
 
 describe('ObservableHookManager', () => {

@@ -180,7 +180,6 @@ export class CircuitBreaker {
   private state: CircuitBreakerState = CircuitBreakerState.CLOSED
   private failureCount = 0
   private successCount = 0
-  private nextAttempt = 0
   private name: string
   private config: RequiredCircuitBreakerOptions
   private metricsRecorder?: CircuitBreakerMetricsRecorder
@@ -247,22 +246,25 @@ export class CircuitBreaker {
    * @throws Error if circuit is open or operation fails
    */
   async execute<T>(operation: () => Promise<T>): Promise<T> {
-    // If disabled, bypass circuit breaker logic
     if (!this.config.enabled) {
       return await operation()
     }
 
-    this.totalRequests++
-
-    // Check for automatic state transitions
     this.checkStateTransition()
 
-    // Reject if circuit is open
+    const now = Date.now()
+
     if (this.state === CircuitBreakerState.OPEN) {
-      const remaining = this.openedAt
-        ? Math.ceil((this.nextAttempt - Date.now()) / 1000)
-        : Math.ceil(this.config.resetTimeout / 1000)
-      throw new Error(`Circuit is OPEN for ${this.name}. Retry in ${remaining}s`)
+      throw new Error(`Circuit is OPEN for ${this.name}`)
+    }
+
+    this.totalRequests++
+
+    if (this.lastFailureAt) {
+      const elapsed = now - this.lastFailureAt.getTime()
+      if (elapsed >= this.config.windowSize) {
+        this.failureCount = 0
+      }
     }
 
     try {
@@ -273,6 +275,30 @@ export class CircuitBreaker {
       this.onFailure()
       throw error
     }
+  }
+
+  /**
+   * Check if the circuit breaker is currently OPEN.
+   */
+  isOpen(): boolean {
+    this.checkStateTransition()
+    return this.state === CircuitBreakerState.OPEN
+  }
+
+  /**
+   * Check if the circuit breaker is currently HALF_OPEN.
+   */
+  isHalfOpen(): boolean {
+    this.checkStateTransition()
+    return this.state === CircuitBreakerState.HALF_OPEN
+  }
+
+  /**
+   * Check if the circuit breaker is currently CLOSED.
+   */
+  isClosed(): boolean {
+    this.checkStateTransition()
+    return this.state === CircuitBreakerState.CLOSED
   }
 
   /**
@@ -334,8 +360,7 @@ export class CircuitBreaker {
   /**
    * Check for automatic state transitions based on time and sliding window.
    */
-  private checkStateTransition(): void {
-    // OPEN → HALF_OPEN: Check if timeout has elapsed
+  checkStateTransition(): void {
     if (this.state === CircuitBreakerState.OPEN && this.openedAt) {
       const elapsed = Date.now() - this.openedAt.getTime()
       if (elapsed >= this.config.resetTimeout) {
@@ -344,7 +369,6 @@ export class CircuitBreaker {
       }
     }
 
-    // Sliding window: Reset failure counter if window has expired
     if (this.lastFailureAt) {
       const elapsed = Date.now() - this.lastFailureAt.getTime()
       if (elapsed >= this.config.windowSize) {
@@ -358,7 +382,6 @@ export class CircuitBreaker {
     this.successCount++
     this.totalSuccesses++
 
-    // Record success metric
     this.metricsRecorder?.recordSuccess(this.name)
 
     if (this.state === CircuitBreakerState.HALF_OPEN) {
@@ -368,7 +391,6 @@ export class CircuitBreaker {
         this.reset()
       }
     } else if (this.state === CircuitBreakerState.CLOSED) {
-      // Reset failure count on success to ensure fresh window
       this.failureCount = 0
     }
   }
@@ -378,32 +400,29 @@ export class CircuitBreaker {
     this.totalFailures++
     this.failureCount++
 
-    // Record failure metric
     this.metricsRecorder?.recordFailure(this.name)
 
     if (this.state === CircuitBreakerState.HALF_OPEN) {
-      // Any failure in HALF_OPEN immediately trips back to OPEN
       this.transitionTo(CircuitBreakerState.OPEN)
       this.openedAt = new Date()
     } else if (this.state === CircuitBreakerState.CLOSED) {
-      // Trip to OPEN if failure threshold is reached
       if (this.failureCount >= this.config.failureThreshold) {
         this.transitionTo(CircuitBreakerState.OPEN)
         this.openedAt = new Date()
       }
+    } else if (this.state === CircuitBreakerState.OPEN) {
+      this.openedAt = new Date()
     }
   }
 
   private transitionTo(newState: CircuitBreakerState): void {
     const oldState = this.state
 
-    // Record state transition
     if (this.metricsRecorder && oldState !== newState) {
       this.metricsRecorder.recordTransition(this.name, oldState, newState)
       this.metricsRecorder.recordState(this.name, this.stateToNumber(newState))
     }
 
-    // Record OPEN duration when transitioning from OPEN
     if (oldState === CircuitBreakerState.OPEN && this.openedAt && this.metricsRecorder) {
       const duration = (Date.now() - this.openedAt.getTime()) / 1000
       this.metricsRecorder.recordOpenDuration(this.name, duration)
@@ -413,7 +432,6 @@ export class CircuitBreaker {
 
     switch (newState) {
       case CircuitBreakerState.OPEN:
-        this.nextAttempt = Date.now() + this.config.resetTimeout
         this.config.onOpen(this.name)
         break
       case CircuitBreakerState.HALF_OPEN:
@@ -430,10 +448,6 @@ export class CircuitBreaker {
     }
   }
 
-  /**
-   * Convert circuit breaker state to numeric value for Prometheus gauge.
-   * @private
-   */
   private stateToNumber(state: CircuitBreakerState): number {
     switch (state) {
       case CircuitBreakerState.CLOSED:

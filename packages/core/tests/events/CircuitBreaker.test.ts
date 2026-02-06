@@ -4,7 +4,7 @@
  * 測試熔斷器的所有功能與狀態轉換
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
+import { describe, expect, it, mock } from 'bun:test'
 import { CircuitBreaker, CircuitBreakerState } from '../../src/events/CircuitBreaker'
 
 /**

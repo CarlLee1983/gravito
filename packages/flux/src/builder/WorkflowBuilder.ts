@@ -52,6 +52,7 @@ export interface ParallelStepConfig<TInput = unknown, TData = Record<string, any
  */
 export class WorkflowBuilder<TInput = unknown, TData = Record<string, any>> {
   private _name: string
+  private _version?: string
   private _steps: StepDefinition[] = []
   private _validateInput?: (input: unknown) => input is TInput
   private _parallelGroupCounter = 0
@@ -79,6 +80,16 @@ export class WorkflowBuilder<TInput = unknown, TData = Record<string, any>> {
    */
   data<T extends Record<string, any>>(): WorkflowBuilder<TInput, T> {
     return this as unknown as WorkflowBuilder<TInput, T>
+  }
+
+  /**
+   * Sets the semantic version of this workflow definition.
+   * @param v - A semantic version string (e.g., "1.0.0", "2.1.0").
+   * @returns The builder instance for chaining.
+   */
+  version(v: string): this {
+    this._version = v
+    return this
   }
 
   /**
@@ -200,6 +211,7 @@ export class WorkflowBuilder<TInput = unknown, TData = Record<string, any>> {
 
     return {
       name: this._name,
+      version: this._version,
       steps: [...this._steps] as StepDefinition<TInput, TData>[],
       validateInput: this._validateInput,
     }
@@ -220,6 +232,7 @@ export class WorkflowBuilder<TInput = unknown, TData = Record<string, any>> {
 
     return {
       name: this._name,
+      version: this._version,
       steps,
     }
   }

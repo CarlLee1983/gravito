@@ -50,7 +50,7 @@ function createSchedulerMockRedis(): GroupRedisClient {
     }),
 
     // EVAL 命令（用於鎖的釋放和續約）
-    eval: mock(async (script: string, numKeys: number, ...args: any[]) => {
+    eval: mock(async (script: string, _numKeys: number, ...args: any[]) => {
       const key = args[0] as string
       const expectedValue = args[1] as string
 
@@ -91,7 +91,9 @@ function createSchedulerMockRedis(): GroupRedisClient {
     // ZRANGEBYSCORE 命令（查詢到期的排程）
     zrangebyscore: mock(async (key: string, min: number, max: number) => {
       const zset = zsets.get(key)
-      if (!zset) return []
+      if (!zset) {
+        return []
+      }
 
       const results: string[] = []
       for (const [member, score] of zset.entries()) {
@@ -107,14 +109,16 @@ function createSchedulerMockRedis(): GroupRedisClient {
       if (!zsets.has(key)) {
         zsets.set(key, new Map())
       }
-      zsets.get(key)!.set(member, score)
+      zsets.get(key)?.set(member, score)
       return 1
     }),
 
     // ZRANGE 命令（獲取範圍）
     zrange: mock(async (key: string, start: number, stop: number) => {
       const zset = zsets.get(key)
-      if (!zset) return []
+      if (!zset) {
+        return []
+      }
 
       const sorted = Array.from(zset.entries()).sort((a, b) => a[1] - b[1])
       const end = stop === -1 ? sorted.length : stop + 1
@@ -139,7 +143,9 @@ function createSchedulerMockRedis(): GroupRedisClient {
     del: mock(async (...keys: string[]) => {
       let count = 0
       for (const key of keys) {
-        if (hashes.delete(key)) count++
+        if (hashes.delete(key)) {
+          count++
+        }
       }
       return count
     }),
@@ -147,7 +153,9 @@ function createSchedulerMockRedis(): GroupRedisClient {
     // ZREM 命令（從有序集合移除）
     zrem: mock(async (key: string, member: string) => {
       const zset = zsets.get(key)
-      if (!zset) return 0
+      if (!zset) {
+        return 0
+      }
       return zset.delete(member) ? 1 : 0
     }),
 
@@ -169,7 +177,7 @@ function createSchedulerMockRedis(): GroupRedisClient {
             if (!zsets.has(key)) {
               zsets.set(key, new Map())
             }
-            zsets.get(key)!.set(member, score)
+            zsets.get(key)?.set(member, score)
             return 1
           })
         },
@@ -177,7 +185,9 @@ function createSchedulerMockRedis(): GroupRedisClient {
           commands.push(async () => {
             let count = 0
             for (const key of keys) {
-              if (hashes.delete(key)) count++
+              if (hashes.delete(key)) {
+                count++
+              }
             }
             return count
           })
@@ -185,7 +195,9 @@ function createSchedulerMockRedis(): GroupRedisClient {
         zrem: (key: string, member: string) => {
           commands.push(async () => {
             const zset = zsets.get(key)
-            if (!zset) return 0
+            if (!zset) {
+              return 0
+            }
             return zset.delete(member) ? 1 : 0
           })
         },

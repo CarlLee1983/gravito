@@ -215,7 +215,8 @@ export async function handleExecutionResult<TInput, TData extends Record<string,
 export async function persistContext<TInput, TData extends Record<string, any>>(
   ctx: WorkflowContext<TInput, TData>,
   storage: WorkflowStorage,
-  contextManager: ContextManager
+  contextManager: ContextManager,
+  definitionVersion?: string
 ): Promise<WorkflowContext<TInput, TData>> {
   const state = contextManager.toState(ctx)
   const stored = await storage.load(state.id)
@@ -224,6 +225,12 @@ export async function persistContext<TInput, TData extends Record<string, any>>(
       'Concurrent modification detected',
       Errors.FluxErrorCode.CONCURRENT_MODIFICATION
     )
+  }
+  // Preserve definitionVersion: use explicit value, or keep existing from storage
+  if (definitionVersion !== undefined) {
+    state.definitionVersion = definitionVersion
+  } else if (stored?.definitionVersion) {
+    state.definitionVersion = stored.definitionVersion
   }
   const nextVersion = state.version + 1
   await storage.save({ ...state, version: nextVersion })

@@ -216,6 +216,70 @@ describe('Strategies', () => {
       const entries = await strategy.getEntries()
       expect(entries).toEqual([])
     })
+
+    it('should warn on add() call', async () => {
+      const warnings: string[] = []
+      const originalWarn = console.warn
+      console.warn = (msg: string) => warnings.push(msg)
+
+      const strategy = new CachedStrategy({
+        mode: 'cached',
+        baseUrl: 'https://example.com',
+        resolvers: [],
+      })
+
+      await strategy.add({ url: '/test' })
+
+      expect(warnings.length).toBe(1)
+      expect(warnings[0]).toContain('CachedStrategy does not support manual add()')
+
+      console.warn = originalWarn
+    })
+
+    it('should warn on remove() call', async () => {
+      const warnings: string[] = []
+      const originalWarn = console.warn
+      console.warn = (msg: string) => warnings.push(msg)
+
+      const strategy = new CachedStrategy({
+        mode: 'cached',
+        baseUrl: 'https://example.com',
+        resolvers: [],
+      })
+
+      await strategy.remove('/test')
+
+      expect(warnings.length).toBe(1)
+      expect(warnings[0]).toContain('CachedStrategy does not support manual remove()')
+
+      console.warn = originalWarn
+    })
+
+    it('should accept custom lock provider', async () => {
+      const mockLockProvider = {
+        createLock: (_key: string, _ttl: number) => ({
+          block: async <T>(_timeout: number, fn: () => Promise<T>) => fn(),
+        }),
+      }
+
+      const resolver: SeoResolver = {
+        name: 'test',
+        fetch: () => [{ url: '/locked' }],
+      }
+
+      const strategy = new CachedStrategy({
+        mode: 'cached',
+        baseUrl: 'https://example.com',
+        resolvers: [resolver],
+        cache: { ttl: 60, lockProvider: mockLockProvider },
+      })
+
+      await strategy.init()
+      const entries = await strategy.getEntries()
+
+      expect(entries.length).toBe(1)
+      expect(entries[0]?.url).toBe('/locked')
+    })
   })
 
   describe('IncrementalStrategy', () => {

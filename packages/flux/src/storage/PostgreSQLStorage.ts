@@ -99,7 +99,8 @@ export class PostgreSQLStorage implements WorkflowStorage {
         created_at TIMESTAMPTZ NOT NULL,
         updated_at TIMESTAMPTZ NOT NULL,
         completed_at TIMESTAMPTZ,
-        version INTEGER NOT NULL DEFAULT 1
+        version INTEGER NOT NULL DEFAULT 1,
+        definition_version TEXT
       )
     `)
 
@@ -133,8 +134,8 @@ export class PostgreSQLStorage implements WorkflowStorage {
     await this.pool.query(
       `
       INSERT INTO ${this.tableName} 
-      (id, name, status, input, data, current_step, history, error, created_at, updated_at, completed_at, version)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      (id, name, status, input, data, current_step, history, error, created_at, updated_at, completed_at, version, definition_version)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
         status = EXCLUDED.status,
@@ -145,7 +146,8 @@ export class PostgreSQLStorage implements WorkflowStorage {
         error = EXCLUDED.error,
         updated_at = EXCLUDED.updated_at,
         completed_at = EXCLUDED.completed_at,
-        version = EXCLUDED.version
+        version = EXCLUDED.version,
+        definition_version = EXCLUDED.definition_version
     `,
       [
         state.id,
@@ -160,6 +162,7 @@ export class PostgreSQLStorage implements WorkflowStorage {
         new Date(),
         state.completedAt ?? null,
         state.version,
+        state.definitionVersion ?? null,
       ]
     )
   }
@@ -211,6 +214,11 @@ export class PostgreSQLStorage implements WorkflowStorage {
         query += ` AND status = $${paramIndex++}`
         params.push(filter.status)
       }
+    }
+
+    if (filter?.version) {
+      query += ` AND definition_version = $${paramIndex++}`
+      params.push(filter.version)
     }
 
     query += ' ORDER BY created_at DESC'
@@ -274,6 +282,7 @@ export class PostgreSQLStorage implements WorkflowStorage {
       updatedAt: new Date(row.updated_at),
       completedAt: row.completed_at ? new Date(row.completed_at) : undefined,
       version: row.version,
+      definitionVersion: row.definition_version ?? undefined,
     }
   }
 
@@ -317,4 +326,5 @@ interface PostgreSQLRow {
   updated_at: string | Date
   completed_at: string | Date | null
   version: number
+  definition_version: string | null
 }
