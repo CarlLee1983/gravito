@@ -14,9 +14,9 @@ describe('MemoryLockProvider', () => {
       const lock = await provider.acquire('resource-1', 'node-a', 5000)
 
       expect(lock).not.toBeNull()
-      expect(lock!.id).toBe('resource-1')
-      expect(lock!.owner).toBe('node-a')
-      expect(lock!.expiresAt).toBeGreaterThan(Date.now())
+      expect(lock?.id).toBe('resource-1')
+      expect(lock?.owner).toBe('node-a')
+      expect(lock?.expiresAt).toBeGreaterThan(Date.now())
     })
 
     it('should reject lock acquisition by a different owner', async () => {
@@ -32,9 +32,9 @@ describe('MemoryLockProvider', () => {
 
       const secondLock = await provider.acquire('resource-1', 'node-a', 10000)
       expect(secondLock).not.toBeNull()
-      expect(secondLock!.owner).toBe('node-a')
+      expect(secondLock?.owner).toBe('node-a')
       // 新的過期時間應更長
-      expect(secondLock!.expiresAt).toBeGreaterThanOrEqual(firstLock!.expiresAt)
+      expect(secondLock?.expiresAt).toBeGreaterThanOrEqual(firstLock?.expiresAt)
     })
 
     it('should allow acquisition after lock expires', async () => {
@@ -46,7 +46,7 @@ describe('MemoryLockProvider', () => {
 
       const newLock = await provider.acquire('resource-1', 'node-b', 5000)
       expect(newLock).not.toBeNull()
-      expect(newLock!.owner).toBe('node-b')
+      expect(newLock?.owner).toBe('node-b')
     })
 
     it('should acquire locks for different resources independently', async () => {
@@ -60,14 +60,14 @@ describe('MemoryLockProvider', () => {
     it('should provide a release function on the lock', async () => {
       const lock = await provider.acquire('resource-1', 'node-a', 5000)
       expect(lock).not.toBeNull()
-      expect(typeof lock!.release).toBe('function')
+      expect(typeof lock?.release).toBe('function')
 
-      await lock!.release()
+      await lock?.release()
 
       // 釋放後其他 owner 可以取得鎖
       const newLock = await provider.acquire('resource-1', 'node-b', 5000)
       expect(newLock).not.toBeNull()
-      expect(newLock!.owner).toBe('node-b')
+      expect(newLock?.owner).toBe('node-b')
     })
   })
 
@@ -135,7 +135,7 @@ describe('MemoryLockProvider', () => {
       for (let i = 0; i < 10; i++) {
         const lock = await provider.acquire('resource', `node-${i}`, 5000)
         expect(lock).not.toBeNull()
-        await lock!.release()
+        await lock?.release()
       }
     })
 

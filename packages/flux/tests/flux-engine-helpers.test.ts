@@ -79,7 +79,9 @@ describe('FluxEngineHelpers', () => {
         name: 'flaky-step',
         handler: async () => {
           attempts++
-          if (attempts < 2) throw new Error('Transient')
+          if (attempts < 2) {
+            throw new Error('Transient')
+          }
         },
         commit: false,
       }
@@ -357,7 +359,7 @@ describe('FluxEngineHelpers', () => {
       // 確認已儲存
       const stored = await storage.load(ctx.id)
       expect(stored).not.toBeNull()
-      expect(stored!.version).toBe(ctx.version + 1)
+      expect(stored?.version).toBe(ctx.version + 1)
     })
 
     it('should throw on concurrent modification', async () => {
@@ -389,7 +391,7 @@ describe('FluxEngineHelpers', () => {
 
       const lock = await acquireEngineLock(config, 'wf-1')
       expect(lock).not.toBeNull()
-      expect(lock!.id).toBe('wf-1')
+      expect(lock?.id).toBe('wf-1')
     })
 
     it('should return lock with release function', async () => {
@@ -397,9 +399,9 @@ describe('FluxEngineHelpers', () => {
       const config: FluxConfig = { lockProvider }
 
       const lock = await acquireEngineLock(config, 'wf-1')
-      expect(typeof lock!.release).toBe('function')
+      expect(typeof lock?.release).toBe('function')
 
-      await lock!.release()
+      await lock?.release()
 
       // 釋放後應該能重新取得
       const newLock = await acquireEngineLock(config, 'wf-1')

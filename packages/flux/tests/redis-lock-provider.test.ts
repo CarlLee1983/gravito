@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import type { RedisClient } from '../src/core/RedisLockProvider'
 import { RedisLockProvider } from '../src/core/RedisLockProvider'
 
@@ -89,9 +89,9 @@ describe('RedisLockProvider', () => {
       const lock = await provider.acquire('resource-1', 'owner-1', 5000)
 
       expect(lock).not.toBeNull()
-      expect(lock!.id).toBe('resource-1')
-      expect(lock!.owner).toBe('owner-1')
-      expect(lock!.expiresAt).toBeGreaterThan(Date.now())
+      expect(lock?.id).toBe('resource-1')
+      expect(lock?.owner).toBe('owner-1')
+      expect(lock?.expiresAt).toBeGreaterThan(Date.now())
     })
 
     it('should store lock with correct key prefix', async () => {
@@ -113,14 +113,14 @@ describe('RedisLockProvider', () => {
 
       expect(lock1).not.toBeNull()
       expect(lock2).not.toBeNull()
-      expect(lock2!.owner).toBe('owner-1')
+      expect(lock2?.owner).toBe('owner-1')
     })
 
     it('should use default TTL when ttl is 0', async () => {
       const lock = await provider.acquire('resource-1', 'owner-1', 0)
 
       expect(lock).not.toBeNull()
-      expect(lock!.expiresAt).toBeGreaterThan(Date.now())
+      expect(lock?.expiresAt).toBeGreaterThan(Date.now())
     })
 
     it('should retry on failure with retries configured', async () => {
@@ -219,9 +219,9 @@ describe('RedisLockProvider', () => {
       const lock = await provider.acquire('resource-1', 'owner-1', 5000)
 
       expect(lock).not.toBeNull()
-      expect(typeof lock!.release).toBe('function')
+      expect(typeof lock?.release).toBe('function')
 
-      await lock!.release()
+      await lock?.release()
 
       expect(client.storage.has('test:lock:resource-1')).toBe(false)
     })
@@ -232,11 +232,11 @@ describe('RedisLockProvider', () => {
       await provider.release('resource-1')
       await provider.acquire('resource-1', 'owner-2', 5000)
 
-      await lock1!.release()
+      await lock1?.release()
 
       expect(client.storage.has('test:lock:resource-1')).toBe(true)
       const entry = client.storage.get('test:lock:resource-1')
-      expect(entry!.value).toBe('owner-2')
+      expect(entry?.value).toBe('owner-2')
     })
   })
 
@@ -254,7 +254,7 @@ describe('RedisLockProvider', () => {
 
       expect(lock).not.toBeNull()
       const expectedMinExpiry = Date.now() + 29000
-      expect(lock!.expiresAt).toBeGreaterThan(expectedMinExpiry)
+      expect(lock?.expiresAt).toBeGreaterThan(expectedMinExpiry)
     })
   })
 
@@ -268,7 +268,7 @@ describe('RedisLockProvider', () => {
       const lock = await provider.acquire('resource-1', 'owner-2', 5000)
 
       expect(lock).not.toBeNull()
-      expect(lock!.owner).toBe('owner-2')
+      expect(lock?.owner).toBe('owner-2')
     })
   })
 })

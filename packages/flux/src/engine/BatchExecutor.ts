@@ -74,7 +74,9 @@ class Semaphore {
   release(): void {
     this.current--
     const next = this.queue.shift()
-    if (next) next()
+    if (next) {
+      next()
+    }
   }
 }
 

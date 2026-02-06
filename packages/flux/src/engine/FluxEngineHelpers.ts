@@ -239,7 +239,9 @@ export async function persistContext<TInput, TData extends Record<string, any>>(
 }
 
 export async function acquireEngineLock(config: FluxConfig, workflowId: string) {
-  if (!config.lockProvider) return null
+  if (!config.lockProvider) {
+    return null
+  }
   const owner = `node_${Math.random().toString(36).substring(7)}`
   return await config.lockProvider.acquire(workflowId, owner, 30000)
 }
