@@ -5,7 +5,6 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import type { RippleSocket } from '../src/engines/IRippleEngine'
 import { RippleServer } from '../src/RippleServer'
 
 describe('RippleServer v5.0', () => {
@@ -156,7 +155,7 @@ describe('RippleServer v5.0', () => {
     it('should add interceptors via use()', () => {
       server = new RippleServer({ port: 3009 })
 
-      server.use(async (ctx, next) => {
+      server.use(async (_ctx, next) => {
         // Interceptor logic
         await next()
       })

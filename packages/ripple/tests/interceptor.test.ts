@@ -7,13 +7,13 @@ describe('InterceptorManager', () => {
     const manager = new InterceptorManager()
     const order: string[] = []
 
-    manager.use(async (ctx, next) => {
+    manager.use(async (_ctx, next) => {
       order.push('in-1')
       await next()
       order.push('out-1')
     })
 
-    manager.use(async (ctx, next) => {
+    manager.use(async (_ctx, next) => {
       order.push('in-2')
       await next()
       order.push('out-2')
@@ -39,12 +39,12 @@ describe('InterceptorManager', () => {
     const manager = new InterceptorManager()
     const order: string[] = []
 
-    manager.use(async (ctx, next) => {
+    manager.use(async (_ctx, _next) => {
       order.push('in-1')
       // Don't call next()
     })
 
-    manager.use(async (ctx, next) => {
+    manager.use(async (_ctx, next) => {
       order.push('in-2')
       await next()
     })
@@ -65,7 +65,7 @@ describe('InterceptorManager', () => {
   it('should throw if next() is called multiple times', async () => {
     const manager = new InterceptorManager()
 
-    manager.use(async (ctx, next) => {
+    manager.use(async (_ctx, next) => {
       await next()
       await next()
     })

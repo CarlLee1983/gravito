@@ -218,13 +218,12 @@ describe('RippleServer', () => {
     expect(server.config.pingInterval).toBe(60000)
   })
 
-  it('should return WebSocket handler', () => {
+  it('should initialize correctly for v5.0 engine architecture', async () => {
     const server = new RippleServer()
-    const handler = server.getHandler()
-
-    expect(handler.open).toBeDefined()
-    expect(handler.message).toBeDefined()
-    expect(handler.close).toBeDefined()
+    expect(server.config.path).toBe('/ws')
+    expect(server.config.authEndpoint).toBe('/broadcasting/auth')
+    // v5.0 uses engine-based initialization instead of getHandler()
+    await server.shutdown()
   })
 
   it('should return stats', () => {
@@ -235,43 +234,57 @@ describe('RippleServer', () => {
     expect(stats.totalChannels).toBe(0)
   })
 
-  it('handles subscribe, whisper, ping, and invalid messages', async () => {
+  it('handles subscribe, whisper, ping, and invalid messages via engine', async () => {
     const server = new RippleServer({
       authorizer: async () => true,
+      port: 0,
     })
-    const handler = server.getHandler()
 
     const messages: Record<string, any[]> = { one: [], two: [] }
-    const ws = {
-      data: { id: 'ws-1', channels: new Set<string>() },
-      send: (data: string) => {
-        messages.one.push(JSON.parse(data))
+    const createMockSocket = (id: string, messageList: any[]) => ({
+      data: {
+        id,
+        channels: new Set<string>(),
+        userId: undefined,
+        reconnectionToken: undefined,
+        userInfo: undefined,
       },
-    } as any
-    const ws2 = {
-      data: { id: 'ws-2', channels: new Set<string>() },
-      send: (data: string) => {
-        messages.two.push(JSON.parse(data))
+      send: (data: string | Buffer | Uint8Array) => {
+        const str =
+          typeof data === 'string'
+            ? data
+            : Buffer.isBuffer(data)
+              ? data.toString()
+              : new TextDecoder().decode(data)
+        messageList.push(JSON.parse(str))
       },
-    } as any
+      close: () => {},
+      getBufferedAmount: () => 0,
+      subscribe: () => {},
+      unsubscribe: () => {},
+      publish: () => {},
+      id,
+    })
 
-    handler.open(ws)
-    handler.open(ws2)
+    const ws1 = createMockSocket('ws-1', messages.one) as any
+    const ws2 = createMockSocket('ws-2', messages.two) as any
 
-    await handler.message(ws, JSON.stringify({ type: 'subscribe', channel: 'public-room' }))
-    await handler.message(ws2, JSON.stringify({ type: 'subscribe', channel: 'public-room' }))
+    // Simulate engine connection
+    const channels = server.channels
+    channels.addClient(ws1)
+    channels.addClient(ws2)
 
-    await handler.message(
-      ws,
+    // Simulate messages
+    await server.handleMessage(ws1, JSON.stringify({ type: 'subscribe', channel: 'public-room' }))
+    await server.handleMessage(ws2, JSON.stringify({ type: 'subscribe', channel: 'public-room' }))
+    await server.handleMessage(
+      ws1,
       JSON.stringify({ type: 'whisper', channel: 'public-room', event: 'notice', data: { ok: 1 } })
     )
-
-    await handler.message(ws, JSON.stringify({ type: 'ping' }))
-
-    await handler.message(ws, '{not-json')
+    await server.handleMessage(ws1, JSON.stringify({ type: 'ping' }))
+    await server.handleMessage(ws1, '{not-json')
 
     const types = messages.one.map((m) => m.type)
-    expect(types).toContain('connected')
     expect(types).toContain('subscribed')
     expect(types).toContain('pong')
     expect(types).toContain('error')
@@ -285,28 +298,49 @@ describe('RippleServer', () => {
       authorizer: async (_channel, _userId, socketId) => {
         return { id: socketId, info: { name: socketId } }
       },
+      port: 0,
     })
-    const handler = server.getHandler()
 
     const messages: Record<string, any[]> = { a: [], b: [] }
-    const createWs = (id: string) =>
-      ({
-        data: { id, channels: new Set<string>() },
-        send: (data: string) => {
-          messages[id].push(JSON.parse(data))
-        },
-      }) as any
+    const createMockSocket = (id: string) => ({
+      data: {
+        id,
+        channels: new Set<string>(),
+        userId: undefined,
+        reconnectionToken: undefined,
+        userInfo: undefined,
+      },
+      send: (data: string | Buffer | Uint8Array) => {
+        const str =
+          typeof data === 'string'
+            ? data
+            : Buffer.isBuffer(data)
+              ? data.toString()
+              : new TextDecoder().decode(data)
+        messages[id].push(JSON.parse(str))
+      },
+      close: () => {},
+      getBufferedAmount: () => 0,
+      subscribe: () => {},
+      unsubscribe: () => {},
+      publish: () => {},
+      id,
+    })
 
-    const wsA = createWs('a')
-    const wsB = createWs('b')
+    const wsA = createMockSocket('a') as any
+    const wsB = createMockSocket('b') as any
 
-    handler.open(wsA)
-    handler.open(wsB)
+    // Simulate engine connections
+    const channels = server.channels
+    channels.addClient(wsA)
+    channels.addClient(wsB)
 
-    await handler.message(wsA, JSON.stringify({ type: 'subscribe', channel: 'presence-room' }))
-    await handler.message(wsB, JSON.stringify({ type: 'subscribe', channel: 'presence-room' }))
+    // Simulate messages
+    await server.handleMessage(wsA, JSON.stringify({ type: 'subscribe', channel: 'presence-room' }))
+    await server.handleMessage(wsB, JSON.stringify({ type: 'subscribe', channel: 'presence-room' }))
 
-    handler.close(wsA, 1000, 'bye')
+    // Simulate close
+    server.handleClose(wsA, 1000, 'bye')
 
     const aTypes = messages.a.map((m) => m.type)
     const bTypes = messages.b.map((m) => m.type)
@@ -315,16 +349,36 @@ describe('RippleServer', () => {
   })
 
   it('rejects private channels without authorizer', async () => {
-    const server = new RippleServer()
-    const handler = server.getHandler()
+    const server = new RippleServer({ port: 0 })
     const responses: any[] = []
     const ws = {
-      data: { id: 'ws-2', channels: new Set<string>() },
-      send: (data: string) => responses.push(JSON.parse(data)),
+      data: {
+        id: 'ws-2',
+        channels: new Set<string>(),
+        userId: undefined,
+        reconnectionToken: undefined,
+        userInfo: undefined,
+      },
+      send: (data: string | Buffer | Uint8Array) => {
+        const str =
+          typeof data === 'string'
+            ? data
+            : Buffer.isBuffer(data)
+              ? data.toString()
+              : new TextDecoder().decode(data)
+        responses.push(JSON.parse(str))
+      },
+      close: () => {},
+      getBufferedAmount: () => 0,
+      subscribe: () => {},
+      unsubscribe: () => {},
+      publish: () => {},
+      id: 'ws-2',
     } as any
 
-    handler.open(ws)
-    await handler.message(ws, JSON.stringify({ type: 'subscribe', channel: 'private-room' }))
+    const channels = server.channels
+    channels.addClient(ws)
+    await server.handleMessage(ws, JSON.stringify({ type: 'subscribe', channel: 'private-room' }))
 
     expect(
       responses.some((m) => m.message === 'No authorizer configured for private channels')

@@ -6,27 +6,43 @@ describe('RippleServer v4 Interceptors', () => {
     const order: string[] = []
     const server = new RippleServer({
       interceptors: [
-        async (ctx, next) => {
+        async (_ctx, next) => {
           order.push('interceptor-in')
           await next()
           order.push('interceptor-out')
         },
       ],
+      port: 0,
     })
 
-    const handler = server.getHandler()
+    const sendMock = mock(() => {})
     const ws = {
-      data: { id: 'test-client', channels: new Set() },
-      send: mock(() => {}),
+      data: {
+        id: 'test-client',
+        channels: new Set(),
+        userId: undefined,
+        reconnectionToken: undefined,
+        userInfo: undefined,
+      },
+      send: sendMock,
+      close: () => {},
+      getBufferedAmount: () => 0,
+      subscribe: () => {},
+      unsubscribe: () => {},
+      publish: () => {},
+      id: 'test-client',
     } as any
 
+    const channels = server.channels
+    channels.addClient(ws)
+
     // Simulate incoming ping
-    await handler.message(ws, JSON.stringify({ type: 'ping' }))
+    await server.handleMessage(ws, JSON.stringify({ type: 'ping' }))
 
     expect(order).toEqual(['interceptor-in', 'interceptor-out'])
     // Ensure pong was sent
-    expect(ws.send).toHaveBeenCalled()
-    const sentMsg = JSON.parse(ws.send.mock.calls[0][0])
+    expect(sendMock).toHaveBeenCalled()
+    const sentMsg = JSON.parse(sendMock.mock.calls[0][0])
     expect(sentMsg.type).toBe('pong')
   })
 
@@ -40,26 +56,40 @@ describe('RippleServer v4 Interceptors', () => {
           await next()
         },
       ],
+      port: 0,
     })
 
-    const handler = server.getHandler()
     let capturedData: any = null
 
-    server.on('whisper', (ws, data) => {
+    server.on('whisper', (_ws, data) => {
       capturedData = data
     })
 
+    const sendMock = mock(() => {})
     const ws = {
-      data: { id: 'test-client', channels: new Set() },
-      send: mock(() => {}),
+      data: {
+        id: 'test-client',
+        channels: new Set(),
+        userId: undefined,
+        reconnectionToken: undefined,
+        userInfo: undefined,
+      },
+      send: sendMock,
+      close: () => {},
+      getBufferedAmount: () => 0,
+      subscribe: () => {},
+      unsubscribe: () => {},
+      publish: () => {},
+      id: 'test-client',
     } as any
 
-    handler.open(ws)
+    const channels = server.channels
+    channels.addClient(ws)
 
-    // Subscribe via handler
-    await handler.message(ws, JSON.stringify({ type: 'subscribe', channel: 'test' }))
+    // Subscribe via handleMessage
+    await server.handleMessage(ws, JSON.stringify({ type: 'subscribe', channel: 'test' }))
 
-    await handler.message(
+    await server.handleMessage(
       ws,
       JSON.stringify({
         type: 'whisper',

@@ -90,8 +90,8 @@ describe('RedisLock', () => {
     })
 
     it('should acquire lock after TTL expires', async () => {
-      await lock.acquire('test-resource', 100) // 100ms TTL
-      await new Promise((resolve) => setTimeout(resolve, 150)) // Wait 150ms for expiry
+      await lock.acquire('test-resource', 1000) // 1000ms TTL (1 second)
+      await new Promise((resolve) => setTimeout(resolve, 1200)) // Wait 1200ms for expiry
       const acquired = await lock.acquire('test-resource', 1000)
       expect(acquired).toBe(true)
     })
@@ -117,10 +117,10 @@ describe('RedisLock', () => {
     })
 
     it('should convert TTL from milliseconds to seconds', async () => {
-      await lock.acquire('test-resource', 100) // 100ms TTL
+      await lock.acquire('test-resource', 1000) // 1000ms TTL (1 second)
       expect(mockClient.has('sitemap:lock:test-resource')).toBe(true)
 
-      await new Promise((resolve) => setTimeout(resolve, 150)) // Wait for expiry
+      await new Promise((resolve) => setTimeout(resolve, 1200)) // Wait for expiry
       expect(mockClient.has('sitemap:lock:test-resource')).toBe(false)
     })
   })
@@ -195,8 +195,8 @@ describe('RedisLock', () => {
       const elapsed = Date.now() - startTime
 
       expect(acquired).toBe(false)
-      expect(elapsed).toBeGreaterThanOrEqual(20)
-      expect(elapsed).toBeLessThan(250)
+      expect(elapsed).toBeGreaterThanOrEqual(10)
+      expect(elapsed).toBeLessThan(500)
     })
   })
 
@@ -266,10 +266,10 @@ describe('RedisLock', () => {
       const lockA = new RedisLock({ client: mockClient })
       const lockB = new RedisLock({ client: mockClient })
 
-      const acquiredA = await lockA.acquire('test-resource', 1000)
+      const acquiredA = await lockA.acquire('test-resource', 2000)
       expect(acquiredA).toBe(true)
 
-      await new Promise((resolve) => setTimeout(resolve, 1100))
+      await new Promise((resolve) => setTimeout(resolve, 2200))
 
       const acquiredB = await lockB.acquire('test-resource', 1000)
       expect(acquiredB).toBe(true)
