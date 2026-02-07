@@ -118,7 +118,7 @@ function handleStatus(dashboard: QueueDashboard): void {
 /**
  * Display pending tasks summary
  */
-function handlePending(dashboard: QueueDashboard, flags: Record<string, string | boolean>): void {
+function handlePending(dashboard: QueueDashboard, _flags: Record<string, string | boolean>): void {
   const snapshot = dashboard.getSnapshot()
   const depth = snapshot.queue.depth
 
@@ -138,7 +138,7 @@ function handlePending(dashboard: QueueDashboard, flags: Record<string, string |
 /**
  * Display active tasks summary
  */
-function handleActive(dashboard: QueueDashboard, flags: Record<string, string | boolean>): void {
+function handleActive(dashboard: QueueDashboard, _flags: Record<string, string | boolean>): void {
   const snapshot = dashboard.getSnapshot()
   const { workers } = snapshot.workers
 

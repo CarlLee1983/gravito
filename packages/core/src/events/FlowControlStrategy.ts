@@ -188,7 +188,7 @@ export class PriorityRebalanceStrategy implements FlowControlStrategy {
 export class StarvationProtectionStrategy implements FlowControlStrategy {
   readonly name = 'StarvationProtection'
 
-  evaluate(context: FlowControlContext): BackpressureDecision {
+  evaluate(_context: FlowControlContext): BackpressureDecision {
     // 此策略需要在 BackpressureManager 中額外實現
     // 以便存取事件的 createdAt 時間戳
     // 暫時作為佔位符，返回允許
@@ -259,7 +259,7 @@ export class CompositeStrategy implements FlowControlStrategy {
  * @public
  */
 export function createDefaultStrategies(
-  config: Omit<BackpressureConfig, 'onRejected' | 'onStateChange'>
+  _config: Omit<BackpressureConfig, 'onRejected' | 'onStateChange'>
 ): CompositeStrategy {
   return new CompositeStrategy('Default', [
     new QueueDepthStrategy(),

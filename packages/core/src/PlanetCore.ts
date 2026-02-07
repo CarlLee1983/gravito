@@ -164,7 +164,12 @@ export class PlanetCore {
    */
   register(provider: ServiceProvider): this {
     // Set core reference
-    provider.setCore(this)
+    if (typeof (provider as any).setCore === 'function') {
+      ;(provider as any).setCore(this)
+    } else {
+      // Fallback: set core directly on the provider
+      ;(provider as any).core = this
+    }
 
     // Handle deferred providers
     if (provider.deferred) {
@@ -173,6 +178,7 @@ export class PlanetCore {
         this.deferredProviders.set(service, provider)
       }
     } else {
+      this.logger.debug(`📝 Registering provider: ${provider.constructor.name}`)
       this.providers.push(provider)
     }
 
@@ -198,7 +204,9 @@ export class PlanetCore {
    */
   async bootstrap(): Promise<void> {
     // Phase 1: Register all bindings (supports async)
+    this.logger.debug(`🔄 Bootstrapping ${this.providers.length} providers`)
     for (const provider of this.providers) {
+      this.logger.debug(`  Registering: ${provider.constructor.name}`)
       await provider.register(this.container)
     }
 

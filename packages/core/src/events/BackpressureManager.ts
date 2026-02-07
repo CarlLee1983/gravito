@@ -184,8 +184,9 @@ class SlidingWindowCounter {
     const now = Date.now()
     const timePassed = now - this.lastBucketTime
 
-    // 推進到當前時間桶（不修改計數）
-    const _bucketsToAdvance = Math.floor(timePassed / this.bucketMs)
+    // Note: timePassed could be used to advance buckets if needed
+    // For now, we just calculate the current rate from existing buckets
+    void timePassed // Intentionally unused
     let totalCount = 0
     for (let i = 0; i < this.buckets.length; i++) {
       totalCount += this.buckets[i]

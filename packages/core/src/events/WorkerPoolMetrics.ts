@@ -16,13 +16,9 @@ export class WorkerPoolMetrics {
   private taskDurationHistogram?: Histogram
   private taskCounter?: Counter
   private autoScalingCounter?: Counter
-  private priorityHistogram?: Histogram
   private poolSizeCallback?: () => number
   private utilizationCallback?: () => number
   private queueDepthCallback?: () => number
-  private poolSizeGauge?: any
-  private utilizationGauge?: any
-  private queueDepthGauge?: any
 
   constructor(private meter: Meter) {
     this.initializeMetrics()
@@ -48,25 +44,8 @@ export class WorkerPoolMetrics {
       description: 'Total number of auto-scaling events',
     })
 
-    // Histogram for priority distribution
-    this.priorityHistogram = this.meter.createHistogram('gravito_worker_priority_distribution', {
-      description: 'Distribution of tasks by priority',
-    })
-
-    // Observable Gauge for pool size
-    this.poolSizeGauge = this.meter.createObservableGauge('gravito_worker_pool_size', {
-      description: 'Current number of active workers in the pool',
-    })
-
-    // Observable Gauge for utilization
-    this.utilizationGauge = this.meter.createObservableGauge('gravito_worker_pool_utilization', {
-      description: 'Pool utilization (0-1)',
-    })
-
-    // Observable Gauge for queue depth
-    this.queueDepthGauge = this.meter.createObservableGauge('gravito_worker_pool_queue_depth', {
-      description: 'Number of tasks waiting in the queue',
-    })
+    // Note: Observable Gauges for pool metrics are not created here as they require
+    // callback registration which is deferred to when setPoolSizeProvider/etc are called
   }
 
   /**

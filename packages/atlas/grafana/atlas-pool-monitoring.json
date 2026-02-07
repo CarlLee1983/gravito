@@ -121,9 +121,7 @@
         "orientation": "auto",
         "reduceOptions": {
           "values": false,
-          "calcs": [
-            "lastNotNull"
-          ]
+          "calcs": ["lastNotNull"]
         },
         "showThresholdLabels": false,
         "showThresholdMarkers": true
@@ -173,10 +171,7 @@
       "id": 3,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
+          "calcs": ["mean", "max"],
           "displayMode": "list",
           "placement": "bottom"
         },
@@ -233,10 +228,7 @@
       "id": 4,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
+          "calcs": ["mean", "max"],
           "displayMode": "list",
           "placement": "bottom"
         },
@@ -288,10 +280,7 @@
       "id": 5,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
+          "calcs": ["mean", "max"],
           "displayMode": "list",
           "placement": "bottom"
         },
@@ -343,9 +332,7 @@
       "id": 6,
       "options": {
         "legend": {
-          "calcs": [
-            "sum"
-          ],
+          "calcs": ["sum"],
           "displayMode": "list",
           "placement": "bottom"
         },
@@ -366,11 +353,7 @@
   ],
   "schemaVersion": 38,
   "style": "dark",
-  "tags": [
-    "database",
-    "atlas",
-    "connection-pool"
-  ],
+  "tags": ["database", "atlas", "connection-pool"],
   "templating": {
     "list": []
   },

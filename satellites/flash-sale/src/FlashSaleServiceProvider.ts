@@ -46,22 +46,17 @@ export class FlashSaleServiceProvider extends ServiceProvider {
     // 記錄啟動訊息
     core.logger.info('🛰️ Satellite Flash-Sale is booting')
 
-    // TODO: 註冊路由
-    // 目前需要手動在主應用中註冊
-    // core.router.prefix('/api').group((router) => {
-    //   router.get('/products', (ctx) => productCtrl.index(ctx))
-    //   router.get('/products/:id', (ctx) => productCtrl.show(ctx))
-    //   router.post('/orders', (ctx) => orderCtrl.store(ctx))
-    //   router.get('/orders/:id', (ctx) => orderCtrl.show(ctx))
-    //   router.get('/orders', (ctx) => orderCtrl.list(ctx))
-    // })
+    // 註冊路由 - 使用控制器類 + 方法名稱
+    core.router.prefix('/api').group((router) => {
+      // 商品管理路由
+      router.get('/products', [ProductController, 'index'])
+      router.get('/products/:id', [ProductController, 'show'])
 
-    // TODO: 監聽事件
-    // core.events.listen(OrderCreated, async (event: OrderCreated) => {
-    //   core.logger.info(`Order created: ${event.order.id}`)
-    //   // 發送庫存鎖定請求
-    //   // 發送支付請求
-    // })
+      // 訂單管理路由
+      router.get('/orders', [OrderController, 'list'])
+      router.post('/orders', [OrderController, 'store'])
+      router.get('/orders/:id', [OrderController, 'show'])
+    })
 
     core.logger.info('✅ Satellite Flash-Sale booted successfully')
   }

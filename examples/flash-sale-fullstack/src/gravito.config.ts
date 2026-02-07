@@ -5,6 +5,9 @@
  */
 
 import type { GravitoConfig as Config } from '@gravito/core'
+import { FlashSaleServiceProvider } from '@gravito/satellite-flash-sale'
+import { InventoryLockServiceProvider } from '@gravito/satellite-inventory-lock'
+import { PaymentServiceProvider } from '@gravito/satellite-payment'
 
 /**
  * 應用配置
@@ -13,6 +16,7 @@ export const GravitoConfig: Config & any = {
   // ─────────────────────────────────────────────────────────────────────────
   // 基礎應用配置
   // ─────────────────────────────────────────────────────────────────────────
+  basePath: process.cwd(),
   port: parseInt(process.env.HTTP_PORT || '3000', 10),
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -65,12 +69,7 @@ export const GravitoConfig: Config & any = {
   // ─────────────────────────────────────────────────────────────────────────
   // Satellite 與 Provider
   // ─────────────────────────────────────────────────────────────────────────
-
-  satellites: [
-    '@gravito/satellite-flash-sale',
-    '@gravito/satellite-inventory-lock',
-    '@gravito/satellite-payment',
-  ],
+  // Satellites are now registered directly in app.ts as providers
 
   // ─────────────────────────────────────────────────────────────────────────
   // 中間件配置

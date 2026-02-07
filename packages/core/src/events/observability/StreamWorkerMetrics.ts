@@ -26,11 +26,8 @@ export enum WorkerJobStatus {
  * - Queue depth
  */
 export class StreamWorkerMetrics {
-  private poolSizeGauge?: any
   private jobDurationHistogram?: Histogram
   private jobCounterCompleted?: Counter
-  private jobCounterFailed?: Counter
-  private queueDepthGauge?: any
 
   constructor(private meter: Meter) {
     this.initializeMetrics()
@@ -51,15 +48,8 @@ export class StreamWorkerMetrics {
       description: 'Total number of worker jobs processed',
     })
 
-    // Observable Gauge for pool size
-    this.poolSizeGauge = this.meter.createObservableGauge('gravito_worker_pool_size', {
-      description: 'Number of active workers in the pool',
-    })
-
-    // Observable Gauge for queue depth
-    this.queueDepthGauge = this.meter.createObservableGauge('gravito_worker_pool_queue_depth', {
-      description: 'Number of jobs waiting in the queue',
-    })
+    // Note: Observable Gauges for pool and queue metrics are managed via provider callbacks
+    // rather than direct field assignments
   }
 
   /**
@@ -93,7 +83,7 @@ export class StreamWorkerMetrics {
    * @param callback - Optional callback to fetch pool size dynamically
    */
   setPoolSizeProvider(callback: () => number): void {
-    if (this.poolSizeGauge && typeof callback === 'function') {
+    if (typeof callback === 'function') {
       // Note: In real OpenTelemetry, this would be an observable callback
       // For now, we store the callback for later use
       this.poolSizeCallback = callback
@@ -116,7 +106,7 @@ export class StreamWorkerMetrics {
    * @param callback - Optional callback to fetch queue depth dynamically
    */
   setQueueDepthProvider(callback: () => number): void {
-    if (this.queueDepthGauge && typeof callback === 'function') {
+    if (typeof callback === 'function') {
       this.queueDepthCallback = callback
     }
   }

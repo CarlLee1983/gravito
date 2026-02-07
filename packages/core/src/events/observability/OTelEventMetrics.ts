@@ -470,7 +470,7 @@ export class OTelEventMetrics implements CircuitBreakerMetricsRecorder {
    * @param reason - Rejection reason
    * @internal
    */
-  recordBackpressureRejection(eventName: string, priority: string, reason: string): void {
+  recordBackpressureRejection(_eventName: string, _priority: string, _reason: string): void {
     // TODO: Implement in Phase 3
     // Will record background pressure rejections to metrics
   }
@@ -482,7 +482,7 @@ export class OTelEventMetrics implements CircuitBreakerMetricsRecorder {
    * @param state - New backpressure state
    * @internal
    */
-  recordBackpressureState(state: string): void {
+  recordBackpressureState(_state: string): void {
     // TODO: Implement in Phase 3
     // Will record background pressure state changes to metrics
   }
@@ -496,7 +496,11 @@ export class OTelEventMetrics implements CircuitBreakerMetricsRecorder {
    * @param toPriority - Degraded priority
    * @internal
    */
-  recordBackpressureDegradation(eventName: string, fromPriority: string, toPriority: string): void {
+  recordBackpressureDegradation(
+    _eventName: string,
+    _fromPriority: string,
+    _toPriority: string
+  ): void {
     // TODO: Implement in Phase 3
     // Will record priority degradation events to metrics
   }
