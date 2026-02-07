@@ -33,7 +33,9 @@
     "test": "bun test --timeout=10000",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test:coverage": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
-    "test:ci": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts"
+    "test:ci": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
+    "test:unit": "bun test '**/*.test.ts' '!**/*.integration.test.ts' --timeout=10000",
+    "test:integration": "bun test '**/*.integration.test.ts' --timeout=10000"
   },
   "keywords": [
     "gravito",

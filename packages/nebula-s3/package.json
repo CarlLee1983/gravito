@@ -15,7 +15,9 @@
   "scripts": {
     "build": "bun build.ts",
     "test": "bun test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:unit": "bun test",
+    "test:integration": "bun test"
   },
   "keywords": [
     "gravito",

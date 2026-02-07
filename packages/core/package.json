@@ -42,7 +42,9 @@
     "check": "biome check ./src ./tests",
     "check:fix": "biome check --write ./src ./tests",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
-    "prepublishOnly": "bun run typecheck && bun run test && bun run build"
+    "prepublishOnly": "bun run typecheck && bun run test && bun run build",
+    "test:unit": "bun test '**/*.test.ts' '!**/*.integration.test.ts' --timeout=10000",
+    "test:integration": "bun test '**/*.integration.test.ts' --timeout=10000"
   },
   "keywords": [],
   "author": "Carl Lee <carllee0520@gmail.com>",

@@ -8,7 +8,9 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean --external @gravito/core --external @gravito/atlas --external @gravito/signal --external @gravito/satellite-flash-sale",
     "test": "bun test",
-    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test:unit": "bun test",
+    "test:integration": "bun test"
   },
   "dependencies": {
     "@gravito/atlas": "workspace:*",

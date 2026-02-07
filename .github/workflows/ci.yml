@@ -221,15 +221,17 @@ jobs:
           FAILED=0
 
           if [ "$MODE" == "full" ]; then
-            # Main: full typecheck + full coverage tests
+            # Main: full typecheck + unit tests (high concurrency) + integration tests (low concurrency)
             (bunx turbo run typecheck --filter='./packages/*' --filter='./satellites/*' --concurrency=6) &
             PID_TYPECHECK=$!
-            (bunx turbo run test:coverage --filter='./packages/*' --concurrency=4 --continue) &
-            PID_TEST_PKG=$!
+            (bunx turbo run test:unit --filter='./packages/*' --concurrency=8 --continue) &
+            PID_TEST_UNIT=$!
+            (bunx turbo run test:integration --filter='./packages/*' --concurrency=2 --continue) &
+            PID_TEST_INT=$!
             (bunx turbo run test --filter='./satellites/*' --concurrency=4 --continue) &
             PID_TEST_SAT=$!
           else
-            # PR: incremental - only affected packages
+            # PR: incremental - only affected packages (split into unit and integration)
             TYPECHECK_FILTERS="${{ steps.filters.outputs.typecheck_filters }}"
             TEST_FILTERS="${{ steps.filters.outputs.test_filters }}"
 
@@ -238,23 +240,25 @@ jobs:
               PID_TYPECHECK=$!
             fi
             if [ -n "$TEST_FILTERS" ]; then
-              (bunx turbo run test $TEST_FILTERS --concurrency=4 --continue) &
-              PID_TEST_PR=$!
+              (bunx turbo run test:unit $TEST_FILTERS --concurrency=8 --continue) &
+              PID_TEST_UNIT=$!
+              (bunx turbo run test:integration $TEST_FILTERS --concurrency=2 --continue) &
+              PID_TEST_INT=$!
             fi
           fi
 
           # Wait for all background processes
           if [ -n "${PID_TYPECHECK:-}" ]; then
-            if wait $PID_TYPECHECK; then echo "Typecheck passed"; else echo "Typecheck failed"; FAILED=1; fi
+            if wait $PID_TYPECHECK; then echo "✓ Typecheck passed"; else echo "✗ Typecheck failed"; FAILED=1; fi
           fi
-          if [ -n "${PID_TEST_PKG:-}" ]; then
-            if wait $PID_TEST_PKG; then echo "Test:coverage (packages) passed"; else echo "Test:coverage (packages) failed"; FAILED=1; fi
+          if [ -n "${PID_TEST_UNIT:-}" ]; then
+            if wait $PID_TEST_UNIT; then echo "✓ Unit tests passed"; else echo "✗ Unit tests failed"; FAILED=1; fi
+          fi
+          if [ -n "${PID_TEST_INT:-}" ]; then
+            if wait $PID_TEST_INT; then echo "✓ Integration tests passed"; else echo "✗ Integration tests failed"; FAILED=1; fi
           fi
           if [ -n "${PID_TEST_SAT:-}" ]; then
-            if wait $PID_TEST_SAT; then echo "Test (satellites) passed"; else echo "Test (satellites) failed"; FAILED=1; fi
-          fi
-          if [ -n "${PID_TEST_PR:-}" ]; then
-            if wait $PID_TEST_PR; then echo "Test (incremental) passed"; else echo "Test (incremental) failed"; FAILED=1; fi
+            if wait $PID_TEST_SAT; then echo "✓ Satellite tests passed"; else echo "✗ Satellite tests failed"; FAILED=1; fi
           fi
 
           if [ $FAILED -eq 1 ]; then exit 1; fi
