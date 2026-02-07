@@ -21,25 +21,22 @@ async function checkAppTsx() {
     const content = await readFile(filePath, 'utf-8')
 
     // 檢查 staticDomains
-    if (
-      content.includes("'photon-site.pages.dev'") ||
-      content.includes('"photon-site.pages.dev"')
-    ) {
+    if (content.includes("'photon.gravito.dev'") || content.includes('"photon.gravito.dev"')) {
       results.push({
         name: 'app.tsx - staticDomains',
         status: 'pass',
-        message: '✅ 已包含 photon-site.pages.dev',
+        message: '✅ 已包含 photon.gravito.dev',
       })
     } else {
       results.push({
         name: 'app.tsx - staticDomains',
         status: 'fail',
-        message: '❌ 未包含 photon-site.pages.dev',
+        message: '❌ 未包含 photon.gravito.dev',
       })
     }
 
     // 檢查 baseUrl
-    if (content.includes('VITE_BASE_URL') || content.includes('photon-site.pages.dev')) {
+    if (content.includes('VITE_BASE_URL') || content.includes('photon.gravito.dev')) {
       results.push({
         name: 'app.tsx - baseUrl',
         status: 'pass',
@@ -67,7 +64,7 @@ async function checkBuildStatic() {
     const content = await readFile(filePath, 'utf-8')
 
     // 檢查 BASE_URL
-    if (content.includes('BASE_URL') || content.includes('photon-site.pages.dev')) {
+    if (content.includes('BASE_URL') || content.includes('photon.gravito.dev')) {
       results.push({
         name: 'build-static.ts - BASE_URL',
         status: 'pass',
@@ -81,18 +78,18 @@ async function checkBuildStatic() {
       })
     }
 
-    // 檢查是否還有硬編碼的舊域名
-    if (content.includes('photon.gravito.dev') && !content.includes('photon-site.pages.dev')) {
+    // 檢查域名配置
+    if (content.includes('photon.gravito.dev')) {
       results.push({
         name: 'build-static.ts - 域名檢查',
-        status: 'warning',
-        message: '⚠️  仍包含舊域名 photon.gravito.dev（如果這是備用域名則可忽略）',
+        status: 'pass',
+        message: '✅ 域名配置正確 (photon.gravito.dev)',
       })
     } else {
       results.push({
         name: 'build-static.ts - 域名檢查',
-        status: 'pass',
-        message: '✅ 域名配置正確',
+        status: 'warning',
+        message: '⚠️ 未發現主域名 photon.gravito.dev',
       })
     }
   } catch (error) {
