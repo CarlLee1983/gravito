@@ -1,7 +1,12 @@
-import { join } from 'path'
-import { fileURLToPath } from 'url'
+import { existsSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { ClientMessage, ServerMessage } from '../types'
 import type { ISerializer } from './ISerializer'
+
+// ESM-compatible __dirname
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 // We use dynamic import for protobufjs to avoid hard dependency if not used
 // This allows the package to be used without protobufjs if only JSON is needed
@@ -23,10 +28,45 @@ export class ProtobufSerializer implements ISerializer {
 
   constructor(private protoPath?: string) {
     if (!protoPath) {
-      // Default path assuming standard structure
-      // Try relative to __dirname first (serializers directory)
-      this.protoPath = join(__dirname, '../proto/ripple.proto')
+      this.protoPath = this.resolveProtoPath()
     }
+  }
+
+  /**
+   * Resolves the proto file path using a multi-level fallback strategy.
+   *
+   * Search order:
+   * 1. Relative to current file (ESM: import.meta.url)
+   * 2. From cwd as package root (common in test environments)
+   * 3. From cwd as monorepo root
+   */
+  private resolveProtoPath(): string {
+    const candidatePaths = [
+      // 1. 相對於當前檔案（開發環境：src/serializers -> ../proto）
+      join(__dirname, '../proto/ripple.proto'),
+
+      // 2. 相對於當前檔案，但在 dist 構建後（dist/serializers -> ../../src/proto）
+      join(__dirname, '../../src/proto/ripple.proto'),
+
+      // 3. 從 cwd 作為 package 根目錄（測試環境常見）
+      join(process.cwd(), 'src/proto/ripple.proto'),
+      join(process.cwd(), 'proto/ripple.proto'),
+      join(process.cwd(), 'dist/proto/ripple.proto'),
+
+      // 4. 從 cwd 作為 monorepo 根目錄
+      join(process.cwd(), 'packages/ripple/src/proto/ripple.proto'),
+      join(process.cwd(), 'packages/ripple/dist/proto/ripple.proto'),
+    ]
+
+    for (const candidatePath of candidatePaths) {
+      const resolvedPath = resolve(candidatePath)
+      if (existsSync(resolvedPath)) {
+        return resolvedPath
+      }
+    }
+
+    // 沒找到時返回預設路徑（讓後續的 init() 顯示詳細錯誤）
+    return join(__dirname, '../proto/ripple.proto')
   }
 
   /**
@@ -36,6 +76,15 @@ export class ProtobufSerializer implements ISerializer {
     if (this.initialized) return
 
     try {
+      // 先檢查文件是否存在
+      if (!existsSync(this.protoPath!)) {
+        throw new Error(
+          `Proto file not found at: ${this.protoPath}\n` +
+            `Working directory: ${process.cwd()}\n` +
+            `Please ensure ripple.proto exists or provide a custom protoPath.`
+        )
+      }
+
       const protobuf = await import('protobufjs')
       protoRoot = await protobuf.load(this.protoPath!)
       ClientMessageProto = protoRoot.lookupType('ripple.ClientMessage')
@@ -43,7 +92,9 @@ export class ProtobufSerializer implements ISerializer {
       this.initialized = true
     } catch (error) {
       throw new Error(
-        `Failed to initialize ProtobufSerializer: ${(error as Error).message}. Ensure 'protobufjs' is installed.`
+        `Failed to initialize ProtobufSerializer: ${(error as Error).message}\n` +
+          `Proto path attempted: ${this.protoPath}\n` +
+          `Ensure 'protobufjs' is installed.`
       )
     }
   }
@@ -153,11 +204,15 @@ export class ProtobufSerializer implements ISerializer {
   private fromProtoPayload(obj: any): ClientMessage {
     // oneof field name is usually the key in `obj`
     if (obj.subscribe) {
+      const auth = obj.subscribe.auth
       return {
         type: 'subscribe',
         channel: obj.subscribe.channel,
-        auth: obj.subscribe.auth
-          ? { socketId: obj.subscribe.auth.socket_id, signature: obj.subscribe.auth.signature }
+        auth: auth
+          ? {
+              socketId: auth.socket_id || auth.socketId || '',
+              signature: auth.signature || '',
+            }
           : undefined,
       }
     }

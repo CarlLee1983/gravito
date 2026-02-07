@@ -254,7 +254,7 @@ describe('RippleServer Additional Tests', () => {
     })
 
     it.skip('should support fluent to() API for broadcasting', async () => {
-      // TODO: Debug broadcast message encoding issue
+      // TODO: Fix broadcast message serialization
       server = new RippleServer({ port: 0 })
       await server.init()
 
