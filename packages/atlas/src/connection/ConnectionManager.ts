@@ -5,10 +5,16 @@
 
 import { AtlasObservability } from '../observability'
 import {
+  type AdaptivePoolConfig,
+  AdaptivePoolManager,
+  DEFAULT_ADAPTIVE_CONFIG,
+} from '../pool/AdaptivePoolManager'
+import {
   DEFAULT_HEALTH_CHECK_CONFIG,
   type PoolHealthCheckConfig,
   PoolHealthChecker,
 } from '../pool/PoolHealthChecker'
+import { createDefaultStrategies } from '../pool/PoolStrategy'
 import { DEFAULT_WARMER_CONFIG, PoolWarmer, type PoolWarmerConfig } from '../pool/PoolWarmer'
 import type { ConnectionConfig, ConnectionContract, PoolHealth } from '../types'
 import { Connection } from './Connection'
@@ -30,6 +36,7 @@ export class ConnectionManager {
   private cleanupInterval?: ReturnType<typeof setInterval>
   private healthChecker?: PoolHealthChecker
   private warmer?: PoolWarmer
+  private adaptiveManager?: AdaptivePoolManager
 
   private readonly MAX_IDLE_TIME = 1000 * 60 * 10 // 10 minutes
   private readonly CLEANUP_INTERVAL = 1000 * 60 * 5 // Check every 5 minutes
@@ -300,14 +307,48 @@ export class ConnectionManager {
   }
 
   /**
+   * Enable adaptive connection pool management
+   * Automatically adjusts pool sizes based on load patterns
+   */
+  enableAdaptive(config: Partial<AdaptivePoolConfig> = {}): void {
+    const strategies = createDefaultStrategies()
+    const strategy = strategies.hybrid
+
+    this.adaptiveManager = new AdaptivePoolManager(this, strategy, {
+      ...DEFAULT_ADAPTIVE_CONFIG,
+      ...config,
+    })
+
+    this.adaptiveManager.start()
+  }
+
+  /**
+   * Disable adaptive connection pool management
+   */
+  disableAdaptive(): void {
+    if (this.adaptiveManager) {
+      this.adaptiveManager.stop()
+      this.adaptiveManager = undefined
+    }
+  }
+
+  /**
+   * Get adaptive pool manager instance (if enabled)
+   */
+  getAdaptiveManager(): AdaptivePoolManager | undefined {
+    return this.adaptiveManager
+  }
+
+  /**
    * Shutdown the connection manager.
-   * Stops the idle cleanup interval, health checking, and disconnects all connections.
+   * Stops the idle cleanup interval, health checking, adaptive management, and disconnects all connections.
    *
    * @returns A promise that resolves when shutdown is complete.
    */
   async shutdown(): Promise<void> {
     this.stopCleanup()
     this.disableHealthCheck()
+    this.disableAdaptive()
     await this.disconnectAll()
   }
 }

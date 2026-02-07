@@ -34,16 +34,14 @@ export class AtlasMetrics {
 
       // Connection pool metrics
       try {
-        // @ts-expect-error - ObservableGauge is available in newer OpenTelemetry versions
-        if (this.meter.createObservableGauge) {
-          // @ts-expect-error
-          this.poolSize = this.meter.createObservableGauge('db.client.connections.usage', {
+        const meterAny = this.meter as any
+        if (meterAny.createObservableGauge) {
+          this.poolSize = meterAny.createObservableGauge('db.client.connections.usage', {
             description: 'Number of connections in various states',
             unit: '{connection}',
           })
 
-          // @ts-expect-error
-          this.poolUtilization = this.meter.createObservableGauge(
+          this.poolUtilization = meterAny.createObservableGauge(
             'db.client.connections.utilization',
             {
               description: 'Connection pool utilization ratio',
@@ -87,10 +85,9 @@ export class AtlasMetrics {
       }
 
       // Record idle, active, and pending connections
-      // @ts-expect-error
-      if (this.poolSize?.addCallback) {
-        // @ts-expect-error
-        this.poolSize.addCallback((result) => {
+      const poolSizeAny = this.poolSize as any
+      if (poolSizeAny?.addCallback) {
+        poolSizeAny.addCallback((result: any) => {
           result.observe(stats.idle, {
             'db.connection.name': connectionName,
             state: 'idle',
@@ -108,10 +105,9 @@ export class AtlasMetrics {
 
       // Record utilization ratio
       const utilization = stats.active / stats.max
-      // @ts-expect-error
-      if (this.poolUtilization?.addCallback) {
-        // @ts-expect-error
-        this.poolUtilization.addCallback((result) => {
+      const poolUtilizationAny = this.poolUtilization as any
+      if (poolUtilizationAny?.addCallback) {
+        poolUtilizationAny.addCallback((result: any) => {
           result.observe(utilization, {
             'db.connection.name': connectionName,
           })

@@ -757,6 +757,20 @@ export interface DriverContract {
    * @returns Pool statistics or null if not supported
    */
   getPoolStats?(): PoolStats | null
+
+  /**
+   * Get connection pool health status
+   * @optional Only implemented by drivers that support connection pooling
+   * @returns Pool health information
+   */
+  getPoolHealth?(): PoolHealth
+
+  /**
+   * Adjust the connection pool size dynamically
+   * @optional Only implemented by drivers that support pool resizing
+   * @param targetSize - Target number of connections
+   */
+  adjustPoolSize?(targetSize: number): Promise<void>
 }
 
 /**

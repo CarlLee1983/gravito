@@ -132,7 +132,6 @@ export class PoolWarmer {
 
     try {
       const connection = this.connectionManager.connection(name)
-      const _config = connection.getConfig()
       const targetCount = this.config.targetConnections ?? 2
       const concurrency = this.config.concurrency ?? 2
       const timeout = this.config.timeout ?? 5000

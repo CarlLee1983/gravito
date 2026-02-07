@@ -32,8 +32,11 @@ export class PostgresDriver implements DriverContract {
   private transactionClient: PgClient | null = null
   private preparedStatements = new Map<string, string>()
   private statementCounter = 0
+  private poolConfig: PostgresConfig
 
-  constructor(private readonly config: PostgresConfig) {}
+  constructor(config: PostgresConfig) {
+    this.poolConfig = { ...config }
+  }
 
   /**
    * Get driver name
@@ -55,25 +58,25 @@ export class PostgresDriver implements DriverContract {
       const pg = await this.loadPgModule()
 
       // Build connection config
-      const poolConfig: PgPoolConfig = {
-        host: this.config.host ?? 'localhost',
-        port: this.config.port ?? 5432,
-        database: this.config.database,
-        user: this.config.username,
-        password: this.config.password,
-        ssl: this.config.ssl,
+      const pgPoolConfig: PgPoolConfig = {
+        host: this.poolConfig.host ?? 'localhost',
+        port: this.poolConfig.port ?? 5432,
+        database: this.poolConfig.database,
+        user: this.poolConfig.username,
+        password: this.poolConfig.password,
+        ssl: this.poolConfig.ssl,
         // Pool settings
-        min: this.config.pool?.min ?? 2,
-        max: this.config.pool?.max ?? 10,
-        idleTimeoutMillis: this.config.pool?.idleTimeout ?? 30000,
-        connectionTimeoutMillis: this.config.pool?.acquireTimeout ?? 5000,
+        min: this.poolConfig.pool?.min ?? 2,
+        max: this.poolConfig.pool?.max ?? 10,
+        idleTimeoutMillis: this.poolConfig.pool?.idleTimeout ?? 30000,
+        connectionTimeoutMillis: this.poolConfig.pool?.acquireTimeout ?? 5000,
       }
 
-      if (this.config.applicationName) {
-        poolConfig.application_name = this.config.applicationName
+      if (this.poolConfig.applicationName) {
+        pgPoolConfig.application_name = this.poolConfig.applicationName
       }
 
-      this.pool = new pg.Pool(poolConfig)
+      this.pool = new pg.Pool(pgPoolConfig)
       this.connected = true
     } catch (error) {
       throw new ConnectionError('Could not connect to PostgreSQL', error)
@@ -327,7 +330,7 @@ export class PostgresDriver implements DriverContract {
       pending,
       active,
       total,
-      max: this.config.pool?.max ?? 10,
+      max: this.poolConfig.pool?.max ?? 10,
     }
   }
 
@@ -369,6 +372,46 @@ export class PostgresDriver implements DriverContract {
       message: 'Connection pool operating normally',
       stats,
       lastCheck: new Date(),
+    }
+  }
+
+  /**
+   * Adjust the connection pool size
+   * Note: pg Pool doesn't support dynamic resizing, so we reconnect with new size
+   */
+  async adjustPoolSize(targetSize: number): Promise<void> {
+    if (!this.pool) {
+      return
+    }
+
+    const currentMax = this.poolConfig.pool?.max ?? 10
+    if (targetSize === currentMax) {
+      return
+    }
+
+    // Clamp target size to reasonable bounds
+    const min = this.poolConfig.pool?.min ?? 2
+    const max = 100
+    const adjustedSize = Math.max(min, Math.min(max, targetSize))
+
+    try {
+      // Disconnect old pool
+      await this.disconnect()
+
+      // Update config with new pool size
+      this.poolConfig = {
+        ...this.poolConfig,
+        pool: {
+          ...this.poolConfig.pool,
+          max: adjustedSize,
+        },
+      }
+
+      // Reconnect with new size
+      await this.connect()
+    } catch (error) {
+      console.error('Failed to adjust PostgreSQL pool size:', error)
+      throw error
     }
   }
 
