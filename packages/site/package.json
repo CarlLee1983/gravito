@@ -22,8 +22,7 @@
     "@gravito/constellation": "workspace:*",
     "@gravito/photon": "workspace:*"
   },
-  "devDependencies": {
-  },
+  "devDependencies": {},
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "homepage": "https://github.com/gravito-framework/gravito#readme",
