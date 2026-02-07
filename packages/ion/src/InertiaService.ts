@@ -8,7 +8,7 @@
  */
 
 import type { GravitoContext, GravitoVariables, ViewService } from '@gravito/core'
-import { InertiaError } from './errors'
+import { InertiaConfigError, InertiaDataError, InertiaError, InertiaTemplateError } from './errors'
 
 /**
  * Configuration options for the InertiaService instance.
@@ -242,22 +242,30 @@ export class InertiaService {
         const partialExcept = this.context.req.header('X-Inertia-Partial-Except')
         const partialComponent = this.context.req.header('X-Inertia-Partial-Component')
 
-        const only = partialData && partialComponent === component ? partialData.split(',') : []
-        const except =
-          partialExcept && partialComponent === component ? partialExcept.split(',') : []
+        const isPartial = partialComponent === component
+        const only = partialData && isPartial ? partialData.split(',') : []
+        const except = partialExcept && isPartial ? partialExcept.split(',') : []
 
         const resolved: Record<string, unknown> = {}
 
         for (const [key, value] of Object.entries(p)) {
-          if (only.length > 0 && !only.includes(key)) {
-            continue
-          }
+          if (only.length > 0 && !only.includes(key)) continue
+          if (except.length > 0 && except.includes(key)) continue
 
-          if (except.length > 0 && except.includes(key)) {
-            continue
+          if (typeof value === 'function') {
+            const propStart = performance.now()
+            try {
+              resolved[key] = await value()
+              this.log('debug', `[InertiaService] Resolved lazy prop: ${key}`, {
+                duration: `${(performance.now() - propStart).toFixed(2)}ms`,
+              })
+            } catch (err) {
+              this.log('error', `[InertiaService] Failed to resolve lazy prop: ${key}`, { err })
+              throw new InertiaDataError(`Failed to resolve lazy prop: ${key}`, { cause: err })
+            }
+          } else {
+            resolved[key] = value
           }
-
-          resolved[key] = typeof value === 'function' ? await value() : value
         }
 
         return resolved
@@ -292,8 +300,12 @@ export class InertiaService {
       try {
         pageJson = JSON.stringify(page)
       } catch (error) {
-        this.log('error', '[InertiaService] Serialization failed', { component, error })
-        throw InertiaError.serializationFailed(component, error)
+        throw new InertiaDataError(
+          `Inertia page serialization failed for component: ${component}`,
+          {
+            cause: error,
+          }
+        )
       }
 
       let response: Response
@@ -313,8 +325,10 @@ export class InertiaService {
         const rootView = this.config.rootView ?? 'app'
 
         if (!view) {
-          this.log('error', '[InertiaService] ViewService not found')
-          throw InertiaError.viewServiceMissing()
+          throw new InertiaConfigError(
+            'ViewService (OrbitPrism) is required for initial page load but was not found in context.',
+            { hint: 'Ensure OrbitPrism is loaded before OrbitIon in your orbit configuration' }
+          )
         }
 
         const isDev = process.env.NODE_ENV !== 'production'

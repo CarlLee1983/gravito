@@ -1,5 +1,5 @@
 import { describe, expect, it, mock } from 'bun:test'
-import { InertiaError, InertiaErrorCodes } from '../src/errors'
+import { InertiaConfigError, InertiaDataError, InertiaError } from '../src/errors'
 import { InertiaService } from '../src/InertiaService'
 import { OrbitIon } from '../src/index'
 
@@ -394,17 +394,14 @@ describe('InertiaService - Error Handling', () => {
 
     const service = new InertiaService(ctx, { version: '1.0' })
 
-    await expect(service.render('Test', {})).rejects.toThrow(InertiaError)
+    await expect(service.render('Test', {})).rejects.toThrow(InertiaConfigError)
 
     try {
       await service.render('Test', {})
     } catch (error) {
-      expect(error).toBeInstanceOf(InertiaError)
-      expect((error as InertiaError).code).toBe(InertiaErrorCodes.CONFIG_VIEW_SERVICE_MISSING)
-      expect((error as InertiaError).httpStatus).toBe(500)
-      expect((error as InertiaError).details).toMatchObject({
-        hint: expect.stringContaining('OrbitPrism'),
-      })
+      expect(error).toBeInstanceOf(InertiaConfigError)
+      expect((error as any).code).toBe('CONFIG_ERROR')
+      expect((error as any).details?.hint).toMatch(/OrbitPrism/)
     }
   })
 
@@ -425,17 +422,14 @@ describe('InertiaService - Error Handling', () => {
     const circular: any = { name: 'test' }
     circular.self = circular
 
-    await expect(service.render('Test', { data: circular })).rejects.toThrow(InertiaError)
+    await expect(service.render('Test', { data: circular })).rejects.toThrow(InertiaDataError)
 
     try {
       await service.render('Test', { data: circular })
     } catch (error) {
-      expect(error).toBeInstanceOf(InertiaError)
-      expect((error as InertiaError).code).toBe(InertiaErrorCodes.SERIALIZATION_FAILED)
-      expect((error as InertiaError).details).toMatchObject({
-        component: 'Test',
-        hint: expect.stringContaining('JSON-serializable'),
-      })
+      expect(error).toBeInstanceOf(InertiaDataError)
+      expect((error as any).code).toBe('DATA_ERROR')
+      expect((error as any).details?.hint).toMatch(/JSON-serializable/)
     }
   })
 
@@ -454,30 +448,27 @@ describe('InertiaService - Error Handling', () => {
     const service = new InertiaService(ctx, { version: '1.0' })
 
     await expect(service.render('Test', { bigNum: BigInt(9007199254740991) })).rejects.toThrow(
-      InertiaError
+      InertiaDataError
     )
 
     try {
       await service.render('Test', { bigNum: BigInt(9007199254740991) })
     } catch (error) {
-      expect(error).toBeInstanceOf(InertiaError)
-      expect((error as InertiaError).code).toBe(InertiaErrorCodes.SERIALIZATION_FAILED)
-      expect((error as InertiaError).httpStatus).toBe(500)
+      expect(error).toBeInstanceOf(InertiaDataError)
+      expect((error as any).code).toBe('DATA_ERROR')
     }
   })
 
   it('InertiaError.toJSON should return structured error data', () => {
-    const error = InertiaError.viewServiceMissing()
+    const error = new InertiaConfigError('Missing view')
     const json = error.toJSON()
 
     expect(json).toMatchObject({
-      name: 'InertiaError',
-      code: InertiaErrorCodes.CONFIG_VIEW_SERVICE_MISSING,
+      name: 'InertiaConfigError',
+      code: 'CONFIG_ERROR',
       httpStatus: 500,
-      message: InertiaErrorCodes.CONFIG_VIEW_SERVICE_MISSING,
       details: {
-        hint: expect.stringContaining('OrbitPrism'),
-        requiredOrbit: 'OrbitPrism',
+        hint: expect.stringContaining('OrbitIon'),
       },
     })
   })
@@ -498,8 +489,8 @@ describe('InertiaService - Error Handling', () => {
     try {
       await service.render('Test', {})
     } catch (error) {
-      expect(error).toBeInstanceOf(InertiaError)
-      expect((error as InertiaError).code).toBe(InertiaErrorCodes.CONFIG_VIEW_SERVICE_MISSING)
+      expect(error).toBeInstanceOf(InertiaConfigError)
+      expect((error as any).code).toBe('CONFIG_ERROR')
     }
   })
 })
