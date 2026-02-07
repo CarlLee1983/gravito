@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process'
-import { existsSync, mkdirSync, rmSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs'
 
 // Clean dist directory
 if (existsSync('./dist')) {
@@ -25,6 +25,12 @@ if (!result.success) {
     console.error(log)
   }
   process.exit(1)
+}
+
+// Copy proto files to dist
+if (existsSync('./src/proto')) {
+  cpSync('./src/proto', './dist/proto', { recursive: true })
+  console.log('📦 Copied proto files to dist/')
 }
 
 // Generate .cjs version

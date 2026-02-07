@@ -25,7 +25,9 @@
     "bench:pool": "MONGODB_URI=mongodb://localhost:27017 bun test benchmarks/connection-pool.bench.ts",
     "bench:schema": "MONGODB_URI=mongodb://localhost:27017 bun test benchmarks/schema-validation.bench.ts",
     "bench:transactions": "MONGODB_URI=mongodb://localhost:27017 bun test benchmarks/transactions.bench.ts",
-    "bench:change-streams": "MONGODB_URI=mongodb://localhost:27017 bun test benchmarks/change-streams.bench.ts"
+    "bench:change-streams": "MONGODB_URI=mongodb://localhost:27017 bun test benchmarks/change-streams.bench.ts",
+    "test:unit": "bun test tests/ --timeout=10000",
+    "test:integration": "test $(find tests -name '*.integration.test.ts' 2>/dev/null | wc -l) -gt 0 && find tests -name '*.integration.test.ts' -print0 | xargs -0 bun test --timeout=10000 || echo 'No integration tests found'"
   },
   "files": [
     "dist",

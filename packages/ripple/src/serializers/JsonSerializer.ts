@@ -19,7 +19,7 @@ export class JsonSerializer implements ISerializer {
     return JSON.stringify(message)
   }
 
-  deserialize(data: string | Buffer | ArrayBuffer): ClientMessage {
+  deserialize(data: string | Buffer | ArrayBuffer | Uint8Array): ClientMessage {
     let str: string
     if (typeof data === 'string') {
       str = data

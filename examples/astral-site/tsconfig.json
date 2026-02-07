@@ -8,10 +8,10 @@
     "baseUrl": ".",
     "paths": {
       "@gravito/astral": ["../../packages/astral/src/index.ts"],
-      "@gravito/core": ["../../packages/core/src/index.ts"],
+      "@gravito/core": ["../../packages/core/src/index.ts"], "@gravito/atlas": ["../../packages/atlas/src/index.ts"],
       "@gravito/impulse": ["../../packages/impulse/src/index.ts"]
     },
-    "types": ["bun-types"]
+    "types": ["node"]
   },
   "include": ["src/**/*"]
 }

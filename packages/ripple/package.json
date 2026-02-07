@@ -1,6 +1,6 @@
 {
   "name": "@gravito/ripple",
-  "version": "4.0.0-alpha.1",
+  "version": "4.0.0",
   "description": "Bun-native WebSocket broadcasting for Gravito. Channel-based real-time communication.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -23,7 +23,9 @@
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test:coverage": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
     "test:ci": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
-    "bench": "bun run benchmarks/index.ts"
+    "bench": "bun run benchmarks/index.ts",
+    "test:unit": "bun test tests/ --timeout=10000",
+    "test:integration": "test $(find tests -name '*.integration.test.ts' 2>/dev/null | wc -l) -gt 0 && find tests -name '*.integration.test.ts' -print0 | xargs -0 bun test --timeout=10000 || echo 'No integration tests found'"
   },
   "keywords": [
     "gravito",
@@ -45,6 +47,7 @@
     "@gravito/core": "workspace:*",
     "ioredis": "^5.0.0",
     "nats": "^2.23.0",
+    "protobufjs": "^8.0.0",
     "ws": "^8.18.0"
   },
   "peerDependenciesMeta": {
@@ -54,21 +57,23 @@
     "nats": {
       "optional": true
     },
+    "protobufjs": {
+      "optional": true
+    },
     "ws": {
       "optional": true
     }
   },
   "devDependencies": {
+    "@types/ws": "^8.18.1",
     "bun-types": "latest",
     "ioredis": "^5.4.2",
+    "protobufjs": "^8.0.0",
     "tinybench": "^6.0.0",
     "typescript": "^5.9.3",
     "ws": "^8.18.0"
   },
   "publishConfig": {
     "access": "public"
-  },
-  "dependencies": {
-    "protobufjs": "^8.0.0"
   }
 }

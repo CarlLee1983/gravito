@@ -12,7 +12,9 @@ mock.module('nats', () => {
 
   return {
     connect: async () => {
-      if (shouldFailConnect) throw new Error('Connect Failed')
+      if (shouldFailConnect) {
+        throw new Error('Connect Failed')
+      }
       return {
         publish: mock(() => {}),
         subscribe: mock(() => ({
@@ -28,7 +30,9 @@ mock.module('nats', () => {
         jetstream: () => ({
           views: {
             kv: async (name: string) => {
-              if (name === 'ripple_presence_fail') throw new Error('KV Error')
+              if (name === 'ripple_presence_fail') {
+                throw new Error('KV Error')
+              }
               return {
                 put: mock(async (key: string, value: Uint8Array) => {
                   kvStored.set(`${name}:${key}`, value)

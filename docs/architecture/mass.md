@@ -1,109 +1,158 @@
 ---
 title: Mass Architecture 技術架構規格書
-version: 1.0.0
+version: 3.0.1
 status: Stable
 tier: C
-last_updated: 2026-01-29
+last_updated: 2026-02-07
+dependencies:
+  - "@gravito/core": "workspace:*"
+  - "@hono/typebox-validator": "^1.1.0"
+  - "@sinclair/typebox": "^0.34.0"
 ---
 
-# 🌌 Mass Architecture 技術架構規格書 (v1.0)
+# 🌌 Mass Architecture 技術架構規格書 (v3.0)
+
+> **狀態**：Stable
+> **層級**：Tier C (核心工具模組)
+> **最後更新**：2026-02-07
 
 本文件詳述 `@gravito/mass` 的內部架構、TypeBox 整合策略以及與 `OrbitImpulse` 的定位差異。
 
 ---
 
-## 1. 核心哲學：The Weight of Integrity
+## 1. 核心哲學
 
-Mass 與 Impulse 同為驗證模組，但側重點截然不同：
-- **Impulse**: Class-based, Declarative, OOP 風格。適合複雜業務邏輯與權限校驗。
-- **Mass**: Schema-based, Functional, FP 風格。適合高效能 API、微服務與邊緣運算 (Edge)。
+### 1.1 設計目標
+- **Zero-overhead**：在執行時達到接近原生的驗證速度。
+- **Type Safety**：利用 TypeScript 泛型推斷，實現端到端的型別安全。
+- **Interoperability**：完全相容 JSON Schema 與 OpenAPI 標準。
 
-Mass 選擇 **TypeBox** 作為核心引擎，原因在於其獨特的「編譯時驗證器生成」特性，能在執行時達到接近原生的驗證速度。
+### 1.2 核心價值
+Mass 是 Gravito 框架中的「重量級」驗證引擎，它選用 **TypeBox** 作為核心，因為其獨特的「編譯時驗證器生成」特性，極適合高效能 API 與邊緣運算 (Edge) 環境。
+
+### 1.3 適用場景
+- ✅ **高效能 API**：需要極低延遲的驗證過程。
+- ✅ **微服務與 Edge**：輕量化且與 JSON 標準高度整合。
+- ✅ **文檔驅動開發**：需要自動生成 OpenAPI/Swagger 定義。
 
 ---
 
-## 2. 模組組件分析
+## 2. 安裝與配置
 
-### 2.1 Validator (Core)
+### 2.1 安裝
+```bash
+bun add @gravito/mass
+```
+
+### 2.2 快速開始
+```typescript
+import { Photon } from '@gravito/photon'
+import { Schema, validate } from '@gravito/mass'
+
+const app = new Photon()
+
+const RegisterSchema = Schema.Object({
+  username: Schema.String({ minLength: 3 }),
+  email: Schema.String({ format: 'email' })
+})
+
+app.post('/register', validate('json', RegisterSchema), (c) => {
+  const data = c.req.valid('json')
+  return c.json({ success: true, user: data.username })
+})
+```
+
+---
+
+## 3. 模組組件分析
+
+### 3.1 Validator (Core)
 - **職責**：封裝 TypeBox Validator 為 Photon 中間件。
 - **位置**：`src/validator.ts`
-- **實作**：直接重用了 `@hono/typebox-validator` 的核心邏輯 (`tbValidator`)，確保與 Hono 生態的相容性，同時加上了 Gravito 的型別增強。
+- **實作**：封裝 `@hono/typebox-validator`，並強化了 Photon 的型別推斷與 JSDoc 支援。
 
-### 2.2 Schema Builder
-- **職責**：提供 Fluent API 構建 JSON Schema。
-- **位置**：`src/index.ts` (Re-export)
-- **機制**：直接導出 `@sinclair/typebox` 的 `Type` 物件為 `Schema`，保持 API 一致性但更符合 Gravito 命名慣例。
+### 3.2 Coercion Layer
+- **職責**：處理非結構化數據（如 Query String, Path Params）的型別轉換。
+- **位置**：`src/coercion.ts`
 
-### 2.3 Utility Layer
-- **職責**：提供常見的 Schema 操作輔助函數。
-- **位置**：`src/utils.ts`
-- **Partial**: 封裝 `Type.Partial`，簡化 PATCH 請求的 Schema 定義。
+### 3.3 OpenAPI Integration
+- **職責**：將 TypeBox Schema 轉換為 OpenAPI/Astral 相容定義。
+- **位置**：`src/openapi.ts`
 
 ---
 
-## 3. 技術規格與設計決策
+## 4. 架構設計
 
-### 3.1 為什麼選擇 TypeBox？
-- **效能**：TypeBox 使用 `new Function` 生成優化的驗證代碼，比 Zod/Valibot 快 10-50 倍 (在某些場景下)。
-- **JSON Schema 相容**：TypeBox 定義的 Schema 本質上就是 JSON Schema，這使得與 OpenAPI (Swagger) 的整合變得零成本。
-- **零依賴**：TypeBox 是一個極其輕量的庫，適合 Serverless 與 Edge 環境。
+### 4.1 為什麼選擇 TypeBox？
+1. **效能**：比 Zod/Valibot 快 10-50 倍。
+2. **JSON Schema 相容**：轉化為 OpenAPI 的成本幾乎為零。
+3. **零依賴**：極其輕量，適合 Serverless 環境。
 
-### 3.2 與 Photon 的整合
-Mass 利用 TypeScript 的泛型推斷，將驗證後的型別直接注入到 `c.req.valid('json')`。
-- **Inference**：
-  ```typescript
-  // 中間件定義
-  MiddlewareHandler<E, P, { in: { json: Static<T> }, out: { json: Static<T> } }>
-  ```
-- 這確保了在 Controller 中不需要手動轉型 (Type Casting)。
+### 4.2 資料流向 (Data Flow)
 
-### 3.3 錯誤處理 Hooks
-Mass 允許透過 `ValidationHook` 攔截驗證結果。
-- **預設行為**：回傳 400 Bad Request。
-- **自定義**：開發者可以傳入 Hook 函數，自定義錯誤格式 (如 JSON:API 或 Problem Details RFC 7807)。
-
----
-
-## 4. 潛在風險與效能評估
-
-### 4.1 錯誤訊息的可讀性
-TypeBox 原生的錯誤訊息通常較為機械化 (e.g., `Expected string, received number`)。
-- **限制**：相較於 Zod，TypeBox 的錯誤訊息客製化較為繁瑣。
-- **建議**：若需高度客製化的 i18n 錯誤訊息，Impulse 是更好的選擇。
-
-### 4.2 編譯開銷 (Startup Time)
-雖然 Runtime 快，但 TypeBox 在首次使用 Schema 時需要編譯 Validator。
-- **風險**：對於擁有數千個 Schema 的大型應用，啟動時間可能微幅增加。
-- **緩解**：由於是 Lazy Compilation，通常影響不大。
+```mermaid
+graph TD
+    Request[Incoming Request] --> Extractor[Data Extractor]
+    Extractor --> Coercion{Needs Coercion?}
+    Coercion -- Yes --> Coerce[Coercible Types Handler]
+    Coercion -- No --> Validator[TypeBox Validator]
+    Coerce --> Validator
+    Validator -- Fail --> ErrorHandler[Error Enhancer/i18n]
+    Validator -- Pass --> Context[Inject to c.req.valid]
+    ErrorHandler --> Response[400 Bad Request]
+    Context --> Controller[Business Handler]
+```
 
 ---
 
-## 5. 後續優化建議
+## 5. API 參考
 
-### 短期 (v1.1)
-1. **Format Registry**：預註冊常用的 TypeBox Formats (email, uuid, date-time)，簡化使用者配置。
-2. **OpenAPI Generator**：提供工具將 Mass Schema 直接轉換為 Astral 文檔定義。
+### 核心 API
+- `validate(source, schema, hook?)`: 主驗證中間件。
+  - `source`: `'json' | 'query' | 'param' | 'form'`
+  - `schema`: TypeBox TSchema
+  - `hook`: 自定義錯誤處理函數
 
-### 中期 (v1.2)
-1. **Coercion Helpers**：增強 Query 與 Param 的型別強制轉換 (Coercion) 支援，例如自動將字串 "true" 轉為布林值。
+### 工具函數 (Utilities)
+- `partial(schema)`: 將物件 Schema 的所有屬性設為選填。
+- `coerceData(data, schema)`: 手動執行數據修正與型別轉換。
 
-### 長期 (v2.0)
-1. **Universal Validator**：探索與 ArkType 或標準 Schema 介面的整合，提供更統一的驗證體驗。
+### OpenAPI / Astral
+- `typeboxToOpenApi(schema)`: 轉換為 OpenAPI JSON Schema。
+- `createAstralResource(options)`: 生成 Astral 文檔資源定義。
+
+---
+
+## 6. 測試與安全性
+
+### 6.1 測試指南
+- **單元測試**：使用 `bun test` 執行 `tests/*.test.ts`。
+- **涵蓋率**：維持 80% 以上的測試覆蓋率。
+- **整合測試**：參考 `tests/integration.test.ts` 確保與 Photon 路由的相容性。
+
+### 6.2 安全考量
+- **DoS 防護**：在 Schema 中使用 `maxLength`, `maxItems` 與 `additionalProperties: false` 限制惡意 Payloads。
+- **輸入驗證**：所有外部輸入必須通過 `validate` 中間件，禁止在 Handler 中使用非校驗數據。
+
+---
+
+## 7. 故障排除 (Troubleshooting)
+
+| 問題 | 可能原因 | 解決方案 |
+|------|---------|---------|
+| 驗證失敗但訊息不明 | 使用原生 TypeBox 訊息 | 調用 `enhanceError(errors, 'zh-TW')` 獲取友善訊息。 |
+| Query 數字變字串 | HTTP 協議特性 | 確保使用 `validate` 或 `coerceNumber` 處理 Query 參數。 |
+| 型別推斷為 any | 泛型丟失 | 檢查是否正確導入了 `TSchema` 與 `Static`。 |
+
+---
+
+## 8. 未來優化建議
+
+1. **Multipart 增強**：提升對上傳檔案的 Metadata（大小、MimeType）驗證。
+2. **效能基準測試**：建立自動化的 Benchmarking 工具，監控不同複雜度 Schema 的編譯耗時。
+3. **分布式驗證**：探索將 Schema 規則同步至 Edge 節點的機制。
 
 ---
 *Created by Gravito Architect.*
+*模板版本：v1.0.0*
 
-
-## 快速開始
-
-> 內容補齊中...
-
-
-## 架構設計
-
-> 內容補齊中...
-
-
-## API 參考
-
-> 內容補齊中...

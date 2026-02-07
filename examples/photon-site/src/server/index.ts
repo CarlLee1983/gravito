@@ -1,4 +1,3 @@
-/// <reference types="bun-types" />
 import path from 'node:path'
 import { InertiaService } from '@gravito/ion'
 import { Photon } from '@gravito/photon'

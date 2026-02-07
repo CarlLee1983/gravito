@@ -7,7 +7,7 @@
       "@gravito/core": ["../../packages/core/src/index.ts"],
       "@gravito/*": ["../../packages/*/src/index.ts"]
     },
-    "types": ["bun-types"]
+    "types": ["node"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]

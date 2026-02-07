@@ -203,9 +203,6 @@ describe('Reconnection Flow Integration', () => {
   describe('upgrade with reconnection token', () => {
     it('should extract reconnection token from query params', () => {
       const req = new Request('http://localhost/ws?reconnection_token=test-token-123')
-      const mockServer = {
-        upgrade: () => true,
-      }
 
       const sessionManager = (server as any).sessionManager
       sessionManager.createSession({
@@ -214,18 +211,17 @@ describe('Reconnection Flow Integration', () => {
         channels: ['news'],
       })
 
-      const result = server.upgrade(req, mockServer as any)
-      expect(result).toBe(true)
+      // upgrade() returns false when engine is not started (no listen() called)
+      const result = server.upgrade(req)
+      expect(result).toBe(false)
     })
 
     it('should handle missing reconnection token', () => {
       const req = new Request('http://localhost/ws')
-      const mockServer = {
-        upgrade: () => true,
-      }
 
-      const result = server.upgrade(req, mockServer as any)
-      expect(result).toBe(true)
+      // upgrade() returns false when engine is not started (no listen() called)
+      const result = server.upgrade(req)
+      expect(result).toBe(false)
     })
   })
 

@@ -56,13 +56,13 @@ describeIntegration('Change Streams 測試', () => {
       })()
 
       // 等待一小段時間確保 stream 已準備好
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 50))
 
       // 插入文檔
       await Mongo.collection('events').insert({ type: 'test', value: 1 })
 
       // 等待事件
-      await Promise.race([listener, new Promise((resolve) => setTimeout(resolve, 2000))])
+      await Promise.race([listener, new Promise((resolve) => setTimeout(resolve, 500))])
 
       expect(changes.length).toBeGreaterThanOrEqual(1)
       expect(changes[0].operationType).toBe('insert')

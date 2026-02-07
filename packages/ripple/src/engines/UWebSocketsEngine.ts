@@ -8,6 +8,7 @@
  * @since 5.0.0
  */
 
+import { randomUUID } from 'node:crypto'
 import type { ClientData } from '../types'
 import type { IRippleEngine, RippleSocket } from './IRippleEngine'
 
@@ -80,7 +81,10 @@ export class UWebSocketsRippleSocket implements RippleSocket {
       this.ws.send(data, false, compress)
     } else {
       // Convert Uint8Array to ArrayBuffer
-      const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
+      const buffer = data.buffer.slice(
+        data.byteOffset,
+        data.byteOffset + data.byteLength
+      ) as ArrayBuffer
       this.ws.send(buffer, true, compress)
     }
   }
@@ -107,13 +111,16 @@ export class UWebSocketsRippleSocket implements RippleSocket {
     if (typeof data === 'string') {
       this.ws.publish(topic, data, false)
     } else {
-      const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
+      const buffer = data.buffer.slice(
+        data.byteOffset,
+        data.byteOffset + data.byteLength
+      ) as ArrayBuffer
       this.ws.publish(topic, buffer, true)
     }
   }
 
   get raw(): WebSocket {
-    return this.ws
+    return this.ws as unknown as any // Cast to any because it's a uWS socket, not DOM WebSocket
   }
 }
 
@@ -147,17 +154,6 @@ export interface UWebSocketsEngineConfig {
  *
  * Leverages uWebSockets.js high-performance WebSocket implementation with native pub/sub support.
  * This engine provides excellent performance on Node.js (~90% of Bun's performance).
- *
- * @example
- * ```typescript
- * const engine = new UWebSocketsEngine({ port: 3000 })
- *
- * engine.onConnection((socket) => {
- *   console.log('Client connected:', socket.id)
- * })
- *
- * await engine.listen(3000)
- * ```
  */
 export class UWebSocketsEngine implements IRippleEngine {
   readonly name = 'node-uws'
@@ -187,12 +183,15 @@ export class UWebSocketsEngine implements IRippleEngine {
   async listen(port: number): Promise<void> {
     // Dynamically import uWebSockets.js (optional peer dependency)
     try {
+      // @ts-expect-error: uWebSockets.js is not installed locally
       this.uws = await import('uWebSockets.js')
     } catch (_error) {
       throw new Error(
         'uWebSockets.js is not installed. Install it with: npm install uWebSockets.js@uNetworking/uWebSockets.js#v20.44.0'
       )
     }
+
+    if (!this.uws) throw new Error('Failed to load uWebSockets.js module')
 
     // Create uWebSockets.js app
     this.app = this.config.tls
@@ -210,6 +209,19 @@ export class UWebSocketsEngine implements IRippleEngine {
       maxBackpressure: this.config.maxBackpressure ?? 1024 * 1024, // 1MB
 
       open: (ws) => {
+        // Initialize ClientData on connection
+        const data = ws.getUserData()
+
+        // Use Node.js crypto for UUIDs
+        const id = randomUUID()
+
+        // Manually hydrate the ClientData object which is empty initially
+        Object.assign(data, {
+          id,
+          channels: new Set<string>(),
+          remoteAddress: undefined, // uWS usually provides remote address via specialized API, skipping for now
+        })
+
         const socket = new UWebSocketsRippleSocket(ws)
         this.sockets.set(socket.id, socket)
         this.connectionHandler?.(socket)
@@ -269,8 +281,6 @@ export class UWebSocketsEngine implements IRippleEngine {
 
     // Close the listen socket
     if (this.listenSocket && this.uws) {
-      // uWebSockets.js doesn't expose a close method for listen sockets
-      // The server will be closed when the process exits
       this.listenSocket = undefined
     }
 
@@ -295,7 +305,11 @@ export class UWebSocketsEngine implements IRippleEngine {
       if (typeof data === 'string') {
         this.app.publish(topic, data, false)
       } else {
-        const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
+        // Safe cast for ArrayBufferLike
+        const buffer = data.buffer.slice(
+          data.byteOffset,
+          data.byteOffset + data.byteLength
+        ) as ArrayBuffer
         this.app.publish(topic, buffer, true)
       }
     }

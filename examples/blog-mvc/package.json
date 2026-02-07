@@ -8,7 +8,7 @@
     "dev:server": "NODE_ENV=development PORT=${PORT:-3001} bun run --watch src/index.ts",
     "dev:vite": "vite",
     "build": "vite build",
-    "typecheck": "bun vue-tsc --noEmit",
+    "typecheck": "vue-tsc --noEmit",
     "start": "bun run src/index.ts"
   },
   "dependencies": {
@@ -31,7 +31,6 @@
     "@types/marked": "^6.0.0",
     "@vitejs/plugin-vue": "^5.0.0",
     "autoprefixer": "^10.4.0",
-    "bun-types": "latest",
     "postcss": "^8.4.0",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.9.3",

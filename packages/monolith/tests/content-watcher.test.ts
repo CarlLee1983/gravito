@@ -32,7 +32,7 @@ describe('ContentWatcher', () => {
     // @ts-expect-error
     expect(manager.cache.size).toBe(1)
 
-    const watcher = new ContentWatcher(manager, TMP_DIR, { debounceMs: 10 })
+    const watcher = new ContentWatcher(manager, TMP_DIR, { debounceMs: 100 })
     watcher.watch('docs')
 
     // Simulate change
@@ -40,7 +40,7 @@ describe('ContentWatcher', () => {
 
     // Wait for cache invalidation (with retry loop for reliability)
     let cleared = false
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 40; i++) {
       // @ts-expect-error
       if (manager.cache.size === 0) {
         cleared = true

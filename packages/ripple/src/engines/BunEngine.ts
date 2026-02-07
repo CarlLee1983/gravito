@@ -202,7 +202,8 @@ export class BunEngine implements IRippleEngine {
    */
   upgrade(req: Request, options?: { userId?: string; reconnectionToken?: string }): boolean {
     if (!this.server) {
-      throw new Error('BunEngine: Server not started. Call listen() first.')
+      // Server not started - cannot upgrade
+      return false
     }
 
     const url = new URL(req.url)

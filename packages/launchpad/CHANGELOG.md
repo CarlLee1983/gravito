@@ -1,5 +1,12 @@
 # @gravito/launchpad
 
+## 1.3.1
+
+### Patch Changes
+
+- Updated dependencies [5a7f332]
+  - @gravito/ripple@4.0.0
+
 ## 1.3.0
 
 ### Minor Changes
@@ -32,14 +39,14 @@
 
 ```typescript
 // 舊版（仍然有效）
-const manager = new PoolManager(docker, repo)
+const manager = new PoolManager(docker, repo);
 
 // 新版（可選配置）
 const manager = new PoolManager(docker, repo, refurbish, router, {
   maxRockets: 10,
-  exhaustionStrategy: 'queue',
+  exhaustionStrategy: "queue",
   maxQueueSize: 50,
-})
+});
 ```
 
 ## 1.2.2

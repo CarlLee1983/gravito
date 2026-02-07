@@ -24,7 +24,7 @@ export interface ISerializer {
    * @param data - The raw data received from the client
    * @returns Parsed ClientMessage object
    */
-  deserialize(data: string | Buffer | ArrayBuffer): ClientMessage
+  deserialize(data: string | Buffer | ArrayBuffer | Uint8Array): ClientMessage
 
   /**
    * Serialize message for broadcasting with caching optimization.

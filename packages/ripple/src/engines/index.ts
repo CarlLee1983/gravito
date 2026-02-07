@@ -11,9 +11,8 @@ export type { BunEngineConfig } from './BunEngine'
 export { BunEngine, BunRippleSocket } from './BunEngine'
 export type { EngineFactory, IRippleEngine, RippleSocket } from './IRippleEngine'
 
-// Multi-runtime engines (v5.0 - planned)
-// TODO: Enable when uWebSockets.js and ws dependencies are properly configured
-// export type { UWebSocketsEngineConfig } from './UWebSocketsEngine'
-// export { UWebSocketsEngine, UWebSocketsRippleSocket } from './UWebSocketsEngine'
-// export type { WsEngineConfig } from './WsEngine'
-// export { WsEngine, WsRippleSocket } from './WsEngine'
+// Multi-runtime engines (v5.0)
+export type { UWebSocketsEngineConfig } from './UWebSocketsEngine'
+export { UWebSocketsEngine, UWebSocketsRippleSocket } from './UWebSocketsEngine'
+export type { WsEngineConfig } from './WsEngine'
+export { WsEngine, WsRippleSocket } from './WsEngine'

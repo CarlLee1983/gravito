@@ -188,14 +188,20 @@ describe('RedisStore Tag System', () => {
     const store = new RedisStore({ connection: 'tags-test' })
 
     const key = store.tagKey('temp:1', ['temporary'])
-    await store.put(key, 'expires soon', 0.1)
+    await store.put(key, 'expires soon', 1)
     await store.tagIndexAdd(['temporary'], key)
 
     const client = Redis.connection('tags-test')
     const tagMembersBefore = await client.smembers('tag:temporary')
     expect(tagMembersBefore).toContain(key)
 
-    await sleep(150)
+    // Verify value exists and TTL is set
+    const valueBeforeExpiry = await store.get(key)
+    expect(valueBeforeExpiry).toBe('expires soon')
+    const ttlBefore = await client.ttl(key)
+    expect(ttlBefore).toBeGreaterThan(0)
+
+    await sleep(1500)
 
     const expired = await store.get(key)
     expect(expired).toBeNull()
