@@ -60,6 +60,7 @@ export { Application, type ApplicationConfig } from './Application'
 export { type CommandHandler, CommandKernel } from './CommandKernel'
 export { ConfigManager } from './ConfigManager'
 export { Container, type Factory, type ServiceKey, type ServiceMap } from './Container'
+export { registerQueueCommands } from './cli/queue-commands'
 // Error Handler (extracted from PlanetCore for SRP)
 export {
   codeFromStatus,
@@ -99,6 +100,16 @@ export {
   ObservableHookManager,
   OTelEventMetrics,
 } from './events/observability'
+// Queue Dashboard & CLI
+export {
+  type DashboardSnapshot,
+  type ErrorStats,
+  type JobEvent,
+  QueueDashboard,
+  type QueueDashboardConfig,
+  type QueueMetrics,
+  type WorkerMetrics as QueueWorkerMetrics,
+} from './observability/QueueDashboard'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // OpenTelemetry Instrumentation
