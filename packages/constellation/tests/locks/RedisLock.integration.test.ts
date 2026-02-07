@@ -90,8 +90,8 @@ describe('RedisLock', () => {
     })
 
     it('should acquire lock after TTL expires', async () => {
-      await lock.acquire('test-resource', 1000)
-      await new Promise((resolve) => setTimeout(resolve, 1100))
+      await lock.acquire('test-resource', 100) // 100ms TTL
+      await new Promise((resolve) => setTimeout(resolve, 150)) // Wait 150ms for expiry
       const acquired = await lock.acquire('test-resource', 1000)
       expect(acquired).toBe(true)
     })
@@ -117,10 +117,10 @@ describe('RedisLock', () => {
     })
 
     it('should convert TTL from milliseconds to seconds', async () => {
-      await lock.acquire('test-resource', 1000)
+      await lock.acquire('test-resource', 100) // 100ms TTL
       expect(mockClient.has('sitemap:lock:test-resource')).toBe(true)
 
-      await new Promise((resolve) => setTimeout(resolve, 1100))
+      await new Promise((resolve) => setTimeout(resolve, 150)) // Wait for expiry
       expect(mockClient.has('sitemap:lock:test-resource')).toBe(false)
     })
   })

@@ -195,7 +195,7 @@ describe('RedisStore Tag System', () => {
     const tagMembersBefore = await client.smembers('tag:temporary')
     expect(tagMembersBefore).toContain(key)
 
-    await sleep(150)
+    await sleep(75)
 
     const expired = await store.get(key)
     expect(expired).toBeNull()

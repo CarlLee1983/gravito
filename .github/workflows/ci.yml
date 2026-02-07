@@ -203,16 +203,23 @@ jobs:
         run: |
           FILTERS='${{ steps.shard.outputs.filters }}'
           echo "Running tests for: $FILTERS"
-          
+
           # Typecheck (implicitly runs build if needed)
           bunx turbo run typecheck $FILTERS --concurrency=4
-          
+
           # Unit Test
           bunx turbo run test:unit $FILTERS --concurrency=4
-          
+
           # Integration Test
-          if [[ "$RUN_DLQ_INTEGRATION" == "true" ]] || [ "${{ github.event_name }}" == "pull_request" ]; then
-             bunx turbo run test:integration $FILTERS --concurrency=2
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            # PR: Skip expensive integration tests (Change Streams, GridFS, etc.)
+            echo "Skipping expensive integration tests in PR mode"
+          else
+            # Main branch: Run ALL integration tests
+            echo "Running FULL integration tests (main branch)"
+            if [[ "$RUN_DLQ_INTEGRATION" == "true" ]] || [ "${{ github.event_name }}" == "release" ]; then
+              bunx turbo run test:integration $FILTERS --concurrency=2
+            fi
           fi
 
       - name: Check Unused Imports

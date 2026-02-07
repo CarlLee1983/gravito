@@ -35,9 +35,9 @@ describe('FileStore Stability', () => {
     await store.put('expire-2', 'value2', 0.1)
     await store.put('keep', 'value3', 60)
 
-    await sleep(150)
+    await sleep(75)
 
-    await sleep(150)
+    await sleep(75)
 
     expect(await store.get<string>('expire-1')).toBeNull()
     expect(await store.get<string>('expire-2')).toBeNull()
@@ -83,7 +83,7 @@ describe('FileStore Stability', () => {
     await store.put('temp2', 'value2', 0.05)
     await store.put('temp3', 'value3', 60)
 
-    await sleep(100)
+    await sleep(50)
 
     const cleaned = await store.cleanExpiredFiles()
 
@@ -120,7 +120,7 @@ describe('FileStore Stability', () => {
 
     await store.put('no-cleanup', 'value', 0.05)
 
-    await sleep(100)
+    await sleep(50)
 
     const value = await store.get('no-cleanup')
     expect(value).toBeNull()
@@ -132,6 +132,6 @@ describe('FileStore Stability', () => {
     await store.destroy()
 
     await store.put('after-destroy', 'value', 0.1)
-    await sleep(150)
+    await sleep(75)
   })
 })

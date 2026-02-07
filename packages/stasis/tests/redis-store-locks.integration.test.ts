@@ -75,12 +75,12 @@ describe('RedisStore Distributed Lock Atomicity', () => {
     }
     const store = new RedisStore({ connection: 'locks-test' })
 
-    const lockA = store.lock('shared-resource', 1)
+    const lockA = store.lock('shared-resource', 100) // 100ms TTL for faster test
     const lockB = store.lock('shared-resource', 5)
 
     expect(await lockA.acquire()).toBe(true)
 
-    await sleep(1100)
+    await sleep(150) // Wait for lockA to expire
 
     const client = Redis.connection('locks-test')
     const lockAfterExpiry = await client.get('lock:shared-resource')
