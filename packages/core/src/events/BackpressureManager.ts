@@ -78,6 +78,12 @@ export interface BackpressureConfig {
 
   /** 低優先級事件最大等待時間，超過則提升優先級（ms，預設 5000） */
   starvationTimeoutMs?: number
+
+  /** 當進入 OVERFLOW 狀態時，是否將被拒絕事件路由到 DLQ（預設 false） */
+  dlqOnOverflow?: boolean
+
+  /** OVERFLOW 時的 DLQ 路由回呼 */
+  onOverflowRejection?: (eventName: string, priority: string) => void | Promise<void>
 }
 
 /**
@@ -96,6 +102,8 @@ export interface BackpressureDecision {
   delayMs?: number
   /** 建議降級後的優先級（若降級） */
   degradedPriority?: 'high' | 'normal' | 'low'
+  /** 是否是由於 OVERFLOW 狀態被拒絕 */
+  isOverflow?: boolean
 }
 
 /**
@@ -133,6 +141,8 @@ const DEFAULT_BACKPRESSURE_CONFIG = {
   lowPriorityDelayMs: 100,
   enableStarvationProtection: true,
   starvationTimeoutMs: 5000,
+  dlqOnOverflow: false,
+  onOverflowRejection: undefined,
 }
 
 /**
@@ -215,9 +225,14 @@ class SlidingWindowCounter {
  */
 export class BackpressureManager {
   private enabled: boolean
-  private config: Omit<Required<BackpressureConfig>, 'onRejected' | 'onStateChange'>
+  private config: Omit<
+    Required<BackpressureConfig>,
+    'onRejected' | 'onStateChange' | 'onOverflowRejection' | 'dlqOnOverflow'
+  >
   private onRejected?: BackpressureConfig['onRejected']
   private onStateChange?: BackpressureConfig['onStateChange']
+  private onOverflowRejection?: BackpressureConfig['onOverflowRejection']
+  private dlqOnOverflow: boolean
 
   private state: BackpressureState = BackpressureState.NORMAL
   private rejectedCount = 0
@@ -250,6 +265,8 @@ export class BackpressureManager {
     }
     this.onRejected = config.onRejected
     this.onStateChange = config.onStateChange
+    this.onOverflowRejection = config.onOverflowRejection
+    this.dlqOnOverflow = config.dlqOnOverflow ?? DEFAULT_BACKPRESSURE_CONFIG.dlqOnOverflow
     this.rateCounter = new SlidingWindowCounter(this.config.rateLimitWindowMs, 10)
   }
 
@@ -287,7 +304,10 @@ export class BackpressureManager {
     // 根據狀態進行決策
     switch (this.state) {
       case BackpressureState.OVERFLOW:
-        return this.createDecision(false, 'Backpressure OVERFLOW', eventName, priority)
+        return {
+          ...this.createDecision(false, 'Backpressure OVERFLOW', eventName, priority),
+          isOverflow: true,
+        }
 
       case BackpressureState.CRITICAL:
         // 僅允許高優先級

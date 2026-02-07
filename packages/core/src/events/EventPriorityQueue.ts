@@ -7,6 +7,7 @@ import type { EventBackend } from './EventBackend'
 import type { EventOptions } from './EventOptions'
 import type { EventMetrics } from './observability/EventMetrics'
 import type { EventTracing } from './observability/EventTracing'
+import type { OTelEventMetrics } from './observability/OTelEventMetrics'
 import type { BackpressureStrategy, EventQueueConfig, EventTask } from './types'
 import type { WorkerPool } from './WorkerPool'
 
@@ -40,6 +41,7 @@ export class EventPriorityQueue implements EventBackend {
   private processingPartitions: Set<string> = new Set()
   private eventCircuitBreakers: Map<string, CircuitBreaker> = new Map()
   private eventMetrics?: EventMetrics
+  private otelEventMetrics?: OTelEventMetrics
   private eventTracing?: EventTracing
   private currentDispatchSpan?: Span
   private backpressureManager?: BackpressureManager
@@ -88,6 +90,16 @@ export class EventPriorityQueue implements EventBackend {
    */
   setEventMetrics(metrics: EventMetrics): void {
     this.eventMetrics = metrics
+  }
+
+  /**
+   * Set the OTelEventMetrics instance for recording DLQ and backpressure metrics.
+   *
+   * @param metrics - OTelEventMetrics instance
+   * @internal
+   */
+  setOTelEventMetrics(metrics: OTelEventMetrics): void {
+    this.otelEventMetrics = metrics
   }
 
   /**
@@ -226,6 +238,31 @@ export class EventPriorityQueue implements EventBackend {
       )
 
       if (!decision.allowed) {
+        // Record backpressure rejection metric
+        const priority = task.options.priority || 'normal'
+        this.otelEventMetrics?.recordBackpressureRejection(
+          task.hook,
+          priority,
+          decision.reason || 'unknown'
+        )
+
+        // Handle OVERFLOW: route to DLQ if configured
+        if (decision.isOverflow && this.config.backpressure?.dlqOnOverflow && this.dlq) {
+          // Create a synthetic error for DLQ entry
+          const overflowError = new Error(`Backpressure OVERFLOW: ${decision.reason}`)
+          this.dlq.add(
+            task.hook,
+            task.args,
+            task.options,
+            overflowError,
+            task.retryCount || 0,
+            Date.now(),
+            'backpressure_overflow'
+          )
+          // Record DLQ entry metric
+          this.otelEventMetrics?.recordDLQEntry(task.hook, 'backpressure_overflow')
+        }
+
         // Rejection: handle according to policy (throw/drop-silent/drop-with-callback)
         if (this.config.backpressure?.rejectionPolicy === 'throw') {
           throw new Error(`[BackpressureManager] Event rejected: ${decision.reason}`)
@@ -496,6 +533,8 @@ export class EventPriorityQueue implements EventBackend {
                   task.firstFailedAt!,
                   'circuit_breaker'
                 )
+                // Record DLQ entry metric
+                this.otelEventMetrics?.recordDLQEntry(hook, 'circuit_breaker')
               }
 
               // Send to persistent DLQ if handler is provided
@@ -536,6 +575,9 @@ export class EventPriorityQueue implements EventBackend {
           task.lastError = lastError
           task.retryCount = (task.retryCount || 0) + 1
 
+          // Record retry attempt metric
+          this.otelEventMetrics?.recordRetryAttempt(hook, task.retryCount)
+
           // Check if we should retry
           if (task.retryCount <= maxRetries) {
             // Calculate retry delay with exponential backoff
@@ -571,6 +613,8 @@ export class EventPriorityQueue implements EventBackend {
                 task.firstFailedAt!,
                 'retry_exhausted'
               )
+              // Record DLQ entry metric
+              this.otelEventMetrics?.recordDLQEntry(hook, 'retry_exhausted')
             }
 
             // Send to persistent DLQ if handler is provided
