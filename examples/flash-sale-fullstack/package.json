@@ -9,7 +9,7 @@
     "test": "bun test",
     "test:load": "k6 run load-tests/k6-test.js",
     "test:queue": "bun run scripts/test-queue.ts",
-    "build": "bun run build.ts",
+    "build": "echo 'No build needed for example'",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
   "dependencies": {
