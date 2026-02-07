@@ -17,6 +17,8 @@ import type {
   DriverType,
   ExecuteResult,
   MySQLConfig,
+  PoolHealth,
+  PoolStats,
   QueryResult,
 } from '../types'
 
@@ -275,6 +277,74 @@ export class MySQLDriver implements DriverContract {
    */
   inTransaction(): boolean {
     return this.transactionConnection !== null
+  }
+
+  /**
+   * Get connection pool statistics
+   */
+  getPoolStats(): PoolStats | null {
+    if (!this.pool) {
+      return null
+    }
+
+    const poolInternal = this.pool as any
+    const allConnections = poolInternal._allConnections ?? []
+    const freeConnections = poolInternal._freeConnections ?? []
+    const acquiringConnections = poolInternal._acquiringConnections ?? []
+
+    const total = allConnections.length
+    const idle = freeConnections.length
+    const active = total - idle
+    const pending = acquiringConnections.length
+
+    return {
+      idle,
+      pending,
+      active,
+      total,
+      max: (this.config as any).pool?.max ?? 10,
+    }
+  }
+
+  /**
+   * Get connection pool health status
+   */
+  getPoolHealth(): PoolHealth {
+    const stats = this.getPoolStats()
+    if (!stats) {
+      return {
+        status: 'disconnected',
+        message: 'Connection pool not initialized',
+      }
+    }
+
+    const utilization = stats.active / stats.max
+    const pendingRatio = stats.pending / stats.max
+
+    if (utilization >= 0.9) {
+      return {
+        status: 'critical',
+        message: `Connection pool utilization critical: ${(utilization * 100).toFixed(1)}%`,
+        stats,
+        lastCheck: new Date(),
+      }
+    }
+
+    if (utilization >= 0.7 || pendingRatio > 0.5) {
+      return {
+        status: 'warning',
+        message: `Connection pool utilization high: ${(utilization * 100).toFixed(1)}%`,
+        stats,
+        lastCheck: new Date(),
+      }
+    }
+
+    return {
+      status: 'healthy',
+      message: 'Connection pool operating normally',
+      stats,
+      lastCheck: new Date(),
+    }
   }
 
   /**

@@ -4,7 +4,13 @@
  */
 
 import { AtlasObservability } from '../observability'
-import type { ConnectionConfig, ConnectionContract } from '../types'
+import {
+  DEFAULT_HEALTH_CHECK_CONFIG,
+  type PoolHealthCheckConfig,
+  PoolHealthChecker,
+} from '../pool/PoolHealthChecker'
+import { DEFAULT_WARMER_CONFIG, PoolWarmer, type PoolWarmerConfig } from '../pool/PoolWarmer'
+import type { ConnectionConfig, ConnectionContract, PoolHealth } from '../types'
 import { Connection } from './Connection'
 
 /**
@@ -22,6 +28,8 @@ export class ConnectionManager {
   private defaultConnectionName = 'default'
   private lastUsed = new Map<string, number>()
   private cleanupInterval?: ReturnType<typeof setInterval>
+  private healthChecker?: PoolHealthChecker
+  private warmer?: PoolWarmer
 
   private readonly MAX_IDLE_TIME = 1000 * 60 * 10 // 10 minutes
   private readonly CLEANUP_INTERVAL = 1000 * 60 * 5 // Check every 5 minutes
@@ -241,13 +249,65 @@ export class ConnectionManager {
   }
 
   /**
+   * Enable connection pool health checking
+   */
+  enableHealthCheck(config: Partial<PoolHealthCheckConfig> = {}): void {
+    this.healthChecker = new PoolHealthChecker(this, {
+      ...DEFAULT_HEALTH_CHECK_CONFIG,
+      ...config,
+    })
+    this.healthChecker.start()
+  }
+
+  /**
+   * Disable connection pool health checking
+   */
+  disableHealthCheck(): void {
+    if (this.healthChecker) {
+      this.healthChecker.stop()
+      this.healthChecker = undefined
+    }
+  }
+
+  /**
+   * Get connection pool health status
+   */
+  getHealthStatus(connectionName?: string): PoolHealth | Map<string, PoolHealth> {
+    if (!this.healthChecker) {
+      throw new Error('Health checker not enabled. Call enableHealthCheck() first.')
+    }
+    return this.healthChecker.getHealthStatus(connectionName)
+  }
+
+  /**
+   * Enable connection pool warming
+   */
+  enableWarmup(config: Partial<PoolWarmerConfig> = {}): void {
+    this.warmer = new PoolWarmer(this, {
+      ...DEFAULT_WARMER_CONFIG,
+      ...config,
+    })
+  }
+
+  /**
+   * Warm up all connection pools
+   */
+  async warmup(): Promise<any> {
+    if (!this.warmer) {
+      this.enableWarmup()
+    }
+    return this.warmer?.warmAll()
+  }
+
+  /**
    * Shutdown the connection manager.
-   * Stops the idle cleanup interval and disconnects all connections.
+   * Stops the idle cleanup interval, health checking, and disconnects all connections.
    *
    * @returns A promise that resolves when shutdown is complete.
    */
   async shutdown(): Promise<void> {
     this.stopCleanup()
+    this.disableHealthCheck()
     await this.disconnectAll()
   }
 }

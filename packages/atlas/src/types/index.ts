@@ -614,6 +614,31 @@ export interface PoolStats {
   max: number
 }
 
+/**
+ * Connection pool health status
+ */
+export interface PoolHealth {
+  /**
+   * Health status: 'healthy' | 'warning' | 'critical' | 'disconnected'
+   */
+  status: 'healthy' | 'warning' | 'critical' | 'disconnected'
+
+  /**
+   * Human-readable health message
+   */
+  message: string
+
+  /**
+   * Pool statistics (when available)
+   */
+  stats?: PoolStats
+
+  /**
+   * Last health check timestamp
+   */
+  lastCheck?: Date
+}
+
 // ============================================================================
 // Model Types (forward declarations to avoid circular dependencies)
 // ============================================================================

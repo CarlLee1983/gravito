@@ -15,6 +15,8 @@ import type {
   DriverContract,
   DriverType,
   ExecuteResult,
+  PoolHealth,
+  PoolStats,
   PostgresConfig,
   QueryResult,
 } from '../types'
@@ -304,6 +306,70 @@ export class PostgresDriver implements DriverContract {
    */
   inTransaction(): boolean {
     return this.transactionActive
+  }
+
+  /**
+   * Get connection pool statistics
+   */
+  getPoolStats(): PoolStats | null {
+    if (!this.pool) {
+      return null
+    }
+
+    const poolInternal = this.pool as any
+    const idle = poolInternal.idleCount ?? 0
+    const total = poolInternal.totalCount ?? 0
+    const pending = poolInternal.waitingCount ?? 0
+    const active = total - idle
+
+    return {
+      idle,
+      pending,
+      active,
+      total,
+      max: this.config.pool?.max ?? 10,
+    }
+  }
+
+  /**
+   * Get connection pool health status
+   */
+  getPoolHealth(): PoolHealth {
+    const stats = this.getPoolStats()
+    if (!stats) {
+      return {
+        status: 'disconnected',
+        message: 'Connection pool not initialized',
+      }
+    }
+
+    const utilization = stats.active / stats.max
+    const pendingRatio = stats.pending / stats.max
+
+    if (utilization >= 0.9) {
+      return {
+        status: 'critical',
+        message: `Connection pool utilization critical: ${(utilization * 100).toFixed(1)}%`,
+        stats,
+        lastCheck: new Date(),
+      }
+    }
+
+    if (utilization >= 0.7 || pendingRatio > 0.5) {
+      return {
+        status: 'warning',
+        message: `Connection pool utilization high: ${(utilization * 100).toFixed(1)}%`,
+        stats,
+        lastCheck: new Date(),
+      }
+    }
+
+    return {
+      status: 'healthy',
+      message: 'Connection pool operating normally',
+      stats,
+      lastCheck: new Date(),
+    }
   }
 
   /**
