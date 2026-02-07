@@ -253,7 +253,7 @@ describe('RippleServer Additional Tests', () => {
       expect(messagesB.some((m) => m.event === 'test-event')).toBe(false)
     })
 
-    it.skip('should support fluent to() API for broadcasting', async () => {
+    it('should support fluent to() API for broadcasting', async () => {
       // TODO: Fix broadcast message serialization
       server = new RippleServer({ port: 0 })
       await server.init()
@@ -286,7 +286,8 @@ describe('RippleServer Additional Tests', () => {
 
       const channels = server.channels
       channels.addClient(mockWs)
-      channels.subscriptions.set('test', new Set(['chat']))
+      // Map: channel -> Set of client IDs
+      channels.subscriptions.set('chat', new Set(['test']))
 
       server.to('chat').emit('message', { text: 'hello' })
 
