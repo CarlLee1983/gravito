@@ -1,0 +1,156 @@
+groups:
+  - name: gravito_event_system
+    interval: 30s
+    rules:
+      # ─────────────────────────────────────────────────────────────────────────
+      # Event Dispatch Performance Alerts
+      # ─────────────────────────────────────────────────────────────────────────
+
+      - alert: HighEventDispatchLatency
+        expr: |
+          histogram_quantile(0.95, rate(gravito_event_dispatch_duration_seconds_bucket[5m])) > 0.8
+        for: 5m
+        labels:
+          severity: critical
+          component: event-system
+        annotations:
+          summary: "事件派發延遲過高"
+          description: "{{ $labels.event_name }} 事件的 P95 延遲: {{ $value | humanizeDuration }}，超過 0.8s 閾值"
+          runbook_url: "https://wiki.example.com/gravito/event-dispatch-latency"
+
+      - alert: HighEventDispatchVariance
+        expr: |
+          histogram_quantile(0.99, rate(gravito_event_dispatch_duration_seconds_bucket[5m])) /
+          histogram_quantile(0.50, rate(gravito_event_dispatch_duration_seconds_bucket[5m])) > 10
+        for: 10m
+        labels:
+          severity: warning
+          component: event-system
+        annotations:
+          summary: "事件派發延遲波動過大"
+          description: "{{ $labels.event_name }} 事件的 P99/P50 比率為 {{ $value | humanize }}，表示延遲分佈不均"
+          runbook_url: "https://wiki.example.com/gravito/event-dispatch-variance"
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Queue Management Alerts
+      # ─────────────────────────────────────────────────────────────────────────
+
+      - alert: HighPriorityQueueBacklog
+        expr: |
+          gravito_event_queue_depth{priority="high"} > 1000
+        for: 2m
+        labels:
+          severity: warning
+          component: event-queue
+        annotations:
+          summary: "高優先級事件隊列堆積"
+          description: "高優先級隊列深度: {{ $value | humanize }} 事件，可能影響搶購系統響應時間"
+          runbook_url: "https://wiki.example.com/gravito/queue-backlog"
+
+      - alert: QueueDepthCritical
+        expr: |
+          sum(gravito_event_queue_depth) > 5000
+        for: 1m
+        labels:
+          severity: critical
+          component: event-queue
+        annotations:
+          summary: "事件隊列總深度達到臨界值"
+          description: "所有優先級的總隊列深度: {{ $value | humanize }} 事件，系統可能無法及時處理"
+          runbook_url: "https://wiki.example.com/gravito/queue-critical"
+
+      - alert: NormalPriorityQueueGrowing
+        expr: |
+          rate(gravito_event_queue_depth{priority="normal"}[5m]) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          component: event-queue
+        annotations:
+          summary: "普通優先級隊列持續增長"
+          description: "普通優先級隊列增長速率: {{ $value | humanize }}/s，可能存在監聽器性能問題"
+          runbook_url: "https://wiki.example.com/gravito/queue-growth"
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Circuit Breaker Alerts
+      # ─────────────────────────────────────────────────────────────────────────
+
+      - alert: CircuitBreakerOpen
+        expr: |
+          gravito_event_circuit_breaker_state == 2
+        for: 5m
+        labels:
+          severity: warning
+          component: circuit-breaker
+        annotations:
+          summary: "Circuit Breaker 持續開啟"
+          description: "{{ $labels.event_name }} 事件的 Circuit Breaker 保持在 OPEN 狀態超過 5 分鐘"
+          runbook_url: "https://wiki.example.com/gravito/circuit-breaker-open"
+
+      - alert: CircuitBreakerHalfOpen
+        expr: |
+          gravito_event_circuit_breaker_state == 1
+        for: 15m
+        labels:
+          severity: info
+          component: circuit-breaker
+        annotations:
+          summary: "Circuit Breaker 長時間停留在 HALF_OPEN 狀態"
+          description: "{{ $labels.event_name }} 事件的 Circuit Breaker 在 HALF_OPEN 狀態超過 15 分鐘，可能無法恢復"
+          runbook_url: "https://wiki.example.com/gravito/circuit-breaker-half-open"
+
+      - alert: HighCircuitBreakerFailureRate
+        expr: |
+          rate(gravito_event_circuit_breaker_failures_total[5m]) > 5
+        for: 5m
+        labels:
+          severity: critical
+          component: circuit-breaker
+        annotations:
+          summary: "Circuit Breaker 失敗率過高"
+          description: "{{ $labels.event_name }} 事件的失敗率: {{ $value | humanize }}/s，可能表示下游服務故障"
+          runbook_url: "https://wiki.example.com/gravito/circuit-breaker-failures"
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Listener Performance Alerts
+      # ─────────────────────────────────────────────────────────────────────────
+
+      - alert: SlowListenerExecution
+        expr: |
+          histogram_quantile(0.95, rate(gravito_event_listener_duration_seconds_bucket[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: event-listener
+        annotations:
+          summary: "事件監聽器執行過慢"
+          description: "{{ $labels.event_name }} 事件監聽器的 P95 執行時間: {{ $value | humanizeDuration }}，可能是性能瓶頸"
+          runbook_url: "https://wiki.example.com/gravito/slow-listener"
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # System Health Alerts
+      # ─────────────────────────────────────────────────────────────────────────
+
+      - alert: EventThroughputCriticallyLow
+        expr: |
+          sum(rate(gravito_event_dispatch_duration_seconds_count[1m])) < 1
+        for: 5m
+        labels:
+          severity: critical
+          component: event-system
+        annotations:
+          summary: "事件系統吞吐量極低"
+          description: "系統事件處理速率低於 1 events/sec，可能系統故障或掛起"
+          runbook_url: "https://wiki.example.com/gravito/throughput-critical"
+
+      - alert: MultipleCircuitBreakersOpen
+        expr: |
+          count(gravito_event_circuit_breaker_state == 2) > 3
+        for: 5m
+        labels:
+          severity: critical
+          component: circuit-breaker
+        annotations:
+          summary: "多個 Circuit Breaker 同時開啟"
+          description: "{{ $value | humanize }} 個事件的 Circuit Breaker 處於 OPEN 狀態，表示系統遭遇級聯故障"
+          runbook_url: "https://wiki.example.com/gravito/cascading-failure"

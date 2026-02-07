@@ -59,6 +59,16 @@
           }
         }
       }
+    },
+    {
+      "includes": ["examples/**/tests/k6/**/*.js"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUndeclaredVariables": "off"
+          }
+        }
+      }
     }
   ],
   "linter": {

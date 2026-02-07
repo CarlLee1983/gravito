@@ -15,6 +15,11 @@ import { Container } from './Container'
 import { ErrorHandler } from './ErrorHandler'
 import { EventManager } from './EventManager'
 import {
+  type ObservabilityConfig,
+  ObservableHookManager,
+} from './events/observability/ObservableHookManager'
+import { OTelEventMetrics } from './events/observability/OTelEventMetrics'
+import {
   type RegisterGlobalErrorHandlersOptions,
   registerGlobalErrorHandlers,
 } from './GlobalErrorHandlers'
@@ -93,6 +98,48 @@ export type GravitoConfig = {
    * @since 2.0.0
    */
   container?: Container
+
+  /**
+   * Observability configuration for event system.
+   * @since 2.1.0
+   */
+  observability?: {
+    /**
+     * Enable event system observability (metrics, tracing).
+     * @default false
+     */
+    enabled?: boolean
+    /**
+     * Enable OpenTelemetry distributed tracing.
+     * @default false
+     */
+    tracing?: boolean
+    /**
+     * Prefix for metric names.
+     * @default 'gravito_event_'
+     */
+    metricsPrefix?: string
+    /**
+     * Prometheus metrics configuration.
+     */
+    prometheus?: {
+      /**
+       * Enable Prometheus metrics endpoint.
+       * @default true
+       */
+      enabled?: boolean
+      /**
+       * Port for Prometheus metrics endpoint.
+       * @default 9090
+       */
+      port?: number
+      /**
+       * Endpoint path for metrics.
+       * @default '/metrics'
+       */
+      endpoint?: string
+    }
+  }
 }
 
 import { BunNativeAdapter } from './adapters/bun/BunNativeAdapter'
@@ -147,6 +194,83 @@ export class PlanetCore {
   private providers: ServiceProvider[] = []
   private deferredProviders: Map<string, ServiceProvider> = new Map()
   private bootedProviders: Set<ServiceProvider> = new Set()
+
+  /**
+   * Initialize observability asynchronously (metrics, tracing, Prometheus).
+   * This is called from constructor but doesn't block initialization.
+   *
+   * @internal
+   */
+  private async initializeObservabilityAsync(
+    obsConfig: GravitoConfig['observability']
+  ): Promise<void> {
+    try {
+      // Import OpenTelemetry API
+      const otel = await import('@opentelemetry/api')
+      const meter = otel.metrics.getMeter('@gravito/core', '2.1.0')
+
+      // Create event metrics
+      const eventMetrics = new OTelEventMetrics(meter, obsConfig?.metricsPrefix ?? 'gravito_event_')
+
+      // Create and set ObservableHookManager
+      const observableHooks = new ObservableHookManager(
+        {},
+        {
+          enabled: true,
+          metrics: eventMetrics,
+          tracing: obsConfig?.tracing ?? false,
+          metricsPrefix: obsConfig?.metricsPrefix ?? 'gravito_event_',
+        }
+      )
+
+      // Set queue depth callback
+      eventMetrics.setQueueDepthCallback(() => {
+        const queue = (observableHooks as any).getEventQueue()
+        return {
+          high: queue.getDepthByPriority('high'),
+          normal: queue.getDepthByPriority('normal'),
+          low: queue.getDepthByPriority('low'),
+        }
+      })
+
+      // Replace hooks with observable version
+      this.hooks = observableHooks
+      this.logger.info('[Observability] ✅ Event system observability enabled')
+
+      // Initialize Prometheus if enabled
+      if (obsConfig?.prometheus?.enabled !== false) {
+        await this.initializePrometheusAsync(obsConfig)
+      }
+    } catch (error) {
+      this.logger.error('[Observability] Failed to initialize observability:', error)
+      // Hooks already initialized to HookManager in constructor
+    }
+  }
+
+  /**
+   * Initialize Prometheus metrics asynchronously.
+   *
+   * @internal
+   */
+  private async initializePrometheusAsync(
+    obsConfig: GravitoConfig['observability']
+  ): Promise<void> {
+    try {
+      const { setupPrometheusMetrics } = await import('./observability/Metrics')
+      const result = await setupPrometheusMetrics({
+        port: obsConfig?.prometheus?.port ?? 9090,
+        prefix: obsConfig?.metricsPrefix ?? 'gravito_event_',
+      })
+
+      if (result) {
+        this.logger.info(
+          `[Observability] Prometheus metrics at http://localhost:${result.port}${result.endpoint}`
+        )
+      }
+    } catch (error) {
+      this.logger.error('[Observability] Failed to setup Prometheus:', error)
+    }
+  }
 
   /**
    * Register a service provider to the core.
@@ -298,7 +422,26 @@ export class PlanetCore {
   ) {
     this.logger = options.logger ?? new ConsoleLogger()
     this.config = new ConfigManager(options.config ?? {})
-    this.hooks = new HookManager()
+
+    // 可觀測性配置初始化
+    const obsConfig = this.config.get<GravitoConfig['observability']>('observability', {
+      enabled: false,
+    })
+
+    // 初始化 hooks（同步）
+    if (obsConfig?.enabled) {
+      this.logger.info('[Observability] Enabling event system observability')
+
+      // 異步初始化可觀測性（不阻塞 constructor）
+      this.initializeObservabilityAsync(obsConfig)
+
+      // 暫時使用標準 HookManager，會被異步替換
+      this.hooks = new HookManager()
+    } else {
+      // 使用標準 HookManager（向後兼容）
+      this.hooks = new HookManager()
+    }
+
     this.events = new EventManager(this)
 
     // Use provided container or create a new one
