@@ -1,5 +1,12 @@
 # @gravito/satellite-support
 
+## 0.1.5
+
+### Patch Changes
+
+- Updated dependencies [5a7f332]
+  - @gravito/ripple@4.0.0
+
 ## 0.1.4
 
 ### Patch Changes
