@@ -8,6 +8,7 @@ import type { EventOptions } from './EventOptions'
 import type { EventMetrics } from './observability/EventMetrics'
 import type { EventTracing } from './observability/EventTracing'
 import type { OTelEventMetrics } from './observability/OTelEventMetrics'
+import type { RetryScheduler } from './RetryScheduler'
 import type { BackpressureStrategy, EventQueueConfig, EventTask } from './types'
 import type { WorkerPool } from './WorkerPool'
 
@@ -46,6 +47,7 @@ export class EventPriorityQueue implements EventBackend {
   private currentDispatchSpan?: Span
   private backpressureManager?: BackpressureManager
   private workerPool?: WorkerPool
+  private retryScheduler?: RetryScheduler
 
   constructor(config: EventQueueConfig = {}) {
     this.config = config
@@ -130,6 +132,26 @@ export class EventPriorityQueue implements EventBackend {
    */
   getCurrentDispatchSpan(): Span | undefined {
     return this.currentDispatchSpan
+  }
+
+  /**
+   * Set the RetryScheduler for async distributed retries.
+   *
+   * @param scheduler - RetryScheduler instance
+   * @internal
+   */
+  setRetryScheduler(scheduler: RetryScheduler): void {
+    this.retryScheduler = scheduler
+  }
+
+  /**
+   * Get the RetryScheduler instance.
+   *
+   * @returns RetryScheduler instance or undefined
+   * @internal
+   */
+  getRetryScheduler(): RetryScheduler | undefined {
+    return this.retryScheduler
   }
 
   /**
@@ -580,7 +602,31 @@ export class EventPriorityQueue implements EventBackend {
 
           // Check if we should retry
           if (task.retryCount <= maxRetries) {
-            // Calculate retry delay with exponential backoff
+            console.warn(
+              `[EventPriorityQueue] Retrying event '${hook}' (attempt ${task.retryCount}/${maxRetries})`
+            )
+
+            // Try to use RetryScheduler if enabled
+            if (this.retryScheduler?.isEnabled()) {
+              try {
+                await this.retryScheduler.scheduleRetry(
+                  hook,
+                  args,
+                  options,
+                  lastError,
+                  task.retryCount
+                )
+                return
+              } catch (schedulerError) {
+                // Fallback to setTimeout if Bull Queue fails
+                console.warn(
+                  '[EventPriorityQueue] RetryScheduler failed, falling back to setTimeout:',
+                  schedulerError instanceof Error ? schedulerError.message : String(schedulerError)
+                )
+              }
+            }
+
+            // Fallback: Calculate retry delay and use setTimeout
             const delay = this.calculateRetryDelay(
               task.retryCount,
               retryConfig.backoff || 'exponential',
@@ -588,11 +634,7 @@ export class EventPriorityQueue implements EventBackend {
               retryConfig.maxDelayMs || 30000
             )
 
-            console.warn(
-              `[EventPriorityQueue] Retrying event '${hook}' (attempt ${task.retryCount}/${maxRetries}) after ${delay}ms`
-            )
-
-            // Schedule retry
+            // Schedule retry with setTimeout
             setTimeout(() => {
               this.enqueueRetry(task)
             }, delay)

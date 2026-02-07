@@ -29,6 +29,8 @@ export {
 export type { EventStatus, MessageQueueBridgeConfig } from './MessageQueueBridge'
 export { MessageQueueBridge } from './MessageQueueBridge'
 export * from './observability'
+export type { QueueStats, RetrySchedulerConfig } from './RetryScheduler'
+export { RetryScheduler } from './RetryScheduler'
 export type { BackpressureStrategy, EventQueueConfig, EventTask } from './types'
 export { WorkerPool } from './WorkerPool'
 export type { WorkerPoolConfig, WorkerPoolStats, WorkerStats } from './WorkerPoolConfig'

@@ -84,6 +84,12 @@ export interface BackpressureConfig {
 
   /** OVERFLOW 時的 DLQ 路由回呼 */
   onOverflowRejection?: (eventName: string, priority: string) => void | Promise<void>
+
+  /** OVERFLOW 時的重試策略（預設 'dlq-only'） */
+  overflowRetryStrategy?: 'immediate' | 'delayed' | 'dlq-only'
+
+  /** OVERFLOW 延遲重試的基礎延遲時間（ms，預設 5000） */
+  overflowRetryDelayMs?: number
 }
 
 /**
@@ -104,6 +110,8 @@ export interface BackpressureDecision {
   degradedPriority?: 'high' | 'normal' | 'low'
   /** 是否是由於 OVERFLOW 狀態被拒絕 */
   isOverflow?: boolean
+  /** OVERFLOW 時的重試策略建議（'immediate'、'delayed'、'dlq-only'） */
+  retryStrategy?: 'immediate' | 'delayed' | 'dlq-only'
 }
 
 /**
@@ -143,6 +151,8 @@ const DEFAULT_BACKPRESSURE_CONFIG = {
   starvationTimeoutMs: 5000,
   dlqOnOverflow: false,
   onOverflowRejection: undefined,
+  overflowRetryStrategy: 'dlq-only' as const,
+  overflowRetryDelayMs: 5000,
 }
 
 /**
@@ -227,12 +237,13 @@ export class BackpressureManager {
   private enabled: boolean
   private config: Omit<
     Required<BackpressureConfig>,
-    'onRejected' | 'onStateChange' | 'onOverflowRejection' | 'dlqOnOverflow'
-  >
+    'onRejected' | 'onStateChange' | 'onOverflowRejection'
+  > & {
+    dlqOnOverflow: boolean
+  }
   private onRejected?: BackpressureConfig['onRejected']
   private onStateChange?: BackpressureConfig['onStateChange']
   private onOverflowRejection?: BackpressureConfig['onOverflowRejection']
-  private dlqOnOverflow: boolean
 
   private state: BackpressureState = BackpressureState.NORMAL
   private rejectedCount = 0
@@ -262,11 +273,15 @@ export class BackpressureManager {
         config.enableStarvationProtection ?? DEFAULT_BACKPRESSURE_CONFIG.enableStarvationProtection,
       starvationTimeoutMs:
         config.starvationTimeoutMs ?? DEFAULT_BACKPRESSURE_CONFIG.starvationTimeoutMs,
+      dlqOnOverflow: config.dlqOnOverflow ?? DEFAULT_BACKPRESSURE_CONFIG.dlqOnOverflow,
+      overflowRetryStrategy: (config.overflowRetryStrategy ??
+        DEFAULT_BACKPRESSURE_CONFIG.overflowRetryStrategy) as 'immediate' | 'delayed' | 'dlq-only',
+      overflowRetryDelayMs:
+        config.overflowRetryDelayMs ?? DEFAULT_BACKPRESSURE_CONFIG.overflowRetryDelayMs,
     }
     this.onRejected = config.onRejected
     this.onStateChange = config.onStateChange
     this.onOverflowRejection = config.onOverflowRejection
-    this.dlqOnOverflow = config.dlqOnOverflow ?? DEFAULT_BACKPRESSURE_CONFIG.dlqOnOverflow
     this.rateCounter = new SlidingWindowCounter(this.config.rateLimitWindowMs, 10)
   }
 
@@ -307,6 +322,11 @@ export class BackpressureManager {
         return {
           ...this.createDecision(false, 'Backpressure OVERFLOW', eventName, priority),
           isOverflow: true,
+          retryStrategy: this.config.overflowRetryStrategy,
+          delayMs:
+            this.config.overflowRetryStrategy === 'delayed'
+              ? this.config.overflowRetryDelayMs
+              : undefined,
         }
 
       case BackpressureState.CRITICAL:
