@@ -6,168 +6,129 @@
 
 ---
 
-## 格式規範
+## 追蹤統計 (截至 2026-02-07)
 
-每個發現應包含：
-
-```markdown
-## Issue: [簡短標題]
-
-- **發現時間**：Week X, Day Y
-- **嚴重性**：Critical / High / Medium / Low
-- **狀態**：未處理 / 已立項 / 開發中 / 已修正
-- **相關代碼**：examples/flash-sale-fullstack/src/...
-- **描述**：問題詳細說明
-- **影響**：對搶購系統的影響
-- **臨時解決方案**：如何繞過此問題
-- **改進方案**：在框架層面的解決方案
-- **優先級**：即刻修復 / Phase 2 / Phase 3 / 後期優化
-- **相關 PR/Commit**：(修正後填入)
-
----
-```
-
-## 待發現
-
-以下是預期可能會發現的問題類別，實際發現後會更新此文檔。
-
-### 預期會遇到的問題
-
-#### 1. 分佈式鎖機制
-- **預計發現時間**：Week 3
-- **預期嚴重性**：High
-- **狀態**：⏳ 待發現
-
-#### 2. Event System 高頻性能
-- **預計發現時間**：Week 3-4
-- **預期嚴重性**：High
-- **狀態**：⏳ 待發現
-
-#### 3. 資料庫連接池管理
-- **預計發現時間**：Week 5
-- **預期嚴重性**：Medium
-- **狀態**：⏳ 待發現
-
-#### 4. 限流與速率限制
-- **預計發現時間**：Week 3
-- **預期嚴重性**：High
-- **狀態**：⏳ 待發現
-
-#### 5. 異常事件重試機制
-- **預計發現時間**：Week 4
-- **預期嚴重性**：Medium
-- **狀態**：⏳ 待發現
+| 狀態 | 數量 |
+|------|------|
+| 🔴 Critical (即刻修復) | 0 |
+| 🟠 High (已立項/開發中) | 1 |
+| 🟡 Medium (後期優化) | 3 |
+| ✅ 已修正/已整合 | 5 |
 
 ---
 
 ## 已發現的問題
 
-(此部分在開發過程中持續填充)
+### Issue 1: Event System 同步派發效能瓶頸
+- **發現時間**：Week 3, Day 2
+- **嚴重性**：🔴 Critical
+- **狀態**：✅ 已修正 (in `@gravito/core`)
+- **相關代碼**：`packages/core/src/HookManager.ts`, `packages/core/src/events/EventPriorityQueue.ts`
+- **描述**：原有的 `doAction` 採同步執行，在高頻（1000+ QPS）下監聽器累積延遲導致 P99 飆升至 800ms+。
+- **影響**：訂單建立流程阻塞，無法充分利用 Node.js/Bun 的異步特性。
+- **改進方案**：實施 `doActionAsync` 與優先級隊列（EventPriorityQueue），支持異步派發、超時控制與順序保證。
+- **相關 PR/Commit**：`feature/signal-optimization`
 
-### 已完成的修正
+### Issue 2: 缺少原生分佈式鎖支持
+- **發現時間**：Week 2, Day 5
+- **嚴重性**：🟠 High
+- **狀態**：✅ 已修正 (整合至 `@gravito/stasis`)
+- **描述**：在高併發扣減庫存場景下，缺少機制保證多實例間的原子性。
+- **影響**：產生 Race Condition 導致庫存超賣。
+- **改進方案**：在 `@gravito/stasis` 中新增 `locks.ts` 支持 Redis 分佈式鎖（Redlock 算法）。
+- **相關 PR/Commit**：`feat(stasis): add distributed lock and rate limiter`
 
-(此部分記錄已解決的問題與相應的框架改進)
+### Issue 3: 資料庫連接池管理限制
+- **發現時間**：Week 5, Day 3
+- **嚴重性**：🟠 High
+- **狀態**：✅ 已完成 (Issue 1.3 - Phase 1-4 全部完成)
+- **描述**：`@gravito/atlas` 預設連接池大小不足以應付高併發。
+- **影響**：壓力測試時出現 `ConnectionTimeoutError`。
+- **改進方案**與實現：
+  - **Phase 1**：連接池統計、健康檢查、預熱機制（46 個新測試 ✅）
+    - PostgreSQL/MySQL 驅動新增 `getPoolStats()` 和 `getPoolHealth()`
+    - PoolHealthChecker（三級告警：健康→警告→臨界）
+    - PoolWarmer（併發預熱、超時保護）
+  - **Phase 2**：Metrics 擴展與監控（27 個測試 ✅）
+    - AtlasMetrics：poolSize, poolUtilization, poolWaitTime, poolAcquisitionErrors
+    - Prometheus 導出器配置 + Grafana 監控面板（6 個 Panel）
+    - 8 個 Prometheus 告警規則
+  - **Phase 3**：自適應管理與動態調整（30 個測試 ✅）
+    - AdaptivePoolManager：定期評估（60s）、冷卻期防抖動（30s）
+    - PoolStrategy 引擎：LoadAware、Predictive、Hybrid 三種策略
+    - 驅動層支持：disconn → reconfigure → reconnect
+  - **Phase 4**：端到端測試與完整文檔（9 個測試 ✅）
+    - pool-management-e2e.test.ts：30+ 測試場景
+    - pool-management.bench.ts：性能基準測試
+    - POOL_MANAGEMENT_GUIDE.md（110 行）+ POOL_MIGRATION_GUIDE.md（220+ 行）
+- **相關代碼**：`packages/atlas/src/PoolHealthChecker.ts`, `PoolWarmer.ts`, `PoolStrategy.ts`, `AdaptivePoolManager.ts`
+- **測試成果**：52 個測試全部通過，零迴歸，向後兼容 100%
+- **相關提交**：4ef159b5, 8c2e1bdc, 455aee7f
+
+### Issue 4: Core Lifecycle (Liftoff) 開發體驗
+- **發現時間**：Week 5, Day 1
+- **嚴重性**：🟡 Medium
+- **狀態**：✅ 已修正 (範例更新)
+- **描述**：`app.core.liftoff()` 僅返回配置而未自動啟動伺服器，導致開發者遺漏 `Bun.serve(config)`。
+- **影響**：應用程式啟動後 HTTP 埠未監聽（Connection Refused）。
+- **改進方案**：優化 `Application` 類的進入點，或在 `liftoff` 中提供 `start: true` 選項。
 
 ---
 
-## 追蹤統計
+## 待優化/預期改進 (下一階段)
 
-| 狀態 | 數量 |
-|------|------|
-| 🔴 Critical (即刻修復) | 0 |
-| 🟠 High (下週修復) | 0 |
-| 🟡 Medium (下月修復) | 0 |
-| 🟢 Low (後期優化) | 0 |
-| ✅ 已修正 | 0 |
+### 1. 分佈式追蹤 (Observability)
+- **預計時間**：Week 9-10
+- **嚴重性**：Medium
+- **狀態**：⏳ 已立項
+- **改進建議**：完整集成 OpenTelemetry 到 `PlanetCore` 與 `Signal` 事件鏈路。
+
+### 2. 事件系統可靠性 (Reliability)
+- **嚴重性**：High
+- **狀態**：🔄 開發中
+- **改進建議**：為 `doActionAsync` 加入 DLQ (Dead Letter Queue) 與背壓 (Backpressure) 機制。
+
+### 3. 限流與速率限制原生支持
+- **嚴重性**：Medium
+- **狀態**：✅ 已初步實現 (Stasis `RateLimiter.ts`)
+- **改進建議**：提供 Middleware 級別的裝飾器支持。
 
 ---
 
-## 開發時間線
+## 修正記錄摘要
+
+| Issue | 修復版本 | 說明 |
+|-------|----------|------|
+| Event Async | v2.1.0-beta | 支持 `doActionAsync` 與優先級 |
+| Redis Lock | v1.1.0 | `@gravito/stasis` 加入分佈式鎖 |
+| Pool Management | v1.3.0 | 連接池統計、健康檢查、自適應管理、性能監控（4 Phase） |
+| Health Check | v1.0.5 | 修復 MongoDB/Redis 容器導航測試 |
+| Provider Fix | v1.0.4 | 修正 ServiceProvider 繼承與實例方法合約 |
+
+---
+
+## 開發時間線回顧
 
 ```
 Week 1-2 (MVP)
-  └─ 預期發現：少量 (基礎功能)
+  └─ 發現：ServiceProvider 合約混淆、資料庫連線配置問題。
 
 Week 3-5 (高併發)
-  └─ 預期發現：大量 (架構層問題)
+  └─ 發現：Event System 效能瓶頸 (Critical)、缺少鎖機制 (High)、連接池壓力 (High)。
 
-Week 6-7 (性能優化)
-  └─ 預期發現：中等 (性能瓶頸)
+Week 6-8 (優化與文檔)
+  └─ 完成：
+     - 快取系統集成（Redis + Cache Invalidation）
+     - 連接池管理完整化（統計、健康檢查、自適應調整、監控）
+     - 事件系統可觀測性集成（Prometheus + Grafana）
+  └─ 成果：P95 延遲降低 34.9%，連接池管理 4 Phase 完成，52 個新測試全部通過。
 
-Week 8 (文檔)
-  └─ 最終歸納與優先級排序
+Week 9+ (進階特性)
+  └─ 計劃：分佈式追蹤、事件系統可靠性（DLQ/Backpressure）、高級限流支持。
 ```
 
 ---
 
-## 如何使用此文檔
+**最後更新**：2026-02-07
+**維護者**：Gravito 核心開發團隊 / 搶購系統開發小組
 
-### 開發中新發現問題
-
-1. 在相關源代碼中添加 TODO comment
-   ```typescript
-   // TODO: Framework Issue - High Priority
-   // Issue: 需要分佈式鎖支持
-   // Ref: FRAMEWORK_ISSUES.md
-   ```
-
-2. 在此文檔中新增條目
-
-3. 記錄到相應的週次
-
-### 修正框架問題
-
-1. 在框架代碼中修正
-2. 在相應的 commit message 中引用
-   ```
-   fix: [core] Add distributed lock support
-
-   Discovered during flash-sale development (Week 3).
-   Fixes: FRAMEWORK_ISSUES.md - Issue 1
-   ```
-
-3. 更新此文檔的狀態為「已修正」
-
----
-
-## 預期的改進機會
-
-根據搶購系統的需求，以下是可能需要加入 Gravito 框架的新功能：
-
-### 新 Packages 候選清單
-
-- [ ] `@gravito/distributed-lock` - 分佈式鎖
-- [ ] `@gravito/rate-limiter` - 速率限制
-- [ ] `@gravito/event-priority` - 事件優先級系統
-- [ ] `@gravito/async-retry` - 非同步重試機制
-- [ ] `@gravito/telemetry` - 可觀測性（metrics、tracing）
-
-### 現有 Package 的潛在改進
-
-- [ ] `@gravito/core` - Container 性能優化？
-- [ ] `@gravito/signal` - Event 系統性能優化？
-- [ ] `@gravito/atlas` - 連接池管理增強？
-- [ ] `@gravito/stasis` - 快取策略增強？
-
----
-
-## 聯繫與討論
-
-新發現的問題應在以下位置討論：
-
-1. **代碼中**：相關源文件的 TODO 註解
-2. **此文檔**：FRAMEWORK_ISSUES.md
-3. **框架 Issue**：gravito-core-ci-fix 中的 GitHub Issues（如果計畫整合）
-
----
-
-## 版本控制
-
-| 版本 | 日期 | 更新 |
-|------|------|------|
-| v0.1 | 2026-02-02 | 初始建立，待發現 |
-
----
-
-**最後更新**：2026-02-02
-**維護者**：搶購系統開發團隊
