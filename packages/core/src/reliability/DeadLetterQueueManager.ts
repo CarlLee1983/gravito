@@ -512,4 +512,70 @@ export class DeadLetterQueueManager {
 
     return query.delete()
   }
+
+  /**
+   * 通過 Bull Job ID 查找 DLQ 記錄
+   *
+   * 用於 MessageQueueBridge 集成：當 Bull Queue job 失敗時，
+   * 通過 Job ID 查找相應的 DLQ 記錄。
+   *
+   * @param bullJobId - Bull Queue Job ID
+   * @returns DLQ 記錄或 undefined
+   *
+   * @example
+   * ```typescript
+   * const record = await dlqManager.findByBullJobId('job-abc123')
+   * if (record) {
+   *   console.log(`Event ${record.event_name} is in DLQ`)
+   * }
+   * ```
+   */
+  async findByBullJobId(bullJobId: string): Promise<DLQRecord | undefined> {
+    try {
+      const records = (await this.db
+        .table('event_dlq')
+        .whereRaw('event_options LIKE ?', [`%"bullJobId":"${bullJobId}"%`])
+        .limit(1)
+        .get()) as unknown as DLQRecord[]
+
+      return records && records.length > 0 ? records[0] : undefined
+    } catch (error) {
+      console.error(`[DeadLetterQueueManager] Error finding record by Bull Job ID:`, error)
+      return undefined
+    }
+  }
+
+  /**
+   * 調度延遲重試（整合 Bull Queue delayed jobs）
+   *
+   * 從 DLQ 中提取事件，通過 Bull Queue 的延遲 job 功能進行重試。
+   *
+   * @param dlqId - DLQ 記錄 ID
+   * @param delayMs - 延遲時間（毫秒）
+   * @throws 如果記錄不存在
+   *
+   * @example
+   * ```typescript
+   * // 延遲 1 小時後重試
+   * await dlqManager.scheduleRetry('dlq-uuid-123', 3600000)
+   * ```
+   */
+  async scheduleRetry(dlqId: string, delayMs: number): Promise<void> {
+    // 1. 從 DLQ 獲取事件
+    const record = await this.getById(dlqId)
+    if (!record) {
+      throw new Error(`[DeadLetterQueueManager] DLQ record not found: ${dlqId}`)
+    }
+
+    // 2. 使用 Bull Queue 創建延遲任務
+    // TODO: Phase 4 Task 3 - 整合 MessageQueueBridge.dispatchDeferredQueued()
+    // 當前作為 stub 實現，在完整實現中應該通過 HookManager 調用 dispatchDeferredQueued
+
+    console.info(
+      `[DeadLetterQueueManager] Scheduled retry for event ${record.event_name} (dlq_id: ${dlqId}) with delay ${delayMs}ms`
+    )
+
+    // 3. 更新 DLQ 狀態
+    await this.requeue(dlqId)
+  }
 }

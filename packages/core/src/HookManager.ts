@@ -116,6 +116,12 @@ export interface HookManagerConfig {
    * @default false
    */
   enablePersistentDLQ?: boolean
+
+  /**
+   * Message Queue Bridge for distributed event processing via Bull Queue.
+   * When provided, enables dispatchQueued() method for routing events to Redis-backed queue.
+   */
+  messageQueueBridge?: any
 }
 
 /**
@@ -162,6 +168,7 @@ export class HookManager {
   private backend: EventBackend
   private dlq?: DeadLetterQueue
   private persistentDlqManager?: DeadLetterQueueManager
+  private messageQueueBridge?: any
   private idempotencyCache: IdempotencyCache
   private config: HookManagerConfig
   private migrationWarner: MigrationWarner
@@ -214,6 +221,11 @@ export class HookManager {
     // Set persistent DLQ handler on EventPriorityQueue if available
     if (this.persistentDlqManager && this.backend instanceof EventPriorityQueue) {
       this.eventQueue.setPersistentDLQHandler(this.createPersistentDLQHandler())
+    }
+
+    // Initialize Message Queue Bridge for distributed processing
+    if (config.messageQueueBridge) {
+      this.messageQueueBridge = config.messageQueueBridge
     }
   }
 
@@ -1077,6 +1089,119 @@ export class HookManager {
       console.error(`[HookManager] Error in persistent DLQ batch retry:`, error)
       return { total: 0, succeeded: 0, failed: 0 }
     }
+  }
+
+  /**
+   * Dispatch an event through Bull Queue (分佈式異步處理).
+   *
+   * 與 doActionAsync() 不同：
+   * - doActionAsync() 使用 EventPriorityQueue (Memory-based)
+   * - dispatchQueued() 使用 Bull Queue (Redis-backed, 分佈式)
+   *
+   * 適用於需要持久化和跨進程處理的事件。
+   *
+   * @template TArgs - 事件參數類型
+   * @param event - 事件名稱
+   * @param args - 事件參數
+   * @param options - 事件選項（可選）
+   * @returns Job ID
+   * @throws 如果未配置 MessageQueueBridge 或沒有 listeners
+   *
+   * @example
+   * ```typescript
+   * const jobId = await hookManager.dispatchQueued('order:created', {
+   *   orderId: 'ORD-123',
+   *   amount: 999.99
+   * })
+   * ```
+   *
+   * @public
+   */
+  async dispatchQueued<TArgs = unknown>(
+    event: string,
+    args: TArgs,
+    options?: any
+  ): Promise<string> {
+    if (!this.messageQueueBridge) {
+      throw new Error(
+        '[HookManager] MessageQueueBridge not configured. Set messageQueueBridge in HookManagerConfig to use dispatchQueued().'
+      )
+    }
+
+    return this.messageQueueBridge.dispatchWithQueue(event, args, options)
+  }
+
+  /**
+   * Dispatch an event through Bull Queue with delay (延遲隊列分發).
+   *
+   * 通過 Bull Queue 的 delayed jobs 功能實現延遲處理。
+   *
+   * @template TArgs - 事件參數類型
+   * @param event - 事件名稱
+   * @param args - 事件參數
+   * @param delay - 延遲時間（毫秒）
+   * @param options - 事件選項（可選）
+   * @returns Job ID
+   * @throws 如果未配置 MessageQueueBridge
+   *
+   * @example
+   * ```typescript
+   * // 延遲 5 秒後處理
+   * const jobId = await hookManager.dispatchDeferredQueued(
+   *   'reminder:send',
+   *   { userId: '123' },
+   *   5000
+   * )
+   * ```
+   *
+   * @public
+   */
+  async dispatchDeferredQueued<TArgs = unknown>(
+    event: string,
+    args: TArgs,
+    delay: number,
+    options?: any
+  ): Promise<string> {
+    if (!this.messageQueueBridge) {
+      throw new Error(
+        '[HookManager] MessageQueueBridge not configured. Set messageQueueBridge in HookManagerConfig to use dispatchDeferredQueued().'
+      )
+    }
+
+    // 將延遲時間添加到 options
+    const mergedOptions = {
+      ...options,
+      delay,
+    }
+
+    return this.messageQueueBridge.dispatchWithQueue(event, args, mergedOptions)
+  }
+
+  /**
+   * Get the execution status of an event.
+   *
+   * 查詢事件執行狀態，支持查詢 Bull Queue 和 DLQ 中的事件。
+   *
+   * @param eventId - 事件 ID (task.id 或 jobId)
+   * @returns 事件狀態信息
+   * @throws 如果未配置 MessageQueueBridge
+   *
+   * @example
+   * ```typescript
+   * const status = await hookManager.getEventStatus('queue-1707000000000-abc123')
+   * console.log(status) // { eventId, status, attempts, createdAt, ... }
+   * ```
+   *
+   * @public
+   */
+  async getEventStatus(eventId: string): Promise<any> {
+    if (!this.messageQueueBridge) {
+      throw new Error(
+        '[HookManager] MessageQueueBridge not configured. Set messageQueueBridge in HookManagerConfig to use getEventStatus().'
+      )
+    }
+
+    return this.messageQueueBridge.getEventStatus(eventId)
   }
 
   /**

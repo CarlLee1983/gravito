@@ -26,6 +26,8 @@ export {
   RateLimitStrategy,
   StarvationProtectionStrategy,
 } from './FlowControlStrategy'
+export type { EventStatus, MessageQueueBridgeConfig } from './MessageQueueBridge'
+export { MessageQueueBridge } from './MessageQueueBridge'
 export * from './observability'
 export type { BackpressureStrategy, EventQueueConfig, EventTask } from './types'
 export { WorkerPool } from './WorkerPool'
