@@ -58,7 +58,7 @@ describe('ProtobufSerializer', () => {
     // or manually construct it using protobufjs in the test.
   })
 
-  it.skip('should deserialize a binary buffer representing a ClientMessage', async () => {
+  it('should deserialize a binary buffer representing a ClientMessage', async () => {
     // TODO: Fix protobufjs field mapping for optional auth fields
     // We can use the same serializer class internals to encode a ClientMessage
     // if we expose a helper or just use protobufjs directly here to mock a client.
@@ -68,10 +68,11 @@ describe('ProtobufSerializer', () => {
     const root = await protobuf.load(join(process.cwd(), 'src/proto/ripple.proto'))
     const ClientMessage = root.lookupType('ripple.ClientMessage')
 
+    // Note: protobufjs converts snake_case to camelCase automatically
     const payload = {
       subscribe: {
         channel: 'my-channel',
-        auth: { socket_id: 's1', signature: 'sig1' },
+        auth: { socketId: 's1', signature: 'sig1' },
       },
     }
     const errMsg = ClientMessage.verify(payload)

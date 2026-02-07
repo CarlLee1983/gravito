@@ -205,12 +205,13 @@ export class ProtobufSerializer implements ISerializer {
     // oneof field name is usually the key in `obj`
     if (obj.subscribe) {
       const auth = obj.subscribe.auth
+      // Note: protobufjs converts snake_case to camelCase automatically
       return {
         type: 'subscribe',
         channel: obj.subscribe.channel,
         auth: auth
           ? {
-              socketId: auth.socket_id || auth.socketId || '',
+              socketId: auth.socketId || '',
               signature: auth.signature || '',
             }
           : undefined,
