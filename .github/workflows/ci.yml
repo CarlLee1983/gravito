@@ -63,7 +63,7 @@ jobs:
               echo "No file changes, skipping lint"
             fi
           else
-            bunx biome check packages satellites --diagnostic-level=error
+            bunx biome check packages --diagnostic-level=error
           fi
 
       - name: Build
@@ -222,14 +222,13 @@ jobs:
 
           if [ "$MODE" == "full" ]; then
             # Main: full typecheck + unit tests (high concurrency) + integration tests (low concurrency)
-            (bunx turbo run typecheck --filter='./packages/*' --filter='./satellites/*' --concurrency=6) &
+            # NOTE: Satellites skipped - will be moved to separate repo
+            (bunx turbo run typecheck --filter='./packages/*' --concurrency=6) &
             PID_TYPECHECK=$!
             (bunx turbo run test:unit --filter='./packages/*' --concurrency=8 --continue) &
             PID_TEST_UNIT=$!
             (bunx turbo run test:integration --filter='./packages/*' --concurrency=2 --continue) &
             PID_TEST_INT=$!
-            (bunx turbo run test --filter='./satellites/*' --concurrency=4 --continue) &
-            PID_TEST_SAT=$!
           else
             # PR: incremental - only affected packages (split into unit and integration)
             TYPECHECK_FILTERS="${{ steps.filters.outputs.typecheck_filters }}"
@@ -256,9 +255,6 @@ jobs:
           fi
           if [ -n "${PID_TEST_INT:-}" ]; then
             if wait $PID_TEST_INT; then echo "✓ Integration tests passed"; else echo "✗ Integration tests failed"; FAILED=1; fi
-          fi
-          if [ -n "${PID_TEST_SAT:-}" ]; then
-            if wait $PID_TEST_SAT; then echo "✓ Satellite tests passed"; else echo "✗ Satellite tests failed"; FAILED=1; fi
           fi
 
           if [ $FAILED -eq 1 ]; then exit 1; fi
