@@ -85,7 +85,17 @@ export class ProtobufSerializer implements ISerializer {
         )
       }
 
-      const protobuf = await import('protobufjs')
+      let protobuf: any
+      try {
+        protobuf = await import('protobufjs')
+      } catch (_importError) {
+        throw new Error(
+          `'protobufjs' is not installed.\n` +
+            `Install it with: npm install protobufjs\n` +
+            `Or use JSON serializer instead: new RippleServer({ serializer: 'json' })`
+        )
+      }
+
       protoRoot = await protobuf.load(this.protoPath!)
       ClientMessageProto = protoRoot.lookupType('ripple.ClientMessage')
       ServerMessageProto = protoRoot.lookupType('ripple.ServerMessage')
@@ -94,7 +104,7 @@ export class ProtobufSerializer implements ISerializer {
       throw new Error(
         `Failed to initialize ProtobufSerializer: ${(error as Error).message}\n` +
           `Proto path attempted: ${this.protoPath}\n` +
-          `Ensure 'protobufjs' is installed.`
+          `Ensure 'protobufjs' is installed or switch to JSON serializer.`
       )
     }
   }

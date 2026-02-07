@@ -47,6 +47,7 @@
     "@gravito/core": "workspace:*",
     "ioredis": "^5.0.0",
     "nats": "^2.23.0",
+    "protobufjs": "^8.0.0",
     "ws": "^8.18.0"
   },
   "peerDependenciesMeta": {
@@ -56,6 +57,9 @@
     "nats": {
       "optional": true
     },
+    "protobufjs": {
+      "optional": true
+    },
     "ws": {
       "optional": true
     }
@@ -63,14 +67,12 @@
   "devDependencies": {
     "bun-types": "latest",
     "ioredis": "^5.4.2",
+    "protobufjs": "^8.0.0",
     "tinybench": "^6.0.0",
     "typescript": "^5.9.3",
     "ws": "^8.18.0"
   },
   "publishConfig": {
     "access": "public"
-  },
-  "dependencies": {
-    "protobufjs": "^8.0.0"
   }
 }

@@ -802,7 +802,13 @@ export interface RippleConfig {
 
   /**
    * Serializer to use for messages (default: 'json').
-   * 'protobuf' requires 'protobufjs' peer dependency.
+   *
+   * 'json': Recommended for most use cases. Zero configuration,
+   *         browser-native, easy debugging. No additional dependencies.
+   *
+   * 'protobuf': For specialized use cases (IoT, bandwidth-constrained networks).
+   *             Requires 'protobufjs' peer dependency to be installed.
+   *             Install with: npm install protobufjs
    */
   serializer?: 'json' | 'protobuf'
 
