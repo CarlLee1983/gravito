@@ -26,7 +26,7 @@
     "bench:schema": "MONGODB_URI=mongodb://localhost:27017 bun test benchmarks/schema-validation.bench.ts",
     "bench:transactions": "MONGODB_URI=mongodb://localhost:27017 bun test benchmarks/transactions.bench.ts",
     "bench:change-streams": "MONGODB_URI=mongodb://localhost:27017 bun test benchmarks/change-streams.bench.ts",
-    "test:unit": "bun test '**/*.test.ts' '!**/*.integration.test.ts' --timeout=10000",
+    "test:unit": "bun test tests/ --timeout=10000",
     "test:integration": "bun test 'integration.test.ts' --timeout=10000"
   },
   "files": [
