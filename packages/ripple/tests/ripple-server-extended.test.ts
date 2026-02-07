@@ -255,6 +255,7 @@ describe('RippleServer Additional Tests', () => {
 
     it('should support fluent to() API for broadcasting', async () => {
       server = new RippleServer({ port: 0 })
+      await server.init()
 
       const messages: any[] = []
       const mockWs = {

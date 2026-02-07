@@ -7,10 +7,9 @@ describe('ProtobufSerializer', () => {
   let serializer: ProtobufSerializer
 
   beforeAll(async () => {
-    // Should point to src/proto/ripple.proto relative to this test file?
-    // The class uses __dirname relative to itself.
-    // Let's instantiate it with explicit path to be safe in test env
-    const protoPath = join(process.cwd(), 'packages/ripple/src/proto/ripple.proto')
+    // Use relative path from current working directory
+    // When running tests, cwd is usually the package root
+    const protoPath = join(process.cwd(), 'src/proto/ripple.proto')
     serializer = new ProtobufSerializer(protoPath)
     await serializer.init()
   })

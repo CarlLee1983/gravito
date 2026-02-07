@@ -1,4 +1,5 @@
 import { join } from 'path'
+import { fileURLToPath } from 'url'
 import type { ClientMessage, ServerMessage } from '../types'
 import type { ISerializer } from './ISerializer'
 
@@ -23,7 +24,7 @@ export class ProtobufSerializer implements ISerializer {
   constructor(private protoPath?: string) {
     if (!protoPath) {
       // Default path assuming standard structure
-      // In production/dist this might need adjustment or bundling
+      // Try relative to __dirname first (serializers directory)
       this.protoPath = join(__dirname, '../proto/ripple.proto')
     }
   }
