@@ -14,10 +14,7 @@ import { ConfigManager } from './ConfigManager'
 import { Container } from './Container'
 import { ErrorHandler } from './ErrorHandler'
 import { EventManager } from './EventManager'
-import {
-  type ObservabilityConfig,
-  ObservableHookManager,
-} from './events/observability/ObservableHookManager'
+import { ObservableHookManager } from './events/observability/ObservableHookManager'
 import { OTelEventMetrics } from './events/observability/OTelEventMetrics'
 import {
   type RegisterGlobalErrorHandlersOptions,

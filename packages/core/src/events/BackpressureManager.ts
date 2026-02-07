@@ -82,9 +82,6 @@ export interface BackpressureConfig {
   /** 當進入 OVERFLOW 狀態時，是否將被拒絕事件路由到 DLQ（預設 false） */
   dlqOnOverflow?: boolean
 
-  /** OVERFLOW 時的 DLQ 路由回呼 */
-  onOverflowRejection?: (eventName: string, priority: string) => void | Promise<void>
-
   /** OVERFLOW 時的重試策略（預設 'dlq-only'） */
   overflowRetryStrategy?: 'immediate' | 'delayed' | 'dlq-only'
 
@@ -150,7 +147,6 @@ const DEFAULT_BACKPRESSURE_CONFIG = {
   enableStarvationProtection: true,
   starvationTimeoutMs: 5000,
   dlqOnOverflow: false,
-  onOverflowRejection: undefined,
   overflowRetryStrategy: 'dlq-only' as const,
   overflowRetryDelayMs: 5000,
 }
@@ -235,15 +231,11 @@ class SlidingWindowCounter {
  */
 export class BackpressureManager {
   private enabled: boolean
-  private config: Omit<
-    Required<BackpressureConfig>,
-    'onRejected' | 'onStateChange' | 'onOverflowRejection'
-  > & {
+  private config: Omit<Required<BackpressureConfig>, 'onRejected' | 'onStateChange'> & {
     dlqOnOverflow: boolean
   }
   private onRejected?: BackpressureConfig['onRejected']
   private onStateChange?: BackpressureConfig['onStateChange']
-  private onOverflowRejection?: BackpressureConfig['onOverflowRejection']
 
   private state: BackpressureState = BackpressureState.NORMAL
   private rejectedCount = 0
@@ -281,7 +273,6 @@ export class BackpressureManager {
     }
     this.onRejected = config.onRejected
     this.onStateChange = config.onStateChange
-    this.onOverflowRejection = config.onOverflowRejection
     this.rateCounter = new SlidingWindowCounter(this.config.rateLimitWindowMs, 10)
   }
 
