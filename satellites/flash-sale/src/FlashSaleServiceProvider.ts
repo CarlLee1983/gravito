@@ -45,7 +45,7 @@ export class FlashSaleServiceProvider extends ServiceProvider {
     container.singleton('cache.service', () => {
       try {
         // 配置 Redis（從應用配置中獲取）
-        const redisConfig = (core.config as any)?.redis
+        const redisConfig = core.config.get('redis') as any
         core.logger.debug(`[Flash-Sale] Redis config available: ${!!redisConfig}`)
 
         if (redisConfig) {
@@ -54,7 +54,7 @@ export class FlashSaleServiceProvider extends ServiceProvider {
           )
           Redis.configure(redisConfig)
         } else {
-          core.logger.warn('[Flash-Sale] No Redis configuration found in core.config')
+          core.logger.warn('[Flash-Sale] No Redis configuration found in core.config.get("redis")')
           return undefined
         }
 
