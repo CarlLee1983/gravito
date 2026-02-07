@@ -265,7 +265,7 @@ console.log(`Online members: ${members.length}`)
 
 Presence 資料使用 Redis Hash 儲存：
 
-```text
+```markdown
 Key: ripple:presence:presence-lobby
 Hash:
   user-123 -> {"id":"user-123","info":{"name":"Alice"}}

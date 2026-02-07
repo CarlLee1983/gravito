@@ -437,7 +437,7 @@ interface StepResult {
 
 ### 核心流程
 
-```text
+```markdown
 使用者代碼
     ↓
 WorkflowBuilder (定義)
