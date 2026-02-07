@@ -4,8 +4,9 @@
  * 處理商品相關的 HTTP 請求
  */
 
-import type { GravitoContext, PlanetCore } from '@gravito/core'
+import type { CacheService, GravitoContext, PlanetCore } from '@gravito/core'
 import type { IProductRepository } from '../../../Application/Contracts/IProductRepository'
+import { GetProduct } from '../../../Application/UseCases/GetProduct'
 import { ListProducts } from '../../../Application/UseCases/ListProducts'
 
 /**
@@ -61,7 +62,7 @@ export class ProductController {
   /**
    * GET /api/products/:id
    *
-   * 查詢單一商品
+   * 查詢單一商品（支持快取）
    */
   async show(ctx: GravitoContext): Promise<void> {
     try {
@@ -74,8 +75,11 @@ export class ProductController {
       }
 
       const productRepository = this.core.container.make<IProductRepository>('product.repository')
+      const cacheService = this.core.container.make<CacheService | undefined>('cache.service')
 
-      const product = await productRepository.findById(id)
+      // 使用新的 GetProduct Use Case（支持快取）
+      const useCase = new GetProduct(productRepository, cacheService)
+      const product = await useCase.execute(id)
 
       if (!product) {
         ctx.status(404)
