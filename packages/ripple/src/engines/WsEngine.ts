@@ -115,14 +115,14 @@ export class WsEngine implements IRippleEngine {
       // Create client data (Ripple context expects this)
       const clientData: ClientData = {
         id: crypto.randomUUID(),
-        socketId: crypto.randomUUID(),
         remoteAddress: req.socket.remoteAddress,
+        channels: new Set<string>(),
       }
 
       const socket = new WsRippleSocket(ws, clientData, this)
       this.sockets.set(socket.id, socket)
 
-      ws.on('message', (data, isBinary) => {
+      ws.on('message', (data: any, isBinary: boolean) => {
         let payload: string | Uint8Array
         if (isBinary) {
           payload = data instanceof Uint8Array ? data : new Uint8Array(data as any)
@@ -132,7 +132,7 @@ export class WsEngine implements IRippleEngine {
         this.messageHandler?.(socket, payload)
       })
 
-      ws.on('close', (code, reason) => {
+      ws.on('close', (code: number, reason: Buffer) => {
         // Cleanup subscriptions
         this.cleanupSocket(socket.id)
         this.sockets.delete(socket.id)
@@ -150,7 +150,7 @@ export class WsEngine implements IRippleEngine {
   async close(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.wss) return resolve()
-      this.wss.close((err) => {
+      this.wss.close((err: any) => {
         if (err) return reject(err)
         this.sockets.clear()
         this.subscriptions.clear()

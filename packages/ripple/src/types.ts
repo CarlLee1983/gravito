@@ -40,6 +40,8 @@ export interface ClientData {
   reconnectionToken?: string
   /** Session expiry timestamp (v3.6+) */
   sessionExpiry?: number
+  /** Remote IP address (v5.0+) */
+  remoteAddress?: string
 }
 
 // ─────────────────────────────────────────────────────────────
