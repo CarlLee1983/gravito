@@ -6,9 +6,11 @@
 
 import type { CacheService, Container, PlanetCore } from '@gravito/core'
 import { ServiceProvider } from '@gravito/core'
+import { Redis } from '@gravito/plasma'
 import { setupCacheInvalidation } from './Infrastructure/Handlers/CacheInvalidationHandler'
 import { MockOrderRepository } from './Infrastructure/Repositories/MockOrderRepository'
 import { MockProductRepository } from './Infrastructure/Repositories/MockProductRepository'
+import { RedisCacheService } from './Infrastructure/Services/RedisCacheService'
 import { AdminController } from './Interface/Http/Controllers/AdminController'
 import { OrderController } from './Interface/Http/Controllers/OrderController'
 import { ProductController } from './Interface/Http/Controllers/ProductController'
@@ -39,12 +41,23 @@ export class FlashSaleServiceProvider extends ServiceProvider {
       return new MockOrderRepository(core)
     })
 
-    // 註冊 CacheService 存根（實際實現由 Orbit 注入）
-    // CacheService 應由應用層的 Orbit（如 Plasma Redis Orbit）提供
+    // 註冊 CacheService（使用真實 Redis）
     container.singleton('cache.service', () => {
-      // 嘗試從 core.orbit 或其他地方取得 CacheService
-      // 如果未可用，返回 undefined
-      return undefined
+      try {
+        // 獲取 Redis 連接（使用 @gravito/plasma 的 Redis 門面）
+        const redisConnection = Redis.connection('cache')
+
+        if (redisConnection) {
+          return new RedisCacheService(redisConnection, 'flash-sale:')
+        }
+
+        // 如果 Redis 未可用，返回 undefined（降級到 Mock）
+        core.logger.warn('[Flash-Sale] Redis CacheService 未可用，將使用 Mock Repository')
+        return undefined
+      } catch (error) {
+        core.logger.error(`[Flash-Sale] 初始化 RedisCacheService 失敗: ${String(error)}`)
+        return undefined
+      }
     })
   }
 
