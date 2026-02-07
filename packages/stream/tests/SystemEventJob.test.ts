@@ -80,4 +80,48 @@ describe('SystemEventJob', () => {
       appSpy.mockRestore()
     })
   })
+
+  describe('failure handling', () => {
+    it('should set failure callback', () => {
+      const job = new SystemEventJob('test', null)
+      const callback = mock(async (_error: Error, _attempt: number) => {})
+
+      const result = job.onFailed(callback)
+
+      expect(result).toBe(job) // Check chaining
+    })
+
+    it('should call failure callback when failed is invoked', async () => {
+      const job = new SystemEventJob('test', null)
+      const callback = mock(async (_error: Error, _attempt: number) => {})
+
+      job.onFailed(callback)
+      const error = new Error('Job failed')
+      await job.failed(error, 3)
+
+      expect(callback).toHaveBeenCalledWith(error, 3)
+    })
+
+    it('should not fail if no failure callback is set', async () => {
+      const job = new SystemEventJob('test', null)
+      const error = new Error('Job failed')
+
+      await job.failed(error, 1) // Should not throw
+    })
+
+    it('should handle callback errors gracefully', async () => {
+      const job = new SystemEventJob('test', null)
+      const callback = mock(async () => {
+        throw new Error('Callback error')
+      })
+
+      job.onFailed(callback)
+      const error = new Error('Job failed')
+
+      // Should not throw
+      await job.failed(error, 1)
+
+      expect(callback).toHaveBeenCalled()
+    })
+  })
 })

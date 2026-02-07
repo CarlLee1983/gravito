@@ -378,6 +378,38 @@ export interface GrpcDriverConfig {
 }
 
 /**
+ * Configuration for the Bull Queue driver.
+ *
+ * Configures the queue system to use Bull Queue (backed by Redis).
+ *
+ * @public
+ * @example
+ * ```typescript
+ * import { Queue } from 'bullmq'
+ * import Redis from 'ioredis'
+ *
+ * const redis = new Redis()
+ * const queue = new Queue('gravito-events', { connection: redis })
+ * const config: BullMQDriverConfig = {
+ *   driver: 'bullmq',
+ *   queue: queue
+ * };
+ * ```
+ */
+export interface BullMQDriverConfig {
+  /** Driver type identifier */
+  driver: 'bullmq'
+  /** Bull Queue instance */
+  queue: any
+  /** Optional Bull Worker instance */
+  worker?: any
+  /** Key prefix for queue namespacing */
+  prefix?: string
+  /** Enable debug logging */
+  debug?: boolean
+}
+
+/**
  * Union type for all supported queue connection configurations.
  *
  * @public
@@ -390,6 +422,7 @@ export type QueueConnectionConfig =
   | SQSDriverConfig
   | RabbitMQDriverConfig
   | GrpcDriverConfig
+  | BullMQDriverConfig
   | { driver: 'nats'; [key: string]: unknown }
   | { driver: string; [key: string]: unknown }
 

@@ -7,6 +7,11 @@ import { Job } from './Job'
  * @internal
  */
 export class SystemEventJob extends Job {
+  /**
+   * Optional failure callback for DLQ handling.
+   */
+  private onFailedCallback?: (error: Error, attempt: number) => Promise<void>
+
   constructor(
     public readonly hook: string,
     public readonly args: unknown,
@@ -25,6 +30,17 @@ export class SystemEventJob extends Job {
   }
 
   /**
+   * Set failure callback for DLQ handling.
+   *
+   * @param callback - Called when job fails permanently
+   * @returns Self for chaining
+   */
+  onFailed(callback: (error: Error, attempt: number) => Promise<void>): this {
+    this.onFailedCallback = callback
+    return this
+  }
+
+  /**
    * Execute the hook listeners in the worker process.
    */
   async handle(): Promise<void> {
@@ -33,6 +49,21 @@ export class SystemEventJob extends Job {
       // Use doActionSync to execute listeners in the worker process
       // and avoid infinite recursion if asyncByDefault is true.
       await core.hooks.doActionSync(this.hook, this.args)
+    }
+  }
+
+  /**
+   * Called when job fails permanently after all retries.
+   *
+   * This method is invoked by the worker when job exhausts all retry attempts.
+   */
+  async failed(error: Error, attempt = 1): Promise<void> {
+    if (this.onFailedCallback) {
+      try {
+        await this.onFailedCallback(error, attempt)
+      } catch (callbackError) {
+        console.error('[SystemEventJob] Failed callback error:', callbackError)
+      }
     }
   }
 }

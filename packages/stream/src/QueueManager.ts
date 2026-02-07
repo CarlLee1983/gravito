@@ -218,9 +218,29 @@ export class QueueManager {
         break
       }
 
+      case 'bullmq': {
+        // Lazy-load BullMQDriver
+        const { BullMQDriver } = require('./drivers/BullMQDriver')
+        if (!config.queue) {
+          throw new Error(
+            '[QueueManager] BullMQDriver requires queue. Please provide Bull Queue instance in connection config.'
+          )
+        }
+        this.drivers.set(
+          name,
+          new BullMQDriver({
+            queue: config.queue,
+            worker: config.worker,
+            prefix: config.prefix,
+            debug: config.debug,
+          })
+        )
+        break
+      }
+
       default:
         throw new Error(
-          `Driver "${driverType}" is not supported. Supported drivers: memory, database, redis, kafka, sqs, rabbitmq`
+          `Driver "${driverType}" is not supported. Supported drivers: memory, database, redis, kafka, sqs, rabbitmq, bullmq`
         )
     }
   }

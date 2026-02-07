@@ -18,3 +18,11 @@ export { type ObservabilityConfig, ObservableHookManager } from './ObservableHoo
  * @public
  */
 export { OTelEventMetrics, type QueueDepthCallback } from './OTelEventMetrics'
+/**
+ * @public
+ */
+export {
+  StreamWorkerMetrics,
+  WorkerJobStatus,
+  type WorkerMetricsRecorder,
+} from './StreamWorkerMetrics'
