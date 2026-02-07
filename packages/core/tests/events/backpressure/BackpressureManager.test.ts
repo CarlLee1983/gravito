@@ -107,8 +107,8 @@ describe('BackpressureManager', () => {
       manager.evaluate('test', 'normal', 49, { high: 0, normal: 49, low: 0 })
       expect(manager.getState()).toBe(BackpressureState.WARNING)
 
-      // 降至 48% 時恢復為 NORMAL
-      manager.evaluate('test', 'normal', 48, { high: 0, normal: 48, low: 0 })
+      // 降至 47% 時恢復為 NORMAL (需要 < 48%)
+      manager.evaluate('test', 'normal', 47, { high: 0, normal: 47, low: 0 })
       expect(manager.getState()).toBe(BackpressureState.NORMAL)
     })
 
@@ -122,8 +122,8 @@ describe('BackpressureManager', () => {
       manager.evaluate('test', 'normal', 69, { high: 0, normal: 69, low: 0 })
       expect(manager.getState()).toBe(BackpressureState.CRITICAL)
 
-      // 降至 68% 時恢復為 WARNING
-      manager.evaluate('test', 'normal', 68, { high: 0, normal: 68, low: 0 })
+      // 降至 67% 時恢復為 WARNING (需要 < 68%)
+      manager.evaluate('test', 'normal', 67, { high: 0, normal: 67, low: 0 })
       expect(manager.getState()).toBe(BackpressureState.WARNING)
     })
 
@@ -137,8 +137,8 @@ describe('BackpressureManager', () => {
       manager.evaluate('test', 'normal', 81, { high: 0, normal: 81, low: 0 })
       expect(manager.getState()).toBe(BackpressureState.OVERFLOW)
 
-      // 降至 80% 時恢復為 CRITICAL
-      manager.evaluate('test', 'normal', 80, { high: 0, normal: 80, low: 0 })
+      // 降至 79% 時恢復為 CRITICAL (需要 < 80%)
+      manager.evaluate('test', 'normal', 79, { high: 0, normal: 79, low: 0 })
       expect(manager.getState()).toBe(BackpressureState.CRITICAL)
     })
   })

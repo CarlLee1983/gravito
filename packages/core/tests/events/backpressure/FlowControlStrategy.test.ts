@@ -193,7 +193,7 @@ describe('FlowControlStrategy', () => {
       const strategy1 = new QueueDepthStrategy()
       const strategy2 = new RateLimitStrategy()
 
-      const composite = new CompositeStrategy([strategy1, strategy2])
+      const composite = new CompositeStrategy('composite', [strategy1, strategy2])
 
       // 超過隊列深度限制
       const context: FlowControlContext = {
@@ -209,7 +209,7 @@ describe('FlowControlStrategy', () => {
       const strategy1 = new QueueDepthStrategy()
       const strategy2 = new RateLimitStrategy()
 
-      const composite = new CompositeStrategy([strategy1, strategy2])
+      const composite = new CompositeStrategy('composite', [strategy1, strategy2])
 
       const context: FlowControlContext = {
         ...baseContext,
@@ -222,7 +222,7 @@ describe('FlowControlStrategy', () => {
     })
 
     it('應返回策略名稱', () => {
-      const composite = new CompositeStrategy([new QueueDepthStrategy()])
+      const composite = new CompositeStrategy('composite', [new QueueDepthStrategy()])
       expect(composite.name).toBe('composite')
     })
   })

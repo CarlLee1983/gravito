@@ -398,28 +398,44 @@ export class BackpressureManager {
 
     let newState = this.state
 
+    // 升級路徑：總是立即升級（無遲滯）
     if (depthRatio >= overflow) {
       newState = BackpressureState.OVERFLOW
     } else if (depthRatio >= critical) {
       newState = BackpressureState.CRITICAL
     } else if (depthRatio >= warning) {
-      newState = BackpressureState.WARNING
-    } else if (
-      // 恢復條件：需降至 threshold * 80%
-      this.state === BackpressureState.WARNING &&
-      depthRatio < warning * hysteresisRatio
-    ) {
-      newState = BackpressureState.NORMAL
-    } else if (
-      this.state === BackpressureState.CRITICAL &&
-      depthRatio < critical * hysteresisRatio
-    ) {
-      newState = BackpressureState.WARNING
-    } else if (
-      this.state === BackpressureState.OVERFLOW &&
-      depthRatio < overflow * hysteresisRatio
-    ) {
-      newState = BackpressureState.CRITICAL
+      // 在 warning 到 critical 之間
+      // 檢查是否應該從 CRITICAL 或更高級別降級
+      if (depthRatio < critical * hysteresisRatio && this.state === BackpressureState.CRITICAL) {
+        // 從 CRITICAL 降級到 WARNING
+        newState = BackpressureState.WARNING
+      } else if (
+        depthRatio < overflow * hysteresisRatio &&
+        this.state === BackpressureState.OVERFLOW
+      ) {
+        // 從 OVERFLOW 降級到 CRITICAL
+        newState = BackpressureState.CRITICAL
+      } else if (this.state === BackpressureState.NORMAL) {
+        // 從 NORMAL 升級到 WARNING
+        newState = BackpressureState.WARNING
+      }
+      // 否則保持當前狀態（WARNING、CRITICAL、OVERFLOW 保持）
+    } else {
+      // depthRatio < warning，檢查進一步降級（遲滯設計）
+      if (this.state === BackpressureState.WARNING && depthRatio < warning * hysteresisRatio) {
+        newState = BackpressureState.NORMAL
+      } else if (
+        this.state === BackpressureState.CRITICAL &&
+        depthRatio < critical * hysteresisRatio
+      ) {
+        newState = BackpressureState.WARNING
+      } else if (
+        this.state === BackpressureState.OVERFLOW &&
+        depthRatio < overflow * hysteresisRatio
+      ) {
+        newState = BackpressureState.CRITICAL
+      }
+      // 否則保持當前狀態
     }
 
     if (newState !== this.state) {

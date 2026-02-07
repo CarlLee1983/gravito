@@ -51,7 +51,7 @@ export interface FlowControlStrategy {
  * 根據總隊列深度和分優先級隊列深度決定是否限制事件入隊。
  */
 export class QueueDepthStrategy implements FlowControlStrategy {
-  readonly name = 'QueueDepth'
+  readonly name = 'queue-depth'
 
   evaluate(context: FlowControlContext): BackpressureDecision {
     const config = context.config
@@ -96,7 +96,7 @@ export class QueueDepthStrategy implements FlowControlStrategy {
  * 根據每秒入隊速率限制事件入隊。
  */
 export class RateLimitStrategy implements FlowControlStrategy {
-  readonly name = 'RateLimit'
+  readonly name = 'rate-limit'
 
   evaluate(context: FlowControlContext): BackpressureDecision {
     const maxRate = context.config.maxEnqueueRate || Number.POSITIVE_INFINITY
@@ -137,7 +137,7 @@ export class RateLimitStrategy implements FlowControlStrategy {
  * 在 WARNING 和 CRITICAL 狀態下降級低優先級事件，防止高優先級飢餓。
  */
 export class PriorityRebalanceStrategy implements FlowControlStrategy {
-  readonly name = 'PriorityRebalance'
+  readonly name = 'priority-rebalance'
 
   evaluate(context: FlowControlContext): BackpressureDecision {
     const state = context.state
@@ -186,7 +186,7 @@ export class PriorityRebalanceStrategy implements FlowControlStrategy {
  * 當事件等待超過 starvationTimeoutMs 時，自動提升其優先級。
  */
 export class StarvationProtectionStrategy implements FlowControlStrategy {
-  readonly name = 'StarvationProtection'
+  readonly name = 'starvation-protection'
 
   evaluate(_context: FlowControlContext): BackpressureDecision {
     // 此策略需要在 BackpressureManager 中額外實現
@@ -260,10 +260,6 @@ export class CompositeStrategy implements FlowControlStrategy {
  */
 export function createDefaultStrategies(
   _config: Omit<BackpressureConfig, 'onRejected' | 'onStateChange'>
-): CompositeStrategy {
-  return new CompositeStrategy('Default', [
-    new QueueDepthStrategy(),
-    new RateLimitStrategy(),
-    new PriorityRebalanceStrategy(),
-  ])
+): FlowControlStrategy[] {
+  return [new QueueDepthStrategy(), new RateLimitStrategy(), new PriorityRebalanceStrategy()]
 }
