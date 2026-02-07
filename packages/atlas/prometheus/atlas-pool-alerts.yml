@@ -1,0 +1,94 @@
+groups:
+  - name: atlas_pool_alerts
+    interval: 30s
+    rules:
+      # 連接池利用率過高
+      - alert: PoolUtilizationHigh
+        expr: db_client_connections_utilization > 0.85
+        for: 2m
+        labels:
+          severity: warning
+          service: gravito-atlas
+        annotations:
+          summary: "Connection pool utilization high"
+          description: "Pool {{ $labels.db_connection_name }} utilization is {{ $value | humanizePercentage }}"
+
+      # 連接池利用率臨界
+      - alert: PoolUtilizationCritical
+        expr: db_client_connections_utilization > 0.95
+        for: 1m
+        labels:
+          severity: critical
+          service: gravito-atlas
+        annotations:
+          summary: "Connection pool utilization critical"
+          description: "Pool {{ $labels.db_connection_name }} utilization is {{ $value | humanizePercentage }}"
+
+      # 連接等待時間過長 (P95 > 1秒)
+      - alert: ConnectionWaitTimeHigh
+        expr: histogram_quantile(0.95, rate(db_client_connections_wait_time_bucket[5m])) > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: gravito-atlas
+        annotations:
+          summary: "Connection wait time high"
+          description: "P95 wait time for {{ $labels.db_connection_name }} is {{ $value | humanize }}ms"
+
+      # 連接獲取失敗率高
+      - alert: ConnectionAcquisitionErrorsHigh
+        expr: rate(db_client_connections_acquisition_errors[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          service: gravito-atlas
+        annotations:
+          summary: "High connection acquisition error rate"
+          description: "Error rate for {{ $labels.db_connection_name }} is {{ $value | humanize }} errors/sec"
+
+      # 待處理連接過多 (> 10)
+      - alert: PendingConnectionsHigh
+        expr: db_client_connections_usage{state="pending"} > 10
+        for: 3m
+        labels:
+          severity: warning
+          service: gravito-atlas
+        annotations:
+          summary: "Too many pending connections"
+          description: "{{ $labels.db_connection_name }} has {{ $value | humanize }} pending connections"
+
+      # 連接池無空閒連接
+      - alert: NoIdleConnections
+        expr: db_client_connections_usage{state="idle"} == 0
+        for: 1m
+        labels:
+          severity: warning
+          service: gravito-atlas
+        annotations:
+          summary: "Connection pool has no idle connections"
+          description: "Pool {{ $labels.db_connection_name }} has no idle connections available"
+
+      # 數據庫操作錯誤率高
+      - alert: DatabaseOperationErrorRateHigh
+        expr: rate(db_client_operation_errors[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: gravito-atlas
+        annotations:
+          summary: "High database operation error rate"
+          description: "Error rate for {{ $labels.db_system }} is {{ $value | humanizePercentage }}"
+
+      # 數據庫操作性能下降
+      - alert: DatabaseOperationSlowdown
+        expr: |
+          (
+            rate(db_client_operation_duration_sum[5m]) / rate(db_client_operation_duration_count[5m])
+          ) > 1000
+        for: 10m
+        labels:
+          severity: warning
+          service: gravito-atlas
+        annotations:
+          summary: "Database operations are slow"
+          description: "Average operation time for {{ $labels.db_system }} is {{ $value | humanize }}ms"

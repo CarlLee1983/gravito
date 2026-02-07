@@ -7,9 +7,16 @@ export interface AtlasMetricsConfig {
 export class AtlasMetrics {
   private meter: Meter | null = null
   private config: AtlasMetricsConfig
+  private poolCallbacks = new Map<string, () => void>()
 
   public readonly operationDuration?: Histogram
   public readonly operationErrors?: Counter
+
+  // Connection pool metrics
+  public readonly poolSize?: any // ObservableGauge
+  public readonly poolUtilization?: any // ObservableGauge
+  public readonly poolWaitTime?: Histogram
+  public readonly poolAcquisitionErrors?: Counter
 
   constructor(config: AtlasMetricsConfig) {
     this.config = config
@@ -24,6 +31,121 @@ export class AtlasMetrics {
       this.operationErrors = this.meter.createCounter('db.client.operation.errors', {
         description: 'Number of database operation errors',
       })
+
+      // Connection pool metrics
+      try {
+        // @ts-expect-error - ObservableGauge is available in newer OpenTelemetry versions
+        if (this.meter.createObservableGauge) {
+          // @ts-expect-error
+          this.poolSize = this.meter.createObservableGauge('db.client.connections.usage', {
+            description: 'Number of connections in various states',
+            unit: '{connection}',
+          })
+
+          // @ts-expect-error
+          this.poolUtilization = this.meter.createObservableGauge(
+            'db.client.connections.utilization',
+            {
+              description: 'Connection pool utilization ratio',
+              unit: '1',
+            }
+          )
+        }
+      } catch {
+        // ObservableGauge not available in this version
+      }
+
+      this.poolWaitTime = this.meter.createHistogram('db.client.connections.wait_time', {
+        description: 'Time spent waiting for a connection',
+        unit: 'ms',
+      })
+
+      this.poolAcquisitionErrors = this.meter.createCounter(
+        'db.client.connections.acquisition_errors',
+        {
+          description: 'Number of connection acquisition errors',
+        }
+      )
     }
+  }
+
+  /**
+   * Register pool statistics callback for ObservableGauge
+   */
+  registerPoolStatsCallback(
+    connectionName: string,
+    getStats: () => { idle: number; active: number; pending: number; max: number } | null
+  ): void {
+    if (!this.poolSize || !this.poolUtilization) {
+      return
+    }
+
+    const callback = () => {
+      const stats = getStats()
+      if (!stats) {
+        return
+      }
+
+      // Record idle, active, and pending connections
+      // @ts-expect-error
+      if (this.poolSize?.addCallback) {
+        // @ts-expect-error
+        this.poolSize.addCallback((result) => {
+          result.observe(stats.idle, {
+            'db.connection.name': connectionName,
+            state: 'idle',
+          })
+          result.observe(stats.active, {
+            'db.connection.name': connectionName,
+            state: 'used',
+          })
+          result.observe(stats.pending, {
+            'db.connection.name': connectionName,
+            state: 'pending',
+          })
+        })
+      }
+
+      // Record utilization ratio
+      const utilization = stats.active / stats.max
+      // @ts-expect-error
+      if (this.poolUtilization?.addCallback) {
+        // @ts-expect-error
+        this.poolUtilization.addCallback((result) => {
+          result.observe(utilization, {
+            'db.connection.name': connectionName,
+          })
+        })
+      }
+    }
+
+    this.poolCallbacks.set(connectionName, callback)
+  }
+
+  /**
+   * Record connection wait time
+   */
+  recordConnectionWaitTime(connectionName: string, duration: number): void {
+    if (!this.poolWaitTime) {
+      return
+    }
+
+    this.poolWaitTime.record(duration, {
+      'db.connection.name': connectionName,
+    })
+  }
+
+  /**
+   * Record connection acquisition error
+   */
+  recordConnectionAcquisitionError(connectionName: string, error: string): void {
+    if (!this.poolAcquisitionErrors) {
+      return
+    }
+
+    this.poolAcquisitionErrors.add(1, {
+      'db.connection.name': connectionName,
+      'error.type': error,
+    })
   }
 }
