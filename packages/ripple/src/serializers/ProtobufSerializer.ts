@@ -121,7 +121,7 @@ export class ProtobufSerializer implements ISerializer {
     return ServerMessageProto.encode(msg).finish()
   }
 
-  deserialize(data: string | Buffer | ArrayBuffer): ClientMessage {
+  deserialize(data: string | Buffer | ArrayBuffer | Uint8Array): ClientMessage {
     this.checkInitialized()
 
     const buffer =

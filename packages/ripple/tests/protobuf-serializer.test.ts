@@ -20,7 +20,7 @@ describe('ProtobufSerializer', () => {
     })
 
     it('should accept custom proto path', async () => {
-      const customPath = join(process.cwd(), 'src/proto/ripple.proto')
+      const customPath = join(process.cwd(), 'packages/ripple/src/proto/ripple.proto')
       const s = new ProtobufSerializer({ protoPath: customPath })
       await s.init()
       expect(s).toBeDefined()
@@ -49,7 +49,7 @@ describe('ProtobufSerializer', () => {
 
   it('should deserialize a binary buffer representing a ClientMessage', async () => {
     const protobuf = await import('protobufjs')
-    const root = await protobuf.load(join(process.cwd(), 'src/proto/ripple.proto'))
+    const root = await protobuf.load(join(process.cwd(), 'packages/ripple/src/proto/ripple.proto'))
     const ClientMessage = root.lookupType('ripple.ClientMessage')
 
     const payload = {
@@ -98,7 +98,7 @@ describe('ProtobufSerializer', () => {
       type: 'binary', // Use binary type for raw bytes transmission properly aligned with proto definition
       channel: 'binary-channel',
       event: 'upload',
-      data: data,
+      data: data.buffer,
     }
 
     // In pure mode, we expect serialize to work without JSON stringification of 'data'
@@ -112,7 +112,7 @@ describe('ProtobufSerializer', () => {
 
     // Decode to check data content
     const protobuf = await import('protobufjs')
-    const root = await protobuf.load(join(process.cwd(), 'src/proto/ripple.proto'))
+    const root = await protobuf.load(join(process.cwd(), 'packages/ripple/src/proto/ripple.proto'))
     const ServerMessageProto = root.lookupType('ripple.ServerMessage')
 
     const decoded = ServerMessageProto.decode(encoded)
