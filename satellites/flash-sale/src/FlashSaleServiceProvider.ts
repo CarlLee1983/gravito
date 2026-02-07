@@ -44,10 +44,25 @@ export class FlashSaleServiceProvider extends ServiceProvider {
     // 註冊 CacheService（使用真實 Redis）
     container.singleton('cache.service', () => {
       try {
+        // 配置 Redis（從應用配置中獲取）
+        const redisConfig = (core.config as any)?.redis
+        core.logger.debug(`[Flash-Sale] Redis config available: ${!!redisConfig}`)
+
+        if (redisConfig) {
+          core.logger.debug(
+            `[Flash-Sale] Configuring Redis with connections: ${Object.keys(redisConfig.connections || {}).join(', ')}`
+          )
+          Redis.configure(redisConfig)
+        } else {
+          core.logger.warn('[Flash-Sale] No Redis configuration found in core.config')
+          return undefined
+        }
+
         // 獲取 Redis 連接（使用 @gravito/plasma 的 Redis 門面）
         const redisConnection = Redis.connection('cache')
 
         if (redisConnection) {
+          core.logger.info('[Flash-Sale] ✅ Redis CacheService 已初始化')
           return new RedisCacheService(redisConnection, 'flash-sale:')
         }
 
