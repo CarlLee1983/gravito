@@ -537,7 +537,7 @@ Issue 1.2 (Event System - Reliability & Scalability)
 
 ---
 
-## 📝 2026-02-07 進度更新 - Phase 4 Task 1 完成
+## 📝 2026-02-07 進度更新 - Phase 4 Task 1-3 完成
 
 ### ✅ 完成 Task 1.2.4.1 - Bull Queue 核心集成
 
@@ -574,6 +574,77 @@ Issue 1.2 (Event System - Reliability & Scalability)
 - 100% 向後相容
 - Biome lint 檢查通過
 
+---
+
+### ✅ 完成 Task 1.2.4.2 - Worker 線程池管理
+
+**實施成果**：
+- WorkerPoolConfig (182 行) - 線程池配置
+  - 並發度、工作線程數、自動擴展參數
+  - 指標報告間隔
+- WorkerPoolMetrics (162 行) - 線程池指標
+  - 活躍/空閒 worker 計數
+  - 隊列深度追蹤
+  - OpenTelemetry 集成
+- WorkerPool (412 行) - 線程池實現
+  - Worker 創建與生命週期管理
+  - 任務隊列與分發
+  - 自動縮放與健康檢查
+  - EventPriorityQueue 集成
+
+**測試驗證**：
+- 新增 17 個測試全部通過 ✅
+- 無迴歸：所有現有測試仍通過
+- TypeScript 類型檢查通過
+
+**代碼質量**：
+- 756 行代碼提交
+- 3 個新文件
+- 100% 向後相容
+
+---
+
+### ✅ 完成 Task 1.2.4.3 - 消息隊列流程整合
+
+**實施成果**：
+- MessageQueueBridge (320 行) - 橋接層
+  - dispatchWithQueue() - Bull Queue 分發
+  - processQueuedEvent() - Worker 執行（直接 callbacks）
+  - handleJobFailure() - DLQ 轉移
+  - getEventStatus() - 狀態查詢（stub）
+- HookManager 擴展 (+125 行)
+  - dispatchQueued() - 分佈式異步分發
+  - dispatchDeferredQueued() - 延遲隊列分發
+  - getEventStatus() - 事件狀態查詢
+- DeadLetterQueueManager 增強 (+64 行)
+  - findByBullJobId() - Job ID 查詢
+  - scheduleRetry() - 延遲重試調度
+
+**技術設計**：
+- Hybrid 重試策略：Bull Queue (3 次) → Core DLQ
+- 避免遞迴：Worker 直接執行 callbacks
+- CircuitBreaker 集成：可選狀態檢查
+- 完整錯誤傳播
+
+**測試驗證**：
+- 新增 22 個集成測試全部通過 ✅
+  - 事件分發 (4 個)
+  - 事件處理 (3 個)
+  - 失敗處理 (2 個)
+  - HookManager 集成 (5 個)
+  - 延遲分發 (2 個)
+  - 事件狀態 (2 個)
+  - 錯誤邊界 (4 個)
+- 無迴歸：所有現有測試仍通過
+- TypeScript 類型檢查通過
+
+**代碼質量**：
+- 954 行代碼提交
+- 2 個新文件 + 3 個修改文件
+- 100% 向後相容
+
+---
+
 ### 📊 整體進度更新
 
 ```
@@ -581,22 +652,28 @@ Issue 1.2 (Event System - Reliability & Scalability)
   Phase 1: ✅ 100% - DLQ + Retry (完成於 2026-02-03)
   Phase 2: ✅ 100% - Circuit Breaker (完成於 2026-02-04)
   Phase 3: ✅ 100% - Backpressure (完成於 2026-02-07)
-  Phase 4: ⏳ Task 1 完成 (1/5) - Bull Queue 整合 (進行中)
-    - Task 1.2.4.1: ✅ 完成 - Bull Queue 核心集成
-    - Task 1.2.4.2: ⏳ 待實施 - Worker 線程池 (預計 2026-02-12)
-    - Task 1.2.4.3: ⏳ 待實施 - 消息隊列流程整合
+  Phase 4: ⏳ Task 1-3 完成 (3/5) - Bull Queue 整合 (進行中)
+    - Task 1.2.4.1: ✅ 完成 - Bull Queue 核心集成 (63 個測試)
+    - Task 1.2.4.2: ✅ 完成 - Worker 線程池 (17 個測試)
+    - Task 1.2.4.3: ✅ 完成 - 消息隊列流程整合 (22 個測試)
     - Task 1.2.4.4: ⏳ 待實施 - 監控儀表板與 CLI
     - Task 1.2.4.5: ⏳ 待實施 - 文檔與遷移指南
 
-📊 整體進度：79% (19/24 任務完成)
+📊 整體進度：88% (21/24 任務完成)
 🎯 預計完成：2026-02-18
 ```
 
-**下次開始點**：Task 1.2.4.2 Worker 線程池管理
+**成果統計**：
+- 新增 102 個測試（全部通過）
+- 3,403 行代碼實施（含測試）
+- 構建成功（79/79 任務）
+- 零迴歸
+
+**下次開始點**：Task 1.2.4.4 監控儀表板與 CLI
 
 ---
 
 **最後更新**：2026-02-07
 **維護者**：Gravito Framework Team
-**當前迭代**：⏳ Issue 1.2 Phase 4 進行中 (Task 1 完成，1/5)
-**下次開始點**：Task 1.2.4.2 Worker 線程池（預計 2026-02-12 開始）
+**當前迭代**：⏳ Issue 1.2 Phase 4 進行中 (Task 1-3 完成，3/5)
+**下次開始點**：Task 1.2.4.4 監控儀表板與 CLI（預計 2026-02-18 開始）
