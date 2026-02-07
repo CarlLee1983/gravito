@@ -1,5 +1,12 @@
 # example-realtime-verification
 
+## 1.0.5
+
+### Patch Changes
+
+- Updated dependencies [5a7f332]
+  - @gravito/ripple@4.0.0
+
 ## 1.0.4
 
 ### Patch Changes
