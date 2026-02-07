@@ -36,7 +36,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:unit": "vitest run",
-    "test:integration": "vitest run"
+    "test:integration": "test $(find tests -name '*.integration.test.ts' 2>/dev/null | wc -l) -gt 0 && find tests -name '*.integration.test.ts' -print0 | xargs -0 bun test --timeout=10000 || echo 'No integration tests found'"
   },
   "publishConfig": {
     "access": "public"

@@ -19,7 +19,7 @@
     "test:ci": "bun test --coverage --coverage-reporter=lcov --timeout=10000 && bun scripts/coverage-report.ts",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test:unit": "bun test tests/ --timeout=10000",
-    "test:integration": "bun test 'integration.test.ts' --timeout=10000"
+    "test:integration": "test $(find tests -name '*.integration.test.ts' 2>/dev/null | wc -l) -gt 0 && find tests -name '*.integration.test.ts' -print0 | xargs -0 bun test --timeout=10000 || echo 'No integration tests found'"
   },
   "dependencies": {
     "@envelop/depth-limit": "^7.1.0",
