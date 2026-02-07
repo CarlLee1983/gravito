@@ -11,7 +11,7 @@
     "docs": "typedoc",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test:unit": "bun test '**/*.test.ts' '!**/*.integration.test.ts' --timeout=10000",
-    "test:integration": "bun test '**/*.integration.test.ts' --timeout=10000"
+    "test:integration": "bun test 'integration.test.ts' --timeout=10000"
   },
   "keywords": [
     "monitoring",

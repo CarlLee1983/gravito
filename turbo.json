@@ -34,7 +34,7 @@
         "bunfig.toml"
       ],
       "outputs": [],
-      "cache": false
+      "cache": true
     },
     "test:ci": {
       "dependsOn": [],
