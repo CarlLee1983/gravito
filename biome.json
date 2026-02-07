@@ -61,7 +61,7 @@
       }
     },
     {
-      "includes": ["examples/**/tests/k6/**/*.js"],
+      "includes": ["examples/**/tests/k6/**/*.js", "packages/**/tests/k6/**/*.js"],
       "linter": {
         "rules": {
           "correctness": {

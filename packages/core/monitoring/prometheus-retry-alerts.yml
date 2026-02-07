@@ -1,0 +1,182 @@
+groups:
+  - name: gravito_retry_system
+    interval: 30s
+    rules:
+      # ─────────────────────────────────────────────────────────────────────────
+      # Retry Queue Monitoring Alerts
+      # ─────────────────────────────────────────────────────────────────────────
+
+      - alert: RetryQueueDepthHigh
+        expr: |
+          sum(gravito_event_retry_queue_depth) > 500
+        for: 3m
+        labels:
+          severity: warning
+          component: retry-system
+        annotations:
+          summary: "重試隊列堆積"
+          description: "重試隊列總深度: {{ $value | humanize }} 任務，接近處理容量上限"
+          runbook_url: "https://wiki.example.com/gravito/retry-queue-backlog"
+
+      - alert: RetryQueueDepthCritical
+        expr: |
+          sum(gravito_event_retry_queue_depth) > 2000
+        for: 1m
+        labels:
+          severity: critical
+          component: retry-system
+        annotations:
+          summary: "重試隊列危急堆積"
+          description: "重試隊列總深度: {{ $value | humanize }} 任務，系統可能無法及時處理"
+          runbook_url: "https://wiki.example.com/gravito/retry-queue-critical"
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Retry Failure Rate Alerts
+      # ─────────────────────────────────────────────────────────────────────────
+
+      - alert: HighRetryFailureRate
+        expr: |
+          rate(gravito_event_retry_attempt_total{status="failed"}[5m]) /
+          rate(gravito_event_retry_attempt_total[5m]) > 0.3
+        for: 5m
+        labels:
+          severity: warning
+          component: retry-system
+        annotations:
+          summary: "重試失敗率過高"
+          description: "{{ $labels.event_name }} 事件的失敗率: {{ $value | humanizePercentage }}，超過 30% 閾值"
+          runbook_url: "https://wiki.example.com/gravito/retry-failure-rate"
+
+      - alert: CriticalRetryFailureRate
+        expr: |
+          rate(gravito_event_retry_attempt_total{status="failed"}[5m]) /
+          rate(gravito_event_retry_attempt_total[5m]) > 0.5
+        for: 2m
+        labels:
+          severity: critical
+          component: retry-system
+        annotations:
+          summary: "重試失敗率危急"
+          description: "{{ $labels.event_name }} 事件的失敗率: {{ $value | humanizePercentage }}，超過 50% 閾值，可能存在系統問題"
+          runbook_url: "https://wiki.example.com/gravito/retry-failure-critical"
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Dead Letter Queue Alerts
+      # ─────────────────────────────────────────────────────────────────────────
+
+      - alert: HighDLQEntryRate
+        expr: |
+          rate(gravito_event_dlq_entry_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          component: dlq
+        annotations:
+          summary: "DLQ 條目進入率過高"
+          description: "DLQ 進入率: {{ $value | humanize }} 條目/秒，表示有多個事件重試失敗"
+          runbook_url: "https://wiki.example.com/gravito/dlq-entry-rate"
+
+      - alert: DLQDepthCritical
+        expr: |
+          gravito_event_dlq_size > 5000
+        for: 3m
+        labels:
+          severity: critical
+          component: dlq
+        annotations:
+          summary: "DLQ 深度危急"
+          description: "DLQ 大小: {{ $value | humanize }} 條目，已超過安全閾值，需要立即調查"
+          runbook_url: "https://wiki.example.com/gravito/dlq-depth-critical"
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Backpressure & OVERFLOW Alerts
+      # ─────────────────────────────────────────────────────────────────────────
+
+      - alert: BackpressureOverflowDetected
+        expr: |
+          rate(gravito_event_backpressure_rejection_total{reason="OVERFLOW"}[5m]) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+          component: backpressure
+        annotations:
+          summary: "背壓 OVERFLOW 狀態檢測"
+          description: "OVERFLOW 拒絕率: {{ $value | humanize }} 次/秒，系統已進入過載狀態"
+          runbook_url: "https://wiki.example.com/gravito/backpressure-overflow"
+
+      - alert: PersistentBackpressureOverflow
+        expr: |
+          rate(gravito_event_backpressure_rejection_total{reason="OVERFLOW"}[5m]) > 1
+        for: 5m
+        labels:
+          severity: critical
+          component: backpressure
+        annotations:
+          summary: "持續背壓 OVERFLOW"
+          description: "OVERFLOW 拒絕率: {{ $value | humanize }} 次/秒，系統長期過載"
+          runbook_url: "https://wiki.example.com/gravito/backpressure-persistent-overflow"
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Retry Scheduler Health Alerts
+      # ─────────────────────────────────────────────────────────────────────────
+
+      - alert: RetrySchedulerQueueStuck
+        expr: |
+          increase(gravito_event_retry_attempt_total[10m]) == 0 AND
+          sum(gravito_event_retry_queue_depth) > 100
+        for: 5m
+        labels:
+          severity: critical
+          component: retry-system
+        annotations:
+          summary: "重試排程器隊列卡住"
+          description: "10 分鐘內未進行重試嘗試，但隊列中有 {{ $value | humanize }} 個待處理任務"
+          runbook_url: "https://wiki.example.com/gravito/retry-scheduler-stuck"
+
+      - alert: HighRetrySchedulerLatency
+        expr: |
+          histogram_quantile(0.95, rate(gravito_event_retry_schedule_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          component: retry-system
+        annotations:
+          summary: "重試排程延遲過高"
+          description: "{{ $labels.event_name }} 的排程延遲 P95: {{ $value | humanizeDuration }}，超過 1s 閾值"
+          runbook_url: "https://wiki.example.com/gravito/retry-scheduler-latency"
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # Exponential Backoff Verification Alerts
+      # ─────────────────────────────────────────────────────────────────────────
+
+      - alert: RetryBackoffAnomalies
+        expr: |
+          abs(
+            (histogram_quantile(0.50, rate(gravito_event_retry_delay_seconds_bucket[5m])) /
+             histogram_quantile(0.50, rate(gravito_event_retry_delay_seconds_bucket{retry_attempt="1"}[5m]))) - 2
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: info
+          component: retry-system
+        annotations:
+          summary: "重試回退係數異常"
+          description: "{{ $labels.event_name }} 的回退係數偏離預期值 2.0"
+          runbook_url: "https://wiki.example.com/gravito/retry-backoff-anomalies"
+
+      # ─────────────────────────────────────────────────────────────────────────
+      # No Alerts Firing (Silence Check)
+      # ─────────────────────────────────────────────────────────────────────────
+
+      - alert: RetrySystemHealthy
+        expr: |
+          (sum(rate(gravito_event_retry_attempt_total{status="success"}[5m])) > 0) AND
+          (sum(gravito_event_retry_queue_depth) < 100) AND
+          (sum(rate(gravito_event_dlq_entry_total[5m])) < 0.1)
+        for: 1m
+        labels:
+          severity: info
+          component: retry-system
+        annotations:
+          summary: "重試系統狀態良好"
+          description: "重試系統運行正常，隊列深度低，DLQ 進入率低"
