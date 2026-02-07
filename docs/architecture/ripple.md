@@ -469,10 +469,10 @@ ripple.on('disconnection', handler)
 - [x] **v4.1**: Protocol Buffers Support (Hybrid Envelope).
 - [x] **v5.0**: **Engine Abstraction Layer** (Decoupling Core from Runtime).
 - [x] **v5.0**: **BunEngine** Implementation.
+- [x] **v5.0**: **Node.js Engines**: `WsEngine` (ws) & `UWebSocketsEngine` (uWebSockets.js) implementation.
+- [x] **v5.0**: **Pure Protobuf Mode**: Supported via `serializerOptions.pure` (No JSON Envelope).
 
 ### 🚧 進行中 (In Progress)
-- [ ] **Node.js Engines**: `WsEngine` 與 `UWebSocketsEngine` 實作 (Currently in Planning/Alpha).
-- [ ] **Pure Protobuf Mode**: 移除 JSON Envelope，實現純二進位 schema 通訊。
 
 ### 🚀 未來規劃 (Future)
 - [ ] **Cluster Auto-Scaling**: K8s Operator 整合。

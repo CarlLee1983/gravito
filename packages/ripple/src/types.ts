@@ -813,6 +813,16 @@ export interface RippleConfig {
   serializer?: 'json' | 'protobuf'
 
   /**
+   * Configuration for the serializer (v5.0+).
+   */
+  serializerOptions?: {
+    /** Path to custom .proto file (Protobuf only) */
+    protoPath?: string
+    /** Enable pure binary mode (no JSON envelope for payload) - Protobuf only (default: false) */
+    pure?: boolean
+  }
+
+  /**
    * Performance & Backpressure (v3.7+).
    */
   backpressure?: {
