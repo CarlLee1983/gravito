@@ -90,7 +90,7 @@ async function bootstrap(): Promise<void> {
 
   // 啟動 Bun 服務器
   if (typeof Bun !== 'undefined') {
-    Bun.serve(liftoffConfig)
+    Bun.serve(liftoffConfig as any)
     app.core.logger.info('✅ HTTP Server is running')
   }
 }
