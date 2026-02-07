@@ -493,7 +493,8 @@ export class EventPriorityQueue implements EventBackend {
                   options,
                   lastError,
                   task.retryCount || 0,
-                  task.firstFailedAt!
+                  task.firstFailedAt!,
+                  'circuit_breaker'
                 )
               }
 
@@ -561,7 +562,15 @@ export class EventPriorityQueue implements EventBackend {
           if (retryConfig.dlqAfterMaxRetries) {
             // Send to in-memory DLQ
             if (this.dlq) {
-              this.dlq.add(hook, args, options, lastError, task.retryCount, task.firstFailedAt!)
+              this.dlq.add(
+                hook,
+                args,
+                options,
+                lastError,
+                task.retryCount,
+                task.firstFailedAt!,
+                'retry_exhausted'
+              )
             }
 
             // Send to persistent DLQ if handler is provided
