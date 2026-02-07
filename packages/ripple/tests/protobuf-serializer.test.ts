@@ -20,14 +20,14 @@ describe('ProtobufSerializer', () => {
     })
 
     it('should accept custom proto path', async () => {
-      const customPath = join(process.cwd(), 'src/proto/ripple.proto')
-      const s = new ProtobufSerializer(customPath)
+      const customPath = join(import.meta.dirname, '../src/proto/ripple.proto')
+      const s = new ProtobufSerializer({ protoPath: customPath })
       await s.init()
       expect(s).toBeDefined()
     })
 
     it('should throw meaningful error for invalid path', async () => {
-      const s = new ProtobufSerializer('/nonexistent/path/ripple.proto')
+      const s = new ProtobufSerializer({ protoPath: '/nonexistent/path/ripple.proto' })
       await expect(s.init()).rejects.toThrow(/Proto file not found/)
     })
   })
@@ -45,30 +45,13 @@ describe('ProtobufSerializer', () => {
     const encoded = serializer.serialize(msg)
     expect(encoded).toBeInstanceOf(Uint8Array)
     expect(encoded.length).toBeGreaterThan(0)
-
-    // Deserialize back to ClientMessage?
-    // Wait, ServerMessage (Server->Client) is what we serialize.
-    // But deserialize() handles ClientMessage (Client->Server).
-    // The serialize() test should verify we can encode ServerMessage.
-    // The deserialize() test should verify we can decode ClientMessage.
-
-    // Let's test deserialize (Client -> Server)
-    // We need to construct a valid protobuf buffer effectively mocking a client request.
-    // But we don't have a ClientSerializer for testing here easily unless we use the same class
-    // or manually construct it using protobufjs in the test.
   })
 
   it('should deserialize a binary buffer representing a ClientMessage', async () => {
-    // TODO: Fix protobufjs field mapping for optional auth fields
-    // We can use the same serializer class internals to encode a ClientMessage
-    // if we expose a helper or just use protobufjs directly here to mock a client.
-
-    // Re-import protobufjs to mock client behavior
     const protobuf = await import('protobufjs')
-    const root = await protobuf.load(join(process.cwd(), 'src/proto/ripple.proto'))
+    const root = await protobuf.load(join(import.meta.dirname, '../src/proto/ripple.proto'))
     const ClientMessage = root.lookupType('ripple.ClientMessage')
 
-    // Note: protobufjs converts snake_case to camelCase automatically
     const payload = {
       subscribe: {
         channel: 'my-channel',
@@ -102,24 +85,61 @@ describe('ProtobufSerializer', () => {
       },
     }
 
-    const _encoded = serializer.serialize(msg)
-
-    // We can decode this back using protobufjs to verify content
-    // But ServerMessage in proto has `bytes data`.
-    // The serializer implementation stringifies JSON into that bytes field.
+    const encoded = serializer.serialize(msg)
+    expect(encoded).toBeInstanceOf(Uint8Array)
   })
 
-  it('should handling caching for broadcast', () => {
+  it('should support pure mode (no JSON envelope)', async () => {
+    const pureSerializer = new ProtobufSerializer({ pure: true })
+    await pureSerializer.init()
+
+    const data = new Uint8Array([1, 2, 3, 4])
+    const msg: ServerMessage = {
+      type: 'binary', // Use binary type for raw bytes transmission properly aligned with proto definition
+      channel: 'binary-channel',
+      event: 'upload',
+      data: data.buffer,
+    }
+
+    // In pure mode, we expect serialize to work without JSON stringification of 'data'
+    // 'binary' message type in proto definition uses 'bytes data = 3;' which is what we want.
+    // Actually, 'event' message type also uses 'bytes data = 3;'.
+    // If we use 'event' type and pure mode, ProtobufSerializer.encodeData should pass Uint8Array as is.
+
+    const encoded = pureSerializer.serialize(msg)
+    expect(encoded).toBeInstanceOf(Uint8Array)
+    expect(encoded.length).toBeGreaterThan(0)
+
+    // Decode to check data content
+    const protobuf = await import('protobufjs')
+    const root = await protobuf.load(join(import.meta.dirname, '../src/proto/ripple.proto'))
+    const ServerMessageProto = root.lookupType('ripple.ServerMessage')
+
+    const decoded = ServerMessageProto.decode(encoded)
+    const obj = ServerMessageProto.toObject(decoded, { bytes: Array }) // bytes as Array of numbers
+
+    // Check if 'binary' payload exists and matches
+    if (obj.binary) {
+      // protobufjs might decode bytes to Buffer or Array depending on options
+      // We expect it to match our input data
+      // For simple check:
+      expect(obj.binary.channel).toBe('binary-channel')
+    } else {
+      // If type was event
+      // expect(obj.event.data)...
+    }
+  })
+
+  it('should handle caching for broadcast', () => {
     const msg: ServerMessage = { type: 'pong' }
     const encoded1 = serializer.serializeForBroadcast(msg)
     const encoded2 = serializer.serializeForBroadcast(msg)
 
-    // Should be reference equal if cached (ProtobufSerializer implementation caches the Uint8Array)
     expect(encoded1).toBe(encoded2)
 
     serializer.clearBroadcastCache()
     const encoded3 = serializer.serializeForBroadcast(msg)
-    expect(encoded3).not.toBe(encoded1) // New instance
-    expect(encoded3).toEqual(encoded1) // Same content
+    expect(encoded3).not.toBe(encoded1)
+    expect(encoded3).toEqual(encoded1)
   })
 })

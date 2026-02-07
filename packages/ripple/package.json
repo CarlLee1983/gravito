@@ -65,6 +65,7 @@
     }
   },
   "devDependencies": {
+    "@types/ws": "^8.18.1",
     "bun-types": "latest",
     "ioredis": "^5.4.2",
     "protobufjs": "^8.0.0",

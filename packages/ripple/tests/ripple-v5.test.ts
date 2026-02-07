@@ -219,6 +219,17 @@ describe('RippleServer v5.0', () => {
       })
       expect(server).toBeDefined()
     })
+
+    it('should support Pure Protobuf serialization', () => {
+      server = new RippleServer({
+        port: 3018,
+        serializer: 'protobuf',
+        serializerOptions: { pure: true },
+      })
+      expect(server).toBeDefined()
+      // We can't easily check internal serializer state without casting to any (private property)
+      // but initialization shouldn't throw.
+    })
   })
 
   describe('Backward Compatibility', () => {
@@ -248,14 +259,40 @@ describe('Engine Abstraction', () => {
   it('should create BunEngine by default on Bun', () => {
     const server = new RippleServer({ port: 3017 })
     expect(server).toBeDefined()
+    // Default runtime is 'bun' if Bun is defined
+    expect(server.config.runtime).toBeUndefined() // auto-detect
   })
 
-  it.skip('should support node-uws runtime (Phase 2)', () => {
-    // uWebSockets.js engine is not yet implemented - placeholder for v5.0
+  it('should support node-uws runtime selection', async () => {
+    const server = new RippleServer({
+      port: 3019,
+      runtime: 'node-uws',
+    })
+
+    // Attempting to start should throw if uWebSockets.js is missing
+    // or succeed if present.
+    try {
+      await server.start()
+      await server.shutdown()
+    } catch (e: any) {
+      // If missing, should throw specific error
+      if (e.message.includes('uWebSockets.js is not installed')) {
+        expect(true).toBe(true)
+      } else {
+        throw e
+      }
+    }
   })
 
-  it.skip('should support node-ws runtime (Phase 3)', () => {
-    // Node.js ws engine is not yet implemented - placeholder for v5.0
+  it('should support node-ws runtime selection', async () => {
+    const server = new RippleServer({
+      port: 3023,
+      runtime: 'node-ws',
+    })
+
+    await server.start()
+    expect(server).toBeDefined()
+    await server.shutdown()
   })
 })
 

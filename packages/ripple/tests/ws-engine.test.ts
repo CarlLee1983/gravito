@@ -1,11 +1,70 @@
 /**
- * @fileoverview Tests for ws engine
+ * @fileoverview Tests for WsEngine
  */
 
-import { describe } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { WebSocket } from 'ws'
+import { WsEngine } from '../src/engines/WsEngine'
 
-// WsEngine is not yet implemented in the `.planned` directory
-// These tests are skipped until the implementation is completed
-describe.skip('WsEngine', () => {
-  // Placeholder test for future implementation
+describe('WsEngine', () => {
+  let engine: WsEngine
+  let port: number
+
+  beforeEach(() => {
+    // Random port between 40000-50000 to avoid conflicts
+    port = 40000 + Math.floor(Math.random() * 10000)
+    engine = new WsEngine({ port })
+  })
+
+  afterEach(async () => {
+    await engine.close()
+  })
+
+  it('should start listening', async () => {
+    await engine.listen(port)
+    // No error thrown means success
+    expect(engine).toBeDefined()
+  })
+
+  it('should accept connection', async () => {
+    await engine.listen(port)
+
+    // Connect client
+    const ws = new WebSocket(`ws://localhost:${port}`)
+
+    await new Promise<void>((resolve) => {
+      ws.on('open', () => {
+        ws.close()
+        resolve()
+      })
+    })
+
+    expect(true).toBe(true)
+  })
+
+  it('should handle messages', async () => {
+    await engine.listen(port)
+
+    let receivedMessage: string | null = null
+
+    engine.onMessage((socket, message) => {
+      receivedMessage = message.toString()
+    })
+
+    engine.onConnection((socket) => {
+      // Echo back
+    })
+
+    const ws = new WebSocket(`ws://localhost:${port}`)
+
+    await new Promise<void>((resolve) => {
+      ws.on('open', () => {
+        ws.send('hello')
+        setTimeout(resolve, 100)
+      })
+    })
+
+    expect(receivedMessage).toBe('hello')
+    ws.close()
+  })
 })

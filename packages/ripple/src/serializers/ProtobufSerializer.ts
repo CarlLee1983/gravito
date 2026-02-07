@@ -26,9 +26,9 @@ export class ProtobufSerializer implements ISerializer {
   private broadcastCache: Uint8Array | null = null
   private initialized = false
 
-  constructor(private protoPath?: string) {
-    if (!protoPath) {
-      this.protoPath = this.resolveProtoPath()
+  constructor(private options: { protoPath?: string; pure?: boolean } = {}) {
+    if (!options.protoPath) {
+      this.options.protoPath = this.resolveProtoPath()
     }
   }
 
@@ -77,9 +77,9 @@ export class ProtobufSerializer implements ISerializer {
 
     try {
       // 先檢查文件是否存在
-      if (!existsSync(this.protoPath!)) {
+      if (!existsSync(this.options.protoPath!)) {
         throw new Error(
-          `Proto file not found at: ${this.protoPath}\n` +
+          `Proto file not found at: ${this.options.protoPath}\n` +
             `Working directory: ${process.cwd()}\n` +
             `Please ensure ripple.proto exists or provide a custom protoPath.`
         )
@@ -96,14 +96,14 @@ export class ProtobufSerializer implements ISerializer {
         )
       }
 
-      protoRoot = await protobuf.load(this.protoPath!)
+      protoRoot = await protobuf.load(this.options.protoPath!)
       ClientMessageProto = protoRoot.lookupType('ripple.ClientMessage')
       ServerMessageProto = protoRoot.lookupType('ripple.ServerMessage')
       this.initialized = true
     } catch (error) {
       throw new Error(
         `Failed to initialize ProtobufSerializer: ${(error as Error).message}\n` +
-          `Proto path attempted: ${this.protoPath}\n` +
+          `Proto path attempted: ${this.options.protoPath}\n` +
           `Ensure 'protobufjs' is installed or switch to JSON serializer.`
       )
     }
@@ -121,7 +121,7 @@ export class ProtobufSerializer implements ISerializer {
     return ServerMessageProto.encode(msg).finish()
   }
 
-  deserialize(data: string | Buffer | ArrayBuffer): ClientMessage {
+  deserialize(data: string | Buffer | ArrayBuffer | Uint8Array): ClientMessage {
     this.checkInitialized()
 
     const buffer =
@@ -130,7 +130,7 @@ export class ProtobufSerializer implements ISerializer {
     const obj = ClientMessageProto.toObject(decoded, {
       enums: String,
       longs: String,
-      bytes: String,
+      bytes: this.options.pure ? undefined : String,
       defaults: true,
       oneofs: true,
     })
@@ -251,6 +251,13 @@ export class ProtobufSerializer implements ISerializer {
   }
 
   private encodeData(data: unknown): Uint8Array {
+    if (this.options.pure) {
+      if (data instanceof Uint8Array) return data
+      if (Object.prototype.toString.call(data) === '[object Uint8Array]') return data as Uint8Array
+      if (Buffer.isBuffer(data)) return data
+      throw new Error('In pure mode, data must be Uint8Array or Buffer')
+    }
+
     // In Hybrid mode, we put JSON string into bytes field for now
     // This is the "Envelope" strategy from RFC
     if (typeof data === 'string') return new TextEncoder().encode(data)
@@ -258,17 +265,19 @@ export class ProtobufSerializer implements ISerializer {
     return new TextEncoder().encode(JSON.stringify(data))
   }
 
-  private decodeData(data: Uint8Array | string): unknown {
+  private decodeData(data: Uint8Array | string | Buffer): unknown {
+    if (this.options.pure) {
+      return data
+    }
+
     if (typeof data === 'string') {
-      // protobufjs might return base64 string for bytes if configured to String
-      // but we used bytes: String option? No, usually Bytes is Buffer/Uint8Array
-      // Let's assume it handles it.
       try {
         return JSON.parse(atob(data))
       } catch {
         return data
       }
     }
+
     try {
       const str = new TextDecoder().decode(data)
       return JSON.parse(str)

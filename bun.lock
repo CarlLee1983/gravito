@@ -137,7 +137,7 @@
     },
     "examples/commerce-fullstack": {
       "name": "@gravito/example-commerce-fullstack",
-      "version": "1.0.8",
+      "version": "1.0.9",
       "dependencies": {
         "@gravito/admin-shell-react": "workspace:*",
         "@gravito/admin-ui-analytics": "workspace:*",
@@ -272,7 +272,7 @@
     },
     "examples/flux-enterprise": {
       "name": "flux-enterprise",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/flux": "workspace:*",
@@ -490,7 +490,7 @@
     },
     "examples/realtime-verification": {
       "name": "example-realtime-verification",
-      "version": "1.0.4",
+      "version": "1.0.5",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/echo": "workspace:*",
@@ -1275,7 +1275,7 @@
     },
     "packages/ion": {
       "name": "@gravito/ion",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "devDependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/photon": "workspace:*",
@@ -1290,7 +1290,7 @@
     },
     "packages/launchpad": {
       "name": "@gravito/launchpad",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/enterprise": "workspace:*",
@@ -1606,13 +1606,12 @@
     },
     "packages/ripple": {
       "name": "@gravito/ripple",
-      "version": "4.0.0-alpha.1",
-      "dependencies": {
-        "protobufjs": "^8.0.0",
-      },
+      "version": "4.0.0",
       "devDependencies": {
+        "@types/ws": "^8.18.1",
         "bun-types": "latest",
         "ioredis": "^5.4.2",
+        "protobufjs": "^8.0.0",
         "tinybench": "^6.0.0",
         "typescript": "^5.9.3",
         "ws": "^8.18.0",
@@ -1621,11 +1620,13 @@
         "@gravito/core": "workspace:*",
         "ioredis": "^5.0.0",
         "nats": "^2.23.0",
+        "protobufjs": "^8.0.0",
         "ws": "^8.18.0",
       },
       "optionalPeers": [
         "ioredis",
         "nats",
+        "protobufjs",
         "ws",
       ],
     },
@@ -2048,7 +2049,7 @@
     },
     "satellites/support": {
       "name": "@gravito/satellite-support",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",

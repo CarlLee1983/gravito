@@ -10,6 +10,8 @@ import { ChannelManager, requiresAuth } from './channels'
 import { LocalDriver, NATSDriver, RedisDriver } from './drivers'
 import { BunEngine } from './engines/BunEngine'
 import type { IRippleEngine, RippleSocket } from './engines/IRippleEngine'
+import { UWebSocketsEngine } from './engines/UWebSocketsEngine'
+import { WsEngine } from './engines/WsEngine'
 import { HealthChecker } from './health/HealthChecker'
 import type { RippleLogger } from './logging/Logger'
 import { createLogger } from './logging/Logger'
@@ -90,7 +92,9 @@ export class RippleServer {
 
     // Initialize serializer based on config
     this.serializer =
-      config.serializer === 'protobuf' ? new ProtobufSerializer() : new JsonSerializer()
+      config.serializer === 'protobuf'
+        ? new ProtobufSerializer(config.serializerOptions)
+        : new JsonSerializer()
 
     // Initialize session manager if reconnection is enabled
     if (config.reconnection?.enabled) {
@@ -129,21 +133,20 @@ export class RippleServer {
           development: process.env.NODE_ENV === 'development',
         })
 
-      // TODO: Enable for Node.js support (v5.0)
-      // case 'node-uws':
-      // return new UWebSocketsEngine({
-      // port: config.port,
-      // hostname: config.hostname,
-      // development: process.env.NODE_ENV === 'development',
-      // })
-      // TODO: Enable for Node.js support (v5.0)
-      // case 'node-ws':
-      // return new WsEngine({
-      // port: config.port,
-      // hostname: config.hostname,
-      // path: config.path,
-      // development: process.env.NODE_ENV === 'development',
-      // })
+      case 'node-uws':
+        return new UWebSocketsEngine({
+          port: config.port,
+          hostname: config.hostname,
+          development: process.env.NODE_ENV === 'development',
+        })
+
+      case 'node-ws':
+        return new WsEngine({
+          port: config.port,
+          hostname: config.hostname,
+          path: config.path,
+          development: process.env.NODE_ENV === 'development',
+        })
       default:
         throw new Error(`Unsupported runtime: ${runtime}`)
     }

@@ -40,6 +40,8 @@ export interface ClientData {
   reconnectionToken?: string
   /** Session expiry timestamp (v3.6+) */
   sessionExpiry?: number
+  /** Remote IP address (v5.0+) */
+  remoteAddress?: string
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -811,6 +813,16 @@ export interface RippleConfig {
    *             Install with: npm install protobufjs
    */
   serializer?: 'json' | 'protobuf'
+
+  /**
+   * Configuration for the serializer (v5.0+).
+   */
+  serializerOptions?: {
+    /** Path to custom .proto file (Protobuf only) */
+    protoPath?: string
+    /** Enable pure binary mode (no JSON envelope for payload) - Protobuf only (default: false) */
+    pure?: boolean
+  }
 
   /**
    * Performance & Backpressure (v3.7+).
