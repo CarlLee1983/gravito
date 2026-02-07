@@ -1,12 +1,16 @@
 import type { Span } from '@opentelemetry/api'
 import type { ActionCallback } from '../HookManager'
+import { BackpressureManager } from './BackpressureManager'
 import { CircuitBreaker } from './CircuitBreaker'
 import type { DeadLetterQueue } from './DeadLetterQueue'
 import type { EventBackend } from './EventBackend'
 import type { EventOptions } from './EventOptions'
 import type { EventMetrics } from './observability/EventMetrics'
 import type { EventTracing } from './observability/EventTracing'
+import type { OTelEventMetrics } from './observability/OTelEventMetrics'
+import type { RetryScheduler } from './RetryScheduler'
 import type { BackpressureStrategy, EventQueueConfig, EventTask } from './types'
+import type { WorkerPool } from './WorkerPool'
 
 export type { EventTask, EventQueueConfig, BackpressureStrategy }
 
@@ -38,11 +42,19 @@ export class EventPriorityQueue implements EventBackend {
   private processingPartitions: Set<string> = new Set()
   private eventCircuitBreakers: Map<string, CircuitBreaker> = new Map()
   private eventMetrics?: EventMetrics
+  private otelEventMetrics?: OTelEventMetrics
   private eventTracing?: EventTracing
   private currentDispatchSpan?: Span
+  private backpressureManager?: BackpressureManager
+  private workerPool?: WorkerPool
+  private retryScheduler?: RetryScheduler
 
   constructor(config: EventQueueConfig = {}) {
     this.config = config
+    // Initialize BackpressureManager if configured
+    if (config.backpressure?.enabled !== false && config.backpressure) {
+      this.backpressureManager = new BackpressureManager(config.backpressure)
+    }
   }
 
   /**
@@ -83,6 +95,16 @@ export class EventPriorityQueue implements EventBackend {
   }
 
   /**
+   * Set the OTelEventMetrics instance for recording DLQ and backpressure metrics.
+   *
+   * @param metrics - OTelEventMetrics instance
+   * @internal
+   */
+  setOTelEventMetrics(metrics: OTelEventMetrics): void {
+    this.otelEventMetrics = metrics
+  }
+
+  /**
    * Set the EventTracing instance for distributed tracing.
    *
    * @param tracing - EventTracing instance
@@ -110,6 +132,26 @@ export class EventPriorityQueue implements EventBackend {
    */
   getCurrentDispatchSpan(): Span | undefined {
     return this.currentDispatchSpan
+  }
+
+  /**
+   * Set the RetryScheduler for async distributed retries.
+   *
+   * @param scheduler - RetryScheduler instance
+   * @internal
+   */
+  setRetryScheduler(scheduler: RetryScheduler): void {
+    this.retryScheduler = scheduler
+  }
+
+  /**
+   * Get the RetryScheduler instance.
+   *
+   * @returns RetryScheduler instance or undefined
+   * @internal
+   */
+  getRetryScheduler(): RetryScheduler | undefined {
+    return this.retryScheduler
   }
 
   /**
@@ -203,7 +245,63 @@ export class EventPriorityQueue implements EventBackend {
       }
     }
 
-    // Check backpressure
+    // === Evaluate advanced backpressure if enabled ===
+    if (this.backpressureManager) {
+      const priority = task.options.priority || 'normal'
+      const decision = this.backpressureManager.evaluate(
+        task.hook,
+        priority as 'high' | 'normal' | 'low',
+        this.getDepth(),
+        {
+          high: this.highPriority.length,
+          normal: this.normalPriority.length,
+          low: this.lowPriority.length,
+        }
+      )
+
+      if (!decision.allowed) {
+        // Record backpressure rejection metric
+        const priority = task.options.priority || 'normal'
+        this.otelEventMetrics?.recordBackpressureRejection(
+          task.hook,
+          priority,
+          decision.reason || 'unknown'
+        )
+
+        // Handle OVERFLOW: route to DLQ if configured
+        if (decision.isOverflow && this.config.backpressure?.dlqOnOverflow && this.dlq) {
+          // Create a synthetic error for DLQ entry
+          const overflowError = new Error(`Backpressure OVERFLOW: ${decision.reason}`)
+          this.dlq.add(
+            task.hook,
+            task.args,
+            task.options,
+            overflowError,
+            task.retryCount || 0,
+            Date.now(),
+            'backpressure_overflow'
+          )
+          // Record DLQ entry metric
+          this.otelEventMetrics?.recordDLQEntry(task.hook, 'backpressure_overflow')
+        }
+
+        // Rejection: handle according to policy (throw/drop-silent/drop-with-callback)
+        if (this.config.backpressure?.rejectionPolicy === 'throw') {
+          throw new Error(`[BackpressureManager] Event rejected: ${decision.reason}`)
+        }
+        return 'dropped'
+      }
+
+      if (decision.delayed && decision.delayMs) {
+        // Delayed enqueue: schedule re-enqueue after delay
+        setTimeout(() => {
+          this.enqueue(task)
+        }, decision.delayMs)
+        return task.id
+      }
+    }
+
+    // === Fall back to simple backpressure (maxSize + strategy) ===
     if (this.config.maxSize && this.getDepth() >= this.config.maxSize) {
       if (!this.handleBackpressure(task.hook)) {
         return 'dropped'
@@ -289,6 +387,7 @@ export class EventPriorityQueue implements EventBackend {
   /**
    * Process the next task in the queue.
    * Tasks are processed in priority order: high > normal > low
+   * If WorkerPool is configured, tasks are submitted to the pool for concurrent execution.
    *
    * @internal
    */
@@ -305,7 +404,13 @@ export class EventPriorityQueue implements EventBackend {
     this.processing = true
 
     try {
-      await this.executeTask(task)
+      // If WorkerPool is configured, submit task to pool
+      if (this.workerPool) {
+        await this.workerPool.submitTask(task)
+      } else {
+        // Otherwise, execute task directly (original behavior)
+        await this.executeTask(task)
+      }
     } catch (error) {
       console.error(`[EventPriorityQueue] Error processing task ${task.id}:`, error)
     } finally {
@@ -447,8 +552,11 @@ export class EventPriorityQueue implements EventBackend {
                   options,
                   lastError,
                   task.retryCount || 0,
-                  task.firstFailedAt!
+                  task.firstFailedAt!,
+                  'circuit_breaker'
                 )
+                // Record DLQ entry metric
+                this.otelEventMetrics?.recordDLQEntry(hook, 'circuit_breaker')
               }
 
               // Send to persistent DLQ if handler is provided
@@ -489,9 +597,36 @@ export class EventPriorityQueue implements EventBackend {
           task.lastError = lastError
           task.retryCount = (task.retryCount || 0) + 1
 
+          // Record retry attempt metric
+          this.otelEventMetrics?.recordRetryAttempt(hook, task.retryCount)
+
           // Check if we should retry
           if (task.retryCount <= maxRetries) {
-            // Calculate retry delay with exponential backoff
+            console.warn(
+              `[EventPriorityQueue] Retrying event '${hook}' (attempt ${task.retryCount}/${maxRetries})`
+            )
+
+            // Try to use RetryScheduler if enabled
+            if (this.retryScheduler?.isEnabled()) {
+              try {
+                await this.retryScheduler.scheduleRetry(
+                  hook,
+                  args,
+                  options,
+                  lastError,
+                  task.retryCount
+                )
+                return
+              } catch (schedulerError) {
+                // Fallback to setTimeout if Bull Queue fails
+                console.warn(
+                  '[EventPriorityQueue] RetryScheduler failed, falling back to setTimeout:',
+                  schedulerError instanceof Error ? schedulerError.message : String(schedulerError)
+                )
+              }
+            }
+
+            // Fallback: Calculate retry delay and use setTimeout
             const delay = this.calculateRetryDelay(
               task.retryCount,
               retryConfig.backoff || 'exponential',
@@ -499,11 +634,7 @@ export class EventPriorityQueue implements EventBackend {
               retryConfig.maxDelayMs || 30000
             )
 
-            console.warn(
-              `[EventPriorityQueue] Retrying event '${hook}' (attempt ${task.retryCount}/${maxRetries}) after ${delay}ms`
-            )
-
-            // Schedule retry
+            // Schedule retry with setTimeout
             setTimeout(() => {
               this.enqueueRetry(task)
             }, delay)
@@ -515,7 +646,17 @@ export class EventPriorityQueue implements EventBackend {
           if (retryConfig.dlqAfterMaxRetries) {
             // Send to in-memory DLQ
             if (this.dlq) {
-              this.dlq.add(hook, args, options, lastError, task.retryCount, task.firstFailedAt!)
+              this.dlq.add(
+                hook,
+                args,
+                options,
+                lastError,
+                task.retryCount,
+                task.firstFailedAt!,
+                'retry_exhausted'
+              )
+              // Record DLQ entry metric
+              this.otelEventMetrics?.recordDLQEntry(hook, 'retry_exhausted')
             }
 
             // Send to persistent DLQ if handler is provided
@@ -672,6 +813,36 @@ export class EventPriorityQueue implements EventBackend {
       case 'low':
         return this.lowPriority.length
     }
+  }
+
+  /**
+   * Get the BackpressureManager instance if enabled.
+   *
+   * @returns BackpressureManager instance or undefined if not enabled
+   * @internal
+   */
+  getBackpressureManager(): BackpressureManager | undefined {
+    return this.backpressureManager
+  }
+
+  /**
+   * Set the WorkerPool for concurrent task execution.
+   *
+   * @param pool - WorkerPool instance
+   * @internal
+   */
+  setWorkerPool(pool: WorkerPool): void {
+    this.workerPool = pool
+  }
+
+  /**
+   * Get the WorkerPool instance if set.
+   *
+   * @returns WorkerPool instance or undefined if not set
+   * @internal
+   */
+  getWorkerPool(): WorkerPool | undefined {
+    return this.workerPool
   }
 
   /**

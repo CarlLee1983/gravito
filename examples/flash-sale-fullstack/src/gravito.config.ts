@@ -5,6 +5,9 @@
  */
 
 import type { GravitoConfig as Config } from '@gravito/core'
+import { FlashSaleServiceProvider } from '@gravito/satellite-flash-sale'
+import { InventoryLockServiceProvider } from '@gravito/satellite-inventory-lock'
+import { PaymentServiceProvider } from '@gravito/satellite-payment'
 
 /**
  * 應用配置
@@ -13,6 +16,7 @@ export const GravitoConfig: Config & any = {
   // ─────────────────────────────────────────────────────────────────────────
   // 基礎應用配置
   // ─────────────────────────────────────────────────────────────────────────
+  basePath: process.cwd(),
   port: parseInt(process.env.HTTP_PORT || '3000', 10),
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -65,12 +69,7 @@ export const GravitoConfig: Config & any = {
   // ─────────────────────────────────────────────────────────────────────────
   // Satellite 與 Provider
   // ─────────────────────────────────────────────────────────────────────────
-
-  satellites: [
-    '@gravito/satellite-flash-sale',
-    '@gravito/satellite-inventory-lock',
-    '@gravito/satellite-payment',
-  ],
+  // Satellites are now registered directly in app.ts as providers
 
   // ─────────────────────────────────────────────────────────────────────────
   // 中間件配置
@@ -122,6 +121,54 @@ export const GravitoConfig: Config & any = {
         attempts: 3,
         backoff: 5000, // 5 秒
       },
+    },
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 可觀測性配置
+  // ─────────────────────────────────────────────────────────────────────────
+
+  observability: {
+    /**
+     * 啟用事件系統可觀測性（metrics、tracing）
+     * @env OBSERVABILITY_ENABLED
+     */
+    enabled: process.env.OBSERVABILITY_ENABLED !== 'false', // 預設啟用
+
+    /**
+     * 啟用 OpenTelemetry 分佈式追蹤
+     * 注意：會增加性能開銷，建議僅在開發環境啟用
+     * @env OBSERVABILITY_TRACING
+     */
+    tracing: process.env.OBSERVABILITY_TRACING === 'true', // 預設關閉
+
+    /**
+     * 指標名稱前綴
+     * @env OBSERVABILITY_METRICS_PREFIX
+     */
+    metricsPrefix: process.env.OBSERVABILITY_METRICS_PREFIX || 'gravito_event_',
+
+    /**
+     * Prometheus 指標配置
+     */
+    prometheus: {
+      /**
+       * 啟用 Prometheus metrics 端點
+       * @env PROMETHEUS_ENABLED
+       */
+      enabled: process.env.PROMETHEUS_ENABLED !== 'false', // 預設啟用
+
+      /**
+       * Prometheus metrics 服務器端口
+       * @env PROMETHEUS_PORT
+       */
+      port: parseInt(process.env.PROMETHEUS_PORT || '9090', 10),
+
+      /**
+       * Prometheus metrics 端點路徑
+       * @env PROMETHEUS_ENDPOINT
+       */
+      endpoint: process.env.PROMETHEUS_ENDPOINT || '/metrics',
     },
   },
 }

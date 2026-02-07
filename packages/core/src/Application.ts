@@ -198,14 +198,14 @@ export class Application {
       await this.discoverProviders()
     }
 
-    // 3. Register explicit providers
+    // 4. Register explicit providers
     if (this.options.providers) {
       for (const provider of this.options.providers) {
         this.core.register(provider)
       }
     }
 
-    // 4. Bootstrap core (register + boot all providers)
+    // 5. Bootstrap core (register + boot all providers)
     await this.core.bootstrap()
 
     this.booted = true

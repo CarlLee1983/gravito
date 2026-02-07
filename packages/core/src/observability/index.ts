@@ -44,6 +44,15 @@ export {
   setupPrometheusMetrics,
 } from './Metrics'
 export {
+  type DashboardSnapshot,
+  type ErrorStats,
+  type JobEvent,
+  QueueDashboard,
+  type QueueDashboardConfig,
+  type QueueMetrics,
+  type WorkerMetrics,
+} from './QueueDashboard'
+export {
   getTracer,
   isTracingInitialized,
   setupTracing,

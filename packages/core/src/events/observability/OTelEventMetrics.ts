@@ -104,6 +104,19 @@ export class OTelEventMetrics implements CircuitBreakerMetricsRecorder {
   private readonly cbTransitionsCounter: Counter
   private readonly cbOpenDurationHistogram: Histogram
 
+  // Backpressure metrics (Phase 3)
+  private readonly backpressureRejectionsCounter: Counter
+  private readonly backpressureStateGauge: ObservableGauge
+  private readonly backpressureDegradationsCounter: Counter
+  private backpressureStateValue = 'NORMAL'
+
+  // DLQ metrics (Phase 3)
+  private readonly dlqEntriesCounter: Counter
+  private readonly dlqDepthGauge: ObservableGauge
+  private readonly dlqRequeueCounter: Counter
+  private readonly retryAttemptsCounter: Counter
+  private dlqDepthCallback?: () => number
+
   private queueDepthCallback?: QueueDepthCallback
   private circuitBreakerStateCallbacks: Map<string, CircuitBreakerStateCallback> = new Map()
   private recordedCircuitBreakerStates: Map<string, number> = new Map()
@@ -224,6 +237,69 @@ export class OTelEventMetrics implements CircuitBreakerMetricsRecorder {
         },
       }
     )
+
+    // Create backpressure metrics
+    this.backpressureRejectionsCounter = (meter as any).createCounter
+      ? (meter as any).createCounter(`${prefix}backpressure_rejections_total`, {
+          description: 'Total number of events rejected due to backpressure',
+          unit: '{rejections}',
+        })
+      : ({ add: () => {} } as any)
+
+    this.backpressureStateGauge = meter.createObservableGauge(`${prefix}backpressure_state`, {
+      description: 'Current backpressure state (0=NORMAL, 1=WARNING, 2=CRITICAL, 3=OVERFLOW)',
+      unit: '{state}',
+    })
+
+    this.backpressureStateGauge.addCallback((observableResult: ObservableResult) => {
+      const stateMap: Record<string, number> = {
+        NORMAL: 0,
+        WARNING: 1,
+        CRITICAL: 2,
+        OVERFLOW: 3,
+      }
+      observableResult.observe(stateMap[this.backpressureStateValue] ?? 0)
+    })
+
+    this.backpressureDegradationsCounter = (meter as any).createCounter
+      ? (meter as any).createCounter(`${prefix}backpressure_degradations_total`, {
+          description: 'Total number of priority degradations due to backpressure',
+          unit: '{degradations}',
+        })
+      : ({ add: () => {} } as any)
+
+    // Create DLQ metrics
+    this.dlqEntriesCounter = (meter as any).createCounter
+      ? (meter as any).createCounter(`${prefix}dlq_entries_total`, {
+          description: 'Total number of events added to Dead Letter Queue',
+          unit: '{entries}',
+        })
+      : ({ add: () => {} } as any)
+
+    this.dlqDepthGauge = meter.createObservableGauge(`${prefix}dlq_depth`, {
+      description: 'Current Dead Letter Queue depth',
+      unit: '{events}',
+    })
+
+    this.dlqDepthGauge.addCallback((observableResult: ObservableResult) => {
+      if (this.dlqDepthCallback) {
+        observableResult.observe(this.dlqDepthCallback())
+      }
+    })
+
+    this.dlqRequeueCounter = (meter as any).createCounter
+      ? (meter as any).createCounter(`${prefix}dlq_requeue_total`, {
+          description: 'Total number of DLQ requeue attempts',
+          unit: '{attempts}',
+        })
+      : ({ add: () => {} } as any)
+
+    this.retryAttemptsCounter = (meter as any).createCounter
+      ? (meter as any).createCounter(`${prefix}retry_attempts_total`, {
+          description: 'Total number of event retry attempts',
+          unit: '{attempts}',
+        })
+      : ({ add: () => {} } as any)
   }
 
   /**
@@ -459,5 +535,92 @@ export class OTelEventMetrics implements CircuitBreakerMetricsRecorder {
    */
   clearCircuitBreakerCallbacks(): void {
     this.circuitBreakerStateCallbacks.clear()
+  }
+
+  /**
+   * Record a backpressure rejection event.
+   *
+   * @param eventName - Event name
+   * @param priority - Event priority
+   * @param reason - Rejection reason
+   */
+  recordBackpressureRejection(eventName: string, priority: string, reason: string): void {
+    this.backpressureRejectionsCounter.add(1, {
+      event_name: eventName,
+      priority,
+      reason,
+    })
+  }
+
+  /**
+   * Record a backpressure state change event.
+   *
+   * @param state - New backpressure state (NORMAL, WARNING, CRITICAL, OVERFLOW)
+   */
+  recordBackpressureState(state: string): void {
+    this.backpressureStateValue = state
+  }
+
+  /**
+   * Record a backpressure degradation event.
+   *
+   * @param eventName - Event name
+   * @param fromPriority - Original priority
+   * @param toPriority - Degraded priority
+   */
+  recordBackpressureDegradation(eventName: string, fromPriority: string, toPriority: string): void {
+    this.backpressureDegradationsCounter.add(1, {
+      event_name: eventName,
+      from_priority: fromPriority,
+      to_priority: toPriority,
+    })
+  }
+
+  /**
+   * Record an event added to Dead Letter Queue.
+   *
+   * @param eventName - Event name
+   * @param source - Source of DLQ entry (retry_exhausted, circuit_breaker, backpressure_overflow)
+   */
+  recordDLQEntry(eventName: string, source: string): void {
+    this.dlqEntriesCounter.add(1, {
+      event_name: eventName,
+      source,
+    })
+  }
+
+  /**
+   * Set the callback for DLQ depth observable gauge.
+   *
+   * @param callback - Function returning current DLQ depth
+   */
+  setDLQDepthCallback(callback: () => number): void {
+    this.dlqDepthCallback = callback
+  }
+
+  /**
+   * Record a DLQ requeue attempt.
+   *
+   * @param eventName - Event name
+   * @param result - Result of requeue (success or failure)
+   */
+  recordDLQRequeue(eventName: string, result: 'success' | 'failure'): void {
+    this.dlqRequeueCounter.add(1, {
+      event_name: eventName,
+      result,
+    })
+  }
+
+  /**
+   * Record an event retry attempt.
+   *
+   * @param eventName - Event name
+   * @param attemptNumber - Attempt number
+   */
+  recordRetryAttempt(eventName: string, attemptNumber: number): void {
+    this.retryAttemptsCounter.add(1, {
+      event_name: eventName,
+      attempt_number: String(attemptNumber),
+    })
   }
 }

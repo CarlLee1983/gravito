@@ -614,6 +614,31 @@ export interface PoolStats {
   max: number
 }
 
+/**
+ * Connection pool health status
+ */
+export interface PoolHealth {
+  /**
+   * Health status: 'healthy' | 'warning' | 'critical' | 'disconnected'
+   */
+  status: 'healthy' | 'warning' | 'critical' | 'disconnected'
+
+  /**
+   * Human-readable health message
+   */
+  message: string
+
+  /**
+   * Pool statistics (when available)
+   */
+  stats?: PoolStats
+
+  /**
+   * Last health check timestamp
+   */
+  lastCheck?: Date
+}
+
 // ============================================================================
 // Model Types (forward declarations to avoid circular dependencies)
 // ============================================================================
@@ -732,6 +757,20 @@ export interface DriverContract {
    * @returns Pool statistics or null if not supported
    */
   getPoolStats?(): PoolStats | null
+
+  /**
+   * Get connection pool health status
+   * @optional Only implemented by drivers that support connection pooling
+   * @returns Pool health information
+   */
+  getPoolHealth?(): PoolHealth
+
+  /**
+   * Adjust the connection pool size dynamically
+   * @optional Only implemented by drivers that support pool resizing
+   * @param targetSize - Target number of connections
+   */
+  adjustPoolSize?(targetSize: number): Promise<void>
 }
 
 /**

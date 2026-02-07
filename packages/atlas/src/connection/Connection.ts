@@ -129,6 +129,13 @@ export class Connection implements ConnectionContract {
   }
 
   /**
+   * Get the metrics
+   */
+  getMetrics(): AtlasMetrics | undefined {
+    return this.metrics
+  }
+
+  /**
    * Create a new query builder for a table
    */
   table<T = Record<string, unknown>>(tableName: string): QueryBuilderContract<T> {

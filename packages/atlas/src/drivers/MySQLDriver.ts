@@ -17,6 +17,8 @@ import type {
   DriverType,
   ExecuteResult,
   MySQLConfig,
+  PoolHealth,
+  PoolStats,
   QueryResult,
 } from '../types'
 
@@ -31,11 +33,13 @@ export class MySQLDriver implements DriverContract {
   private transactionConnection: MySQLConnection | null = null
   private connected = false
   private mysql: MySQLModule | null = null
+  private poolConfig: ConnectionConfig
+  private readonly driverType: 'mysql' | 'mariadb'
 
-  constructor(
-    private readonly config: ConnectionConfig,
-    private readonly driverType: 'mysql' | 'mariadb' = 'mysql'
-  ) {}
+  constructor(config: ConnectionConfig, driverType: 'mysql' | 'mariadb' = 'mysql') {
+    this.poolConfig = { ...config }
+    this.driverType = driverType
+  }
 
   /**
    * Get the driver name
@@ -54,9 +58,9 @@ export class MySQLDriver implements DriverContract {
 
     try {
       this.mysql = await this.loadMySQLModule()
-      const myConfig = this.config as MySQLConfig
+      const myConfig = this.poolConfig as MySQLConfig
 
-      const poolConfig: Record<string, unknown> = {
+      const mysqlPoolConfig: Record<string, unknown> = {
         host: myConfig.host ?? 'localhost',
         port: myConfig.port ?? 3306,
         database: myConfig.database,
@@ -72,7 +76,7 @@ export class MySQLDriver implements DriverContract {
       // SSL configuration
       if (myConfig.ssl) {
         if (typeof myConfig.ssl === 'boolean') {
-          poolConfig.ssl = myConfig.ssl ? {} : undefined
+          mysqlPoolConfig.ssl = myConfig.ssl ? {} : undefined
         } else {
           const sslConfig = myConfig.ssl as {
             rejectUnauthorized?: boolean
@@ -80,7 +84,7 @@ export class MySQLDriver implements DriverContract {
             key?: string
             cert?: string
           }
-          poolConfig.ssl = {
+          mysqlPoolConfig.ssl = {
             rejectUnauthorized: sslConfig.rejectUnauthorized,
             ca: sslConfig.ca,
             key: sslConfig.key,
@@ -92,7 +96,7 @@ export class MySQLDriver implements DriverContract {
       if (!this.mysql) {
         throw new Error('MySQL module not loaded')
       }
-      this.pool = this.mysql.createPool(poolConfig)
+      this.pool = this.mysql.createPool(mysqlPoolConfig)
       this.connected = true
     } catch (error) {
       throw new ConnectionError('Could not connect to MySQL', error)
@@ -275,6 +279,112 @@ export class MySQLDriver implements DriverContract {
    */
   inTransaction(): boolean {
     return this.transactionConnection !== null
+  }
+
+  /**
+   * Get connection pool statistics
+   */
+  getPoolStats(): PoolStats | null {
+    if (!this.pool) {
+      return null
+    }
+
+    const poolInternal = this.pool as any
+    const allConnections = poolInternal._allConnections ?? []
+    const freeConnections = poolInternal._freeConnections ?? []
+    const acquiringConnections = poolInternal._acquiringConnections ?? []
+
+    const total = allConnections.length
+    const idle = freeConnections.length
+    const active = total - idle
+    const pending = acquiringConnections.length
+
+    return {
+      idle,
+      pending,
+      active,
+      total,
+      max: (this.poolConfig as any).pool?.max ?? 10,
+    }
+  }
+
+  /**
+   * Get connection pool health status
+   */
+  getPoolHealth(): PoolHealth {
+    const stats = this.getPoolStats()
+    if (!stats) {
+      return {
+        status: 'disconnected',
+        message: 'Connection pool not initialized',
+      }
+    }
+
+    const utilization = stats.active / stats.max
+    const pendingRatio = stats.pending / stats.max
+
+    if (utilization >= 0.9) {
+      return {
+        status: 'critical',
+        message: `Connection pool utilization critical: ${(utilization * 100).toFixed(1)}%`,
+        stats,
+        lastCheck: new Date(),
+      }
+    }
+
+    if (utilization >= 0.7 || pendingRatio > 0.5) {
+      return {
+        status: 'warning',
+        message: `Connection pool utilization high: ${(utilization * 100).toFixed(1)}%`,
+        stats,
+        lastCheck: new Date(),
+      }
+    }
+
+    return {
+      status: 'healthy',
+      message: 'Connection pool operating normally',
+      stats,
+      lastCheck: new Date(),
+    }
+  }
+
+  /**
+   * Adjust the connection pool size
+   * Note: mysql2 Pool doesn't support dynamic resizing, so we reconnect with new size
+   */
+  async adjustPoolSize(targetSize: number): Promise<void> {
+    if (!this.pool) {
+      return
+    }
+
+    const currentMax = (this.poolConfig as any).pool?.max ?? 10
+    if (targetSize === currentMax) {
+      return
+    }
+
+    // Clamp target size to reasonable bounds
+    const min = (this.poolConfig as any).pool?.min ?? 2
+    const max = 100
+    const adjustedSize = Math.max(min, Math.min(max, targetSize))
+
+    try {
+      // Disconnect old pool
+      await this.disconnect()
+
+      // Update config with new pool size
+      const myConfig = this.poolConfig as any
+      myConfig.pool = {
+        ...myConfig.pool,
+        max: adjustedSize,
+      }
+
+      // Reconnect with new size
+      await this.connect()
+    } catch (error) {
+      console.error('Failed to adjust MySQL pool size:', error)
+      throw error
+    }
   }
 
   /**

@@ -4,11 +4,12 @@
  * 處理訂單相關的 HTTP 請求
  */
 
-import type { GravitoContext, PlanetCore } from '@gravito/core'
+import type { CacheService, GravitoContext, PlanetCore } from '@gravito/core'
 import type { IOrderRepository } from '../../../Application/Contracts/IOrderRepository'
 import type { IProductRepository } from '../../../Application/Contracts/IProductRepository'
 import { CreateOrder } from '../../../Application/UseCases/CreateOrder'
 import { GetOrder } from '../../../Application/UseCases/GetOrder'
+import { ListOrders } from '../../../Application/UseCases/ListOrders'
 import { CreateOrderRequest } from '../../../Domain/Models'
 
 /**
@@ -31,12 +32,13 @@ export class OrderController {
       // 建立請求對象
       const request = new CreateOrderRequest(userId, productId, quantity)
 
-      // 取得 Repositories
+      // 取得 Repositories 與 CacheService
       const productRepository = this.core.container.make<IProductRepository>('product.repository')
       const orderRepository = this.core.container.make<IOrderRepository>('order.repository')
+      const cacheService = this.core.container.make<CacheService | undefined>('cache.service')
 
-      // 執行 Use Case
-      const useCase = new CreateOrder(productRepository, orderRepository)
+      // 執行 Use Case（支持快取）
+      const useCase = new CreateOrder(productRepository, orderRepository, cacheService)
       const result = await useCase.execute(request)
 
       // 回應成功
@@ -124,13 +126,14 @@ export class OrderController {
   /**
    * GET /api/orders
    *
-   * 查詢用戶的訂單列表
+   * 查詢用戶的訂單列表（支持快取）
    */
   async list(ctx: GravitoContext): Promise<void> {
     try {
       const userId = ctx.req.query('userId')
       const page = parseInt(ctx.req.query('page') || '1', 10)
       const limit = parseInt(ctx.req.query('limit') || '10', 10)
+      const status = ctx.req.query('status')
 
       if (!userId) {
         ctx.status(400)
@@ -142,10 +145,15 @@ export class OrderController {
       }
 
       const orderRepository = this.core.container.make<IOrderRepository>('order.repository')
+      const cacheService = this.core.container.make<CacheService | undefined>('cache.service')
 
-      const result = await orderRepository.findByUserId(userId, {
+      // 使用新的 ListOrders Use Case（支持快取）
+      const useCase = new ListOrders(orderRepository, cacheService)
+      const result = await useCase.execute({
+        userId,
         page,
         limit,
+        status: status as any, // OrderStatus 可選
       })
 
       ctx.json({
@@ -155,6 +163,7 @@ export class OrderController {
           total: result.total,
           page: result.page,
           limit: result.limit,
+          hasMore: result.hasMore,
         },
       })
     } catch (error) {

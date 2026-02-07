@@ -25,6 +25,8 @@ export type { ConsumerOptions } from './Consumer'
 export { Consumer } from './Consumer'
 
 // Driver config types
+export type { BullMQDriverConfig } from './drivers/BullMQDriver'
+export { BullMQDriver } from './drivers/BullMQDriver'
 export type { DatabaseDriverConfig } from './drivers/DatabaseDriver'
 export { DatabaseDriver } from './drivers/DatabaseDriver'
 export type { GrpcDriverConfig } from './drivers/GrpcDriver'
@@ -55,7 +57,11 @@ export type { Queueable } from './Queueable'
 export { QueueManager } from './QueueManager'
 export type { ScheduledJobConfig, SchedulerOptions } from './Scheduler'
 export { Scheduler } from './Scheduler'
-export { StreamEventBackend } from './StreamEventBackend'
+export {
+  type RetryStrategy,
+  StreamEventBackend,
+  type StreamEventBackendConfig,
+} from './StreamEventBackend'
 export { SystemEventJob } from './SystemEventJob'
 export { ClassNameSerializer } from './serializers/ClassNameSerializer'
 // Serializers

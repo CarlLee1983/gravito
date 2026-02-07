@@ -5,6 +5,9 @@
  */
 
 import { Application } from '@gravito/core'
+import { FlashSaleServiceProvider } from '@gravito/satellite-flash-sale'
+import { InventoryLockServiceProvider } from '@gravito/satellite-inventory-lock'
+import { PaymentServiceProvider } from '@gravito/satellite-payment'
 import type { QueueManager } from '@gravito/stream'
 import { GravitoConfig } from './gravito.config'
 import { setupOrderQueueIntegration } from './integrations/order-queue-handler'
@@ -40,7 +43,27 @@ export function getQueueManager(): QueueManager {
 async function bootstrap(): Promise<void> {
   const _env = (process.env.NODE_ENV || 'development') as 'development' | 'production' | 'testing'
 
-  const app = new Application(GravitoConfig as any)
+  // Create Application with proper configuration structure
+  const p1 = new FlashSaleServiceProvider()
+  const p2 = new InventoryLockServiceProvider()
+  const p3 = new PaymentServiceProvider()
+
+  const providers = [p1, p2, p3]
+
+  console.log('Provider 1:', {
+    name: p1.constructor.name,
+    type: typeof p1,
+    hasRegister: typeof (p1 as any).register,
+    hasBoot: typeof (p1 as any).boot,
+  })
+
+  const app = new Application({
+    basePath: process.cwd(),
+    config: GravitoConfig,
+    env: _env,
+    // Register satellite providers directly
+    providers,
+  } as any)
 
   // 啟動應用
   await app.boot()
@@ -55,12 +78,21 @@ async function bootstrap(): Promise<void> {
   setupOrderQueueIntegration(app.core)
   setupPaymentQueueIntegration(app.core)
 
+  // 啟動 HTTP 伺服器
+  const liftoffConfig = app.core.liftoff()
+
   // 記錄啟動訊息
   app.core.logger.info('🚀 Flash Sale System started')
   app.core.logger.info(`📍 Environment: ${app.env}`)
-  app.core.logger.info(`🌐 Listen on: http://localhost:3000`)
+  app.core.logger.info(`🌐 Listen on: http://localhost:${liftoffConfig.port}`)
   app.core.logger.info('📦 Queue Manager initialized')
   app.core.logger.info('🔗 Satellites integrations configured')
+
+  // 啟動 Bun 服務器
+  if (typeof Bun !== 'undefined') {
+    Bun.serve(liftoffConfig as any)
+    app.core.logger.info('✅ HTTP Server is running')
+  }
 }
 
 // 啟動應用
