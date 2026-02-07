@@ -117,6 +117,7 @@ export interface RenderMetrics {
  */
 export class InertiaService {
   private sharedProps: Record<string, unknown> = {}
+  private sharedPropsCache: { key: string; value: Record<string, unknown> } | null = null
   private readonly logLevel: 'debug' | 'info' | 'warn' | 'error' | 'silent'
   private readonly onRenderCallback?: (metrics: RenderMetrics) => void
 
@@ -271,9 +272,18 @@ export class InertiaService {
 
       const version = await resolveVersion()
 
+      // P5: Optimized shared props retrieval
+      const getMergedProps = () => {
+        const propsToMerge = props ?? {}
+        if (Object.keys(propsToMerge).length === 0) {
+          return this.sharedProps
+        }
+        return { ...this.sharedProps, ...propsToMerge }
+      }
+
       const page = {
         component,
-        props: await resolveProps({ ...this.sharedProps, ...(props ?? {}) }),
+        props: await resolveProps(getMergedProps()),
         url: pageUrl,
         version,
       }
@@ -395,6 +405,7 @@ export class InertiaService {
    */
   public share(key: string, value: unknown): void {
     this.sharedProps[key] = value
+    this.sharedPropsCache = null // Invalidate cache
   }
 
   /**
@@ -416,6 +427,7 @@ export class InertiaService {
    */
   public shareAll(props: Record<string, unknown>): void {
     Object.assign(this.sharedProps, props)
+    this.sharedPropsCache = null // Invalidate cache
   }
 
   /**
