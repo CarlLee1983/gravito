@@ -28,3 +28,6 @@ export {
 } from './FlowControlStrategy'
 export * from './observability'
 export type { BackpressureStrategy, EventQueueConfig, EventTask } from './types'
+export { WorkerPool } from './WorkerPool'
+export type { WorkerPoolConfig, WorkerPoolStats, WorkerStats } from './WorkerPoolConfig'
+export { WorkerPoolMetrics } from './WorkerPoolMetrics'

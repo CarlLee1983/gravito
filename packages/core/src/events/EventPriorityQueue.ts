@@ -8,6 +8,7 @@ import type { EventOptions } from './EventOptions'
 import type { EventMetrics } from './observability/EventMetrics'
 import type { EventTracing } from './observability/EventTracing'
 import type { BackpressureStrategy, EventQueueConfig, EventTask } from './types'
+import type { WorkerPool } from './WorkerPool'
 
 export type { EventTask, EventQueueConfig, BackpressureStrategy }
 
@@ -42,6 +43,7 @@ export class EventPriorityQueue implements EventBackend {
   private eventTracing?: EventTracing
   private currentDispatchSpan?: Span
   private backpressureManager?: BackpressureManager
+  private workerPool?: WorkerPool
 
   constructor(config: EventQueueConfig = {}) {
     this.config = config
@@ -326,6 +328,7 @@ export class EventPriorityQueue implements EventBackend {
   /**
    * Process the next task in the queue.
    * Tasks are processed in priority order: high > normal > low
+   * If WorkerPool is configured, tasks are submitted to the pool for concurrent execution.
    *
    * @internal
    */
@@ -342,7 +345,13 @@ export class EventPriorityQueue implements EventBackend {
     this.processing = true
 
     try {
-      await this.executeTask(task)
+      // If WorkerPool is configured, submit task to pool
+      if (this.workerPool) {
+        await this.workerPool.submitTask(task)
+      } else {
+        // Otherwise, execute task directly (original behavior)
+        await this.executeTask(task)
+      }
     } catch (error) {
       console.error(`[EventPriorityQueue] Error processing task ${task.id}:`, error)
     } finally {
@@ -719,6 +728,26 @@ export class EventPriorityQueue implements EventBackend {
    */
   getBackpressureManager(): BackpressureManager | undefined {
     return this.backpressureManager
+  }
+
+  /**
+   * Set the WorkerPool for concurrent task execution.
+   *
+   * @param pool - WorkerPool instance
+   * @internal
+   */
+  setWorkerPool(pool: WorkerPool): void {
+    this.workerPool = pool
+  }
+
+  /**
+   * Get the WorkerPool instance if set.
+   *
+   * @returns WorkerPool instance or undefined if not set
+   * @internal
+   */
+  getWorkerPool(): WorkerPool | undefined {
+    return this.workerPool
   }
 
   /**
