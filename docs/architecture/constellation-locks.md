@@ -8,6 +8,42 @@ last_updated: 2026-02-02
 
 # Constellation Risk Mitigation Implementation Summary
 
+## 快速開始
+
+### 安裝
+
+```bash
+bun add @gravito/constellation
+```
+
+### 基本使用
+
+```typescript
+import { OrbitSitemap, MemoryLock } from '@gravito/constellation'
+
+const sitemap = OrbitSitemap.dynamic({
+  baseUrl: 'https://example.com',
+  lock: new MemoryLock()
+})
+
+sitemap.install(core)
+```
+
+### 生產環境（Redis 分散式鎖）
+
+```typescript
+import { OrbitSitemap, RedisLock } from '@gravito/constellation'
+import { createClient } from 'redis'
+
+const redis = createClient({ url: process.env.REDIS_URL })
+const sitemap = OrbitSitemap.dynamic({
+  baseUrl: 'https://example.com',
+  lock: new RedisLock({ client: redis, retryCount: 3 })
+})
+```
+
+---
+
 ## 實作完成日期
 - **初始實作**: 2026-01-29
 - **JSDoc 增強**: 2026-02-02
@@ -86,7 +122,7 @@ last_updated: 2026-02-02
 ## 檔案清單
 
 ### 新增檔案
-```text
+```sh
 packages/constellation/src/locks/
 ├── index.ts                      # 匯出檔案
 ├── MemoryLock.ts                 # 記憶體鎖定實作 ✅ 完整 JSDoc
@@ -101,7 +137,7 @@ docs/architecture/
 ```
 
 ### 修改檔案
-```text
+```sh
 packages/constellation/src/index.ts      # 新增 lock 匯出
 docs/architecture/constellation.md       # 更新風險評估狀態與範例
 IMPLEMENTATION_SUMMARY_CONSTELLATION_LOCKS.md  # 本文件（新增 JSDoc 記錄）
@@ -203,6 +239,57 @@ sitemap.install(core)
 - ✅ `lock` 參數為可選（Optional）
 - ✅ 若未提供 lock，行為與先前版本相同
 - ✅ 現有測試全部通過（50/50）
+
+---
+
+## 架構設計
+
+### 系統架構
+
+```bash
+OrbitSitemap (Constellation Module)
+  └─ SitemapLock Interface
+      ├─ MemoryLock (Single Instance)
+      │  ├─ Map-based Storage
+      │  ├─ TTL Management
+      │  └─ Auto Cleanup
+      └─ RedisLock (Distributed)
+         ├─ Redis Connection
+         ├─ Atomic SET NX EX
+         ├─ Lua Script Release
+         └─ Retry Mechanism
+```
+
+### 核心設計原則
+
+1. **隔離性** - 各個資源獨立鎖定
+2. **自動過期** - TTL 防止死鎖
+3. **重試機制** - 可配置的重試策略
+4. **所有權驗證** - 防止非擁有者釋放鎖
+
+### API 參考
+
+#### MemoryLock
+
+```typescript
+interface SitemapLock {
+  acquire(resource: string, ttl?: number): Promise<boolean>
+  release(resource: string): Promise<void>
+  isLocked(resource: string): boolean
+  getTTL(resource: string): number | null
+}
+```
+
+#### RedisLock
+
+```typescript
+interface RedisLockOptions {
+  client: RedisClient
+  keyPrefix?: string          // 預設: 'sitemap:lock:'
+  retryCount?: number         // 預設: 3
+  retryDelay?: number         // 預設: 100ms
+}
+```
 
 ---
 
