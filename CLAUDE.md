@@ -237,15 +237,17 @@ bun test
 
 ### 4. Commit Message 格式
 
-遵循 [CONTRIBUTING.md](./CONTRIBUTING.md) 的約定，使用繁體中文台灣用語：
+遵循 [CONTRIBUTING.md](./CONTRIBUTING.md) 的約定，**使用英文描述**：
 
 ```
-feat: [模組名] 功能描述
-fix: 修正 XXX 問題
-refactor: 重構 XXX 模組
-docs: 更新文檔
-test: 增加 XXX 測試
+feat: [module-name] Add feature description
+fix: Fix XXX issue
+refactor: Refactor XXX module
+docs: Update documentation
+test: Add XXX tests
 ```
+
+**注意**：Commit message 使用英文，但繁體中文文件（README、文檔等）使用繁體中文台灣用語
 
 ## 特殊腳本
 
