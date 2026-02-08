@@ -48,5 +48,5 @@ defineProps<{
   version: string
 }>()
 
-const _count = ref(0)
+const count = ref(0)
 </script>
