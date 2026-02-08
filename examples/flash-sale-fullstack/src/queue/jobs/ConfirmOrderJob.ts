@@ -6,6 +6,7 @@
 
 import { Job } from '@gravito/stream'
 import { getCore } from '../../app'
+import { recordEvent, withSpan } from '../../tracing/tracer'
 import type { ConfirmOrderJobPayload } from '../../types/queue'
 
 /**
@@ -31,42 +32,43 @@ export class ConfirmOrderJob extends Job {
    * 執行 Job
    */
   async handle(): Promise<void> {
-    const core = getCore()
-    const logger = core.logger
+    await withSpan(
+      'job.confirm_order',
+      {
+        'job.type': 'ConfirmOrderJob',
+        'flash_sale.order_id': this.payload.orderId,
+        'flash_sale.lock_id': this.payload.lockId,
+      },
+      async (_span) => {
+        const core = getCore()
+        const logger = core.logger
 
-    try {
-      logger.info(`[ConfirmOrderJob] 開始執行: orderId=${this.payload.orderId}`)
+        logger.info(`[ConfirmOrderJob] 開始執行: orderId=${this.payload.orderId}`)
 
-      // 取得 Flash-Sale Use Case
-      const confirmOrder = core.container.make<any>('flash-sale.confirm-order')
+        // 取得 Flash-Sale Use Case
+        const confirmOrder = core.container.make<any>('flash-sale.confirm-order')
 
-      // 執行訂單確認
-      const _result = await confirmOrder?.execute?.({
-        orderId: this.payload.orderId,
-        lockId: this.payload.lockId,
-      })
+        // 執行訂單確認
+        const _result = await confirmOrder?.execute?.({
+          orderId: this.payload.orderId,
+          lockId: this.payload.lockId,
+        })
 
-      logger.info(`[ConfirmOrderJob] ✅ 完成: orderId=${this.payload.orderId}`)
+        logger.info(`[ConfirmOrderJob] ✅ 完成: orderId=${this.payload.orderId}`)
 
-      // 觸發事件：訂單已確認
-      await core.hooks.doAction('order:confirmed', {
-        orderId: this.payload.orderId,
-        lockId: this.payload.lockId,
-        confirmedAt: new Date().toISOString(),
-      })
-    } catch (error) {
-      const logger = getCore().logger
-      logger.error(`[ConfirmOrderJob] ❌ 失敗: orderId=${this.payload.orderId}`, error)
+        recordEvent('order_confirmed', {
+          'flash_sale.order_id': this.payload.orderId,
+          'flash_sale.confirmed_at': new Date().toISOString(),
+        })
 
-      // 觸發事件：訂單確認失敗
-      await core.hooks.doAction('order:confirm_failed', {
-        orderId: this.payload.orderId,
-        reason: error instanceof Error ? error.message : 'Unknown error',
-      })
-
-      // 重新拋出錯誤以觸發重試
-      throw error
-    }
+        // 觸發事件：訂單已確認
+        await core.hooks.doAction('order:confirmed', {
+          orderId: this.payload.orderId,
+          lockId: this.payload.lockId,
+          confirmedAt: new Date().toISOString(),
+        })
+      }
+    )
   }
 
   /**

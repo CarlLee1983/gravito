@@ -6,6 +6,7 @@
 
 import { Job } from '@gravito/stream'
 import { getCore, getQueueManager } from '../../app'
+import { getFlashSaleTracer, recordEvent, withSpan } from '../../tracing/tracer'
 import type { DeductInventoryJobPayload } from '../../types/queue'
 import { ConfirmOrderJob } from './ConfirmOrderJob'
 import { ReleaseInventoryJob } from './ReleaseInventoryJob'
@@ -33,41 +34,59 @@ export class DeductInventoryJob extends Job {
    * 執行 Job
    */
   async handle(): Promise<void> {
-    const core = getCore()
-    const logger = core.logger
-    const queueManager = getQueueManager()
+    await withSpan(
+      'job.deduct_inventory',
+      {
+        'job.type': 'DeductInventoryJob',
+        'flash_sale.order_id': this.payload.orderId,
+        'flash_sale.lock_id': this.payload.lockId,
+      },
+      async (_span) => {
+        const core = getCore()
+        const logger = core.logger
+        const queueManager = getQueueManager()
 
-    try {
-      logger.info(`[DeductInventoryJob] 開始執行: orderId=${this.payload.orderId}`)
+        logger.info(`[DeductInventoryJob] 開始執行: orderId=${this.payload.orderId}`)
 
-      // 取得 Inventory-Lock Use Case
-      const inventoryLock = core.container.make<any>('inventory-lock.deduct-inventory')
+        // 取得 Inventory-Lock Use Case
+        const inventoryLock = core.container.make<any>('inventory-lock.deduct-inventory')
 
-      // 執行庫存扣減
-      const _result = await inventoryLock?.execute?.({
-        orderId: this.payload.orderId,
-        lockId: this.payload.lockId,
-        version: this.payload.lockVersion,
-      })
+        // 執行庫存扣減
+        const _result = await inventoryLock?.execute?.({
+          orderId: this.payload.orderId,
+          lockId: this.payload.lockId,
+          version: this.payload.lockVersion,
+        })
 
-      logger.info(
-        `[DeductInventoryJob] ✅ 扣減完成: orderId=${this.payload.orderId}, lockId=${this.payload.lockId}`
-      )
+        logger.info(
+          `[DeductInventoryJob] ✅ 扣減完成: orderId=${this.payload.orderId}, lockId=${this.payload.lockId}`
+        )
 
-      // 扣減成功：推送訂單確認 Job
-      const confirmJob = new ConfirmOrderJob({
-        orderId: this.payload.orderId,
-        lockId: this.payload.lockId,
-      })
+        recordEvent('inventory_deducted', { 'flash_sale.order_id': this.payload.orderId })
 
-      await queueManager.push(confirmJob.onQueue('orders'))
+        // 扣減成功：推送訂單確認 Job
+        const confirmJob = new ConfirmOrderJob({
+          orderId: this.payload.orderId,
+          lockId: this.payload.lockId,
+        })
 
-      logger.info(`[DeductInventoryJob] 推送 ConfirmOrderJob: orderId=${this.payload.orderId}`)
-    } catch (error) {
+        await queueManager.push(confirmJob.onQueue('orders'))
+
+        logger.info(`[DeductInventoryJob] 推送 ConfirmOrderJob: orderId=${this.payload.orderId}`)
+      }
+    ).catch(async (error) => {
       const logger = getCore().logger
       logger.error(`[DeductInventoryJob] ❌ 扣減失敗: orderId=${this.payload.orderId}`, error)
 
-      // 扣減失敗：推送補償 Job（釋放庫存）
+      // 扣減失敗：建立補償 Span
+      const tracer = getFlashSaleTracer()
+      const compensationSpan = tracer.startSpan('job.compensation.release_inventory', {
+        attributes: {
+          'flash_sale.order_id': this.payload.orderId,
+          'flash_sale.compensation_reason': 'deduction_failed',
+        },
+      })
+
       const releaseJob = new ReleaseInventoryJob({
         orderId: this.payload.orderId,
         lockId: this.payload.lockId,
@@ -77,15 +96,19 @@ export class DeductInventoryJob extends Job {
       })
 
       try {
+        const queueManager = getQueueManager()
         await queueManager.push(releaseJob.onQueue('inventory'))
         logger.info(
           `[DeductInventoryJob] 推送補償 Job (ReleaseInventoryJob): orderId=${this.payload.orderId}`
         )
       } catch (pushError) {
         logger.error(`[DeductInventoryJob] 推送補償 Job 失敗`, pushError)
+      } finally {
+        compensationSpan.end()
       }
 
       // 觸發事件：扣減失敗
+      const core = getCore()
       await core.hooks.doAction('order:deduct_failed', {
         orderId: this.payload.orderId,
         reason: error instanceof Error ? error.message : 'Unknown error',
@@ -93,7 +116,7 @@ export class DeductInventoryJob extends Job {
 
       // 重新拋出錯誤以觸發重試
       throw error
-    }
+    })
   }
 
   /**

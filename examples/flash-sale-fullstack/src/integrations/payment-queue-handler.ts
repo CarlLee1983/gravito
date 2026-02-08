@@ -7,6 +7,7 @@
 import type { PlanetCore } from '@gravito/core'
 import { getQueueManager } from '../app'
 import { DeductInventoryJob } from '../queue/jobs/DeductInventoryJob'
+import { recordEvent, withSpan } from '../tracing/tracer'
 import type { DeductInventoryJobPayload } from '../types/queue'
 
 /**
@@ -22,36 +23,48 @@ export function setupPaymentQueueIntegration(core: PlanetCore): void {
   // 監聽支付成功 Hook
   core.hooks.addAction('payment:succeeded', async (payload: any) => {
     try {
-      logger.info(`[Payment→Queue] 支付成功，準備推送庫存扣減 Job`)
-      logger.info(`[Payment→Queue] orderId: ${payload.orderId}`)
+      await withSpan(
+        'integration.payment_to_queue',
+        {
+          'flash_sale.order_id': payload.orderId,
+          'integration.source': 'payment:succeeded',
+          'integration.target': 'DeductInventoryJob',
+        },
+        async (_span) => {
+          logger.info(`[Payment→Queue] 支付成功，準備推送庫存扣減 Job`)
+          logger.info(`[Payment→Queue] orderId: ${payload.orderId}`)
 
-      const orderId = payload.orderId
-      const lockId = payload.lockId // 此欄位需要從某處取得
+          const orderId = payload.orderId
+          const lockId = payload.lockId // 此欄位需要從某處取得
 
-      // 如果沒有 lockId，嘗試從訂單中查詢
-      if (!lockId) {
-        logger.warn(`[Payment→Queue] 警告：未找到 lockId，需要從訂單或其他來源查詢`)
-        // 這裡應該查詢訂單數據以取得 lockId
-        // 暫時跳過，等待框架決策
-        return
-      }
+          // 如果沒有 lockId，嘗試從訂單中查詢
+          if (!lockId) {
+            logger.warn(`[Payment→Queue] 警告：未找到 lockId，需要從訂單或其他來源查詢`)
+            // 這裡應該查詢訂單數據以取得 lockId
+            // 暫時跳過，等待框架決策
+            return
+          }
 
-      const queueManager = getQueueManager()
+          const queueManager = getQueueManager()
 
-      // 構建 Payload
-      const jobPayload: DeductInventoryJobPayload = {
-        orderId,
-        lockId,
-        productId: '', // 需要從訂單中取得
-        quantity: 0, // 需要從訂單中取得
-        lockVersion: 1, // 需要從訂單中取得
-      }
+          // 構建 Payload
+          const jobPayload: DeductInventoryJobPayload = {
+            orderId,
+            lockId,
+            productId: '', // 需要從訂單中取得
+            quantity: 0, // 需要從訂單中取得
+            lockVersion: 1, // 需要從訂單中取得
+          }
 
-      // 推送 Job
-      const job = new DeductInventoryJob(jobPayload)
-      await queueManager.push(job.onQueue('inventory'))
+          // 推送 Job
+          const job = new DeductInventoryJob(jobPayload)
+          await queueManager.push(job.onQueue('inventory'))
 
-      logger.info(`[Payment→Queue] ✅ DeductInventoryJob 已推送: orderId=${orderId}`)
+          recordEvent('job_pushed', { 'job.type': 'DeductInventoryJob' })
+
+          logger.info(`[Payment→Queue] ✅ DeductInventoryJob 已推送: orderId=${orderId}`)
+        }
+      )
     } catch (error) {
       logger.error(`[Payment→Queue] ❌ 推送 Job 失敗`, error)
       // 不拋出錯誤，防止支付流程中斷

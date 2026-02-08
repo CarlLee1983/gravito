@@ -5,9 +5,6 @@
  */
 
 import type { GravitoConfig as Config } from '@gravito/core'
-import { FlashSaleServiceProvider } from '@gravito/satellite-flash-sale'
-import { InventoryLockServiceProvider } from '@gravito/satellite-inventory-lock'
-import { PaymentServiceProvider } from '@gravito/satellite-payment'
 
 /**
  * 應用配置
@@ -140,7 +137,7 @@ export const GravitoConfig: Config & any = {
      * 注意：會增加性能開銷，建議僅在開發環境啟用
      * @env OBSERVABILITY_TRACING
      */
-    tracing: process.env.OBSERVABILITY_TRACING === 'true', // 預設關閉
+    tracing: process.env.OBSERVABILITY_TRACING !== 'false', // 改為預設啟用
 
     /**
      * 指標名稱前綴
@@ -169,6 +166,27 @@ export const GravitoConfig: Config & any = {
        * @env PROMETHEUS_ENDPOINT
        */
       endpoint: process.env.PROMETHEUS_ENDPOINT || '/metrics',
+    },
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // OpenTelemetry 完整配置
+  // ─────────────────────────────────────────────────────────────────────────
+
+  openTelemetry: {
+    serviceName: process.env.OTEL_SERVICE_NAME || 'flash-sale-service',
+    serviceVersion: process.env.OTEL_SERVICE_VERSION || '0.1.0',
+    environment: process.env.NODE_ENV || 'development',
+    tracing: {
+      enabled: process.env.OTEL_TRACING_ENABLED !== 'false',
+      exporter: (process.env.OTEL_TRACING_EXPORTER || 'jaeger') as 'jaeger' | 'otlp' | 'console',
+      jaegerEndpoint: process.env.JAEGER_ENDPOINT || 'http://localhost:14268/api/traces',
+      samplingRate: parseFloat(process.env.OTEL_SAMPLING_RATE || '0.1'),
+    },
+    metrics: {
+      enabled: process.env.OTEL_METRICS_ENABLED !== 'false',
+      exporter: (process.env.OTEL_METRICS_EXPORTER || 'prometheus') as 'prometheus' | 'otlp',
+      prometheusPort: parseInt(process.env.PROMETHEUS_PORT || '9090', 10),
     },
   },
 }

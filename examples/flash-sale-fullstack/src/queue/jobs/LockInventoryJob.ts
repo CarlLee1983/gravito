@@ -6,6 +6,7 @@
 
 import { Job } from '@gravito/stream'
 import { getCore } from '../../app'
+import { recordEvent, withSpan } from '../../tracing/tracer'
 import type { LockInventoryJobPayload } from '../../types/queue'
 
 /**
@@ -31,46 +32,50 @@ export class LockInventoryJob extends Job {
    * 執行 Job
    */
   async handle(): Promise<void> {
-    const core = getCore()
-    const logger = core.logger
+    await withSpan(
+      'job.lock_inventory',
+      {
+        'job.type': 'LockInventoryJob',
+        'flash_sale.order_id': this.payload.orderId,
+        'flash_sale.product_id': this.payload.productId,
+        'flash_sale.quantity': this.payload.quantity,
+      },
+      async (span) => {
+        const core = getCore()
+        const logger = core.logger
 
-    try {
-      logger.info(`[LockInventoryJob] 開始執行: orderId=${this.payload.orderId}`)
+        logger.info(`[LockInventoryJob] 開始執行: orderId=${this.payload.orderId}`)
 
-      // 取得 Inventory-Lock Use Case
-      const inventoryLock = core.container.make<any>('inventory-lock.lock-inventory')
+        // 取得 Inventory-Lock Use Case
+        const inventoryLock = core.container.make<any>('inventory-lock.lock-inventory')
 
-      // 執行庫存鎖定
-      const result = await inventoryLock?.execute?.({
-        orderId: this.payload.orderId,
-        productId: this.payload.productId,
-        quantity: this.payload.quantity,
-      })
+        // 執行庫存鎖定
+        const result = await inventoryLock?.execute?.({
+          orderId: this.payload.orderId,
+          productId: this.payload.productId,
+          quantity: this.payload.quantity,
+        })
 
-      logger.info(
-        `[LockInventoryJob] ✅ 完成: orderId=${this.payload.orderId}, lockId=${result.id}`
-      )
+        logger.info(
+          `[LockInventoryJob] ✅ 完成: orderId=${this.payload.orderId}, lockId=${result.id}`
+        )
 
-      // 觸發事件：訂單已準備好支付
-      // 注意：具體的事件類型和 dispatch 方式依賴於 Gravito 的事件系統實現
-      await core.hooks.doAction('order:ready_for_payment', {
-        orderId: this.payload.orderId,
-        lockId: result.id,
-        lockVersion: result.version,
-      })
-    } catch (error) {
-      const logger = getCore().logger
-      logger.error(`[LockInventoryJob] ❌ 失敗: orderId=${this.payload.orderId}`, error)
+        recordEvent('inventory_locked', {
+          'flash_sale.lock_id': result.id,
+          'flash_sale.lock_version': result.version,
+        })
 
-      // 觸發事件：庫存鎖定失敗
-      await core.hooks.doAction('order:lock_failed', {
-        orderId: this.payload.orderId,
-        reason: error instanceof Error ? error.message : 'Unknown error',
-      })
+        span.setAttributes({ 'flash_sale.lock_id': result.id })
 
-      // 重新拋出錯誤以觸發重試
-      throw error
-    }
+        // 觸發事件：訂單已準備好支付
+        // 注意：具體的事件類型和 dispatch 方式依賴於 Gravito 的事件系統實現
+        await core.hooks.doAction('order:ready_for_payment', {
+          orderId: this.payload.orderId,
+          lockId: result.id,
+          lockVersion: result.version,
+        })
+      }
+    )
   }
 
   /**
