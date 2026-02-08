@@ -756,7 +756,8 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
     if (!this.pluralRules.has(locale)) {
       this.pluralRules.set(locale, new Intl.PluralRules(locale))
     }
-    return this.pluralRules.get(locale)?.select(count)
+    const rule = this.pluralRules.get(locale)
+    return rule?.select(count) ?? 'other'
   }
 
   /**
