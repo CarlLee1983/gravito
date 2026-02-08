@@ -1,4 +1,42 @@
+---
+title: "Issue 1.1 Phase 2: Event System 可觀測性整合 - 實施完成報告"
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-02-02
+---
+
 # Issue 1.1 Phase 2: Event System 可觀測性整合 - 實施完成報告
+
+## 快速開始
+
+### 安裝依賴
+
+```bash
+bun add @gravito/core @gravito/monitor
+```
+
+### 基本配置
+
+```typescript
+import { ObservableHookManager } from '@gravito/core'
+import { MetricsRegistry } from '@gravito/monitor'
+
+const metrics = new MetricsRegistry()
+const manager = new ObservableHookManager(
+  { migrationMode: 'async' },
+  {
+    enabled: true,
+    metrics,
+    tracing: true
+  }
+)
+
+// 使用管理器
+await manager.doActionAsync('event', data, { priority: 'high' })
+```
+
+---
 
 ## 📋 實施概況
 
@@ -85,7 +123,7 @@
 - ✅ 並發派發性能
 
 **測試結果**:
-```
+```yaml
 319 通過 / 0 失敗 / 100% 成功率
 覆蓋率: > 80%
 類型檢查: ✅ 通過
@@ -186,7 +224,7 @@
 
 ### 集成點
 
-```
+```bash
 HookManager (base)
     ↓
 ObservableHookManager (wrapper)
@@ -267,6 +305,48 @@ manager.setObservabilityConfig({
   tracing: true
 })
 ```
+
+---
+
+## API 參考
+
+### ObservableHookManager
+
+#### 方法
+
+| 方法 | 說明 |
+|------|------|
+| `doActionAsync(name, data, options)` | 派發異步事件（記錄指標和追蹤） |
+| `setObservabilityConfig(config)` | 設置可觀測性配置 |
+| `getMetricsRegistry()` | 獲取指標註冊表 |
+| `setObservabilityEnabled(enabled)` | 啟用/禁用可觀測性 |
+
+#### 配置選項
+
+```typescript
+interface ObservabilityConfig {
+  enabled: boolean           // 是否啟用可觀測性
+  metrics?: MetricsRegistry  // Prometheus 指標
+  tracing?: boolean          // 是否啟用追蹤
+  metricsPrefix?: string     // 指標前綴 (預設: gravito_event_)
+}
+
+interface AsyncEventOptions {
+  priority?: 'high' | 'normal' | 'low'
+  timeout?: number  // 毫秒
+}
+```
+
+### EventMetrics
+
+#### 核心指標
+
+- `gravito_event_dispatch_latency_seconds` - 派發延遲
+- `gravito_event_listener_execution_seconds` - 監聽器執行時間
+- `gravito_event_queue_depth` - 隊列深度
+- `gravito_event_failures_total` - 失敗總數
+- `gravito_event_timeouts_total` - 超時總數
+- `gravito_event_processed_total` - 已處理事件數
 
 ---
 

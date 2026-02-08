@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Features
+
+* **ripple:** implement multi-runtime engine architecture (Bun, Node/uWS, Node/ws)
+* **ripple:** implement protobuf serializer for high-performance binary messaging
+* **signal:** add presence channels with NATS KV store integration
+* **horizon:** implement rate limiting and job prioritization
+* **monitor:** add `@gravito/monitor` observability module
+* **fortify:** implement complete authentication system with CLI scaffolding
+* **plasma:** add `OrbitPlasma` class for Gravito integration
+* **benchmark:** add atlas performance benchmark suite
+* **atlas:** finalize site SEO, benchmark reports, and core driver implementations
+* **official-site:** add Releases page and enhance benchmark stats
+
+### Bug Fixes
+
+* **events:** fix `EventPriorityQueue` type signature and interface
+* **stasis:** fix expiration check boundary condition
+* **ion:** fix Biome formatting check errors
+* **flash-sale:** fix build script and typecheck errors
+* **official-site:** fix TOC anchor links and sitemap issues
+* **horizon:** correct lock key format in scheduler test
+* **luminosity-site:** use `@gravito/freeze-vue` `StaticLink` for SSG navigation
+* **atlas:** fix RedisDriver method return types and resolve test failures
+* **impulse:** fix middleware return type in `validateRequest` function
+* **build:** resolve monorepo build failures and clean up artifacts
+
+### Refactor
+
+* standardize Orbit class naming convention
+* **atlas-site:** restructure navigation and remove unused pages
+* **examples:** skip build for image-verification example
+
+### Documentation
+
+* **atlas:** enhance query-builder, quick-start, and benchmark documentation
+* **official-site:** add premium kinetic ecosystem guide with galaxy branding
+* **legal:** add legal documentation and update footer links
+
 ### Changed
 
 * enforce per-package coverage (>= 80%) in CI and pre-push checks

@@ -27,8 +27,9 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 1. Fork the repo and create your branch from `main`
 2. If you've added code that should be tested, add tests
 3. Ensure the test suite passes (`bun test`)
-4. Make sure your code lints (`bun run check`)
-5. Issue that pull request!
+4. Ensure TypeScript types pass (`bun run typecheck`)
+5. Make sure your code lints (`bun run check`)
+6. Issue that pull request!
 
 ## Development Setup
 
@@ -42,6 +43,9 @@ bun install
 
 # Run tests
 bun test
+
+# Run typechecking
+bun run typecheck
 
 # Run linting
 bun run check
