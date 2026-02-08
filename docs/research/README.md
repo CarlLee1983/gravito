@@ -18,12 +18,15 @@
 - `orm-query-optimization.md` - ORM 查詢優化與常見性能陷阱
 - `turbo-build-optimization.md` - Turbo 構建優化與 Monorepo 效率
 - `stream-backpressure.md` - 流處理與背壓機制
+- `memory-management.md` - 內存管理與垃圾回收
+- `distributed-systems.md` - 分佈式系統性能考量
 
 ### 🔗 [集成 (Integrations)](./integrations/)
 第三方服務集成、生態系統適配相關研究。
 - `photon-http-integration.md` - HTTP 框架（Photon）集成設計
 - `hooks-event-system.md` - 事件系統與 Hooks 架構
 - `atlas-orm-integration.md` - ORM（Atlas）與數據庫集成
+- `authentication-authorization.md` - 認證授權體系設計
 
 ---
 
