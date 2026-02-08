@@ -1,5 +1,5 @@
 ---
-title: Issue 1.1 Phase 2: Event System 可觀測性整合 - 實施完成報告
+title: "Issue 1.1 Phase 2: Event System 可觀測性整合 - 實施完成報告"
 version: 1.0.0
 status: Stable
 tier: C
