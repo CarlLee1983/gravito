@@ -491,7 +491,10 @@ export class BullMQDriver implements QueueDriver {
   /**
    * Checks rate limit for a queue.
    */
-  async checkRateLimit(queue: string, config: { max: number; duration: number }): Promise<boolean> {
+  async checkRateLimit(
+    queue: string,
+    _config: { max: number; duration: number }
+  ): Promise<boolean> {
     // Placeholder; would require Redis INCR/EXPIRE logic
     return true
   }
