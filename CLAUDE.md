@@ -56,7 +56,8 @@ gravito-core-dx/
 6. **Commit Message**：使用英文描述 (例：`feat: [core] Add new feature`)
 
 → **詳細配置**：[docs/claude/config.md](docs/claude/config.md)
-→ **架構約束**：[docs/claude/architecture.md](docs/claude/architecture.md)
+→ **架構設計**：[docs/claude/design.md](docs/claude/design.md)
+→ **架構約束**：[docs/claude/constraints.md](docs/claude/constraints.md)
 
 ## 常見開發任務
 
@@ -105,7 +106,9 @@ bun run build      # 驗證構建
 | **[packages.md](docs/claude/packages.md)** | 包功能與依賴關係 | 需要了解某個包的職責或尋找合適的包時 |
 | **[config.md](docs/claude/config.md)** | 工具配置詳情 | 需要修改 TypeScript / Biome / Turbo 配置時 |
 | **[development.md](docs/claude/development.md)** | 完整開發流程 | 第一次提交代碼前、或需要完整工作流指引時 |
-| **[architecture.md](docs/claude/architecture.md)** | 架構約束與最佳實踐 | 做跨模組修改或架構決策時 |
+| **[design.md](docs/claude/design.md)** | Galaxy Architecture 設計原則 | 理解架構整體設計、評估包位置時 |
+| **[constraints.md](docs/claude/constraints.md)** | Monorepo 約束與規範 | 檢查包邊界、循環依賴、版本一致性時 |
+| **[patterns.md](docs/claude/patterns.md)** | 架構模式與最佳實踐 | 實戰開發、設計特性、解決架構問題時 |
 | **[troubleshooting.md](docs/claude/troubleshooting.md)** | 故障排除手冊 | 遇到構建、測試、類型或依賴問題時 |
 
 ## 相關文檔與資源
