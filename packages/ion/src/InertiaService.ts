@@ -422,7 +422,6 @@ export class InertiaService {
    */
   public share(key: string, value: unknown): void {
     this.sharedProps[key] = value
-    this.sharedPropsCache = null // Invalidate cache
   }
 
   /**
@@ -444,7 +443,6 @@ export class InertiaService {
    */
   public shareAll(props: Record<string, unknown>): void {
     Object.assign(this.sharedProps, props)
-    this.sharedPropsCache = null // Invalidate cache
   }
 
   /**

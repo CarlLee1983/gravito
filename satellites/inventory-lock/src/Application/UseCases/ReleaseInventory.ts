@@ -8,6 +8,7 @@
  * 4. 發送事件通知
  */
 
+import type { PlanetCore } from '@gravito/core'
 import {
   type InventoryLock,
   InventoryReleased,
@@ -17,6 +18,8 @@ import {
 import type { IInventoryLockRepository } from '../Contracts/IInventoryLockRepository'
 
 export class ReleaseInventory {
+  constructor(private core: PlanetCore) {}
+
   async execute(request: ReleaseLockRequest): Promise<InventoryLock | null> {
     const { core } = this
 

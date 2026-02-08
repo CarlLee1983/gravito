@@ -61,10 +61,11 @@ export class DynamicRouteResolver {
 
       for (const { params } of paths) {
         const path = this.interpolate(route.pattern, params)
+        const getData = route.getData
 
         resolved.push({
           path,
-          getData: route.getData ? () => route.getData?.(params) : undefined,
+          getData: getData ? () => getData(params) : undefined,
         })
       }
     }
