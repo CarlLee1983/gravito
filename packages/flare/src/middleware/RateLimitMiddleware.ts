@@ -180,6 +180,12 @@ export class RateLimitMiddleware implements ChannelMiddleware {
   private buckets = new Map<string, TokenBucket>()
 
   /**
+   * Cache store for distributed rate limiting.
+   * 分散式限流使用的快取儲存
+   */
+  private store: CacheStore
+
+  /**
    * Create a new RateLimitMiddleware instance.
    *
    * @param config - Rate limit configuration for each channel
