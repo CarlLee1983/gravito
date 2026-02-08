@@ -20,7 +20,9 @@
 
 ### 🔗 [集成 (Integrations)](./integrations/)
 第三方服務集成、生態系統適配相關研究。
-- *（待補充）*
+- `photon-http-integration.md` - HTTP 框架（Photon）集成設計
+- `hooks-event-system.md` - 事件系統與 Hooks 架構
+- `atlas-orm-integration.md` - ORM（Atlas）與數據庫集成
 
 ---
 
