@@ -472,10 +472,7 @@ export class HookManager {
       retryCount: 0,
     }
 
-    const result = this.backend.enqueue(task)
-    if (result instanceof Promise) {
-      await result
-    }
+    this.backend.enqueue(task)
 
     // Note: We don't await the queue processing here
     // Events are processed asynchronously in the background

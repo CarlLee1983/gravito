@@ -219,14 +219,14 @@ export class EventPriorityQueue implements EventBackend {
   /*
    * Enqueue an event task.
    */
-  enqueue(task: EventTask): void
+  enqueue(task: EventTask): string
   enqueue(hook: string, args: unknown, callbacks: ActionCallback[], options: EventOptions): string
   enqueue(
     hookOrTask: string | EventTask,
     args?: unknown,
     callbacks?: ActionCallback[],
     options?: EventOptions
-  ): string | void {
+  ): string {
     let task: EventTask
 
     if (typeof hookOrTask !== 'string') {
