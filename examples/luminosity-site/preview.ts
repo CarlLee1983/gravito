@@ -10,7 +10,7 @@ console.log(`📂 Serving directory: ${DIST_DIR}`)
 
 serve({
   port: PORT,
-  async fetch(req) {
+  async fetch(req: Request) {
     const url = new URL(req.url)
     const pathname = url.pathname
 
