@@ -144,7 +144,7 @@ export function isExpired(expiresAt: number | null | undefined, now = Date.now()
   if (expiresAt === undefined) {
     return false
   }
-  return now > expiresAt
+  return now >= expiresAt
 }
 
 /**
