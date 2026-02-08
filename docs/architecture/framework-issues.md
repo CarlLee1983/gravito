@@ -1,3 +1,11 @@
+---
+title: Framework Issues Discovery Log
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-02-07
+---
+
 # Framework Issues Discovery Log
 
 在搶購系統開發過程中發現的 Gravito 框架問題與改進機會。
@@ -109,7 +117,7 @@
 
 ## 開發時間線回顧
 
-```
+```text
 Week 1-2 (MVP)
   └─ 發現：ServiceProvider 合約混淆、資料庫連線配置問題。
 

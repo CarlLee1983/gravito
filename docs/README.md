@@ -13,30 +13,49 @@ Gravito is a modular, high-performance framework built on the principles of **Do
 
 ---
 
-## 📚 Guides & Specifications
+## 📚 Documentation Index
 
-### 🚀 Getting Started & Architecture
-- [2.0 Integration Guide](./spec/GUIDE_2.0_INTEGRATION.md) - Deep dive into the Galaxy Architecture and MDD.
-- [Satellite Specification](./spec/SATELLITE_SPEC.md) - Standards for building domain modules.
+### 🚀 Getting Started
+- [Quick Start Guide](./guides/quick-start.md) - Get up and running in minutes.
+- [Development Examples](./guides/development-examples.md) - Common patterns and recipes.
+- [AI Assistant Guide](./guides/ai/gravito-ai-guide.md) - How to work with the Gravito AI agent.
+
+### 🏗️ Architecture & Core Concepts
 - [Architecture Spec](./spec/ARCHITECTURE_SPEC.md) - Core system design specifications.
+- [Satellite Specification](./spec/SATELLITE_SPEC.md) - Standards for building domain modules.
+- [Event System & Observability](./architecture/event-system-observability.md) - Deep dive into event tracking.
+- [Constellation Locks](./architecture/constellation-locks.md) - Distributed locking mechanism.
 
-### 🛠️ Infrastructure & Operations
-- [Development Guide](./operations/DEVELOPMENT_GUIDE.md) - Best practices for contributing to the monorepo.
-- [Extending Atlas](./operations/EXTENDING_ATLAS_GUIDE.md) - Guide for extending the ORM.
-- [Monorepo / Turborepo](./operations/TURBOREPO_INTEGRATION_GUIDE.md) - Tooling and build system guide.
-- [NPM Publishing Guide](./operations/NPM_PUBLISHING_GUIDE.md) - Comprehensive package publishing workflow.
-- [Local CI Validation](./operations/LOCAL_CI_VALIDATION.md) - Verifying changes before pushing.
-- [Changesets Integration](./operations/CHANGESETS_INTEGRATION_GUIDE.md) - Versioning and changelog management.
-- [Migration Guide](./operations/MIGRATION.md) - Moving to modern APIs.
-- [Hono Migration](./operations/MIGRATION_FROM_HONO.md) - Migrating from Hono to Gravito.
+### 🛠️ Operations & Infrastructure
+- [Development Guide](./operations/DEVELOPMENT_GUIDE.md) - Monorepo contribution guide.
+- [NPM Publishing](./operations/NPM_PUBLISHING_GUIDE.md) - Package release workflow.
+- [Migration Guides](./operations/migration/) - Guides for upgrading and migrating features.
+- [CI/CD Optimization](./operations/optimization/ci.md) - Pipeline strategies.
 
-### ⚡ Performance & Benchmarks
-- [Atlas Performance Whitepaper](./benchmarks/ATLAS_PERFORMANCE_WHITEPAPER.md) - Benchmarks for the custom ORM.
-- [Benchmark Status](./benchmarks/BENCHMARK_STATUS.md) - Historical performance records.
-- [Static Site Standardization](./spec/STATIC_SITE_STANDARDIZATION.md) - Standards for SSG with `@gravito/freeze`.
+### ⚡ Core Features & Guides
+**System Resilience:**
+- [Circuit Breakers](./guides/core/circuit-breaker.md)
+- [Pool Management](./guides/core/pool-management.md)
+
+**Queues & Async:**
+- [Bull Queue Integration](./guides/core/bull-queue-integration.md)
+- [DLQ & Retry Strategies](./guides/core/dlq-and-retry.md)
+
+**Observability:**
+- [Observability Guide](./guides/core/observability.md)
+
+### 📈 Benchmarks & Whitepapers
+- [Gravito Whitepaper](./whitepaper/gravito-whitepaper.md)
+- [Atlas Performance](./benchmarks/ATLAS_PERFORMANCE_WHITEPAPER.md)
+- [Bull Queue Benchmarks](./benchmarks/bull-queue-performance.md)
 
 ---
 
 ## 📂 Multi-language Support
 - `zh-TW/` - [繁體中文文檔](./zh-TW/guide/getting-started/introduction.md)
 - `en/` - [English Documentation](./en/guide/getting-started/introduction.md) (WIP)
+
+## 🗃️ Archive
+- [Task Logs & History](./archive/tasks/) - Historical task breakdowns.
+- [Progress Logs](./archive/logs/) - Past session summaries and progress reports.
+

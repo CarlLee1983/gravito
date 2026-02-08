@@ -1,3 +1,11 @@
+---
+title: Constellation Risk Mitigation Implementation Summary
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-02-02
+---
+
 # Constellation Risk Mitigation Implementation Summary
 
 ## 實作完成日期
@@ -78,7 +86,7 @@
 ## 檔案清單
 
 ### 新增檔案
-```
+```text
 packages/constellation/src/locks/
 ├── index.ts                      # 匯出檔案
 ├── MemoryLock.ts                 # 記憶體鎖定實作 ✅ 完整 JSDoc
@@ -93,7 +101,7 @@ docs/architecture/
 ```
 
 ### 修改檔案
-```
+```text
 packages/constellation/src/index.ts      # 新增 lock 匯出
 docs/architecture/constellation.md       # 更新風險評估狀態與範例
 IMPLEMENTATION_SUMMARY_CONSTELLATION_LOCKS.md  # 本文件（新增 JSDoc 記錄）
@@ -225,7 +233,7 @@ sitemap.install(core)
 
 ## 參考文件
 
-- [Constellation Architecture](../docs/architecture/constellation.md)
-- [Distributed Locking Guide](../docs/architecture/constellation-locking-guide.md)
+- [Constellation Architecture](./constellation.md)
+- [Distributed Locking Guide](./constellation-locking-guide.md)
 - [RedLock Algorithm](https://redis.io/docs/manual/patterns/distributed-locks/)
 - [Cache Stampede Problem](https://en.wikipedia.org/wiki/Cache_stampede)

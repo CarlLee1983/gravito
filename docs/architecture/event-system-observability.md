@@ -1,3 +1,11 @@
+---
+title: Issue 1.1 Phase 2: Event System 可觀測性整合 - 實施完成報告
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-02-02
+---
+
 # Issue 1.1 Phase 2: Event System 可觀測性整合 - 實施完成報告
 
 ## 📋 實施概況
@@ -85,7 +93,7 @@
 - ✅ 並發派發性能
 
 **測試結果**:
-```
+```text
 319 通過 / 0 失敗 / 100% 成功率
 覆蓋率: > 80%
 類型檢查: ✅ 通過
@@ -186,7 +194,7 @@
 
 ### 集成點
 
-```
+```text
 HookManager (base)
     ↓
 ObservableHookManager (wrapper)
