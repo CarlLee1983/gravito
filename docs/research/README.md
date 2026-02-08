@@ -17,6 +17,7 @@
 性能優化、基準測試、瓶頸分析相關研究。
 - `orm-query-optimization.md` - ORM 查詢優化與常見性能陷阱
 - `turbo-build-optimization.md` - Turbo 構建優化與 Monorepo 效率
+- `stream-backpressure.md` - 流處理與背壓機制
 
 ### 🔗 [集成 (Integrations)](./integrations/)
 第三方服務集成、生態系統適配相關研究。
