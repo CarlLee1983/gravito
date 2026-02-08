@@ -506,8 +506,8 @@ describe('WebhookDispatcher', () => {
 
         const metrics = dispatcher.getCircuitBreakerMetrics('https://example.com/webhook')
         expect(metrics).not.toBeNull()
-        expect(metrics!.state).toBe('CLOSED')
-        expect(metrics!.successes).toBeGreaterThanOrEqual(1)
+        expect(metrics?.state).toBe('CLOSED')
+        expect(metrics?.successes).toBeGreaterThanOrEqual(1)
       } finally {
         globalThis.fetch = originalFetch
       }

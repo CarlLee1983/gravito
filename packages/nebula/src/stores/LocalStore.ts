@@ -36,7 +36,7 @@ export class LocalStore implements StorageStore {
    * @param options - Optional upload options (note: customMetadata not persisted in LocalStore)
    * @throws {Error} If the key is invalid or path is outside root
    */
-  async put(key: string, data: Blob | Buffer | string, options?: PutOptions): Promise<void> {
+  async put(key: string, data: Blob | Buffer | string, _options?: PutOptions): Promise<void> {
     const path = this.resolvePath(key)
     await this.ensureDirectory(path)
     await this.runtime.writeFile(path, data)
@@ -184,7 +184,9 @@ export class LocalStore implements StorageStore {
     try {
       while (true) {
         const { done, value } = await reader.read()
-        if (done) break
+        if (done) {
+          break
+        }
         writer.write(value)
       }
       await writer.end()

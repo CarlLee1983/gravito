@@ -106,14 +106,14 @@ function getConfigFromEnv(): Partial<OpenTelemetryConfig> {
  * 驗證採樣率是否有效
  */
 function isValidSamplingRate(rate: number | undefined): rate is number {
-  return rate !== undefined && !isNaN(rate) && rate >= 0 && rate <= 1
+  return rate !== undefined && !Number.isNaN(rate) && rate >= 0 && rate <= 1
 }
 
 /**
  * 驗證端口是否有效
  */
 function isValidPort(port: number | undefined): port is number {
-  return port !== undefined && !isNaN(port) && port > 0 && port <= 65535
+  return port !== undefined && !Number.isNaN(port) && port > 0 && port <= 65535
 }
 
 /**
@@ -206,7 +206,9 @@ function mergeConfig(userConfig: OpenTelemetryConfig): OpenTelemetryConfigRequir
  * 正規化採樣率（限制在 0-1 範圍內）
  */
 function normalizeSamplingRate(rate: number): number {
-  if (isNaN(rate)) return DEFAULT_CONFIG.tracing.samplingRate
+  if (Number.isNaN(rate)) {
+    return DEFAULT_CONFIG.tracing.samplingRate
+  }
   return Math.max(0, Math.min(1, rate))
 }
 
@@ -214,7 +216,7 @@ function normalizeSamplingRate(rate: number): number {
  * 正規化端口（使用預設值如果無效）
  */
 function normalizePort(port: number): number {
-  if (isNaN(port) || port <= 0 || port > 65535) {
+  if (Number.isNaN(port) || port <= 0 || port > 65535) {
     return DEFAULT_CONFIG.metrics.prometheusPort
   }
   return port
@@ -304,8 +306,6 @@ async function setupTracing(
         processor = new SimpleSpanProcessor(new ConsoleSpanExporter())
         break
       }
-
-      case 'none':
       default: {
         // 不使用任何導出器
         processor = null
@@ -418,8 +418,6 @@ async function setupMetrics(config: OpenTelemetryConfigRequired): Promise<unknow
         })
         break
       }
-
-      case 'none':
       default: {
         // 不使用任何導出器
         metricReader = null

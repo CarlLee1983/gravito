@@ -19,12 +19,16 @@ function createMockThreadWorker() {
 
   const worker = {
     on: mock((event: string, handler: Function) => {
-      if (!listeners[event]) listeners[event] = []
+      if (!listeners[event]) {
+        listeners[event] = []
+      }
       listeners[event].push(handler)
       return worker
     }),
     once: mock((event: string, handler: Function) => {
-      if (!listeners[event]) listeners[event] = []
+      if (!listeners[event]) {
+        listeners[event] = []
+      }
       listeners[event].push(handler)
       return worker
     }),

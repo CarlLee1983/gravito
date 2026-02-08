@@ -125,7 +125,9 @@ export class FFmpegAdapter implements ProcessorAdapter {
           try {
             while (true) {
               const { done, value } = await reader.read()
-              if (done) break
+              if (done) {
+                break
+              }
               stderrBuffer += decoder.decode(value, { stream: true })
             }
           } catch {

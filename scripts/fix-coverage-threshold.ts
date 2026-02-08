@@ -11,7 +11,9 @@ let errors = 0
 for (const dir of dirs) {
   const pkgPath = join(packagesDir, dir, 'package.json')
 
-  if (!existsSync(pkgPath)) continue
+  if (!existsSync(pkgPath)) {
+    continue
+  }
 
   const content = readFileSync(pkgPath, 'utf-8')
   const pkg = JSON.parse(content)
@@ -113,7 +115,7 @@ console.log(\`${dir} coverage \${rounded}% (\${hit}/\${total}) meets threshold \
   pkg.scripts['test:ci'] =
     `bun test --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts`
 
-  writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
+  writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
 
   console.log(`✅ Fixed ${dir}`)
   fixed++

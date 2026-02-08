@@ -62,7 +62,9 @@ function getRandomProduct() {
 }
 
 function parsePrometheusMetrics(metricsText) {
-  if (!metricsText) return 0
+  if (!metricsText) {
+    return 0
+  }
 
   // 計算 gravito_event_ 開頭的指標行數
   const lines = metricsText.split('\n')
@@ -117,9 +119,9 @@ export function mainLoad() {
 
 export function verifyMetrics() {
   group('Verify Prometheus Endpoint', () => {
-    const startTime = new Date().getTime()
+    const startTime = Date.now()
     const metricsRes = http.get(`${PROMETHEUS_URL}/metrics`)
-    const endTime = new Date().getTime()
+    const endTime = Date.now()
 
     metricsResponseTime.add(endTime - startTime)
 
@@ -168,10 +170,10 @@ export function handleSummary(data) {
 }
 
 // 簡單的文本總結
-function textSummary(data, options) {
+function textSummary(data, _options) {
   const metrics = data.metrics
   let summary = '\n📊 K6 性能測試總結\n'
-  summary += '═'.repeat(50) + '\n'
+  summary += `${'═'.repeat(50)}\n`
 
   if (metrics.http_req_duration) {
     const values = metrics.http_req_duration.values
@@ -191,6 +193,6 @@ function textSummary(data, options) {
     summary += `Prometheus 指標計數: ${Math.round(values.avg) || 'N/A'} (avg)\n`
   }
 
-  summary += '═'.repeat(50) + '\n'
+  summary += `${'═'.repeat(50)}\n`
   return summary
 }

@@ -2,7 +2,7 @@ import type { GravitoContext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import type { OpenAPIV3_1 } from 'openapi-types'
 import { AstralConfigError, AstralResourceError } from './errors'
 import { OpenApiGenerator } from './OpenApiGenerator'
-import type { AstralConfig, AstralOperation, AstralResource, OpenApiDocument } from './types'
+import type { AstralConfig, AstralOperation, AstralResource } from './types'
 
 export * from './errors'
 export * from './types'

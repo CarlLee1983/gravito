@@ -8,7 +8,7 @@
  */
 
 import type { GravitoContext, GravitoVariables, ViewService } from '@gravito/core'
-import { InertiaConfigError, InertiaDataError, InertiaError, InertiaTemplateError } from './errors'
+import { InertiaConfigError, InertiaDataError, InertiaError } from './errors'
 
 /**
  * Configuration options for the InertiaService instance.
@@ -117,7 +117,6 @@ export interface RenderMetrics {
  */
 export class InertiaService {
   private sharedProps: Record<string, unknown> = {}
-  private sharedPropsCache: { key: string; value: Record<string, unknown> } | null = null
   private readonly logLevel: 'debug' | 'info' | 'warn' | 'error' | 'silent'
   private readonly onRenderCallback?: (metrics: RenderMetrics) => void
 
@@ -249,8 +248,12 @@ export class InertiaService {
         const resolved: Record<string, unknown> = {}
 
         for (const [key, value] of Object.entries(p)) {
-          if (only.length > 0 && !only.includes(key)) continue
-          if (except.length > 0 && except.includes(key)) continue
+          if (only.length > 0 && !only.includes(key)) {
+            continue
+          }
+          if (except.length > 0 && except.includes(key)) {
+            continue
+          }
 
           if (typeof value === 'function') {
             const propStart = performance.now()

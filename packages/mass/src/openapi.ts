@@ -1,4 +1,4 @@
-import type { TArray, TBoolean, TNumber, TObject, TSchema, TString } from '@sinclair/typebox'
+import type { TArray, TNumber, TObject, TSchema, TString } from '@sinclair/typebox'
 import { Kind } from '@sinclair/typebox'
 
 /**
@@ -125,10 +125,18 @@ export function typeboxToOpenApi(schema: TSchema): OpenApiSchema {
       const stringSchema = schema as TString
       result.type = 'string'
 
-      if (stringSchema.format) result.format = stringSchema.format
-      if (stringSchema.minLength !== undefined) result.minLength = stringSchema.minLength
-      if (stringSchema.maxLength !== undefined) result.maxLength = stringSchema.maxLength
-      if (stringSchema.pattern) result.pattern = stringSchema.pattern
+      if (stringSchema.format) {
+        result.format = stringSchema.format
+      }
+      if (stringSchema.minLength !== undefined) {
+        result.minLength = stringSchema.minLength
+      }
+      if (stringSchema.maxLength !== undefined) {
+        result.maxLength = stringSchema.maxLength
+      }
+      if (stringSchema.pattern) {
+        result.pattern = stringSchema.pattern
+      }
       break
     }
 
@@ -137,8 +145,12 @@ export function typeboxToOpenApi(schema: TSchema): OpenApiSchema {
       const numberSchema = schema as TNumber
       result.type = schema[Kind] === 'Integer' ? 'integer' : 'number'
 
-      if (numberSchema.minimum !== undefined) result.minimum = numberSchema.minimum
-      if (numberSchema.maximum !== undefined) result.maximum = numberSchema.maximum
+      if (numberSchema.minimum !== undefined) {
+        result.minimum = numberSchema.minimum
+      }
+      if (numberSchema.maximum !== undefined) {
+        result.maximum = numberSchema.maximum
+      }
       break
     }
 

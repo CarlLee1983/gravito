@@ -12,7 +12,7 @@
  */
 
 import { beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
-import type { DeadLetterQueueManager, DLQManagerFilter, DLQRecord, DLQStats } from '@gravito/core'
+import type { DeadLetterQueueManager, DLQRecord, DLQStats } from '@gravito/core'
 import { EventDLQCommand } from '../../src/commands/EventDLQCommand'
 
 // ============================================================================

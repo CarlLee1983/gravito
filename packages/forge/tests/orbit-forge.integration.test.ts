@@ -14,7 +14,7 @@
  */
 
 import { beforeAll, describe, expect, it, jest, mock } from 'bun:test'
-import { createMockContext, createMockPlanetCore, createMockStatusStore } from './helpers/mocks'
+import { createMockContext, createMockPlanetCore } from './helpers/mocks'
 
 // Mock adapters 以避免實際執行 FFmpeg / ImageMagick
 class AdapterMock {

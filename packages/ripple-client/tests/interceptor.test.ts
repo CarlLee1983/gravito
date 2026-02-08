@@ -17,13 +17,13 @@ describe('Client InterceptorManager', () => {
   it('should execute interceptors in onion order', async () => {
     const order: string[] = []
 
-    manager.use(async (ctx, next) => {
+    manager.use(async (_ctx, next) => {
       order.push('1-before')
       await next()
       order.push('1-after')
     })
 
-    manager.use(async (ctx, next) => {
+    manager.use(async (_ctx, next) => {
       order.push('2-before')
       await next()
       order.push('2-after')
@@ -47,12 +47,12 @@ describe('Client InterceptorManager', () => {
   it('should allow short-circuiting by not calling next()', async () => {
     const order: string[] = []
 
-    manager.use(async (ctx, next) => {
+    manager.use(async (_ctx, _next) => {
       order.push('interceptor-1')
       // Don't call next() - short circuit
     })
 
-    manager.use(async (ctx, next) => {
+    manager.use(async (_ctx, next) => {
       order.push('interceptor-2')
       await next()
     })
@@ -73,7 +73,7 @@ describe('Client InterceptorManager', () => {
   })
 
   it('should throw error if next() is called multiple times', async () => {
-    manager.use(async (ctx, next) => {
+    manager.use(async (_ctx, next) => {
       await next()
       await next() // Second call should throw
     })
@@ -87,7 +87,7 @@ describe('Client InterceptorManager', () => {
   })
 
   it('should propagate errors from interceptors', async () => {
-    manager.use(async (ctx, next) => {
+    manager.use(async (_ctx, _next) => {
       throw new Error('Interceptor error')
     })
 
@@ -122,13 +122,13 @@ describe('Client InterceptorManager', () => {
   it('should handle async interceptors correctly', async () => {
     const delays: number[] = []
 
-    manager.use(async (ctx, next) => {
+    manager.use(async (_ctx, next) => {
       const start = Date.now()
       await next()
       delays.push(Date.now() - start)
     })
 
-    manager.use(async (ctx, next) => {
+    manager.use(async (_ctx, next) => {
       await new Promise((resolve) => setTimeout(resolve, 10))
       await next()
     })

@@ -85,8 +85,12 @@ export abstract class FormRequestBase<TData = unknown> {
     if (this.messages) {
       const customMessages = this.messages()
       const key = code ? `${field}.${code}` : field
-      if (customMessages[key]) return customMessages[key]
-      if (customMessages[field]) return customMessages[field]
+      if (customMessages[key]) {
+        return customMessages[key]
+      }
+      if (customMessages[field]) {
+        return customMessages[field]
+      }
     }
 
     if (this.options.messageProvider) {

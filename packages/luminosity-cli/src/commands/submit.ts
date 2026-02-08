@@ -4,7 +4,6 @@ import {
   ConfigLoader,
   GoogleSubmitter,
   type GoogleSubmitterConfig,
-  IncrementalStrategy,
   SeoEngine,
   type SitemapEntry,
 } from '@gravito/luminosity'

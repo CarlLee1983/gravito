@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import {
-  QueueDashboard,
-  type QueueDashboardConfig,
-  type QueueMetrics,
-  type WorkerMetrics,
-} from '../../src/observability/QueueDashboard'
+import { QueueDashboard, type QueueDashboardConfig } from '../../src/observability/QueueDashboard'
 
 /**
  * Mock EventPriorityQueue
@@ -13,9 +8,15 @@ function createMockEventQueue() {
   return {
     getDepth: () => 160,
     getDepthByPriority: (priority: string) => {
-      if (priority === 'high') return 10
-      if (priority === 'normal') return 50
-      if (priority === 'low') return 100
+      if (priority === 'high') {
+        return 10
+      }
+      if (priority === 'normal') {
+        return 50
+      }
+      if (priority === 'low') {
+        return 100
+      }
       return 0
     },
     getBackpressureManager: () => ({

@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from 'bun:test'
-import { createBeam, createCachedHeaderResolver, validateResponse } from '../src'
+import { createCachedHeaderResolver, validateResponse } from '../src'
 
 describe('Beam v1.1 Features', () => {
   describe('Retry Jitter', () => {
@@ -41,7 +41,9 @@ describe('Beam v1.1 Features', () => {
     test('should validate response data using a function', async () => {
       const mockRes = new Response(JSON.stringify({ id: 1, name: 'Alice' }))
       const validator = (data: any) => {
-        if (typeof data.id !== 'number') throw new Error('Invalid ID')
+        if (typeof data.id !== 'number') {
+          throw new Error('Invalid ID')
+        }
         return data
       }
 
@@ -53,7 +55,9 @@ describe('Beam v1.1 Features', () => {
       const mockRes = new Response(JSON.stringify({ id: 1, name: 'Alice' }))
       const schema = {
         parse: (data: any) => {
-          if (typeof data.id !== 'number') throw new Error('Invalid ID')
+          if (typeof data.id !== 'number') {
+            throw new Error('Invalid ID')
+          }
           return data
         },
       }
@@ -65,7 +69,9 @@ describe('Beam v1.1 Features', () => {
     test('should throw BeamError when validation fails', async () => {
       const mockRes = new Response(JSON.stringify({ id: '1', name: 'Alice' }))
       const validator = (data: any) => {
-        if (typeof data.id !== 'number') throw new Error('Invalid ID')
+        if (typeof data.id !== 'number') {
+          throw new Error('Invalid ID')
+        }
         return data
       }
 

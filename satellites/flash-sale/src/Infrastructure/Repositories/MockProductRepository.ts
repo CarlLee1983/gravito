@@ -70,7 +70,9 @@ export class MockProductRepository implements IProductRepository {
   async findBySku(sku: string): Promise<Product | null> {
     await this.simulateLatency()
     const id = this.skuIndex.get(sku)
-    if (!id) return null
+    if (!id) {
+      return null
+    }
     return this.products.get(id) || null
   }
 

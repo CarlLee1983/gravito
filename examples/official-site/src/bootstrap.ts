@@ -62,7 +62,9 @@ export async function bootstrap(options: AppConfig = {}): Promise<PlanetCore> {
 
       if (isViteAsset) {
         const result = await proxyToVite(c, core)
-        if (result) return result
+        if (result) {
+          return result
+        }
       }
 
       return await next()

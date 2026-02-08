@@ -15,7 +15,7 @@ describe('Driver Adaptive Pool Management', () => {
       const config: PostgresConfig = {
         driver: 'postgres',
         host: process.env.POSTGRES_HOST ?? 'localhost',
-        port: parseInt(process.env.POSTGRES_PORT ?? '5432'),
+        port: parseInt(process.env.POSTGRES_PORT ?? '5432', 10),
         database: process.env.POSTGRES_DB ?? 'gravito_test',
         username: process.env.POSTGRES_USER ?? 'postgres',
         password: process.env.POSTGRES_PASSWORD ?? 'postgres',
@@ -119,7 +119,7 @@ describe('Driver Adaptive Pool Management', () => {
       const config: MySQLConfig = {
         driver: 'mysql',
         host: process.env.MYSQL_HOST ?? 'localhost',
-        port: parseInt(process.env.MYSQL_PORT ?? '3306'),
+        port: parseInt(process.env.MYSQL_PORT ?? '3306', 10),
         database: process.env.MYSQL_DB ?? 'gravito_test',
         username: process.env.MYSQL_USER ?? 'root',
         password: process.env.MYSQL_PASSWORD ?? 'root',

@@ -2,7 +2,7 @@
  * @gravito/atlas - PostgreSQL Driver Pool Statistics Tests
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { PostgresDriver } from '../../src/drivers/PostgresDriver'
 import type { PostgresConfig } from '../../src/types'
 

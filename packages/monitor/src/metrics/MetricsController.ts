@@ -35,7 +35,9 @@ export class MetricsController {
    */
   private updateHealthCacheMetrics(): void {
     const healthMetrics = (this.registry as any)._healthCacheMetrics
-    if (!healthMetrics) return
+    if (!healthMetrics) {
+      return
+    }
 
     const stats = healthMetrics.registry.getCacheStats()
 

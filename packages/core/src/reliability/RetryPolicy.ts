@@ -331,8 +331,6 @@ export function getPresetRetryPolicy(
         maxDelayMs: 15000,
         dlqAfterMaxRetries: true,
       }
-
-    case 'default':
     default:
       return getDefaultRetryPolicy()
   }

@@ -4,7 +4,7 @@
  * 註冊訂單管理系統的所有服務與事件監聽
  */
 
-import type { Container, PlanetCore } from '@gravito/core'
+import type { Container } from '@gravito/core'
 import { ServiceProvider } from '@gravito/core'
 
 /**
@@ -19,7 +19,7 @@ export class CommerceServiceProvider extends ServiceProvider {
   /**
    * 註冊階段
    */
-  register(container: Container): void {
+  register(_container: Container): void {
     // TODO: 當 Repository 實現時解開註解
     // container.singleton('order.repository', () => {
     //   return new AtlasOrderRepository()

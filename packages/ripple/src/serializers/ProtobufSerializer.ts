@@ -73,7 +73,9 @@ export class ProtobufSerializer implements ISerializer {
    * Initialize the serializer by loading the .proto file
    */
   async init(): Promise<void> {
-    if (this.initialized) return
+    if (this.initialized) {
+      return
+    }
 
     try {
       // 先檢查文件是否存在
@@ -115,7 +117,9 @@ export class ProtobufSerializer implements ISerializer {
     // Convert generic message to Proto-compatible payload
     const payload = this.toProtoPayload(message)
     const errMsg = ServerMessageProto.verify(payload)
-    if (errMsg) throw Error(errMsg)
+    if (errMsg) {
+      throw Error(errMsg)
+    }
 
     const msg = ServerMessageProto.create(payload)
     return ServerMessageProto.encode(msg).finish()
@@ -227,7 +231,9 @@ export class ProtobufSerializer implements ISerializer {
           : undefined,
       }
     }
-    if (obj.unsubscribe) return { type: 'unsubscribe', channel: obj.unsubscribe.channel }
+    if (obj.unsubscribe) {
+      return { type: 'unsubscribe', channel: obj.unsubscribe.channel }
+    }
     if (obj.whisper) {
       return {
         type: 'whisper',
@@ -236,8 +242,12 @@ export class ProtobufSerializer implements ISerializer {
         data: this.decodeData(obj.whisper.data),
       }
     }
-    if (obj.ping) return { type: 'ping' }
-    if (obj.ack) return { type: 'ack', seq: obj.ack.seq }
+    if (obj.ping) {
+      return { type: 'ping' }
+    }
+    if (obj.ack) {
+      return { type: 'ack', seq: obj.ack.seq }
+    }
     if (obj.binary) {
       return {
         type: 'binary',
@@ -252,16 +262,26 @@ export class ProtobufSerializer implements ISerializer {
 
   private encodeData(data: unknown): Uint8Array {
     if (this.options.pure) {
-      if (data instanceof Uint8Array) return data
-      if (Object.prototype.toString.call(data) === '[object Uint8Array]') return data as Uint8Array
-      if (Buffer.isBuffer(data)) return data
+      if (data instanceof Uint8Array) {
+        return data
+      }
+      if (Object.prototype.toString.call(data) === '[object Uint8Array]') {
+        return data as Uint8Array
+      }
+      if (Buffer.isBuffer(data)) {
+        return data
+      }
       throw new Error('In pure mode, data must be Uint8Array or Buffer')
     }
 
     // In Hybrid mode, we put JSON string into bytes field for now
     // This is the "Envelope" strategy from RFC
-    if (typeof data === 'string') return new TextEncoder().encode(data)
-    if (data instanceof Uint8Array) return data
+    if (typeof data === 'string') {
+      return new TextEncoder().encode(data)
+    }
+    if (data instanceof Uint8Array) {
+      return data
+    }
     return new TextEncoder().encode(JSON.stringify(data))
   }
 

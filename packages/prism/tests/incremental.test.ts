@@ -25,7 +25,7 @@ const mockCore = {
     }),
   },
   config: {
-    get: mock((key: string, defaultValue: string) => defaultValue),
+    get: mock((_key: string, defaultValue: string) => defaultValue),
   },
 }
 

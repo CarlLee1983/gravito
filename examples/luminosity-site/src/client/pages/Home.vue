@@ -1,16 +1,5 @@
 <script setup lang="ts">
-import {
-  Activity,
-  ChevronRight,
-  FileText,
-  HardDrive,
-  Search,
-  Shield,
-  Terminal,
-  Zap,
-} from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
-import heroGraphic from '../assets/hero-graphic.png'
 import { useI18n } from '../composables/useI18n'
 
 defineProps<{

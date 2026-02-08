@@ -1,4 +1,4 @@
-import { describe, expect, it, mock, spyOn } from 'bun:test'
+import { describe, expect, it, mock } from 'bun:test'
 import { OrbitStream } from '../src/OrbitStream'
 
 describe('OrbitStream', () => {
@@ -120,7 +120,7 @@ describe('OrbitStream', () => {
       }
       const mockNext = mock(() => Promise.resolve())
 
-      await capturedMiddleware!(mockContext, mockNext)
+      await capturedMiddleware?.(mockContext, mockNext)
 
       expect(mockContext.set).toHaveBeenCalledWith('queue', expect.anything())
       expect(mockNext).toHaveBeenCalled()
@@ -157,7 +157,7 @@ describe('OrbitStream', () => {
       }
       const mockNext = mock(() => Promise.resolve())
 
-      await capturedMiddleware!(mockContext, mockNext)
+      await capturedMiddleware?.(mockContext, mockNext)
       expect(mockContext.set).toHaveBeenCalledWith('queue', expect.anything())
     })
 
@@ -193,7 +193,7 @@ describe('OrbitStream', () => {
       const mockNext = mock(() => Promise.resolve())
 
       // Should not throw
-      await capturedMiddleware!(mockContext, mockNext)
+      await capturedMiddleware?.(mockContext, mockNext)
       expect(mockNext).toHaveBeenCalled()
     })
   })

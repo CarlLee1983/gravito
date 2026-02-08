@@ -968,9 +968,7 @@ function validateEntryPath(entryFile: string): string {
 
   // 確保路徑在專案目錄內
   if (!resolved.startsWith(projectRoot)) {
-    throw new Error(
-      `Entry file must be within the project directory. ` + `Attempted path: ${resolved}`
-    )
+    throw new Error(`Entry file must be within the project directory. Attempted path: ${resolved}`)
   }
 
   // 驗證檔案存在
@@ -981,7 +979,7 @@ function validateEntryPath(entryFile: string): string {
   // 驗證檔案副檔名
   const ext = path.extname(resolved)
   if (!['.ts', '.js', '.mts', '.mjs'].includes(ext)) {
-    throw new Error(`Invalid entry file type: ${ext}. ` + `Supported types: .ts, .js, .mts, .mjs`)
+    throw new Error(`Invalid entry file type: ${ext}. Supported types: .ts, .js, .mts, .mjs`)
   }
 
   return resolved

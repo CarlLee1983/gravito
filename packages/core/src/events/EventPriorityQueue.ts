@@ -192,13 +192,13 @@ export class EventPriorityQueue implements EventBackend {
       },
       metricsRecorder: this.eventMetrics
         ? {
-            recordState: (name, state) => this.eventMetrics!.recordCircuitBreakerState(name, state),
+            recordState: (name, state) => this.eventMetrics?.recordCircuitBreakerState(name, state),
             recordTransition: (name, from, to) =>
-              this.eventMetrics!.recordCircuitBreakerTransition(name, from, to),
-            recordFailure: (name) => this.eventMetrics!.recordCircuitBreakerFailure(name),
-            recordSuccess: (name) => this.eventMetrics!.recordCircuitBreakerSuccess(name),
+              this.eventMetrics?.recordCircuitBreakerTransition(name, from, to),
+            recordFailure: (name) => this.eventMetrics?.recordCircuitBreakerFailure(name),
+            recordSuccess: (name) => this.eventMetrics?.recordCircuitBreakerSuccess(name),
             recordOpenDuration: (name, seconds) =>
-              this.eventMetrics!.recordCircuitBreakerOpenDuration(name, seconds),
+              this.eventMetrics?.recordCircuitBreakerOpenDuration(name, seconds),
           }
         : undefined,
     })

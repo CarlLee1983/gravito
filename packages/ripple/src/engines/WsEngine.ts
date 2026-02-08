@@ -143,15 +143,19 @@ export class WsEngine implements IRippleEngine {
     })
 
     return new Promise((resolve) => {
-      this.wss!.once('listening', () => resolve())
+      this.wss?.once('listening', () => resolve())
     })
   }
 
   async close(): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (!this.wss) return resolve()
+      if (!this.wss) {
+        return resolve()
+      }
       this.wss.close((err: any) => {
-        if (err) return reject(err)
+        if (err) {
+          return reject(err)
+        }
         this.sockets.clear()
         this.subscriptions.clear()
         resolve()
@@ -163,7 +167,7 @@ export class WsEngine implements IRippleEngine {
     if (!this.subscriptions.has(topic)) {
       this.subscriptions.set(topic, new Set())
     }
-    this.subscriptions.get(topic)!.add(socketId)
+    this.subscriptions.get(topic)?.add(socketId)
   }
 
   unsubscribe(socketId: string, topic: string): void {
@@ -178,10 +182,14 @@ export class WsEngine implements IRippleEngine {
 
   broadcast(topic: string, data: string | Uint8Array, excludeSocketId?: string): void {
     const subscribers = this.subscriptions.get(topic)
-    if (!subscribers) return
+    if (!subscribers) {
+      return
+    }
 
     for (const socketId of subscribers) {
-      if (socketId === excludeSocketId) continue
+      if (socketId === excludeSocketId) {
+        continue
+      }
       const socket = this.sockets.get(socketId)
       socket?.send(data)
     }

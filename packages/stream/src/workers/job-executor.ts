@@ -7,7 +7,7 @@
  * @internal
  */
 
-import { parentPort } from 'worker_threads'
+import { parentPort } from 'node:worker_threads'
 import type { SerializedJob } from '../types'
 
 /**
@@ -155,10 +155,10 @@ if (parentPort) {
 
         await executeJob(message.job)
 
-        parentPort!.postMessage({ type: 'success' } as WorkerResponse)
+        parentPort?.postMessage({ type: 'success' } as WorkerResponse)
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error))
-        parentPort!.postMessage({
+        parentPort?.postMessage({
           type: 'error',
           error: err.message,
           stack: err.stack,

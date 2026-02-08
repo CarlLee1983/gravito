@@ -20,7 +20,7 @@ class MockPlanetCore implements Partial<PlanetCore> {
 
   container = {
     make: () => ({
-      findExpired: async (beforeDate: Date) => [
+      findExpired: async (_beforeDate: Date) => [
         {
           id: 'LOCK-1',
           productId: 'PROD-1',

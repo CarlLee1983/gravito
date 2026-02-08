@@ -8,13 +8,10 @@
  * 4. 記錄死鎖事件
  */
 
-import type { PlanetCore } from '@gravito/core'
 import { LockStatus } from '../../Domain/Models'
 import type { IInventoryLockRepository } from '../Contracts/IInventoryLockRepository'
 
 export class DetectDeadlock {
-  constructor(private core: PlanetCore) {}
-
   async execute(beforeDate?: Date): Promise<{ cleaned: number; message: string }> {
     const { core } = this
 

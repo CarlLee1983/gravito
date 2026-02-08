@@ -26,7 +26,9 @@ describe('ScriptRegistry', () => {
   })
 
   it('should register and execute scripts with auto-SHA1', async () => {
-    if (!available) return
+    if (!available) {
+      return
+    }
 
     const scripts = manager.scripts()
 
@@ -50,7 +52,9 @@ describe('ScriptRegistry', () => {
   })
 
   it('should handle number of keys correctly', async () => {
-    if (!available) return
+    if (!available) {
+      return
+    }
 
     const scripts = manager.scripts()
 
@@ -64,7 +68,9 @@ describe('ScriptRegistry', () => {
   })
 
   it('should throw error for unregistered scripts', async () => {
-    if (!available) return
+    if (!available) {
+      return
+    }
     const scripts = manager.scripts()
     expect(scripts.execute('non_existent')).rejects.toThrow('not registered')
   })

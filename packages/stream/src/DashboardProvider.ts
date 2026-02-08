@@ -68,7 +68,9 @@ export class DashboardProvider {
 
     router.post(`${basePath}/jobs/retry`, async (c: GravitoContext) => {
       const { queue, count } = await c.req.json<{ queue: string; count?: number }>()
-      if (!queue) return c.json({ error: 'Queue name is required' }, 400)
+      if (!queue) {
+        return c.json({ error: 'Queue name is required' }, 400)
+      }
 
       const retried = await this.manager.retryFailed(queue, count || 1)
       return c.json({ success: true, retried })

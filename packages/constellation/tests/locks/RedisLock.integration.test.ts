@@ -7,9 +7,9 @@ class MockRedisClient implements RedisClient {
   async set(
     key: string,
     value: string,
-    mode: 'EX',
+    _mode: 'EX',
     ttl: number,
-    flag: 'NX'
+    _flag: 'NX'
   ): Promise<string | null> {
     const now = Date.now()
     this.cleanupExpired()
@@ -27,7 +27,7 @@ class MockRedisClient implements RedisClient {
     return 'OK'
   }
 
-  async eval(script: string, numKeys: number, ...args: string[]): Promise<number> {
+  async eval(_script: string, _numKeys: number, ...args: string[]): Promise<number> {
     this.cleanupExpired()
 
     const key = args[0]
@@ -58,7 +58,9 @@ class MockRedisClient implements RedisClient {
   has(key: string): boolean {
     this.cleanupExpired()
     const entry = this.store.get(key)
-    if (!entry) return false
+    if (!entry) {
+      return false
+    }
     return entry.expiresAt > Date.now()
   }
 

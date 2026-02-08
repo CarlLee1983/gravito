@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ChevronLeft, Home, Search } from 'lucide-vue-next'
 import { useI18n } from '../composables/useI18n'
 
 const { t, locale } = useI18n()

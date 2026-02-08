@@ -65,13 +65,20 @@ export class ReactMjmlRenderer<P extends object = object> implements Renderer {
     }
 
     const mergedProps = { ...this.props, ...data } as P
-    const element = createElement!(this.component, mergedProps)
-    const mjml = renderToStaticMarkup!(element)
+    const element = createElement?.(this.component, mergedProps)
+    const mjml = renderToStaticMarkup?.(element)
+    if (!mjml) {
+      throw new Error('Failed to render MJML template')
+    }
 
-    const { html, errors } = mjml2html!(mjml, {
+    const result = mjml2html?.(mjml, {
       validationLevel: 'soft',
       ...this.options,
     })
+    if (!result) {
+      throw new Error('Failed to convert MJML to HTML')
+    }
+    const { html, errors } = result
 
     if (errors && errors.length > 0 && this.options.validationLevel === 'strict') {
       throw new Error(

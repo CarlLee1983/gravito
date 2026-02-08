@@ -9,7 +9,6 @@ import {
   BackpressureManager,
   DeadLetterQueue,
   EventPriorityQueue,
-  Hook,
   OTelEventMetrics,
   RetryScheduler,
 } from '../src/index'
@@ -152,7 +151,7 @@ class SystemMonitor {
 
   printStats() {
     const uptime = (Date.now() - this.startTime) / 1000
-    console.log('\n' + '='.repeat(80))
+    console.log(`\n${'='.repeat(80)}`)
     console.log('📊 系統統計信息')
     console.log('='.repeat(80))
     console.log(`⏱️  運行時間：${uptime.toFixed(2)} 秒`)
@@ -162,7 +161,7 @@ class SystemMonitor {
     console.log(`🔄 已重試事件：${this.metrics.eventsRetried}`)
     console.log(`💀 DLQ 事件：${this.metrics.dlqSize}`)
     console.log(`⏱️  平均延遲：${this.metrics.avgLatency.toFixed(2)}ms`)
-    console.log('='.repeat(80) + '\n')
+    console.log(`${'='.repeat(80)}\n`)
   }
 }
 
@@ -225,7 +224,7 @@ async function setupEventHandlers(system: Awaited<ReturnType<typeof setupSystem>
   const { queue, scheduler, dlq, monitor, handlers, backpressure } = system
 
   // 5.1 隊列事件監聽
-  queue.on('enqueued', (event) => {
+  queue.on('enqueued', (_event) => {
     monitor.recordEnqueue()
   })
 
@@ -388,7 +387,7 @@ async function runLoadTest(system: Awaited<ReturnType<typeof setupSystem>>) {
 function printDetailedReport(system: Awaited<ReturnType<typeof setupSystem>>) {
   const { scheduler, dlq, handlers, monitor } = system
 
-  console.log('\n' + '='.repeat(80))
+  console.log(`\n${'='.repeat(80)}`)
   console.log('📈 詳細系統報告')
   console.log('='.repeat(80))
 
@@ -424,7 +423,7 @@ function printDetailedReport(system: Awaited<ReturnType<typeof setupSystem>>) {
   // 系統總體統計
   monitor.printStats()
 
-  console.log('='.repeat(80) + '\n')
+  console.log(`${'='.repeat(80)}\n`)
 }
 
 // ============================================================================
@@ -510,7 +509,7 @@ async function main() {
 }
 
 // 處理未捕獲的異常
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason, _promise) => {
   console.error('未捕獲的 Promise 拒絕：', reason)
   process.exit(1)
 })

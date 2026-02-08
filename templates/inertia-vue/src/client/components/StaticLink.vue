@@ -58,11 +58,11 @@ function isStaticSite(): boolean {
 
 const isStatic = isStaticSite()
 
-const linkComponent = computed(() => {
+const _linkComponent = computed(() => {
   return isStatic ? 'a' : Link
 })
 
-const linkProps = computed(() => {
+const _linkProps = computed(() => {
   if (isStatic) {
     // 在靜態環境中，使用普通的 <a> 標籤
     const { href, class: className, ...rest } = props

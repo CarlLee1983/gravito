@@ -90,7 +90,9 @@ export class MarkovPredictor implements AccessPredictor {
             minKey = k
           }
         }
-        if (minKey) edges.delete(minKey)
+        if (minKey) {
+          edges.delete(minKey)
+        }
       }
     }
 
@@ -99,7 +101,9 @@ export class MarkovPredictor implements AccessPredictor {
 
   predict(key: string): string[] {
     const edges = this.transitions.get(key)
-    if (!edges) return []
+    if (!edges) {
+      return []
+    }
 
     // Return keys sorted by frequency (descending)
     return Array.from(edges.entries())

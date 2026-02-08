@@ -1,5 +1,5 @@
 import { describe, expect, it, mock } from 'bun:test'
-import { InertiaConfigError, InertiaDataError, InertiaError } from '../src/errors'
+import { InertiaConfigError, InertiaDataError } from '../src/errors'
 import { InertiaService } from '../src/InertiaService'
 import { OrbitIon } from '../src/index'
 
@@ -130,9 +130,15 @@ describe('InertiaService', () => {
     const req = {
       url: '/test',
       header: (key: string) => {
-        if (key === 'X-Inertia') return 'true'
-        if (key === 'X-Inertia-Partial-Data') return 'user'
-        if (key === 'X-Inertia-Partial-Component') return 'Dashboard'
+        if (key === 'X-Inertia') {
+          return 'true'
+        }
+        if (key === 'X-Inertia-Partial-Data') {
+          return 'user'
+        }
+        if (key === 'X-Inertia-Partial-Component') {
+          return 'Dashboard'
+        }
         return undefined
       },
     }
@@ -161,9 +167,15 @@ describe('InertiaService', () => {
     const req = {
       url: '/test',
       header: (key: string) => {
-        if (key === 'X-Inertia') return 'true'
-        if (key === 'X-Inertia-Partial-Except') return 'posts'
-        if (key === 'X-Inertia-Partial-Component') return 'Dashboard'
+        if (key === 'X-Inertia') {
+          return 'true'
+        }
+        if (key === 'X-Inertia-Partial-Except') {
+          return 'posts'
+        }
+        if (key === 'X-Inertia-Partial-Component') {
+          return 'Dashboard'
+        }
         return undefined
       },
     }
@@ -234,8 +246,12 @@ describe('InertiaService', () => {
     const req = {
       url: '/test',
       header: (key: string) => {
-        if (key === 'X-Inertia') return 'true'
-        if (key === 'X-Inertia-Version') return 'old-version'
+        if (key === 'X-Inertia') {
+          return 'true'
+        }
+        if (key === 'X-Inertia-Version') {
+          return 'old-version'
+        }
         return undefined
       },
     }

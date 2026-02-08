@@ -24,7 +24,6 @@ import { beforeEach, describe, expect, it } from 'bun:test'
 import { RedisClient } from '../src/RedisClient'
 import {
   createMockIORedisInstance,
-  MockIORedis,
   setupRedisClientMock,
 } from './helpers/redis-client.test-helpers'
 

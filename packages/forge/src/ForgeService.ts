@@ -197,7 +197,7 @@ export class ForgeService {
    * @returns Reference to the created job and its initial state
    * @throws {Error} If statusStore is not configured
    */
-  async processAsync(input: FileInput, options: ProcessOptions = {}): Promise<ProcessingJob> {
+  async processAsync(input: FileInput, _options: ProcessOptions = {}): Promise<ProcessingJob> {
     if (!this.statusStore) {
       throw new Error('Status store is required for async processing')
     }

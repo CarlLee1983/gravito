@@ -8,7 +8,7 @@
  * 4. 啟動超時清理定時任務
  */
 
-import type { Container, PlanetCore } from '@gravito/core'
+import type { Container } from '@gravito/core'
 import { ServiceProvider } from '@gravito/core'
 import { DeductInventory } from './Application/UseCases/DeductInventory'
 import { DetectDeadlock } from './Application/UseCases/DetectDeadlock'
@@ -24,29 +24,39 @@ export class InventoryLockServiceProvider extends ServiceProvider {
     // 1. 註冊 Repository
     container.singleton('inventoryLock.repository', () => {
       const core = this.core
-      if (!core) throw new Error('Core not initialized')
+      if (!core) {
+        throw new Error('Core not initialized')
+      }
       return new MockInventoryLockRepository(core)
     })
 
     // 2. 註冊 Use Cases
     container.singleton('inventoryLock.usecase.lock', () => {
       const core = this.core
-      if (!core) throw new Error('Core not initialized')
+      if (!core) {
+        throw new Error('Core not initialized')
+      }
       return new LockInventory(core)
     })
     container.singleton('inventoryLock.usecase.release', () => {
       const core = this.core
-      if (!core) throw new Error('Core not initialized')
+      if (!core) {
+        throw new Error('Core not initialized')
+      }
       return new ReleaseInventory(core)
     })
     container.singleton('inventoryLock.usecase.deduct', () => {
       const core = this.core
-      if (!core) throw new Error('Core not initialized')
+      if (!core) {
+        throw new Error('Core not initialized')
+      }
       return new DeductInventory(core)
     })
     container.singleton('inventoryLock.usecase.detectDeadlock', () => {
       const core = this.core
-      if (!core) throw new Error('Core not initialized')
+      if (!core) {
+        throw new Error('Core not initialized')
+      }
       return new DetectDeadlock(core)
     })
   }
@@ -56,7 +66,9 @@ export class InventoryLockServiceProvider extends ServiceProvider {
    */
   override boot(): void {
     const core = this.core
-    if (!core) return
+    if (!core) {
+      return
+    }
 
     core.logger.info('[Inventory-Lock] Booting service provider')
 

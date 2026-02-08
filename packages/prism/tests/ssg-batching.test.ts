@@ -205,7 +205,7 @@ describe('StaticSiteGenerator - Batched Processing', () => {
 
       const batchTrackingFetch = mock(async (req: Request) => {
         const url = new URL(req.url)
-        const pageNum = parseInt(url.pathname.match(/\/page-(\d+)/)?.[1] || '0')
+        const pageNum = parseInt(url.pathname.match(/\/page-(\d+)/)?.[1] || '0', 10)
 
         const batch = Math.floor(pageNum / 10)
         if (!processedBatches.includes(batch)) {

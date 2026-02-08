@@ -26,7 +26,9 @@ describe('Stream API', () => {
   })
 
   it('should append to stream (XADD)', async () => {
-    if (!available) return
+    if (!available) {
+      return
+    }
     const redis = manager.getDefault()
     const stream = 'test:stream:add'
 
@@ -38,7 +40,9 @@ describe('Stream API', () => {
   })
 
   it('should read from stream (XREAD)', async () => {
-    if (!available) return
+    if (!available) {
+      return
+    }
     const redis = manager.getDefault()
     const stream = 'test:stream:read'
 
@@ -50,17 +54,19 @@ describe('Stream API', () => {
     const result = await redis.xread({ [stream]: '0' }, { count: 2 })
 
     expect(result).toBeArray()
-    expect(result!.length).toBe(1)
-    expect(result![0][0]).toBe(stream) // Stream key
+    expect(result?.length).toBe(1)
+    expect(result?.[0][0]).toBe(stream) // Stream key
 
-    const entries = result![0][1]
+    const entries = result?.[0][1]
     expect(entries.length).toBe(2)
     expect(entries[0][0]).toBe(id1)
     expect(entries[1][0]).toBe(id2)
   })
 
   it('should manage consumer groups (XGROUP/XREADGROUP)', async () => {
-    if (!available) return
+    if (!available) {
+      return
+    }
     const redis = manager.getDefault()
     const stream = 'test:stream:group'
     const group = 'mygroup'
@@ -79,7 +85,7 @@ describe('Stream API', () => {
     const result = await redis.xreadgroup(group, 'alice', { [stream]: '>' })
 
     expect(result).toBeArray()
-    const entries = result![0][1]
+    const entries = result?.[0][1]
     expect(entries[0][0]).toBe(id)
 
     // Ack
@@ -88,7 +94,9 @@ describe('Stream API', () => {
   })
 
   it('should get range (XRANGE/XREVRANGE)', async () => {
-    if (!available) return
+    if (!available) {
+      return
+    }
     const redis = manager.getDefault()
     const stream = 'test:stream:range'
 

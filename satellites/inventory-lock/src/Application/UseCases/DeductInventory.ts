@@ -9,13 +9,10 @@
  * 5. 發送事件通知
  */
 
-import type { PlanetCore } from '@gravito/core'
 import { InventoryDeducted, LockStatus } from '../../Domain/Models'
 import type { IInventoryLockRepository } from '../Contracts/IInventoryLockRepository'
 
 export class DeductInventory {
-  constructor(private core: PlanetCore) {}
-
   async execute(
     lockId: string,
     expectedVersion: number

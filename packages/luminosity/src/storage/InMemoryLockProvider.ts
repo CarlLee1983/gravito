@@ -15,7 +15,7 @@ class InMemoryLock implements CacheLock {
 
   constructor(
     private key: string,
-    private ttl: number
+    _ttl: number
   ) {}
 
   /**

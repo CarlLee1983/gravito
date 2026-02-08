@@ -1,6 +1,5 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg'
 import { fetchFile, toBlobURL } from '@ffmpeg/util'
-import type { ProcessingProgress } from '../types'
 import type { AdapterOptions, ProcessorAdapter } from './ProcessorAdapter'
 
 /**
@@ -86,20 +85,24 @@ export class FFmpegWasmAdapter implements ProcessorAdapter {
       })
     }
 
-    const inputFileName = 'input_' + input.split('/').pop()
-    const outputFileName = 'output_' + output.split('/').pop()
+    const inputFileName = `input_${input.split('/').pop()}`
+    const outputFileName = `output_${output.split('/').pop()}`
 
     await ffmpeg.writeFile(inputFileName, await fetchFile(input))
 
     const wasmArgs = [...args]
 
     const inputIdx = wasmArgs.indexOf(input)
-    if (inputIdx !== -1) wasmArgs[inputIdx] = inputFileName
+    if (inputIdx !== -1) {
+      wasmArgs[inputIdx] = inputFileName
+    }
 
     const outputIdx = wasmArgs.indexOf(output)
-    if (outputIdx !== -1) wasmArgs[outputIdx] = outputFileName
-    else if (wasmArgs[wasmArgs.length - 1] === output)
+    if (outputIdx !== -1) {
+      wasmArgs[outputIdx] = outputFileName
+    } else if (wasmArgs[wasmArgs.length - 1] === output) {
       wasmArgs[wasmArgs.length - 1] = outputFileName
+    }
 
     await ffmpeg.exec(wasmArgs)
 
@@ -125,7 +128,7 @@ export class FFmpegWasmAdapter implements ProcessorAdapter {
    */
   async probe(inputPath: string): Promise<Record<string, unknown>> {
     const ffmpeg = await this.load()
-    const inputFileName = 'probe_' + inputPath.split('/').pop()
+    const inputFileName = `probe_${inputPath.split('/').pop()}`
 
     await ffmpeg.writeFile(inputFileName, await fetchFile(inputPath))
 

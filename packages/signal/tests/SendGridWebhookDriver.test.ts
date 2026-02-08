@@ -1,4 +1,4 @@
-import { describe, expect, it, mock } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import type { GravitoContext } from '@gravito/core'
 import { SendGridWebhookDriver } from '../src/webhooks/SendGridWebhookDriver'
 
@@ -21,9 +21,9 @@ describe('SendGridWebhookDriver', () => {
     const result = await driver.handle(mockCtx)
 
     expect(result).toHaveLength(2)
-    expect(result![0].event).toBe('delivered')
-    expect(result![1].event).toBe('opened')
-    expect(result![0].payload.email).toBe('user1@example.com')
+    expect(result?.[0].event).toBe('delivered')
+    expect(result?.[1].event).toBe('opened')
+    expect(result?.[0].payload.email).toBe('user1@example.com')
   })
 
   it('should handle single event body', async () => {
@@ -39,7 +39,7 @@ describe('SendGridWebhookDriver', () => {
 
     const result = await driver.handle(mockCtx)
     expect(result).toHaveLength(1)
-    expect(result![0].event).toBe('bounced')
+    expect(result?.[0].event).toBe('bounced')
   })
 
   it('should return null for empty body', async () => {
@@ -60,7 +60,7 @@ describe('SendGridWebhookDriver', () => {
     const mockCtx = {
       req: {
         json: async () => [{ event: 'test' }],
-        header: (name: string) => undefined,
+        header: (_name: string) => undefined,
       },
     } as unknown as GravitoContext
 

@@ -275,9 +275,13 @@ export class WorkerPool {
 
     for (const worker of this.workers) {
       const state = worker.getState()
-      if (state === 'ready') ready++
-      else if (state === 'busy') busy++
-      else if (state === 'terminated') terminated++
+      if (state === 'ready') {
+        ready++
+      } else if (state === 'busy') {
+        busy++
+      } else if (state === 'terminated') {
+        terminated++
+      }
     }
 
     return {

@@ -15,7 +15,7 @@ import type { ProcessingStatus } from '../../src/types'
  */
 export function createMockForgeService(overrides: Record<string, unknown> = {}) {
   return {
-    process: jest.fn(async (input: any, options: any) => {
+    process: jest.fn(async (_input: any, options: any) => {
       if (options?.onProgress) {
         await options.onProgress({ progress: 50, message: 'processing' })
         await options.onProgress({ progress: 100, message: 'done' })
@@ -165,7 +165,7 @@ export function createMockContext(
   return {
     req: {
       param: jest.fn((name: string) => params[name]),
-      query: jest.fn((name: string) => undefined as string | undefined),
+      query: jest.fn((_name: string) => undefined as string | undefined),
     },
     get: jest.fn((key: string) => variables.get(key)),
     set: jest.fn((key: string, value: unknown) => {

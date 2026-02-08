@@ -23,8 +23,8 @@ describe('SesWebhookDriver', () => {
     const result = await driver.handle(mockCtx)
 
     expect(result).toHaveLength(1)
-    expect(result![0].event).toBe('bounce')
-    expect(result![0].payload.bounce.bounceType).toBe('Permanent')
+    expect(result?.[0].event).toBe('bounce')
+    expect(result?.[0].payload.bounce.bounceType).toBe('Permanent')
   })
 
   it('should handle subscription confirmation', async () => {
@@ -41,6 +41,6 @@ describe('SesWebhookDriver', () => {
     } as unknown as GravitoContext
 
     const result = await driver.handle(mockCtx)
-    expect(result![0].event).toBe('sns:subscription')
+    expect(result?.[0].event).toBe('sns:subscription')
   })
 })

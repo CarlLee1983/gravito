@@ -67,16 +67,23 @@ export class VueMjmlRenderer<P extends object = object> implements Renderer {
     }
 
     const mergedProps = { ...this.props, ...data }
-    const app = createSSRApp!({
-      render: () => h!(this.component, mergedProps),
+    const app = createSSRApp?.({
+      render: () => h?.(this.component, mergedProps),
     })
 
-    const mjml = await renderToString!(app)
+    const mjml = await renderToString?.(app)
+    if (!mjml) {
+      throw new Error('Failed to render MJML template')
+    }
 
-    const { html, errors } = mjml2html!(mjml, {
+    const result = mjml2html?.(mjml, {
       validationLevel: 'soft',
       ...this.options,
     })
+    if (!result) {
+      throw new Error('Failed to convert MJML to HTML')
+    }
+    const { html, errors } = result
 
     if (errors && errors.length > 0 && this.options.validationLevel === 'strict') {
       throw new Error(

@@ -2,7 +2,7 @@
  * @gravito/core - EventPriorityQueue RetryScheduler Integration Tests
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { EventPriorityQueue } from '../../src/events/EventPriorityQueue'
 import { RetryScheduler } from '../../src/events/RetryScheduler'
 

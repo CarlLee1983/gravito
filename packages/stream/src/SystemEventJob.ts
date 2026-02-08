@@ -20,13 +20,23 @@ export class SystemEventJob extends Job {
     super()
 
     // Apply options to job configuration
-    if (options.queue) this.onQueue(options.queue)
-    if (options.priority) this.withPriority(options.priority)
-    if (options.delay) this.delay(options.delay)
-    if (options.retryAfter) this.backoff(options.retryAfter, options.retryMultiplier)
+    if (options.queue) {
+      this.onQueue(options.queue)
+    }
+    if (options.priority) {
+      this.withPriority(options.priority)
+    }
+    if (options.delay) {
+      this.delay(options.delay)
+    }
+    if (options.retryAfter) {
+      this.backoff(options.retryAfter, options.retryMultiplier)
+    }
     // options.connection handling depends on Job implementation, keeping it if it was there?
     // Original line 18: if (options.connection) this.onConnection(options.connection)
-    if (options.connection) this.onConnection(options.connection)
+    if (options.connection) {
+      this.onConnection(options.connection)
+    }
   }
 
   /**

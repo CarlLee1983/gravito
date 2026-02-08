@@ -67,7 +67,9 @@ describe('OfflineQueue (v2.0)', () => {
     let callCount = 0
     const mockFetch = mock(() => {
       callCount++
-      if (callCount === 1) return Promise.reject(new Error('Network error'))
+      if (callCount === 1) {
+        return Promise.reject(new Error('Network error'))
+      }
       return Promise.resolve(new Response('ok'))
     })
 

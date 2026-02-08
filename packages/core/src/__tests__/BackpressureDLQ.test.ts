@@ -8,7 +8,7 @@
  */
 
 import { beforeEach, describe, expect, it } from 'bun:test'
-import { BackpressureManager, BackpressureState } from '../events/BackpressureManager'
+import { BackpressureManager } from '../events/BackpressureManager'
 import { DeadLetterQueue, type DLQEntry } from '../events/DeadLetterQueue'
 import type { EventOptions } from '../events/EventOptions'
 import { EventPriorityQueue } from '../events/EventPriorityQueue'
@@ -88,7 +88,7 @@ describe('BackpressureManager + DLQ Integration', () => {
 
       expect(oldest?.eventName).toBe('event1')
       expect(newest?.eventName).toBe('event2')
-      expect(oldest!.failedAt).toBeLessThanOrEqual(newest!.failedAt)
+      expect(oldest?.failedAt).toBeLessThanOrEqual(newest?.failedAt)
     })
   })
 

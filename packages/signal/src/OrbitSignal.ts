@@ -5,7 +5,7 @@ import type { MailEvent, MailEventHandler, MailEventType } from './events'
 import type { Mailable } from './Mailable'
 import { LogTransport } from './transports/LogTransport'
 import { MemoryTransport } from './transports/MemoryTransport'
-import type { MailConfig, Message, WebhookDriver } from './types'
+import type { MailConfig, Message } from './types'
 
 /**
  * OrbitSignal - Mail service orbit for Gravito framework.

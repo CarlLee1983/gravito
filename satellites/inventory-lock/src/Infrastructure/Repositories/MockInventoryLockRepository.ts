@@ -21,7 +21,9 @@ export class MockInventoryLockRepository implements IInventoryLockRepository {
 
   async findByOrderId(orderId: string): Promise<InventoryLock | null> {
     const lockId = this.locksByOrderId.get(orderId)
-    if (!lockId) return null
+    if (!lockId) {
+      return null
+    }
     return this.locks.get(lockId) || null
   }
 
@@ -53,7 +55,7 @@ export class MockInventoryLockRepository implements IInventoryLockRepository {
     if (!this.locksByProductId.has(data.productId)) {
       this.locksByProductId.set(data.productId, [])
     }
-    this.locksByProductId.get(data.productId)!.push(id)
+    this.locksByProductId.get(data.productId)?.push(id)
 
     return lock
   }

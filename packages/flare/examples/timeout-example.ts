@@ -87,8 +87,6 @@ const _timeoutChannel = new TimeoutChannel(customChannel, {
 // ==========================================
 
 export class AdaptiveSlackChannel {
-  private channel: SlackChannel
-
   constructor(private baseTimeout = 5000) {
     this.channel = new SlackChannel({
       webhookUrl: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL',
