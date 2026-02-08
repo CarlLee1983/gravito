@@ -11,10 +11,12 @@
 ### 🏗️ [架構 (Architecture)](./architecture/)
 框架整體架構、設計模式、系統設計相關研究。
 - `galaxy-microcore-design.md` - Galaxy Architecture 微核心設計深度分析
+- `satellite-isolation-principles.md` - Satellite 隔離原則與開發實踐
 
 ### ⚡ [性能 (Performance)](./performance/)
 性能優化、基準測試、瓶頸分析相關研究。
-- *（待補充）*
+- `orm-query-optimization.md` - ORM 查詢優化與常見性能陷阱
+- `turbo-build-optimization.md` - Turbo 構建優化與 Monorepo 效率
 
 ### 🔗 [集成 (Integrations)](./integrations/)
 第三方服務集成、生態系統適配相關研究。
