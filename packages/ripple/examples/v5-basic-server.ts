@@ -18,7 +18,7 @@ const ripple = new RippleServer({
   // runtime: 'node-ws',    // Use ws package on Node.js (best compatibility)
 
   // Channel authorizer
-  authorizer: async (channel, userId, socketId) => {
+  authorizer: async (channel, userId, _socketId) => {
     console.log(`Authorization request: ${channel} for user ${userId}`)
 
     // Public channels - allow all
@@ -33,7 +33,9 @@ const ripple = new RippleServer({
 
     // Presence channels - return user info
     if (channel.startsWith('presence-')) {
-      if (!userId) return false
+      if (!userId) {
+        return false
+      }
 
       return {
         id: userId,

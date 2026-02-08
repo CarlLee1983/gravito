@@ -46,7 +46,7 @@ mock.module('react', () => ({
     return [initial as T, () => {}]
   },
   createElement: createElementMock,
-  useEffect: (effect: () => (() => void) | void) => {
+  useEffect: (effect: () => (() => void) | undefined) => {
     // Execute first two FreezeProvider useEffects to test coverage
     effectCallCount++
     if (effectCallCount <= 2) {
@@ -367,7 +367,7 @@ describe('@gravito/freeze-react - Additional Coverage', () => {
         return [initial as T, () => {}]
       },
       createElement: createElementMock,
-      useEffect: (_effect: () => (() => void) | void) => {},
+      useEffect: (_effect: () => (() => void) | undefined) => {},
     }))
 
     // Re-import to get fresh instance
@@ -390,7 +390,7 @@ describe('@gravito/freeze-react - Additional Coverage', () => {
         return [initial as T, () => {}]
       },
       createElement: createElementMock,
-      useEffect: (_effect: () => (() => void) | void) => {},
+      useEffect: (_effect: () => (() => void) | undefined) => {},
     }))
   })
 

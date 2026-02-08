@@ -588,7 +588,7 @@ describe('Pipeline error handling', () => {
     pipeline.add(
       {
         supports: (mime: string) => mime === 'image/jpeg',
-        process: async (input) => {
+        process: async (_input) => {
           results.push('step1')
           return {
             url: '/tmp/step1',
@@ -605,7 +605,7 @@ describe('Pipeline error handling', () => {
     pipeline.add(
       {
         supports: (mime: string) => mime === 'image/png',
-        process: async (input) => {
+        process: async (_input) => {
           results.push('step2')
           return {
             url: '/tmp/step2',

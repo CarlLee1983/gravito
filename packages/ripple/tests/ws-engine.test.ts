@@ -47,11 +47,11 @@ describe('WsEngine', () => {
 
     let receivedMessage: string | null = null
 
-    engine.onMessage((socket, message) => {
+    engine.onMessage((_socket, message) => {
       receivedMessage = message.toString()
     })
 
-    engine.onConnection((socket) => {
+    engine.onConnection((_socket) => {
       // Echo back
     })
 

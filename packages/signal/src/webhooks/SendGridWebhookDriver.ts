@@ -1,4 +1,3 @@
-import { createHmac, timingSafeEqual } from 'node:crypto'
 import type { GravitoContext } from '@gravito/core'
 import type { WebhookDriver } from '../types'
 
@@ -69,8 +68,10 @@ export class SendGridWebhookDriver implements WebhookDriver {
    * Real SendGrid validation uses Elliptic Curve (ECDSA).
    * This is a placeholder for the logic structure.
    */
-  private verifySignature(payload: string, signature: string, timestamp: string): boolean {
-    if (!this.config.publicKey) return true
+  private verifySignature(_payload: string, _signature: string, _timestamp: string): boolean {
+    if (!this.config.publicKey) {
+      return true
+    }
 
     // In a real implementation, you would use crypto.verify with the SendGrid public key.
     // SendGrid uses ECDSA with SHA256.

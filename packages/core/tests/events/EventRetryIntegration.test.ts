@@ -11,7 +11,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { BackpressureManager, BackpressureState } from '../../src/events/BackpressureManager'
+import { BackpressureManager } from '../../src/events/BackpressureManager'
 import { DeadLetterQueue } from '../../src/events/DeadLetterQueue'
 import { EventPriorityQueue } from '../../src/events/EventPriorityQueue'
 import { RetryScheduler } from '../../src/events/RetryScheduler'

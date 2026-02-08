@@ -234,7 +234,7 @@ describe('formats.ts', () => {
 
   describe('unregisterFormat', () => {
     test('should remove registered format', () => {
-      registerFormat('temp-format', (value) => true)
+      registerFormat('temp-format', (_value) => true)
       expect(isFormatRegistered('temp-format')).toBe(true)
 
       unregisterFormat('temp-format')

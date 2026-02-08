@@ -1187,7 +1187,9 @@ export class BunRedisClient implements RedisClientContract {
 
     try {
       const result = await this.sendCommand('XREAD', args)
-      if (!result) return null
+      if (!result) {
+        return null
+      }
 
       // Bun.redis returns streams as an object? { streamKey: entries }
       // We need to convert it to standard [stream, entries][] format
@@ -1246,7 +1248,9 @@ export class BunRedisClient implements RedisClientContract {
 
     try {
       const result = await this.sendCommand('XREADGROUP', args)
-      if (!result) return null
+      if (!result) {
+        return null
+      }
 
       // Bun.redis returns streams as an object? { streamKey: entries }
       if (!Array.isArray(result) && typeof result === 'object') {

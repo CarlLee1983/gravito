@@ -34,20 +34,18 @@ export class RippleMetrics {
     const activeConnections = this.tracker.getActiveConnections()
     const pendingAcks = this.ackManager?.getPendingCount() ?? 0
 
-    return (
-      [
-        `# HELP ${this.prefix}_connections_active Currently active WebSocket connections`,
-        `# TYPE ${this.prefix}_connections_active gauge`,
-        `${this.prefix}_connections_active ${activeConnections}`,
+    return `${[
+      `# HELP ${this.prefix}_connections_active Currently active WebSocket connections`,
+      `# TYPE ${this.prefix}_connections_active gauge`,
+      `${this.prefix}_connections_active ${activeConnections}`,
 
-        `# HELP ${this.prefix}_acks_pending Current number of messages waiting for ACK`,
-        `# TYPE ${this.prefix}_acks_pending gauge`,
-        `${this.prefix}_acks_pending ${pendingAcks}`,
+      `# HELP ${this.prefix}_acks_pending Current number of messages waiting for ACK`,
+      `# TYPE ${this.prefix}_acks_pending gauge`,
+      `${this.prefix}_acks_pending ${pendingAcks}`,
 
-        `# HELP ${this.prefix}_slow_clients_total Total number of slow clients isolated/disconnected`,
-        `# TYPE ${this.prefix}_slow_clients_total counter`,
-        `${this.prefix}_slow_clients_total ${this.slowClients}`,
-      ].join('\n') + '\n'
-    )
+      `# HELP ${this.prefix}_slow_clients_total Total number of slow clients isolated/disconnected`,
+      `# TYPE ${this.prefix}_slow_clients_total counter`,
+      `${this.prefix}_slow_clients_total ${this.slowClients}`,
+    ].join('\n')}\n`
   }
 }

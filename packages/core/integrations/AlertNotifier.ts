@@ -8,7 +8,7 @@
  * - 失敗重試
  */
 
-import { EventEmitter } from 'events'
+import { EventEmitter } from 'node:events'
 
 export interface AlertPayload {
   status: 'firing' | 'resolved'

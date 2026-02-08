@@ -21,7 +21,9 @@ export class CacheService {
 
   constructor(redisClient: Redis, namespace?: string) {
     this.redis = redisClient
-    if (namespace) this.namespace = namespace
+    if (namespace) {
+      this.namespace = namespace
+    }
   }
 
   /**
@@ -37,7 +39,9 @@ export class CacheService {
   async get<T>(key: string): Promise<T | null> {
     try {
       const value = await this.redis.get(this.getKey(key))
-      if (!value) return null
+      if (!value) {
+        return null
+      }
       return JSON.parse(value) as T
     } catch (error) {
       // 快取讀取失敗不應中斷主流程
@@ -81,7 +85,9 @@ export class CacheService {
    * 刪除多個快取
    */
   async deleteMany(keys: string[]): Promise<void> {
-    if (keys.length === 0) return
+    if (keys.length === 0) {
+      return
+    }
     try {
       const cacheKeys = keys.map((k) => this.getKey(k))
       await this.redis.del(...cacheKeys)
@@ -113,7 +119,9 @@ export class CacheService {
   async remember<T>(key: string, loader: () => Promise<T>, options?: CacheOptions): Promise<T> {
     // 嘗試從快取中獲取
     const cached = await this.get<T>(key)
-    if (cached !== null) return cached
+    if (cached !== null) {
+      return cached
+    }
 
     // 快取未命中，執行 loader
     const value = await loader()

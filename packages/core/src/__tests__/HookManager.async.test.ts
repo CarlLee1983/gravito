@@ -434,7 +434,7 @@ describe('HookManager - Async Event Dispatch', () => {
 
     it('should handle filter errors and continue', async () => {
       hookManager.addFilter('test:filter', (val: number) => val + 1)
-      hookManager.addFilter('test:filter', (val: number) => {
+      hookManager.addFilter('test:filter', (_val: number) => {
         throw new Error('Filter error')
       })
       hookManager.addFilter('test:filter', (val: number) => val * 2)

@@ -297,7 +297,7 @@ class EventProcessingService {
     console.log(`  └─ 用戶已保存到數據庫: ${user.email}`)
   }
 
-  private async sendWelcomeEmail(email: string, name: string): Promise<void> {
+  private async sendWelcomeEmail(email: string, _name: string): Promise<void> {
     // 模擬郵件發送（200-500ms）
     await new Promise((resolve) => setTimeout(resolve, Math.random() * 300 + 200))
     console.log(`  └─ 歡迎郵件已發送: ${email}`)
@@ -324,7 +324,7 @@ class EventProcessingService {
     console.log(`  └─ 再見郵件已發送: ${userId}`)
   }
 
-  private async validateInventory(items: any[]): Promise<void> {
+  private async validateInventory(_items: any[]): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 50))
   }
 
@@ -333,33 +333,33 @@ class EventProcessingService {
     console.log(`  └─ 訂單已建立: ${order.orderId}`)
   }
 
-  private async sendOrderConfirmation(userId: string, orderId: string): Promise<void> {
+  private async sendOrderConfirmation(_userId: string, orderId: string): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 100))
     console.log(`  └─ 訂單確認已發送: ${orderId}`)
   }
 
-  private async updateOrderStatus(orderId: string, status: string): Promise<void> {
+  private async updateOrderStatus(_orderId: string, status: string): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 50))
     console.log(`  └─ 訂單狀態已更新: ${status}`)
   }
 
-  private async notifyOrderShipped(userId: string, orderId: string): Promise<void> {
+  private async notifyOrderShipped(_userId: string, orderId: string): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 100))
     console.log(`  └─ 發貨通知已發送: ${orderId}`)
   }
 
-  private async processPayment(orderId: string, amount: number): Promise<string> {
+  private async processPayment(_orderId: string, _amount: number): Promise<string> {
     await new Promise((resolve) => setTimeout(resolve, 500))
     const paymentId = `PAY-${Date.now()}`
     console.log(`  └─ 支付已處理: ${paymentId}`)
     return paymentId
   }
 
-  private async recordAnalytics(data: any): Promise<void> {
+  private async recordAnalytics(_data: any): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 50))
   }
 
-  private async writeAuditLog(data: any): Promise<void> {
+  private async writeAuditLog(_data: any): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 30))
   }
 

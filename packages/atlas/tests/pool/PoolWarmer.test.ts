@@ -18,7 +18,7 @@ describe('PoolWarmer', () => {
 
     mockConnectionManager = {
       getConnectionNames: () => ['default', 'secondary'],
-      connection: (name: string) => ({
+      connection: (_name: string) => ({
         getConfig: () => ({
           pool: { max: 10 },
         }),

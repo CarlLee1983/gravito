@@ -14,11 +14,11 @@ describe('AdaptivePoolManager', () => {
   let adjustmentCallback: any
 
   beforeEach(() => {
-    adjustmentCallback = (event: any) => {}
+    adjustmentCallback = (_event: any) => {}
 
     mockConnectionManager = {
       getConnectionNames: () => ['default'],
-      connection: (name: string) => ({
+      connection: (_name: string) => ({
         getConfig: () => ({
           pool: { max: 10 },
         }),
@@ -31,7 +31,7 @@ describe('AdaptivePoolManager', () => {
               total: 10,
               max: 10,
             }) as PoolStats,
-          adjustPoolSize: async (size: number) => {},
+          adjustPoolSize: async (_size: number) => {},
         }),
       }),
     } as any
@@ -86,7 +86,7 @@ describe('AdaptivePoolManager', () => {
       const mockManager = new AdaptivePoolManager(
         {
           getConnectionNames: () => ['test'],
-          connection: (name: string) => ({
+          connection: (_name: string) => ({
             getConfig: () => ({
               pool: { max: 10, min: 2 },
             }),
@@ -99,7 +99,7 @@ describe('AdaptivePoolManager', () => {
                   total: 9,
                   max: 10,
                 }) as PoolStats,
-              adjustPoolSize: async (size: number) => {
+              adjustPoolSize: async (_size: number) => {
                 adjustmentCount++
               },
             }),
@@ -141,7 +141,7 @@ describe('AdaptivePoolManager', () => {
       const mockManager = new AdaptivePoolManager(
         {
           getConnectionNames: () => ['test'],
-          connection: (name: string) => ({
+          connection: (_name: string) => ({
             getConfig: () => ({
               pool: { max: 10, min: 2 },
             }),
@@ -154,7 +154,7 @@ describe('AdaptivePoolManager', () => {
                   total: 9,
                   max: 10,
                 }) as PoolStats,
-              adjustPoolSize: async (size: number) => {},
+              adjustPoolSize: async (_size: number) => {},
             }),
           }),
         } as any,
@@ -185,7 +185,7 @@ describe('AdaptivePoolManager', () => {
       const mockManager = new AdaptivePoolManager(
         {
           getConnectionNames: () => ['test'],
-          connection: (name: string) => ({
+          connection: (_name: string) => ({
             getConfig: () => ({}),
             getDriver: () => ({
               getPoolStats: () => null,
@@ -210,7 +210,7 @@ describe('AdaptivePoolManager', () => {
       const mockManager = new AdaptivePoolManager(
         {
           getConnectionNames: () => ['test'],
-          connection: (name: string) => ({
+          connection: (_name: string) => ({
             getConfig: () => ({
               pool: { max: 10, min: 2 },
             }),

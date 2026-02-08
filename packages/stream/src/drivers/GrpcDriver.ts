@@ -1,6 +1,6 @@
+import path from 'node:path'
 import * as grpc from '@grpc/grpc-js'
 import * as protoLoader from '@grpc/proto-loader'
-import path from 'path'
 import type { GrpcDriverConfig, JobPushOptions, QueueStats, SerializedJob } from '../types'
 import type { QueueDriver } from './QueueDriver'
 
@@ -66,7 +66,9 @@ export class GrpcDriver implements QueueDriver {
 
     return new Promise((resolve, reject) => {
       ;(this.client as any).Push(req, (err: any, response: any) => {
-        if (err) return reject(err)
+        if (err) {
+          return reject(err)
+        }
         if (!response.success) {
           return reject(new Error(response.message || 'Unknown gRPC error'))
         }
@@ -78,8 +80,12 @@ export class GrpcDriver implements QueueDriver {
   async pop(queue: string): Promise<SerializedJob | null> {
     return new Promise((resolve, reject) => {
       ;(this.client as any).Pull({ queue }, (err: any, response: any) => {
-        if (err) return reject(err)
-        if (!response.job || !response.job.id) return resolve(null)
+        if (err) {
+          return reject(err)
+        }
+        if (!response.job || !response.job.id) {
+          return resolve(null)
+        }
         resolve(this.fromProtoJob(response.job))
       })
     })
@@ -88,7 +94,9 @@ export class GrpcDriver implements QueueDriver {
   async size(queue: string): Promise<number> {
     return new Promise((resolve, reject) => {
       ;(this.client as any).Size({ queue }, (err: any, response: any) => {
-        if (err) return reject(err)
+        if (err) {
+          return reject(err)
+        }
         resolve(response.size || 0)
       })
     })
@@ -97,7 +105,9 @@ export class GrpcDriver implements QueueDriver {
   async clear(queue: string): Promise<void> {
     return new Promise((resolve, reject) => {
       ;(this.client as any).Clear({ queue }, (err: any) => {
-        if (err) return reject(err)
+        if (err) {
+          return reject(err)
+        }
         resolve()
       })
     })
@@ -118,7 +128,9 @@ export class GrpcDriver implements QueueDriver {
     // Let's assume the server only needs ID.
     return new Promise((resolve, reject) => {
       ;(this.client as any).Acknowledge({ jobId: messageId }, (err: any) => {
-        if (err) return reject(err)
+        if (err) {
+          return reject(err)
+        }
         resolve()
       })
     })
@@ -127,7 +139,9 @@ export class GrpcDriver implements QueueDriver {
   async stats(queue: string): Promise<QueueStats> {
     return new Promise((resolve, reject) => {
       ;(this.client as any).Stats({ queue }, (err: any, response: any) => {
-        if (err) return reject(err)
+        if (err) {
+          return reject(err)
+        }
         resolve({
           queue: response.queue,
           size: response.size,

@@ -152,7 +152,7 @@ export class LogRotator {
    * @private
    */
   private async listBackups(
-    snapshotPath: string
+    _snapshotPath: string
   ): Promise<Array<{ path: string; timestamp: number }>> {
     // This is a simplified implementation
     // For production, you'd need to actually list directory contents

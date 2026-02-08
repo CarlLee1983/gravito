@@ -232,8 +232,12 @@ export abstract class FormRequest<T = unknown> {
         const customMessages = MessageCache.getInstanceMessages(this)
         if (customMessages) {
           const key = code ? `${field}.${code}` : field
-          if (customMessages[key]) return customMessages[key]
-          if (customMessages[field]) return customMessages[field]
+          if (customMessages[key]) {
+            return customMessages[key]
+          }
+          if (customMessages[field]) {
+            return customMessages[field]
+          }
         }
       }
 
@@ -373,7 +377,9 @@ export function validateRequest<T>(
 
         if (request.redirect) {
           const url = request.redirect()
-          if (url) exception.withRedirect(url)
+          if (url) {
+            exception.withRedirect(url)
+          }
         }
 
         exception.withInput(await request.getData(ctx))

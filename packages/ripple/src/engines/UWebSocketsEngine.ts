@@ -89,7 +89,7 @@ export class UWebSocketsRippleSocket implements RippleSocket {
     }
   }
 
-  close(code?: number, reason?: string): void {
+  close(_code?: number, _reason?: string): void {
     // uWebSockets.js doesn't support close codes/reasons directly
     // We just close the connection
     this.ws.close()
@@ -191,7 +191,9 @@ export class UWebSocketsEngine implements IRippleEngine {
       )
     }
 
-    if (!this.uws) throw new Error('Failed to load uWebSockets.js module')
+    if (!this.uws) {
+      throw new Error('Failed to load uWebSockets.js module')
+    }
 
     // Create uWebSockets.js app
     this.app = this.config.tls
@@ -230,7 +232,9 @@ export class UWebSocketsEngine implements IRippleEngine {
       message: (ws, message, isBinary) => {
         const data = ws.getUserData()
         const socket = this.sockets.get(data.id)
-        if (!socket) return
+        if (!socket) {
+          return
+        }
 
         // Convert ArrayBuffer to Uint8Array or string
         const payload = isBinary ? new Uint8Array(message) : new TextDecoder().decode(message)
@@ -251,7 +255,9 @@ export class UWebSocketsEngine implements IRippleEngine {
       close: (ws, code, message) => {
         const data = ws.getUserData()
         const socket = this.sockets.get(data.id)
-        if (!socket) return
+        if (!socket) {
+          return
+        }
 
         const reason = new TextDecoder().decode(message)
         this.disconnectionHandler?.(socket, code, reason)
@@ -261,7 +267,7 @@ export class UWebSocketsEngine implements IRippleEngine {
 
     // Start listening
     return new Promise((resolve, reject) => {
-      this.app!.listen(port, (listenSocket) => {
+      this.app?.listen(port, (listenSocket) => {
         if (listenSocket) {
           this.listenSocket = listenSocket
           resolve()

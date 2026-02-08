@@ -4,7 +4,7 @@
  * 註冊搶購系統的所有服務與路由
  */
 
-import type { CacheService, Container, PlanetCore } from '@gravito/core'
+import type { CacheService, Container } from '@gravito/core'
 import { ServiceProvider } from '@gravito/core'
 import { Redis } from '@gravito/plasma'
 import { setupCacheInvalidation } from './Infrastructure/Handlers/CacheInvalidationHandler'

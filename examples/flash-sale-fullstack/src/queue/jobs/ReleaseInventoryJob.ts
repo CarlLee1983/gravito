@@ -6,6 +6,7 @@
 
 import { Job } from '@gravito/stream'
 import { getCore } from '../../app'
+import { recordEvent, withSpan } from '../../tracing/tracer'
 import type { ReleaseInventoryJobPayload } from '../../types/queue'
 
 /**
@@ -31,54 +32,50 @@ export class ReleaseInventoryJob extends Job {
    * 執行 Job
    */
   async handle(): Promise<void> {
-    const core = getCore()
-    const logger = core.logger
+    await withSpan(
+      'job.release_inventory',
+      {
+        'job.type': 'ReleaseInventoryJob',
+        'flash_sale.order_id': this.payload.orderId,
+        'flash_sale.lock_id': this.payload.lockId,
+        'flash_sale.compensation': true,
+        'flash_sale.release_reason': this.payload.reason,
+      },
+      async (_span) => {
+        const core = getCore()
+        const logger = core.logger
 
-    try {
-      logger.info(
-        `[ReleaseInventoryJob] 開始執行補償: orderId=${this.payload.orderId}, reason=${this.payload.reason}`
-      )
+        logger.info(
+          `[ReleaseInventoryJob] 開始執行補償: orderId=${this.payload.orderId}, reason=${this.payload.reason}`
+        )
 
-      // 取得 Inventory-Lock Use Case
-      const releaseInventory = core.container.make<any>('inventory-lock.release-inventory')
+        // 取得 Inventory-Lock Use Case
+        const releaseInventory = core.container.make<any>('inventory-lock.release-inventory')
 
-      // 執行庫存釋放
-      await releaseInventory?.execute?.({
-        lockId: this.payload.lockId,
-      })
+        // 執行庫存釋放
+        await releaseInventory?.execute?.({
+          lockId: this.payload.lockId,
+        })
 
-      logger.info(
-        `[ReleaseInventoryJob] ✅ 補償完成: orderId=${this.payload.orderId}, lockId=${this.payload.lockId}`
-      )
+        logger.info(
+          `[ReleaseInventoryJob] ✅ 補償完成: orderId=${this.payload.orderId}, lockId=${this.payload.lockId}`
+        )
 
-      // 觸發事件：庫存已釋放（補償完成）
-      await core.hooks.doAction('inventory:released', {
-        orderId: this.payload.orderId,
-        lockId: this.payload.lockId,
-        productId: this.payload.productId,
-        quantity: this.payload.quantity,
-        reason: this.payload.reason,
-      })
-    } catch (error) {
-      const logger = getCore().logger
-      logger.error(
-        `[ReleaseInventoryJob] ❌ 釋放失敗: orderId=${this.payload.orderId}, lockId=${this.payload.lockId}`,
-        error
-      )
+        recordEvent('inventory_released', {
+          'flash_sale.product_id': this.payload.productId,
+          'flash_sale.quantity': this.payload.quantity,
+        })
 
-      // 觸發事件：庫存釋放失敗（需要告警/人工介入）
-      await core.hooks.doAction('inventory:release_failed', {
-        orderId: this.payload.orderId,
-        lockId: this.payload.lockId,
-        productId: this.payload.productId,
-        quantity: this.payload.quantity,
-        reason: this.payload.reason,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      })
-
-      // 重新拋出錯誤以觸發重試
-      throw error
-    }
+        // 觸發事件：庫存已釋放（補償完成）
+        await core.hooks.doAction('inventory:released', {
+          orderId: this.payload.orderId,
+          lockId: this.payload.lockId,
+          productId: this.payload.productId,
+          quantity: this.payload.quantity,
+          reason: this.payload.reason,
+        })
+      }
+    )
   }
 
   /**

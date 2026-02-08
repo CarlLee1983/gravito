@@ -7,8 +7,8 @@
  * @public
  */
 
-import { resolve } from 'path'
-import { Worker as ThreadWorker } from 'worker_threads'
+import { resolve } from 'node:path'
+import { Worker as ThreadWorker } from 'node:worker_threads'
 import type { SerializedJob } from '../types'
 
 /**
@@ -155,7 +155,7 @@ export class SandboxedWorker {
         reject(new Error('Worker initialization timeout'))
       }, 5000)
 
-      this.worker!.once('message', (message: any) => {
+      this.worker?.once('message', (message: any) => {
         clearTimeout(timeout)
         if (message.type === 'ready') {
           this.state = WorkerState.READY
@@ -165,7 +165,7 @@ export class SandboxedWorker {
         }
       })
 
-      this.worker!.once('error', (error) => {
+      this.worker?.once('error', (error) => {
         clearTimeout(timeout)
         reject(error)
       })

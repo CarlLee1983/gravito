@@ -88,7 +88,7 @@ describe.skipIf(!shouldRunIntegrationTests)('S3Store - 整合測試', () => {
     const blob = await store.get(testKey)
     expect(blob).not.toBeNull()
 
-    const downloadedContent = await blob!.text()
+    const downloadedContent = await blob?.text()
     expect(downloadedContent).toBe(testContent)
     console.log(`✅ Downloaded and verified: ${testKey}`)
 
@@ -108,7 +108,7 @@ describe.skipIf(!shouldRunIntegrationTests)('S3Store - 整合測試', () => {
     const blob = await store.get(testKey)
     expect(blob).not.toBeNull()
 
-    const downloadedData = new Uint8Array(await blob!.arrayBuffer())
+    const downloadedData = new Uint8Array(await blob?.arrayBuffer())
     expect(downloadedData).toEqual(binaryData)
     console.log(`✅ Downloaded and verified binary: ${testKey}`)
 
@@ -173,7 +173,7 @@ describe.skipIf(!shouldRunIntegrationTests)('S3Store - 整合測試', () => {
 
     // 驗證內容相同
     const destBlob = await store.get(destKey)
-    expect(await destBlob!.text()).toBe(content)
+    expect(await destBlob?.text()).toBe(content)
 
     // 清理
     await store.delete(sourceKey)
@@ -198,7 +198,7 @@ describe.skipIf(!shouldRunIntegrationTests)('S3Store - 整合測試', () => {
 
     // 驗證內容
     const destBlob = await store.get(destKey)
-    expect(await destBlob!.text()).toBe(content)
+    expect(await destBlob?.text()).toBe(content)
 
     // 清理
     await store.delete(destKey)
@@ -222,11 +222,11 @@ describe.skipIf(!shouldRunIntegrationTests)('S3Store - 整合測試', () => {
     // 讀取 metadata
     const meta = await store.getMetadata(testKey)
     expect(meta).not.toBeNull()
-    expect(meta!.mimeType).toBe('text/plain; charset=utf-8')
-    expect(meta!.customMetadata?.author).toBe('Integration Test')
-    expect(meta!.customMetadata?.version).toBe('1.0')
-    expect(meta!.customMetadata?.description).toBe('測試中文 metadata')
-    console.log(`✅ Verified metadata:`, meta!.customMetadata)
+    expect(meta?.mimeType).toBe('text/plain; charset=utf-8')
+    expect(meta?.customMetadata?.author).toBe('Integration Test')
+    expect(meta?.customMetadata?.version).toBe('1.0')
+    expect(meta?.customMetadata?.description).toBe('測試中文 metadata')
+    console.log(`✅ Verified metadata:`, meta?.customMetadata)
 
     // 清理
     await store.delete(testKey)
@@ -252,10 +252,10 @@ describe.skipIf(!shouldRunIntegrationTests)('S3Store - 整合測試', () => {
 
     // 驗證 metadata
     const meta = await store.getMetadata(testKey)
-    expect(meta!.customMetadata?.version).toBe('2.0')
-    expect(meta!.customMetadata?.author).toBe('Original Author') // 保留原有
-    expect(meta!.customMetadata?.updatedat).toBeDefined() // 使用小寫
-    console.log(`✅ Verified updated metadata:`, meta!.customMetadata)
+    expect(meta?.customMetadata?.version).toBe('2.0')
+    expect(meta?.customMetadata?.author).toBe('Original Author') // 保留原有
+    expect(meta?.customMetadata?.updatedat).toBeDefined() // 使用小寫
+    console.log(`✅ Verified updated metadata:`, meta?.customMetadata)
 
     // 清理
     await store.delete(testKey)
@@ -285,7 +285,7 @@ describe.skipIf(!shouldRunIntegrationTests)('S3Store - 整合測試', () => {
 
     // 驗證檔案大小
     const meta = await store.getMetadata(testKey)
-    expect(meta!.size).toBe(sizeInMB * 1024 * 1024)
+    expect(meta?.size).toBe(sizeInMB * 1024 * 1024)
 
     // 清理
     await store.delete(testKey)
@@ -303,11 +303,13 @@ describe.skipIf(!shouldRunIntegrationTests)('S3Store - 整合測試', () => {
     expect(stream).not.toBeNull()
 
     // 讀取串流
-    const reader = stream!.getReader()
+    const reader = stream?.getReader()
     const chunks: Uint8Array[] = []
     while (true) {
       const { done, value } = await reader.read()
-      if (done) break
+      if (done) {
+        break
+      }
       chunks.push(value)
     }
 
@@ -366,7 +368,7 @@ describe.skipIf(!shouldRunIntegrationTests)('S3Store - 整合測試', () => {
     expect(url).toContain('X-Amz-Credential')
     expect(url).toContain('X-Amz-Signature')
     expect(url).toContain(testKey)
-    console.log(`✅ Presigned URL generated:`, url.substring(0, 100) + '...')
+    console.log(`✅ Presigned URL generated:`, `${url.substring(0, 100)}...`)
 
     // 使用 Presigned URL 下載
     const response = await fetch(url)
@@ -392,7 +394,7 @@ describe.skipIf(!shouldRunIntegrationTests)('S3Store - 整合測試', () => {
     const blob = await store.get(testKey)
     expect(blob).not.toBeNull()
 
-    const downloadedContent = await blob!.text()
+    const downloadedContent = await blob?.text()
     expect(downloadedContent).toBe(testContent)
     console.log(`✅ Downloaded and verified Chinese content`)
 

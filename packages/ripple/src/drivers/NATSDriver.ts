@@ -66,7 +66,9 @@ export class NATSDriver implements RippleDriver {
   }
 
   async init(): Promise<void> {
-    if (this._initialized) return
+    if (this._initialized) {
+      return
+    }
 
     this.logger.info('Initializing NATSDriver', {
       servers: this.config.servers ?? 'nats://localhost:4222',

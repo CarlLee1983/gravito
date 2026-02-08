@@ -658,7 +658,7 @@ describe('CircuitBreaker Metrics Integration', () => {
       expect(metrics.totalSuccesses).toBe(1)
       expect(metrics.totalFailures).toBe(0)
       expect(metrics.lastSuccessAt).toBeInstanceOf(Date)
-      expect(metrics.lastSuccessAt!.getTime()).toBeGreaterThanOrEqual(beforeSuccess.getTime())
+      expect(metrics.lastSuccessAt?.getTime()).toBeGreaterThanOrEqual(beforeSuccess.getTime())
       expect(metrics.failures).toBe(0)
 
       // === 失敗導致 OPEN ===
@@ -679,9 +679,9 @@ describe('CircuitBreaker Metrics Integration', () => {
       expect(metrics.totalFailures).toBe(2)
       expect(metrics.totalSuccesses).toBe(1)
       expect(metrics.lastFailureAt).toBeInstanceOf(Date)
-      expect(metrics.lastFailureAt!.getTime()).toBeGreaterThanOrEqual(beforeFailure.getTime())
+      expect(metrics.lastFailureAt?.getTime()).toBeGreaterThanOrEqual(beforeFailure.getTime())
       expect(metrics.openedAt).toBeInstanceOf(Date)
-      expect(metrics.openedAt!.getTime()).toBeGreaterThanOrEqual(beforeFailure.getTime())
+      expect(metrics.openedAt?.getTime()).toBeGreaterThanOrEqual(beforeFailure.getTime())
 
       // === HALF_OPEN 恢復後 ===
       await new Promise((resolve) => setTimeout(resolve, 100))

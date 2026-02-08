@@ -67,7 +67,9 @@ export async function proxyToVite(
  */
 export function setupViteProxy(core: PlanetCore): void {
   const app = (core as any).app
-  if (!app) return
+  if (!app) {
+    return
+  }
 
   // Register as a regular route to ensure priority over static handlers
   const vitePatterns = [
@@ -85,7 +87,9 @@ export function setupViteProxy(core: PlanetCore): void {
   vitePatterns.forEach((pattern) => {
     app.all(pattern, async (c: any) => {
       const result = await proxyToVite(c, core)
-      if (result) return result
+      if (result) {
+        return result
+      }
       return c.notFound()
     })
   })

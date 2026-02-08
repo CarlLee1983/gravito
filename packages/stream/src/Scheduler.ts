@@ -269,11 +269,15 @@ export class Scheduler {
    * to ensure that only one node performs the scanning in a multi-node environment.
    */
   async start(): Promise<void> {
-    if (this.running) return
+    if (this.running) {
+      return
+    }
     this.running = true
 
     const loop = async () => {
-      if (!this.running) return
+      if (!this.running) {
+        return
+      }
 
       try {
         await this.performTickWithLeaderElection()

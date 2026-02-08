@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Activity, ChevronRight, Cpu, Layers, Share2, Shield, Terminal, Zap } from 'lucide-vue-next'
+import { Activity, Layers, Share2, Zap } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useI18n } from '../composables/useI18n'
 

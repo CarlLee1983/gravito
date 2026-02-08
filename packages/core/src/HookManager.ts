@@ -796,7 +796,9 @@ export class HookManager {
    * @returns True if requeued successfully, false if entry not found
    */
   async requeueDLQEntry(dlqEntryId: string): Promise<boolean> {
-    if (!this.dlq) return false
+    if (!this.dlq) {
+      return false
+    }
     const entry = this.dlq.get(dlqEntryId)
 
     if (!entry) {
@@ -822,7 +824,9 @@ export class HookManager {
    * @returns Number of events requeued
    */
   async requeueDLQBatch(eventName: string): Promise<number> {
-    if (!this.dlq) return 0
+    if (!this.dlq) {
+      return 0
+    }
     const entries = this.dlq.list({ eventName })
     let requeuedCount = 0
 
@@ -843,7 +847,9 @@ export class HookManager {
    * @returns Array of DLQ entries
    */
   getDLQEntries(filter: { eventName?: string; from?: number; to?: number; limit?: number } = {}) {
-    if (!this.dlq) return []
+    if (!this.dlq) {
+      return []
+    }
     return this.dlq.list(filter)
   }
 
@@ -854,7 +860,9 @@ export class HookManager {
    * @returns Count of entries
    */
   getDLQCount(eventName: string): number {
-    if (!this.dlq) return 0
+    if (!this.dlq) {
+      return 0
+    }
     return this.dlq.getCountByEvent(eventName)
   }
 
@@ -865,7 +873,9 @@ export class HookManager {
    * @returns True if deleted, false if not found
    */
   deleteDLQEntry(entryId: string): boolean {
-    if (!this.dlq) return false
+    if (!this.dlq) {
+      return false
+    }
     return this.dlq.delete(entryId)
   }
 

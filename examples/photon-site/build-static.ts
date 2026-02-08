@@ -39,7 +39,9 @@ async function build() {
   if (!appInstance.config) {
     appInstance.config = {
       get: (key: string, defaultValue: any) => {
-        if (key === 'VIEW_DIR') return 'src/views'
+        if (key === 'VIEW_DIR') {
+          return 'src/views'
+        }
         return defaultValue
       },
       has: (key: string) => key === 'VIEW_DIR',

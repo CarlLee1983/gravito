@@ -122,7 +122,7 @@ export class BunEngine implements IRippleEngine {
       tls: this.config.tls,
       development: this.config.development,
 
-      fetch: (req, server) => {
+      fetch: (_req, _server) => {
         // This will be called by RippleServer.upgrade()
         // We don't handle fetch here, just return 404
         return new Response('WebSocket endpoint. Use upgrade() to connect.', { status: 404 })
@@ -137,7 +137,9 @@ export class BunEngine implements IRippleEngine {
 
         message: (ws, message) => {
           const socket = this.sockets.get(ws.data.id)
-          if (!socket) return
+          if (!socket) {
+            return
+          }
 
           const data =
             typeof message === 'string'
@@ -151,13 +153,15 @@ export class BunEngine implements IRippleEngine {
 
         close: (ws, code, reason) => {
           const socket = this.sockets.get(ws.data.id)
-          if (!socket) return
+          if (!socket) {
+            return
+          }
 
           this.disconnectionHandler?.(socket, code, reason)
           this.sockets.delete(ws.data.id)
         },
 
-        drain: (ws) => {
+        drain: (_ws) => {
           // Backpressure drained - no-op for now
           // Could emit event if needed
         },
@@ -174,7 +178,9 @@ export class BunEngine implements IRippleEngine {
   }
 
   broadcast(topic: string, data: string | Uint8Array, excludeSocketId?: string): void {
-    if (!this.server) return
+    if (!this.server) {
+      return
+    }
 
     // Bun's native pub/sub - extremely efficient (C++ layer broadcast)
     // If we need to exclude a socket, we have to do it manually

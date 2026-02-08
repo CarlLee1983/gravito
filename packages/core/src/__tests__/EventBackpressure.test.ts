@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { EventPriorityQueue, EventPriorityQueue as Queue } from '../events/EventPriorityQueue'
+import { EventPriorityQueue } from '../events/EventPriorityQueue'
 import type { ActionCallback } from '../HookManager'
 import { HookManager } from '../HookManager'
 

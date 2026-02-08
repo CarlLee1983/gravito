@@ -217,7 +217,7 @@ describe('ForgeService - process() 併發控制', () => {
     expect((service as any).waitingTasks.length).toBe(1)
 
     // 釋放第一個任務
-    task1Resolve!()
+    task1Resolve?.()
 
     // 兩個都應完成
     const [result1, result2] = await Promise.all([result1Promise, result2Promise])

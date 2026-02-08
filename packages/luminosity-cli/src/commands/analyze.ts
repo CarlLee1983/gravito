@@ -1,4 +1,4 @@
-import { ConfigLoader, IncrementalStrategy, JsonlLogger, SeoEngine } from '@gravito/luminosity'
+import { ConfigLoader, IncrementalStrategy, SeoEngine } from '@gravito/luminosity'
 import pc from 'picocolors'
 
 /**
@@ -30,7 +30,9 @@ export interface AnalyzeCommandOptions {
  * Format bytes to human-readable string.
  */
 function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B'
+  if (bytes === 0) {
+    return '0 B'
+  }
   const k = 1024
   const sizes = ['B', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
@@ -41,7 +43,9 @@ function formatBytes(bytes: number): string {
  * Calculate health score based on log/snapshot ratio.
  */
 function calculateHealthScore(logSize: number, snapshotSize: number): number {
-  if (snapshotSize === 0) return 50 // Neutral score
+  if (snapshotSize === 0) {
+    return 50 // Neutral score
+  }
 
   const ratio = logSize / snapshotSize
 
@@ -51,9 +55,15 @@ function calculateHealthScore(logSize: number, snapshotSize: number): number {
   // Warning: 0.5-1.0 (50-100%) = 50-80 points
   // Critical: > 1.0 (>100%) = 0-50 points
 
-  if (ratio < 0.1) return 100
-  if (ratio < 0.5) return Math.round(100 - (ratio - 0.1) * 50)
-  if (ratio < 1.0) return Math.round(80 - (ratio - 0.5) * 60)
+  if (ratio < 0.1) {
+    return 100
+  }
+  if (ratio < 0.5) {
+    return Math.round(100 - (ratio - 0.1) * 50)
+  }
+  if (ratio < 1.0) {
+    return Math.round(80 - (ratio - 0.5) * 60)
+  }
   return Math.max(0, Math.round(50 - (ratio - 1.0) * 50))
 }
 
@@ -68,8 +78,12 @@ function renderHealthBar(score: number): string {
   const bar = '█'.repeat(filled) + '░'.repeat(empty)
 
   // Color based on score
-  if (score >= 80) return pc.green(bar)
-  if (score >= 50) return pc.yellow(bar)
+  if (score >= 80) {
+    return pc.green(bar)
+  }
+  if (score >= 50) {
+    return pc.yellow(bar)
+  }
   return pc.red(bar)
 }
 

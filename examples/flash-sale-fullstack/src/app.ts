@@ -4,7 +4,7 @@
  * 搶購系統主應用入口
  */
 
-import { Application } from '@gravito/core'
+import { Application, shutdownOpenTelemetry } from '@gravito/core'
 import { FlashSaleServiceProvider } from '@gravito/satellite-flash-sale'
 import { InventoryLockServiceProvider } from '@gravito/satellite-inventory-lock'
 import { PaymentServiceProvider } from '@gravito/satellite-payment'
@@ -13,6 +13,8 @@ import { GravitoConfig } from './gravito.config'
 import { setupOrderQueueIntegration } from './integrations/order-queue-handler'
 import { setupPaymentQueueIntegration } from './integrations/payment-queue-handler'
 import { initializeQueueManager } from './queue'
+import { httpTracingMiddleware } from './tracing/http-tracing-middleware'
+import { initializeTracing } from './tracing/setup'
 
 let globalApp: Application | null = null
 let globalQueueManager: QueueManager | null = null
@@ -42,6 +44,12 @@ export function getQueueManager(): QueueManager {
  */
 async function bootstrap(): Promise<void> {
   const _env = (process.env.NODE_ENV || 'development') as 'development' | 'production' | 'testing'
+
+  // 1. 初始化 OpenTelemetry（必須在任何其他初始化之前）
+  const otelSdk = await initializeTracing(GravitoConfig.openTelemetry)
+  if (otelSdk) {
+    console.log('[Tracing] OpenTelemetry SDK initialized successfully')
+  }
 
   // Create Application with proper configuration structure
   const p1 = new FlashSaleServiceProvider()
@@ -78,6 +86,11 @@ async function bootstrap(): Promise<void> {
   setupOrderQueueIntegration(app.core)
   setupPaymentQueueIntegration(app.core)
 
+  // 掛載 HTTP tracing 中間件（全局）
+  const honoApp = app.core.app as any
+  honoApp.use('*', httpTracingMiddleware())
+  app.core.logger.info('[Tracing] HTTP tracing middleware registered')
+
   // 啟動 HTTP 伺服器
   const liftoffConfig = app.core.liftoff()
 
@@ -93,6 +106,19 @@ async function bootstrap(): Promise<void> {
     Bun.serve(liftoffConfig as any)
     app.core.logger.info('✅ HTTP Server is running')
   }
+
+  // 註冊 shutdown hook - 確保 OTel Spans 被正確 flush
+  process.on('SIGTERM', async () => {
+    app.core.logger.info('SIGTERM received, shutting down gracefully...')
+    await shutdownOpenTelemetry()
+    process.exit(0)
+  })
+
+  process.on('SIGINT', async () => {
+    app.core.logger.info('SIGINT received, shutting down gracefully...')
+    await shutdownOpenTelemetry()
+    process.exit(0)
+  })
 }
 
 // 啟動應用

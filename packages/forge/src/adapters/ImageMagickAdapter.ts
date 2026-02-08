@@ -111,7 +111,9 @@ export class ImageMagickAdapter implements ProcessorAdapter {
           try {
             while (true) {
               const { done, value } = await reader.read()
-              if (done) break
+              if (done) {
+                break
+              }
               stdoutBuffer += decoder.decode(value, { stream: true })
             }
           } catch {

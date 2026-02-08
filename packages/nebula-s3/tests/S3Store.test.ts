@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import { S3Store } from '../src/S3Store'
 
 /**
@@ -150,7 +150,7 @@ describe.skipIf(!shouldRunIntegrationTests)('S3Store - 整合測試', () => {
     // 下載
     const blob = await store.get(testKey)
     expect(blob).not.toBeNull()
-    expect(await blob!.text()).toBe(testContent)
+    expect(await blob?.text()).toBe(testContent)
 
     // 清理
     await store.delete(testKey)
@@ -187,8 +187,8 @@ describe.skipIf(!shouldRunIntegrationTests)('S3Store - 整合測試', () => {
     // 讀取 metadata
     const meta = await store.getMetadata(testKey)
     expect(meta).not.toBeNull()
-    expect(meta!.customMetadata?.author).toBe('Test User')
-    expect(meta!.customMetadata?.version).toBe('1.0')
+    expect(meta?.customMetadata?.author).toBe('Test User')
+    expect(meta?.customMetadata?.version).toBe('1.0')
 
     // 清理
     await store.delete(testKey)

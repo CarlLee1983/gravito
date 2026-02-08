@@ -9,7 +9,7 @@
  */
 
 import type { PlanetCore } from '@gravito/core'
-import { DeductInventoryRequest, type OrderStatusTransition } from '../../Domain/Models'
+import { DeductInventoryRequest } from '../../Domain/Models'
 
 export interface DeductInventoryResponse {
   success: boolean

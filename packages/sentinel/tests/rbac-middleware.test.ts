@@ -1,6 +1,5 @@
 import { describe, expect, it, mock } from 'bun:test'
 import { AuthorizationException } from '@gravito/core'
-import type { Authenticatable } from '../src/contracts/Authenticatable'
 import { permission } from '../src/middleware/permission'
 import { role } from '../src/middleware/role'
 

@@ -163,8 +163,6 @@ export class PoolManager {
         console.log(`[PoolManager] 任務 ${mission.id} 進入等待隊列`)
         return this.missionQueue.enqueue(mission)
       }
-
-      case 'queue':
       default:
         if (this.missionQueue.isFull) {
           throw new PoolExhaustedException(`Rocket Pool 與隊列均已滿，無法處理任務 ${mission.id}`)

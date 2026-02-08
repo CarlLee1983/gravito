@@ -1,4 +1,4 @@
-import { describe, expect, it, mock, spyOn } from 'bun:test'
+import { describe, expect, it, mock } from 'bun:test'
 import { RedisClusterClient } from '../src/RedisClusterClient'
 import { RedisManager } from '../src/RedisManager'
 
@@ -8,7 +8,7 @@ const mockCluster = {
   quit: mock(async () => 'OK'),
   disconnect: mock(() => {}),
   ping: mock(async () => 'PONG'),
-  on: mock((event: string, cb: any) => {}),
+  on: mock((_event: string, _cb: any) => {}),
   // Add other methods as needed
   get: mock(async () => 'value'),
   set: mock(async () => 'OK'),
@@ -19,7 +19,7 @@ const mockCluster = {
 mock.module('ioredis', () => {
   return {
     Cluster: class {
-      constructor(nodes: any[], options: any) {
+      constructor(_nodes: any[], _options: any) {
         // biome-ignore lint/correctness/noConstructorReturn: Mock
         return mockCluster
       }

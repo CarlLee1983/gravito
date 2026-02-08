@@ -27,7 +27,9 @@ export class InterceptorManager {
 
     let index = -1
     const dispatch = async (i: number): Promise<void> => {
-      if (i <= index) throw new Error('next() called multiple times')
+      if (i <= index) {
+        throw new Error('next() called multiple times')
+      }
       index = i
       const interceptor = i === this.interceptors.length ? null : this.interceptors[i]
 

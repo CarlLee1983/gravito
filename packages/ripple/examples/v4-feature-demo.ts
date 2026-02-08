@@ -68,7 +68,7 @@ const server = new RippleServer({
         }
 
         if (msg.data?.creditCard) {
-          msg.data.creditCard = '****-****-****-' + msg.data.creditCard.slice(-4)
+          msg.data.creditCard = `****-****-****-${msg.data.creditCard.slice(-4)}`
           console.log('[Server Interceptor] 🔒 Masked credit card')
         }
       }
@@ -76,7 +76,7 @@ const server = new RippleServer({
     },
 
     // 3. Rate Limiting Interceptor (Optional)
-    async (ctx, next) => {
+    async (_ctx, next) => {
       // You can add rate limiting logic here
       // For now, just pass through
       await next()
@@ -84,7 +84,7 @@ const server = new RippleServer({
   ],
 
   // Authorization callback
-  authorizer: async (channel, userId, socketId) => {
+  authorizer: async (channel, userId, _socketId) => {
     console.log(`[Authorizer] Checking access for channel: ${channel}`)
 
     if (channel.startsWith('private-')) {
@@ -181,7 +181,7 @@ setInterval(() => {
   server.to('orders').emit(
     'status-update',
     {
-      orderId: 'ORD-' + Math.floor(Math.random() * 1000),
+      orderId: `ORD-${Math.floor(Math.random() * 1000)}`,
       status: 'shipped',
     },
     { needAck: true } // Request acknowledgment

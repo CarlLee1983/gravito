@@ -14,7 +14,7 @@
  * - buildFFmpegArgs() rotate 合併已有 vf
  */
 
-import { beforeAll, describe, expect, it, jest, mock } from 'bun:test'
+import { beforeAll, describe, expect, it, mock } from 'bun:test'
 import { createMockRuntimeAdapter, createMockVideoAdapter } from './helpers/mocks'
 
 // Mock adapters 以避免實際執行 FFmpeg / ImageMagick
@@ -278,7 +278,9 @@ describe('VideoProcessor - buildFFmpegArgs() watermark + overlay', () => {
 
     // 應有兩個 -i 輸入（原始視頻 + watermark）
     const inputIndices = args.reduce<number[]>((acc, arg, i) => {
-      if (arg === '-i') acc.push(i)
+      if (arg === '-i') {
+        acc.push(i)
+      }
       return acc
     }, [])
     expect(inputIndices).toHaveLength(2)
@@ -579,7 +581,9 @@ describe('VideoProcessor - buildFFmpegArgs() rotate 合併已有 vf', () => {
 
     // 應只有一個 -vf，包含 scale 和 transpose
     const vfIndices = args.reduce<number[]>((acc, arg, i) => {
-      if (arg === '-vf') acc.push(i)
+      if (arg === '-vf') {
+        acc.push(i)
+      }
       return acc
     }, [])
     expect(vfIndices).toHaveLength(1)

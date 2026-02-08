@@ -5,6 +5,7 @@
  */
 
 import { Consumer, type QueueManager } from '@gravito/stream'
+import { trace } from '@opentelemetry/api'
 
 export interface ConsumerServiceOptions {
   queues: string[]
@@ -91,25 +92,55 @@ export class ConsumerService {
    * 設置事件監聽
    */
   private setupEventListeners(): void {
-    if (!this.consumer) return
+    if (!this.consumer) {
+      return
+    }
 
     // Job 開始執行
     this.consumer.on('started', (job: any) => {
+      const span = trace.getActiveSpan()
+      if (span) {
+        span.addEvent('consumer.job_started', {
+          'job.class': job.constructor.name,
+          'job.queue': job.queueName,
+        })
+      }
       this.logger.info(`[Consumer] ▶️  開始處理: ${job.constructor.name} (queue: ${job.queueName})`)
     })
 
     // Job 成功完成
     this.consumer.on('processed', (job: any, duration: number) => {
+      const span = trace.getActiveSpan()
+      if (span) {
+        span.addEvent('consumer.job_processed', {
+          'job.class': job.constructor.name,
+          'job.duration_ms': duration,
+        })
+      }
       this.logger.info(`[Consumer] ✅ 完成: ${job.constructor.name} (${duration}ms)`)
     })
 
     // Job 失敗但會重試
     this.consumer.on('retried', (job: any, attempt: number) => {
+      const span = trace.getActiveSpan()
+      if (span) {
+        span.addEvent('consumer.job_retried', {
+          'job.class': job.constructor.name,
+          'job.attempt': attempt,
+        })
+      }
       this.logger.warn(`[Consumer] 🔄 重試: ${job.constructor.name} (第 ${attempt} 次嘗試)`)
     })
 
     // Job 永久失敗（進入 DLQ）
     this.consumer.on('failed', (job: any, error: Error) => {
+      const span = trace.getActiveSpan()
+      if (span) {
+        span.recordException(error)
+        span.addEvent('consumer.job_failed', {
+          'job.class': job.constructor.name,
+        })
+      }
       this.logger.error(`[Consumer] 🔴 失敗: ${job.constructor.name}`, error)
     })
   }

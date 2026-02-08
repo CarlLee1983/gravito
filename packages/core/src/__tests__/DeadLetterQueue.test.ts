@@ -127,8 +127,8 @@ describe('Dead Letter Queue (DLQ)', () => {
 
       const entry = dlq.get(entryId)
       expect(entry).toBeDefined()
-      expect(entry!.id).toBe(entryId)
-      expect(entry!.eventName).toBe('test:event')
+      expect(entry?.id).toBe(entryId)
+      expect(entry?.eventName).toBe('test:event')
     })
 
     it('should delete DLQ entry', () => {
@@ -265,7 +265,7 @@ describe('Dead Letter Queue (DLQ)', () => {
       const entryId = dlq.add('test:event', {}, {}, new Error('Error'), 3, Date.now())
 
       const entryBefore = dlq.get(entryId)
-      expect(entryBefore!.lastRetriedAt).toBeUndefined()
+      expect(entryBefore?.lastRetriedAt).toBeUndefined()
 
       // Requeue
       hookManager.addAction('test:event', async () => {

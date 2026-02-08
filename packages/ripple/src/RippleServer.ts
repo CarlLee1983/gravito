@@ -26,12 +26,9 @@ import { DefaultConnectionTracker } from './tracking/ConnectionTracker'
 import { type SessionData, SessionManager } from './tracking/SessionManager'
 import type {
   ChannelAuthorizer,
-  ClientData,
-  ClientMessage,
   RippleConfig,
   RippleDriver,
   RippleInterceptor,
-  RippleWebSocket,
   ServerMessage,
   WebSocketHandlerConfig,
 } from './types'
@@ -381,12 +378,16 @@ export class RippleServer {
   private async handleBinaryMessage(ws: RippleSocket, message: Uint8Array): Promise<void> {
     const buffer = message
 
-    if (buffer.length < 4) return
+    if (buffer.length < 4) {
+      return
+    }
 
     // Read header length (4 bytes, little-endian)
     const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength)
     const headerLength = view.getInt32(0, true) // true = little-endian
-    if (buffer.length < 4 + headerLength) return
+    if (buffer.length < 4 + headerLength) {
+      return
+    }
 
     try {
       const headerBytes = buffer.subarray(4, 4 + headerLength)
@@ -423,7 +424,9 @@ export class RippleServer {
     excludeClientId?: string
   ): void {
     const subscribers = this.channels.getSubscribers(channel)
-    if (subscribers.length === 0) return
+    if (subscribers.length === 0) {
+      return
+    }
 
     const header = JSON.stringify({ type: 'binary', channel, event })
     const headerBuffer = Buffer.from(header)
@@ -434,7 +437,9 @@ export class RippleServer {
     Buffer.from(data).copy(totalBuffer, 4 + headerBuffer.length)
 
     for (const ws of subscribers) {
-      if (excludeClientId && ws.data.id === excludeClientId) continue
+      if (excludeClientId && ws.data.id === excludeClientId) {
+        continue
+      }
       ws.send(totalBuffer)
     }
   }
@@ -486,10 +491,6 @@ export class RippleServer {
     }
 
     this.ackManager.clearClient(ws.data.id)
-  }
-
-  private handleDrain(_ws: RippleSocket): void {
-    // No-op
   }
 
   private async handleSubscribe(
@@ -616,7 +617,9 @@ export class RippleServer {
     options?: { needAck?: boolean; timeout?: number }
   ): void {
     const subscribers = this.channels.getSubscribers(channel)
-    if (subscribers.length === 0) return
+    if (subscribers.length === 0) {
+      return
+    }
 
     const message: ServerMessage =
       event === 'presence'
@@ -631,7 +634,9 @@ export class RippleServer {
     const serialized = this.serializer.serializeForBroadcast(message)
 
     for (const ws of subscribers) {
-      if (excludeClientId && ws.data.id === excludeClientId) continue
+      if (excludeClientId && ws.data.id === excludeClientId) {
+        continue
+      }
 
       // Execute outgoing interceptors
       this.interceptors.execute(
@@ -795,7 +800,9 @@ export class RippleServer {
 
   async shutdown(): Promise<void> {
     this.logger.info('Shutting down RippleServer')
-    if (this.pingInterval) clearInterval(this.pingInterval)
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval)
+    }
     await this.driver.shutdown?.()
   }
 }

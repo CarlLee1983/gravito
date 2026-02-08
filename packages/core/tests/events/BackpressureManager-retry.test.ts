@@ -3,11 +3,7 @@
  */
 
 import { describe, expect, it } from 'bun:test'
-import {
-  type BackpressureConfig,
-  BackpressureManager,
-  BackpressureState,
-} from '../../src/events/BackpressureManager'
+import { type BackpressureConfig, BackpressureManager } from '../../src/events/BackpressureManager'
 
 describe('BackpressureManager Retry Strategy', () => {
   it('should support default dlq-only overflow retry strategy', () => {

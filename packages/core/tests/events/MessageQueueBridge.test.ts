@@ -9,15 +9,11 @@
  * - HookManager 擴展方法
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import type { EventBackend } from '../../src/events/EventBackend'
-import {
-  type EventStatus,
-  MessageQueueBridge,
-  type MessageQueueBridgeConfig,
-} from '../../src/events/MessageQueueBridge'
+import { MessageQueueBridge } from '../../src/events/MessageQueueBridge'
 import type { EventTask } from '../../src/events/types'
-import { type ActionCallback, HookManager } from '../../src/HookManager'
+import { HookManager } from '../../src/HookManager'
 import type { DeadLetterQueueManager } from '../../src/reliability/DeadLetterQueueManager'
 
 /**
@@ -34,7 +30,7 @@ class MockEventBackend implements EventBackend {
     this.enqueueCalls.push({ task })
   }
 
-  resetCircuitBreaker(hook: string): void {
+  resetCircuitBreaker(_hook: string): void {
     // Mock implementation
   }
 }
@@ -66,7 +62,7 @@ class MockDLQManager {
     return { id, event_name: 'test.event' }
   }
 
-  async requeue(id: string): Promise<void> {
+  async requeue(_id: string): Promise<void> {
     // Mock implementation
   }
 }
@@ -83,7 +79,7 @@ describe('MessageQueueBridge', () => {
     hookManager = new HookManager()
 
     // 註冊一個測試 listener
-    hookManager.addAction('test.event', async (args) => {
+    hookManager.addAction('test.event', async (_args) => {
       // Mock handler
     })
 

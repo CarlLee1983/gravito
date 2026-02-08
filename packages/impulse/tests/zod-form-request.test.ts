@@ -30,11 +30,15 @@ function createMockContext(data: unknown = {}) {
       },
     },
     get: (key: string) => {
-      if (key === '__parsedBody') return parsedBody
+      if (key === '__parsedBody') {
+        return parsedBody
+      }
       return null
     },
     set: (key: string, value: unknown) => {
-      if (key === '__parsedBody') parsedBody = value
+      if (key === '__parsedBody') {
+        parsedBody = value
+      }
     },
   } as any
 }

@@ -46,10 +46,10 @@ export async function setupPrometheusMetrics(
   config: PrometheusMetricsConfig = {}
 ): Promise<{ port: number; endpoint: string } | null> {
   const finalConfig = {
-    port: config.port ?? parseInt(process.env.PROMETHEUS_PORT || String(DEFAULTS.port)),
+    port: config.port ?? parseInt(process.env.PROMETHEUS_PORT || String(DEFAULTS.port), 10),
     prefix: config.prefix ?? process.env.PROMETHEUS_PREFIX ?? DEFAULTS.prefix,
     interval:
-      config.interval ?? parseInt(process.env.PROMETHEUS_INTERVAL || String(DEFAULTS.interval)),
+      config.interval ?? parseInt(process.env.PROMETHEUS_INTERVAL || String(DEFAULTS.interval), 10),
     defaultMetrics: config.defaultMetrics ?? process.env.PROMETHEUS_DEFAULT_METRICS !== 'false',
   }
 
