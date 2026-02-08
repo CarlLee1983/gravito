@@ -86,14 +86,12 @@ export interface BullMQDriverConfig {
  */
 export class BullMQDriver implements QueueDriver {
   private queue: BullQueueClient
-  private worker?: BullWorkerClient
   private prefix: string
   private debug: boolean
   private queueMap = new Map<string, BullQueueClient>()
 
   constructor(config: BullMQDriverConfig) {
     this.queue = config.queue
-    this.worker = config.worker
     this.prefix = config.prefix ?? 'gravito:'
     this.debug = config.debug ?? false
 
@@ -144,17 +142,6 @@ export class BullMQDriver implements QueueDriver {
   }
 
   /**
-   * Parse serialized job data.
-   */
-  private parseJobData(job: SerializedJob): any {
-    if (job.type === 'json' || !job.type) {
-      return JSON.parse(job.data)
-    }
-    // For 'class' and 'msgpack', we keep as-is (data is already serialized string)
-    return job.data
-  }
-
-  /**
    * Create Bull job data from SerializedJob.
    */
   private createBullJobData(job: SerializedJob): any {
@@ -173,28 +160,6 @@ export class BullMQDriver implements QueueDriver {
       error: job.error,
       failedAt: job.failedAt,
       priority: job.priority,
-    }
-  }
-
-  /**
-   * Reconstruct SerializedJob from Bull job data.
-   */
-  private createSerializedJob(bullJobData: any): SerializedJob {
-    return {
-      id: bullJobData.id,
-      type: bullJobData.type ?? 'json',
-      data: bullJobData.data,
-      className: bullJobData.className,
-      createdAt: bullJobData.createdAt,
-      delaySeconds: bullJobData.delaySeconds,
-      attempts: bullJobData.attempts,
-      maxAttempts: bullJobData.maxAttempts,
-      groupId: bullJobData.groupId,
-      retryAfterSeconds: bullJobData.retryAfterSeconds,
-      retryMultiplier: bullJobData.retryMultiplier,
-      error: bullJobData.error,
-      failedAt: bullJobData.failedAt,
-      priority: bullJobData.priority,
     }
   }
 
@@ -344,7 +309,7 @@ export class BullMQDriver implements QueueDriver {
   /**
    * Retrieves failed jobs from the Dead Letter Queue.
    */
-  async getFailed(queue: string, start = 0, end = -1): Promise<SerializedJob[]> {
+  async getFailed(queue: string, _start = 0, _end = -1): Promise<SerializedJob[]> {
     try {
       this.getQueue(queue)
 
@@ -361,7 +326,7 @@ export class BullMQDriver implements QueueDriver {
   /**
    * Retries failed jobs.
    */
-  async retryFailed(queue: string, count = 1): Promise<number> {
+  async retryFailed(queue: string, _count = 1): Promise<number> {
     try {
       this.getQueue(queue)
 
@@ -393,7 +358,7 @@ export class BullMQDriver implements QueueDriver {
   /**
    * Creates a new queue/topic.
    */
-  async createTopic(topic: string, _options?: TopicOptions): Promise<void> {
+  async createTopic(_topic: string, _options?: TopicOptions): Promise<void> {
     // Bull Queue creates queues on-the-fly when adding jobs
     // No explicit creation needed
   }
@@ -440,7 +405,7 @@ export class BullMQDriver implements QueueDriver {
   /**
    * Pops multiple jobs in batch.
    */
-  async popMany(queue: string, count: number): Promise<SerializedJob[]> {
+  async popMany(_queue: string, _count: number): Promise<SerializedJob[]> {
     // Bull Queue is event-driven, not pull-based
     // Returning empty for now; real implementation uses Workers
     return []
@@ -461,7 +426,7 @@ export class BullMQDriver implements QueueDriver {
       metrics?: Record<string, any>
       [key: string]: any
     },
-    prefix?: string
+    _prefix?: string
   ): Promise<void> {
     // Placeholder for heartbeat reporting
     if (this.debug) {
@@ -492,7 +457,7 @@ export class BullMQDriver implements QueueDriver {
    * Checks rate limit for a queue.
    */
   async checkRateLimit(
-    queue: string,
+    _queue: string,
     _config: { max: number; duration: number }
   ): Promise<boolean> {
     // Placeholder; would require Redis INCR/EXPIRE logic
