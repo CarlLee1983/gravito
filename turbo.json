@@ -3,7 +3,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**", "package.json", "tsconfig.json"],
+      "inputs": ["src/**", "package.json", "tsconfig.json", "biome.json"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "test": {
@@ -53,7 +53,8 @@
     },
     "lint": {
       "inputs": ["src/**", "tests/**", "package.json", "biome.json"],
-      "outputs": []
+      "outputs": [],
+      "cache": true
     },
     "dev": {
       "cache": false,
