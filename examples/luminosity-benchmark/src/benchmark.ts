@@ -41,7 +41,11 @@ const sitemap = OrbitSitemap.static({
         const stmt = db.prepare('SELECT slug, updated_at, priority FROM products')
 
         // Use iterator to stream rows one by one (low memory)
-        for (const row of stmt.iterate()) {
+        for (const row of stmt.iterate() as Iterable<{
+          slug: string
+          updated_at: string
+          priority: number
+        }>) {
           processedCount++
 
           // Track peak memory
