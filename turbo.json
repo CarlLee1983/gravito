@@ -32,7 +32,14 @@
     "my-gravito-static-site#build": {
       "cache": true,
       "outputs": ["dist/**", "dist-static/**"],
-      "inputs": ["src/**", "package.json", "tsconfig.json", "vite.config.ts", "build-static.ts", "biome.json"],
+      "inputs": [
+        "src/**",
+        "package.json",
+        "tsconfig.json",
+        "vite.config.ts",
+        "build-static.ts",
+        "biome.json"
+      ],
       "dependsOn": ["^build"]
     },
     "test": {

@@ -2,11 +2,7 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "allowJs": true,
@@ -19,51 +15,21 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
-    "types": [
-      "bun-types",
-      "vite/client"
-    ],
+    "types": ["bun-types", "vite/client"],
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@gravito/core": [
-        "../../packages/core/src/index.ts"
-      ],
-      "@gravito/ion": [
-        "../../packages/ion/src/index.ts"
-      ],
-      "@gravito/stasis": [
-        "../../packages/stasis/src/index.ts"
-      ],
-      "@gravito/prism": [
-        "../../packages/prism/src/index.ts"
-      ],
-      "@gravito/constellation": [
-        "../../packages/constellation/src/index.ts"
-      ],
-      "@gravito/photon": [
-        "../../packages/photon/src/index.ts"
-      ],
-      "@gravito/photon/bun": [
-        "../../packages/photon/src/bun.ts"
-      ],
-      "@gravito/plasma": [
-        "../../packages/plasma/src/index.ts"
-      ],
-      "@gravito/atlas": [
-        "../../packages/atlas/src/index.ts"
-      ]
+      "@/*": ["./src/*"],
+      "@gravito/core": ["../../packages/core/src/index.ts"],
+      "@gravito/ion": ["../../packages/ion/src/index.ts"],
+      "@gravito/stasis": ["../../packages/stasis/src/index.ts"],
+      "@gravito/prism": ["../../packages/prism/src/index.ts"],
+      "@gravito/constellation": ["../../packages/constellation/src/index.ts"],
+      "@gravito/photon": ["../../packages/photon/src/index.ts"],
+      "@gravito/photon/bun": ["../../packages/photon/src/bun.ts"],
+      "@gravito/plasma": ["../../packages/plasma/src/index.ts"],
+      "@gravito/atlas": ["../../packages/atlas/src/index.ts"]
     }
   },
-  "include": [
-    "src/**/*",
-    "build-static.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "dist-static"
-  ]
+  "include": ["src/**/*", "build-static.ts"],
+  "exclude": ["node_modules", "dist", "dist-static"]
 }
