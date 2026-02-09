@@ -7,9 +7,11 @@
 import type { CacheService, Container } from '@gravito/core'
 import { ServiceProvider } from '@gravito/core'
 import { Redis } from '@gravito/plasma'
+import { type ShardingConfig, ShardingManager } from './Infrastructure/Database/ShardingManager'
 import { setupCacheInvalidation } from './Infrastructure/Handlers/CacheInvalidationHandler'
 import { MockOrderRepository } from './Infrastructure/Repositories/MockOrderRepository'
 import { MockProductRepository } from './Infrastructure/Repositories/MockProductRepository'
+import { ShardedOrderRepository } from './Infrastructure/Repositories/ShardedOrderRepository'
 import { CacheWarmupService } from './Infrastructure/Services/CacheWarmupService'
 import { HotnessTracker } from './Infrastructure/Services/HotnessTracker'
 import { RedisCacheService } from './Infrastructure/Services/RedisCacheService'
@@ -40,7 +42,40 @@ export class FlashSaleServiceProvider extends ServiceProvider {
       return new MockProductRepository(core)
     })
 
+    // 註冊 ShardingManager（如果啟用分片）
+    const shardingEnabled = core.config.get('flash-sale.sharding.enabled', false)
+    if (shardingEnabled) {
+      container.singleton('sharding.manager', () => {
+        try {
+          const shardingConfig = core.config.get('sharding') as ShardingConfig
+          if (!shardingConfig) {
+            core.logger.warn('[Flash-Sale] Sharding config not found, will use mock repository')
+            return undefined
+          }
+
+          const manager = new ShardingManager(shardingConfig, core.logger)
+          core.logger.info('[Flash-Sale] ✅ ShardingManager 已初始化，共 8 個分片')
+          return manager
+        } catch (error) {
+          core.logger.error(`[Flash-Sale] ShardingManager 初始化失敗: ${String(error)}`)
+          return undefined
+        }
+      })
+    }
+
+    // 註冊 Order Repository
     container.singleton('order.repository', () => {
+      const shardingEnabled = core.config.get('flash-sale.sharding.enabled', false)
+
+      if (shardingEnabled) {
+        const shardingManager = container.make<ShardingManager | undefined>('sharding.manager')
+        if (shardingManager) {
+          core.logger.debug('[Flash-Sale] Using ShardedOrderRepository')
+          return new ShardedOrderRepository(shardingManager, core.logger)
+        }
+      }
+
+      // 回退到 MockOrderRepository
       return new MockOrderRepository(core)
     })
 
