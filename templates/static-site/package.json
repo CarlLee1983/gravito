@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@gravito/core": "workspace:*",
+    "@gravito/atlas": "workspace:*",
     "@gravito/stasis": "workspace:*",
     "@gravito/prism": "workspace:*",
     "@gravito/ion": "workspace:*",
