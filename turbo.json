@@ -8,12 +8,32 @@
     },
     "create-gravito-app#build": {
       "cache": false,
-      "outputs": []
+      "outputs": [],
+      "dependsOn": []
+    },
+    "my-gravito-app#build": {
+      "cache": true,
+      "outputs": ["dist/**"],
+      "inputs": ["src/**", "package.json", "tsconfig.json", "biome.json"],
+      "dependsOn": ["^build"]
     },
     "my-gravito-inertia-app#build": {
       "cache": true,
       "outputs": ["dist/**", "static/**"],
-      "inputs": ["src/**", "package.json", "tsconfig.json", "vite.config.ts", "biome.json"]
+      "inputs": ["src/**", "package.json", "tsconfig.json", "vite.config.ts", "biome.json"],
+      "dependsOn": ["^build"]
+    },
+    "my-gravito-inertia-vue-app#build": {
+      "cache": true,
+      "outputs": ["dist/**", "static/**"],
+      "inputs": ["src/**", "package.json", "tsconfig.json", "vite.config.ts", "biome.json"],
+      "dependsOn": ["^build"]
+    },
+    "my-gravito-static-site#build": {
+      "cache": true,
+      "outputs": ["dist/**", "dist-static/**"],
+      "inputs": ["src/**", "package.json", "tsconfig.json", "vite.config.ts", "build-static.ts", "biome.json"],
+      "dependsOn": ["^build"]
     },
     "test": {
       "dependsOn": [],
