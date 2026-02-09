@@ -4,8 +4,7 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["src/**", "package.json", "tsconfig.json", "biome.json"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
-      "outputMode": "partial"
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "test": {
       "dependsOn": [],
