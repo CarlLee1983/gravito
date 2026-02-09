@@ -6,6 +6,10 @@
       "inputs": ["src/**", "package.json", "tsconfig.json", "biome.json"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**", "static/**"]
     },
+    "create-gravito-app#build": {
+      "cache": false,
+      "outputs": []
+    },
     "test": {
       "dependsOn": [],
       "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json", "bunfig.toml"],
