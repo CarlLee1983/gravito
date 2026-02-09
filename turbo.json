@@ -10,6 +10,11 @@
       "cache": false,
       "outputs": []
     },
+    "my-gravito-inertia-app#build": {
+      "cache": true,
+      "outputs": ["dist/**", "static/**"],
+      "inputs": ["src/**", "package.json", "tsconfig.json", "vite.config.ts", "biome.json"]
+    },
     "test": {
       "dependsOn": [],
       "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json", "bunfig.toml"],
