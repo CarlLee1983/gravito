@@ -7,6 +7,11 @@
 import type { CacheService, Container } from '@gravito/core'
 import { ServiceProvider } from '@gravito/core'
 import { Redis } from '@gravito/plasma'
+import { FailoverManager } from './Infrastructure/Cache/FailoverManager'
+import {
+  MultiRegionCacheService,
+  type RegionConfig,
+} from './Infrastructure/Cache/MultiRegionCacheService'
 import { type ShardingConfig, ShardingManager } from './Infrastructure/Database/ShardingManager'
 import { setupCacheInvalidation } from './Infrastructure/Handlers/CacheInvalidationHandler'
 import { MockOrderRepository } from './Infrastructure/Repositories/MockOrderRepository'
@@ -79,10 +84,54 @@ export class FlashSaleServiceProvider extends ServiceProvider {
       return new MockOrderRepository(core)
     })
 
-    // 註冊 CacheService（使用分層快取 = L1 Memory + L2 Redis）
+    // 註冊區域特定的 TieredCacheService（用於多區域部署）
+    container.singleton('region.caches', () => {
+      const regionCaches = new Map<string, CacheService>()
+
+      try {
+        const redisConfig = core.config.get('redis') as any
+        if (!redisConfig) {
+          return regionCaches
+        }
+
+        Redis.configure(redisConfig)
+
+        // 為每個區域創建 TieredCacheService
+        const regionConfigs = core.config.get('regions') as RegionConfig[] | undefined
+        if (regionConfigs && regionConfigs.length > 0) {
+          const metricsRegistry = (core.container.make('metrics.registry') as any) || {
+            histogram: () => ({ observe: () => {} }),
+            counter: () => ({ inc: () => {} }),
+            gauge: () => ({ set: () => {} }),
+          }
+
+          for (const regionConfig of regionConfigs) {
+            try {
+              const redisConnection = Redis.connection(regionConfig.connectionName)
+              if (redisConnection) {
+                const l2Cache = new RedisCacheService(redisConnection, regionConfig.prefix)
+                const tieredCache = new TieredCacheService(l2Cache, metricsRegistry, core.logger)
+                regionCaches.set(regionConfig.name, tieredCache)
+
+                core.logger.debug(`[Flash-Sale] Region cache initialized: ${regionConfig.name}`)
+              }
+            } catch (error) {
+              core.logger.warn(
+                `[Flash-Sale] Failed to initialize cache for region ${regionConfig.name}: ${String(error)}`
+              )
+            }
+          }
+        }
+      } catch (error) {
+        core.logger.warn(`[Flash-Sale] Failed to initialize region caches: ${String(error)}`)
+      }
+
+      return regionCaches
+    })
+
+    // 註冊 CacheService（支持單區域和多區域部署）
     container.singleton('cache.service', () => {
       try {
-        // 配置 Redis（從應用配置中獲取）
         const redisConfig = core.config.get('redis') as any
         core.logger.debug(`[Flash-Sale] Redis config available: ${!!redisConfig}`)
 
@@ -96,7 +145,28 @@ export class FlashSaleServiceProvider extends ServiceProvider {
           return undefined
         }
 
-        // 獲取 Redis 連接（使用 @gravito/plasma 的 Redis 門面）
+        // 檢查是否啟用多區域部署
+        const multiRegionEnabled = core.config.get('flash-sale.multi-region.enabled', false)
+        const regionConfigs = core.config.get('regions') as RegionConfig[] | undefined
+
+        if (multiRegionEnabled && regionConfigs && regionConfigs.length > 1) {
+          // 多區域部署
+          const regionCaches = core.container.make<Map<string, CacheService>>('region.caches')
+
+          if (regionCaches.size > 0) {
+            // 創建多區域快取服務（包含內置的 FailoverManager）
+            const multiRegionCache = new MultiRegionCacheService(
+              regionConfigs,
+              regionCaches,
+              core.logger
+            )
+
+            core.logger.info('[Flash-Sale] ✅ MultiRegionCacheService 已初始化（4 個區域）')
+            return multiRegionCache as unknown as CacheService
+          }
+        }
+
+        // 單區域部署（默認）
         const redisConnection = Redis.connection('cache')
 
         if (redisConnection) {
@@ -119,7 +189,7 @@ export class FlashSaleServiceProvider extends ServiceProvider {
         core.logger.warn('[Flash-Sale] Redis CacheService 未可用，將使用 Mock Repository')
         return undefined
       } catch (error) {
-        core.logger.error(`[Flash-Sale] 初始化 TieredCacheService 失敗: ${String(error)}`)
+        core.logger.error(`[Flash-Sale] 初始化 CacheService 失敗: ${String(error)}`)
         return undefined
       }
     })
