@@ -3,11 +3,16 @@
  *
  * 支持 Redis 快取（5 分鐘 TTL）
  * 使用 remember 模式防止快取穿透
+ * 集成熱度追蹤以支援智能快取預熱
  */
 
 import type { Product } from '../../Domain/Models'
 import type { CacheService } from '../../Infrastructure/Services/CacheService'
 import type { IProductRepository } from '../Contracts/IProductRepository'
+
+interface HotnessTracker {
+  recordAccess(productId: string): Promise<void>
+}
 
 /**
  * GetProduct Use Case
@@ -18,7 +23,8 @@ import type { IProductRepository } from '../Contracts/IProductRepository'
 export class GetProduct {
   constructor(
     private repository: IProductRepository,
-    private cache?: CacheService
+    private cache?: CacheService,
+    private hotnessTracker?: HotnessTracker
   ) {}
 
   /**
@@ -35,6 +41,13 @@ export class GetProduct {
     // 參數驗證
     if (!productId || !productId.trim()) {
       throw new Error('Product ID is required')
+    }
+
+    // 記錄訪問熱度（異步，不阻塞主流程）
+    if (this.hotnessTracker) {
+      this.hotnessTracker.recordAccess(productId).catch(() => {
+        // 靜默失敗，不影響主流程
+      })
     }
 
     // 嘗試從快取讀取

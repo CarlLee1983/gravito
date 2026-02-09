@@ -76,9 +76,10 @@ export class ProductController {
 
       const productRepository = this.core.container.make<IProductRepository>('product.repository')
       const cacheService = this.core.container.make<CacheService | undefined>('cache.service')
+      const hotnessTracker = this.core.container.make<any>('hotness.tracker')
 
-      // 使用新的 GetProduct Use Case（支持快取）
-      const useCase = new GetProduct(productRepository, cacheService)
+      // 使用新的 GetProduct Use Case（支持快取和熱度追蹤）
+      const useCase = new GetProduct(productRepository, cacheService, hotnessTracker)
       const product = await useCase.execute(id)
 
       if (!product) {

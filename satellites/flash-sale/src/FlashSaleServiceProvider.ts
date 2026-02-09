@@ -10,7 +10,10 @@ import { Redis } from '@gravito/plasma'
 import { setupCacheInvalidation } from './Infrastructure/Handlers/CacheInvalidationHandler'
 import { MockOrderRepository } from './Infrastructure/Repositories/MockOrderRepository'
 import { MockProductRepository } from './Infrastructure/Repositories/MockProductRepository'
+import { CacheWarmupService } from './Infrastructure/Services/CacheWarmupService'
+import { HotnessTracker } from './Infrastructure/Services/HotnessTracker'
 import { RedisCacheService } from './Infrastructure/Services/RedisCacheService'
+import { TieredCacheService } from './Infrastructure/Services/TieredCacheService'
 import { AdminController } from './Interface/Http/Controllers/AdminController'
 import { OrderController } from './Interface/Http/Controllers/OrderController'
 import { ProductController } from './Interface/Http/Controllers/ProductController'
@@ -41,7 +44,7 @@ export class FlashSaleServiceProvider extends ServiceProvider {
       return new MockOrderRepository(core)
     })
 
-    // 註冊 CacheService（使用真實 Redis）
+    // 註冊 CacheService（使用分層快取 = L1 Memory + L2 Redis）
     container.singleton('cache.service', () => {
       try {
         // 配置 Redis（從應用配置中獲取）
@@ -62,15 +65,26 @@ export class FlashSaleServiceProvider extends ServiceProvider {
         const redisConnection = Redis.connection('cache')
 
         if (redisConnection) {
-          core.logger.info('[Flash-Sale] ✅ Redis CacheService 已初始化')
-          return new RedisCacheService(redisConnection, 'flash-sale:')
+          // 創建 L2 Redis 快取
+          const l2Cache = new RedisCacheService(redisConnection, 'flash-sale:')
+
+          // 創建分層快取（L1 Memory + L2 Redis）
+          const metricsRegistry = (core.container.make('metrics.registry') as any) || {
+            histogram: () => ({ observe: () => {} }),
+            counter: () => ({ inc: () => {} }),
+            gauge: () => ({ set: () => {} }),
+          }
+          const tieredCache = new TieredCacheService(l2Cache, metricsRegistry, core.logger)
+
+          core.logger.info('[Flash-Sale] ✅ TieredCacheService 已初始化（L1 Memory + L2 Redis）')
+          return tieredCache
         }
 
         // 如果 Redis 未可用，返回 undefined（降級到 Mock）
         core.logger.warn('[Flash-Sale] Redis CacheService 未可用，將使用 Mock Repository')
         return undefined
       } catch (error) {
-        core.logger.error(`[Flash-Sale] 初始化 RedisCacheService 失敗: ${String(error)}`)
+        core.logger.error(`[Flash-Sale] 初始化 TieredCacheService 失敗: ${String(error)}`)
         return undefined
       }
     })
@@ -98,6 +112,57 @@ export class FlashSaleServiceProvider extends ServiceProvider {
       setupCacheInvalidation(core, cacheService).catch((error) => {
         core.logger.error(`[Flash-Sale] Failed to setup cache invalidation: ${String(error)}`)
       })
+    }
+
+    // 註冊 HotnessTracker（熱度追蹤）
+    try {
+      const redisConnection = Redis.connection('cache')
+      if (redisConnection) {
+        const hotnessTracker = new HotnessTracker(redisConnection, core.logger)
+        core.container.singleton('hotness.tracker', () => hotnessTracker)
+        core.logger.debug('[Flash-Sale] ✅ HotnessTracker 已初始化')
+      }
+    } catch (error) {
+      core.logger.warn(`[Flash-Sale] HotnessTracker 初始化失敗: ${String(error)}`)
+    }
+
+    // 註冊並啟動 CacheWarmupService（快取預熱）
+    if (cacheService) {
+      try {
+        const productRepository = core.container.make('product.repository') as any
+        const hotnessTracker = core.container.make<HotnessTracker | undefined>('hotness.tracker')
+        const metricsRegistry = core.container.make('metrics.registry') as any
+
+        if (productRepository && hotnessTracker) {
+          // 創建 Dummy Metrics 如果不可用
+          const metrics = metricsRegistry || {
+            histogram: () => ({ observe: () => {} }),
+            counter: () => ({ inc: () => {} }),
+          }
+
+          const warmupService = new CacheWarmupService(
+            hotnessTracker,
+            productRepository,
+            cacheService,
+            core.logger,
+            metrics
+          )
+
+          core.container.singleton('cache.warmup', () => warmupService)
+
+          // 非阻塞方式啟動預熱
+          warmupService.warmupOnStartup().catch((error) => {
+            core.logger.error(`[Flash-Sale] 啟動預熱失敗: ${String(error)}`)
+          })
+
+          // 啟動定期刷新（每 5 分鐘）
+          warmupService.startPeriodicRefresh(300)
+
+          core.logger.debug('[Flash-Sale] ✅ CacheWarmupService 已初始化並啟動')
+        }
+      } catch (error) {
+        core.logger.warn(`[Flash-Sale] CacheWarmupService 初始化失敗: ${String(error)}`)
+      }
     }
 
     // 註冊路由 - 使用控制器類 + 方法名稱
