@@ -99,7 +99,7 @@ Markdown 渲染預設開啟了 HTML 轉義。
 1.  **Search Index (Completed)**：在啟動時建立簡易的全文索引 (In-Memory Search)，支援 `search(query)` API。
 
 ### 長期 (v2.0)
-1. **Git Backend (Research Completed)**：支援直接從 GitHub/GitLab API 讀取內容，實現無頭 CMS (Headless CMS) 架構。詳細方案請參閱 [技術研究報告](../research/monolith-git-backend.md)。
+1. **Git Backend (Research Completed)**：支援直接從 GitHub/GitLab API 讀取內容，實現無頭 CMS (Headless CMS) 架構。詳細方案請參閱 [技術研究報告](../research/content-management/monolith-git-backend.md)。
 
 ---
 *Created by Gravito Architect.*
