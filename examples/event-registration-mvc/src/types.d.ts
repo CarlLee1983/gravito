@@ -1,3 +1,5 @@
+import type { GravitoContext } from '@gravito/core'
+
 declare module '@gravito/core' {
   interface GravitoContext {
     inertia?: any
