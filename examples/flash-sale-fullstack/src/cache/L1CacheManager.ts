@@ -11,6 +11,8 @@ export interface CacheEntry<T> {
   value: T
   expiresAt: number
   hits: number
+  version: number
+  lastModified: number
 }
 
 export interface L1CacheStats {
@@ -95,7 +97,7 @@ export class L1CacheManager<T = any> {
   /**
    * 設置快取條目
    */
-  set(key: string, value: T, ttlSeconds = 300): void {
+  set(key: string, value: T, ttlSeconds = 300, version?: number): void {
     // 計算大小
     const size = this.estimateSize(value)
 
@@ -115,6 +117,8 @@ export class L1CacheManager<T = any> {
       value,
       expiresAt: Date.now() + ttlSeconds * 1000,
       hits: 0,
+      version: version ?? 1,
+      lastModified: Date.now(),
     }
 
     this.cache.set(key, entry)
@@ -172,6 +176,96 @@ export class L1CacheManager<T = any> {
         console.error(`[L1Cache] L2 失效失敗 (${key}):`, error)
       }
     }
+  }
+
+  /**
+   * 清理過期條目
+   * @returns 清理的條目數量
+   */
+  cleanup(): number {
+    const now = Date.now()
+    let cleaned = 0
+
+    for (const [key, entry] of this.cache.entries()) {
+      if (entry.expiresAt < now) {
+        this.currentSize -= this.estimateSize(entry.value)
+        this.cache.delete(key)
+        cleaned++
+      }
+    }
+
+    return cleaned
+  }
+
+  /**
+   * 檢查 L1 與 L2 的一致性
+   * @param keys 要檢查的鍵列表
+   * @param l2Cache L2 快取實例
+   * @returns 不一致的鍵列表
+   */
+  async checkConsistency(keys: string[], l2Cache?: any): Promise<string[]> {
+    const inconsistent: string[] = []
+
+    if (!l2Cache) {
+      return inconsistent
+    }
+
+    for (const key of keys) {
+      const l1Entry = this.cache.get(key)
+      if (!l1Entry) continue
+
+      try {
+        const l2Data = await l2Cache.get(key)
+        if (!l2Data) continue
+
+        const l2Entry = typeof l2Data === 'string' ? JSON.parse(l2Data) : l2Data
+
+        // 比較版本號
+        if (l1Entry.version !== (l2Entry.version ?? 1)) {
+          inconsistent.push(key)
+        }
+      } catch (error) {
+        console.error(`[L1Cache] 檢查一致性失敗 (${key}):`, error)
+      }
+    }
+
+    return inconsistent
+  }
+
+  /**
+   * 修復不一致的快取條目
+   * @param keys 需要修復的鍵列表
+   * @param l2Cache L2 快取實例
+   * @returns 成功修復的數量
+   */
+  async repairInconsistency(keys: string[], l2Cache?: any): Promise<number> {
+    let repaired = 0
+
+    if (!l2Cache) {
+      return repaired
+    }
+
+    for (const key of keys) {
+      try {
+        const l2Data = await l2Cache.get(key)
+        if (!l2Data) {
+          // L2 也沒有，從 L1 刪除
+          this.delete(key)
+          repaired++
+          continue
+        }
+
+        const l2Entry = typeof l2Data === 'string' ? JSON.parse(l2Data) : l2Data
+
+        // 使用 L2 的數據更新 L1
+        await this.set(key, l2Entry.value ?? l2Entry, undefined, l2Entry.version ?? 1)
+        repaired++
+      } catch (error) {
+        console.error(`[L1Cache] 修復失敗 (${key}):`, error)
+      }
+    }
+
+    return repaired
   }
 
   /**
