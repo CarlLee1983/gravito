@@ -9,6 +9,7 @@ import { FlashSaleServiceProvider } from '@gravito/satellite-flash-sale'
 import { InventoryLockServiceProvider } from '@gravito/satellite-inventory-lock'
 import { PaymentServiceProvider } from '@gravito/satellite-payment'
 import type { QueueManager } from '@gravito/stream'
+import { DynamicPoolManager } from './database/DynamicPoolManager'
 import { GravitoConfig } from './gravito.config'
 import { setupOrderQueueIntegration } from './integrations/order-queue-handler'
 import { setupPaymentQueueIntegration } from './integrations/payment-queue-handler'
@@ -18,6 +19,7 @@ import { initializeTracing } from './tracing/setup'
 
 let globalApp: Application | null = null
 let globalQueueManager: QueueManager | null = null
+let globalPoolManager: DynamicPoolManager | null = null
 
 /**
  * 取得全局 Core 實例（供 Job 和其他異步代碼使用）
@@ -82,6 +84,21 @@ async function bootstrap(): Promise<void> {
   // 保存全局應用實例
   globalApp = app
 
+  // P0.3：初始化動態連接池管理器
+  globalPoolManager = new DynamicPoolManager(
+    {
+      minPoolSize: 2,
+      maxPoolSize: 50,
+      checkInterval: 30000,
+      changeThreshold: 60000,
+      expandThreshold: 0.8,
+      shrinkThreshold: 0.2,
+    },
+    app.core.logger
+  )
+  globalPoolManager.startMonitoring(app.core)
+  app.core.logger.info('[PoolManager] 動態連接池已初始化')
+
   // 設置 Satellites 與隊列系統的整合
   setupOrderQueueIntegration(app.core)
   setupPaymentQueueIntegration(app.core)
@@ -110,12 +127,20 @@ async function bootstrap(): Promise<void> {
   // 註冊 shutdown hook - 確保 OTel Spans 被正確 flush
   process.on('SIGTERM', async () => {
     app.core.logger.info('SIGTERM received, shutting down gracefully...')
+    // 停止動態連接池監控
+    if (globalPoolManager) {
+      globalPoolManager.stopMonitoring()
+    }
     await shutdownOpenTelemetry()
     process.exit(0)
   })
 
   process.on('SIGINT', async () => {
     app.core.logger.info('SIGINT received, shutting down gracefully...')
+    // 停止動態連接池監控
+    if (globalPoolManager) {
+      globalPoolManager.stopMonitoring()
+    }
     await shutdownOpenTelemetry()
     process.exit(0)
   })
