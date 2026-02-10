@@ -1,0 +1,260 @@
+groups:
+  - name: flash_sale_performance
+    interval: 30s
+    rules:
+      # ═══════════════════════════════════════════════════════════════
+      # 延遲告警（P0 優先級）
+      # ═══════════════════════════════════════════════════════════════
+
+      - alert: HighP95Latency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 0.02
+        for: 5m
+        labels:
+          severity: warning
+          service: flash-sale
+        annotations:
+          summary: "P95 延遲超過 20ms"
+          description: "服務 {{ $labels.service }} 的 P95 延遲為 {{ $value | humanizeDuration }}"
+          dashboard: "http://localhost:3001/d/flash-sale-performance"
+
+      - alert: VeryHighP95Latency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          service: flash-sale
+        annotations:
+          summary: "P95 延遲超過 50ms（嚴重）"
+          description: "服務 {{ $labels.service }} 的 P95 延遲為 {{ $value | humanizeDuration }}，請立即調查"
+          dashboard: "http://localhost:3001/d/flash-sale-performance"
+
+      - alert: HighP99Latency
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: flash-sale
+        annotations:
+          summary: "P99 延遲超過 50ms"
+          description: "服務 {{ $labels.service }} 的 P99 延遲為 {{ $value | humanizeDuration }}"
+
+      # ═══════════════════════════════════════════════════════════════
+      # 錯誤率告警（P0 優先級）
+      # ═══════════════════════════════════════════════════════════════
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.001
+        for: 5m
+        labels:
+          severity: warning
+          service: flash-sale
+        annotations:
+          summary: "HTTP 錯誤率超過 0.1%"
+          description: "{{ $labels.service }} 的 5xx 錯誤率為 {{ $value | humanizePercentage }}"
+
+      - alert: CriticalErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: critical
+          service: flash-sale
+        annotations:
+          summary: "HTTP 錯誤率超過 1%（嚴重）"
+          description: "{{ $labels.service }} 的 5xx 錯誤率為 {{ $value | humanizePercentage }}，請立即調查"
+
+      - alert: HighClientErrorRate
+        expr: rate(http_requests_total{status=~"4.."}[5m]) > 0.05
+        for: 10m
+        labels:
+          severity: info
+          service: flash-sale
+        annotations:
+          summary: "客户端錯誤率超過 5%"
+          description: "{{ $labels.service }} 的 4xx 錯誤率為 {{ $value | humanizePercentage }}"
+
+      # ═══════════════════════════════════════════════════════════════
+      # QPS 和流量告警
+      # ═══════════════════════════════════════════════════════════════
+
+      - alert: LowTraffic
+        expr: rate(http_requests_total[5m]) < 0.1
+        for: 5m
+        labels:
+          severity: info
+          service: flash-sale
+        annotations:
+          summary: "流量異常低"
+          description: "{{ $labels.service }} 的 QPS 為 {{ $value | humanize }}/s，可能存在問題"
+
+      - alert: VeryHighTraffic
+        expr: rate(http_requests_total[5m]) > 10000
+        for: 1m
+        labels:
+          severity: warning
+          service: flash-sale
+        annotations:
+          summary: "流量異常高"
+          description: "{{ $labels.service }} 的 QPS 為 {{ $value | humanize }}/s，接近容量限制"
+
+      # ═══════════════════════════════════════════════════════════════
+      # 業務層告警（搶購系統特定）
+      # ═══════════════════════════════════════════════════════════════
+
+      - alert: JobQueueBacklog
+        expr: queue_jobs_pending > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: flash-sale
+        annotations:
+          summary: "Job 隊列待處理任務過多"
+          description: "{{ $labels.queue }} 隊列中有 {{ $value }} 個待處理任務"
+
+      - alert: HighJobFailureRate
+        expr: rate(queue_jobs_failed_total[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          service: flash-sale
+        annotations:
+          summary: "Job 失敗率超過 1%"
+          description: "{{ $labels.queue }} 隊列的失敗率為 {{ $value | humanizePercentage }}"
+
+      # ═══════════════════════════════════════════════════════════════
+      # 資料庫告警
+      # ═══════════════════════════════════════════════════════════════
+
+      - alert: HighDatabaseConnections
+        expr: db_pool_active_connections > 8
+        for: 5m
+        labels:
+          severity: warning
+          service: flash-sale
+        annotations:
+          summary: "活躍數據庫連接數過高"
+          description: "{{ $labels.database }} 有 {{ $value }} 個活躍連接（池大小：10）"
+
+      - alert: DatabaseConnectionExhausted
+        expr: db_pool_active_connections >= 10
+        for: 1m
+        labels:
+          severity: critical
+          service: flash-sale
+        annotations:
+          summary: "數據庫連接池已滿"
+          description: "{{ $labels.database }} 的連接池已滿，可能導致請求阻塞"
+
+      - alert: HighDatabaseQueryTime
+        expr: rate(db_query_duration_seconds_sum[5m]) / rate(db_query_duration_seconds_count[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: flash-sale
+        annotations:
+          summary: "數據庫查詢平均時間超過 100ms"
+          description: "{{ $labels.database }} 的平均查詢時間為 {{ $value | humanizeDuration }}"
+
+      # ═══════════════════════════════════════════════════════════════
+      # Redis 快取告警
+      # ═══════════════════════════════════════════════════════════════
+
+      - alert: LowCacheHitRate
+        expr: rate(cache_hits_total[5m]) / (rate(cache_hits_total[5m]) + rate(cache_misses_total[5m])) < 0.8
+        for: 10m
+        labels:
+          severity: warning
+          service: flash-sale
+        annotations:
+          summary: "快取命中率低於 80%"
+          description: "{{ $labels.cache }} 的命中率為 {{ $value | humanizePercentage }}"
+
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: flash-sale
+        annotations:
+          summary: "Redis 內存使用超過 90%"
+          description: "{{ $labels.redis }} 的內存使用為 {{ $value | humanizePercentage }}"
+
+      # ═══════════════════════════════════════════════════════════════
+      # 應用層告警
+      # ═══════════════════════════════════════════════════════════════
+
+      - alert: HighGCPause
+        expr: go_gc_duration_seconds_sum > 0.02
+        for: 5m
+        labels:
+          severity: warning
+          service: flash-sale
+        annotations:
+          summary: "GC 暫停時間超過 20ms"
+          description: "{{ $labels.service }} 的 GC 暫停時間為 {{ $value | humanizeDuration }}"
+
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes / 1073741824 > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: flash-sale
+        annotations:
+          summary: "應用內存使用超過 500MB"
+          description: "{{ $labels.service }} 的內存使用為 {{ $value | humanize }} GB"
+
+      - alert: PanicInApplication
+        expr: increase(app_panics_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          service: flash-sale
+        annotations:
+          summary: "應用發生 Panic"
+          description: "{{ $labels.service }} 發生了 {{ $value }} 個 panic，立即調查"
+
+  # ═══════════════════════════════════════════════════════════════════
+  # 服務可用性告警組
+  # ═══════════════════════════════════════════════════════════════════
+
+  - name: flash_sale_availability
+    interval: 1m
+    rules:
+      - alert: ServiceDown
+        expr: up{job="flash-sale-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: flash-sale
+        annotations:
+          summary: "Flash Sale 服務宕機"
+          description: "{{ $labels.instance }} 的 Flash Sale 服務無法訪問"
+
+      - alert: JaegerDown
+        expr: up{job="jaeger"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: monitoring
+        annotations:
+          summary: "Jaeger 追蹤服務宕機"
+          description: "無法收集分佈式追蹤，診斷能力下降"
+
+      - alert: DatabaseDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "數據庫服務宕機"
+          description: "PostgreSQL 無法訪問"
+
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: cache
+        annotations:
+          summary: "Redis 快取服務宕機"
+          description: "Redis 無法訪問，快取功能不可用"

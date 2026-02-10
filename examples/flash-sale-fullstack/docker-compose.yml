@@ -78,9 +78,69 @@ services:
       timeout: 5s
       retries: 5
 
+  # Prometheus 指標蒐集
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: flash-sale-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./alerting/prometheus-alerts.yml:/etc/prometheus/alerting/prometheus-alerts.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'  # 允許熱重載配置
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      - jaeger
+
+  # AlertManager 告警管理
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: flash-sale-alertmanager
+    volumes:
+      - ./alerting/alertmanager-config.yml:/etc/alertmanager/config.yml
+      - alertmanager_data:/alertmanager
+    ports:
+      - "9093:9093"
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9093"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Grafana 儀表板
+  grafana:
+    image: grafana/grafana:latest
+    container_name: flash-sale-grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+
 volumes:
   postgres_data:
   redis_data:
+  prometheus_data:
+  alertmanager_data:
+  grafana_data:
 
 networks:
   default:
