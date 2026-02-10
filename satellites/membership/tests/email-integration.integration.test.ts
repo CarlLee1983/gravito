@@ -98,7 +98,7 @@ describe('Membership Email Integration', () => {
       passwordPlain: 'password',
     })
 
-    const messages = mailbox.list()
+    const messages = await mailbox.list()
     expect(messages.length).toBe(1)
     expect(messages[0].envelope.subject).toBe('membership.emails.welcome_subject')
     // 驗證是否包含 CSS 樣式標籤 (代表模板已渲染)
@@ -117,7 +117,7 @@ describe('Membership Email Integration', () => {
       )
     })
 
-    mailbox.clear()
+    await mailbox.clear()
 
     // 2. 模擬觸發 Hook
     await mockCore.hooks.doAction('membership:send-reset-password', {
@@ -125,7 +125,7 @@ describe('Membership Email Integration', () => {
       token: 'secret-token',
     })
 
-    const messages = mailbox.list()
+    const messages = await mailbox.list()
     expect(messages.length).toBe(1)
     expect(messages[0].envelope.subject).toBe('membership.emails.reset_password_subject')
     expect(messages[0].html).toContain('secret-token')
@@ -143,7 +143,7 @@ describe('Membership Email Integration', () => {
       )
     })
 
-    mailbox.clear()
+    await mailbox.clear()
 
     await mockCore.hooks.doAction('membership:level-changed', {
       email: 'vip@example.com',
@@ -151,7 +151,7 @@ describe('Membership Email Integration', () => {
       newLevel: 'Gold',
     })
 
-    const messages = mailbox.list()
+    const messages = await mailbox.list()
     expect(messages.length).toBe(1)
     expect(messages[0].envelope.subject).toBe('membership.emails.level_changed_subject')
     expect(messages[0].html).toContain('Silver')

@@ -70,6 +70,8 @@ export interface StaticSitemapOptions extends SitemapStreamOptions {
   filename?: string | undefined
   /** List of sitemap entry providers to scan for content. */
   providers: SitemapProvider[]
+  /** Maximum number of entries per individual sitemap file. @default 50000 */
+  maxEntriesPerFile?: number | undefined
   /** Custom storage backend. Defaults to DiskSitemapStorage using `outDir`. */
   storage?: SitemapStorage | undefined
   /** Optional incremental generation settings to only update changed URLs. */

@@ -26,7 +26,8 @@
       "@gravito/constellation": ["../../packages/constellation/src/index.ts"],
       "@gravito/photon": ["../../packages/photon/src/index.ts"],
       "@gravito/photon/bun": ["../../packages/photon/src/bun.ts"],
-      "@gravito/plasma": ["../../packages/plasma/src/index.ts"]
+      "@gravito/plasma": ["../../packages/plasma/src/index.ts"],
+      "@gravito/atlas": ["../../packages/atlas/src/index.ts"]
     }
   },
   "include": ["src/**/*", "build-static.ts"],

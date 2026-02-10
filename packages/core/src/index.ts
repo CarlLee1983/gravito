@@ -129,8 +129,34 @@ export { type GravitoManifest, GravitoServer } from './GravitoServer'
 // Hooks
 export type { ActionCallback, FilterCallback, ListenerInfo, ListenerOptions } from './HookManager'
 export { HookManager, type HookManagerConfig } from './HookManager'
+export type { DumpOptions } from './helpers'
 // Helpers
-export * from './helpers'
+export {
+  Arr,
+  abort,
+  abortIf,
+  abortUnless,
+  app,
+  blank,
+  config,
+  DumpDieError,
+  dd,
+  dump,
+  env,
+  filled,
+  hasApp,
+  logger,
+  router,
+  Str,
+  setApp,
+  tap,
+  throwIf,
+  throwUnless,
+  value,
+} from './helpers'
+export * from './helpers/data'
+export * from './helpers/errors'
+export * from './helpers/response'
 // HTTP / Security utilities
 export { CookieJar, type CookieOptions } from './http/CookieJar'
 export { deleteCookie, getCookie, setCookie } from './http/cookie'

@@ -673,5 +673,3 @@
   "uid": "gravito-event-system",
   "version": 1
 }
-EOFJON
-echo "✅ Created Grafana Dashboard"
