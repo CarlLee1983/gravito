@@ -1,0 +1,37 @@
+# Prometheus 全局配置
+global:
+  scrape_interval: 15s      # 預設採集間隔
+  evaluation_interval: 15s  # 預設告警評估間隔
+  external_labels:
+    cluster: 'flash-sale'
+    environment: 'development'
+
+# 告警規則
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# 告警規則檔案
+rule_files: []
+
+# 採集目標
+scrape_configs:
+  # Prometheus 自身指標
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Flash Sale 應用指標（從 OpenTelemetry 收集）
+  - job_name: 'flash-sale-service'
+    static_configs:
+      - targets: ['localhost:9090']  # 應用暴露的 metrics 端點
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+    scrape_timeout: 5s
+
+  # Jaeger 指標
+  - job_name: 'jaeger'
+    static_configs:
+      - targets: ['jaeger:14269']
+    metrics_path: '/metrics'
