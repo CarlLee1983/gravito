@@ -2,6 +2,8 @@
  * 異步失效系統 - 模塊導出
  */
 
+// 事件優先級（從事件模塊重新導出）
+export { EventPriority } from '../events'
 // 異步失效引擎
 export {
   type AsyncInvalidationConfig,
@@ -10,7 +12,6 @@ export {
   type InvalidationResult,
   type InvalidationStats,
 } from './AsyncInvalidationEngine'
-
 // 調度器
 export {
   InvalidationScheduler,

@@ -7,7 +7,7 @@
  * - 去重率追蹤：監控去重效率
  */
 
-import type { CacheEvent } from './types'
+import type { CacheEvent, EventPriority } from './types'
 
 /**
  * 去重統計
@@ -36,6 +36,21 @@ export class EventDeduplicator {
     deduplicationRate: 0,
   }
 
+  // 優先級映射（靜態常量，避免重複創建）
+  private static readonly PRIORITY_ORDER: Record<EventPriority, number> = {
+    critical: 0,
+    high: 1,
+    normal: 2,
+    low: 3,
+  }
+
+  // 去重結果緩存
+  private cachedDeduplicated: CacheEvent[] | null = null
+  private deduplicatedDirty = true
+
+  // RegExp 緩存
+  private regexCache = new Map<string, RegExp>()
+
   /**
    * 添加事件，自動去重
    *
@@ -46,6 +61,7 @@ export class EventDeduplicator {
    */
   addEvent(event: CacheEvent): void {
     this.stats.totalEvents++
+    this.deduplicatedDirty = true
 
     // 遍歷事件的所有模式
     for (const pattern of event.patterns) {
@@ -56,15 +72,9 @@ export class EventDeduplicator {
         this.patternMap.set(pattern, event)
       } else {
         // 模式已存在，判斷是否需要替換
-        const priorityOrder: Record<string, number> = {
-          critical: 0,
-          high: 1,
-          normal: 2,
-          low: 3,
-        }
-
-        const existingPriority = priorityOrder[existing.priority]
-        const newPriority = priorityOrder[event.priority]
+        // 使用靜態優先級映射（避免每次重新創建）
+        const existingPriority = EventDeduplicator.PRIORITY_ORDER[existing.priority]
+        const newPriority = EventDeduplicator.PRIORITY_ORDER[event.priority]
 
         if (newPriority < existingPriority) {
           // 新事件優先級更高，替換
@@ -99,8 +109,14 @@ export class EventDeduplicator {
   /**
    * 獲取所有去重後的事件
    * 每個返回的事件包含合併後的所有模式
+   * 結果被緩存，只在 addEvent() 時重新計算
    */
   getDeduplicated(): CacheEvent[] {
+    // 如果緩存有效，直接返回
+    if (!this.deduplicatedDirty && this.cachedDeduplicated !== null) {
+      return this.cachedDeduplicated
+    }
+
     // 重新組織為事件 ID -> 事件的映射
     const eventMap = new Map<string, CacheEvent>()
 
@@ -121,7 +137,11 @@ export class EventDeduplicator {
       })
     }
 
-    return Array.from(eventMap.values())
+    // 緩存結果
+    this.cachedDeduplicated = Array.from(eventMap.values())
+    this.deduplicatedDirty = false
+
+    return this.cachedDeduplicated
   }
 
   /**
@@ -170,6 +190,9 @@ export class EventDeduplicator {
    */
   clear(): void {
     this.patternMap.clear()
+    this.cachedDeduplicated = null
+    this.deduplicatedDirty = true
+    this.regexCache.clear()
     this.stats.totalEvents = 0
     this.stats.deduplicatedEvents = 0
     this.stats.removedCount = 0
@@ -260,6 +283,7 @@ export class EventDeduplicator {
   /**
    * 查找匹配某個失效模式的所有事件
    * 支持通配符匹配
+   * 使用緩存的 RegExp 避免重複創建
    */
   findEventsByPattern(invalidationPattern: string): CacheEvent[] {
     const result: Set<CacheEvent> = new Set()
@@ -272,7 +296,7 @@ export class EventDeduplicator {
 
     // 通配符匹配
     if (invalidationPattern.includes('*')) {
-      const regex = this.patternToRegex(invalidationPattern)
+      const regex = this.getPatternRegex(invalidationPattern)
       for (const [pattern, event] of this.patternMap.entries()) {
         if (regex.test(pattern)) {
           result.add(event)
@@ -281,6 +305,16 @@ export class EventDeduplicator {
     }
 
     return Array.from(result)
+  }
+
+  /**
+   * 獲取模式的 RegExp（緩存以避免重複創建）
+   */
+  private getPatternRegex(pattern: string): RegExp {
+    if (!this.regexCache.has(pattern)) {
+      this.regexCache.set(pattern, this.patternToRegex(pattern))
+    }
+    return this.regexCache.get(pattern)!
   }
 
   /**
