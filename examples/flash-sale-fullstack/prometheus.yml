@@ -10,10 +10,11 @@ global:
 alerting:
   alertmanagers:
     - static_configs:
-        - targets: []
+        - targets: ['alertmanager:9093']
 
 # 告警規則檔案
-rule_files: []
+rule_files:
+  - '/etc/prometheus/alerting/prometheus-alerts.yml'
 
 # 採集目標
 scrape_configs:

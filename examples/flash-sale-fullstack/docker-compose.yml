@@ -84,6 +84,7 @@ services:
     container_name: flash-sale-prometheus
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./alerting/prometheus-alerts.yml:/etc/prometheus/alerting/prometheus-alerts.yml
       - prometheus_data:/prometheus
     ports:
       - "9090:9090"
@@ -91,6 +92,7 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'  # 允許熱重載配置
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090"]
       interval: 10s
@@ -98,6 +100,24 @@ services:
       retries: 5
     depends_on:
       - jaeger
+
+  # AlertManager 告警管理
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: flash-sale-alertmanager
+    volumes:
+      - ./alerting/alertmanager-config.yml:/etc/alertmanager/config.yml
+      - alertmanager_data:/alertmanager
+    ports:
+      - "9093:9093"
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9093"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Grafana 儀表板
   grafana:
@@ -119,6 +139,7 @@ volumes:
   postgres_data:
   redis_data:
   prometheus_data:
+  alertmanager_data:
   grafana_data:
 
 networks:
