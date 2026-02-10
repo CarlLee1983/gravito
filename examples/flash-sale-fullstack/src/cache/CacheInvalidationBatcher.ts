@@ -145,6 +145,9 @@ export class CacheInvalidationBatcher {
     const failed = results.filter((r) => r.status === 'rejected')
     if (failed.length > 0) {
       console.warn(`[CacheInvalidationBatcher] ${failed.length} 個模式失效失敗`)
+      // 拋出錯誤讓 processBatch 捕捉，以便記錄到 DLQ
+      const firstError = (failed[0] as PromiseRejectedResult).reason
+      throw firstError || new Error(`${failed.length} 個模式失效失敗`)
     }
   }
 
