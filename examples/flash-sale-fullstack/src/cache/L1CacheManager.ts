@@ -5,7 +5,12 @@
  * L1: 本地記憶體 (微秒級)
  * L2: Redis (毫秒級)
  * L3: 資料庫 (秒級)
+ *
+ * 支持事件驅動快取失效
  */
+
+import type { EventAggregator } from './events'
+import { createCacheEvent, type EventPriority } from './events'
 
 export interface CacheEntry<T> {
   value: T
@@ -38,9 +43,18 @@ export class L1CacheManager<T = any> {
   }
   private currentSize = 0
 
-  constructor(maxSize: number = 100 * 1024 * 1024, maxEntries = 10000) {
+  // 事件驅動支持
+  private eventAggregator?: EventAggregator
+  private invalidationListeners: Set<(pattern: string) => void> = new Set()
+
+  constructor(
+    maxSize: number = 100 * 1024 * 1024,
+    maxEntries = 10000,
+    eventAggregator?: EventAggregator
+  ) {
     this.maxSize = maxSize
     this.maxEntries = maxEntries
+    this.eventAggregator = eventAggregator
   }
 
   /**
@@ -139,9 +153,9 @@ export class L1CacheManager<T = any> {
   }
 
   /**
-   * 按模式刪除
+   * 按模式刪除（支持事件驅動）
    */
-  deletePattern(pattern: string): number {
+  async deletePattern(pattern: string, priority?: EventPriority): Promise<number> {
     const regex = new RegExp(pattern)
     let deleted = 0
 
@@ -150,6 +164,27 @@ export class L1CacheManager<T = any> {
         this.currentSize -= this.estimateSize(entry.value)
         this.cache.delete(key)
         deleted++
+      }
+    }
+
+    // 發佈失效事件
+    if (deleted > 0 && this.eventAggregator) {
+      const event = createCacheEvent('BATCH_INVALIDATION', [pattern], {
+        source: 'system',
+        priority,
+        metadata: {
+          source: 'L1CacheManager',
+          deletedCount: deleted,
+          pattern,
+        },
+      })
+      await this.eventAggregator.submit(event)
+    }
+
+    // 通知監聽器
+    if (deleted > 0) {
+      for (const listener of this.invalidationListeners) {
+        listener(pattern)
       }
     }
 
@@ -165,9 +200,9 @@ export class L1CacheManager<T = any> {
   }
 
   /**
-   * 同步失效 L1 和 L2
+   * 同步失效 L1 和 L2（支持事件驅動）
    */
-  async invalidateWithL2(key: string, l2Cache?: any): Promise<void> {
+  async invalidateWithL2(key: string, l2Cache?: any, priority?: EventPriority): Promise<void> {
     this.delete(key)
     if (l2Cache) {
       try {
@@ -175,6 +210,21 @@ export class L1CacheManager<T = any> {
       } catch (error) {
         console.error(`[L1Cache] L2 失效失敗 (${key}):`, error)
       }
+    }
+
+    // 發佈失效事件
+    if (this.eventAggregator) {
+      const event = createCacheEvent('BATCH_INVALIDATION', [key], {
+        source: 'system',
+        priority,
+        metadata: { source: 'L1CacheManager' },
+      })
+      await this.eventAggregator.submit(event)
+    }
+
+    // 通知監聽器
+    for (const listener of this.invalidationListeners) {
+      listener(key)
     }
   }
 
@@ -290,6 +340,34 @@ export class L1CacheManager<T = any> {
    */
   resetStats(): void {
     this.stats = { l1Hits: 0, l2Hits: 0, l3Hits: 0, totalHits: 0 }
+  }
+
+  /**
+   * 設置事件聚合器
+   */
+  setEventAggregator(aggregator: EventAggregator): void {
+    this.eventAggregator = aggregator
+  }
+
+  /**
+   * 監聽失效事件
+   */
+  onInvalidation(listener: (pattern: string) => void): void {
+    this.invalidationListeners.add(listener)
+  }
+
+  /**
+   * 移除失效事件監聽器
+   */
+  offInvalidation(listener: (pattern: string) => void): void {
+    this.invalidationListeners.delete(listener)
+  }
+
+  /**
+   * 清空所有失效監聽器
+   */
+  clearInvalidationListeners(): void {
+    this.invalidationListeners.clear()
   }
 
   private isExpired(entry: CacheEntry<T>): boolean {

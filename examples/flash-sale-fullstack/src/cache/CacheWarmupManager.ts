@@ -5,9 +5,11 @@
  * 1. 啟動時預熱 - 預加載熱銷商品
  * 2. 熱度驅動預熱 - 當商品熱度增加時自動預熱
  * 3. 定期再預熱 - 保持快取新鮮度
+ * 4. 事件驅動預熱 - 監聽失效事件，自動重新加載
  */
 
 import type { HeatMetrics, HotProductTracker } from './HotProductTracker'
+import type { L1CacheManager } from './L1CacheManager'
 
 export interface WarmupConfig {
   topProductsCount: number // 啟動時預熱的商品數量
@@ -22,6 +24,8 @@ export interface WarmupMetrics {
   lastWarmupTime: number
   avgWarmupDuration: number
   cacheHitRate: number
+  invalidationCount?: number // 監聽的失效事件數
+  eventDrivenWarmups?: number // 事件驅動預熱數
 }
 
 export class CacheWarmupManager {
@@ -32,15 +36,21 @@ export class CacheWarmupManager {
   private readonly metrics: WarmupMetrics
   private periodicTimer: NodeJS.Timeout | null = null
 
+  // 事件驅動支持
+  private l1CacheManager?: L1CacheManager
+  private invalidationListenerSet = false
+
   constructor(
     heatTracker: HotProductTracker,
     cacheService: any,
     db: any,
-    config: Partial<WarmupConfig> = {}
+    config: Partial<WarmupConfig> = {},
+    l1CacheManager?: L1CacheManager
   ) {
     this.heatTracker = heatTracker
     this.cacheService = cacheService
     this.db = db
+    this.l1CacheManager = l1CacheManager
 
     this.config = {
       topProductsCount: 100,
@@ -56,7 +66,12 @@ export class CacheWarmupManager {
       lastWarmupTime: 0,
       avgWarmupDuration: 0,
       cacheHitRate: 0,
+      invalidationCount: 0,
+      eventDrivenWarmups: 0,
     }
+
+    // 自動設置失效監聽器
+    this.setupInvalidationListener()
   }
 
   /**
@@ -218,5 +233,64 @@ export class CacheWarmupManager {
    */
   getMetrics(): WarmupMetrics {
     return { ...this.metrics }
+  }
+
+  /**
+   * 設置 L1 快取管理器（用於事件監聽）
+   */
+  setL1CacheManager(l1CacheManager: L1CacheManager): void {
+    this.l1CacheManager = l1CacheManager
+    this.setupInvalidationListener()
+  }
+
+  /**
+   * 設置失效監聽器
+   * 當快取被失效時，自動重新加載相關數據
+   */
+  private setupInvalidationListener(): void {
+    if (!this.l1CacheManager || this.invalidationListenerSet) {
+      return
+    }
+
+    this.l1CacheManager.onInvalidation((pattern: string) => {
+      // 非同步處理失效事件，不阻塞主流程
+      this.handleInvalidationEvent(pattern).catch((error) => {
+        console.error('[CacheWarmup] 處理失效事件失敗:', pattern, error)
+      })
+    })
+
+    this.invalidationListenerSet = true
+  }
+
+  /**
+   * 處理快取失效事件
+   * 當快取失效時，根據模式判定是否需要重新加載
+   */
+  private async handleInvalidationEvent(pattern: string): Promise<void> {
+    if (this.metrics.invalidationCount !== undefined) {
+      this.metrics.invalidationCount++
+    }
+
+    // 判定是否需要重新預熱
+    if (pattern.includes('product:')) {
+      // 從模式中提取產品 ID
+      const productIdMatch = pattern.match(/product:(\w+)/)
+      if (productIdMatch?.[1]) {
+        const productId = productIdMatch[1]
+
+        // 檢查是否是熱產品
+        const heat = await this.heatTracker.getHeat(productId)
+        if (heat >= this.config.heatThreshold) {
+          // 重新預熱
+          await this.warmupProduct(productId)
+          if (this.metrics.eventDrivenWarmups !== undefined) {
+            this.metrics.eventDrivenWarmups++
+          }
+        }
+      }
+    } else if (pattern.includes('*')) {
+      // 通配符模式，執行定期預熱
+      await this.periodicWarmup()
+    }
   }
 }
