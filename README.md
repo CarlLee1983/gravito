@@ -2,6 +2,8 @@
 
 Gravito is a modular, high-performance TypeScript framework built for the modern web. It leverages the **Galaxy Architecture**—a unique approach inspired by celestial mechanics to manage lifecycle, extensions (Orbits), and domain-specific plugins (Satellites).
 
+👉 **[Discover our Technical Highlights & Value Propositions](./docs/TECH_HIGHLIGHTS.md)**
+
 > **Version 1.0 is here!** Build complex e-commerce systems by simply composing modules.
 
 ---

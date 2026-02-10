@@ -1,115 +1,76 @@
 # @gravito/stasis 🧊
 
-> High-performance caching and rate-limiting Orbit for Gravito.
+> High-performance Cache and State Management Orbit for Gravito.
 
-`@gravito/stasis` provides a robust, developer-friendly caching layer for the Gravito framework. Inspired by Laravel's cache system, it offers a unified API for multiple storage backends, distributed locking, and integrated rate limiting.
+`@gravito/stasis` wraps complex caching logic into an elegant and powerful API, ensuring your application handles high concurrency and massive datasets with ease.
 
-## 🌟 Key Features
+---
 
-- **🚀 Unified Cache API**: Simple `get`, `put`, `remember`, and `forever` methods across all drivers.
-- **💾 Multiple Storage Drivers**: Native support for Memory, Redis, File-based, and Null storage.
-- **🔒 Distributed Locks**: Prevent race conditions with atomic, cross-process locks.
-- **⚡ Flexible Caching (SWR)**: Stale-While-Revalidate support to serve data fast while refreshing in the background.
-- **🚦 Integrated Rate Limiting**: Throttling mechanism built directly on top of your cache infrastructure.
-- **🏷️ Cache Tagging**: Group related items for bulk invalidation (supported in Memory driver).
-- **🪝 Hook System**: Lifecycle events for monitoring cache hits, misses, and writes.
+## 📖 Quick Index
+*   [**Architecture Deep Dive**](./docs/architecture.md) — Understand the mechanics of hybrid caching and predictive engines.
+*   [**Observability & Protection**](./docs/observability.md) — How to prevent OOM and monitor cache performance.
+
+---
+
+## 🌟 Core Capabilities
+*   🚀 **Unified API**: Seamlessly switch between Memory, Redis, File, and other storage drivers.
+*   🏗️ **Tiered Cache (Hybrid)**: Combine local Memory with distributed Redis for extreme read speeds.
+*   🔒 **Distributed Locks**: Atomic cross-instance concurrency control.
+*   🚦 **Rate Limiting**: Built-in traffic throttling on top of your cache infrastructure.
+*   🧠 **Smart Pre-warming**: Access path prediction and automated pre-fetching powered by Markov Chains.
 
 ## 📦 Installation
-
 ```bash
 bun add @gravito/stasis
 ```
 
-## 🚀 Quick Start
+## 🚀 5-Minute Quick Start
 
-### 1. Register the Orbit
-
+### 1. Configure the Orbit
 ```typescript
-import { PlanetCore, defineConfig } from '@gravito/core'
+import { defineConfig } from '@gravito/core'
 import { OrbitStasis } from '@gravito/stasis'
 
-const config = defineConfig({
+export default defineConfig({
   config: {
     cache: {
-      default: 'memory',
+      default: 'tiered', // default to tiered caching
       stores: {
-        memory: { driver: 'memory', maxItems: 5000 },
-        redis: { driver: 'redis', connection: 'default' }
+        local: { driver: 'memory', maxItems: 1000 },
+        remote: { driver: 'redis', connection: 'default' },
+        tiered: { driver: 'tiered', local: 'local', remote: 'remote' }
       }
     }
   },
   orbits: [new OrbitStasis()]
 })
-
-const core = await PlanetCore.boot(config)
 ```
 
-### 2. Basic Caching
-
+### 2. Basic Caching Example
 ```typescript
-const cache = core.container.make('cache')
+const cache = core.container.make('cache');
 
-// Simple storage
-await cache.put('stats:total', 100, 3600) // Store for 1 hour
-
-// "Remember" pattern (Get or Set)
-const users = await cache.remember('users:all', 300, async () => {
-  return await db.users.findMany()
-})
+// 💡 Classic "Remember" pattern
+const news = await cache.remember('news:today', 3600, () => {
+  return await db.news.latest();
+});
 ```
 
-### 3. Distributed Locking
+---
 
-```typescript
-const lock = cache.lock('process-invoice:123', 10)
+## 🛠️ Drivers Overview
 
-if (await lock.get()) {
-  try {
-    // Perform critical task...
-  } finally {
-    await lock.release()
-  }
-}
-```
+| Driver Name | Tier | Best For |
+| :--- | :--- | :--- |
+| **Memory** | L1 | Local hotspots, LRU restricted |
+| **Redis** | L2 | Distributed sharing, Atomic locks |
+| **Tiered** | Hybrid | **Recommended**: Balance of speed and consistency |
+| **Predictive**| Smart | Scenarios with clear access patterns |
+| **File** | Persistent | Simple local persistence |
 
-## 🚦 Rate Limiting
-
-Easily throttle requests or actions using your cache backend.
-
-```typescript
-const limiter = cache.limiter()
-
-if (await limiter.tooManyAttempts('login:127.0.0.1', 5)) {
-  const seconds = await limiter.availableIn('login:127.0.0.1')
-  throw new Error(`Too many attempts. Try again in ${seconds}s.`)
-}
-
-await limiter.hit('login:127.0.0.1', 60) // Decay in 60s
-```
-
-## 🛠️ Supported Drivers
-
-| Driver | Best For | Features |
-|---|---|---|
-| **Memory** | Local dev & Small apps | Fast, Tags, LRU |
-| **Redis** | Distributed production | Multi-node, Locks, Persistent |
-| **File** | Simple persistence | No external deps |
-| **Null** | Testing / Disabling cache | No-op |
-
-## 🧩 API Reference
-
-### `CacheManager`
-- `cache.get(key, default?)`: Retrieve an item.
-- `cache.put(key, value, ttl?)`: Store an item.
-- `cache.remember(key, ttl, callback)`: Get or execute callback and store.
-- `cache.flexible(key, ttl, stale, callback)`: Stale-While-Revalidate.
-- `cache.increment / decrement`: Atomic numeric updates.
-- `cache.tags(['tag1']).flush()`: Invalidate by tag.
+---
 
 ## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](../../CONTRIBUTING.md) for details.
-
-## 📄 License
+We welcome any optimization suggestions! Please see our [Contributing Guide](../../CONTRIBUTING.md).
 
 MIT © Carl Lee
