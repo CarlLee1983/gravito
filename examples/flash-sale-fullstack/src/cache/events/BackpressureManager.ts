@@ -59,10 +59,10 @@ export class BackpressureManager {
   private lastResetTime = Date.now()
 
   private readonly config: BackpressureConfig = {
-    maxQueueDepth: 5000,
-    moderateThreshold: 100,
-    highThreshold: 500,
-    criticalThreshold: 1000,
+    maxQueueDepth: 10000,
+    moderateThreshold: 1000,
+    highThreshold: 2000,
+    criticalThreshold: 4000,
     rejectionStrategy: 'adaptive',
   }
 
@@ -91,41 +91,15 @@ export class BackpressureManager {
     // 根據背壓狀態應用策略
     const state = this.getBackpressureState(queueDepth)
 
-    switch (state) {
-      case BackpressureState.NORMAL:
-        return true
+    // 計算自適應延遲
+    const delay = this.calculateAdaptiveDelay(eventPriority, state, queueDepth)
 
-      case BackpressureState.MODERATE:
-        // 中度背壓，延遲低優先級事件
-        if (eventPriority === EventPriority.LOW) {
-          await this.applyDelay(50)
-          this.stats.delayedCount++
-        }
-        return true
-
-      case BackpressureState.HIGH:
-        // 高背壓，延遲低和普通優先級事件
-        if (eventPriority === EventPriority.LOW) {
-          await this.applyDelay(100)
-          this.stats.delayedCount++
-        } else if (eventPriority === EventPriority.NORMAL) {
-          await this.applyDelay(50)
-          this.stats.delayedCount++
-        }
-        return true
-
-      case BackpressureState.CRITICAL:
-        // 關鍵背壓，拒絕低優先級，延遲其他
-        if (eventPriority === EventPriority.LOW) {
-          this.stats.rejectedCount++
-          return false
-        }
-        if (eventPriority === EventPriority.NORMAL) {
-          this.stats.throttledCount++
-          await this.applyDelay(200)
-        }
-        return true
+    if (delay > 0) {
+      await this.applyDelay(delay)
+      this.stats.delayedCount++
     }
+
+    return true
   }
 
   /**
@@ -142,6 +116,62 @@ export class BackpressureManager {
       return BackpressureState.MODERATE
     }
     return BackpressureState.NORMAL
+  }
+
+  /**
+   * 計算自適應延遲（漸進式背壓）
+   * 根據隊列深度和優先級線性計算延遲，避免固定延遲跳躍
+   */
+  private calculateAdaptiveDelay(
+    eventPriority: EventPriority,
+    state: BackpressureState,
+    queueDepth: number
+  ): number {
+    // 優先級延遲因子（相對基礎延遲）
+    const delayFactors: Record<EventPriority, number> = {
+      [EventPriority.CRITICAL]: 0,
+      [EventPriority.HIGH]: 1,
+      [EventPriority.NORMAL]: 2,
+      [EventPriority.LOW]: 4,
+    }
+
+    const baseFactor = delayFactors[eventPriority]
+
+    // 根據背壓狀態計算基礎延遲
+    switch (state) {
+      case BackpressureState.NORMAL:
+        return 0
+
+      case BackpressureState.MODERATE: {
+        // 隊列從 moderateThreshold 到 highThreshold
+        // 延遲從 0 到 2ms（減少至 1/5）
+        const ratio =
+          (queueDepth - this.config.moderateThreshold) /
+          (this.config.highThreshold - this.config.moderateThreshold)
+        const baseDelay = Math.max(0, ratio * 2)
+        return baseDelay * baseFactor
+      }
+
+      case BackpressureState.HIGH: {
+        // 隊列從 highThreshold 到 criticalThreshold
+        // 延遲從 2ms 到 4ms
+        const ratio =
+          (queueDepth - this.config.highThreshold) /
+          (this.config.criticalThreshold - this.config.highThreshold)
+        const baseDelay = 2 + Math.max(0, ratio * 2)
+        return baseDelay * baseFactor
+      }
+
+      case BackpressureState.CRITICAL: {
+        // 隊列從 criticalThreshold 到 maxQueueDepth
+        // 延遲從 4ms 到 10ms
+        const ratio =
+          (queueDepth - this.config.criticalThreshold) /
+          (this.config.maxQueueDepth - this.config.criticalThreshold)
+        const baseDelay = 4 + Math.max(0, ratio * 6)
+        return baseDelay * baseFactor
+      }
+    }
   }
 
   /**
