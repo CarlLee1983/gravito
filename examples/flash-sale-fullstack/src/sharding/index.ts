@@ -15,6 +15,14 @@ export { DataReconciliation } from './DataReconciliation'
 export type { MigrationConfig, MigrationPhase, MigrationStats } from './MigrationManager'
 export { MigrationManager } from './MigrationManager'
 export type {
+  FailoverPolicy,
+  GeoRoutingRule,
+  RegionConfig,
+  RegionHealth,
+  ReplicationStrategy,
+} from './MultiRegionManager'
+export { MultiRegionManager } from './MultiRegionManager'
+export type {
   BaselineReport,
   LoadDistribution,
   PerformanceMetrics,
