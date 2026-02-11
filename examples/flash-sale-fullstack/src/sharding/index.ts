@@ -20,6 +20,15 @@ export type {
   ReconciliationResult,
 } from './DataReconciliation'
 export { DataReconciliation } from './DataReconciliation'
+export type {
+  CacheEntry,
+  CacheReplicationEvent,
+  CacheStats,
+  EvictionPolicy,
+  GeoCacheConfig,
+  GeoLocation,
+} from './GeographicCacheManager'
+export { GeographicCacheManager } from './GeographicCacheManager'
 export type { MigrationConfig, MigrationPhase, MigrationStats } from './MigrationManager'
 export { MigrationManager } from './MigrationManager'
 export type {
