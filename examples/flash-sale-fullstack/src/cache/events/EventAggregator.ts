@@ -12,8 +12,15 @@
 import { BackpressureManager, BackpressureState } from './BackpressureManager'
 import { EventDeduplicator } from './EventDeduplicator'
 import { EventQueue } from './EventQueue'
+import { CacheEventPool } from './ObjectPool.js'
 import { PriorityEscalationManager, PriorityStatistics } from './priority'
-import { type CacheEvent, EventPriority, PRIORITY_CONFIG } from './types'
+import {
+  type CacheEvent,
+  CacheEventType,
+  EventPriority,
+  EventSource,
+  PRIORITY_CONFIG,
+} from './types'
 
 /**
  * 聚合器統計
@@ -48,6 +55,7 @@ export class EventAggregator {
   private deduplicator: EventDeduplicator
   private backpressureManager: BackpressureManager
   private priorityStats: PriorityStatistics
+  private eventPool: CacheEventPool
 
   private config: Required<AggregatorConfig> = {
     maxQueueDepth: 5000,
@@ -80,6 +88,38 @@ export class EventAggregator {
       maxQueueDepth: config?.maxQueueDepth ?? 5000,
     })
     this.priorityStats = new PriorityStatistics()
+
+    // 初始化對象池 - 預分配 1000 個事件對象
+    this.eventPool = new CacheEventPool(
+      1000,
+      // 工廠函數 - 創建新的 CacheEvent
+      () => ({
+        id: '',
+        type: CacheEventType.BATCH_INVALIDATION,
+        priority: EventPriority.NORMAL,
+        source: EventSource.SYSTEM,
+        patterns: [],
+        timestamp: 0,
+        metadata: undefined,
+        retryCount: 0,
+        maxRetries: 3,
+      }),
+      // 重置函數 - 準備對象復用
+      (event) => {
+        event.id = ''
+        event.type = CacheEventType.BATCH_INVALIDATION
+        event.priority = EventPriority.NORMAL
+        event.source = EventSource.SYSTEM
+        event.patterns = []
+        event.timestamp = 0
+        event.metadata = undefined
+        event.retryCount = 0
+        event.maxRetries = 3
+      }
+    )
+
+    // 預熱池
+    this.eventPool.warmup(500)
 
     if (config) {
       Object.assign(this.config, config)
@@ -312,7 +352,30 @@ export class EventAggregator {
   clear(): void {
     this.queue.clear()
     this.deduplicator.clear()
+    this.eventPool.clear()
     this.latencies = []
+  }
+
+  /**
+   * 從對象池中獲取一個事件對象（Phase 3 優化）
+   * 用於避免頻繁創建新對象
+   */
+  getEventFromPool(): CacheEvent {
+    return this.eventPool.acquire()
+  }
+
+  /**
+   * 將事件對象歸還到對象池（Phase 3 優化）
+   */
+  releaseEventToPool(event: CacheEvent): void {
+    this.eventPool.release(event)
+  }
+
+  /**
+   * 獲取對象池統計信息（Phase 3 優化）
+   */
+  getPoolStats() {
+    return this.eventPool.getStats()
   }
 
   /**
