@@ -14,7 +14,13 @@ import { EventDeduplicator } from './EventDeduplicator'
 import { EventQueue } from './EventQueue'
 import { CacheEventPool } from './ObjectPool.js'
 import { PriorityEscalationManager, PriorityStatistics } from './priority'
-import { type CacheEvent, EventPriority, PRIORITY_CONFIG } from './types'
+import {
+  type CacheEvent,
+  CacheEventType,
+  EventPriority,
+  EventSource,
+  PRIORITY_CONFIG,
+} from './types'
 
 /**
  * 聚合器統計
@@ -89,9 +95,9 @@ export class EventAggregator {
       // 工廠函數 - 創建新的 CacheEvent
       () => ({
         id: '',
-        type: 'batch_invalidation' as const,
-        priority: 'normal' as const,
-        source: 'system' as const,
+        type: CacheEventType.BATCH_INVALIDATION,
+        priority: EventPriority.NORMAL,
+        source: EventSource.SYSTEM,
         patterns: [],
         timestamp: 0,
         metadata: undefined,
@@ -101,9 +107,9 @@ export class EventAggregator {
       // 重置函數 - 準備對象復用
       (event) => {
         event.id = ''
-        event.type = 'batch_invalidation' as const
-        event.priority = 'normal' as const
-        event.source = 'system' as const
+        event.type = CacheEventType.BATCH_INVALIDATION
+        event.priority = EventPriority.NORMAL
+        event.source = EventSource.SYSTEM
         event.patterns = []
         event.timestamp = 0
         event.metadata = undefined
