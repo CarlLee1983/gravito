@@ -13,7 +13,7 @@
 export interface UIState {
   currentPage: 'list' | 'details' | 'schedule' | 'download'
   selectedReportId?: string
-  filters: ReportFilter
+  filters: UIReportFilter
   searchQuery: string
   sortBy: 'date' | 'name' | 'size'
   sortOrder: 'asc' | 'desc'
@@ -21,7 +21,7 @@ export interface UIState {
   currentPageNumber: number
 }
 
-export interface ReportFilter {
+export interface UIReportFilter {
   templateId?: string
   format?: 'csv' | 'excel' | 'json'
   dateRange?: {
@@ -134,7 +134,7 @@ export class ReportUIManager {
       }
 
       case 'UPDATE_FILTERS': {
-        this.state.filters = { ...this.state.filters, ...(action.payload as ReportFilter) }
+        this.state.filters = { ...this.state.filters, ...(action.payload as UIReportFilter) }
         this.state.currentPageNumber = 1
         break
       }
@@ -280,7 +280,7 @@ export class ReportUIManager {
   /**
    * 過濾報表
    */
-  async filterReports(filters: ReportFilter): Promise<ReportListItem[]> {
+  async filterReports(filters: UIReportFilter): Promise<ReportListItem[]> {
     this.state.filters = { ...this.state.filters, ...filters }
     return this.getReportList()
   }

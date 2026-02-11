@@ -40,10 +40,10 @@ export { ReportStorageManager } from './ReportStorageManager'
 export type {
   DownloadOptions,
   ReportDetails,
-  ReportFilter,
   ReportListItem,
   ShareOptions,
   UIAction,
+  UIReportFilter,
   UIState,
 } from './ReportUIManager'
 export { ReportUIManager } from './ReportUIManager'
