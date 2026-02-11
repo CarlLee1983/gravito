@@ -4,6 +4,18 @@
  */
 
 export { ConsistentHash } from './ConsistentHash'
+export type {
+  PostgresPoolConfig,
+  ShardDatabaseConnectionConfig,
+  ShardDeploymentMode,
+} from './ShardDatabaseConfig'
+export { ShardDatabaseConfig } from './ShardDatabaseConfig'
+export type {
+  PoolStats,
+  ShardDatabaseStats,
+  ShardHealth,
+} from './ShardDatabaseManager'
+export { ShardDatabaseManager } from './ShardDatabaseManager'
 export { ShardingManager } from './ShardingManager'
 export type {
   AggregateQueryResult,
