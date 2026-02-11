@@ -7,6 +7,14 @@ export type { CanaryConfig, CanaryMetrics, CanaryPhase } from './CanaryDeploymen
 export { CanaryDeployment } from './CanaryDeployment'
 export { ConsistentHash } from './ConsistentHash'
 export type {
+  DeploymentDependency,
+  DeploymentVersion,
+  RegionDeploymentPlan,
+  RegionDeploymentStatus,
+  SyncState,
+} from './CrossRegionDeploymentManager'
+export { CrossRegionDeploymentManager } from './CrossRegionDeploymentManager'
+export type {
   MismatchDetail,
   ReconciliationConfig,
   ReconciliationResult,
