@@ -3,9 +3,21 @@
  * 分片系統公開接口
  */
 
+export type { CanaryConfig, CanaryMetrics, CanaryPhase } from './CanaryDeployment'
+export { CanaryDeployment } from './CanaryDeployment'
 export { ConsistentHash } from './ConsistentHash'
+export type {
+  MismatchDetail,
+  ReconciliationConfig,
+  ReconciliationResult,
+} from './DataReconciliation'
+export { DataReconciliation } from './DataReconciliation'
+export type { MigrationConfig, MigrationPhase, MigrationStats } from './MigrationManager'
+export { MigrationManager } from './MigrationManager'
 export type { AggregationResult, FilterCriteria } from './QueryAggregator'
 export { QueryAggregator } from './QueryAggregator'
+export type { RollbackPlan, RollbackPoint, RollbackResult, RollbackStep } from './RollbackManager'
+export { RollbackManager } from './RollbackManager'
 export type {
   PostgresPoolConfig,
   ShardDatabaseConnectionConfig,
