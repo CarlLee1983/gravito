@@ -49,6 +49,15 @@ export type {
 export { PerformanceBaseline } from './PerformanceBaseline'
 export type { AggregationResult, FilterCriteria } from './QueryAggregator'
 export { QueryAggregator } from './QueryAggregator'
+export type {
+  Alert,
+  AlertAction,
+  AlertRule,
+  HealthStatus,
+  MonitoringConfig,
+  RegionMetrics,
+} from './RegionalMonitoringSystem'
+export { RegionalMonitoringSystem } from './RegionalMonitoringSystem'
 export type { RollbackPlan, RollbackPoint, RollbackResult, RollbackStep } from './RollbackManager'
 export { RollbackManager } from './RollbackManager'
 export type {
