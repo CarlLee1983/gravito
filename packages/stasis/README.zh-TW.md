@@ -1,115 +1,76 @@
 # @gravito/stasis 🧊
 
-> 高效能快取與速率限制 (Rate Limiting) Orbit，專為 Gravito 設計。
+> Gravito 的高效能快取與狀態管理 Orbit。
 
-`@gravito/stasis` 為 Gravito 框架提供了一個強大且開發者友善的快取層。受 Laravel 快取系統啟發，它為多種存儲後端、分佈式鎖定以及整合式速率限制提供了統一的 API。
+`@gravito/stasis` 將複雜的快取邏輯封裝成優雅且強大的 API，讓你的應用在處理高併發與海量數據時依然游刃有餘。
 
-## 🌟 核心特性
+---
 
-- **🚀 統一快取 API**：在所有驅動程式中提供簡潔的 `get`、`put`、`remember` 與 `forever` 方法。
-- **💾 多種存儲驅動**：原生支援 Memory、Redis、檔案 (File) 以及 Null 存儲。
-- **🔒 分佈式鎖 (Distributed Locks)**：透過原子性的跨進程鎖定防止競態條件 (Race Conditions)。
-- **⚡ 彈性快取 (SWR)**：支援 Stale-While-Revalidate 模式，在背景更新數據的同時快速響應請求。
-- **🚦 整合式速率限制**：直接在快取基礎設施上構建的流量節流機制。
-- **🏷️ 快取標籤 (Tagging)**：支援將相關項目分組，以便進行批量刪除（Memory 驅動支援）。
-- **🪝 Hook 系統**：提供生命週期事件，用於監控快取命中 (Hit)、未命中 (Miss) 與寫入。
+## 📖 快速索引
+*   [**技術架構深探**](./docs/architecture.zh-TW.md) — 了解混合式快取與預測機制的運作原理。
+*   [**可觀察性與資源保護**](./docs/observability.zh-TW.md) — 如何防止 OOM 並監控快取效能。
+
+---
+
+## 🌟 核心能力
+*   🚀 **統一 API**：無縫切換 Memory, Redis, File 等不同存儲驅動。
+*   🏗️ **混合快取 (Tiered)**：結合本地 Memory 與分散式 Redis，實現極限讀取速度。
+*   🔒 **分散式鎖**：基於原子操作的跨實例並發控制。
+*   🚦 **流量節流**：內建基於快取基礎設施的 Rate Limiting。
+*   🧠 **智慧預熱**：基於馬可夫鏈的存取路徑預測與自動讀取。
 
 ## 📦 安裝
-
 ```bash
 bun add @gravito/stasis
 ```
 
-## 🚀 快速上手
+## 🚀 5 分鐘快速上手
 
-### 1. 註冊 Orbit
-
+### 1. 配置 Orbit
 ```typescript
-import { PlanetCore, defineConfig } from '@gravito/core'
+import { defineConfig } from '@gravito/core'
 import { OrbitStasis } from '@gravito/stasis'
 
-const config = defineConfig({
+export default defineConfig({
   config: {
     cache: {
-      default: 'memory',
+      default: 'tiered', // 預設使用分層快取
       stores: {
-        memory: { driver: 'memory', maxItems: 5000 },
-        redis: { driver: 'redis', connection: 'default' }
+        local: { driver: 'memory', maxItems: 1000 },
+        remote: { driver: 'redis', connection: 'default' },
+        tiered: { driver: 'tiered', local: 'local', remote: 'remote' }
       }
     }
   },
   orbits: [new OrbitStasis()]
 })
-
-const core = await PlanetCore.boot(config)
 ```
 
-### 2. 基礎快取操作
-
+### 2. 資料存取範例
 ```typescript
-const cache = core.container.make('cache')
+const cache = core.container.make('cache');
 
-// 簡單存儲
-await cache.put('stats:total', 100, 3600) // 存儲 1 小時
-
-// "Remember" 模式 (讀取或設置)
-const users = await cache.remember('users:all', 300, async () => {
-  return await db.users.findMany()
-})
+// 💡 經典的「讀取或存儲」模式
+const news = await cache.remember('news:today', 3600, () => {
+  return await db.news.latest();
+});
 ```
 
-### 3. 分佈式鎖定
+---
 
-```typescript
-const lock = cache.lock('process-invoice:123', 10)
+## 🛠️ 驅動程式一覽
 
-if (await lock.get()) {
-  try {
-    // 執行關鍵任務...
-  } finally {
-    await lock.release()
-  }
-}
-```
+| 驅動名稱 | 性質 | 適用場景 |
+| :--- | :--- | :--- |
+| **Memory** | L1 | 本地熱點、LRU 限制 |
+| **Redis** | L2 | 分散式共用、原子性鎖 |
+| **Tiered** | Hybrid | **推薦**：平衡效能與一致性 |
+| **Predictive**| Smart | 具有明顯路徑規律的存取場景 |
+| **File** | Persistent | 簡單的本地持久化 |
 
-## 🚦 速率限制 (Rate Limiting)
-
-輕鬆地使用您的快取後端來限制請求或操作的頻率。
-
-```typescript
-const limiter = cache.limiter()
-
-if (await limiter.tooManyAttempts('login:127.0.0.1', 5)) {
-  const seconds = await limiter.availableIn('login:127.0.0.1')
-  throw new Error(`嘗試次數過多。請在 ${seconds} 秒後重試。`)
-}
-
-await limiter.hit('login:127.0.0.1', 60) // 60 秒後衰減
-```
-
-## 🛠️ 支援的驅動程式 (Drivers)
-
-| 驅動名稱 | 適用場景 | 核心功能 |
-|---|---|---|
-| **Memory** | 本地開發與小型應用 | 極速、標籤支援、LRU |
-| **Redis** | 分佈式生產環境 | 多節點共享、鎖定、持久化 |
-| **File** | 簡單的持久化需求 | 無外部依賴 |
-| **Null** | 測試或停用快取 | 不執行任何操作 |
-
-## 🧩 API 參考
-
-### `CacheManager`
-- `cache.get(key, default?)`：讀取項目。
-- `cache.put(key, value, ttl?)`：存儲項目。
-- `cache.remember(key, ttl, callback)`：讀取或執行回調並存儲。
-- `cache.flexible(key, ttl, stale, callback)`：Stale-While-Revalidate 模式。
-- `cache.increment / decrement`：原子性的數值更新。
-- `cache.tags(['tag1']).flush()`：按標籤清除快取。
+---
 
 ## 🤝 參與貢獻
-
-我們歡迎任何形式的貢獻！詳細資訊請參閱 [貢獻指南](../../CONTRIBUTING.md)。
-
-## 📄 開源授權
+我們歡迎任何優化建議！請參閱 [貢獻指南](../../CONTRIBUTING.md)。
 
 MIT © Carl Lee

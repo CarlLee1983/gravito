@@ -12,9 +12,22 @@
 
 ## 📚 文檔
 
+- **[進化藍圖：從 MVC 到萬人搶購](./docs/blueprint.md)** - 🛠️ **核心推薦**
 - **[ROADMAP.md](./ROADMAP.md)** - 13 週開發里程碑
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** - 系統設計與決策
 - **[SETUP.md](./docs/SETUP.md)** - 本地開發環境設定
+
+---
+
+## 🗺️ 架構演進階段
+
+如果您想了解此專案如何一步步進化，請閱讀：
+- **[Stage 1: MVC 模式](./docs/evolution/stage-1-mvc.md)** - 如何起步
+- **[Stage 2: 模組化衛星](./docs/evolution/stage-2-modular.md)** - 如何建立邊界
+- **[Stage 3: 分佈式星系](./docs/evolution/stage-3-galactic.md)** - 如何應付萬人秒殺
+- **[性能測試報告](./docs/benchmarks.md)** - 實證擴充後的威力
+
+---
 
 ## 🚀 快速開始
 
