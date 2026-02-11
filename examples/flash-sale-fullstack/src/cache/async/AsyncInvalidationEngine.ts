@@ -10,7 +10,7 @@
  */
 
 import type { CacheEvent } from '../events'
-import { EventPriority } from '../events'
+import { CacheEventType, EventPriority, EventSource } from '../events'
 import { InvalidationScheduler, type ScheduledTask } from './InvalidationScheduler'
 import { type RetryPolicy, RetryPolicyFactory } from './RetryPolicy'
 
@@ -147,11 +147,11 @@ export class AsyncInvalidationEngine {
     const startTime = Date.now()
     const event: CacheEvent = {
       id: `invalidate:${pattern}:${Date.now()}`,
-      type: 'BATCH_INVALIDATION' as any,
+      type: CacheEventType.BATCH_INVALIDATION,
       priority,
       patterns: [pattern],
       timestamp: Date.now(),
-      source: 'system' as any,
+      source: EventSource.SYSTEM,
     }
 
     // 調度任務

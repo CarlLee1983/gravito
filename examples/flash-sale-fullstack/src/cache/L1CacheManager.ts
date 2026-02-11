@@ -10,7 +10,7 @@
  */
 
 import type { EventAggregator } from './events'
-import { createCacheEvent, type EventPriority } from './events'
+import { CacheEventType, createCacheEvent, type EventPriority, EventSource } from './events'
 
 export interface CacheEntry<T> {
   value: T
@@ -169,8 +169,8 @@ export class L1CacheManager<T = any> {
 
     // 發佈失效事件
     if (deleted > 0 && this.eventAggregator) {
-      const event = createCacheEvent('BATCH_INVALIDATION', [pattern], {
-        source: 'system',
+      const event = createCacheEvent(CacheEventType.BATCH_INVALIDATION, [pattern], {
+        source: EventSource.SYSTEM,
         priority,
         metadata: {
           source: 'L1CacheManager',
@@ -214,8 +214,8 @@ export class L1CacheManager<T = any> {
 
     // 發佈失效事件
     if (this.eventAggregator) {
-      const event = createCacheEvent('BATCH_INVALIDATION', [key], {
-        source: 'system',
+      const event = createCacheEvent(CacheEventType.BATCH_INVALIDATION, [key], {
+        source: EventSource.SYSTEM,
         priority,
         metadata: { source: 'L1CacheManager' },
       })

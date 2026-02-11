@@ -9,7 +9,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AsyncInvalidationEngine, EventPriority } from '../async'
-import { createCacheEvent } from '../events'
+import { CacheEventType, createCacheEvent, EventSource } from '../events'
 import { EventAggregator } from '../events/EventAggregator'
 import { L1CacheManager } from '../L1CacheManager'
 
@@ -399,8 +399,8 @@ describe('P1.3 Phase 2 - Event-Driven Cache Performance', () => {
       const iterations = 50
       for (let i = 0; i < iterations; i++) {
         const start = performance.now()
-        const event = createCacheEvent('BATCH_INVALIDATION', [`product:${i % 50}`], {
-          source: 'test',
+        const event = createCacheEvent(CacheEventType.BATCH_INVALIDATION, [`product:${i % 50}`], {
+          source: EventSource.SYSTEM,
           priority: EventPriority.NORMAL,
         })
         await aggregator.submit(event)
