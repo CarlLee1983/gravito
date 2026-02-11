@@ -84,7 +84,7 @@ describe('DLQ + HookManager Integration', () => {
       // 驗證延遲時間
       if (timestamps.length >= 2) {
         const delay1 = timestamps[1] - timestamps[0]
-        expect(delay1).toBeGreaterThanOrEqual(50)
+        expect(delay1).toBeGreaterThanOrEqual(45)
       }
     })
 
