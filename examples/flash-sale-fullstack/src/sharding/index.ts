@@ -21,6 +21,16 @@ export type {
 } from './DataReconciliation'
 export { DataReconciliation } from './DataReconciliation'
 export type {
+  DisasterRecoveryPlan,
+  FailoverTest,
+  RCA,
+  RecoveryMetrics,
+  RecoveryStep,
+  TestResult,
+  TimelineEvent,
+} from './DisasterRecoveryManager'
+export { DisasterRecoveryManager } from './DisasterRecoveryManager'
+export type {
   CacheEntry,
   CacheReplicationEvent,
   CacheStats,
