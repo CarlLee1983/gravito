@@ -14,6 +14,14 @@ export type {
 export { DataReconciliation } from './DataReconciliation'
 export type { MigrationConfig, MigrationPhase, MigrationStats } from './MigrationManager'
 export { MigrationManager } from './MigrationManager'
+export type {
+  BaselineReport,
+  LoadDistribution,
+  PerformanceMetrics,
+  PerformanceTestConfig,
+  QueryLatencies,
+} from './PerformanceBaseline'
+export { PerformanceBaseline } from './PerformanceBaseline'
 export type { AggregationResult, FilterCriteria } from './QueryAggregator'
 export { QueryAggregator } from './QueryAggregator'
 export type { RollbackPlan, RollbackPoint, RollbackResult, RollbackStep } from './RollbackManager'
