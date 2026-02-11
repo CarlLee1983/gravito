@@ -113,7 +113,7 @@ export class DisasterRecoveryManager {
     timeToMigrateAvg: 0,
     compliance: 0,
   }
-  private eventListeners: Map<string, ((...args: never) => unknown)[]> = new Map()
+  private eventListeners: Map<string, ((data: unknown) => void)[]> = new Map()
 
   /**
    * 創建災難恢復計畫
@@ -524,7 +524,7 @@ export class DisasterRecoveryManager {
   /**
    * 事件監聽
    */
-  on(event: string, callback: (...args: never) => unknown): void {
+  on(event: string, callback: (data: unknown) => void): void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, [])
     }

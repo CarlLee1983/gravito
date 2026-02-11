@@ -158,8 +158,8 @@ export class DataReconciliation {
     sourceData: any[],
     targetData: any[]
   ): Promise<ReconciliationResult> {
-    const sourceMap = new Map(sourceData.map((r, i) => [i, r]))
-    const targetMap = new Map(targetData.map((r, i) => [i, r]))
+    const sourceMap = new Map(sourceData.map((r, i) => [i.toString(), r]))
+    const targetMap = new Map(targetData.map((r, i) => [i.toString(), r]))
     return this.reconcile(sourceMap, targetMap)
   }
 

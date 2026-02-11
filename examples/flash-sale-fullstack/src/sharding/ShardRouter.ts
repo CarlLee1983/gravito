@@ -72,14 +72,14 @@ export class ShardRouter {
     let source = 'unknown'
 
     // 1. 嘗試從請求頭獲取
-    shardKeyValue = ctx.req.header(this.options.headerName)
+    shardKeyValue = ctx.req.header(this.options.headerName) ?? null
     if (shardKeyValue) {
       source = `header(${this.options.headerName})`
     }
 
     // 2. 嘗試從查詢參數獲取
     if (!shardKeyValue) {
-      shardKeyValue = ctx.req.query(this.options.queryParamName)
+      shardKeyValue = ctx.req.query(this.options.queryParamName) ?? null
       if (shardKeyValue) {
         source = `query(${this.options.queryParamName})`
       }

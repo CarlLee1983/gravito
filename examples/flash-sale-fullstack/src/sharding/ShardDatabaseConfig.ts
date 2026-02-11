@@ -89,7 +89,7 @@ export class ShardDatabaseConfig {
     for (let i = 0; i < shardCount; i++) {
       config.setShardConfig(i, {
         ...baseConfig,
-        database: baseConfig.database || 'flash_sale',
+        database: 'flash_sale',
       })
     }
 
