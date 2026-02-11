@@ -27,6 +27,8 @@ export type {
   ReportQueueConfig,
 } from './ReportQueueManager'
 export { ReportQueueManager } from './ReportQueueManager'
+export type { ScheduleExecution, ScheduleRule, ScheduleStats } from './ReportScheduler'
+export { ReportScheduler } from './ReportScheduler'
 export type {
   ReportQuery,
   StorageConfig,
@@ -34,3 +36,14 @@ export type {
   StoredReport,
 } from './ReportStorageManager'
 export { ReportStorageManager } from './ReportStorageManager'
+
+export type {
+  DownloadOptions,
+  ReportDetails,
+  ReportFilter,
+  ReportListItem,
+  ShareOptions,
+  UIAction,
+  UIState,
+} from './ReportUIManager'
+export { ReportUIManager } from './ReportUIManager'
