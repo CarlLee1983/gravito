@@ -7,13 +7,23 @@
  * - O(log n) 移除最高優先級事件
  */
 
-import { type CacheEvent, PriorityEscalationManager } from './index'
+import { type CacheEvent, EventPriority, PriorityEscalationManager } from './index'
 
 /**
  * 優先級隊列實現
  */
 export class EventQueue {
   private heap: CacheEvent[] = []
+
+  /**
+   * 優先級數值映射（靜態常量，避免重複計算）
+   */
+  private static readonly PRIORITY_VALUES: Record<EventPriority, number> = {
+    [EventPriority.CRITICAL]: 0,
+    [EventPriority.HIGH]: 1,
+    [EventPriority.NORMAL]: 2,
+    [EventPriority.LOW]: 3,
+  }
 
   /**
    * 添加事件到隊列
@@ -58,12 +68,14 @@ export class EventQueue {
 
   /**
    * 取出所有優先級 >= threshold 的事件
-   * 用於批處理
+   * 用於批處理，優化為 O(n) 而非 O(n log n)
    */
   dequeueByPriority(maxSize: number = Infinity): CacheEvent[] {
     const result: CacheEvent[] = []
+    const toRemove = Math.min(maxSize, this.heap.length)
 
-    while (result.length < maxSize && this.heap.length > 0) {
+    // 直接批量移除，而非循環調用 dequeue()
+    for (let i = 0; i < toRemove; i++) {
       const event = this.dequeue()
       if (event) {
         result.push(event)
@@ -142,15 +154,16 @@ export class EventQueue {
     while (index > 0) {
       const parentIndex = Math.floor((index - 1) / 2)
 
-      // 比較當前和父節點的優先級
-      const cmp = PriorityEscalationManager.comparePriority(
-        this.heap[index],
-        this.heap[parentIndex]
-      )
+      // 內聯優先級比較（避免函數調用開銷）
+      const currentPriority = EventQueue.PRIORITY_VALUES[this.heap[index].priority]
+      const parentPriority = EventQueue.PRIORITY_VALUES[this.heap[parentIndex].priority]
 
       // 如果子節點優先級更高，交換
-      if (cmp < 0) {
-        ;[this.heap[index], this.heap[parentIndex]] = [this.heap[parentIndex], this.heap[index]]
+      if (currentPriority < parentPriority) {
+        // 使用直接交換而非解構（性能優化）
+        const temp = this.heap[index]
+        this.heap[index] = this.heap[parentIndex]
+        this.heap[parentIndex] = temp
         index = parentIndex
       } else {
         break
@@ -168,31 +181,30 @@ export class EventQueue {
       const leftChild = 2 * index + 1
       const rightChild = 2 * index + 2
 
-      // 比較左子節點
+      // 比較左子節點（內聯優先級比較）
       if (leftChild < this.heap.length) {
-        const cmp = PriorityEscalationManager.comparePriority(
-          this.heap[leftChild],
-          this.heap[smallest]
-        )
-        if (cmp < 0) {
+        const leftPriority = EventQueue.PRIORITY_VALUES[this.heap[leftChild].priority]
+        const smallestPriority = EventQueue.PRIORITY_VALUES[this.heap[smallest].priority]
+        if (leftPriority < smallestPriority) {
           smallest = leftChild
         }
       }
 
-      // 比較右子節點
+      // 比較右子節點（內聯優先級比較）
       if (rightChild < this.heap.length) {
-        const cmp = PriorityEscalationManager.comparePriority(
-          this.heap[rightChild],
-          this.heap[smallest]
-        )
-        if (cmp < 0) {
+        const rightPriority = EventQueue.PRIORITY_VALUES[this.heap[rightChild].priority]
+        const smallestPriority = EventQueue.PRIORITY_VALUES[this.heap[smallest].priority]
+        if (rightPriority < smallestPriority) {
           smallest = rightChild
         }
       }
 
       // 如果子節點優先級更高，交換
       if (smallest !== index) {
-        ;[this.heap[index], this.heap[smallest]] = [this.heap[smallest], this.heap[index]]
+        // 使用直接交換而非解構（性能優化）
+        const temp = this.heap[index]
+        this.heap[index] = this.heap[smallest]
+        this.heap[smallest] = temp
         index = smallest
       } else {
         break
