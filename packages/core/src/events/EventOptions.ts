@@ -156,6 +156,72 @@ export interface EventOptions {
      */
     halfOpenRequests?: number
   }
+
+  /**
+   * Event aggregation configuration (FS-102).
+   * Enables deduplication and micro-batching for improved throughput.
+   * @default undefined (disabled)
+   */
+  aggregation?: {
+    /**
+     * Enable event aggregation.
+     * @default false
+     */
+    enabled?: boolean
+
+    /**
+     * Aggregation window size in milliseconds.
+     * Backpressure-aware adjustment: 50-500ms
+     * @default 200
+     */
+    windowMs?: number
+
+    /**
+     * Batch size threshold for auto-flush.
+     * @default 50
+     */
+    batchSize?: number
+
+    /**
+     * Deduplication strategy.
+     * @default 'pattern'
+     */
+    deduplication?: 'pattern' | 'idempotencyKey' | 'off'
+
+    /**
+     * Deduplication pattern (string or function).
+     * String: hook-based pattern
+     * Function: custom pattern from event args
+     */
+    pattern?: string | ((args: unknown) => string)
+
+    /**
+     * Priority merge strategy.
+     * - 'highest': keep highest priority event
+     * - 'earliest': keep earliest event
+     * - 'latest': keep latest event
+     * @default 'highest'
+     */
+    mergePriority?: 'highest' | 'earliest' | 'latest'
+
+    /**
+     * Enable automatic cleanup of expired entries.
+     * @default true
+     */
+    enableCleanup?: boolean
+
+    /**
+     * Cleanup interval in milliseconds.
+     * @default 300000 (5 minutes)
+     */
+    cleanupIntervalMs?: number
+
+    /**
+     * TTL for entries in milliseconds.
+     * @default 600000 (10 minutes)
+     */
+    ttlMs?: number
+  }
 }
 
 /**
@@ -190,5 +256,16 @@ export const DEFAULT_EVENT_OPTIONS: Required<EventOptions> = {
     failureThreshold: 5,
     resetTimeout: 30000,
     halfOpenRequests: 3,
+  },
+  aggregation: {
+    enabled: false,
+    windowMs: 200,
+    batchSize: 50,
+    deduplication: 'pattern',
+    pattern: undefined,
+    mergePriority: 'highest',
+    enableCleanup: true,
+    cleanupIntervalMs: 300000,
+    ttlMs: 600000,
   },
 }

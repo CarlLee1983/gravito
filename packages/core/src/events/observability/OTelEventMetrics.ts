@@ -651,4 +651,78 @@ export class OTelEventMetrics implements CircuitBreakerMetricsRecorder {
       to_priority: toPriority,
     })
   }
+
+  /**
+   * Record event deduplication (FS-102).
+   *
+   * @param eventName - Event name
+   * @param deduplicatedCount - Number of events after deduplication
+   * @param totalCount - Total number of events before deduplication
+   */
+  recordDeduplication(eventName: string, deduplicatedCount: number, totalCount: number): void {
+    this.meter
+      .createObservableCounter(`gravito_event_deduplication_count`, {
+        description: 'Count of deduplicated events',
+      })
+      .addCallback((result: ObservableResult) => {
+        result.observe(totalCount - deduplicatedCount, {
+          event_name: eventName,
+          type: 'removed',
+        })
+        result.observe(deduplicatedCount, {
+          event_name: eventName,
+          type: 'remaining',
+        })
+      })
+  }
+
+  /**
+   * Record batch submission (FS-102).
+   *
+   * @param eventName - Event name
+   * @param batchSize - Size of submitted batch
+   * @param windowMs - Aggregation window size
+   */
+  recordBatch(eventName: string, batchSize: number, windowMs: number): void {
+    this.meter
+      .createObservableCounter(`gravito_event_batch_size`, {
+        description: 'Size of event batches',
+      })
+      .addCallback((result: ObservableResult) => {
+        result.observe(batchSize, {
+          event_name: eventName,
+        })
+      })
+
+    this.meter
+      .createObservableGauge(`gravito_event_batch_window`, {
+        description: 'Aggregation window size in milliseconds',
+      })
+      .addCallback((result: ObservableResult) => {
+        result.observe(windowMs, {
+          event_name: eventName,
+        })
+      })
+  }
+
+  /**
+   * Record window adjustment (FS-102).
+   *
+   * @param oldWindowMs - Previous window size
+   * @param newWindowMs - New window size
+   * @param reason - Adjustment reason
+   */
+  recordWindowAdjustment(oldWindowMs: number, newWindowMs: number, reason: string): void {
+    this.meter
+      .createObservableCounter(`gravito_event_aggregation_window_adjustments`, {
+        description: 'Count of window adjustments',
+      })
+      .addCallback((result: ObservableResult) => {
+        result.observe(1, {
+          from_window: `${oldWindowMs}ms`,
+          to_window: `${newWindowMs}ms`,
+          reason,
+        })
+      })
+  }
 }

@@ -1,4 +1,5 @@
 import type { ConnectionContract } from '@gravito/atlas'
+import { EventAggregationManager } from './events/aggregation/EventAggregationManager'
 import { CircuitBreaker, type CircuitBreakerOptions } from './events/CircuitBreaker'
 import { DeadLetterQueue } from './events/DeadLetterQueue'
 import type { EventBackend } from './events/EventBackend'
@@ -122,6 +123,12 @@ export interface HookManagerConfig {
    * When provided, enables dispatchQueued() method for routing events to Redis-backed queue.
    */
   messageQueueBridge?: any
+
+  /**
+   * Event aggregation configuration (FS-102).
+   * Enables deduplication and micro-batching for improved throughput.
+   */
+  aggregation?: any
 }
 
 /**
@@ -172,6 +179,7 @@ export class HookManager {
   private idempotencyCache: IdempotencyCache
   private config: HookManagerConfig
   private migrationWarner: MigrationWarner
+  private aggregationManager?: EventAggregationManager
 
   /**
    * Cache for async detection results (WeakMap for automatic garbage collection).
@@ -226,6 +234,24 @@ export class HookManager {
     // Initialize Message Queue Bridge for distributed processing
     if (config.messageQueueBridge) {
       this.messageQueueBridge = config.messageQueueBridge
+    }
+
+    // Initialize event aggregation manager (FS-102)
+    if (config.aggregation?.enabled) {
+      this.aggregationManager = new EventAggregationManager(config.aggregation)
+      this.aggregationManager.setSubmitToQueueFn((tasks) => {
+        for (const task of tasks) {
+          this.backend.enqueue(task)
+        }
+        return Promise.resolve()
+      })
+      // Connect to backpressure manager for window adjustment
+      if (this.backend instanceof EventPriorityQueue) {
+        const backpressure = this.backend.getBackpressureManager()
+        if (backpressure) {
+          this.aggregationManager.setBackpressureManager(backpressure)
+        }
+      }
     }
   }
 
@@ -474,7 +500,24 @@ export class HookManager {
       retryCount: 0,
     }
 
-    this.backend.enqueue(task)
+    // === FS-102: Aggregation layer interception ===
+    if (this.aggregationManager && mergedOptions.aggregation?.enabled) {
+      try {
+        const accepted = await this.aggregationManager.submit(task)
+        if (!accepted) {
+          console.warn(
+            `[HookManager] Event '${hook}' was rejected due to backpressure (aggregation overflow)`
+          )
+        }
+      } catch (error) {
+        console.error(`[HookManager] Aggregation error for event '${hook}':`, error)
+        // Fallback to direct enqueue on error
+        this.backend.enqueue(task)
+      }
+    } else {
+      // Direct enqueue without aggregation
+      this.backend.enqueue(task)
+    }
 
     // Note: We don't await the queue processing here
     // Events are processed asynchronously in the background

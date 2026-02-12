@@ -972,4 +972,28 @@ export class EventPriorityQueue implements EventBackend {
     breaker.reset()
     return true
   }
+
+  /**
+   * Batch enqueue multiple tasks (FS-102).
+   * Supports aggregation layer batch submission.
+   *
+   * @param tasks - Array of tasks to enqueue
+   * @returns Array of task IDs
+   * @internal
+   */
+  enqueueBatch(tasks: EventTask[]): string[] {
+    const taskIds: string[] = []
+
+    for (const task of tasks) {
+      const id = this.enqueue(task)
+      taskIds.push(id)
+    }
+
+    // Trigger batch processing if not already processing
+    if (tasks.length > 0 && !this.processing) {
+      setImmediate(() => this.processNext())
+    }
+
+    return taskIds
+  }
 }
