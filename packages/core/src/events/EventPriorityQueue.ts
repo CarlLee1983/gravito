@@ -10,7 +10,12 @@ import type { EventTracing } from './observability/EventTracing'
 import type { OTelEventMetrics } from './observability/OTelEventMetrics'
 import { PriorityEscalationManager, type PriorityStatistics } from './PriorityEscalationManager'
 import type { RetryScheduler } from './RetryScheduler'
-import type { BackpressureStrategy, EventQueueConfig, EventTask } from './types'
+import type {
+  BackpressureStrategy,
+  EventQueueConfig,
+  EventTask,
+  MultiPriorityQueueDepth,
+} from './types'
 import type { WorkerPool } from './WorkerPool'
 
 export type { EventTask, EventQueueConfig, BackpressureStrategy }
@@ -391,6 +396,9 @@ export class EventPriorityQueue implements EventBackend {
         break
     }
 
+    // === FS-103: Sync queue depth to backpressure manager ===
+    this.syncBackpressure()
+
     return task.id
   }
 
@@ -487,6 +495,8 @@ export class EventPriorityQueue implements EventBackend {
       console.error(`[EventPriorityQueue] Error processing task ${task.id}:`, error)
     } finally {
       this.processing = false
+      // === FS-103: Sync queue depth after processing ===
+      this.syncBackpressure()
       // Process next task
       setImmediate(() => this.processNext())
     }
@@ -995,5 +1005,39 @@ export class EventPriorityQueue implements EventBackend {
     }
 
     return taskIds
+  }
+
+  /**
+   * Get queue depth for each priority level (FS-103).
+   * Used by BackpressureManager for multi-priority depth monitoring.
+   *
+   * @returns Queue depth snapshot with depths for each priority
+   * @internal
+   */
+  getQueueDepthByPriority(): MultiPriorityQueueDepth {
+    return {
+      critical: this.criticalPriority.length,
+      high: this.highPriority.length,
+      normal: this.normalPriority.length,
+      low: this.lowPriority.length,
+      total: this.getDepth(),
+    }
+  }
+
+  /**
+   * Sync queue depth to BackpressureManager (FS-103).
+   * Called whenever queue depth changes to keep BackpressureManager
+   * synchronized with real-time queue state.
+   *
+   * @private
+   * @internal
+   */
+  private syncBackpressure(): void {
+    if (!this.backpressureManager) {
+      return
+    }
+
+    const depths = this.getQueueDepthByPriority()
+    this.backpressureManager.updateQueueDepth(depths)
   }
 }
