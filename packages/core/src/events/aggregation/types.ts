@@ -4,7 +4,6 @@
  */
 
 import { BackpressureState } from '../BackpressureManager'
-import type { EventTask } from '../types'
 
 /**
  * Deduplication statistics.

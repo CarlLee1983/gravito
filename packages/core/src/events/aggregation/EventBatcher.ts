@@ -241,7 +241,7 @@ export class EventBatcher {
   /**
    * Adjust flush interval.
    */
-  setFlushInterval(newIntervalMs: number): void {
+  setFlushInterval(_newIntervalMs: number): void {
     // Restart timer with new interval
     this.clearTimer()
     if (this.queue.length > 0) {

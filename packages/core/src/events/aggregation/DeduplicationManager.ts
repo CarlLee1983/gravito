@@ -11,7 +11,7 @@
  */
 
 import type { EventTask } from '../types'
-import type { AggregationConfig, DeduplicationStats, WindowAdjustmentConfig } from './types'
+import type { AggregationConfig, DeduplicationStats } from './types'
 import { DEFAULT_AGGREGATION_CONFIG, PRIORITY_ORDER } from './types'
 
 /**

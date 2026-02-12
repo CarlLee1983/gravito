@@ -16,7 +16,7 @@ import type { EventTask } from '../types'
 import { AggregationWindow } from './AggregationWindow'
 import { DeduplicationManager } from './DeduplicationManager'
 import { EventBatcher } from './EventBatcher'
-import type { AggregationConfig, AggregationStats, WindowAdjustmentConfig } from './types'
+import type { AggregationConfig, AggregationStats } from './types'
 import { DEFAULT_AGGREGATION_CONFIG, DEFAULT_WINDOW_ADJUSTMENT, getSuggestedWindow } from './types'
 
 /**
