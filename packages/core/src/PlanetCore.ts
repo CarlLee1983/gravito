@@ -224,6 +224,7 @@ export class PlanetCore {
       eventMetrics.setQueueDepthCallback(() => {
         const queue = (observableHooks as any).getEventQueue()
         return {
+          critical: queue.getDepthByPriority('critical'),
           high: queue.getDepthByPriority('high'),
           normal: queue.getDepthByPriority('normal'),
           low: queue.getDepthByPriority('low'),

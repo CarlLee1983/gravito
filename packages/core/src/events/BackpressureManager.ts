@@ -40,6 +40,7 @@ export interface BackpressureConfig {
 
   /** 分優先級隊列深度限制 */
   maxSizeByPriority?: {
+    critical?: number
     high?: number
     normal?: number
     low?: number
@@ -287,9 +288,9 @@ export class BackpressureManager {
    */
   evaluate(
     eventName: string,
-    priority: 'high' | 'normal' | 'low',
+    priority: 'critical' | 'high' | 'normal' | 'low',
     queueDepth: number,
-    depthByPriority: { high: number; normal: number; low: number }
+    depthByPriority: { critical: number; high: number; normal: number; low: number }
   ): BackpressureDecision {
     if (!this.enabled) {
       return { allowed: true }
@@ -301,8 +302,13 @@ export class BackpressureManager {
     // 重新計算背壓狀態
     this.updateState(queueDepth)
 
+    // CRITICAL 優先級在 OVERFLOW 之外永不拒絕
+    if (priority === 'critical' && this.state !== BackpressureState.OVERFLOW) {
+      return { allowed: true }
+    }
+
     // 檢查分優先級深度限制
-    const maxSizeForPriority = this.config.maxSizeByPriority[priority] ?? Number.POSITIVE_INFINITY
+    const maxSizeForPriority = this.config.maxSizeByPriority?.[priority] ?? Number.POSITIVE_INFINITY
     if (depthByPriority[priority] >= maxSizeForPriority) {
       return this.createDecision(false, `Priority queue full for ${priority}`, eventName, priority)
     }
@@ -321,8 +327,8 @@ export class BackpressureManager {
         }
 
       case BackpressureState.CRITICAL:
-        // 僅允許高優先級
-        if (priority === 'high') {
+        // 允許 CRITICAL 和 HIGH 優先級
+        if (priority === 'critical' || priority === 'high') {
           return { allowed: true }
         }
         if (priority === 'normal') {

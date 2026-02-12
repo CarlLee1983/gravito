@@ -38,6 +38,13 @@ export interface EventTask {
   createdAt: number
 
   /**
+   * Timestamp when the event was enqueued (added to the queue).
+   * Used for priority escalation calculations.
+   * @internal
+   */
+  enqueuedAt: number
+
+  /**
    * Partition key for ordering (if applicable).
    */
   partitionKey?: string

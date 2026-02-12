@@ -8,6 +8,7 @@ import type { EventOptions } from './EventOptions'
 import type { EventMetrics } from './observability/EventMetrics'
 import type { EventTracing } from './observability/EventTracing'
 import type { OTelEventMetrics } from './observability/OTelEventMetrics'
+import { PriorityEscalationManager, type PriorityStatistics } from './PriorityEscalationManager'
 import type { RetryScheduler } from './RetryScheduler'
 import type { BackpressureStrategy, EventQueueConfig, EventTask } from './types'
 import type { WorkerPool } from './WorkerPool'
@@ -17,13 +18,17 @@ export type { EventTask, EventQueueConfig, BackpressureStrategy }
 /**
  * Priority queue for event processing.
  * Events are processed based on their priority level:
- * - High priority events are processed first
- * - Normal priority events are processed second
- * - Low priority events are processed last
+ * - Critical priority events are processed first (< 1ms)
+ * - High priority events are processed second (< 50ms)
+ * - Normal priority events are processed third (< 200ms)
+ * - Low priority events are processed last (< 500ms)
+ *
+ * Supports automatic priority escalation based on wait time.
  *
  * @internal
  */
 export class EventPriorityQueue implements EventBackend {
+  private criticalPriority: EventTask[] = []
   private highPriority: EventTask[] = []
   private normalPriority: EventTask[] = []
   private lowPriority: EventTask[] = []
@@ -48,6 +53,7 @@ export class EventPriorityQueue implements EventBackend {
   private backpressureManager?: BackpressureManager
   private workerPool?: WorkerPool
   private retryScheduler?: RetryScheduler
+  private priorityStats?: PriorityStatistics
 
   constructor(config: EventQueueConfig = {}) {
     this.config = config
@@ -102,6 +108,26 @@ export class EventPriorityQueue implements EventBackend {
    */
   setOTelEventMetrics(metrics: OTelEventMetrics): void {
     this.otelEventMetrics = metrics
+  }
+
+  /**
+   * Set the PriorityStatistics instance for tracking priority distribution.
+   *
+   * @param stats - PriorityStatistics instance
+   * @internal
+   */
+  setPriorityStatistics(stats: PriorityStatistics): void {
+    this.priorityStats = stats
+  }
+
+  /**
+   * Get the PriorityStatistics instance.
+   *
+   * @returns PriorityStatistics instance or undefined
+   * @internal
+   */
+  getPriorityStatistics(): PriorityStatistics | undefined {
+    return this.priorityStats
   }
 
   /**
@@ -233,26 +259,53 @@ export class EventPriorityQueue implements EventBackend {
       task = hookOrTask
     } else {
       const taskId = `task-${++this.taskIdCounter}-${Date.now()}`
+      const nowMs = Date.now()
       task = {
         id: taskId,
         hook: hookOrTask,
         args,
         options: options!,
         callbacks: callbacks!,
-        createdAt: Date.now(),
+        createdAt: nowMs,
+        enqueuedAt: nowMs,
         partitionKey: options?.partitionKey,
         retryCount: 0,
       }
     }
 
+    // === Apply priority escalation if enabled ===
+    if (task.options.escalation?.enabled !== false) {
+      const originalPriority = task.options.priority || 'normal'
+      const escalatedPriority = PriorityEscalationManager.calculateCurrentPriority(
+        task,
+        task.options.escalation
+      )
+
+      // Record escalation event if priority changed
+      if (escalatedPriority !== originalPriority) {
+        this.priorityStats?.recordEscalation(originalPriority, escalatedPriority)
+        this.otelEventMetrics?.recordPriorityEscalation(
+          task.hook,
+          originalPriority,
+          escalatedPriority
+        )
+      }
+
+      task.options.priority = escalatedPriority
+    }
+
+    // Record event priority stat
+    const priority = task.options.priority || 'normal'
+    this.priorityStats?.recordEvent(priority as any)
+
     // === Evaluate advanced backpressure if enabled ===
     if (this.backpressureManager) {
-      const priority = task.options.priority || 'normal'
       const decision = this.backpressureManager.evaluate(
         task.hook,
-        priority as 'high' | 'normal' | 'low',
+        priority as 'critical' | 'high' | 'normal' | 'low',
         this.getDepth(),
         {
+          critical: this.criticalPriority.length,
           high: this.highPriority.length,
           normal: this.normalPriority.length,
           low: this.lowPriority.length,
@@ -308,23 +361,34 @@ export class EventPriorityQueue implements EventBackend {
       }
     }
 
-    const priority = task.options.priority || 'normal'
+    const finalPriority = task.options.priority || 'normal'
 
-    switch (priority) {
+    switch (finalPriority) {
+      case 'critical':
+        this.criticalPriority.push(task)
+        // Process immediately for CRITICAL events
+        if (!this.processing) {
+          setImmediate(() => this.processNext())
+        }
+        break
       case 'high':
         this.highPriority.push(task)
+        if (!this.processing) {
+          this.processNext()
+        }
         break
       case 'normal':
         this.normalPriority.push(task)
+        if (!this.processing) {
+          this.processNext()
+        }
         break
       case 'low':
         this.lowPriority.push(task)
+        if (!this.processing) {
+          this.processNext()
+        }
         break
-    }
-
-    // Start processing if not already running
-    if (!this.processing) {
-      this.processNext()
     }
 
     return task.id
@@ -359,6 +423,7 @@ export class EventPriorityQueue implements EventBackend {
 
   /**
    * Drop the oldest event from the queue, prioritizing low priority events.
+   * Drops in order: LOW → NORMAL → HIGH → CRITICAL
    */
   private dropOldest(): void {
     if (this.lowPriority.length > 0) {
@@ -379,6 +444,13 @@ export class EventPriorityQueue implements EventBackend {
       const dropped = this.highPriority.shift()
       console.warn(
         `[EventPriorityQueue] Queue full. Dropped oldest HIGH priority event '${dropped?.hook}'.`
+      )
+      return
+    }
+    if (this.criticalPriority.length > 0) {
+      const dropped = this.criticalPriority.shift()
+      console.warn(
+        `[EventPriorityQueue] Queue full. Dropped oldest CRITICAL priority event '${dropped?.hook}'.`
       )
       return
     }
@@ -422,6 +494,7 @@ export class EventPriorityQueue implements EventBackend {
 
   /**
    * Dequeue the next task based on priority and partition ordering.
+   * Priority order: CRITICAL > HIGH > NORMAL > LOW
    *
    * @returns Next task to process, or undefined if queue is empty
    * @internal
@@ -429,6 +502,7 @@ export class EventPriorityQueue implements EventBackend {
   private dequeue(): EventTask | undefined {
     // Try to find a task that respects partition ordering
     return (
+      this.dequeueFromPriority(this.criticalPriority) ||
       this.dequeueFromPriority(this.highPriority) ||
       this.dequeueFromPriority(this.normalPriority) ||
       this.dequeueFromPriority(this.lowPriority)
@@ -795,7 +869,12 @@ export class EventPriorityQueue implements EventBackend {
    * @returns Total number of tasks in the queue
    */
   getDepth(): number {
-    return this.highPriority.length + this.normalPriority.length + this.lowPriority.length
+    return (
+      this.criticalPriority.length +
+      this.highPriority.length +
+      this.normalPriority.length +
+      this.lowPriority.length
+    )
   }
 
   /**
@@ -804,8 +883,10 @@ export class EventPriorityQueue implements EventBackend {
    * @param priority - Priority level
    * @returns Number of tasks in the specified priority queue
    */
-  getDepthByPriority(priority: 'high' | 'normal' | 'low'): number {
+  getDepthByPriority(priority: 'critical' | 'high' | 'normal' | 'low'): number {
     switch (priority) {
+      case 'critical':
+        return this.criticalPriority.length
       case 'high':
         return this.highPriority.length
       case 'normal':
@@ -890,5 +971,29 @@ export class EventPriorityQueue implements EventBackend {
 
     breaker.reset()
     return true
+  }
+
+  /**
+   * Batch enqueue multiple tasks (FS-102).
+   * Supports aggregation layer batch submission.
+   *
+   * @param tasks - Array of tasks to enqueue
+   * @returns Array of task IDs
+   * @internal
+   */
+  enqueueBatch(tasks: EventTask[]): string[] {
+    const taskIds: string[] = []
+
+    for (const task of tasks) {
+      const id = this.enqueue(task)
+      taskIds.push(id)
+    }
+
+    // Trigger batch processing if not already processing
+    if (tasks.length > 0 && !this.processing) {
+      setImmediate(() => this.processNext())
+    }
+
+    return taskIds
   }
 }
