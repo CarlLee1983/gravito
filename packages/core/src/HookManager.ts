@@ -461,13 +461,15 @@ export class HookManager {
 
     // Use backend to enqueue
     // We construct the task here to ensure consistent ID generation and type safety
+    const nowMs = Date.now()
     const task: EventTask = {
-      id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `task-${nowMs}-${Math.random().toString(36).substr(2, 9)}`,
       hook,
       args,
       callbacks: callbacks as ActionCallback[],
       options: mergedOptions,
-      createdAt: Date.now(),
+      createdAt: nowMs,
+      enqueuedAt: nowMs,
       partitionKey: mergedOptions.partitionKey,
       retryCount: 0,
     }

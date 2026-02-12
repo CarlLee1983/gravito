@@ -11,12 +11,53 @@ export interface EventOptions {
 
   /**
    * Priority level for event processing.
-   * - 'high': Critical events (e.g., order:created, payment:succeeded)
-   * - 'normal': Standard events (e.g., order:confirmed)
-   * - 'low': Non-critical events (e.g., analytics, logging)
+   * - 'critical': Immediate processing, bypass queue (< 1ms)
+   * - 'high': High priority events (< 50ms)
+   * - 'normal': Standard events (< 200ms)
+   * - 'low': Non-critical events (< 500ms)
    * @default 'normal'
    */
-  priority?: 'high' | 'normal' | 'low'
+  priority?: 'critical' | 'high' | 'normal' | 'low'
+
+  /**
+   * Automatic priority escalation configuration.
+   * Events can be automatically upgraded to higher priority based on wait time.
+   */
+  escalation?: {
+    /**
+     * Whether to enable automatic priority escalation.
+     * @default true
+     */
+    enabled?: boolean
+
+    /**
+     * Escalation thresholds in milliseconds.
+     * Events exceeding these wait times are promoted.
+     */
+    thresholds?: {
+      /**
+       * Wait time before LOW events are promoted to NORMAL.
+       * @default 200
+       */
+      lowToNormal?: number
+      /**
+       * Wait time before NORMAL events are promoted to HIGH.
+       * @default 100
+       */
+      normalToHigh?: number
+      /**
+       * Wait time before HIGH events are promoted to CRITICAL.
+       * @default 50
+       */
+      highToCritical?: number
+    }
+
+    /**
+     * Maximum wait time before forcing CRITICAL priority.
+     * @default 500
+     */
+    maxWaitTimeMs?: number
+  }
 
   /**
    * Execution timeout in milliseconds.
@@ -129,6 +170,15 @@ export const DEFAULT_EVENT_OPTIONS: Required<EventOptions> = {
   partitionKey: '',
   idempotencyKey: '',
   ttl: 3600000, // 1 hour
+  escalation: {
+    enabled: true,
+    thresholds: {
+      lowToNormal: 200,
+      normalToHigh: 100,
+      highToCritical: 50,
+    },
+    maxWaitTimeMs: 500,
+  },
   retry: {
     maxRetries: 0,
     backoff: 'exponential',

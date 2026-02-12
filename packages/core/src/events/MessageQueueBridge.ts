@@ -135,13 +135,15 @@ export class MessageQueueBridge {
     }
 
     // 3. 構建 EventTask
+    const nowMs = Date.now()
     const task: EventTask = {
-      id: `queue-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `queue-${nowMs}-${Math.random().toString(36).substr(2, 9)}`,
       hook: eventName,
       args,
       callbacks: listeners,
       options: options || {},
-      createdAt: Date.now(),
+      createdAt: nowMs,
+      enqueuedAt: nowMs,
       retryCount: 0,
     }
 
