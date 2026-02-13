@@ -16,13 +16,19 @@ async function bootstrap(): Promise<void> {
     // =========================================================================
     // 2. 註冊所有 ServiceProvider
     // =========================================================================
-    // TODO: 在 Phase 2-7 逐步實現各個 Provider
-    // - DatabaseServiceProvider
-    // - CacheServiceProvider
-    // - AuthenticationServiceProvider
-    // - EventServiceProvider
-    // - ObservabilityServiceProvider
-    // 等...
+    // Phase 4: 認證系統（已實現）
+    core.register(require('./providers/AuthServiceProvider').AuthServiceProvider)
+
+    // Phase 5: 安全系統（已實現）
+    core.register(require('./providers/SecurityServiceProvider').SecurityServiceProvider)
+
+    // Phase 6: 事件驅動系統（已實現）
+    core.register(require('./providers/EventServiceProvider').EventServiceProvider)
+
+    // TODO: 在後續 Phase 實現
+    // - DatabaseServiceProvider（Phase 2）
+    // - CacheServiceProvider（Phase 3）
+    // - ObservabilityServiceProvider（Phase 7）
 
     // =========================================================================
     // 3. 啟動應用

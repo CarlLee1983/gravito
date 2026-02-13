@@ -2,8 +2,10 @@
  * CreateOrder Use Case
  */
 
+import { OrderCreated } from '@domain/order/events/OrderCreated'
 import type { CreateOrderInput, Order, ShippingAddress } from '@domain/order/Order'
 import { OrderDomainService } from '@domain/order/Order'
+import type { EventManager } from '@gravito/core'
 import type { OrderRepository } from '@infrastructure/repositories/OrderRepository'
 import type { ProductRepository } from '@infrastructure/repositories/ProductRepository'
 
@@ -17,7 +19,8 @@ export interface CreateOrderRequest {
 export class CreateOrderUseCase {
   constructor(
     private orderRepository: OrderRepository,
-    private productRepository: ProductRepository
+    private productRepository: ProductRepository,
+    private eventManager: EventManager
   ) {}
 
   async execute(request: CreateOrderRequest): Promise<Order> {
@@ -77,6 +80,20 @@ export class CreateOrderUseCase {
     for (const item of request.items) {
       await this.productRepository.decreaseStock(item.productId, item.quantity)
     }
+
+    // =====================================================================
+    // 6. 發送訂單建立事件
+    // =====================================================================
+    await this.eventManager.dispatch(
+      new OrderCreated({
+        orderId: order.id,
+        userId: order.userId,
+        totalAmount: order.total,
+        itemCount: order.items.length,
+        shippingAddress: order.shippingAddress,
+        createdAt: order.createdAt,
+      })
+    )
 
     return order
   }

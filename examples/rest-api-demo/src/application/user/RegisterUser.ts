@@ -4,8 +4,10 @@
  * 應用層業務邏輯：用戶註冊
  */
 
+import { UserCreated } from '@domain/user/events/UserCreated'
 import type { CreateUserInput, User } from '@domain/user/User'
 import { UserDomainService } from '@domain/user/User'
+import type { EventManager } from '@gravito/core'
 import type { UserRepository } from '@infrastructure/repositories/UserRepository'
 import * as bcrypt from 'bcrypt'
 
@@ -25,7 +27,10 @@ export interface RegisterUserResponse {
 }
 
 export class RegisterUserUseCase {
-  constructor(private userRepository: UserRepository) {}
+  constructor(
+    private userRepository: UserRepository,
+    private eventManager: EventManager
+  ) {}
 
   async execute(request: RegisterUserRequest): Promise<RegisterUserResponse> {
     // =====================================================================
@@ -67,7 +72,20 @@ export class RegisterUserUseCase {
     const user = await this.userRepository.create(createUserInput)
 
     // =====================================================================
-    // 5. 返回結果
+    // 5. 發送用戶建立事件
+    // =====================================================================
+    await this.eventManager.dispatch(
+      new UserCreated({
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        createdAt: user.createdAt,
+      })
+    )
+
+    // =====================================================================
+    // 6. 返回結果
     // =====================================================================
     return this.toResponse(user)
   }
