@@ -20,6 +20,9 @@ describe('authenticate middleware', () => {
         method: 'GET',
         url: '/api/protected',
       },
+      app: {
+        make: vi.fn(),
+      },
       get: vi.fn(),
       set: vi.fn(),
       header: vi.fn(),
