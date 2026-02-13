@@ -1,11 +1,22 @@
 import type { GravitoContext } from '@gravito/core'
 import type { InertiaHelper } from '@gravito/ion'
 import type { AuthManager } from '@gravito/sentinel'
-import { Product } from '../../models/Product'
 import type { User } from '../../models/User'
-import { Wishlist } from '../../models/Wishlist'
+import { RequestProductCache, WishlistService } from '../../Services'
 
 export class WishlistController {
+  /**
+   * Get WishlistService instance with injected RequestScope cache
+   *
+   * The product cache is automatically scoped to the current HTTP request.
+   * Multiple calls within the same request return the same cache instance.
+   * Cache is automatically cleaned up when request ends.
+   */
+  private static getService(ctx: GravitoContext): WishlistService {
+    const productCache = ctx.scoped('product:cache', () => new RequestProductCache())
+    return new WishlistService(productCache)
+  }
+
   static async index(ctx: GravitoContext) {
     const inertia = ctx.get('inertia') as unknown as InertiaHelper
     const auth = ctx.get('auth') as AuthManager
@@ -14,30 +25,11 @@ export class WishlistController {
       return ctx.redirect('/login')
     }
 
-    const wishlists = await Wishlist.where('user_id', user.id).get()
-
-    // In a real app, we would use a join or eager loading
-    // For now, simpler optimization: fetch all related products
-    const productIds = wishlists.map((w: Wishlist) => w.product_id)
-    const products = productIds.length > 0 ? await Product.whereIn('id', productIds).get() : []
-
-    const formattedWishlists = wishlists
-      .map((item: Wishlist) => {
-        const product = products.find((p: Product) => p.id === item.product_id)
-        return {
-          id: item.id,
-          product: product
-            ? {
-                ...(product as any)._attributes,
-                formatted_price: product.getFormattedPrice(),
-              }
-            : null,
-        }
-      })
-      .filter((item: any) => item.product) // Filter out items where product no longer exists
+    const service = WishlistController.getService(ctx)
+    const wishlists = await service.getUserWishlists(user.id)
 
     return inertia.render('Account/Wishlist', {
-      wishlists: formattedWishlists,
+      wishlists,
     })
   }
 
@@ -55,15 +47,8 @@ export class WishlistController {
       return ctx.json({ error: 'Product ID required' }, 400)
     }
 
-    const existing = await Wishlist.where('user_id', user.id).where('product_id', productId).first()
-
-    if (!existing) {
-      const wishlist = new Wishlist()
-      wishlist.user_id = user.id
-      wishlist.product_id = productId
-      wishlist.created_at = new Date()
-      await wishlist.save()
-    }
+    const service = WishlistController.getService(ctx)
+    await service.addToWishlist(user.id, productId)
 
     return ctx.redirect('/account/wishlist')
   }
@@ -76,11 +61,8 @@ export class WishlistController {
     }
 
     const id = (ctx as any).req.param('id')
-    const wishlist = await Wishlist.find(id)
-
-    if (wishlist && wishlist.user_id === user.id) {
-      await wishlist.delete()
-    }
+    const service = WishlistController.getService(ctx)
+    await service.removeFromWishlist(id, user.id)
 
     return ctx.redirect('/account/wishlist')
   }
