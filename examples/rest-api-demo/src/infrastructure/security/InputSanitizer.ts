@@ -68,6 +68,22 @@ export function sanitizeUrl(input: string): string {
     return ''
   }
 
+  // 拒絕危險協議
+  const dangerousProtocols = [
+    'javascript:',
+    'data:',
+    'vbscript:',
+    'file:',
+    'about:',
+  ]
+
+  const lowerInput = input.toLowerCase().trim()
+  for (const protocol of dangerousProtocols) {
+    if (lowerInput.startsWith(protocol)) {
+      return '' // 拒絕危險協議
+    }
+  }
+
   try {
     // 驗證 URL 格式
     new URL(input)
@@ -191,4 +207,74 @@ export function sanitizeObject(obj: any, type: 'html' | 'sql' = 'html'): any {
   }
 
   return obj
+}
+
+/**
+ * 移除 HTML 標籤
+ */
+export function stripTags(input: string): string {
+  if (!input || typeof input !== 'string') {
+    return ''
+  }
+
+  return input
+    .replace(/<[^>]*>/g, '') // 移除所有 HTML 標籤
+    .replace(/\s+/g, ' ') // 多個空白合併為單一空格
+    .trim()
+}
+
+/**
+ * 移除前導和尾隨空白
+ */
+export function trim(input: string): string {
+  if (!input || typeof input !== 'string') {
+    return ''
+  }
+
+  return input.trim()
+}
+
+/**
+ * 正規化空白字符
+ */
+export function normalizeWhitespace(input: string): string {
+  if (!input || typeof input !== 'string') {
+    return ''
+  }
+
+  return input
+    .replace(/[\t\n\r]/g, ' ') // 將 tab、換行、回車轉換為空格
+    .replace(/\s+/g, ' ') // 多個空白合併為單一空格
+    .trim()
+}
+
+/**
+ * 驗證電子郵件地址格式
+ */
+export function isValidEmail(email: string): boolean {
+  if (!email || typeof email !== 'string') {
+    return false
+  }
+
+  // RFC 5322 簡化版本
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+  if (!emailRegex.test(email)) {
+    return false
+  }
+
+  // 額外檢查
+  if (email.includes('..')) {
+    return false // 連續點不允許
+  }
+
+  if (email.startsWith('.') || email.endsWith('.')) {
+    return false // 開始或結束不能是點
+  }
+
+  if (email.length > 254) {
+    return false // RFC 5321 限制
+  }
+
+  return true
 }

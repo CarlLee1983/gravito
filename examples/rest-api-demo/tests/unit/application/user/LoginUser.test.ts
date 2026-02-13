@@ -6,10 +6,14 @@
 
 import { LoginUserUseCase } from '@application/user/LoginUser'
 import type { UserRepository } from '@infrastructure/repositories/UserRepository'
-import * as bcrypt from 'bcrypt'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('bcrypt')
+// Mock bcrypt module before importing anything that uses it
+const mockCompare = vi.fn()
+
+vi.mock('bcrypt', () => ({
+  compare: mockCompare,
+}))
 
 describe('LoginUserUseCase', () => {
   let useCase: LoginUserUseCase
@@ -45,7 +49,7 @@ describe('LoginUserUseCase', () => {
       }
 
       mockUserRepository.findByEmail.mockResolvedValue(mockUser)
-      ;(bcrypt.compare as any).mockResolvedValue(true)
+      mockCompare.mockResolvedValue(true)
 
       const result = await useCase.execute(request)
 
@@ -73,7 +77,7 @@ describe('LoginUserUseCase', () => {
       }
 
       mockUserRepository.findByEmail.mockResolvedValue(mockUser)
-      ;(bcrypt.compare as any).mockResolvedValue(true)
+      mockCompare.mockResolvedValue(true)
 
       const result = await useCase.execute(request)
 
@@ -102,7 +106,7 @@ describe('LoginUserUseCase', () => {
       }
 
       mockUserRepository.findByEmail.mockResolvedValue(mockUser)
-      ;(bcrypt.compare as any).mockResolvedValue(true)
+      mockCompare.mockResolvedValue(true)
 
       await useCase.execute(request)
 
@@ -182,7 +186,7 @@ describe('LoginUserUseCase', () => {
       }
 
       mockUserRepository.findByEmail.mockResolvedValue(mockUser)
-      ;(bcrypt.compare as any).mockResolvedValue(true)
+      mockCompare.mockResolvedValue(true)
 
       const result = await useCase.execute(request)
 
@@ -205,7 +209,7 @@ describe('LoginUserUseCase', () => {
       }
 
       mockUserRepository.findByEmail.mockResolvedValue(mockUser)
-      ;(bcrypt.compare as any).mockResolvedValue(false)
+      mockCompare.mockResolvedValue(false)
 
       await expect(useCase.execute(request)).rejects.toThrow('Invalid email or password')
     })
@@ -226,11 +230,11 @@ describe('LoginUserUseCase', () => {
       }
 
       mockUserRepository.findByEmail.mockResolvedValue(mockUser)
-      ;(bcrypt.compare as any).mockResolvedValue(true)
+      mockCompare.mockResolvedValue(true)
 
       await useCase.execute(request)
 
-      expect(bcrypt.compare).toHaveBeenCalledWith('password123', 'hashedPassword')
+      expect(mockCompare).toHaveBeenCalledWith('password123', 'hashedPassword')
     })
   })
 
@@ -291,7 +295,7 @@ describe('LoginUserUseCase', () => {
       }
 
       mockUserRepository.findByEmail.mockResolvedValue(mockUser)
-      ;(bcrypt.compare as any).mockResolvedValue(true)
+      mockCompare.mockResolvedValue(true)
 
       const result = await useCase.execute(request)
 
@@ -316,7 +320,7 @@ describe('LoginUserUseCase', () => {
       }
 
       mockUserRepository.findByEmail.mockResolvedValue(mockUser)
-      ;(bcrypt.compare as any).mockResolvedValue(true)
+      mockCompare.mockResolvedValue(true)
 
       const result = await useCase.execute(request)
 
@@ -339,7 +343,7 @@ describe('LoginUserUseCase', () => {
       }
 
       mockUserRepository.findByEmail.mockResolvedValue(mockUser)
-      ;(bcrypt.compare as any).mockResolvedValue(true)
+      mockCompare.mockResolvedValue(true)
 
       const result = await useCase.execute(request)
 
