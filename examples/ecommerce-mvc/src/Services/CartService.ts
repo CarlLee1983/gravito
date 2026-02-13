@@ -94,10 +94,8 @@ export class CartService {
    * Get cart as DTO (for API responses)
    */
   async getCartAsDTO(cartId: number): Promise<CartResponseDTO | null> {
-    const cart = await this.cartRepository.find(cartId)
-    if (!cart) return null
-    const withItems = await this.cartRepository.getWithItems(cartId)
-    return withItems ? CartPresenter.present(withItems) : null
+    const cart = await this.cartRepository.getWithItems(cartId)
+    return cart ? CartPresenter.present(cart) : null
   }
 
   /**
@@ -117,10 +115,7 @@ export class CartService {
    */
   async getUserCartAsDTO(userId: number): Promise<CartResponseDTO> {
     const cart = await this.cartRepository.getOrCreateForUser(userId)
-    const withItems = await this.cartRepository.getWithItems(cart.id)
-    if (!withItems) {
-      throw new Error('Failed to load cart with items')
-    }
-    return CartPresenter.present(withItems)
+    // getOrCreateForUser already populates items
+    return CartPresenter.present(cart)
   }
 }

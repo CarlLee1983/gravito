@@ -81,15 +81,16 @@ export class CartController {
       const cart = await service.getOrCreateCart(userId, sessionId)
       await service.addItem(cart.id, body.product_id, body.quantity || 1)
 
-      // Get updated cart
-      const updatedCart = await service.getOrCreateCart(userId, sessionId)
+      // Get updated items only (much faster than full cart fetch)
+      const items = await service.getCartItems(cart.id)
+      cart.items = items
 
       return ctx.json({
         success: true,
         message: '商品已加入購物車',
         cart: {
-          item_count: updatedCart.getItemCount(),
-          subtotal: updatedCart.getSubtotal(),
+          item_count: cart.getItemCount(),
+          subtotal: cart.getSubtotal(),
         },
       })
     } catch (error: any) {

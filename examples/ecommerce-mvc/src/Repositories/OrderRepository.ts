@@ -241,8 +241,8 @@ export class OrderRepository extends ModelRepository<Order> {
   /**
    * Cancel order and restore stock
    */
-  async cancelOrder(orderId: number): Promise<void> {
-    const order = await this.getOrderWithItems(orderId)
+  async cancelOrder(orderId: number, orderWithItems?: Order): Promise<void> {
+    const order = orderWithItems || (await this.getOrderWithItems(orderId))
     if (!order) {
       throw new Error('Order not found')
     }

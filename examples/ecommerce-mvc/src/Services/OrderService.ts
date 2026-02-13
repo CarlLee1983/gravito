@@ -97,7 +97,8 @@ export class OrderService {
    */
   async cancelOrder(orderId: number) {
     const order = await this.orderRepository.getOrderWithItems(orderId)
-    await this.orderRepository.cancelOrder(orderId)
+    // Pass pre-loaded order to avoid double fetch in repository
+    await this.orderRepository.cancelOrder(orderId, order)
     // Emit OrderCancelled event for cancellation processing
     if (this.events && order) {
       await this.events.dispatch(new OrderCancelled(order))
