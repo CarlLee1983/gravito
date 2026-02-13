@@ -25,6 +25,9 @@ async function bootstrap(): Promise<void> {
     // Phase 6: 事件驅動系統（已實現）
     core.register(require('./providers/EventServiceProvider').EventServiceProvider)
 
+    // Phase 8: 性能優化系統（已實現）
+    core.register(require('./providers/PerformanceServiceProvider').PerformanceServiceProvider)
+
     // TODO: 在後續 Phase 實現
     // - DatabaseServiceProvider（Phase 2）
     // - CacheServiceProvider（Phase 3）
