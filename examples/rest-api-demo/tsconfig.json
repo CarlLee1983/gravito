@@ -1,16 +1,44 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["ES2020"],
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
     "baseUrl": ".",
     "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
     "paths": {
       "@/*": ["./src/*"],
+      "@domain/*": ["./src/domain/*"],
+      "@application/*": ["./src/application/*"],
+      "@infrastructure/*": ["./src/infrastructure/*"],
+      "@presentation/*": ["./src/presentation/*"],
       "@gravito/core": ["../../packages/core/src/index.ts"],
-      "@gravito/monolith": ["../../packages/monolith/src/index.ts"],
+      "@gravito/atlas": ["../../packages/atlas/src/index.ts"],
       "@gravito/astral": ["../../packages/astral/src/index.ts"],
       "@gravito/impulse": ["../../packages/impulse/src/index.ts"],
-      "@gravito/atlas": ["../../packages/atlas/src/index.ts"]
+      "@gravito/photon": ["../../packages/photon/src/index.ts"],
+      "@gravito/sentinel": ["../../packages/sentinel/src/index.ts"],
+      "@gravito/signal": ["../../packages/signal/src/index.ts"],
+      "@gravito/fortify": ["../../packages/fortify/src/index.ts"],
+      "@gravito/stream": ["../../packages/stream/src/index.ts"]
     }
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

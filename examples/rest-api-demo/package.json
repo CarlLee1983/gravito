@@ -4,7 +4,21 @@
   "private": true,
   "scripts": {
     "dev": "bun run src/index.ts",
-    "start": "bun run src/index.ts"
+    "start": "bun run src/index.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint src --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:migrate": "bun run src/database/migrate.ts",
+    "db:seed": "bun run src/database/seed.ts"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^14.0.0",
+    "@types/bun": "latest",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
   },
   "dependencies": {
     "@gravito/core": "workspace:*",
@@ -12,6 +26,14 @@
     "@gravito/impulse": "workspace:*",
     "@gravito/astral": "workspace:*",
     "@gravito/photon": "workspace:*",
-    "zod": "^3.22.4"
+    "@gravito/sentinel": "workspace:*",
+    "@gravito/signal": "workspace:*",
+    "@gravito/fortify": "workspace:*",
+    "@gravito/stream": "workspace:*",
+    "bullmq": "^5.0.0",
+    "ioredis": "^5.3.0",
+    "zod": "^3.22.4",
+    "bcrypt": "^5.1.0",
+    "jsonwebtoken": "^9.0.0"
   }
 }
