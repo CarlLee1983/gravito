@@ -1,5 +1,5 @@
 import type { Order, ShippingAddress } from '../models'
-import { OrderItemPresenter } from './OrderItemPresenter'
+import { OrderItemPresenter, type OrderItemResponseDTO } from './OrderItemPresenter'
 
 /**
  * Order Response DTO
@@ -60,8 +60,8 @@ export class OrderPresenter {
     }
   }
 
-  private static presentItems(items: typeof order.items): OrderItemResponseDTO[] {
-    return (items ?? []).map((item) => OrderItemPresenter.present(item))
+  private static presentItems(items: any): OrderItemResponseDTO[] {
+    return (items ?? []).map((item: any) => OrderItemPresenter.present(item))
   }
 }
 

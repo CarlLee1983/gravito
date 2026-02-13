@@ -13,13 +13,15 @@ import type { OrderStatus } from '../models'
 import { OrderPresenter, type OrderResponseDTO } from '../Presenters'
 import type { CreateOrderInput } from '../Repositories'
 import { OrderRepository } from '../Repositories'
+import type { RequestProductCache } from './RequestProductCache'
 
 export type { CreateOrderInput }
 
 export class OrderService {
   constructor(
     private orderRepository = new OrderRepository(),
-    private events?: EventManager
+    private events?: EventManager,
+    private productCache?: RequestProductCache
   ) {}
 
   // ─────────────────────────────────────────────────────────────
@@ -98,7 +100,7 @@ export class OrderService {
   async cancelOrder(orderId: number) {
     const order = await this.orderRepository.getOrderWithItems(orderId)
     // Pass pre-loaded order to avoid double fetch in repository
-    await this.orderRepository.cancelOrder(orderId, order)
+    await this.orderRepository.cancelOrder(orderId, order || undefined)
     // Emit OrderCancelled event for cancellation processing
     if (this.events && order) {
       await this.events.dispatch(new OrderCancelled(order))

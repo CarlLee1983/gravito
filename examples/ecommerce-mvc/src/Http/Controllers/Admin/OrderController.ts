@@ -79,6 +79,10 @@ export class AdminOrderController {
     try {
       const order = await orderService.getOrder(orderId)
 
+      if (!order) {
+        return ctx.notFound()
+      }
+
       // Get user info
       const userResult = await DB.raw<{ id: number; name: string; email: string }>(
         sql('SELECT id, name, email FROM users WHERE id = ?'),

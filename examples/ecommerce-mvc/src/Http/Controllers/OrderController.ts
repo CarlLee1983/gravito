@@ -21,7 +21,7 @@ export class OrderController {
    */
   private static getService(ctx: GravitoContext): OrderService {
     const productCache = ctx.scoped('product:cache', () => new RequestProductCache())
-    return new OrderService(undefined, productCache)
+    return new OrderService(undefined, undefined, productCache)
   }
 
   /**
@@ -41,6 +41,11 @@ export class OrderController {
     const userId = user.getAuthIdentifier() as number
     const orderId = parseInt(ctx.req.param('id') || '', 10)
     const order = await orderService.getOrder(orderId)
+
+    // Verify order exists
+    if (!order) {
+      return ctx.json({ error: '訂單不存在' }, 404)
+    }
 
     // Verify ownership and status
     if (order.user_id !== userId) {
@@ -118,6 +123,11 @@ export class OrderController {
     const orderService = OrderController.getService(ctx)
     const order = await orderService.getOrder(orderId)
 
+    // Verify order exists
+    if (!order) {
+      return ctx.notFound()
+    }
+
     // Verify order belongs to user
     if (order.user_id !== userId) {
       return ctx.notFound()
@@ -165,6 +175,11 @@ export class OrderController {
 
     const orderService = OrderController.getService(ctx)
     const order = await orderService.getOrder(orderId)
+
+    // Verify order exists
+    if (!order) {
+      return ctx.json({ error: '訂單不存在' }, 404)
+    }
 
     // Verify order belongs to user
     if (order.user_id !== userId) {

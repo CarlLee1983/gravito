@@ -38,14 +38,14 @@ export class EventProvider extends ServiceProvider {
      * Send order confirmation email
      * Runs synchronously immediately after order creation
      */
-    core.events.listen(OrderCreated, SendOrderCreatedNotification)
+    core.events.listen(OrderCreated as any, SendOrderCreatedNotification)
 
     /**
      * Process payment and trigger fulfillment
      * Runs asynchronously on queue for heavy operations
      * (uncomment queue option when using queue system)
      */
-    core.events.listen(OrderPaid, ProcessOrderPayment)
+    core.events.listen(OrderPaid as any, ProcessOrderPayment)
     // core.events.listen(OrderPaid, ProcessOrderPayment, { queue: 'orders', delay: 5 })
 
     /**
@@ -61,7 +61,7 @@ export class EventProvider extends ServiceProvider {
     /**
      * Track cart interactions for analytics and inventory monitoring
      */
-    core.events.listen(CartItemAdded, TrackCartInteraction)
+    core.events.listen(CartItemAdded as any, TrackCartInteraction)
 
     /**
      * Handle abandoned cart recovery

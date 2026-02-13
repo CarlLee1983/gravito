@@ -133,9 +133,7 @@ export class CartRepository extends ModelRepository<Cart> {
         slug: product.slug,
         image_url: product.image_url,
         stock: product.stock,
-        price: product.price,
-        is_active: product.is_active,
-      }
+      } as any
       return item
     }
 
@@ -160,9 +158,7 @@ export class CartRepository extends ModelRepository<Cart> {
       slug: product.slug,
       image_url: product.image_url,
       stock: product.stock,
-      price: product.price,
-      is_active: product.is_active,
-    }
+    } as any
 
     // Update cart timestamp
     await DB.raw(sql('UPDATE carts SET updated_at = CURRENT_TIMESTAMP WHERE id = ?'), [cartId])

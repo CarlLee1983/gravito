@@ -1,5 +1,5 @@
 import type { Cart, CartItem } from '../models'
-import { CartItemPresenter } from './CartItemPresenter'
+import { CartItemPresenter, type CartItemResponseDTO } from './CartItemPresenter'
 
 /**
  * Cart Response DTO
