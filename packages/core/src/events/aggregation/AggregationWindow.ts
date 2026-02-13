@@ -6,8 +6,13 @@
  * - WARNING: 150ms (accelerate processing)
  * - CRITICAL: 100ms (fast drain)
  * - OVERFLOW: 50ms (minimum latency)
+ *
+ * FS-103 增強：
+ * - 與 BackpressureManager 雙向反饋
+ * - 窗口調整通知機制
  */
 
+import type { BackpressureManager } from '../BackpressureManager'
 import { BackpressureState } from '../BackpressureManager'
 import type { WindowStats } from './types'
 import { DEFAULT_WINDOW_ADJUSTMENT } from './types'
@@ -29,6 +34,9 @@ export class AggregationWindow {
     lastAdjustmentReason: '' as string | undefined,
   }
 
+  // FS-103：BackpressureManager 引用用於反饋
+  private backpressureManager?: BackpressureManager
+
   /**
    * Create an aggregation window.
    *
@@ -36,6 +44,15 @@ export class AggregationWindow {
    */
   constructor(initialWindowMs = 200) {
     this.currentWindowMs = Math.max(this.minWindowMs, Math.min(this.maxWindowMs, initialWindowMs))
+  }
+
+  /**
+   * Set the BackpressureManager for feedback loop (FS-103).
+   *
+   * @param manager - BackpressureManager instance
+   */
+  setBackpressureManager(manager: BackpressureManager): void {
+    this.backpressureManager = manager
   }
 
   /**
@@ -77,9 +94,28 @@ export class AggregationWindow {
       this.currentWindowMs = newWindow
       this.stats.adjustmentCount++
       this.stats.lastAdjustmentReason = `${reason} (${oldWindow}ms → ${newWindow}ms)`
+
+      // === FS-103：Notify BackpressureManager of window adjustment ===
+      this.notifyBackpressureManager(oldWindow, newWindow)
     }
 
     return this.currentWindowMs
+  }
+
+  /**
+   * Notify BackpressureManager of window adjustment (FS-103).
+   * Part of the backpressure feedback loop for automatic state recovery.
+   *
+   * @param oldWindowMs - Previous window size
+   * @param newWindowMs - New window size
+   * @private
+   */
+  private notifyBackpressureManager(oldWindowMs: number, newWindowMs: number): void {
+    if (!this.backpressureManager) {
+      return
+    }
+
+    this.backpressureManager.notifyWindowAdjustment(oldWindowMs, newWindowMs)
   }
 
   /**

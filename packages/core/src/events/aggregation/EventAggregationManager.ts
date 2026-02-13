@@ -64,9 +64,12 @@ export class EventAggregationManager {
 
   /**
    * Set backpressure manager for window adjustment.
+   * FS-103：Also sets BackpressureManager on AggregationWindow for feedback loop.
    */
   setBackpressureManager(backpressure: BackpressureManager): void {
     this.backpressureManager = backpressure
+    // === FS-103：Enable bidirectional feedback between AggregationWindow and BackpressureManager ===
+    this.window.setBackpressureManager(backpressure)
   }
 
   /**

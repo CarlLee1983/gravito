@@ -5,7 +5,14 @@
  * from starving low-priority events when the queue is under resource constraints.
  *
  * 背壓管理器：在資源受限時進行智慧型流量控制，防止優先級飢餓。
+ *
+ * FS-103 增強：
+ * - 多優先級隊列深度監控
+ * - 背壓反饋迴路支持
+ * - 智能 DLQ 路由決策
  */
+
+import type { DeadLetterDecision, MultiPriorityQueueDepth, WindowAdjustment } from './types'
 
 /**
  * 背壓狀態枚舉。
@@ -120,11 +127,13 @@ export interface BackpressureDecision {
 export interface BackpressureMetricsSnapshot {
   state: BackpressureState
   totalDepth: number
-  depthByPriority: { high: number; normal: number; low: number }
+  depthByPriority: { critical: number; high: number; normal: number; low: number }
   enqueueRate: number
   rejectedCount: number
   degradedCount: number
   stateTransitions: number
+  dlqRouteCount?: number
+  windowAdjustmentCount?: number
 }
 
 /**
@@ -243,6 +252,17 @@ export class BackpressureManager {
   private degradedCount = 0
   private stateTransitions = 0
   private rateCounter: SlidingWindowCounter
+
+  // FS-103 增強：多優先級隊列深度監控
+  private depthByPriority: MultiPriorityQueueDepth = {
+    critical: 0,
+    high: 0,
+    normal: 0,
+    low: 0,
+    total: 0,
+  }
+  private windowAdjustmentHistory: WindowAdjustment[] = []
+  private dlqRouteCount = 0
 
   constructor(config: BackpressureConfig = {}) {
     this.enabled = config.enabled !== false
@@ -378,12 +398,14 @@ export class BackpressureManager {
   getMetrics(): BackpressureMetricsSnapshot {
     return {
       state: this.state,
-      totalDepth: 0, // 需由呼叫者提供
-      depthByPriority: { high: 0, normal: 0, low: 0 }, // 需由呼叫者提供
+      totalDepth: this.depthByPriority.total,
+      depthByPriority: { ...this.depthByPriority },
       enqueueRate: this.rateCounter.getRate(),
       rejectedCount: this.rejectedCount,
       degradedCount: this.degradedCount,
       stateTransitions: this.stateTransitions,
+      dlqRouteCount: this.dlqRouteCount,
+      windowAdjustmentCount: this.windowAdjustmentHistory.length,
     }
   }
 
@@ -396,6 +418,146 @@ export class BackpressureManager {
     this.degradedCount = 0
     this.stateTransitions = 0
     this.rateCounter.reset()
+    this.depthByPriority = { critical: 0, high: 0, normal: 0, low: 0, total: 0 }
+    this.windowAdjustmentHistory = []
+    this.dlqRouteCount = 0
+  }
+
+  /**
+   * 同步隊列深度（由 EventPriorityQueue 調用）。
+   * FS-103：多優先級隊列深度監控
+   */
+  updateQueueDepth(depths: MultiPriorityQueueDepth): void {
+    this.depthByPriority = {
+      critical: depths.critical,
+      high: depths.high,
+      normal: depths.normal,
+      low: depths.low,
+      total: depths.total,
+    }
+
+    // 根據新的隊列深度重新計算背壓狀態
+    this.updateState(depths.total)
+  }
+
+  /**
+   * 獲取各優先級的隊列深度。
+   * FS-103：提供實時隊列深度快照
+   */
+  getQueueDepthByPriority(): MultiPriorityQueueDepth {
+    return { ...this.depthByPriority }
+  }
+
+  /**
+   * 獲取總隊列深度。
+   */
+  getTotalQueueDepth(): number {
+    return this.depthByPriority.total
+  }
+
+  /**
+   * 接收來自 AggregationWindow 的窗口調整通知。
+   * FS-103：背壓反饋迴路
+   */
+  notifyWindowAdjustment(oldWindowMs: number, newWindowMs: number): void {
+    // 記錄窗口調整
+    this.windowAdjustmentHistory.push({
+      timestamp: Date.now(),
+      from: oldWindowMs,
+      to: newWindowMs,
+      reason: this.state,
+    })
+
+    // 窗口縮小意味著加速處理，可能有助於恢復
+    // 如果從 CRITICAL 調整到更大窗口，檢查是否可以降級
+    if (newWindowMs > oldWindowMs && this.state === BackpressureState.CRITICAL) {
+      this.checkStateRecovery()
+    }
+  }
+
+  /**
+   * 檢查是否可以從 CRITICAL 或更高級別降級。
+   * FS-103：自動狀態恢復機制
+   */
+  private checkStateRecovery(): void {
+    if (this.config.maxQueueSize === Number.POSITIVE_INFINITY) {
+      return // 無限隊列，無需降級檢查
+    }
+
+    const totalDepth = this.depthByPriority.total
+    const hysteresisRatio = 0.8 // 遲滯設計：80% 恢復比例
+
+    // 檢查從 CRITICAL 到 WARNING 的降級條件
+    if (this.state === BackpressureState.CRITICAL) {
+      const criticalThreshold =
+        this.config.maxQueueSize * (this.config.thresholds?.critical ?? 0.85)
+      if (totalDepth <= criticalThreshold * hysteresisRatio) {
+        this.transitionTo(BackpressureState.WARNING)
+      }
+    }
+
+    // 檢查從 WARNING 到 NORMAL 的降級條件
+    if (this.state === BackpressureState.WARNING) {
+      const warningThreshold = this.config.maxQueueSize * (this.config.thresholds?.warning ?? 0.6)
+      if (totalDepth <= warningThreshold * hysteresisRatio) {
+        this.transitionTo(BackpressureState.NORMAL)
+      }
+    }
+  }
+
+  /**
+   * 決定是否應該將事件路由到死信隊列。
+   * FS-103：智能 DLQ 路由決策
+   */
+  makeDeadLetterDecision(
+    _eventName: string,
+    priority: 'critical' | 'high' | 'normal' | 'low'
+  ): DeadLetterDecision {
+    // 規則 1：非 OVERFLOW 狀態永不路由到 DLQ
+    if (this.state !== BackpressureState.OVERFLOW) {
+      return { shouldRoute: false }
+    }
+
+    // 規則 2：配置禁用 DLQ
+    if (!this.config.dlqOnOverflow) {
+      return {
+        shouldRoute: false,
+        reason: 'DLQ disabled in config',
+      }
+    }
+
+    // 規則 3：優先級決策
+    // LOW 優先級在 OVERFLOW 時總是路由到 DLQ
+    if (priority === 'low') {
+      this.dlqRouteCount++
+      return {
+        shouldRoute: true,
+        reason: 'Low priority event during OVERFLOW state',
+        retryStrategy: 'dlq-only',
+      }
+    }
+
+    // 檢查 CRITICAL 隊列容量
+    const criticalCapacity = this.config.maxSizeByPriority?.critical ?? this.config.maxQueueSize
+    const criticalCapacityPercent = (this.depthByPriority.critical / criticalCapacity) * 100
+
+    if (criticalCapacityPercent > 90) {
+      // CRITICAL 隊列接近滿，NORMAL 優先級也路由到 DLQ
+      if (priority === 'normal') {
+        this.dlqRouteCount++
+        return {
+          shouldRoute: true,
+          reason: `CRITICAL queue at ${criticalCapacityPercent.toFixed(1)}% capacity`,
+          retryStrategy: 'dlq-only',
+        }
+      }
+    }
+
+    // HIGH 和 CRITICAL 優先級建議延遲重試
+    return {
+      shouldRoute: false,
+      retryStrategy: 'delayed',
+    }
   }
 
   /**
