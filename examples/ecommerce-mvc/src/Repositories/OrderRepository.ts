@@ -126,11 +126,9 @@ export class OrderRepository extends ModelRepository<Order> {
       return null
     }
 
-    // Get order items
-    const itemsResult = await DB.raw(sql('SELECT * FROM order_items WHERE order_id = ?'), [orderId])
-    order.items = itemsResult.rows.map((row: any) => {
-      return OrderItem.hydrate(row)
-    })
+    // Load items using ORM relationship (cleaner than manual DB.raw)
+    const items = await order.hasMany(OrderItem).get()
+    order.items = items
 
     return order
   }
@@ -147,6 +145,7 @@ export class OrderRepository extends ModelRepository<Order> {
     if (!row) {
       return null
     }
+    // Use getOrderWithItems to leverage ORM relationship loading
     return this.getOrderWithItems(row.id)
   }
 
@@ -197,6 +196,25 @@ export class OrderRepository extends ModelRepository<Order> {
     const orders = ordersResult.rows.map((row: any) => {
       return Order.hydrate(row)
     })
+
+    // Batch-load all items for all orders in one query (avoids N queries)
+    if (orders.length > 0) {
+      const orderIds = orders.map((o) => o.id)
+      const itemsResult = await DB.raw(
+        sql(`SELECT * FROM order_items WHERE order_id IN (${orderIds.map(() => '?').join(',')})`),
+        orderIds
+      )
+      const itemsByOrderId = new Map<number, OrderItem[]>()
+      for (const row of itemsResult.rows) {
+        const item = OrderItem.hydrate(row as any)
+        const list = itemsByOrderId.get(item.order_id) || []
+        list.push(item)
+        itemsByOrderId.set(item.order_id, list)
+      }
+      for (const order of orders) {
+        order.items = itemsByOrderId.get(order.id) || []
+      }
+    }
 
     return {
       orders,
