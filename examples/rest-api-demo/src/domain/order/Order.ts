@@ -64,6 +64,9 @@ export interface CreateOrderInput {
     quantity: number
   }>
   shippingAddress: ShippingAddress
+  subtotal: number
+  shippingCost: number
+  tax: number
   notes?: string
 }
 
