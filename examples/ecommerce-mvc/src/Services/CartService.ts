@@ -7,6 +7,7 @@
  * Dispatches domain events for cart state changes.
  */
 
+import { DB } from '@gravito/atlas'
 import type { EventManager } from '@gravito/core'
 import { CartCleared, CartItemAdded } from '../Events'
 import type { Cart, CartItem } from '../models'
@@ -17,6 +18,7 @@ import {
   type CartResponseDTO,
 } from '../Presenters'
 import { CartRepository } from '../Repositories'
+import { sql } from '../utils/db'
 
 export class CartService {
   constructor(
@@ -95,7 +97,11 @@ export class CartService {
    */
   async getCartAsDTO(cartId: number): Promise<CartResponseDTO | null> {
     const cart = await this.cartRepository.getWithItems(cartId)
-    return cart ? CartPresenter.present(cart) : null
+    if (!cart) return null
+
+    // Batch-load products for all items in one query
+    const products = await this.batchLoadProducts(cart.items ?? [])
+    return CartPresenter.presentWithProducts(cart, products)
   }
 
   /**
@@ -115,7 +121,43 @@ export class CartService {
    */
   async getUserCartAsDTO(userId: number): Promise<CartResponseDTO> {
     const cart = await this.cartRepository.getOrCreateForUser(userId)
-    // getOrCreateForUser already populates items
-    return CartPresenter.present(cart)
+    // Batch-load products for all items in one query
+    const products = await this.batchLoadProducts(cart.items ?? [])
+    return CartPresenter.presentWithProducts(cart, products)
+  }
+
+  /**
+   * Batch-load products for cart items (single query)
+   */
+  private async batchLoadProducts(
+    items: CartItem[]
+  ): Promise<
+    Map<number, { id: number; name: string; slug: string; image_url: string | null; stock: number }>
+  > {
+    if (items.length === 0) {
+      return new Map()
+    }
+
+    const productIds = [...new Set(items.map((item) => item.product_id))]
+    const result = await DB.raw(
+      sql(
+        `SELECT id, name, slug, image_url, stock FROM products WHERE id IN (${productIds.map(() => '?').join(',')})`
+      ),
+      productIds
+    )
+
+    const productsMap = new Map()
+    for (const row of result.rows) {
+      const product = row as any
+      productsMap.set(product.id, {
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        image_url: product.image_url,
+        stock: product.stock,
+      })
+    }
+
+    return productsMap
   }
 }

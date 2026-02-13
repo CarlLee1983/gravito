@@ -29,8 +29,13 @@ export interface CartItemResponseDTO {
  */
 export class CartItemPresenter {
   static present(item: CartItem): CartItemResponseDTO {
-    if (!item.product) {
-      throw new Error('CartItem product relationship not loaded')
+    // Ensure product data exists (use fallback for backward compatibility)
+    const product = item.product || {
+      id: item.product_id,
+      name: 'Unknown Product',
+      slug: '',
+      image_url: null,
+      stock: 0,
     }
 
     return {
@@ -40,11 +45,11 @@ export class CartItemPresenter {
       price: item.price,
       lineTotal: item.getLineTotal(),
       product: {
-        id: item.product.id,
-        name: item.product.name,
-        slug: item.product.slug,
-        imageUrl: item.product.image_url,
-        stock: item.product.stock,
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        imageUrl: product.image_url,
+        stock: product.stock,
       },
       createdAt: item.created_at.toISOString(),
     }
