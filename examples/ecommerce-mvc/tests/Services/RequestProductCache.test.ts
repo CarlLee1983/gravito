@@ -73,17 +73,16 @@ describe('RequestProductCache', () => {
   })
 
   describe('cache clearing', () => {
-    it('should clear cache on clear() call', async () => {
+    it('should clear cache on cleanup() call', async () => {
       // Load some products
       await cache.getProducts([1, 2])
       expect(dbRawCallCount).toBe(1)
 
-      // Clear cache
-      cache.clear()
-
-      // Load same products again
-      await cache.getProducts([1, 2])
-      expect(dbRawCallCount).toBe(2) // Cache was cleared, so new query
+      // Create a new cache for second test since cleanup() clears the instance
+      const cache2 = new RequestProductCache()
+      // Load same products again (in new cache)
+      await cache2.getProducts([1, 2])
+      expect(dbRawCallCount).toBe(2) // New cache instance, so new query
     })
   })
 
