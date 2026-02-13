@@ -4,8 +4,11 @@
  * Business logic for shopping cart operations.
  * Uses CartRepository for data access.
  * Returns DTOs via Presenters for API responses.
+ * Dispatches domain events for cart state changes.
  */
 
+import type { EventManager } from '@gravito/core'
+import { CartCleared, CartItemAdded } from '../Events'
 import type { Cart, CartItem } from '../models'
 import {
   CartItemPresenter,
@@ -16,7 +19,10 @@ import {
 import { CartRepository } from '../Repositories'
 
 export class CartService {
-  constructor(private cartRepository = new CartRepository()) {}
+  constructor(
+    private cartRepository = new CartRepository(),
+    private events?: EventManager
+  ) {}
 
   // ─────────────────────────────────────────────────────────────
   // Internal Methods (return raw models)
@@ -40,7 +46,12 @@ export class CartService {
    * Add item to cart
    */
   async addItem(cartId: number, productId: number, quantity?: number): Promise<CartItem> {
-    return this.cartRepository.addItem(cartId, productId, quantity)
+    const item = await this.cartRepository.addItem(cartId, productId, quantity)
+    // Emit CartItemAdded event for inventory/analytics tracking
+    if (this.events) {
+      await this.events.dispatch(new CartItemAdded(item, cartId, productId))
+    }
+    return item
   }
 
   /**
@@ -61,7 +72,11 @@ export class CartService {
    * Clear cart
    */
   async clearCart(cartId: number): Promise<void> {
-    return this.cartRepository.clearCart(cartId)
+    await this.cartRepository.clearCart(cartId)
+    // Emit CartCleared event for recovery campaigns
+    if (this.events) {
+      await this.events.dispatch(new CartCleared(cartId))
+    }
   }
 
   /**
@@ -93,7 +108,7 @@ export class CartService {
     productId: number,
     quantity?: number
   ): Promise<CartItemResponseDTO> {
-    const item = await this.cartRepository.addItem(cartId, productId, quantity)
+    const item = await this.addItem(cartId, productId, quantity)
     return CartItemPresenter.present(item)
   }
 

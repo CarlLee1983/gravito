@@ -4,8 +4,11 @@
  * Business logic for order processing.
  * Uses OrderRepository for data access.
  * Returns DTOs via Presenters for API responses.
+ * Dispatches domain events for order state changes.
  */
 
+import type { EventManager } from '@gravito/core'
+import { OrderCancelled, OrderCreated, OrderPaid } from '../Events'
 import type { OrderStatus } from '../models'
 import { OrderPresenter, type OrderResponseDTO } from '../Presenters'
 import type { CreateOrderInput } from '../Repositories'
@@ -14,7 +17,10 @@ import { OrderRepository } from '../Repositories'
 export type { CreateOrderInput }
 
 export class OrderService {
-  constructor(private orderRepository = new OrderRepository()) {}
+  constructor(
+    private orderRepository = new OrderRepository(),
+    private events?: EventManager
+  ) {}
 
   // ─────────────────────────────────────────────────────────────
   // Internal Methods (return raw models)
@@ -24,7 +30,12 @@ export class OrderService {
    * Create order from cart
    */
   async createOrder(input: CreateOrderInput) {
-    return this.orderRepository.createOrder(input)
+    const order = await this.orderRepository.createOrder(input)
+    // Emit OrderCreated event for downstream processing
+    if (this.events) {
+      await this.events.dispatch(new OrderCreated(order, input.userId))
+    }
+    return order
   }
 
   /**
@@ -73,14 +84,24 @@ export class OrderService {
    * Mark order as paid
    */
   async markAsPaid(orderId: number, paymentIntentId: string) {
-    return this.orderRepository.markAsPaid(orderId, paymentIntentId)
+    await this.orderRepository.markAsPaid(orderId, paymentIntentId)
+    // Emit OrderPaid event for order processing
+    const order = await this.orderRepository.getOrderWithItems(orderId)
+    if (this.events && order) {
+      await this.events.dispatch(new OrderPaid(order, paymentIntentId, order.total))
+    }
   }
 
   /**
    * Cancel order and restore stock
    */
   async cancelOrder(orderId: number) {
-    return this.orderRepository.cancelOrder(orderId)
+    const order = await this.orderRepository.getOrderWithItems(orderId)
+    await this.orderRepository.cancelOrder(orderId)
+    // Emit OrderCancelled event for cancellation processing
+    if (this.events && order) {
+      await this.events.dispatch(new OrderCancelled(order))
+    }
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -91,7 +112,7 @@ export class OrderService {
    * Create order and return DTO (for API responses)
    */
   async createOrderAsDTO(input: CreateOrderInput): Promise<OrderResponseDTO> {
-    const order = await this.orderRepository.createOrder(input)
+    const order = await this.createOrder(input)
     return OrderPresenter.present(order)
   }
 
