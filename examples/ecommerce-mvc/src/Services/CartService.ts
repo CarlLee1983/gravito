@@ -19,11 +19,13 @@ import {
 } from '../Presenters'
 import { CartRepository } from '../Repositories'
 import { sql } from '../utils/db'
+import type { RequestProductCache } from './RequestProductCache'
 
 export class CartService {
   constructor(
     private cartRepository = new CartRepository(),
-    private events?: EventManager
+    private events?: EventManager,
+    private productCache?: RequestProductCache
   ) {}
 
   // ─────────────────────────────────────────────────────────────
@@ -127,7 +129,7 @@ export class CartService {
   }
 
   /**
-   * Batch-load products for cart items (single query)
+   * Batch-load products for cart items (single query or from cache)
    */
   private async batchLoadProducts(
     items: CartItem[]
@@ -138,12 +140,35 @@ export class CartService {
       return new Map()
     }
 
-    const productIds = [...new Set(items.map((item) => item.product_id))]
+    const productIds = items.map((item) => item.product_id)
+
+    // Use request-level cache if available (Phase 4 optimization)
+    if (this.productCache) {
+      return this.productCache.getProducts(productIds)
+    }
+
+    // Fallback to direct batch loading
+    return this.batchLoadProductsDirect(productIds)
+  }
+
+  /**
+   * Direct batch product loading (bypasses cache)
+   */
+  private async batchLoadProductsDirect(
+    productIds: number[]
+  ): Promise<
+    Map<number, { id: number; name: string; slug: string; image_url: string | null; stock: number }>
+  > {
+    const uniqueIds = [...new Set(productIds)]
+    if (uniqueIds.length === 0) {
+      return new Map()
+    }
+
     const result = await DB.raw(
       sql(
-        `SELECT id, name, slug, image_url, stock FROM products WHERE id IN (${productIds.map(() => '?').join(',')})`
+        `SELECT id, name, slug, image_url, stock FROM products WHERE id IN (${uniqueIds.map(() => '?').join(',')})`
       ),
-      productIds
+      uniqueIds
     )
 
     const productsMap = new Map()
