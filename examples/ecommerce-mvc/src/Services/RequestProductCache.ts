@@ -18,19 +18,26 @@ export interface CachedProduct {
  * Caches products within a single HTTP request to avoid duplicate queries.
  * Automatically deduplicates product IDs and batches database lookups.
  *
- * Usage:
+ * Integrates with @gravito/core RequestScope for automatic lifecycle management.
+ *
+ * Usage in Controller:
  * ```typescript
- * const cache = new RequestProductCache()
+ * const cache = ctx.scoped('product:cache', () => new RequestProductCache())
  * const products = await cache.getProducts([1, 2, 3])
+ * // Automatically cleaned up when request ends
  * ```
  */
 export class RequestProductCache {
   private cache = new Map<number, CachedProduct>()
   private pendingIds = new Set<number>()
   private loadingPromise: Promise<void> | null = null
+  private queryCount = 0
+  private hitCount = 0
 
   /**
    * Get products by IDs, using cache and batch-loading uncached items
+   *
+   * Tracks cache hits and misses for diagnostics
    */
   async getProducts(productIds: number[]): Promise<Map<number, CachedProduct>> {
     // Deduplicate IDs
@@ -38,6 +45,12 @@ export class RequestProductCache {
 
     // Find uncached IDs
     const uncachedIds = uniqueIds.filter((id) => !this.cache.has(id))
+
+    // Track cache statistics
+    this.hitCount += uniqueIds.length - uncachedIds.length
+    if (uncachedIds.length > 0) {
+      this.queryCount++
+    }
 
     // Load uncached products
     if (uncachedIds.length > 0) {
@@ -89,9 +102,37 @@ export class RequestProductCache {
   }
 
   /**
-   * Clear cache (call at end of request)
+   * Get cache statistics
+   *
+   * Returns metrics about cache performance during this request
    */
-  clear(): void {
+  getStats() {
+    return {
+      cachedProducts: this.cache.size,
+      totalQueries: this.queryCount,
+      cacheHits: this.hitCount,
+      hitRate:
+        this.hitCount > 0
+          ? (this.hitCount / (this.hitCount + this.queryCount * 10)).toFixed(2)
+          : '0',
+    }
+  }
+
+  /**
+   * Cleanup hook called automatically by RequestScope
+   *
+   * Called when the HTTP request ends, logs statistics and releases resources.
+   * This is automatically called by the Gravito engine when using RequestScope.
+   */
+  async cleanup(): Promise<void> {
+    const stats = this.getStats()
+    console.log(
+      `[ProductCache] Request stats: ` +
+        `products=${stats.cachedProducts}, ` +
+        `queries=${stats.totalQueries}, ` +
+        `hits=${stats.cacheHits}, ` +
+        `hitRate=${stats.hitRate}`
+    )
     this.cache.clear()
     this.pendingIds.clear()
   }

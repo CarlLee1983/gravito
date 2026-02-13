@@ -8,14 +8,23 @@ import type { GravitoContext } from '@gravito/core'
 import type { InertiaHelper } from '@gravito/ion'
 import type { SessionService } from '@gravito/pulsar'
 import type { AuthManager } from '@gravito/sentinel'
-import { CartService } from '../../Services'
+import { CartService, RequestProductCache } from '../../Services'
 
 export class CartController {
   /**
-   * Get CartService instance
+   * Get CartService instance with injected RequestScope cache
+   *
+   * The product cache is automatically scoped to the current HTTP request.
+   * Multiple calls within the same request return the same cache instance.
+   * Cache is automatically cleaned up when request ends.
    */
-  private static getService(): CartService {
-    return new CartService()
+  private static getService(ctx: GravitoContext): CartService {
+    // Resolve request-scoped product cache
+    // First call: creates new RequestProductCache instance
+    // Subsequent calls: returns cached instance
+    const productCache = ctx.scoped('product:cache', () => new RequestProductCache())
+
+    return new CartService(undefined, undefined, productCache)
   }
 
   /**
@@ -46,7 +55,7 @@ export class CartController {
    */
   static async index(ctx: GravitoContext) {
     const inertia = ctx.get('inertia') as unknown as InertiaHelper
-    const service = CartController.getService()
+    const service = CartController.getService(ctx)
     const { userId, sessionId } = await CartController.getCartIdentifiers(ctx)
 
     const cart = await service.getOrCreateCart(userId, sessionId)
@@ -74,7 +83,7 @@ export class CartController {
    */
   static async add(ctx: GravitoContext) {
     const body = (await ctx.req.json()) as { product_id: number; quantity?: number }
-    const service = CartController.getService()
+    const service = CartController.getService(ctx)
     const { userId, sessionId } = await CartController.getCartIdentifiers(ctx)
 
     try {
@@ -110,7 +119,7 @@ export class CartController {
   static async update(ctx: GravitoContext) {
     const itemId = parseInt(ctx.req.param('itemId') || '', 10)
     const body = (await ctx.req.json()) as { quantity: number }
-    const service = CartController.getService()
+    const service = CartController.getService(ctx)
     const { userId, sessionId } = await CartController.getCartIdentifiers(ctx)
 
     try {
@@ -141,7 +150,7 @@ export class CartController {
    */
   static async remove(ctx: GravitoContext) {
     const itemId = parseInt(ctx.req.param('itemId') || '', 10)
-    const service = CartController.getService()
+    const service = CartController.getService(ctx)
     const { userId, sessionId } = await CartController.getCartIdentifiers(ctx)
 
     await service.removeItem(itemId)
@@ -161,7 +170,7 @@ export class CartController {
    * Clear cart
    */
   static async clear(ctx: GravitoContext) {
-    const service = CartController.getService()
+    const service = CartController.getService(ctx)
     const { userId, sessionId } = await CartController.getCartIdentifiers(ctx)
 
     const cart = await service.getOrCreateCart(userId, sessionId)
@@ -180,7 +189,7 @@ export class CartController {
    * Get cart summary (for header mini-cart)
    */
   static async summary(ctx: GravitoContext) {
-    const service = CartController.getService()
+    const service = CartController.getService(ctx)
     const { userId, sessionId } = await CartController.getCartIdentifiers(ctx)
 
     const cart = await service.getOrCreateCart(userId, sessionId)
