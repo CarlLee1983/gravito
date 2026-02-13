@@ -5,6 +5,7 @@
  */
 
 import type { GravitoContext, GravitoNext } from '@gravito/core'
+import * as crypto from 'crypto'
 
 export interface SecurityHeadersConfig {
   enableHsts?: boolean
@@ -54,17 +55,23 @@ export function securityHeaders(config: SecurityHeadersConfig = {}) {
       ctx.header('Strict-Transport-Security', 'max-age=2592000; includeSubDomains')
     }
 
-    // Content-Security-Policy: 防止 XSS
+    // Content-Security-Policy: 防止 XSS（使用 nonce 而不是 unsafe-inline）
     if (enableContentSecurityPolicy) {
+      // 生成隨機 nonce 用於內聯指令碼和樣式
+      const nonce = crypto.randomBytes(16).toString('base64')
+      ctx.set('X-CSP-Nonce', nonce) // 供應用程式使用
+
       ctx.header(
         'Content-Security-Policy',
-        "default-src 'self'; " +
-          "script-src 'self' 'unsafe-inline'; " +
-          "style-src 'self' 'unsafe-inline'; " +
-          'img-src *; ' +
-          "font-src 'self'; " +
-          "connect-src 'self'; " +
-          "frame-ancestors 'none'"
+        `default-src 'self'; ` +
+          `script-src 'self' 'nonce-${nonce}'; ` +
+          `style-src 'self' 'nonce-${nonce}'; ` +
+          `img-src 'self' data: https:; ` +
+          `font-src 'self'; ` +
+          `connect-src 'self'; ` +
+          `frame-ancestors 'none'; ` +
+          `base-uri 'self'; ` +
+          `form-action 'self'`
       )
     }
 

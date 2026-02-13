@@ -15,13 +15,36 @@ export interface TokenPayload {
 export class TokenService {
   private readonly accessTokenSecret: string
   private readonly refreshTokenSecret: string
-  private readonly accessTokenExpiry: string = '1h'
-  private readonly refreshTokenExpiry: string = '30d'
+  private readonly accessTokenExpiry: string = '15m'
+  private readonly refreshTokenExpiry: string = '7d'
 
   constructor(accessTokenSecret?: string, refreshTokenSecret?: string) {
-    this.accessTokenSecret = accessTokenSecret || process.env.JWT_ACCESS_SECRET || 'access-secret'
-    this.refreshTokenSecret =
-      refreshTokenSecret || process.env.JWT_REFRESH_SECRET || 'refresh-secret'
+    // 使用傳入的密鑰，或從環境變數讀取
+    // 生產環境必須提供有效的密鑰
+    this.accessTokenSecret = accessTokenSecret || process.env.JWT_ACCESS_SECRET || ''
+    this.refreshTokenSecret = refreshTokenSecret || process.env.JWT_REFRESH_SECRET || ''
+
+    // 驗證生產環境的密鑰配置
+    if (process.env.NODE_ENV === 'production') {
+      if (!this.accessTokenSecret) {
+        throw new Error(
+          'JWT_ACCESS_SECRET is required in production. Set it via environment variables.'
+        )
+      }
+      if (!this.refreshTokenSecret) {
+        throw new Error(
+          'JWT_REFRESH_SECRET is required in production. Set it via environment variables.'
+        )
+      }
+    } else if (!this.accessTokenSecret || !this.refreshTokenSecret) {
+      // 開發環境：生成臨時密鑰並警告
+      const crypto = require('crypto')
+      this.accessTokenSecret = this.accessTokenSecret || crypto.randomBytes(32).toString('hex')
+      this.refreshTokenSecret = this.refreshTokenSecret || crypto.randomBytes(32).toString('hex')
+      console.warn(
+        '[SECURITY WARNING] Using random JWT secrets in development - tokens will not survive restart'
+      )
+    }
   }
 
   /**

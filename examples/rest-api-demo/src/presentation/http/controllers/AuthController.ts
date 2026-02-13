@@ -11,6 +11,8 @@ import type { RegisterUserUseCase } from '@application/user/RegisterUser'
 import type { GravitoContext } from '@gravito/core'
 import type { AuthManager } from '@gravito/sentinel'
 import type { TokenService } from '@infrastructure/auth/TokenService'
+import { LoginRequest } from '@presentation/http/requests/auth/LoginRequest'
+import { RegisterRequest } from '@presentation/http/requests/auth/RegisterRequest'
 
 export class AuthController {
   /**
@@ -22,7 +24,13 @@ export class AuthController {
     const registerUseCase = ctx.app.make('RegisterUserUseCase') as RegisterUserUseCase
 
     try {
-      const result = await registerUseCase.execute(body)
+      // 驗證輸入
+      const validation = RegisterRequest.safeValidate(body)
+      if (!validation.success) {
+        return ctx.json({ success: false, errors: validation.errors }, 422)
+      }
+
+      const result = await registerUseCase.execute(validation.data)
       return ctx.json({ success: true, data: result }, 201)
     } catch (_error: any) {
       return ctx.json({ success: false, error: _error.message }, 400)
@@ -39,8 +47,14 @@ export class AuthController {
     const tokenService = ctx.app.make('TokenService') as TokenService
 
     try {
+      // 驗證輸入
+      const validation = LoginRequest.safeValidate(body)
+      if (!validation.success) {
+        return ctx.json({ success: false, errors: validation.errors }, 422)
+      }
+
       // 執行登入業務邏輯
-      const user = await loginUseCase.execute(body)
+      const user = await loginUseCase.execute(validation.data)
 
       // 生成 Token
       const accessToken = tokenService.generateAccessToken({

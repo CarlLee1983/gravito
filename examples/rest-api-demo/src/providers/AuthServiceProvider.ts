@@ -15,6 +15,7 @@ import { AuthManager } from '@gravito/sentinel'
 import { InMemoryTokenBlacklist } from '@infrastructure/auth/TokenBlacklist'
 import { TokenService } from '@infrastructure/auth/TokenService'
 import type { UserRepository } from '@infrastructure/repositories/UserRepository'
+import * as bcrypt from 'bcrypt'
 
 export class AuthServiceProvider extends ServiceProvider {
   /**
@@ -55,10 +56,11 @@ export class AuthServiceProvider extends ServiceProvider {
         },
 
         async validateCredentials(user: any, credentials: Record<string, any>) {
-          // TODO: 使用 bcrypt 驗證密碼
-          // const hasher = c.make('hasher')
-          // return await hasher.check(credentials.password, user.password)
-          return credentials.password === user.password // 臨時實現
+          // 使用 bcrypt 安全地驗證密碼
+          if (!user.password || !credentials.password) {
+            return false
+          }
+          return await bcrypt.compare(credentials.password, user.password)
         },
       }
 
@@ -79,8 +81,9 @@ export class AuthServiceProvider extends ServiceProvider {
       return new RegisterUserUseCase(userRepository)
     })
 
-    container.singleton('RefreshTokenUseCase', () => {
-      return new RefreshTokenUseCase()
+    container.singleton('RefreshTokenUseCase', (c: Container) => {
+      const tokenService = c.make('TokenService') as TokenService
+      return new RefreshTokenUseCase(tokenService)
     })
 
     container.singleton('LogoutUserUseCase', () => {
@@ -92,13 +95,14 @@ export class AuthServiceProvider extends ServiceProvider {
    * 啟動認證服務
    */
   async boot(container: Container): Promise<void> {
-    // 驗證必要的環境變數
-    if (!process.env.JWT_ACCESS_SECRET) {
-      console.warn('[Auth] JWT_ACCESS_SECRET 未設置，使用預設值')
-    }
+    // 驗證生產環境的必要環境變數
+    if (process.env.NODE_ENV === 'production') {
+      const requiredSecrets = ['JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET', 'JWT_SECRET']
+      const missingSecrets = requiredSecrets.filter((secret) => !process.env[secret])
 
-    if (!process.env.JWT_REFRESH_SECRET) {
-      console.warn('[Auth] JWT_REFRESH_SECRET 未設置，使用預設值')
+      if (missingSecrets.length > 0) {
+        throw new Error(`缺少必要的環境變數（生產環境）: ${missingSecrets.join(', ')}`)
+      }
     }
 
     console.log('[Auth] ✅ 認證系統已初始化')

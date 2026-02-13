@@ -28,7 +28,8 @@ export const gravitoConfig = {
       username: process.env.DB_USER ?? 'postgres',
       password: process.env.DB_PASSWORD ?? 'password',
       database: process.env.DB_NAME ?? 'rest_api_demo',
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      // 生產環境啟用 SSL 證書驗證
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false,
       // 連接池配置
       poolMin: parseInt(process.env.DB_POOL_MIN ?? '5'),
       poolMax: parseInt(process.env.DB_POOL_MAX ?? '20'),
@@ -70,14 +71,14 @@ export const gravitoConfig = {
     guards: {
       jwt: {
         driver: 'jwt',
-        secret: process.env.JWT_SECRET ?? 'your-secret-key-change-in-production',
-        expiresIn: '24h',
+        secret: process.env.JWT_SECRET,
+        expiresIn: '1h',
         refreshTokenExpiresIn: '7d',
         algorithms: ['HS256'],
       },
       session: {
         driver: 'session',
-        secret: process.env.SESSION_SECRET ?? 'your-session-secret',
+        secret: process.env.SESSION_SECRET,
         cookieHttpOnly: true,
         cookieSecure: process.env.NODE_ENV === 'production',
         cookieSameSite: 'lax',
@@ -143,7 +144,8 @@ export const gravitoConfig = {
     rateLimitWindowMs: 60000, // 1 分鐘
     rateLimitMaxRequests: 100,
     corsEnabled: true,
-    corsOrigins: process.env.CORS_ORIGINS?.split(',') ?? ['*'],
+    // 生產環境必須明確配置 CORS 來源，不使用通配符
+    corsOrigins: process.env.CORS_ORIGINS?.split(',').map((origin) => origin.trim()) ?? [],
     corsCredentials: true,
   },
 
