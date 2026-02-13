@@ -110,14 +110,21 @@ export class OrderRepository extends ModelRepository<Order> {
     await DB.raw(sql('DELETE FROM cart_items WHERE cart_id = ?'), [input.cartId])
 
     // Return order with items
-    return this.getOrderWithItems(orderId)
+    const order = await this.getOrderWithItems(orderId)
+    if (!order) {
+      throw new Error('Failed to retrieve created order')
+    }
+    return order
   }
 
   /**
    * Get order with items
    */
-  async getOrderWithItems(orderId: number): Promise<Order> {
-    const order = await this.findOrFail(orderId)
+  async getOrderWithItems(orderId: number): Promise<Order | null> {
+    const order = await this.find(orderId)
+    if (!order) {
+      return null
+    }
 
     // Get order items
     const itemsResult = await DB.raw(sql('SELECT * FROM order_items WHERE order_id = ?'), [orderId])
@@ -236,6 +243,9 @@ export class OrderRepository extends ModelRepository<Order> {
    */
   async cancelOrder(orderId: number): Promise<void> {
     const order = await this.getOrderWithItems(orderId)
+    if (!order) {
+      throw new Error('Order not found')
+    }
     if (!order.canBeCancelled()) {
       throw new Error('Order cannot be cancelled')
     }
