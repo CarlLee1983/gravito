@@ -100,9 +100,7 @@ export class CartRepository extends ModelRepository<Cart> {
       sql(`SELECT * FROM products WHERE id = ? AND is_active = ${TRUE}`),
       [productId]
     )
-    const product = productResult.rows[0] as
-      | { id: number; stock: number; price: number }
-      | undefined
+    const product = productResult.rows[0] as any
     if (!product) {
       throw new Error('Product not found or unavailable')
     }
@@ -128,6 +126,16 @@ export class CartRepository extends ModelRepository<Cart> {
         existingItem.id,
       ])
       const item = CartItem.hydrate({ ...existingItem, quantity: newQty })
+      // Attach product data to the item for event dispatch
+      item.product = {
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        image_url: product.image_url,
+        stock: product.stock,
+        price: product.price,
+        is_active: product.is_active,
+      }
       return item
     }
 
@@ -145,6 +153,16 @@ export class CartRepository extends ModelRepository<Cart> {
     item.product_id = productId
     item.quantity = quantity
     item.price = product.price
+    // Attach product data to the item for event dispatch
+    item.product = {
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      image_url: product.image_url,
+      stock: product.stock,
+      price: product.price,
+      is_active: product.is_active,
+    }
 
     // Update cart timestamp
     await DB.raw(sql('UPDATE carts SET updated_at = CURRENT_TIMESTAMP WHERE id = ?'), [cartId])

@@ -65,12 +65,7 @@ describe('Order Integration - Full Workflow', () => {
 
   afterEach(async () => {
     // Clean up between tests
-    await DB.raw('DELETE FROM order_items')
-    await DB.raw('DELETE FROM orders')
-    await DB.raw('DELETE FROM cart_items')
-    await DB.raw('DELETE FROM carts')
-    await DB.raw('DELETE FROM users')
-    await DB.raw('DELETE FROM products')
+    await cleanupAllTables()
   })
 
   describe('Complete Order Flow', () => {
