@@ -66,7 +66,7 @@ describe('RegisterUserUseCase', () => {
       mockUserRepository.findByEmail.mockResolvedValue({ id: '456' })
 
       // Act & Assert
-      await expect(useCase.execute(request)).rejects.toThrow('已註冊')
+      await expect(useCase.execute(request)).rejects.toThrow('already registered')
     })
 
     it('應該驗證密碼強度', async () => {
@@ -80,7 +80,7 @@ describe('RegisterUserUseCase', () => {
       mockUserRepository.findByEmail.mockResolvedValue(null)
 
       // Act & Assert
-      await expect(useCase.execute(request)).rejects.toThrow('密碼')
+      await expect(useCase.execute(request)).rejects.toThrow('Password must be at least')
     })
 
     it('應該驗證電子郵件格式', async () => {
@@ -92,7 +92,7 @@ describe('RegisterUserUseCase', () => {
       }
 
       // Act & Assert
-      await expect(useCase.execute(request)).rejects.toThrow('郵件')
+      await expect(useCase.execute(request)).rejects.toThrow('Invalid email')
     })
   })
 })

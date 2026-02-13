@@ -11,11 +11,11 @@ describe('LayeredCacheService', () => {
 
   beforeEach(() => {
     mockL2Service = {
-      get: vi.fn(),
-      set: vi.fn(),
-      delete: vi.fn(),
-      deletePattern: vi.fn(),
-      flush: vi.fn(),
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockResolvedValue(undefined),
+      delete: vi.fn().mockResolvedValue(undefined),
+      deletePattern: vi.fn().mockResolvedValue(undefined),
+      flush: vi.fn().mockResolvedValue(undefined),
     }
 
     cacheService = new LayeredCacheService(mockL2Service, {
