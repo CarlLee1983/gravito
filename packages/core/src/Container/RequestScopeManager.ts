@@ -1,4 +1,5 @@
 import type { ServiceKey } from '../Container'
+import { RequestScopeMetrics, type RequestScopeObserver } from './RequestScopeMetrics'
 
 /**
  * Manages request-scoped service instances within a single HTTP request.
@@ -18,6 +19,26 @@ import type { ServiceKey } from '../Container'
 export class RequestScopeManager {
   private scoped = new Map<string, unknown>()
   private metadata = new Map<string, Record<string, unknown>>()
+  private metrics = new RequestScopeMetrics()
+  private observer: RequestScopeObserver | null = null
+
+  constructor(observer?: RequestScopeObserver) {
+    this.observer = observer || null
+  }
+
+  /**
+   * Set observer for monitoring scope lifecycle
+   */
+  setObserver(observer: RequestScopeObserver): void {
+    this.observer = observer
+  }
+
+  /**
+   * Get metrics for this scope
+   */
+  getMetrics(): RequestScopeMetrics {
+    return this.metrics
+  }
 
   /**
    * Resolve or retrieve a request-scoped service instance.
@@ -34,8 +55,9 @@ export class RequestScopeManager {
    */
   resolve<T>(key: ServiceKey, factory: () => T): T {
     const keyStr = String(key)
+    const isFromCache = this.scoped.has(keyStr)
 
-    if (!this.scoped.has(keyStr)) {
+    if (!isFromCache) {
       const instance = factory()
       this.scoped.set(keyStr, instance)
 
@@ -44,6 +66,9 @@ export class RequestScopeManager {
         this.metadata.set(keyStr, { hasCleanup: true })
       }
     }
+
+    // Notify observer
+    this.observer?.onServiceResolved?.(key, isFromCache)
 
     return this.scoped.get(keyStr) as T
   }
@@ -58,7 +83,11 @@ export class RequestScopeManager {
    * @returns Promise that resolves when all cleanup is complete.
    */
   async cleanup(): Promise<void> {
+    this.metrics.recordCleanupStart()
+    this.observer?.onCleanupStart?.()
+
     const errors: unknown[] = []
+    let servicesCleaned = 0
 
     for (const [, instance] of this.scoped) {
       if (instance && typeof instance === 'object' && 'cleanup' in instance) {
@@ -66,16 +95,25 @@ export class RequestScopeManager {
         if (typeof fn === 'function') {
           try {
             await fn.call(instance)
+            servicesCleaned++
           } catch (error) {
             // Collect errors but continue cleanup
             errors.push(error)
+            this.observer?.onCleanupError?.(
+              error instanceof Error ? error : new Error(String(error))
+            )
           }
         }
       }
     }
 
+    const scopeSize = this.scoped.size
     this.scoped.clear()
     this.metadata.clear()
+
+    // Record metrics
+    this.metrics.recordCleanupEnd(scopeSize, servicesCleaned, errors.length)
+    this.observer?.onCleanupEnd?.(this.metrics)
 
     // Log errors if any occurred
     if (errors.length > 0) {
