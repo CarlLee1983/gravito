@@ -3,13 +3,24 @@
  *
  * Business logic for shopping cart operations.
  * Uses CartRepository for data access.
+ * Returns DTOs via Presenters for API responses.
  */
 
 import type { Cart, CartItem } from '../models'
+import {
+  CartItemPresenter,
+  type CartItemResponseDTO,
+  CartPresenter,
+  type CartResponseDTO,
+} from '../Presenters'
 import { CartRepository } from '../Repositories'
 
 export class CartService {
   constructor(private cartRepository = new CartRepository()) {}
+
+  // ─────────────────────────────────────────────────────────────
+  // Internal Methods (return raw models)
+  // ─────────────────────────────────────────────────────────────
 
   /**
    * Get or create cart for user/session
@@ -58,5 +69,43 @@ export class CartService {
    */
   async mergeCarts(guestSessionId: string, userId: number): Promise<Cart> {
     return this.cartRepository.mergeCarts(guestSessionId, userId)
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Presenter Methods (return DTOs for API responses)
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * Get cart as DTO (for API responses)
+   */
+  async getCartAsDTO(cartId: number): Promise<CartResponseDTO | null> {
+    const cart = await this.cartRepository.find(cartId)
+    if (!cart) return null
+    const withItems = await this.cartRepository.getWithItems(cartId)
+    return withItems ? CartPresenter.present(withItems) : null
+  }
+
+  /**
+   * Add item and return item DTO
+   */
+  async addItemAsDTO(
+    cartId: number,
+    productId: number,
+    quantity?: number
+  ): Promise<CartItemResponseDTO> {
+    const item = await this.cartRepository.addItem(cartId, productId, quantity)
+    return CartItemPresenter.present(item)
+  }
+
+  /**
+   * Get user's cart as DTO
+   */
+  async getUserCartAsDTO(userId: number): Promise<CartResponseDTO> {
+    const cart = await this.cartRepository.getOrCreateForUser(userId)
+    const withItems = await this.cartRepository.getWithItems(cart.id)
+    if (!withItems) {
+      throw new Error('Failed to load cart with items')
+    }
+    return CartPresenter.present(withItems)
   }
 }
