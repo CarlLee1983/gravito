@@ -57,13 +57,13 @@ export class RequestScopeMetrics {
   }
 
   /**
-   * Check if cleanup took longer than threshold (default 5ms)
+   * Check if cleanup took longer than threshold (default 2ms)
    * Useful for detecting slow cleanups
    *
    * @param thresholdMs - Threshold in milliseconds
    * @returns True if cleanup exceeded threshold
    */
-  isSlowCleanup(thresholdMs = 5): boolean {
+  isSlowCleanup(thresholdMs = 2): boolean {
     if (this.cleanupDuration === null) return false
     return this.cleanupDuration > thresholdMs
   }
