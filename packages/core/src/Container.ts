@@ -31,6 +31,7 @@ export type ServiceKey = keyof ServiceMap | (string & {}) | symbol
 interface Binding<T = unknown> {
   factory: Factory<T>
   shared: boolean // true for singleton
+  scope?: 'transient' | 'singleton' | 'request' // scope type
 }
 
 /**
@@ -59,7 +60,11 @@ export class Container {
    * ```
    */
   bind<T>(key: ServiceKey, factory: Factory<T>): void {
-    this.bindings.set(key, { factory: factory as Factory<unknown>, shared: false })
+    this.bindings.set(key, {
+      factory: factory as Factory<unknown>,
+      shared: false,
+      scope: 'transient',
+    })
   }
 
   /**
@@ -78,7 +83,34 @@ export class Container {
    * ```
    */
   singleton<T>(key: ServiceKey, factory: Factory<T>): void {
-    this.bindings.set(key, { factory: factory as Factory<unknown>, shared: true })
+    this.bindings.set(key, {
+      factory: factory as Factory<unknown>,
+      shared: true,
+      scope: 'singleton',
+    })
+  }
+
+  /**
+   * Bind a request-scoped service to the container.
+   *
+   * A new instance will be created for each request and cached within that request.
+   * The service is automatically cleaned up when the request ends.
+   *
+   * @template T - The type of the service being bound.
+   * @param key - The unique identifier for the service.
+   * @param factory - The factory function that creates the service instance.
+   *
+   * @example
+   * ```typescript
+   * container.scoped('requestCache', (c) => new RequestProductCache());
+   * ```
+   */
+  scoped<T>(key: ServiceKey, factory: Factory<T>): void {
+    this.bindings.set(key, {
+      factory: factory as Factory<unknown>,
+      shared: false,
+      scope: 'request',
+    })
   }
 
   /**
@@ -89,6 +121,16 @@ export class Container {
    */
   instance<T>(key: ServiceKey, instance: T): void {
     this.instances.set(key, instance)
+  }
+
+  /**
+   * Check if a service is request-scoped.
+   *
+   * @param key - The service key to check.
+   * @returns True if the service is request-scoped.
+   */
+  isRequestScoped(key: ServiceKey): boolean {
+    return this.bindings.get(key)?.scope === 'request'
   }
 
   /**

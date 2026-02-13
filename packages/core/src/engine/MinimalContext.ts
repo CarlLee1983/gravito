@@ -12,6 +12,7 @@
  * @module @gravito/core/engine
  */
 
+import { RequestScopeManager } from '../Container/RequestScopeManager'
 import type { FastRequest, FastContext as IFastContext } from './types'
 
 /**
@@ -131,6 +132,7 @@ class MinimalRequest implements FastRequest {
 export class MinimalContext implements IFastContext {
   public readonly req: MinimalRequest
   private _resHeaders: Record<string, string> = {}
+  private _requestScope: RequestScopeManager
 
   constructor(
     request: Request,
@@ -139,6 +141,7 @@ export class MinimalContext implements IFastContext {
     routePattern?: string
   ) {
     this.req = new MinimalRequest(request, params, path, routePattern)
+    this._requestScope = new RequestScopeManager()
   }
 
   // get req(): FastRequest {
@@ -241,6 +244,27 @@ export class MinimalContext implements IFastContext {
   }
 
   set(_key: string, _value: any): void {}
+
+  /**
+   * Get the request-scoped service manager for this request.
+   *
+   * @returns The RequestScopeManager for this request.
+   */
+  requestScope(): RequestScopeManager {
+    return this._requestScope
+  }
+
+  /**
+   * Resolve a request-scoped service (convenience method).
+   *
+   * @template T - The service type.
+   * @param key - The service key for caching.
+   * @param factory - Factory function to create the service.
+   * @returns The cached or newly created service instance.
+   */
+  scoped<T>(key: string | symbol, factory: () => T): T {
+    return this._requestScope.resolve(key, factory)
+  }
 
   public route: (name: string, params?: any, query?: any) => string = () => ''
 
