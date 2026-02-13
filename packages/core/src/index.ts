@@ -76,6 +76,15 @@ export {
 } from './ErrorHandler'
 // Events
 export { EventManager } from './EventManager'
+// RequestScope-Aware Error Handling
+export {
+  cleanupRequestScopeOnError,
+  detectRequestScopeLeaks,
+  extractRequestScopeErrorContext,
+  RequestScopeCleanupError,
+  type RequestScopeErrorContext,
+  withRequestScopeCleanup,
+} from './error-handling/RequestScopeErrorContext'
 // Event System
 export type {
   CircuitBreakerOptions,
