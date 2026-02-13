@@ -1,0 +1,161 @@
+# REST API Demo Docker Compose 配置
+# 一鍵啟動完整開發環境
+
+version: '3.8'
+
+services:
+  # =========================================================================
+  # PostgreSQL 資料庫
+  # =========================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: rest-api-demo-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: rest_api_demo
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rest-api-network
+
+  # =========================================================================
+  # Redis 快取
+  # =========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: rest-api-demo-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rest-api-network
+
+  # =========================================================================
+  # Prometheus 指標收集
+  # =========================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: rest-api-demo-prometheus
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - rest-api-network
+
+  # =========================================================================
+  # Grafana 監控面板
+  # =========================================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: rest-api-demo-grafana
+    ports:
+      - '3001:3000'
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_USER: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana-dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+    depends_on:
+      prometheus:
+        condition: service_started
+    networks:
+      - rest-api-network
+
+  # =========================================================================
+  # Jaeger 分佈式追蹤
+  # =========================================================================
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: rest-api-demo-jaeger
+    ports:
+      - '6831:6831/udp'  # Jaeger agent
+      - '16686:16686'    # Jaeger UI
+    environment:
+      COLLECTOR_ZIPKIN_HOST_PORT: ':9411'
+    networks:
+      - rest-api-network
+
+  # =========================================================================
+  # 應用服務（可選，如果要容器化運行）
+  # =========================================================================
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: rest-api-demo-app
+  #   ports:
+  #     - '3000:3000'
+  #   environment:
+  #     - NODE_ENV=development
+  #     - DB_HOST=postgres
+  #     - DB_PORT=5432
+  #     - DB_USER=postgres
+  #     - DB_PASSWORD=password
+  #     - DB_NAME=rest_api_demo
+  #     - REDIS_HOST=redis
+  #     - REDIS_PORT=6379
+  #     - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+  #     - PROMETHEUS_PUSHGATEWAY=http://prometheus:9091
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     jaeger:
+  #       condition: service_started
+  #   networks:
+  #     - rest-api-network
+  #   command: bun run dev
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  rest-api-network:
+    driver: bridge
+
+# ===========================================================================================
+# 使用說明
+# ===========================================================================================
+# 啟動所有服務：
+#   docker-compose up -d
+#
+# 停止所有服務：
+#   docker-compose down
+#
+# 查看日誌：
+#   docker-compose logs -f [service-name]
+#
+# 訪問地址：
+#   - PostgreSQL: localhost:5432
+#   - Redis: localhost:6379
+#   - Prometheus: http://localhost:9090
+#   - Grafana: http://localhost:3001 (admin/admin)
+#   - Jaeger: http://localhost:16686
+#
+# 刪除所有數據（包括卷）：
+#   docker-compose down -v
