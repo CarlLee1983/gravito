@@ -78,6 +78,8 @@
 |------|------|------|------|
 | **DDD 學習** | DDD_LEARNING_GUIDE | 初級 | 理解概念和設計原則 |
 | **架構設計** | ARCHITECTURE | 中級 | 系統整體設計 |
+| **架構圖表** ⭐ | ARCHITECTURE_DIAGRAMS | 中級 | 視覺化流程和架構 |
+| **設計模式** ⭐ | DESIGN_PATTERNS | 中級 | 11 個設計模式實現 |
 | **實現指南** | IMPLEMENTATION_GUIDE | 中級 | 實現新功能 |
 | **最佳實踐** | BEST_PRACTICES | 高級 | 代碼質量和性能 |
 | **故障排除** | TROUBLESHOOTING | 高級 | 問題診斷和修復 |
@@ -88,14 +90,21 @@
 #### 🎯 核心概念
 
 - Entity、Value Object、Aggregate → [DDD_LEARNING_GUIDE](./DDD_LEARNING_GUIDE.md)
-- Repository 模式 → [ARCHITECTURE](./ARCHITECTURE.md)
-- Dependency Injection → [ARCHITECTURE](./ARCHITECTURE.md)
+- Repository 模式 → [ARCHITECTURE](./ARCHITECTURE.md) + [DESIGN_PATTERNS](./DESIGN_PATTERNS.md)
+- Dependency Injection → [ARCHITECTURE](./ARCHITECTURE.md) + [DESIGN_PATTERNS](./DESIGN_PATTERNS.md)
 
 #### 🏗️ 架構模式
 
 - Clean Architecture 四層 → [DDD_LEARNING_GUIDE](./DDD_LEARNING_GUIDE.md) + [ARCHITECTURE](./ARCHITECTURE.md)
-- 事件驅動架構 → [ARCHITECTURE](./ARCHITECTURE.md)
+- 事件驅動架構 → [ARCHITECTURE](./ARCHITECTURE.md) + [DESIGN_PATTERNS](./DESIGN_PATTERNS.md)
 - Domain Events → [DDD_LEARNING_GUIDE](./DDD_LEARNING_GUIDE.md)
+
+#### 🎨 設計模式
+
+- 創建型（Factory、Builder、Singleton） → [DESIGN_PATTERNS](./DESIGN_PATTERNS.md)
+- 結構型（Adapter、Decorator、Proxy） → [DESIGN_PATTERNS](./DESIGN_PATTERNS.md)
+- 行為型（Strategy、Observer、State、Command） → [DESIGN_PATTERNS](./DESIGN_PATTERNS.md)
+- 特殊模式（Repository、DI、Specification） → [DESIGN_PATTERNS](./DESIGN_PATTERNS.md)
 
 #### ⚡ 性能優化
 
@@ -167,15 +176,17 @@
 
 ## 📊 文檔統計
 
-| 文檔 | 行數 | 代碼示例 | 預計閱讀時間 |
-|------|------|---------|------------|
-| DDD_LEARNING_GUIDE | 1,200+ | 36+ | 4-5 小時 |
-| ARCHITECTURE | 500+ | 20+ | 2-3 小時 |
-| IMPLEMENTATION_GUIDE | 600+ | 25+ | 2-3 小時 |
-| BEST_PRACTICES | 400+ | 15+ | 1-2 小時 |
-| TROUBLESHOOTING | 300+ | 10+ | 1-2 小時 |
-| API_GUIDE | 400+ | 50+ | 1-2 小時 |
-| **總計** | **3,400+** | **156+** | **12-17 小時** |
+| 文檔 | 行數 | 代碼示例/圖表 | 預計閱讀時間 |
+|------|------|-------------|------------|
+| DDD_LEARNING_GUIDE | 1,200+ | 36+ 代碼 | 4-5 小時 |
+| ARCHITECTURE | 500+ | 20+ 代碼 | 2-3 小時 |
+| ARCHITECTURE_DIAGRAMS ⭐ | 600+ | 8 個 Mermaid 圖表 | 1-2 小時 |
+| DESIGN_PATTERNS ⭐ | 1,000+ | 11 個完整實現 | 3-4 小時 |
+| IMPLEMENTATION_GUIDE | 600+ | 25+ 代碼 | 2-3 小時 |
+| BEST_PRACTICES | 400+ | 15+ 代碼 | 1-2 小時 |
+| TROUBLESHOOTING | 300+ | 10+ 代碼 | 1-2 小時 |
+| API_GUIDE | 400+ | 50+ 代碼 | 1-2 小時 |
+| **總計** | **5,000+** | **67 代碼 + 8 圖表** | **16-23 小時** |
 
 ---
 
@@ -284,6 +295,8 @@ A: 歡迎提交 Issue 或 Pull Request！
 |------|---------|------|
 | DDD_LEARNING_GUIDE | 2026-02-14 | 1.0 |
 | ARCHITECTURE | 2026-02-13 | 1.0 |
+| ARCHITECTURE_DIAGRAMS | 2026-02-14 | 1.0 ⭐ |
+| DESIGN_PATTERNS | 2026-02-14 | 1.0 ⭐ |
 | IMPLEMENTATION_GUIDE | 2026-02-13 | 1.0 |
 | BEST_PRACTICES | 2026-02-13 | 1.0 |
 | TROUBLESHOOTING | 2026-02-13 | 1.0 |
