@@ -6,7 +6,7 @@
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean --external @gravito/atlas --external @gravito/enterprise --external @gravito/stasis --external @gravito/core --external stripe",
+    "build": "tsup src/index.ts --format esm --clean --external @gravito/atlas --external @gravito/enterprise --external @gravito/stasis --external @gravito/core --external stripe",
     "test": "bun test",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test:unit": "bun test",

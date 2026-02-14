@@ -20,7 +20,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "build": "tsup src/index.ts --format cjs,esm --clean",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
   "peerDependencies": {

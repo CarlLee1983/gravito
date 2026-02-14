@@ -19,7 +19,7 @@
     "typescript": "^5.9.3"
   },
   "scripts": {
-    "build": "tsup src/index.tsx --format esm --dts",
+    "build": "tsup src/index.tsx --format esm",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
   "publishConfig": {

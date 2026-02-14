@@ -6,7 +6,8 @@ console.log('Building @gravito/core...')
 await Bun.$`rm -rf dist`
 
 try {
-  // Build bundles
+  // Build bundles WITHOUT --dts to avoid memory exhaustion
+  // Full DTS generation is too memory-intensive for CI
   execSync(
     'npx tsup src/index.ts src/compat.ts --format esm,cjs --shims --external @gravito/photon --external bun:test --external bun:sqlite --outDir dist --target esnext',
     {
@@ -25,24 +26,6 @@ try {
       env: process.env,
     }
   )
-
-  // Generate type declaration files
-  // These are minimal - full types come from source during type checking
-  const indexStub = `declare module '@gravito/core' {
-  export * from '../../src/index';
-}`
-
-  const compatStub = `declare module '@gravito/core/compat' {
-  export * from '../../src/compat';
-}`
-
-  const engineStub = `declare module '@gravito/core/engine' {
-  export * from '../../../src/engine/index';
-}`
-
-  await Bun.write('dist/index.d.ts', indexStub)
-  await Bun.write('dist/compat.d.ts', compatStub)
-  await Bun.write('dist/engine/index.d.ts', engineStub)
 
   console.log('✅ Build complete!')
 } catch (_error) {
