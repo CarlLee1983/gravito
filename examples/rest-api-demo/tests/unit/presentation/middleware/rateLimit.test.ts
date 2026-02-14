@@ -4,8 +4,7 @@
  * 測試 API 速率限制功能
  */
 
-import type { GravitoContext, GravitoNext } from '@gravito/core'
-import { HttpException } from '@gravito/core'
+import type { GravitoContext } from '@gravito/core'
 import {
   rateLimit,
   rateLimitByEndpoint,
@@ -15,7 +14,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('rateLimit middleware', () => {
   let ctx: any
-  let next: GravitoNext
+  let next: any
 
   beforeEach(() => {
     ctx = {

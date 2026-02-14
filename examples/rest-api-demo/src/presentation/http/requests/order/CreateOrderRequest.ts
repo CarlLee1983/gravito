@@ -7,14 +7,16 @@
 import { z } from 'zod'
 
 export const createOrderSchema = z.object({
-  userId: z.string('User ID is required').uuid('User ID must be a valid UUID'),
+  userId: z.string({ required_error: 'User ID is required' }).uuid('User ID must be a valid UUID'),
 
   items: z
     .array(
       z.object({
-        productId: z.string('Product ID is required').uuid('Product ID must be a valid UUID'),
+        productId: z
+          .string({ required_error: 'Product ID is required' })
+          .uuid('Product ID must be a valid UUID'),
         quantity: z
-          .number('Quantity must be a number')
+          .number({ invalid_type_error: 'Quantity must be a number' })
           .int('Quantity must be an integer')
           .positive('Quantity must be greater than 0'),
       })
@@ -24,28 +26,36 @@ export const createOrderSchema = z.object({
 
   shippingAddress: z.object({
     name: z
-      .string('Name is required')
+      .string({ required_error: 'Name is required' })
       .min(2, 'Name must be at least 2 characters')
       .max(255, 'Name must not exceed 255 characters'),
 
-    email: z.string('Email is required').email('Invalid email format'),
+    email: z.string({ required_error: 'Email is required' }).email('Invalid email format'),
 
-    phone: z.string('Phone is required').regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number format'),
+    phone: z
+      .string({ required_error: 'Phone is required' })
+      .regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number format'),
 
     address: z
-      .string('Address is required')
+      .string({ required_error: 'Address is required' })
       .min(5, 'Address must be at least 5 characters')
       .max(500, 'Address must not exceed 500 characters'),
 
-    city: z.string('City is required').min(2, 'City must be at least 2 characters'),
+    city: z
+      .string({ required_error: 'City is required' })
+      .min(2, 'City must be at least 2 characters'),
 
-    state: z.string('State is required').min(2, 'State must be at least 2 characters'),
+    state: z
+      .string({ required_error: 'State is required' })
+      .min(2, 'State must be at least 2 characters'),
 
     postalCode: z
-      .string('Postal code is required')
+      .string({ required_error: 'Postal code is required' })
       .regex(/^[0-9]{5,10}$/, 'Invalid postal code format'),
 
-    country: z.string('Country is required').length(2, 'Country code must be 2 characters'),
+    country: z
+      .string({ required_error: 'Country is required' })
+      .length(2, 'Country code must be 2 characters'),
   }),
 
   notes: z.string().max(1000, 'Notes must not exceed 1000 characters').optional(),

@@ -44,7 +44,9 @@ export class PerformanceServiceProvider extends ServiceProvider {
    */
   async boot(): Promise<void> {
     // 獲取連接池管理器
-    const poolManager = this.app.make<ConnectionPoolManager>('pool.manager')
+    const poolManager = this.core?.container.make<ConnectionPoolManager>('pool.manager') as
+      | ConnectionPoolManager
+      | undefined
 
     if (poolManager) {
       try {

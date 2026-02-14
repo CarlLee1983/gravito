@@ -70,14 +70,9 @@ export class ListProductsUseCase {
     let result: ListProductsResponse
 
     if (request.categoryId) {
-      result = await this.productRepository.findByCategory(
-        request.categoryId,
-        page,
-        limit,
-        true // Eager Loading
-      )
+      result = await this.productRepository.findByCategory(request.categoryId, page, limit)
     } else {
-      result = await this.productRepository.findAll(page, limit, true) // Eager Loading
+      result = await this.productRepository.findAll(page, limit)
     }
 
     // =========================================================================
@@ -114,7 +109,7 @@ export class ListProductsUseCase {
     )
 
     return {
-      data: paginationResponse.data,
+      data: paginationResponse.data as Product[],
       nextCursor: paginationResponse.nextCursor,
       hasMore: paginationResponse.hasMore,
       limit: paginationResponse.limit,

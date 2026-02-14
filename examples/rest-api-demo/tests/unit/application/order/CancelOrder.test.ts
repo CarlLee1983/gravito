@@ -5,8 +5,6 @@
  */
 
 import { CancelOrderUseCase } from '@application/order/CancelOrder'
-import type { OrderRepository } from '@infrastructure/repositories/OrderRepository'
-import type { ProductRepository } from '@infrastructure/repositories/ProductRepository'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('CancelOrderUseCase', () => {

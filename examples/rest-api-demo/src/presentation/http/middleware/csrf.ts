@@ -70,14 +70,14 @@ export function csrf(config: CsrfConfig = {}) {
       const token = await getCsrfToken(ctx, tokenField, headerName)
 
       if (!token || token !== tokenData.token) {
-        throw new HttpException('CSRF token validation failed', 403)
+        throw new HttpException(403, { message: 'CSRF token validation failed' })
       }
 
       // 驗證 Token 是否過期（1 小時）
       const tokenAge = Date.now() - tokenData.timestamp
       if (tokenAge > 60 * 60 * 1000) {
         csrfTokens.delete(sessionId)
-        throw new HttpException('CSRF token expired', 403)
+        throw new HttpException(403, { message: 'CSRF token expired' })
       }
     }
 
@@ -103,9 +103,9 @@ async function getCsrfToken(
   }
 
   // 檢查 URL 參數
-  const queryToken = ctx.req.query?.[tokenField]
+  const queryToken = ctx.req.query(tokenField)
   if (queryToken) {
-    return Array.isArray(queryToken) ? queryToken[0] : queryToken
+    return queryToken
   }
 
   // 檢查請求體
@@ -115,7 +115,7 @@ async function getCsrfToken(
       const body = (await ctx.req.json()) as any
       return body?.[tokenField]
     } else if (contentType?.includes('application/x-www-form-urlencoded')) {
-      const body = (await ctx.req.text()) as any
+      const body = await ctx.req.text()
       const params = new URLSearchParams(body)
       return params.get(tokenField)
     }
@@ -147,10 +147,9 @@ function getSessionId(ctx: GravitoContext): string {
     return crypto.createHash('sha256').update(authHeader).digest('hex')
   }
 
-  // 使用 IP + User-Agent 作為備用
-  const ip = ctx.req.socket?.remoteAddress || ''
+  // 使用 User-Agent 作為備用
   const ua = ctx.req.header('User-Agent') || ''
-  return crypto.createHash('sha256').update(`${ip}:${ua}`).digest('hex')
+  return crypto.createHash('sha256').update(ua).digest('hex')
 }
 
 /**
@@ -159,11 +158,11 @@ function getSessionId(ctx: GravitoContext): string {
  * 允許客戶端獲取 CSRF Token
  */
 export function csrfToken() {
-  return async (ctx: GravitoContext, next: GravitoNext) => {
+  return async (ctx: GravitoContext, _next: GravitoNext) => {
     const token = ctx.get('csrfToken') as string
 
     if (!token) {
-      throw new HttpException('CSRF token not available', 500)
+      throw new HttpException(500, { message: 'CSRF token not available' })
     }
 
     return ctx.json({

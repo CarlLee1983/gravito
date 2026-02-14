@@ -1,9 +1,16 @@
 /**
  * 完整用戶旅程 E2E 測試
- * 模擬現實用戶場景：註冊 → 登入 → 購物 → 支付
+ * 模擬現實用戶場景：註冊 -> 登入 -> 購物 -> 支付
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
+
+interface ApiResponse {
+  success: boolean
+  data: any
+  error?: string
+  nextCursor?: string
+}
 
 describe('完整用戶旅程 E2E 測試', () => {
   let authToken: string
@@ -25,7 +32,7 @@ describe('完整用戶旅程 E2E 測試', () => {
 
       // Assert
       expect(response.status).toBe(201)
-      const data = await response.json()
+      const data = (await response.json()) as ApiResponse
       expect(data.success).toBe(true)
       userId = data.data.id
     })
@@ -43,7 +50,7 @@ describe('完整用戶旅程 E2E 測試', () => {
 
       // Assert
       expect(response.status).toBe(200)
-      const data = await response.json()
+      const data = (await response.json()) as ApiResponse
       expect(data.success).toBe(true)
       authToken = data.data.token
     })
@@ -56,7 +63,7 @@ describe('完整用戶旅程 E2E 測試', () => {
 
       // Assert
       expect(response.status).toBe(200)
-      const data = await response.json()
+      const data = (await response.json()) as ApiResponse
       expect(Array.isArray(data.data)).toBe(true)
       expect(data.data.length).toBeGreaterThan(0)
     })
@@ -66,7 +73,7 @@ describe('完整用戶旅程 E2E 測試', () => {
       const listRes = await fetch('/api/products?limit=1', {
         headers: { Authorization: `Bearer ${authToken}` },
       })
-      const listData = await listRes.json()
+      const listData = (await listRes.json()) as ApiResponse
       const productId = listData.data[0].id
 
       // 查看詳情
@@ -75,7 +82,7 @@ describe('完整用戶旅程 E2E 測試', () => {
       })
 
       expect(response.status).toBe(200)
-      const data = await response.json()
+      const data = (await response.json()) as ApiResponse
       expect(data.data.id).toBe(productId)
       expect(data.data.price).toBeDefined()
     })
@@ -85,7 +92,7 @@ describe('完整用戶旅程 E2E 測試', () => {
       const listRes = await fetch('/api/products?limit=1', {
         headers: { Authorization: `Bearer ${authToken}` },
       })
-      const listData = await listRes.json()
+      const listData = (await listRes.json()) as ApiResponse
       const productId = listData.data[0].id
 
       // 建立訂單
@@ -112,7 +119,7 @@ describe('完整用戶旅程 E2E 測試', () => {
       })
 
       expect(response.status).toBe(201)
-      const data = await response.json()
+      const data = (await response.json()) as ApiResponse
       expect(data.success).toBe(true)
       orderId = data.data.id
     })
@@ -123,7 +130,7 @@ describe('完整用戶旅程 E2E 測試', () => {
       })
 
       expect(response.status).toBe(200)
-      const data = await response.json()
+      const data = (await response.json()) as ApiResponse
       expect(data.data.id).toBe(orderId)
       expect(data.data.status).toBe('pending')
       expect(data.data.total).toBeGreaterThan(0)
@@ -145,7 +152,7 @@ describe('完整用戶旅程 E2E 測試', () => {
       })
 
       expect(response.status).toBe(200)
-      const data = await response.json()
+      const data = (await response.json()) as ApiResponse
       expect(data.data.status).toBe('completed')
     })
 
@@ -154,7 +161,7 @@ describe('完整用戶旅程 E2E 測試', () => {
         headers: { Authorization: `Bearer ${authToken}` },
       })
 
-      const data = await response.json()
+      const data = (await response.json()) as ApiResponse
       expect(data.data.status).toBe('paid')
     })
 
@@ -164,7 +171,7 @@ describe('完整用戶旅程 E2E 測試', () => {
       })
 
       expect(response.status).toBe(200)
-      const data = await response.json()
+      const data = (await response.json()) as ApiResponse
       expect(data.data.id).toBe(userId)
     })
 

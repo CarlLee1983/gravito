@@ -5,7 +5,6 @@
  */
 
 import { LoginUserUseCase } from '@application/user/LoginUser'
-import type { UserRepository } from '@infrastructure/repositories/UserRepository'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock bcrypt module before importing anything that uses it

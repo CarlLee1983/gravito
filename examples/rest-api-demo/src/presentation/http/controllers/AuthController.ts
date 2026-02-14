@@ -4,15 +4,21 @@
  * 處理認證相關的 REST 端點
  */
 
-import type { LogoutUserUseCase } from '@application/auth/LogoutUser'
-import type { RefreshTokenUseCase } from '@application/auth/RefreshToken'
 import type { LoginUserUseCase } from '@application/user/LoginUser'
 import type { RegisterUserUseCase } from '@application/user/RegisterUser'
-import type { GravitoContext } from '@gravito/core'
+import type { GravitoContext, GravitoVariables } from '@gravito/core'
 import type { AuthManager } from '@gravito/sentinel'
 import type { TokenService } from '@infrastructure/auth/TokenService'
 import { LoginRequest } from '@presentation/http/requests/auth/LoginRequest'
 import { RegisterRequest } from '@presentation/http/requests/auth/RegisterRequest'
+
+/**
+ * 從 GravitoContext 獲取容器服務的輔助函數
+ */
+function resolveService<T>(ctx: GravitoContext<GravitoVariables>, key: string): T {
+  const core = ctx.get('core') as any
+  return core.container.make(key) as T
+}
 
 export class AuthController {
   /**
@@ -21,7 +27,7 @@ export class AuthController {
    */
   async register(ctx: GravitoContext) {
     const body = (await ctx.req.json()) as any
-    const registerUseCase = ctx.app.make('RegisterUserUseCase') as RegisterUserUseCase
+    const registerUseCase = resolveService<RegisterUserUseCase>(ctx, 'RegisterUserUseCase')
 
     try {
       // 驗證輸入
@@ -30,7 +36,7 @@ export class AuthController {
         return ctx.json({ success: false, errors: validation.errors }, 422)
       }
 
-      const result = await registerUseCase.execute(validation.data)
+      const result = await registerUseCase.execute(validation.data!)
       return ctx.json({ success: true, data: result }, 201)
     } catch (_error: any) {
       return ctx.json({ success: false, error: _error.message }, 400)
@@ -43,8 +49,8 @@ export class AuthController {
    */
   async login(ctx: GravitoContext) {
     const body = (await ctx.req.json()) as any
-    const loginUseCase = ctx.app.make('LoginUserUseCase') as LoginUserUseCase
-    const tokenService = ctx.app.make('TokenService') as TokenService
+    const loginUseCase = resolveService<LoginUserUseCase>(ctx, 'LoginUserUseCase')
+    const tokenService = resolveService<TokenService>(ctx, 'TokenService')
 
     try {
       // 驗證輸入
@@ -54,7 +60,7 @@ export class AuthController {
       }
 
       // 執行登入業務邏輯
-      const user = await loginUseCase.execute(validation.data)
+      const user = await loginUseCase.execute(validation.data!)
 
       // 生成 Token
       const accessToken = tokenService.generateAccessToken({
@@ -107,8 +113,7 @@ export class AuthController {
    */
   async refreshToken(ctx: GravitoContext) {
     const body = (await ctx.req.json()) as any
-    const _refreshTokenUseCase = ctx.app.make('RefreshTokenUseCase') as RefreshTokenUseCase
-    const tokenService = ctx.app.make('TokenService') as TokenService
+    const tokenService = resolveService<TokenService>(ctx, 'TokenService')
 
     try {
       // 驗證 Refresh Token
@@ -150,12 +155,12 @@ export class AuthController {
    */
   async logout(ctx: GravitoContext) {
     const auth = ctx.get('auth') as AuthManager
-    const tokenBlacklist = ctx.app.make('TokenBlacklist')
+    const tokenBlacklist = resolveService<any>(ctx, 'TokenBlacklist')
 
     try {
       // 從 Authorization Header 提取 Token
       const authHeader = ctx.req.header('Authorization')
-      const tokenService = ctx.app.make('TokenService') as TokenService
+      const tokenService = resolveService<TokenService>(ctx, 'TokenService')
       const token = tokenService.extractTokenFromHeader(authHeader)
 
       if (token) {

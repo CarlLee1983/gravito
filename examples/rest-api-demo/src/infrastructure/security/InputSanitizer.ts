@@ -69,13 +69,7 @@ export function sanitizeUrl(input: string): string {
   }
 
   // 拒絕危險協議
-  const dangerousProtocols = [
-    'javascript:',
-    'data:',
-    'vbscript:',
-    'file:',
-    'about:',
-  ]
+  const dangerousProtocols = ['javascript:', 'data:', 'vbscript:', 'file:', 'about:']
 
   const lowerInput = input.toLowerCase().trim()
   for (const protocol of dangerousProtocols) {

@@ -5,7 +5,6 @@
  */
 
 import type { AuthConfig } from '@gravito/sentinel'
-import type { UserRepository } from '@infrastructure/repositories/UserRepository'
 
 /**
  * 認證配置
@@ -66,39 +65,6 @@ export const authConfig: AuthConfig = {
   providers: {
     users: {
       driver: 'callback',
-    },
-  },
-
-  /**
-   * Bindings 配置：綁定提供者實現
-   * 這些會在 AuthServiceProvider 中配置
-   */
-  bindings: {
-    providers: {
-      users: (config: Record<string, any>) => {
-        return {
-          async retrieveById(id: string) {
-            // TODO: 從容器中獲取 UserRepository
-            // const repo = app().make('UserRepository') as UserRepository
-            // return await repo.findById(id)
-            return null
-          },
-
-          async retrieveByCredentials(credentials: Record<string, any>) {
-            // TODO: 從容器中獲取 UserRepository
-            // const repo = app().make('UserRepository') as UserRepository
-            // return await repo.findByEmail(credentials.email)
-            return null
-          },
-
-          async validateCredentials(user: any, credentials: Record<string, any>) {
-            // TODO: 使用 bcrypt 驗證密碼
-            // const hasher = app().make('hasher')
-            // return await hasher.check(credentials.password, user.password)
-            return false
-          },
-        }
-      },
     },
   },
 }

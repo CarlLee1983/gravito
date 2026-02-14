@@ -20,8 +20,9 @@ import type { TokenService } from '@infrastructure/auth/TokenService'
 export function authenticate(...guards: string[]) {
   return async (ctx: GravitoContext, next: GravitoNext) => {
     const auth = ctx.get('auth') as AuthManager
-    const tokenService = ctx.app.make('TokenService') as TokenService
-    const tokenBlacklist = ctx.app.make('TokenBlacklist')
+    const core = ctx.get('core') as any
+    const tokenService = core.container.make('TokenService') as TokenService
+    const tokenBlacklist = core.container.make('TokenBlacklist') as any
 
     try {
       // 如果指定了守衛，使用指定的守衛

@@ -87,8 +87,8 @@ class DatabaseSeeder {
     for (let i = 0; i < config.users; i++) {
       const userId = generateId()
       this.userIds.push(userId)
-      const _email = generateEmail(i)
-      const _phone = generatePhone()
+      generateEmail(i)
+      generatePhone()
       showProgress(i + 1, config.users, `生成用戶 ${i + 1}/${config.users}`)
     }
     console.log(`✅ 已生成 ${config.users} 個用戶\n`)
@@ -99,7 +99,7 @@ class DatabaseSeeder {
     for (let i = 0; i < config.categories; i++) {
       const categoryId = generateId()
       this.categoryIds.push(categoryId)
-      const _name = categoryNames[i] || `Category ${i + 1}`
+      void (categoryNames[i] || `Category ${i + 1}`)
       showProgress(i + 1, config.categories, `生成分類 ${i + 1}/${config.categories}`)
     }
     console.log(`✅ 已生成 ${config.categories} 個分類\n`)
@@ -112,8 +112,8 @@ class DatabaseSeeder {
       for (let prodIdx = 0; prodIdx < config.productPerCategory; prodIdx++) {
         const productId = generateId()
         this.productIds.push(productId)
-        const _sku = generateSku(catIdx, prodIdx)
-        const _price = Math.floor(Math.random() * 50000) + 1000 // $10 - $500
+        generateSku(catIdx, prodIdx)
+        void (Math.floor(Math.random() * 50000) + 1000) // $10 - $500
         productCount++
         showProgress(productCount, totalProducts, `生成商品 ${productCount}/${totalProducts}`)
       }
@@ -123,10 +123,10 @@ class DatabaseSeeder {
     // 生成訂單
     console.log('📦 訂單資料:')
     for (let i = 0; i < config.orders; i++) {
-      const _orderId = generateId()
-      const _userId = this.userIds[Math.floor(Math.random() * this.userIds.length)]
-      const _orderNumber = generateOrderNumber()
-      const _itemCount = Math.floor(Math.random() * 5) + 1 // 1-5 個商品
+      generateId()
+      void this.userIds[Math.floor(Math.random() * this.userIds.length)]
+      generateOrderNumber()
+      void (Math.floor(Math.random() * 5) + 1) // 1-5 個商品
       showProgress(i + 1, config.orders, `生成訂單 ${i + 1}/${config.orders}`)
     }
     console.log(`✅ 已生成 ${config.orders} 個訂單\n`)

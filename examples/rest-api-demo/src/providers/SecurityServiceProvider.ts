@@ -4,7 +4,7 @@
  * 註冊安全系統的所有服務到 IoC 容器
  */
 
-import { type Container, ServiceProvider } from '@gravito/core'
+import { ServiceProvider } from '@gravito/core'
 
 export class SecurityServiceProvider extends ServiceProvider {
   /**

@@ -45,10 +45,7 @@ export class GetProductUseCase {
     // =========================================================================
     // 2. 執行數據庫查詢（包含 Eager Loading）
     // =========================================================================
-    const product = await this.productRepository.findByIdWithRelations(
-      request.productId,
-      ['category', 'inventory'] // Eager Load 分類和庫存信息
-    )
+    const product = await this.productRepository.findById(request.productId)
 
     if (!product) {
       throw new Error('Product not found')

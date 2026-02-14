@@ -2,10 +2,8 @@
  * RegisterUser Use Case 單元測試
  */
 
-import type { EventManager } from '@gravito/core'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { RegisterUserUseCase } from '../../../src/application/user/RegisterUser'
-import type { UserRepository } from '../../../src/infrastructure/repositories/UserRepository'
 
 describe('RegisterUserUseCase', () => {
   let useCase: RegisterUserUseCase

@@ -5,9 +5,6 @@
  */
 
 import { CreateOrderUseCase } from '@application/order/CreateOrder'
-import type { EventManager } from '@gravito/core'
-import type { OrderRepository } from '@infrastructure/repositories/OrderRepository'
-import type { ProductRepository } from '@infrastructure/repositories/ProductRepository'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('CreateOrderUseCase', () => {
@@ -44,8 +41,12 @@ describe('CreateOrderUseCase', () => {
         userId: 'user-1',
         items: [{ productId: 'prod-1', quantity: 2 }],
         shippingAddress: {
-          street: '123 Main St',
+          name: 'Test User',
+          email: 'test@example.com',
+          phone: '1234567890',
+          address: '123 Main St',
           city: 'New York',
+          state: 'NY',
           postalCode: '10001',
           country: 'USA',
         },
@@ -82,8 +83,12 @@ describe('CreateOrderUseCase', () => {
         userId: 'user-1',
         items: [{ productId: 'prod-1', quantity: 2 }],
         shippingAddress: {
-          street: '123 Main St',
+          name: 'Test User',
+          email: 'test@example.com',
+          phone: '1234567890',
+          address: '123 Main St',
           city: 'New York',
+          state: 'NY',
           postalCode: '10001',
           country: 'USA',
         },
@@ -116,8 +121,12 @@ describe('CreateOrderUseCase', () => {
           { productId: 'prod-2', quantity: 1 },
         ],
         shippingAddress: {
-          street: '123 Main St',
+          name: 'Test User',
+          email: 'test@example.com',
+          phone: '1234567890',
+          address: '123 Main St',
           city: 'New York',
+          state: 'NY',
           postalCode: '10001',
           country: 'USA',
         },
@@ -146,8 +155,12 @@ describe('CreateOrderUseCase', () => {
         userId: 'user-1',
         items: [{ productId: 'prod-1', quantity: 1 }],
         shippingAddress: {
-          street: '', // 空街道
+          name: 'Test User',
+          email: 'test@example.com',
+          phone: '1234567890',
+          address: '', // 空地址
           city: 'New York',
+          state: 'NY',
           postalCode: '10001',
           country: 'USA',
         },
@@ -161,8 +174,12 @@ describe('CreateOrderUseCase', () => {
         userId: 'user-1',
         items: [{ productId: 'prod-1', quantity: 1 }],
         shippingAddress: {
-          street: '123 Main St',
+          name: 'Test User',
+          email: 'test@example.com',
+          phone: '1234567890',
+          address: '123 Main St',
           city: 'New York',
+          state: 'NY',
           postalCode: '', // 缺少郵遞區號
           country: 'USA',
         },
@@ -178,8 +195,12 @@ describe('CreateOrderUseCase', () => {
         userId: 'user-1',
         items: [],
         shippingAddress: {
-          street: '123 Main St',
+          name: 'Test User',
+          email: 'test@example.com',
+          phone: '1234567890',
+          address: '123 Main St',
           city: 'New York',
+          state: 'NY',
           postalCode: '10001',
           country: 'USA',
         },
@@ -193,8 +214,12 @@ describe('CreateOrderUseCase', () => {
         userId: 'user-1',
         items: [{ productId: 'non-existent', quantity: 1 }],
         shippingAddress: {
-          street: '123 Main St',
+          name: 'Test User',
+          email: 'test@example.com',
+          phone: '1234567890',
+          address: '123 Main St',
           city: 'New York',
+          state: 'NY',
           postalCode: '10001',
           country: 'USA',
         },
@@ -210,8 +235,12 @@ describe('CreateOrderUseCase', () => {
         userId: 'user-1',
         items: [{ productId: 'prod-1', quantity: 100 }],
         shippingAddress: {
-          street: '123 Main St',
+          name: 'Test User',
+          email: 'test@example.com',
+          phone: '1234567890',
+          address: '123 Main St',
           city: 'New York',
+          state: 'NY',
           postalCode: '10001',
           country: 'USA',
         },
@@ -234,8 +263,12 @@ describe('CreateOrderUseCase', () => {
         userId: 'user-1',
         items: [{ productId: 'prod-1', quantity: 3 }],
         shippingAddress: {
-          street: '123 Main St',
+          name: 'Test User',
+          email: 'test@example.com',
+          phone: '1234567890',
+          address: '123 Main St',
           city: 'New York',
+          state: 'NY',
           postalCode: '10001',
           country: 'USA',
         },
@@ -264,8 +297,12 @@ describe('CreateOrderUseCase', () => {
         userId: 'user-1',
         items: [{ productId: 'prod-1', quantity: 1 }],
         shippingAddress: {
-          street: '123 Main St',
+          name: 'Test User',
+          email: 'test@example.com',
+          phone: '1234567890',
+          address: '123 Main St',
           city: 'New York',
+          state: 'NY',
           postalCode: '10001',
           country: 'USA',
         },
@@ -296,8 +333,12 @@ describe('CreateOrderUseCase', () => {
         userId: 'user-1',
         items: [{ productId: 'prod-1', quantity: 1 }],
         shippingAddress: {
-          street: '123 Main St',
+          name: 'Test User',
+          email: 'test@example.com',
+          phone: '1234567890',
+          address: '123 Main St',
           city: 'New York',
+          state: 'NY',
           postalCode: '10001',
           country: 'USA',
         },
@@ -333,8 +374,12 @@ describe('CreateOrderUseCase', () => {
         userId: 'user-1',
         items: [{ productId: 'prod-1', quantity: 5 }],
         shippingAddress: {
-          street: '123 Main St',
+          name: 'Test User',
+          email: 'test@example.com',
+          phone: '1234567890',
+          address: '123 Main St',
           city: 'New York',
+          state: 'NY',
           postalCode: '10001',
           country: 'USA',
         },
@@ -364,8 +409,12 @@ describe('CreateOrderUseCase', () => {
           { productId: 'prod-2', quantity: 3 },
         ],
         shippingAddress: {
-          street: '123 Main St',
+          name: 'Test User',
+          email: 'test@example.com',
+          phone: '1234567890',
+          address: '123 Main St',
           city: 'New York',
+          state: 'NY',
           postalCode: '10001',
           country: 'USA',
         },

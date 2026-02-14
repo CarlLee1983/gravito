@@ -146,7 +146,7 @@ export function guest() {
 /**
  * 獲取用戶權限（TODO: 需要實現）
  */
-async function getUserPermissions(userId: string): Promise<string[]> {
+async function getUserPermissions(_userId: string): Promise<string[]> {
   // TODO: 從數據庫或快取中獲取用戶權限
   // 示例：
   // const permissions = await db.query('SELECT permission FROM user_permissions WHERE user_id = ?', [userId])

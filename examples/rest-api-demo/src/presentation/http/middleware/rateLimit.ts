@@ -63,7 +63,7 @@ export function rateLimit(config: RateLimitConfig) {
 
     // 檢查是否超出限制
     if (memoryStore[key].count > maxRequests) {
-      throw new HttpException(message, statusCode)
+      throw new HttpException(statusCode, { message })
     }
 
     // 添加速率限制信息到響應頭
@@ -117,7 +117,7 @@ export function rateLimitByIp(config: RateLimitConfig) {
 
     // 檢查是否超出限制
     if (memoryStore[key].count > maxRequests) {
-      throw new HttpException(message, statusCode)
+      throw new HttpException(statusCode, { message })
     }
 
     // 添加速率限制信息到響應頭
@@ -172,7 +172,7 @@ export function rateLimitByEndpoint(config: RateLimitConfig) {
 
     // 檢查是否超出限制
     if (memoryStore[key].count > maxRequests) {
-      throw new HttpException(message, statusCode)
+      throw new HttpException(statusCode, { message })
     }
 
     // 添加速率限制信息到響應頭
@@ -204,7 +204,7 @@ function getClientIp(ctx: GravitoContext): string {
   }
 
   // 使用遠程地址
-  return ctx.req.socket?.remoteAddress || '127.0.0.1'
+  return '127.0.0.1'
 }
 
 export default {

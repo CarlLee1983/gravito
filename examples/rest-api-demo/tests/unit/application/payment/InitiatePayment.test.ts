@@ -5,7 +5,6 @@
  */
 
 import { InitiatePaymentUseCase } from '@application/payment/InitiatePayment'
-import type { PaymentRepository } from '@infrastructure/repositories/PaymentRepository'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('InitiatePaymentUseCase', () => {
@@ -31,7 +30,7 @@ describe('InitiatePaymentUseCase', () => {
         userId: 'user-1',
         amount: 5000,
         currency: 'USD',
-        method: 'card' as const,
+        method: 'credit_card' as const,
         gateway: 'stripe' as const,
       }
 
@@ -41,7 +40,7 @@ describe('InitiatePaymentUseCase', () => {
         userId: 'user-1',
         amount: 5000,
         currency: 'USD',
-        method: 'card',
+        method: 'credit_card',
         gateway: 'stripe',
         status: 'pending',
       })
@@ -55,7 +54,7 @@ describe('InitiatePaymentUseCase', () => {
     })
 
     it('應支持多種支付方式', async () => {
-      const methods = ['card', 'paypal', 'bank_transfer'] as const
+      const methods = ['credit_card', 'paypal', 'bank_transfer'] as const
 
       for (const method of methods) {
         mockPaymentRepository.create.mockResolvedValue({
@@ -91,7 +90,7 @@ describe('InitiatePaymentUseCase', () => {
           userId: 'user-1',
           amount: 5000,
           currency: 'USD',
-          method: 'card' as const,
+          method: 'credit_card' as const,
           gateway,
         }
 
@@ -108,7 +107,7 @@ describe('InitiatePaymentUseCase', () => {
         userId: 'user-1',
         amount: 0,
         currency: 'USD',
-        method: 'card' as const,
+        method: 'credit_card' as const,
         gateway: 'stripe' as const,
       }
 
@@ -121,7 +120,7 @@ describe('InitiatePaymentUseCase', () => {
         userId: 'user-1',
         amount: -5000,
         currency: 'USD',
-        method: 'card' as const,
+        method: 'credit_card' as const,
         gateway: 'stripe' as const,
       }
 
@@ -134,7 +133,7 @@ describe('InitiatePaymentUseCase', () => {
         userId: 'user-1',
         amount: 5000,
         currency: 'USD',
-        method: 'card' as const,
+        method: 'credit_card' as const,
         gateway: 'stripe' as const,
       }
 
@@ -164,7 +163,7 @@ describe('InitiatePaymentUseCase', () => {
           userId: 'user-1',
           amount: 5000,
           currency,
-          method: 'card' as const,
+          method: 'credit_card' as const,
           gateway: 'stripe' as const,
         }
 
@@ -179,7 +178,7 @@ describe('InitiatePaymentUseCase', () => {
         userId: 'user-1',
         amount: 5000,
         currency: 'INVALID',
-        method: 'card' as const,
+        method: 'credit_card' as const,
         gateway: 'stripe' as const,
       }
 
@@ -192,7 +191,7 @@ describe('InitiatePaymentUseCase', () => {
         userId: 'user-1',
         amount: 5000,
         currency: '',
-        method: 'card' as const,
+        method: 'credit_card' as const,
         gateway: 'stripe' as const,
       }
 
@@ -220,18 +219,18 @@ describe('InitiatePaymentUseCase', () => {
         userId: 'user-1',
         amount: 5000,
         currency: 'USD',
-        method: 'card' as const,
+        method: 'credit_card' as const,
         gateway: 'stripe' as const,
       }
 
       mockPaymentRepository.create.mockResolvedValue({
         id: 'payment-1',
-        method: 'card',
+        method: 'credit_card',
       })
 
       const result = await useCase.execute(request)
 
-      expect(result.method).toBe('card')
+      expect(result.method).toBe('credit_card')
     })
   })
 
@@ -242,7 +241,7 @@ describe('InitiatePaymentUseCase', () => {
         userId: 'user-1',
         amount: 5000,
         currency: 'USD',
-        method: 'card' as const,
+        method: 'credit_card' as const,
         gateway: 'invalid' as any,
       }
 
@@ -255,7 +254,7 @@ describe('InitiatePaymentUseCase', () => {
         userId: 'user-1',
         amount: 5000,
         currency: 'USD',
-        method: 'card' as const,
+        method: 'credit_card' as const,
         gateway: 'stripe' as const,
       }
 
@@ -277,7 +276,7 @@ describe('InitiatePaymentUseCase', () => {
         userId: 'user-1',
         amount: 5000,
         currency: 'USD',
-        method: 'card' as const,
+        method: 'credit_card' as const,
         gateway: 'stripe' as const,
       }
 
@@ -312,7 +311,7 @@ describe('InitiatePaymentUseCase', () => {
         userId: 'user-1',
         amount: 5000,
         currency: 'USD',
-        method: 'card' as const,
+        method: 'credit_card' as const,
         gateway: 'stripe' as const,
       }
 
@@ -335,7 +334,7 @@ describe('InitiatePaymentUseCase', () => {
         userId: 'user-1',
         amount: 5000,
         currency: 'USD',
-        method: 'card' as const,
+        method: 'credit_card' as const,
         gateway: 'stripe' as const,
       }
 
@@ -345,7 +344,7 @@ describe('InitiatePaymentUseCase', () => {
         userId: 'user-1',
         amount: 5000,
         currency: 'USD',
-        method: 'card',
+        method: 'credit_card',
         gateway: 'stripe',
         status: 'pending',
       }

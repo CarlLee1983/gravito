@@ -11,7 +11,7 @@ async function bootstrap(): Promise<void> {
     // =========================================================================
     // 1. 初始化 PlanetCore
     // =========================================================================
-    const core = new PlanetCore(gravitoConfig)
+    const core = new PlanetCore({ config: gravitoConfig as Record<string, unknown> })
 
     // =========================================================================
     // 2. 註冊所有 ServiceProvider
@@ -42,9 +42,10 @@ async function bootstrap(): Promise<void> {
     // 4. 啟動 HTTP 伺服器（Photon）
     // =========================================================================
     Bun.serve({
-      ...config,
+      port: config.port,
+      fetch: config.fetch,
       error: (error: Error) => {
-        console.error('❌ Server error:', error)
+        console.error('Server error:', error)
         return new Response('Internal Server Error', { status: 500 })
       },
     })

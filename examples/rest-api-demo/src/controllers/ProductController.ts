@@ -1,22 +1,17 @@
-import { Controller } from '@gravito/monolith'
-import { Product } from '../models/Product'
-import type { CreateProductRequest } from '../requests/CreateProductRequest'
+import type { GravitoContext } from '@gravito/core'
 
-export class ProductController extends Controller {
-  async index() {
-    return Product.all()
+export class ProductController {
+  async index(ctx: GravitoContext) {
+    return ctx.json({ data: [] })
   }
 
-  async store(req: CreateProductRequest) {
-    // req.input is fully typed!
-    const data = req.input
-
-    const product = await Product.create(data)
-
-    return this.response.json(product, 201)
+  async store(ctx: GravitoContext) {
+    const data = await ctx.req.json()
+    return ctx.json({ data }, 201)
   }
 
-  async show(id: string) {
-    return Product.findOrFail(id)
+  async show(ctx: GravitoContext) {
+    const id = ctx.req.param('id')
+    return ctx.json({ data: { id } })
   }
 }

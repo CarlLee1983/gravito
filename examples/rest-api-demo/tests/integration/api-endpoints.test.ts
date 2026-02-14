@@ -3,7 +3,14 @@
  * 測試完整的 HTTP 請求和響應流程
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
+
+interface ApiResponse {
+  success: boolean
+  data: any
+  error?: string
+  nextCursor?: string
+}
 
 describe('API 端點整合測試', () => {
   describe('POST /api/auth/register', () => {
@@ -20,7 +27,7 @@ describe('API 端點整合測試', () => {
       })
 
       expect(response.status).toBe(201)
-      const data = await response.json()
+      const data = (await response.json()) as ApiResponse
       expect(data.success).toBe(true)
       expect(data.data.email).toBe('test@example.com')
     })
@@ -37,7 +44,7 @@ describe('API 端點整合測試', () => {
       })
 
       expect(response.status).toBe(422)
-      const data = await response.json()
+      const data = (await response.json()) as ApiResponse
       expect(data.success).toBe(false)
     })
   })
@@ -47,18 +54,18 @@ describe('API 端點整合測試', () => {
       const response = await fetch('/api/products?page=1&limit=20')
 
       expect(response.status).toBe(200)
-      const data = await response.json()
+      const data = (await response.json()) as ApiResponse
       expect(Array.isArray(data.data)).toBe(true)
     })
 
     it('應該支持遊標分頁', async () => {
       // 第一頁
       const page1 = await fetch('/api/products?limit=5')
-      const data1 = await page1.json()
+      const data1 = (await page1.json()) as ApiResponse
 
       // 使用遊標獲取下一頁
       const page2 = await fetch(`/api/products?cursor=${data1.nextCursor}&limit=5`)
-      const data2 = await page2.json()
+      const data2 = (await page2.json()) as ApiResponse
 
       expect(data2.data).not.toEqual(data1.data)
     })
@@ -67,7 +74,7 @@ describe('API 端點整合測試', () => {
       const response = await fetch('/api/products?categoryId=123&limit=20')
 
       expect(response.status).toBe(200)
-      const data = await response.json()
+      const data = (await response.json()) as ApiResponse
       expect(Array.isArray(data.data)).toBe(true)
     })
   })
@@ -97,7 +104,7 @@ describe('API 端點整合測試', () => {
       })
 
       expect(response.status).toBe(201)
-      const data = await response.json()
+      const data = (await response.json()) as ApiResponse
       expect(data.data.id).toBeDefined()
       expect(data.data.status).toBe('pending')
     })

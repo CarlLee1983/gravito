@@ -8,12 +8,7 @@
 import {
   isValidEmail,
   normalizeWhitespace,
-  sanitizeEmail,
-  sanitizeFilename,
   sanitizeHtml,
-  sanitizeJson,
-  sanitizeObject,
-  sanitizePhone,
   sanitizeRegex,
   sanitizeSql,
   sanitizeUrl,
