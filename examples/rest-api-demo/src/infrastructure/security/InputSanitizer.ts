@@ -25,19 +25,24 @@ export function sanitizeHtml(input: string): string {
 }
 
 /**
- * SQL 注入防護：清理 SQL 特殊字符
- * 注意：這只是基本的清理，實際應使用參數化查詢
+ * 日誌轉義：為安全日誌記錄轉義特殊字符
+ *
+ * 此函數用於在日誌中安全地記錄用戶輸入，防止日誌注入攻擊。
+ * 注意：此函數僅用於日誌輸出，不適合用於 SQL 防護。
+ * SQL 防護應使用參數化查詢，而不是手動轉義。
  */
-export function sanitizeSql(input: string): string {
+export function escapeForLogging(input: string): string {
   if (!input || typeof input !== 'string') {
     return ''
   }
 
   return input
-    .replace(/'/g, "''") // 轉義單引號
+    .replace(/'/g, "\\'") // 轉義單引號
+    .replace(/"/g, '\\"') // 轉義雙引號
     .replace(/\0/g, '') // 移除空字節
     .replace(/\n/g, '\\n') // 轉義換行符
     .replace(/\r/g, '\\r') // 轉義回車符
+    .replace(/\t/g, '\\t') // 轉義製表符
     .slice(0, 1000) // 限制長度
 }
 
@@ -154,13 +159,13 @@ export function sanitizeJson(json: string): string {
  */
 export function sanitize(
   input: any,
-  type: 'html' | 'sql' | 'url' | 'email' | 'phone' | 'json' = 'html'
+  type: 'html' | 'logging' | 'url' | 'email' | 'phone' | 'json' = 'html'
 ): string {
   switch (type) {
     case 'html':
       return sanitizeHtml(String(input))
-    case 'sql':
-      return sanitizeSql(String(input))
+    case 'logging':
+      return escapeForLogging(String(input))
     case 'url':
       return sanitizeUrl(String(input))
     case 'email':
@@ -177,13 +182,13 @@ export function sanitize(
 /**
  * 深度清理對象
  */
-export function sanitizeObject(obj: any, type: 'html' | 'sql' = 'html'): any {
+export function sanitizeObject(obj: any, type: 'html' | 'logging' = 'html'): any {
   if (obj === null || obj === undefined) {
     return obj
   }
 
   if (typeof obj === 'string') {
-    return type === 'html' ? sanitizeHtml(obj) : sanitizeSql(obj)
+    return type === 'html' ? sanitizeHtml(obj) : escapeForLogging(obj)
   }
 
   if (Array.isArray(obj)) {

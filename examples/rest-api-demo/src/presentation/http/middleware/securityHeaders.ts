@@ -98,12 +98,6 @@ export function securityHeaders(config: SecurityHeadersConfig = {}) {
     // 移除 Server header（隱藏伺服器信息）
     ctx.header('Server', 'GravitoAPI/1.0')
 
-    // 禁用 MIME 類型猜測
-    ctx.header('X-Content-Type-Options', 'nosniff')
-
-    // 啟用 HTTPS
-    ctx.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
-
     return await next()
   }
 }
@@ -133,8 +127,23 @@ export interface CorsConfig {
 }
 
 export function corsHeaders(config: CorsConfig = {}) {
+  // 驗證 origin 配置：必須明確提供，不允許使用 '*' 與憑據組合
+  if (!config.origin) {
+    throw new Error(
+      'CORS origin 必須明確配置。不允許使用萬用字符 "*"。' +
+        '請在環境變數中指定允許的來源：例如 CORS_ORIGINS=http://localhost:3000,https://example.com'
+    )
+  }
+
+  if (config.origin === '*' && config.credentials) {
+    throw new Error(
+      'CORS 不安全的配置：不能同時使用通配符 "*" 和 credentials: true。' +
+        '請明確指定允許的來源列表。'
+    )
+  }
+
   const {
-    origin = '*',
+    origin,
     credentials = false,
     methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders = ['Content-Type', 'Authorization'],

@@ -1,12 +1,15 @@
 #!/usr/bin/env bun
 
 import { PlanetCore } from '@gravito/core'
+import { getLogger } from '@infrastructure/logging/Logger'
 import gravitoConfig from './gravito.config'
 
 /**
  * 初始化並啟動 REST API 應用
  */
 async function bootstrap(): Promise<void> {
+  const logger = getLogger()
+
   try {
     // =========================================================================
     // 1. 初始化 PlanetCore
@@ -16,6 +19,9 @@ async function bootstrap(): Promise<void> {
     // =========================================================================
     // 2. 註冊所有 ServiceProvider
     // =========================================================================
+    // Phase 2: 資料倉庫（已實現 - Mock 實現）
+    core.register(require('./providers/RepositoryServiceProvider').RepositoryServiceProvider)
+
     // Phase 4: 認證系統（已實現）
     core.register(require('./providers/AuthServiceProvider').AuthServiceProvider)
 
@@ -29,7 +35,6 @@ async function bootstrap(): Promise<void> {
     core.register(require('./providers/PerformanceServiceProvider').PerformanceServiceProvider)
 
     // TODO: 在後續 Phase 實現
-    // - DatabaseServiceProvider（Phase 2）
     // - CacheServiceProvider（Phase 3）
     // - ObservabilityServiceProvider（Phase 7）
 
@@ -55,18 +60,17 @@ async function bootstrap(): Promise<void> {
     const env = gravitoConfig.app.environment
     const baseUrl = `http://${host}:${port}`
 
-    console.log(
-      `\n✅ REST API Demo 已啟動`,
-      `\n📍 地址: ${baseUrl}`,
-      `\n🚀 環境: ${env}`,
-      `\n📚 API 文檔: ${baseUrl}/docs`
-    )
+    logger.info('✅ REST API Demo 已啟動', {
+      address: baseUrl,
+      environment: env,
+      docsUrl: `${baseUrl}/docs`,
+    })
 
     // =========================================================================
     // 5. 優雅關閉
     // =========================================================================
     const handleShutdown = async (signal: string) => {
-      console.log(`\n⏹️  收到 ${signal} 信號，開始優雅關閉...`)
+      logger.info(`⏹️  收到 ${signal} 信號，開始優雅關閉...`)
 
       // TODO: 實現優雅關閉邏輯
       // - 停止接受新請求
@@ -80,16 +84,19 @@ async function bootstrap(): Promise<void> {
     }
 
     process.on('SIGTERM', () => {
-      handleShutdown('SIGTERM').catch(console.error)
+      handleShutdown('SIGTERM').catch((err: Error) => logger.error('關閉失敗', err))
     })
     process.on('SIGINT', () => {
-      handleShutdown('SIGINT').catch(console.error)
+      handleShutdown('SIGINT').catch((err: Error) => logger.error('關閉失敗', err))
     })
   } catch (error) {
-    console.error('❌ 應用啟動失敗:', error)
+    logger.error('❌ 應用啟動失敗', error instanceof Error ? error : new Error(String(error)))
     process.exit(1)
   }
 }
 
 // 啟動應用
-bootstrap().catch(console.error)
+bootstrap().catch((error: Error) => {
+  const logger = getLogger()
+  logger.error('啟動失敗', error)
+})

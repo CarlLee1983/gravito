@@ -6,11 +6,11 @@
  */
 
 import {
+  escapeForLogging,
   isValidEmail,
   normalizeWhitespace,
   sanitizeHtml,
   sanitizeRegex,
-  sanitizeSql,
   sanitizeUrl,
   stripTags,
   trim,
@@ -93,10 +93,10 @@ describe('InputSanitizer', () => {
     })
   })
 
-  describe('sanitizeSql', () => {
-    it('應轉義單引號防止 SQL 注入', () => {
+  describe('escapeForLogging', () => {
+    it('應轉義單引號防止日誌注入', () => {
       const input = "'; DROP TABLE users--"
-      const result = sanitizeSql(input)
+      const result = escapeForLogging(input)
 
       // 應該將單引號轉義為兩個單引號
       expect(result).toContain("''")
@@ -108,7 +108,7 @@ describe('InputSanitizer', () => {
       const inputs = ["admin'--", "admin'#", "admin'/*"]
 
       inputs.forEach((input) => {
-        const result = sanitizeSql(input)
+        const result = escapeForLogging(input)
         // 應該移除或安全轉義
         expect(typeof result).toBe('string')
       })
@@ -116,28 +116,28 @@ describe('InputSanitizer', () => {
 
     it('應移除 null bytes', () => {
       const input = 'test\x00data'
-      const result = sanitizeSql(input)
+      const result = escapeForLogging(input)
 
       expect(result).not.toContain('\x00')
     })
 
     it('應處理雙引號', () => {
       const input = 'test" OR "1"="1'
-      const result = sanitizeSql(input)
+      const result = escapeForLogging(input)
 
       expect(typeof result).toBe('string')
     })
 
     it('應處理 UNION 注入', () => {
       const input = "' UNION SELECT * FROM users--"
-      const result = sanitizeSql(input)
+      const result = escapeForLogging(input)
 
       expect(typeof result).toBe('string')
     })
 
     it('應保留正常的 SQL 字符串', () => {
       const input = 'John Smith'
-      const result = sanitizeSql(input)
+      const result = escapeForLogging(input)
 
       expect(result).toContain('John')
       expect(result).toContain('Smith')
@@ -318,7 +318,7 @@ describe('InputSanitizer', () => {
     it('應處理混合攻擊向量', () => {
       const input = "'; DROP TABLE users--<script>alert('xss')</script>"
       const htmlSafe = sanitizeHtml(input)
-      const sqlSafe = sanitizeSql(input)
+      const sqlSafe = escapeForLogging(input)
 
       // HTML 轉義應該轉義角括號
       expect(htmlSafe).toContain('&lt;script&gt;')
@@ -329,7 +329,7 @@ describe('InputSanitizer', () => {
     it('應保留合法用戶輸入', () => {
       const input = "John O'Reilly <john@example.com>"
       const htmlSanitized = sanitizeHtml(input)
-      const sqlSanitized = sanitizeSql(input)
+      const sqlSanitized = escapeForLogging(input)
 
       // 應該保留基本內容，只是轉義特殊字符
       expect(htmlSanitized).toContain('John')
