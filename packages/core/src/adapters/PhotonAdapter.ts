@@ -9,6 +9,7 @@
  */
 
 import type { Context, Handler, MiddlewareHandler, Next, Photon } from '@gravito/photon'
+import { RequestScopeManager } from '../Container/RequestScopeManager'
 import type {
   GravitoContext,
   GravitoErrorHandler,
@@ -181,6 +182,7 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
 {
   private _req!: PhotonRequestWrapper
   private photonCtx!: Context
+  private _requestScope!: RequestScopeManager
 
   public route!: (name: string, params?: Record<string, any>, query?: Record<string, any>) => string
 
@@ -194,6 +196,7 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
     } else {
       this._req.reset(photonCtx)
     }
+    this._requestScope = new RequestScopeManager()
   }
 
   /**
@@ -444,6 +447,14 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
       body: this.req.method !== 'GET' && this.req.method !== 'HEAD' ? this.req.raw.body : null,
       duplex: 'half',
     } as RequestInit & { duplex?: string })
+  }
+
+  requestScope(): RequestScopeManager {
+    return this._requestScope
+  }
+
+  scoped<T>(key: string | symbol, factory: () => T): T {
+    return this._requestScope.resolve(key, factory)
   }
 }
 

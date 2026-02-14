@@ -8,6 +8,11 @@
  * @since 1.3.0
  */
 
+import {
+  cleanupRequestScopeOnError,
+  detectRequestScopeLeaks,
+  extractRequestScopeErrorContext,
+} from './error-handling/RequestScopeErrorContext'
 import { GravitoException } from './exceptions/GravitoException'
 import { HttpException } from './exceptions/HttpException'
 import { ValidationException } from './exceptions/ValidationException'
@@ -102,9 +107,32 @@ export class ErrorHandler {
 
   /**
    * Handle application errors
+   *
+   * Integrates RequestScope cleanup to ensure proper resource management
+   * even when errors occur during request processing.
    */
   async handleError(err: unknown, c: GravitoContext): Promise<Response> {
     const isProduction = process.env.NODE_ENV === 'production'
+
+    // Extract RequestScope context for diagnostics and cleanup
+    const scopeErrorContext = extractRequestScopeErrorContext(c, err)
+    const cleanupErrors = await cleanupRequestScopeOnError(scopeErrorContext.scope)
+
+    // Update context with cleanup diagnostics
+    if (cleanupErrors.length > 0) {
+      scopeErrorContext.diagnostics = {
+        cleanupErrors,
+      }
+    }
+
+    // Detect potential resource leaks
+    const leakDetection = detectRequestScopeLeaks(scopeErrorContext)
+    if (leakDetection.warnings.length > 0 && !isProduction) {
+      // Log warnings in development to help identify issues
+      for (const warning of leakDetection.warnings) {
+        this.deps.logger?.warn?.(`[RequestScope] ${warning}`)
+      }
+    }
 
     // Try rendering HTML if available and requested
     const view = c.get('view') as ViewService | undefined

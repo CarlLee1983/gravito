@@ -9,9 +9,21 @@ import type { GravitoContext } from '@gravito/core'
 import type { InertiaHelper } from '@gravito/ion'
 import type { AuthManager } from '@gravito/sentinel'
 import { OrderStatus } from '../../models'
-import { OrderService, StripeService } from '../../Services'
+import { OrderService, RequestProductCache, StripeService } from '../../Services'
 
 export class OrderController {
+  /**
+   * Get OrderService instance with injected RequestScope cache
+   *
+   * The product cache is automatically scoped to the current HTTP request.
+   * Multiple calls within the same request return the same cache instance.
+   * Cache is automatically cleaned up when request ends.
+   */
+  private static getService(ctx: GravitoContext): OrderService {
+    const productCache = ctx.scoped('product:cache', () => new RequestProductCache())
+    return new OrderService(undefined, undefined, productCache)
+  }
+
   /**
    * Process payment for an existing order
    */
@@ -19,7 +31,7 @@ export class OrderController {
     const _atlas = ctx.get('atlas') as OrbitAtlas
     const auth = ctx.get('auth') as AuthManager
     const stripeService = new StripeService()
-    const orderService = new OrderService()
+    const orderService = OrderController.getService(ctx)
 
     const user = await auth.user()
     if (!user) {
@@ -29,6 +41,11 @@ export class OrderController {
     const userId = user.getAuthIdentifier() as number
     const orderId = parseInt(ctx.req.param('id') || '', 10)
     const order = await orderService.getOrder(orderId)
+
+    // Verify order exists
+    if (!order) {
+      return ctx.json({ error: '訂單不存在' }, 404)
+    }
 
     // Verify ownership and status
     if (order.user_id !== userId) {
@@ -70,7 +87,7 @@ export class OrderController {
     const userId = user.getAuthIdentifier() as number
     const page = parseInt(ctx.req.query('page') || '1', 10)
 
-    const orderService = new OrderService()
+    const orderService = OrderController.getService(ctx)
     const { orders, total, totalPages } = await orderService.getUserOrders(userId, page)
 
     return inertia.render('Account/Orders', {
@@ -103,8 +120,13 @@ export class OrderController {
     const userId = user.getAuthIdentifier() as number
     const orderId = parseInt(ctx.req.param('id') || '', 10)
 
-    const orderService = new OrderService()
+    const orderService = OrderController.getService(ctx)
     const order = await orderService.getOrder(orderId)
+
+    // Verify order exists
+    if (!order) {
+      return ctx.notFound()
+    }
 
     // Verify order belongs to user
     if (order.user_id !== userId) {
@@ -151,8 +173,13 @@ export class OrderController {
     const userId = user.getAuthIdentifier() as number
     const orderId = parseInt(ctx.req.param('id') || '', 10)
 
-    const orderService = new OrderService()
+    const orderService = OrderController.getService(ctx)
     const order = await orderService.getOrder(orderId)
+
+    // Verify order exists
+    if (!order) {
+      return ctx.json({ error: '訂單不存在' }, 404)
+    }
 
     // Verify order belongs to user
     if (order.user_id !== userId) {

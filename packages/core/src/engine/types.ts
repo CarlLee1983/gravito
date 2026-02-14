@@ -42,6 +42,10 @@ export interface FastContext {
   get<T>(key: string): T
   set(key: string, value: any): void
 
+  /** Request Scope Management */
+  requestScope(): any // RequestScopeManager (avoid circular import)
+  scoped<T>(key: string | symbol, factory: () => T): T
+
   /** Lifecycle helpers */
   route: (name: string, params?: any, query?: any) => string
   readonly native: any

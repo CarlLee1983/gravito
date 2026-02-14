@@ -7,6 +7,7 @@
  * @module @gravito/core/engine
  */
 
+import { RequestScopeManager } from '../Container/RequestScopeManager'
 import type { FastRequest, FastContext as IFastContext } from './types'
 
 /**
@@ -195,6 +196,7 @@ export class FastContext implements IFastContext {
   private _headers = new Headers() // Reuse this object
 
   public _isReleased = false // Made public for internal check access
+  private _requestScope: RequestScopeManager | null = null // Request-scoped services
 
   /**
    * Initialize context for a new request
@@ -213,6 +215,7 @@ export class FastContext implements IFastContext {
     // But for strict object pooling, we might want to reconsider.
     // For now, new Headers() is safe and fast enough.
     this._headers = new Headers()
+    this._requestScope = new RequestScopeManager() // Initialize request scope
     return this
   }
 
@@ -369,6 +372,35 @@ export class FastContext implements IFastContext {
 
   set(key: string, value: any): void {
     this._store.set(key, value)
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Request Scope Management
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Get the request-scoped service manager for this request.
+   *
+   * @returns The RequestScopeManager for this request.
+   * @throws Error if called before init() or after reset().
+   */
+  requestScope(): RequestScopeManager {
+    if (!this._requestScope) {
+      throw new Error('RequestScope not initialized. Call init() first.')
+    }
+    return this._requestScope
+  }
+
+  /**
+   * Resolve a request-scoped service (convenience method).
+   *
+   * @template T - The service type.
+   * @param key - The service key for caching.
+   * @param factory - Factory function to create the service.
+   * @returns The cached or newly created service instance.
+   */
+  scoped<T>(key: string | symbol, factory: () => T): T {
+    return this.requestScope().resolve(key, factory)
   }
 
   // ─────────────────────────────────────────────────────────────────────────

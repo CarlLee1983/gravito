@@ -432,6 +432,31 @@ export interface GravitoContext<V extends GravitoVariables = GravitoVariables> {
    * ```
    */
   readonly native: unknown
+
+  // ─────────────────────────────────────────────
+  // Request-Scoped Dependency Injection
+  // ─────────────────────────────────────────────
+
+  /**
+   * Access the RequestScopeManager for this request
+   * Services resolved through this manager are scoped to the HTTP request lifetime.
+   */
+  requestScope(): any // RequestScopeManager (avoid circular import)
+
+  /**
+   * Resolve or create a request-scoped service
+   *
+   * @param key - Service key (string or symbol)
+   * @param factory - Factory function to create the service if not cached
+   * @returns The cached or newly created service instance
+   *
+   * @example
+   * ```typescript
+   * // Subsequent calls in the same request return the same instance
+   * const cache = ctx.scoped('product:cache', () => new RequestProductCache())
+   * ```
+   */
+  scoped<T>(key: string | symbol, factory: () => T): T
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
