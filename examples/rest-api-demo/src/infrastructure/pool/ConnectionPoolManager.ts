@@ -209,14 +209,46 @@ export class ConnectionPoolManager {
       console.log(
         `[Pool] 增加連接 (當前: ${this.metrics.active}, 目標: ${newSize}, 利用率: ${utilization.toFixed(2)}%)`
       )
-      this.metrics.active = newSize
+
+      // 實際調用驅動程序調整池大小（如果支持）
+      if (this.connection && typeof this.connection.adjustPoolSize === 'function') {
+        try {
+          await this.connection.adjustPoolSize({
+            min: this.config.minSize,
+            max: newSize,
+          })
+          this.metrics.active = newSize
+          console.log(`[Pool] ✅ 連接池已調整為 ${newSize}`)
+        } catch (error) {
+          console.error('[Pool] 調整連接池失敗:', error)
+        }
+      } else {
+        // Mock 實現：直接更新指標
+        this.metrics.active = newSize
+      }
     } else if (utilization < 30 && this.metrics.idle > this.config.minSize) {
       // 利用率過低，減少連接
       const newSize = Math.max(this.metrics.idle - 3, this.config.minSize)
       console.log(
         `[Pool] 減少連接 (當前: ${this.metrics.idle}, 目標: ${newSize}, 利用率: ${utilization.toFixed(2)}%)`
       )
-      this.metrics.idle = newSize
+
+      // 實際調用驅動程序調整池大小（如果支持）
+      if (this.connection && typeof this.connection.adjustPoolSize === 'function') {
+        try {
+          await this.connection.adjustPoolSize({
+            min: this.config.minSize,
+            max: newSize,
+          })
+          this.metrics.idle = newSize
+          console.log(`[Pool] ✅ 連接池已調整為 ${newSize}`)
+        } catch (error) {
+          console.error('[Pool] 調整連接池失敗:', error)
+        }
+      } else {
+        // Mock 實現：直接更新指標
+        this.metrics.idle = newSize
+      }
     }
   }
 

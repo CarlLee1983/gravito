@@ -6,7 +6,7 @@
 
 import type { LoginUserUseCase } from '@application/user/LoginUser'
 import type { RegisterUserUseCase } from '@application/user/RegisterUser'
-import type { GravitoContext, GravitoVariables } from '@gravito/core'
+import type { GravitoContext, GravitoVariables, PlanetCore } from '@gravito/core'
 import type { AuthManager } from '@gravito/sentinel'
 import type { TokenService } from '@infrastructure/auth/TokenService'
 import { LoginRequest } from '@presentation/http/requests/auth/LoginRequest'
@@ -16,7 +16,7 @@ import { RegisterRequest } from '@presentation/http/requests/auth/RegisterReques
  * 從 GravitoContext 獲取容器服務的輔助函數
  */
 function resolveService<T>(ctx: GravitoContext<GravitoVariables>, key: string): T {
-  const core = ctx.get('core') as any
+  const core = ctx.get('core') as unknown as PlanetCore
   return core.container.make(key) as T
 }
 
@@ -26,7 +26,7 @@ export class AuthController {
    * 用戶註冊
    */
   async register(ctx: GravitoContext) {
-    const body = (await ctx.req.json()) as any
+    const body = (await ctx.req.json()) as Record<string, unknown>
     const registerUseCase = resolveService<RegisterUserUseCase>(ctx, 'RegisterUserUseCase')
 
     try {
@@ -38,8 +38,9 @@ export class AuthController {
 
       const result = await registerUseCase.execute(validation.data!)
       return ctx.json({ success: true, data: result }, 201)
-    } catch (_error: any) {
-      return ctx.json({ success: false, error: _error.message }, 400)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      return ctx.json({ success: false, error: message }, 400)
     }
   }
 
@@ -48,7 +49,7 @@ export class AuthController {
    * 用戶登入，返回 Access Token 和 Refresh Token
    */
   async login(ctx: GravitoContext) {
-    const body = (await ctx.req.json()) as any
+    const body = (await ctx.req.json()) as Record<string, unknown>
     const loginUseCase = resolveService<LoginUserUseCase>(ctx, 'LoginUserUseCase')
     const tokenService = resolveService<TokenService>(ctx, 'TokenService')
 
@@ -96,11 +97,12 @@ export class AuthController {
         },
         200
       )
-    } catch (_error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
       return ctx.json(
         {
           success: false,
-          error: _error.message,
+          error: message,
         },
         401
       )
@@ -112,7 +114,7 @@ export class AuthController {
    * 刷新 Token
    */
   async refreshToken(ctx: GravitoContext) {
-    const body = (await ctx.req.json()) as any
+    const body = (await ctx.req.json()) as Record<string, unknown>
     const tokenService = resolveService<TokenService>(ctx, 'TokenService')
 
     try {
@@ -138,11 +140,12 @@ export class AuthController {
         },
         200
       )
-    } catch (_error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
       return ctx.json(
         {
           success: false,
-          error: _error.message,
+          error: message,
         },
         401
       )
@@ -218,11 +221,12 @@ export class AuthController {
         },
         200
       )
-    } catch (_error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
       return ctx.json(
         {
           success: false,
-          error: _error.message,
+          error: message,
         },
         400
       )

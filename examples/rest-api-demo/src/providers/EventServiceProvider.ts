@@ -5,10 +5,20 @@
 
 import type { Container } from '@gravito/core'
 import { type PlanetCore, ServiceProvider } from '@gravito/core'
+import { getLogger } from '@infrastructure/logging/Logger'
 import { InvalidateCacheListener } from '../infrastructure/listeners/InvalidateCacheListener'
 import { ProcessPaymentListener } from '../infrastructure/listeners/ProcessPaymentListener'
 import { SendWelcomeEmailListener } from '../infrastructure/listeners/SendWelcomeEmailListener'
 import { UpdateStockListener } from '../infrastructure/listeners/UpdateStockListener'
+
+/**
+ * 領域事件接口
+ */
+export interface DomainEvent {
+  eventName: string
+  payload: Record<string, unknown>
+  timestamp?: Date
+}
 
 export class EventServiceProvider extends ServiceProvider {
   /**
@@ -27,8 +37,9 @@ export class EventServiceProvider extends ServiceProvider {
    */
   async boot(core: PlanetCore): Promise<void> {
     // 從容器中獲取事件管理器
-    // 使用 any 因為 EventManager.listen 期望 Listener<Event> 而非內聯函數
-    const eventManager = core.events as any
+    const eventManager = core.events as unknown as {
+      listen: (eventName: string, handler: (event: DomainEvent) => Promise<void>) => void
+    }
 
     // =========================================================================
     // 1. 註冊用戶事件監聽器
@@ -36,7 +47,7 @@ export class EventServiceProvider extends ServiceProvider {
     const welcomeEmailListener = core.container.make<SendWelcomeEmailListener>(
       'SendWelcomeEmailListener'
     )
-    eventManager.listen('user:created', async (event: any) => {
+    eventManager.listen('user:created', async (event: DomainEvent) => {
       await welcomeEmailListener.handle(event)
     })
 
@@ -44,13 +55,13 @@ export class EventServiceProvider extends ServiceProvider {
     // 2. 註冊訂單事件監聽器
     // =========================================================================
     const updateStockListener = core.container.make<UpdateStockListener>('UpdateStockListener')
-    eventManager.listen('order:created', async (event: any) => {
+    eventManager.listen('order:created', async (event: DomainEvent) => {
       await updateStockListener.handle(event)
     })
 
     const processPaymentListener =
       core.container.make<ProcessPaymentListener>('ProcessPaymentListener')
-    eventManager.listen('order:created', async (event: any) => {
+    eventManager.listen('order:created', async (event: DomainEvent) => {
       await processPaymentListener.handle(event)
     })
 
@@ -59,18 +70,20 @@ export class EventServiceProvider extends ServiceProvider {
     // =========================================================================
     const invalidateCacheListener =
       core.container.make<InvalidateCacheListener>('InvalidateCacheListener')
-    eventManager.listen('product:updated', async (event: any) => {
+    eventManager.listen('product:updated', async (event: DomainEvent) => {
       await invalidateCacheListener.handleProductUpdated(event)
     })
-    eventManager.listen('order:status_changed', async (event: any) => {
+    eventManager.listen('order:status_changed', async (event: DomainEvent) => {
       await invalidateCacheListener.handleOrderStatusChanged(event)
     })
-    eventManager.listen('payment:completed', async (event: any) => {
+    eventManager.listen('payment:completed', async (event: DomainEvent) => {
       await invalidateCacheListener.handlePaymentCompleted(event)
     })
 
-    console.log('[Events] 事件系統已初始化')
-    console.log('[Events] - 已註冊 4 個監聽器')
-    console.log('[Events] - 監聽 6 個事件型別')
+    const logger = getLogger()
+    logger.info('[Events] 事件系統已初始化', {
+      listeners: 4,
+      events: 6,
+    })
   }
 }
