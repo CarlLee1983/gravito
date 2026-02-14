@@ -6,8 +6,7 @@ console.log('Building @gravito/core...')
 await Bun.$`rm -rf dist`
 
 try {
-  // Build main index and compat without DTS to avoid memory issues
-  console.log('Building bundles...')
+  // Build bundles WITHOUT --dts to avoid memory issues
   execSync(
     'npx tsup src/index.ts src/compat.ts --format esm,cjs --shims --external @gravito/photon --external bun:test --external bun:sqlite --outDir dist --target esnext',
     {
@@ -16,14 +15,9 @@ try {
     }
   )
 
-  // Generate minimal type stubs
-  console.log('Generating type stubs...')
-  await Bun.$`echo "export * from './src/index';" > dist/index.d.ts`
-  await Bun.$`echo "export * from './src/compat';" > dist/compat.d.ts`
-
   console.log('Building @gravito/core/engine...')
 
-  // Build engine without DTS
+  // Build engine bundles
   execSync(
     'npx tsup src/engine/index.ts --format esm,cjs --shims --external @gravito/photon --external bun:test --outDir dist/engine --target esnext',
     {
@@ -31,9 +25,6 @@ try {
       env: process.env,
     }
   )
-
-  // Generate engine type stub
-  await Bun.$`echo "export * from '../src/engine/index';" > dist/engine/index.d.ts`
 
   console.log('✅ Build complete!')
 } catch (_error) {
