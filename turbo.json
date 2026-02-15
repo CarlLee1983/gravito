@@ -3,7 +3,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**", "package.json", "tsconfig.json", "biome.json"],
+      "inputs": ["src/**", "build.ts", "package.json", "tsconfig.json", "biome.json"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**", "static/**"]
     },
     "create-gravito-app#build": {
