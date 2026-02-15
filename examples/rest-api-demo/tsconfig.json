@@ -3,11 +3,7 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -26,62 +22,24 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@domain/*": [
-        "./src/domain/*"
-      ],
-      "@application/*": [
-        "./src/application/*"
-      ],
-      "@infrastructure/*": [
-        "./src/infrastructure/*"
-      ],
-      "@presentation/*": [
-        "./src/presentation/*"
-      ],
-      "@config/*": [
-        "./src/config/*"
-      ],
-      "@providers/*": [
-        "./src/providers/*"
-      ],
-      "@gravito/core": [
-        "../../packages/core/src/index.ts"
-      ],
-      "@gravito/atlas": [
-        "../../packages/atlas/src/index.ts"
-      ],
-      "@gravito/astral": [
-        "../../packages/astral/src/index.ts"
-      ],
-      "@gravito/impulse": [
-        "../../packages/impulse/src/index.ts"
-      ],
-      "@gravito/photon": [
-        "../../packages/photon/src/index.ts"
-      ],
-      "@gravito/sentinel": [
-        "../../packages/sentinel/src/index.ts"
-      ],
-      "@gravito/signal": [
-        "../../packages/signal/src/index.ts"
-      ],
-      "@gravito/fortify": [
-        "../../packages/fortify/src/index.ts"
-      ],
-      "@gravito/stream": [
-        "../../packages/stream/src/index.ts"
-      ]
+      "@/*": ["./src/*"],
+      "@domain/*": ["./src/domain/*"],
+      "@application/*": ["./src/application/*"],
+      "@infrastructure/*": ["./src/infrastructure/*"],
+      "@presentation/*": ["./src/presentation/*"],
+      "@config/*": ["./src/config/*"],
+      "@providers/*": ["./src/providers/*"],
+      "@gravito/core": ["../../packages/core/src/index.ts"],
+      "@gravito/atlas": ["../../packages/atlas/src/index.ts"],
+      "@gravito/astral": ["../../packages/astral/src/index.ts"],
+      "@gravito/impulse": ["../../packages/impulse/src/index.ts"],
+      "@gravito/photon": ["../../packages/photon/src/index.ts"],
+      "@gravito/sentinel": ["../../packages/sentinel/src/index.ts"],
+      "@gravito/signal": ["../../packages/signal/src/index.ts"],
+      "@gravito/fortify": ["../../packages/fortify/src/index.ts"],
+      "@gravito/stream": ["../../packages/stream/src/index.ts"]
     }
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "tests"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "tests"]
 }

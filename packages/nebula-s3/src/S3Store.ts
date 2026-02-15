@@ -100,11 +100,11 @@ export class S3Store implements StorageStore {
     // Sanitize metadata to ensure only ASCII characters (S3 requirement)
     const sanitizedMetadata = options?.metadata
       ? Object.fromEntries(
-          Object.entries(options.metadata).map(([k, v]: [string, string]) => [
+          (Object.entries(options.metadata) as [string, unknown][]).map(([k, v]) => [
             k,
             // Replace non-ASCII characters with URL encoding
             // biome-ignore lint/suspicious/noControlCharactersInRegex: Need to detect non-ASCII for S3 compatibility
-            v.replace(/[^\x00-\x7F]/g, (char: string) => encodeURIComponent(char)),
+            String(v).replace(/[^\x00-\x7F]/g, (char: string) => encodeURIComponent(char)),
           ])
         )
       : undefined
