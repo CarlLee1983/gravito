@@ -1,3 +1,4 @@
+import { RequestScopeManager } from '../../Container/RequestScopeManager'
 import type {
   ContentfulStatusCode,
   GravitoContext,
@@ -19,6 +20,9 @@ export class BunContext<V extends GravitoVariables = GravitoVariables>
 
   // Context variables
   private _variables: Map<string, unknown> = new Map()
+
+  // Request scope management
+  private _requestScope: RequestScopeManager
 
   /**
    * URL generator helper
@@ -42,6 +46,7 @@ export class BunContext<V extends GravitoVariables = GravitoVariables>
   ) {
     this.req = new BunRequest(request)
     this._executionCtx = executionCtx
+    this._requestScope = new RequestScopeManager()
     this.native = { request, env, executionCtx }
   }
 
@@ -222,5 +227,14 @@ export class BunContext<V extends GravitoVariables = GravitoVariables>
   // Execution Control
   get executionCtx(): ExecutionContext | undefined {
     return this._executionCtx
+  }
+
+  // Request-Scoped Dependency Injection
+  requestScope(): RequestScopeManager {
+    return this._requestScope
+  }
+
+  scoped<T>(key: string | symbol, factory: () => T): T {
+    return this._requestScope.resolve(key, factory)
   }
 }

@@ -105,6 +105,7 @@ export {
   Model,
   ModelNotFoundError,
   ModelRegistry,
+  ModelRepository,
   MorphMany,
   MorphOne,
   MorphTo,

@@ -328,6 +328,11 @@ export class Gravito {
     } catch (error) {
       return await this.handleError(error as Error, ctx)
     } finally {
+      try {
+        await ctx.requestScope().cleanup()
+      } catch (cleanupError) {
+        console.error('RequestScope cleanup failed:', cleanupError)
+      }
       this.contextPool.release(ctx)
     }
   }
@@ -369,6 +374,11 @@ export class Gravito {
       } catch (error) {
         return await this.handleError(error as Error, ctx)
       } finally {
+        try {
+          await ctx.requestScope().cleanup()
+        } catch (cleanupError) {
+          console.error('RequestScope cleanup failed:', cleanupError)
+        }
         this.contextPool.release(ctx)
       }
     }

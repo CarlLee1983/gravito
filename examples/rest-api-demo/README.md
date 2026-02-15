@@ -9,6 +9,22 @@
 - ✅ **完整測試**：單元、整合、E2E、K6 性能測試
 - ✅ **事件驅動**：BackpressureManager、DLQ、RetryScheduler
 
+---
+
+## 🎓 **新手必讀：DDD 完整學習指南**
+
+> 不確定怎麼開始？先讀 [📖 DDD_LEARNING_GUIDE.md](./docs/DDD_LEARNING_GUIDE.md)！
+
+本專案提供了**業界首份最詳細的 DDD 學習指南**，帶你從零開始理解領域驅動設計：
+
+- 📚 **詳細的概念講解** - Entity、Value Object、Aggregate、Repository 等
+- 💻 **36+ 個代碼示例** - 對比式示例（✅ 正確 vs ❌ 錯誤）
+- 🎯 **4 週循序漸進計劃** - 從基礎到進階
+- 🏆 **3 個實踐項目** - 應用所學知識
+- ✅ **完整檢查清單** - 評估學習進度
+
+[👉 立即開始學習 DDD](./docs/DDD_LEARNING_GUIDE.md)
+
 ## 📋 快速開始（5 分鐘）
 
 ### 前提條件
@@ -258,6 +274,20 @@ bun test --coverage
 
 ## 📚 文檔
 
+### 🎓 學習指南（推薦從這裡開始）
+
+- **[DDD_LEARNING_GUIDE.md](./docs/DDD_LEARNING_GUIDE.md)** 🌟 - **完整的 DDD 學習指南**
+  - 從零開始理解 Domain-Driven Design
+  - 深入講解 Entity、Value Object、Aggregate、Repository 等核心概念
+  - Clean Architecture 四層設計詳解
+  - 用戶模塊完整案例 (6 個實施步驟)
+  - 進階設計模式 (Specification、Strategy、Factory)
+  - 4 週循序漸進學習路線圖
+  - 3 個實踐項目
+  - **適合**: 剛開始學習 DDD 的開發者
+
+### 📖 技術文檔
+
 - **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - 詳細架構設計
 - **[IMPLEMENTATION_GUIDE.md](./docs/IMPLEMENTATION_GUIDE.md)** - 實現指南
 - **[BEST_PRACTICES.md](./docs/BEST_PRACTICES.md)** - 最佳實踐
@@ -307,14 +337,39 @@ LOG_LEVEL=info
 
 ## 📖 學習資源
 
-此專案可用於：
+### 🚀 快速學習路徑
 
-- ✅ 理解 DDD + Clean Architecture
-- ✅ 學習事件驅動架構
-- ✅ 性能優化實踐
-- ✅ TypeScript 最佳實踐
-- ✅ 完整應用測試策略
-- ✅ Gravito 框架使用
+1. **開始學習 DDD** → 📖 [DDD_LEARNING_GUIDE.md](./docs/DDD_LEARNING_GUIDE.md)
+   - 5 大核心部分，深度講解 DDD 概念
+   - 使用本項目代碼作為實踐案例
+
+2. **理解系統架構** → 🏗️ [ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+   - 四層架構詳細說明
+   - 數據流和設計模式
+
+3. **實施新功能** → 📝 [IMPLEMENTATION_GUIDE.md](./docs/IMPLEMENTATION_GUIDE.md)
+   - 逐步實現步驟
+   - 最佳實踐指南
+
+### 💡 此專案適合學習
+
+- ✅ **DDD 領域驅動設計**（推薦）- [完整學習指南](./docs/DDD_LEARNING_GUIDE.md)
+- ✅ **Clean Architecture 四層設計** - Entity → Use Case → Repository → Controller
+- ✅ **事件驅動架構** - Domain Events 和異步事件監聽
+- ✅ **性能優化實踐** - 分層快取、連接池、查詢優化
+- ✅ **TypeScript 最佳實踐** - 強類型系統和設計模式
+- ✅ **完整應用測試策略** - 單元、整合、E2E 測試
+- ✅ **Gravito 框架使用** - 微核心、IoC 容器、服務提供者
+
+### 📊 學習進度檢查清單
+
+在 [DDD_LEARNING_GUIDE.md](./docs/DDD_LEARNING_GUIDE.md) 中有完整的檢查清單：
+
+- [ ] Domain Layer 理解度
+- [ ] Application Layer 理解度
+- [ ] Infrastructure Layer 理解度
+- [ ] Presentation Layer 理解度
+- [ ] 完成 3 個實踐項目
 
 ## 🤝 貢獻
 
