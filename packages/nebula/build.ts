@@ -22,6 +22,21 @@ try {
   const packageDir = import.meta.dir
   const distDir = path.join(packageDir, 'dist')
 
+  // Copy and export all source files to dist as .d.ts to ensure types are available
+  const srcDir = path.join(packageDir, 'src')
+  const files = fs.readdirSync(srcDir)
+  for (const file of files) {
+    if (file.endsWith('.ts')) {
+      const source = path.join(srcDir, file)
+      const dest = path.join(distDir, file.replace('.ts', '.d.ts'))
+      let content = fs.readFileSync(source, 'utf8')
+      // Convert all interfaces/types to exported ones
+      content = content.replace(/^(interface|type|enum|class|function) /gm, 'export $1 ')
+      content = content.replace(/^export export /gm, 'export ')
+      fs.writeFileSync(dest, content)
+    }
+  }
+
   // Generate index.d.ts with proper type exports
   const indexDts = `/**
  * @gravito/nebula - Unified Storage Abstraction Layer
@@ -109,22 +124,11 @@ export declare class NullStore {
 }
 
 // Interfaces & Types
-export type {
-  StorageStore,
-  StorageProvider,
-  OrbitNebulaOptions,
-  StorageHooks,
-  StorageMetadata,
-  PutOptions,
-  StorageItem,
-  ListOptions,
-  ListResult,
-} from './types';
+export * from './types';
+export * from './store';
 
 // Deprecated aliases
-export type { StorageStore as StorageProvider };
 export { LocalStore as LocalStorageProvider };
-export type { OrbitNebulaOptions as OrbitStorageOptions };
 
 // Default export
 export default function orbitStorage(core: any, options: any): StorageManager;
@@ -138,13 +142,6 @@ declare module '@gravito/core' {
 `
 
   fs.writeFileSync(path.join(distDir, 'index.d.ts'), indexDts)
-
-  // Also copy types.ts to dist/types.d.ts as it is referenced in index.d.ts
-  const typesSource = path.join(packageDir, 'src', 'types.ts')
-  const typesDest = path.join(distDir, 'types.d.ts')
-  if (fs.existsSync(typesSource)) {
-    fs.copyFileSync(typesSource, typesDest)
-  }
 
   console.log('✅ Build complete!')
 } catch (_error) {
