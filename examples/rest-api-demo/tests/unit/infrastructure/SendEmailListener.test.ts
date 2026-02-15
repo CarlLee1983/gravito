@@ -148,8 +148,8 @@ describe('SendEmailListener', () => {
         return { status: 'sent' }
       })
 
-      listener.handle.mockImplementation(async (event) => {
-        return mockEmailService.send({ to: event.payload.userEmail })
+      listener.handle.mockImplementation(async (event: unknown) => {
+        return mockEmailService.send({ to: (event as any).payload.userEmail })
       })
 
       const event = {

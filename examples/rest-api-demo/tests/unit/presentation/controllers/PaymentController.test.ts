@@ -49,7 +49,7 @@ describe('PaymentController', () => {
         method: 'credit_card',
       })
 
-      const useCase = mockCore.container.make('InitiatePaymentUseCase')
+      const useCase = mockCore.container.make('InitiatePaymentUseCase')!
       const result = await useCase.execute({
         orderId: 'order-1',
         amount: 10000,
@@ -76,7 +76,7 @@ describe('PaymentController', () => {
 
       mockCtx.get.mockReturnValue(mockCore)
 
-      const useCase = mockCore.container.make('InitiatePaymentUseCase')
+      const useCase = mockCore.container.make('InitiatePaymentUseCase')!
 
       await expect(
         useCase.execute({
@@ -109,7 +109,7 @@ describe('PaymentController', () => {
 
       mockCtx.get.mockReturnValue(mockCore)
 
-      const useCase = mockCore.container.make('CompletePaymentUseCase')
+      const useCase = mockCore.container.make('CompletePaymentUseCase')!
       const result = await useCase.execute({
         paymentId: 'payment-1',
         transactionId: 'txn-123',
@@ -135,7 +135,7 @@ describe('PaymentController', () => {
 
       mockCtx.get.mockReturnValue(mockCore)
 
-      const useCase = mockCore.container.make('CompletePaymentUseCase')
+      const useCase = mockCore.container.make('CompletePaymentUseCase')!
 
       await expect(
         useCase.execute({
@@ -166,7 +166,7 @@ describe('PaymentController', () => {
 
       mockCtx.get.mockReturnValue(mockCore)
 
-      const useCase = mockCore.container.make('RefundPaymentUseCase')
+      const useCase = mockCore.container.make('RefundPaymentUseCase')!
       const result = await useCase.execute({
         paymentId: 'payment-1',
         reason: '客戶要求退款',
@@ -191,7 +191,7 @@ describe('PaymentController', () => {
 
       mockCtx.get.mockReturnValue(mockCore)
 
-      const useCase = mockCore.container.make('RefundPaymentUseCase')
+      const useCase = mockCore.container.make('RefundPaymentUseCase')!
 
       await expect(
         useCase.execute({

@@ -46,7 +46,7 @@ describe('ProductController', () => {
 
       mockCtx.get.mockReturnValue(mockCore)
 
-      const useCase = mockCore.container.make('ListProductsUseCase')
+      const useCase = mockCore.container.make('ListProductsUseCase')!
       const result = await useCase.execute({ page: 1, limit: 10 })
 
       expect(result.data).toHaveLength(2)
@@ -76,7 +76,7 @@ describe('ProductController', () => {
       mockCtx.get.mockReturnValue(mockCore)
       mockCtx.req.param.mockReturnValue('prod-1')
 
-      const useCase = mockCore.container.make('GetProductUseCase')
+      const useCase = mockCore.container.make('GetProductUseCase')!
       const result = await useCase.execute('prod-1')
 
       expect(result.id).toBe('prod-1')
@@ -99,7 +99,7 @@ describe('ProductController', () => {
 
       mockCtx.get.mockReturnValue(mockCore)
 
-      const useCase = mockCore.container.make('GetProductUseCase')
+      const useCase = mockCore.container.make('GetProductUseCase')!
       const result = await useCase.execute('invalid-id')
 
       expect(result).toBeNull()
@@ -126,7 +126,7 @@ describe('ProductController', () => {
 
       mockCtx.get.mockReturnValue(mockCore)
 
-      const useCase = mockCore.container.make('SearchProductsUseCase')
+      const useCase = mockCore.container.make('SearchProductsUseCase')!
       const result = await useCase.execute({ query: 'laptop', page: 1, limit: 10 })
 
       expect(result.data).toHaveLength(1)
@@ -152,7 +152,7 @@ describe('ProductController', () => {
 
       mockCtx.get.mockReturnValue(mockCore)
 
-      const useCase = mockCore.container.make('SearchProductsUseCase')
+      const useCase = mockCore.container.make('SearchProductsUseCase')!
       const result = await useCase.execute({ query: 'nonexistent', page: 1, limit: 10 })
 
       expect(result.data).toHaveLength(0)

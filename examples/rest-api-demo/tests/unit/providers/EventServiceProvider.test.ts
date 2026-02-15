@@ -80,7 +80,7 @@ describe('EventServiceProvider', () => {
     it('應註冊 order:created 事件監聽器', async () => {
       mockEventManager.listen.mockReturnValue(undefined)
 
-      mockEventManager.listen('order:created', async (event) => {
+      mockEventManager.listen('order:created', async (event: unknown) => {
         console.log('Order created:', event)
       })
 
@@ -90,7 +90,7 @@ describe('EventServiceProvider', () => {
     it('應註冊 payment:completed 事件監聽器', async () => {
       mockEventManager.listen.mockReturnValue(undefined)
 
-      mockEventManager.listen('payment:completed', async (event) => {
+      mockEventManager.listen('payment:completed', async (event: unknown) => {
         console.log('Payment completed:', event)
       })
 
@@ -103,7 +103,7 @@ describe('EventServiceProvider', () => {
     it('應註冊 order:cancelled 事件監聽器', async () => {
       mockEventManager.listen.mockReturnValue(undefined)
 
-      mockEventManager.listen('order:cancelled', async (event) => {
+      mockEventManager.listen('order:cancelled', async (event: unknown) => {
         console.log('Order cancelled:', event)
       })
 

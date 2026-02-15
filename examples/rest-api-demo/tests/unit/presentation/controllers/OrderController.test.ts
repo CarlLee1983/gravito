@@ -48,7 +48,7 @@ describe('OrderController', () => {
         items: [{ productId: 'prod-1', quantity: 1 }],
       })
 
-      const useCase = mockCore.container.make('CreateOrderUseCase')
+      const useCase = mockCore.container.make('CreateOrderUseCase')!
       const result = await useCase.execute({
         userId: 'user-1',
         items: [{ productId: 'prod-1', quantity: 1 }],
@@ -74,7 +74,7 @@ describe('OrderController', () => {
 
       mockCtx.get.mockReturnValue(mockCore)
 
-      const useCase = mockCore.container.make('CreateOrderUseCase')
+      const useCase = mockCore.container.make('CreateOrderUseCase')!
 
       await expect(
         useCase.execute({
@@ -108,7 +108,7 @@ describe('OrderController', () => {
       mockCtx.get.mockReturnValue(mockCore)
       mockCtx.req.param.mockReturnValue('order-1')
 
-      const useCase = mockCore.container.make('GetOrderUseCase')
+      const useCase = mockCore.container.make('GetOrderUseCase')!
       const result = await useCase.execute('order-1')
 
       expect(result.id).toBe('order-1')
@@ -131,7 +131,7 @@ describe('OrderController', () => {
 
       mockCtx.get.mockReturnValue(mockCore)
 
-      const useCase = mockCore.container.make('GetOrderUseCase')
+      const useCase = mockCore.container.make('GetOrderUseCase')!
       const result = await useCase.execute('invalid-id')
 
       expect(result).toBeNull()
@@ -158,7 +158,7 @@ describe('OrderController', () => {
 
       mockCtx.get.mockReturnValue(mockCore)
 
-      const useCase = mockCore.container.make('UpdateOrderStatusUseCase')
+      const useCase = mockCore.container.make('UpdateOrderStatusUseCase')!
       const result = await useCase.execute({
         orderId: 'order-1',
         status: 'shipped',
@@ -183,7 +183,7 @@ describe('OrderController', () => {
 
       mockCtx.get.mockReturnValue(mockCore)
 
-      const useCase = mockCore.container.make('UpdateOrderStatusUseCase')
+      const useCase = mockCore.container.make('UpdateOrderStatusUseCase')!
 
       await expect(
         useCase.execute({
@@ -214,7 +214,7 @@ describe('OrderController', () => {
 
       mockCtx.get.mockReturnValue(mockCore)
 
-      const useCase = mockCore.container.make('CancelOrderUseCase')
+      const useCase = mockCore.container.make('CancelOrderUseCase')!
       const result = await useCase.execute('order-1')
 
       expect(result.status).toBe('cancelled')

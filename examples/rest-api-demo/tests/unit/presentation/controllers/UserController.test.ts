@@ -45,7 +45,7 @@ describe('UserController', () => {
       mockCtx.req.param.mockReturnValue('user-1')
 
       // Test passes if we can resolve the service
-      const useCase = mockCore.container.make('GetUserProfileUseCase')
+      const useCase = mockCore.container.make('GetUserProfileUseCase')!
       const result = await useCase.execute('user-1')
 
       expect(result.id).toBe('user-1')
@@ -69,7 +69,7 @@ describe('UserController', () => {
       mockCtx.get.mockReturnValue(mockCore)
       mockCtx.req.param.mockReturnValue('invalid-id')
 
-      const useCase = mockCore.container.make('GetUserProfileUseCase')
+      const useCase = mockCore.container.make('GetUserProfileUseCase')!
       const result = await useCase.execute('invalid-id')
 
       expect(result).toBeNull()
@@ -99,7 +99,7 @@ describe('UserController', () => {
         name: 'Updated Name',
       })
 
-      const useCase = mockCore.container.make('UpdateUserUseCase')
+      const useCase = mockCore.container.make('UpdateUserUseCase')!
       const result = await useCase.execute({
         userId: 'user-1',
         name: 'Updated Name',
@@ -124,7 +124,7 @@ describe('UserController', () => {
 
       mockCtx.get.mockReturnValue(mockCore)
 
-      const useCase = mockCore.container.make('UpdateUserUseCase')
+      const useCase = mockCore.container.make('UpdateUserUseCase')!
 
       await expect(
         useCase.execute({
