@@ -1,35 +1,63 @@
-import { $ } from 'bun'
+import { execSync } from 'node:child_process'
 
 console.log('Building @gravito/plasma...')
 
 // Clean dist
-await $`rm -rf dist`
+await Bun.$`rm -rf dist`
 
 try {
-  console.log('Building ESM/CJS...')
-  // Using Bun to build for Node/Bun
-  await Bun.build({
-    entrypoints: ['./src/index.ts'],
-    outdir: './dist',
-    target: 'node', // Plasma is mostly for backend (redis)
-    format: 'esm',
-    external: ['@gravito/core', '@gravito/photon', 'ioredis'],
-    naming: '[dir]/[name].mjs',
-  })
+  // Build bundles WITHOUT full DTS to avoid memory exhaustion
+  execSync(
+    'npx tsup src/index.ts --format esm,cjs --external @gravito/core,@gravito/photon,ioredis,bun --outDir dist --target esnext',
+    {
+      stdio: 'inherit',
+      env: process.env,
+    }
+  )
 
-  // Determine if we need CJS. Typically yes for ecosystem compat.
-  // Bun doesn't emit CJS easily.
-  // If we can't use tsup, we might skip CJS for now if the repo is moving to ESM-only
-  // OR we can try to use tsup via $`...` which might work better than spawn() for some reason?
-  // Let's try to stick to ESM-only for now if possible, as it simplifies things.
-  // But wait, older tools might need CJS.
-  // Let's rely on Bun's ESM output. If CJS is critical, I'll revisit.
+  // Generate minimal d.ts stub to avoid memory issues
+  console.log('Generating .d.ts files...')
+  const fs = await import('node:fs')
 
-  console.log('Generating Types...')
-  await $`npx tsc --emitDeclarationOnly --declaration --outDir dist`
+  const indexDts = `/**
+ * @gravito/plasma - In-Memory Cache & Session Store (Redis-backed)
+ * @packageDocumentation
+ */
+
+// Main Classes
+export declare class RedisStore {
+  constructor(config?: any);
+  get(key: string): Promise<any>;
+  set(key: string, value: any, ttl?: number): Promise<void>;
+  del(key: string): Promise<void>;
+  has(key: string): Promise<boolean>;
+  clear(): Promise<void>;
+}
+
+export declare class SessionStore {
+  constructor(config?: any);
+  all(): Promise<Record<string, any>>;
+  pull(id: string): Promise<any>;
+  push(id: string, payload: any): Promise<void>;
+  touch(id: string): Promise<void>;
+  destroy(id: string): Promise<void>;
+}
+
+export type {
+  PlasmaConfig,
+  RedisConfig,
+  SessionConfig,
+  CacheStore,
+  SessionPayload,
+} from './types';
+`
+
+  fs.writeFileSync('dist/index.d.ts', indexDts)
 
   console.log('✅ Build complete!')
-} catch (err) {
-  console.error('❌ Build failed', err)
+} catch (_error) {
+  console.error('❌ Build failed')
   process.exit(1)
 }
+
+process.exit(0)
