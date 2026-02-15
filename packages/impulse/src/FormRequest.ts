@@ -1,4 +1,4 @@
-import type { ContentfulStatusCode } from '@gravito/core'
+import type { ContentfulStatusCode, GravitoContext, GravitoNext } from '@gravito/core'
 import { AuthorizationException, ValidationException } from '@gravito/core'
 import type { Context, MiddlewareHandler } from '@gravito/core/compat'
 import { BlueprintGenerator } from './core/BlueprintGenerator'
@@ -346,7 +346,7 @@ export function validateRequest<T>(
   RequestClass: new () => FormRequest<T>,
   options: { partial?: boolean } = {}
 ): MiddlewareHandler {
-  return async (ctx, next) => {
+  return async (ctx: GravitoContext, next: GravitoNext) => {
     const { FormRequestInstanceCache } = require('./core/FormRequestInstanceCache')
     const request = FormRequestInstanceCache.getInstance(RequestClass)
 

@@ -173,6 +173,80 @@ export * from './exceptions';
     }
   )
 
+  // Generate engine.d.ts for proper type support
+  const engineDts = `/**
+ * @gravito/core/engine - High-Performance Web Engine for Bun
+ * @packageDocumentation
+ */
+
+// Main Engine Class
+export declare class Gravito {
+  constructor(options?: any);
+  get(path: string, handler: any): void;
+  post(path: string, handler: any): void;
+  put(path: string, handler: any): void;
+  patch(path: string, handler: any): void;
+  delete(path: string, handler: any): void;
+  head(path: string, handler: any): void;
+  options(path: string, handler: any): void;
+  use(middleware: any): void;
+  all(path: string, handler: any): void;
+  route(path: string, methods?: any): void;
+  mount(path: string, router: any): void;
+  notFound(handler: any): void;
+  onError(handler: any): void;
+  fetch(request: any): any;
+  match(path: string, method?: string): any;
+}
+
+// Types
+export type {
+  EngineOptions,
+  ErrorHandler,
+  FastContext,
+  FastRequest,
+  Handler,
+  Middleware,
+  NotFoundHandler,
+  RouteMatch,
+} from './types';
+
+// Advanced Exports
+export declare class AOTRouter {
+  constructor(routes?: any[]);
+  compile(): void;
+  match(path: string, method?: string): any;
+}
+
+export declare class FastContext {
+  constructor(request: any, params?: any);
+  json(data: any, status?: number): any;
+  text(text: any, status?: number): any;
+  html(html: any, status?: number): any;
+  blob(blob: any, options?: any): any;
+  redirect(url: string, status?: number): any;
+  setHeader(key: string, value: string): void;
+  setCookie(name: string, value: string, options?: any): void;
+}
+
+export declare class MinimalContext {
+  constructor(request: any, params?: any);
+  json(data: any): any;
+  text(text: any): any;
+}
+
+export declare function extractPath(url: string): string;
+
+export declare class ObjectPool {
+  constructor(factory: any, options?: any);
+  acquire(): any;
+  release(obj: any): void;
+  clear(): void;
+}
+`
+
+  fs.writeFileSync('dist/engine/index.d.ts', engineDts)
+
   // Ensure index.d.ts exports GravitoContext for downstream packages
   console.log('Ensuring .d.ts exports are available...')
   try {
