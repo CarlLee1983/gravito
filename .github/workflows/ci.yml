@@ -182,6 +182,16 @@ jobs:
             echo "RUN_PROMETHEUS_INTEGRATION=true" >> $GITHUB_ENV
           fi
 
+      - name: Build packages (generate .d.ts for typecheck)
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            # Build changed packages and their dependents
+            bunx turbo run build --filter="[origin/${{ github.base_ref }}]..." --concurrency=4
+          else
+            # Main branch: Build all packages
+            bun run build
+          fi
+
       - name: Calculate Shard Filter
         id: shard
         env:
