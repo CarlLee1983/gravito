@@ -6,6 +6,11 @@
 import type { Container } from '@gravito/core'
 import { type PlanetCore, ServiceProvider } from '@gravito/core'
 import { getLogger } from '@infrastructure/logging/Logger'
+import type { OrderCreated } from '../domain/order/events/OrderCreated'
+import type { OrderStatusChanged } from '../domain/order/events/OrderStatusChanged'
+import type { PaymentCompleted } from '../domain/payment/events/PaymentCompleted'
+import type { ProductUpdated } from '../domain/product/events/ProductUpdated'
+import type { UserCreated } from '../domain/user/events/UserCreated'
 import { InvalidateCacheListener } from '../infrastructure/listeners/InvalidateCacheListener'
 import { ProcessPaymentListener } from '../infrastructure/listeners/ProcessPaymentListener'
 import { SendWelcomeEmailListener } from '../infrastructure/listeners/SendWelcomeEmailListener'
@@ -48,7 +53,7 @@ export class EventServiceProvider extends ServiceProvider {
       'SendWelcomeEmailListener'
     )
     eventManager.listen('user:created', async (event: DomainEvent) => {
-      await welcomeEmailListener.handle(event)
+      await welcomeEmailListener.handle(event as unknown as UserCreated)
     })
 
     // =========================================================================
@@ -56,13 +61,13 @@ export class EventServiceProvider extends ServiceProvider {
     // =========================================================================
     const updateStockListener = core.container.make<UpdateStockListener>('UpdateStockListener')
     eventManager.listen('order:created', async (event: DomainEvent) => {
-      await updateStockListener.handle(event)
+      await updateStockListener.handle(event as unknown as OrderCreated)
     })
 
     const processPaymentListener =
       core.container.make<ProcessPaymentListener>('ProcessPaymentListener')
     eventManager.listen('order:created', async (event: DomainEvent) => {
-      await processPaymentListener.handle(event)
+      await processPaymentListener.handle(event as unknown as OrderCreated)
     })
 
     // =========================================================================
@@ -71,13 +76,13 @@ export class EventServiceProvider extends ServiceProvider {
     const invalidateCacheListener =
       core.container.make<InvalidateCacheListener>('InvalidateCacheListener')
     eventManager.listen('product:updated', async (event: DomainEvent) => {
-      await invalidateCacheListener.handleProductUpdated(event)
+      await invalidateCacheListener.handleProductUpdated(event as unknown as ProductUpdated)
     })
     eventManager.listen('order:status_changed', async (event: DomainEvent) => {
-      await invalidateCacheListener.handleOrderStatusChanged(event)
+      await invalidateCacheListener.handleOrderStatusChanged(event as unknown as OrderStatusChanged)
     })
     eventManager.listen('payment:completed', async (event: DomainEvent) => {
-      await invalidateCacheListener.handlePaymentCompleted(event)
+      await invalidateCacheListener.handlePaymentCompleted(event as unknown as PaymentCompleted)
     })
 
     const logger = getLogger()

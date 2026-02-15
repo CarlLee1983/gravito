@@ -119,7 +119,7 @@ export class AuthController {
 
     try {
       // 驗證 Refresh Token
-      const payload = tokenService.verifyRefreshToken(body.refreshToken)
+      const payload = tokenService.verifyRefreshToken(body.refreshToken as string)
       if (!payload) {
         throw new Error('Invalid or expired refresh token')
       }
