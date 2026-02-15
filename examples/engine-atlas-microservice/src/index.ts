@@ -1,4 +1,5 @@
 import { DB } from '@gravito/atlas'
+import type { GravitoContext } from '@gravito/core'
 import { Gravito } from '@gravito/core/engine'
 
 // 1. Initialize DB manually (Standalone Mode)
@@ -45,17 +46,17 @@ const app = new Gravito()
 // 4. Define Routes
 
 // Fast Path: Hello World (Pure Engine Performance)
-app.get('/', (c) => c.text('Gravito Engine + Atlas Microservice'))
+app.get('/', (c: GravitoContext) => c.text('Gravito Engine + Atlas Microservice'))
 
 // High Performance DB Query (Query Builder)
 // This keeps overhead minimal by skipping full ORM hydration if not needed
-app.get('/users', async (c) => {
+app.get('/users', async (c: GravitoContext) => {
   const users = await DB.table<User>('users').get()
   return c.json(users)
 })
 
 // Specific Record
-app.get('/users/:id', async (c) => {
+app.get('/users/:id', async (c: GravitoContext) => {
   const id = c.req.param('id')
   const user = await DB.table<User>('users').find(id)
 
@@ -67,7 +68,7 @@ app.get('/users/:id', async (c) => {
 })
 
 // Create User (POST)
-app.post('/users', async (c) => {
+app.post('/users', async (c: GravitoContext) => {
   const body = await c.req.json<{ name: string; email: string }>()
 
   try {
