@@ -18,6 +18,9 @@ try {
   // Generate d.ts files manually
   console.log('Generating .d.ts files...')
   const fs = await import('node:fs')
+  const path = await import('node:path')
+  const packageDir = import.meta.dir
+  const distDir = path.join(packageDir, 'dist')
 
   // Generate index.d.ts with proper type exports
   const indexDts = `/**
@@ -134,7 +137,7 @@ declare module '@gravito/core' {
 }
 `
 
-  fs.writeFileSync('dist/index.d.ts', indexDts)
+  fs.writeFileSync(path.join(distDir, 'index.d.ts'), indexDts)
 
   console.log('✅ Build complete!')
 } catch (_error) {
