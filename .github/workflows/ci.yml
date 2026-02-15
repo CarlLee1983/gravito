@@ -70,8 +70,8 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             # Filter: Changed packages and their dependents (consumers)
-            # Also explicitly include @gravito/nebula to ensure type definitions are generated
-            bunx turbo run build --filter="[origin/${{ github.base_ref }}]..." --filter=@gravito/nebula --concurrency=4
+            # Also explicitly include @gravito/atlas and @gravito/nebula to ensure type definitions are generated
+            bunx turbo run build --filter="[origin/${{ github.base_ref }}]..." --filter=@gravito/atlas --filter=@gravito/nebula --concurrency=4
           else
             bun run build
           fi
@@ -187,8 +187,8 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             # Build changed packages and their dependents
-            # Also explicitly include @gravito/nebula to ensure type definitions are generated
-            bunx turbo run build --filter="[origin/${{ github.base_ref }}]..." --filter=@gravito/nebula --concurrency=4
+            # Also explicitly include @gravito/atlas and @gravito/nebula to ensure type definitions are generated
+            bunx turbo run build --filter="[origin/${{ github.base_ref }}]..." --filter=@gravito/atlas --filter=@gravito/nebula --concurrency=4
           else
             # Main branch: Build all packages
             bun run build
