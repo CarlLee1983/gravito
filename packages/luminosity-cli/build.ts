@@ -13,7 +13,6 @@ const tsupMain = spawn(
     'src/index.ts',
     '--format',
     'esm,cjs',
-    '--dts',
     '--external',
     '@gravito/luminosity,commander,picocolors',
     '--outDir',

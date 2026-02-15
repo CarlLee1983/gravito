@@ -100,7 +100,7 @@ export class DataExtractor {
           return {}
         }
         const obj: Record<string, unknown> = {}
-        fd.forEach((value, key) => {
+        fd.forEach((value: FormDataEntryValue, key: string) => {
           obj[key] = value
         })
         return obj

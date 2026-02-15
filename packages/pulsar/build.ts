@@ -6,7 +6,7 @@ console.log('Building @gravito/pulsar...')
 await Bun.$`rm -rf dist`
 
 try {
-  // Build bundles WITHOUT --dts to avoid memory exhaustion
+  // Build bundles WITHOUT to avoid memory exhaustion
   execSync(
     'npx tsup src/index.ts --format esm,cjs --external @gravito/core,@gravito/photon,@gravito/stasis,bun:sqlite --outDir dist',
     {

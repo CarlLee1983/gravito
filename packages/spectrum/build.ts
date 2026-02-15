@@ -13,7 +13,6 @@ const tsup = spawn(
     'src/index.ts',
     '--format',
     'esm,cjs',
-    '--dts',
     '--external',
     '@gravito/core',
     '--external',

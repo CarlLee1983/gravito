@@ -6,7 +6,7 @@ console.log('Building @gravito/atlas...')
 await Bun.$`rm -rf dist`
 
 try {
-  // Build bundles WITHOUT --dts to avoid memory exhaustion
+  // Build bundles WITHOUT to avoid memory exhaustion
   // Full DTS generation is too memory-intensive for CI
   execSync(
     'npx tsup src/index.ts --format esm,cjs --external pg,mysql2,better-sqlite3,mongodb,ioredis --outDir dist --target esnext',

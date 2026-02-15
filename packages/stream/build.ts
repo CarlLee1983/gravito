@@ -13,7 +13,6 @@ const tsup = spawn(
     'src/index.ts',
     '--format',
     'esm,cjs',
-    '--dts',
     '--external',
     '@gravito/core',
     '--outDir',
@@ -31,7 +30,7 @@ if (tsupCode !== 0) {
   process.exit(1)
 }
 
-// Type declaration generation is now handled by tsup --dts
+// Type declaration generation is now handled by tsup
 
 console.log('✅ Build complete!')
 process.exit(0)
