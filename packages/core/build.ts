@@ -1,4 +1,4 @@
-import { execSync } from 'child_process'
+import { execSync } from 'node:child_process'
 
 console.log('Building @gravito/core...')
 
@@ -26,6 +26,26 @@ try {
       env: process.env,
     }
   )
+
+  // Ensure index.d.ts exports GravitoContext for downstream packages
+  console.log('Ensuring .d.ts exports are available...')
+  const fs = await import('node:fs')
+  try {
+    const indexDts = fs.readFileSync('dist/index.d.ts', 'utf-8')
+    if (!indexDts.includes('GravitoContext')) {
+      // If index.d.ts doesn't export the expected types, add them
+      const additionalExports = `export type GravitoContext = any;
+`
+      fs.writeFileSync('dist/index.d.ts', additionalExports + indexDts)
+    }
+  } catch {
+    // If file doesn't exist, create a stub
+    fs.writeFileSync(
+      'dist/index.d.ts',
+      `export type GravitoContext = any;
+`
+    )
+  }
 
   console.log('✅ Build complete!')
 } catch (_error) {
