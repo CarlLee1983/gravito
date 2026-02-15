@@ -139,6 +139,13 @@ declare module '@gravito/core' {
 
   fs.writeFileSync(path.join(distDir, 'index.d.ts'), indexDts)
 
+  // Also copy types.ts to dist/types.d.ts as it is referenced in index.d.ts
+  const typesSource = path.join(packageDir, 'src', 'types.ts')
+  const typesDest = path.join(distDir, 'types.d.ts')
+  if (fs.existsSync(typesSource)) {
+    fs.copyFileSync(typesSource, typesDest)
+  }
+
   console.log('✅ Build complete!')
 } catch (_error) {
   console.error('❌ Build failed')
