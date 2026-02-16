@@ -15,16 +15,84 @@ try {
     }
   )
 
-  // Generate minimal d.ts stub to avoid memory issues
+  // Generate complete .d.ts file
   console.log('Generating .d.ts files...')
   const fs = await import('node:fs')
 
   const indexDts = `/**
- * @gravito/plasma - In-Memory Cache & Session Store (Redis-backed)
+ * @gravito/plasma - Redis client for Gravito
  * @packageDocumentation
  */
 
+// Errors
+export declare class RedisError extends Error {
+  constructor(message: string);
+}
+
+// Orbit export
+export declare class OrbitPlasma {
+  constructor(config: any);
+}
+export type OrbitPlasmaOptions = any;
+
 // Main Classes
+export declare class Redis {
+  constructor(config?: any);
+  get(key: string): Promise<any>;
+  set(key: string, value: any, options?: any): Promise<void>;
+  del(key: string): Promise<void>;
+  exists(key: string): Promise<boolean>;
+  incr(key: string): Promise<number>;
+  decr(key: string): Promise<number>;
+  scan(cursor: number, options?: ScanOptions): Promise<ScanResult>;
+  info(): Promise<string>;
+  flushdb(): Promise<void>;
+  flushall(): Promise<void>;
+  lpush(key: string, ...values: any[]): Promise<number>;
+  rpush(key: string, ...values: any[]): Promise<number>;
+  lpop(key: string): Promise<any>;
+  rpop(key: string): Promise<any>;
+  lrange(key: string, start: number, end: number): Promise<any[]>;
+  sadd(key: string, ...members: any[]): Promise<number>;
+  srem(key: string, ...members: any[]): Promise<number>;
+  smembers(key: string): Promise<any[]>;
+  zadd(key: string, options?: ZAddOptions): Promise<number>;
+  zrange(key: string, start: number, end: number, options?: ZRangeOptions): Promise<any[]>;
+  zrem(key: string, ...members: any[]): Promise<number>;
+  hset(key: string, field: string, value: any): Promise<number>;
+  hget(key: string, field: string): Promise<any>;
+  hdel(key: string, field: string): Promise<number>;
+  hgetall(key: string): Promise<Record<string, any>>;
+  expire(key: string, seconds: number): Promise<number>;
+  ttl(key: string): Promise<number>;
+  pexpire(key: string, milliseconds: number): Promise<number>;
+  pttl(key: string): Promise<number>;
+  pipeline(): RedisPipelineContract;
+  subscribe(...channels: string[]): Promise<void>;
+  unsubscribe(...channels: string[]): Promise<void>;
+  publish(channel: string, message: any): Promise<number>;
+  on(event: string, listener: any): void;
+  off(event: string, listener: any): void;
+  once(event: string, listener: any): void;
+  connect(): Promise<void>;
+  disconnect(): Promise<void>;
+
+  // Static methods
+  static configure(config: RedisManagerConfig): void;
+  static addConnection(name: string, config: RedisConfig): void;
+  static connection(name?: string): RedisClientContract;
+  static scripts(name?: string): any;
+}
+
+export declare class RedisClient {
+  constructor(config?: any);
+}
+
+export declare class RedisManager {
+  constructor(config?: RedisManagerConfig);
+  connection(name?: string): RedisClientContract;
+}
+
 export declare class RedisStore {
   constructor(config?: any);
   get(key: string): Promise<any>;
@@ -43,13 +111,18 @@ export declare class SessionStore {
   destroy(id: string): Promise<void>;
 }
 
-export type {
-  PlasmaConfig,
-  RedisConfig,
-  SessionConfig,
-  CacheStore,
-  SessionPayload,
-} from './types';
+// Type exports
+export type RedisClientContract = any;
+export type PipelineResult = any;
+export type RedisConfig = any;
+export type RedisManagerConfig = any;
+export type RedisPipelineContract = any;
+export type ScanOptions = any;
+export type ScanResult = any;
+export type SetOptions = any;
+export type TLSOptions = any;
+export type ZAddOptions = any;
+export type ZRangeOptions = any;
 `
 
   fs.writeFileSync('dist/index.d.ts', indexDts)
