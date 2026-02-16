@@ -336,6 +336,97 @@ export function defineConfig(config: import('./PlanetCore').GravitoConfig): impo
 
   fs.writeFileSync('dist/index.d.ts', indexDts)
 
+  // Generate Router.d.ts for proper type support
+  const routerDts = `/**
+ * @gravito/core - Router and Routing Utilities
+ * @packageDocumentation
+ */
+
+export type ControllerClass = new (core: import('./index').PlanetCore) => any;
+export type GravitoHandler = import('./index').GravitoHandler;
+export type GravitoMiddleware = import('./index').GravitoMiddleware;
+export type RouteHandler = GravitoHandler | [ControllerClass, string];
+export interface FormRequestLike {
+  validate(): Promise<void>;
+  validated(): Record<string, unknown>;
+  only(...keys: string[]): Record<string, unknown>;
+  except(...keys: string[]): Record<string, unknown>;
+  has(key: string): boolean;
+  get(key: string, defaultValue?: unknown): unknown;
+  all(): Record<string, unknown>;
+  failed(): string[];
+}
+export type FormRequestClass = new () => FormRequestLike;
+export const FORM_REQUEST_SYMBOL: symbol;
+export interface RouteOptions {
+  prefix?: string;
+  domain?: string;
+  middleware?: GravitoMiddleware[];
+}
+export declare class RouteGroup {
+  constructor(router: Router, options: RouteOptions);
+  prefix(path: string): RouteGroup;
+  middleware(...handlers: (GravitoMiddleware | GravitoMiddleware[])[]): RouteGroup;
+  domain(domain: string): RouteGroup;
+  group(callback: (api: RouteGroup) => void): RouteGroup;
+  get(path: string, handler: RouteHandler | RouteHandler[]): Route;
+  post(path: string, handler: RouteHandler | RouteHandler[]): Route;
+  put(path: string, handler: RouteHandler | RouteHandler[]): Route;
+  patch(path: string, handler: RouteHandler | RouteHandler[]): Route;
+  delete(path: string, handler: RouteHandler | RouteHandler[]): Route;
+  head(path: string, handler: RouteHandler | RouteHandler[]): Route;
+  options(path: string, handler: RouteHandler | RouteHandler[]): Route;
+  any(path: string, handler: RouteHandler | RouteHandler[]): Route;
+  resource(resource: string, controller: ControllerClass, options?: any): void;
+  match(methods: string[], path: string, handler: RouteHandler | RouteHandler[]): Route;
+}
+export declare class Router {
+  routes: Array<{ method: string; path: string; domain?: string }>;
+  constructor(core?: import('./index').PlanetCore);
+  compile(): Array<{ method: string; path: string; name?: string; domain?: string }>;
+  bind(param: string, fn: (id: string) => Promise<unknown>): Router;
+  url(name: string, params?: Record<string, any>): string | null;
+  prefix(path: string): RouteGroup;
+  middleware(...handlers: (GravitoMiddleware | GravitoMiddleware[])[]): RouteGroup;
+  domain(domain: string): RouteGroup;
+  group(callback: (api: RouteGroup) => void): void;
+  get(path: string, handler: RouteHandler | RouteHandler[], name?: string): Route;
+  post(path: string, handler: RouteHandler | RouteHandler[], name?: string): Route;
+  put(path: string, handler: RouteHandler | RouteHandler[], name?: string): Route;
+  patch(path: string, handler: RouteHandler | RouteHandler[], name?: string): Route;
+  delete(path: string, handler: RouteHandler | RouteHandler[], name?: string): Route;
+  head(path: string, handler: RouteHandler | RouteHandler[], name?: string): Route;
+  options(path: string, handler: RouteHandler | RouteHandler[], name?: string): Route;
+  any(path: string, handler: RouteHandler | RouteHandler[], name?: string): Route;
+  resource(resource: string, controller: ControllerClass, options?: any): void;
+  match(methods: string[], path: string, handler: RouteHandler | RouteHandler[], name?: string): Route;
+}
+
+export interface ResourceAction {
+  index?: RouteHandler | RouteHandler[];
+  create?: RouteHandler | RouteHandler[];
+  store?: RouteHandler | RouteHandler[];
+  show?: RouteHandler | RouteHandler[];
+  edit?: RouteHandler | RouteHandler[];
+  update?: RouteHandler | RouteHandler[];
+  destroy?: RouteHandler | RouteHandler[];
+}
+
+export interface ResourceOptions {
+  only?: string[];
+  except?: string[];
+  names?: Record<string, string>;
+}
+
+export declare class Route {
+  constructor(method: string, path: string, handler: RouteHandler | RouteHandler[]);
+  name(name: string): Route;
+  middleware(...handlers: (GravitoMiddleware | GravitoMiddleware[])[]): Route;
+}
+`
+
+  fs.writeFileSync('dist/Router.d.ts', routerDts)
+
   console.log('Building @gravito/core/engine...')
 
   // Build engine bundles
