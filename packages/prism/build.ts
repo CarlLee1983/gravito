@@ -67,6 +67,10 @@ export interface OrbitPrismOptions {
   viewPath?: string;
   cacheDuration?: number;
   cacheViews?: boolean;
+  cache?: {
+    enabled?: boolean;
+    maxSize?: number;
+  };
 }
 
 export class PrismViewEngine {

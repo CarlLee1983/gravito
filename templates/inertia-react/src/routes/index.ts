@@ -1,4 +1,4 @@
-import type { GravitoContext, GravitoNext, PlanetCore } from '@gravito/core'
+import type { GravitoContext, GravitoNext, PlanetCore, Router } from '@gravito/core'
 import { ApiController } from '../controllers/ApiController'
 import { HomeController } from '../controllers/HomeController'
 
@@ -29,7 +29,7 @@ export function registerRoutes(core: PlanetCore): void {
   router
     .prefix('/api')
     .middleware(apiLogger)
-    .group((api) => {
+    .group((api: Router) => {
       api.get('/health', [ApiController, 'health'])
       api.get('/config', [ApiController, 'config'])
       api.get('/stats', [ApiController, 'stats'])

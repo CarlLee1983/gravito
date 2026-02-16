@@ -39,6 +39,8 @@ const indexDts = `/**
  * @packageDocumentation
  */
 
+import type { GravitoOrbit } from '@gravito/core';
+
 export interface FormField {
   name: string;
   type: string;
@@ -70,6 +72,38 @@ export class IonForm {
 }
 
 export function createForm(config: FormConfig): IonForm;
+
+// Inertia Service for React/Vue integration
+export interface InertiaProps {
+  [key: string]: any;
+}
+
+export interface InertiaOptions {
+  layout?: string;
+  headers?: Record<string, string>;
+}
+
+export class InertiaService {
+  render(component: string, props?: InertiaProps, options?: InertiaOptions): string;
+}
+
+export class InertiaError extends Error {
+  readonly code?: string;
+}
+
+export class InertiaConfigError extends InertiaError {}
+
+// Orbit registration
+export interface OrbitIonOptions {
+  layout?: string;
+  viewPath?: string;
+}
+
+export class OrbitIon implements GravitoOrbit {
+  constructor(options?: OrbitIonOptions);
+  register(): void;
+  boot(): Promise<void>;
+}
 `
 
 fs.writeFileSync('dist/index.d.ts', indexDts)
