@@ -81,10 +81,21 @@ export interface InertiaProps {
 export interface InertiaOptions {
   layout?: string;
   headers?: Record<string, string>;
+  ssr?: { enabled?: boolean; path?: string };
 }
 
-export class InertiaService {
-  render(component: string, props?: InertiaProps, options?: InertiaOptions): string;
+export interface InertiaService {
+  (component: string, props?: InertiaProps, rootVars?: Record<string, unknown>, status?: number): Promise<Response>;
+  render(component: string, props?: InertiaProps, rootVars?: Record<string, unknown>, status?: number): Promise<Response>;
+  share(key: string, value: any): void;
+  flush(): void;
+  getService(): InertiaServiceCore;
+}
+
+export interface InertiaServiceCore {
+  render(component: string, props?: InertiaProps, rootVars?: Record<string, unknown>, status?: number): Promise<Response>;
+  share(key: string, value: any): void;
+  flush(): void;
 }
 
 export class InertiaError extends Error {

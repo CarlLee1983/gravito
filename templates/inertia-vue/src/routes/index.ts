@@ -8,7 +8,7 @@ export function registerRoutes(core: PlanetCore): void {
   router.get('/', [HomeController, 'index'])
   router.get('/about', [HomeController, 'about'])
 
-  router.prefix('/api').group((api) => {
+  router.prefix('/api').group((api: typeof router) => {
     api.get('/health', [ApiController, 'health'])
   })
 }
