@@ -1,6 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { Mongo } from '../src'
-import { MongoGridFS } from '../src/MongoGridFS'
+import { Mongo, MongoGridFS } from '../dist/index.js'
 
 // Integration tests need a real MongoDB instance
 const MONGODB_URI = process.env.MONGODB_URI

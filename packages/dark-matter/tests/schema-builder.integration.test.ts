@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { schema } from '../src/MongoSchemaBuilder'
+import { schema } from '../dist/index.js'
 
 describe('MongoSchemaBuilder', () => {
   describe('基本 Schema 建構', () => {

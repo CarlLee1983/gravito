@@ -1,4 +1,5 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'bun:test'
+import { beforeEach, describe, expect, it } from 'bun:test'
+import { MongoAggregateBuilder, MongoQueryBuilder } from '../dist/index.js'
 
 // ===== Mock Collection Factory =====
 
@@ -141,15 +142,7 @@ function createMockCollection() {
 }
 
 // ===== 匯入模組 =====
-
-let MongoQueryBuilder: typeof import('../src/MongoQueryBuilder').MongoQueryBuilder
-let MongoAggregateBuilder: typeof import('../src/MongoQueryBuilder').MongoAggregateBuilder
-
-beforeAll(async () => {
-  const mod = await import('../src/MongoQueryBuilder')
-  MongoQueryBuilder = mod.MongoQueryBuilder
-  MongoAggregateBuilder = mod.MongoAggregateBuilder
-})
+// 靜態導入避免 beforeAll 競態條件
 
 // ===== 測試開始 =====
 

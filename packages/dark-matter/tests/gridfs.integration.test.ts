@@ -1,6 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { Mongo } from '../src'
-import { MongoGridFS } from '../src/MongoGridFS'
+import { Mongo, MongoGridFS } from '../dist/index.js'
 
 const MONGODB_URI = process.env.MONGODB_URI
 const describeIntegration = MONGODB_URI ? describe : describe.skip

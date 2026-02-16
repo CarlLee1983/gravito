@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
-import { MongoGridFS } from '../src/MongoGridFS'
+import { MongoGridFS } from '../dist/index.js'
 
 // ===== Mock Stream Classes =====
 
