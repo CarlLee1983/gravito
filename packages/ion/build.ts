@@ -30,7 +30,49 @@ if (tsupCode !== 0) {
   process.exit(1)
 }
 
-// Type declaration generation is now handled by tsup
+// Generate .d.ts file
+console.log('Generating .d.ts file...')
+const fs = await import('node:fs')
+
+const indexDts = `/**
+ * @gravito/ion - Forms & Validation Orbit for Gravito
+ * @packageDocumentation
+ */
+
+export interface FormField {
+  name: string;
+  type: string;
+  value?: any;
+  rules?: string[];
+  messages?: Record<string, string>;
+}
+
+export interface FormConfig {
+  method?: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  action: string;
+  fields: FormField[];
+}
+
+export interface ValidationError {
+  field: string;
+  message: string;
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  errors: ValidationError[];
+}
+
+export class IonForm {
+  constructor(config: FormConfig);
+  validate(): ValidationResult;
+  render(): string;
+}
+
+export function createForm(config: FormConfig): IonForm;
+`
+
+fs.writeFileSync('dist/index.d.ts', indexDts)
 
 console.log('✅ Build complete!')
 process.exit(0)

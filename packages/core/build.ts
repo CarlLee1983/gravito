@@ -6,8 +6,7 @@ console.log('Building @gravito/core...')
 await Bun.$`rm -rf dist`
 
 try {
-  // Build bundles WITHOUT to avoid memory exhaustion
-  // Full DTS generation is too memory-intensive for CI
+  // Build bundles WITHOUT dts to avoid memory exhaustion
   execSync(
     'npx tsup src/index.ts src/compat.ts --format esm,cjs --shims --external @gravito/photon --external bun:test --external bun:sqlite --outDir dist --target esnext',
     {
@@ -16,8 +15,7 @@ try {
     }
   )
 
-  // Generate d.ts files for index and compat separately
-  // This avoids memory exhaustion from full DTS generation
+  // Generate d.ts files manually from source exports
   console.log('Generating .d.ts files...')
   const fs = await import('node:fs')
 
@@ -55,8 +53,7 @@ export type ValidationTarget = import('./http/types').ValidationTarget;
 
   fs.writeFileSync('dist/compat.d.ts', compatDts)
 
-  // For index.d.ts, write a minimal re-export to avoid huge file size
-  // In production, this can be expanded via separate TypeScript build
+  // For index.d.ts, generate complete exports from index.ts
   const indexDts = `/**
  * @gravito/core - The micro-kernel for the Galaxy Architecture
  * @packageDocumentation
@@ -87,6 +84,17 @@ export type {
   RouteDefinition,
 } from './adapters/types';
 
+export { GravitoEngineAdapter } from './adapters/GravitoEngineAdapter';
+export {
+  createGravitoAdapter,
+  createPhotonAdapter,
+  GravitoAdapter,
+  PhotonAdapter,
+  PhotonContextWrapper,
+  PhotonRequestWrapper,
+} from './adapters/PhotonAdapter';
+export { isHttpAdapter } from './adapters/types';
+
 // Core Classes
 export { Application } from './Application';
 export { CommandKernel } from './CommandKernel';
@@ -99,44 +107,99 @@ export { PlanetCore } from './PlanetCore';
 
 // Core Types
 export type { ApplicationConfig } from './Application';
-export type { GravitoConfig, GravitoOrbit, FormRequestClass } from './PlanetCore';
+export type { CacheService, ErrorHandlerContext, GravitoConfig, GravitoOrbit, FormRequestClass, ViewService } from './PlanetCore';
 export type { CommandHandler } from './CommandKernel';
 export type { Factory, ServiceKey, ServiceMap } from './Container';
+export { RequestScopeManager } from './Container/RequestScopeManager';
+export {
+  RequestScopeMetrics,
+  RequestScopeMetricsCollector,
+  type RequestScopeObserver,
+} from './Container/RequestScopeMetrics';
+export { registerQueueCommands } from './cli/queue-commands';
+
+// Error Handler
+export {
+  codeFromStatus,
+  ErrorHandler,
+  type ErrorHandlerDeps,
+  messageFromStatus,
+} from './ErrorHandler';
+
+// Events
+export { EventManager as EventManagerClass } from './EventManager';
+
+// RequestScope-Aware Error Handling
+export {
+  cleanupRequestScopeOnError,
+  detectRequestScopeLeaks,
+  extractRequestScopeErrorContext,
+  RequestScopeCleanupError,
+  type RequestScopeErrorContext,
+  withRequestScopeCleanup,
+} from './error-handling/RequestScopeErrorContext';
 
 // Event System
-export {
-  CircuitBreaker,
-  CircuitBreakerState,
-  DeadLetterQueue,
-  EventPriorityQueue,
-  DEFAULT_EVENT_OPTIONS,
-} from './events';
-
 export type {
   CircuitBreakerOptions,
   DLQEntry,
   DLQFilter,
-  EventBackpressure,
   EventBackend,
   EventOptions,
   EventTask,
 } from './events';
+export {
+  CircuitBreaker,
+  CircuitBreakerState,
+  DEFAULT_EVENT_OPTIONS,
+  DeadLetterQueue,
+  EventPriorityQueue,
+} from './events';
 
-// Observability
-export { EventMetrics, EventTracer, EventTracing, OTelEventMetrics } from './events/observability';
-export { QueueDashboard } from './observability/QueueDashboard';
-
+// Event System Observability
 export type {
   EventTracingConfig,
   ObservabilityConfig,
   QueueDepthCallback,
 } from './events/observability';
+export {
+  EventMetrics,
+  EventTracer,
+  EventTracing,
+  getEventTracing,
+  ObservableHookManager,
+  OTelEventMetrics,
+} from './events/observability';
 
-export type {
-  DashboardSnapshot,
-  QueueDashboardConfig,
-  QueueMetrics,
+// Queue Dashboard & CLI
+export {
+  type DashboardSnapshot,
+  type ErrorStats,
+  type JobEvent,
+  QueueDashboard,
+  type QueueDashboardConfig,
+  type QueueMetrics,
+  type WorkerMetrics as QueueWorkerMetrics,
 } from './observability/QueueDashboard';
+
+// Exceptions
+export * from './exceptions';
+
+// Global Error Handlers
+export {
+  type GlobalErrorHandlersMode,
+  type GlobalProcessErrorHandlerContext,
+  type GlobalProcessErrorKind,
+  type RegisterGlobalErrorHandlersOptions,
+  registerGlobalErrorHandlers,
+} from './GlobalErrorHandlers';
+
+export { type GravitoManifest } from './GravitoServer';
+
+// Hooks
+export type { ActionCallback, FilterCallback, ListenerInfo, ListenerOptions } from './HookManager';
+export type { HookManagerConfig } from './HookManager';
+export type { DumpOptions } from './helpers';
 
 // Helpers
 export {
@@ -147,6 +210,7 @@ export {
   app,
   blank,
   config,
+  DumpDieError,
   dd,
   dump,
   env,
@@ -155,9 +219,119 @@ export {
   logger,
   router,
   Str,
+  setApp,
+  tap,
+  throwIf,
+  throwUnless,
+  value,
 } from './helpers';
+export * from './helpers/data';
+export * from './helpers/errors';
+export * from './helpers/response';
 
-export * from './exceptions';
+// HTTP / Security utilities
+export { CookieJar, type CookieOptions } from './http/CookieJar';
+export { deleteCookie, getCookie, setCookie } from './http/cookie';
+export { type BodySizeLimitOptions, bodySizeLimit } from './http/middleware/BodySizeLimit';
+export { type CorsOptions, type CorsOrigin, cors } from './http/middleware/Cors';
+export { type CsrfOptions, csrfProtection, getCsrfToken } from './http/middleware/Csrf';
+export {
+  createHeaderGate,
+  type HeaderTokenGateOptions,
+  type RequireHeaderTokenOptions,
+  requireHeaderToken,
+} from './http/middleware/HeaderTokenGate';
+export {
+  type HstsOptions,
+  type SecurityHeadersOptions,
+  securityHeaders,
+} from './http/middleware/SecurityHeaders';
+export { ThrottleRequests } from './http/middleware/ThrottleRequests';
+
+// OpenTelemetry Instrumentation
+export * as instrumentation from './instrumentation';
+export {
+  DEFAULT_CONFIG as OTEL_DEFAULT_CONFIG,
+  getMeter,
+  getOpenTelemetrySDK,
+  getTracer as getOtelTracer,
+  isOpenTelemetryInitialized,
+  type MetricsConfig as OtelMetricsConfig,
+  type MetricsExporter,
+  type OpenTelemetryConfig,
+  type OpenTelemetrySDK,
+  OTEL_ENV_VARS,
+  resetOpenTelemetry,
+  setupOpenTelemetry,
+  shutdownOpenTelemetry,
+  type TracingConfig as OtelTracingConfig,
+  type TracingExporter,
+} from './instrumentation';
+
+// Listeners
+export type { Listener, ShouldQueue } from './Listener';
+
+// Logger
+export type { Logger } from './Logger';
+export { ConsoleLogger } from './Logger';
+
+// Routing
+export { Route } from './Route';
+export {
+  type ControllerClass,
+  FORM_REQUEST_SYMBOL,
+  type FormRequestLike,
+  RouteGroup,
+  type RouteHandler,
+  type RouteOptions,
+  Router,
+} from './Router';
+
+// Reliability
+export type { DLQManagerFilter, DLQRecord, DLQStats, RetryPolicy } from './reliability';
+export {
+  DeadLetterQueueManager,
+  getDefaultRetryPolicy,
+  getPresetRetryPolicy,
+  RetryEngine,
+} from './reliability';
+
+// Service Provider
+export { ServiceProvider } from './ServiceProvider';
+
+// Security
+export { Encrypter, type EncrypterOptions } from './security/Encrypter';
+
+// Event Types
+export type { Channel, ShouldBroadcast } from './types/events';
+export { Event } from './types/events';
+
+// Testing Utilities
+export * from './testing';
+
+// Runtime Adapters
+export {
+  createSqliteDatabase,
+  getPasswordAdapter,
+  getRuntimeAdapter,
+  getRuntimeEnv,
+  type RuntimeAdapter,
+  type RuntimeFileStat,
+  type RuntimeKind,
+  type RuntimePasswordAdapter,
+  type RuntimeProcess,
+  type RuntimeServeConfig,
+  type RuntimeServer,
+  type RuntimeSpawnOptions,
+  type RuntimeSqliteDatabase,
+  type RuntimeSqliteStatement,
+} from './runtime';
+
+// Standalone Engine (High-Performance Bun-Only Engine)
+export * as engine from './engine';
+
+// Configuration Helper
+export function defineConfig(config: import('./PlanetCore').GravitoConfig): import('./PlanetCore').GravitoConfig;
 `
 
   fs.writeFileSync('dist/index.d.ts', indexDts)
@@ -247,27 +421,8 @@ export declare class ObjectPool {
 
   fs.writeFileSync('dist/engine/index.d.ts', engineDts)
 
-  // Ensure index.d.ts exports GravitoContext for downstream packages
-  console.log('Ensuring .d.ts exports are available...')
-  try {
-    const indexDts = fs.readFileSync('dist/index.d.ts', 'utf-8')
-    if (!indexDts.includes('GravitoContext')) {
-      // If index.d.ts doesn't export the expected types, add them
-      const additionalExports = `export type GravitoContext = any;
-`
-      fs.writeFileSync('dist/index.d.ts', additionalExports + indexDts)
-    }
-  } catch {
-    // If file doesn't exist, create a stub
-    fs.writeFileSync(
-      'dist/index.d.ts',
-      `export type GravitoContext = any;
-`
-    )
-  }
-
   console.log('✅ Build complete!')
 } catch (_error) {
-  console.error('❌ Build failed')
+  console.error('❌ Build failed', _error)
   process.exit(1)
 }
