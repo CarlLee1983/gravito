@@ -16,7 +16,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "bun run build.ts",
     "dev": "tsup --watch",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test": "bun test --timeout=10000",
