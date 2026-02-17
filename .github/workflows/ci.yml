@@ -73,10 +73,14 @@ jobs:
       - name: Build
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            # Filter: Changed packages and their dependents (consumers)
-            bunx turbo run build --filter="[origin/${{ github.base_ref }}]..." --concurrency=4
+            # Filter: Changed packages and their dependents (consumers), excluding examples
+            bunx turbo run build \
+              --filter="[origin/${{ github.base_ref }}]..." \
+              --filter='!example-*' \
+              --concurrency=4
           else
-            bun run build
+            # For main branch, build all packages except examples
+            bunx turbo run build --filter='!example-*' --concurrency=4
           fi
 
   # --------------------------------------------------------------------------
