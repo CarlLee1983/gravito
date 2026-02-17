@@ -1,36 +1,15 @@
-import { spawn } from 'bun'
-
 console.log('Building @gravito/stasis...')
 
 // Clean dist
 await Bun.$`rm -rf dist`
 
-// Use tsup for multi-format build
-const tsup = spawn(
-  [
-    'npx',
-    'tsup',
-    'src/index.ts',
-    '--format',
-    'esm,cjs',
-    '--external',
-    '@gravito/core,@gravito/photon',
-    '--outDir',
-    'dist',
-  ],
-  {
-    stdout: 'inherit',
-    stderr: 'inherit',
-  }
-)
+try {
+  // Build with tsup, generate dts
+  console.log('Building bundles with type declarations...')
+  await Bun.$`npx tsup src/index.ts --format esm,cjs --dts --external @gravito/core,@gravito/photon --outDir dist --target esnext`
 
-const tsupCode = await tsup.exited
-if (tsupCode !== 0) {
-  console.error('❌ tsup build failed')
+  console.log('✅ Build complete!')
+} catch (error) {
+  console.error('❌ Build failed:', error)
   process.exit(1)
 }
-
-// Type declaration generation is now handled by tsup
-
-console.log('✅ Build complete!')
-process.exit(0)
