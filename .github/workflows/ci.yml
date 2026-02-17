@@ -70,8 +70,7 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             # Filter: Changed packages and their dependents (consumers)
-            # Also explicitly include @gravito/atlas and @gravito/nebula to ensure type definitions are generated
-            bunx turbo run build --filter="[origin/${{ github.base_ref }}]..." --filter=@gravito/atlas --filter=@gravito/nebula --concurrency=4
+            bunx turbo run build --filter="[origin/${{ github.base_ref }}]..." --concurrency=4
           else
             bun run build
           fi
@@ -187,12 +186,20 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             # Build changed packages and their dependents
-            # Also explicitly include @gravito/atlas and @gravito/nebula to ensure type definitions are generated
-            bunx turbo run build --filter="[origin/${{ github.base_ref }}]..." --filter=@gravito/atlas --filter=@gravito/nebula --concurrency=4
+            bunx turbo run build --filter="[origin/${{ github.base_ref }}]..." --concurrency=4
           else
             # Main branch: Build all packages
             bun run build
           fi
+
+      - name: Generate complete type definitions (.d.ts)
+        run: |
+          # CRITICAL: Typecheck needs .d.ts from ALL packages, not just changed ones
+          # This second build ensures complete type definition chain for typecheck
+          # Turbo cache makes this fast (most packages already built in previous step)
+          echo "🔨 Building all packages for complete type definitions..."
+          bun run build
+          echo "✅ All type definitions generated successfully"
 
       - name: Calculate Shard Filter
         id: shard
