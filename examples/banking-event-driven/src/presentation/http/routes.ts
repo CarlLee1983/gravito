@@ -75,4 +75,19 @@ export function registerRoutes(
     const records = deadLetterListener.getDLQRecords()
     return c.json({ success: true, data: records, total: records.length })
   })
+
+  // ============================================================================
+  // 前端靜態檔案服務（serving public/index.html）
+  // ============================================================================
+  router.get('/', async () => {
+    const file = Bun.file(new URL('../../../../public/index.html', import.meta.url).pathname)
+    if (await file.exists()) {
+      return new Response(file, {
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      })
+    }
+    return new Response('Banking Event-Driven API is running. UI not found.', {
+      headers: { 'Content-Type': 'text/plain' },
+    })
+  })
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { PlanetCore } from '@gravito/core'
+import { cors, PlanetCore } from '@gravito/core'
 import gravitoConfig from './gravito.config'
 import type { DeadLetterListener } from './infrastructure/listeners/DeadLetterListener'
 import type { AccountController } from './presentation/http/controllers/AccountController'
@@ -24,12 +24,26 @@ async function bootstrap(): Promise<void> {
     core.register(new EventServiceProvider())
 
     // =========================================================================
-    // 3. Bootstrap（初始化所有 Providers）
+    // 3. 添加 CORS 中間件（支援前端跨域請求）
+    // =========================================================================
+    core.adapter.use(
+      '*',
+      cors({
+        origin: '*',
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
+        exposedHeaders: ['Content-Length'],
+        maxAge: 600,
+      })
+    )
+
+    // =========================================================================
+    // 4. Bootstrap（初始化所有 Providers）
     // =========================================================================
     await core.bootstrap()
 
     // =========================================================================
-    // 4. 註冊 HTTP 路由
+    // 5. 註冊 HTTP 路由
     // =========================================================================
     const accountController = core.container.make<AccountController>('AccountController')
     const transferController = core.container.make<TransferController>('TransferController')
@@ -45,7 +59,7 @@ async function bootstrap(): Promise<void> {
     )
 
     // =========================================================================
-    // 5. 啟動 HTTP 伺服器
+    // 6. 啟動 HTTP 伺服器
     // =========================================================================
     const { fetch } = core.liftoff()
     const finalPort = gravitoConfig.http.port
@@ -81,7 +95,7 @@ async function bootstrap(): Promise<void> {
     console.log('=====================================\n')
 
     // =========================================================================
-    // 6. 優雅關閉
+    // 7. 優雅關閉
     // =========================================================================
     const handleShutdown = (signal: string) => {
       console.log(`\n收到 ${signal} 信號，開始關閉...`)

@@ -1,0 +1,21 @@
+{
+  "name": "@gravito/example-banking-event-driven",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@gravito/core": "workspace:*",
+    "@gravito/enterprise": "workspace:*",
+    "@gravito/photon": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.3.0"
+  }
+}
