@@ -61,6 +61,13 @@ export interface CompilerOptions {
 }
 
 /**
+ * Comparison operator type for conditional expressions.
+ *
+ * @since 3.2.0
+ */
+export type ComparisonOperator = 'eq' | 'ne' | 'gt' | 'lt' | 'gte' | 'lte'
+
+/**
  * Static regex constants for better performance
  */
 const SECTION_REGEX = /@section\s*\(\s*['"](.+?)['"]\s*\)([\s\S]*?)@endsection/g
@@ -439,20 +446,141 @@ export class TemplateCompiler {
    */
   private processConditionals(template: string, data: Record<string, unknown>): string {
     let result = template.replace(
-      /\{\{\s*#if\s+([\w.]+)\s*\}\}([\s\S]*?)(\{\{\s*else\s*\}\}([\s\S]*?))?\{\{\s*\/if\s*\}\}/g,
-      (_, key, trueBlock, _elseGroup, falseBlock) => {
-        const value = this.getNestedValue(data, key)
-        return value ? trueBlock : falseBlock || ''
+      /\{\{\s*#if\s+([^}]+?)\s*\}\}([\s\S]*?)(\{\{\s*else\s*\}\}([\s\S]*?))?\{\{\s*\/if\s*\}\}/g,
+      (_, condition, trueBlock, _elseGroup, falseBlock) => {
+        const conditionResult = this.evaluateCondition(condition.trim(), data)
+        return conditionResult ? trueBlock : falseBlock || ''
       }
     )
     result = result.replace(
-      /\{\{\s*#unless\s+([\w.]+)\s*\}\}([\s\S]*?)\{\{\s*\/unless\s*\}\}/g,
-      (_, key, content) => {
-        const value = this.getNestedValue(data, key)
-        return !value ? content : ''
+      /\{\{\s*#unless\s+([^}]+?)\s*\}\}([\s\S]*?)\{\{\s*\/unless\s*\}\}/g,
+      (_, condition, content) => {
+        const conditionResult = this.evaluateCondition(condition.trim(), data)
+        return !conditionResult ? content : ''
       }
     )
     return result
+  }
+
+  /**
+   * Evaluate conditional expressions including comparison operators.
+   *
+   * Supports:
+   * - Simple variable checks: `isActive`, `user.role`
+   * - Comparison functions: `eq(a, b)`, `ne(a, b)`, `gt(a, b)`, `lt(a, b)`, `gte(a, b)`, `lte(a, b)`
+   * - String comparison: `eq(status, 'active')`
+   * - Numeric comparison: `gt(age, 18)`
+   *
+   * @param condition - The condition expression to evaluate
+   * @param data - The data context for variable resolution
+   * @returns The result of the condition evaluation
+   *
+   * @private
+   * @since 3.2.0
+   */
+  private evaluateCondition(condition: string, data: Record<string, unknown>): boolean {
+    // Check if it's a comparison function call: eq(...), ne(...), etc.
+    const funcMatch = condition.match(/^(eq|ne|gt|lt|gte|lte)\s*\(\s*(.+?)\s*,\s*(.+?)\s*\)$/)
+    if (funcMatch) {
+      const [, operator, leftExpr, rightExpr] = funcMatch
+      const left = this.resolveValue(leftExpr.trim(), data)
+      const right = this.resolveValue(rightExpr.trim(), data)
+      return this.compareValues(operator as ComparisonOperator, left, right)
+    }
+
+    // Otherwise, treat as a simple variable check (truthy/falsy)
+    const value = this.getNestedValue(data, condition)
+    return Boolean(value)
+  }
+
+  /**
+   * Resolve a value expression, which can be:
+   * - A string literal: 'text', "text"
+   * - A number literal: 123, 45.67
+   * - A boolean literal: true, false
+   * - A variable reference: varName, obj.prop
+   *
+   * @param expr - The expression to resolve
+   * @param data - The data context for variable resolution
+   * @returns The resolved value
+   *
+   * @private
+   * @since 3.2.0
+   */
+  private resolveValue(expr: string, data: Record<string, unknown>): unknown {
+    expr = expr.trim()
+
+    // String literal (single or double quotes)
+    if (
+      (expr.startsWith('"') && expr.endsWith('"')) ||
+      (expr.startsWith("'") && expr.endsWith("'"))
+    ) {
+      return expr.slice(1, -1)
+    }
+
+    // Number literal
+    if (/^-?\d+(\.\d+)?$/.test(expr)) {
+      return Number(expr)
+    }
+
+    // Boolean literal
+    if (expr === 'true') {
+      return true
+    }
+    if (expr === 'false') {
+      return false
+    }
+
+    // null/undefined literals
+    if (expr === 'null') {
+      return null
+    }
+    if (expr === 'undefined') {
+      return undefined
+    }
+
+    // Variable reference (dot notation)
+    return this.getNestedValue(data, expr)
+  }
+
+  /**
+   * Compare two values using the specified operator.
+   *
+   * Handles type coercion and comparison logic:
+   * - `eq`: Loose equality (==)
+   * - `ne`: Loose inequality (!=)
+   * - `gt`: Greater than (>)
+   * - `lt`: Less than (<)
+   * - `gte`: Greater than or equal (>=)
+   * - `lte`: Less than or equal (<=)
+   *
+   * @param operator - The comparison operator
+   * @param left - The left-hand side value
+   * @param right - The right-hand side value
+   * @returns The result of the comparison
+   *
+   * @private
+   * @since 3.2.0
+   */
+  private compareValues(operator: ComparisonOperator, left: unknown, right: unknown): boolean {
+    switch (operator) {
+      case 'eq':
+        // eslint-disable-next-line eqeqeq
+        return left == right
+      case 'ne':
+        // eslint-disable-next-line eqeqeq
+        return left != right
+      case 'gt':
+        return Number(left) > Number(right)
+      case 'lt':
+        return Number(left) < Number(right)
+      case 'gte':
+        return Number(left) >= Number(right)
+      case 'lte':
+        return Number(left) <= Number(right)
+      default:
+        return false
+    }
   }
 
   /**
