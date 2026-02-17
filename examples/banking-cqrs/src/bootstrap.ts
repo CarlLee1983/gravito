@@ -8,8 +8,7 @@ export async function bootstrapDatabase(core: PlanetCore): Promise<void> {
   core.register(new CqrsProvider())
 
   // 執行資料庫遷移
-  const db = core.container.make('db')
-  await migrate(db)
+  await migrate()
 
   // 註冊路由
   const router = core.container.make('router')

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
+import { Money } from '../../src/Domain/Shared/Money'
 
-describe('Money ValueObject', async () => {
-  const { Money } = await import('../../src/Domain/Shared/Money')
+describe('Money ValueObject', () => {
   it('應該正確建立金額（分為單位）', () => {
     const money = new Money(10000, 'TWD')
     expect(money.cents).toBe(10000)

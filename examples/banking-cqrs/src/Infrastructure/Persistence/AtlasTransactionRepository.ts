@@ -1,13 +1,11 @@
-import type { Database } from '@gravito/atlas'
+import { DB } from '@gravito/atlas'
 import type { ITransactionRepository } from '../../Domain/Transaction/ITransactionRepository'
 import { Transaction } from '../../Domain/Transaction/Transaction'
 import type { TransactionType } from '../../Domain/Transaction/TransactionType'
 
 export class AtlasTransactionRepository implements ITransactionRepository {
-  constructor(private db: Database) {}
-
   async save(transaction: Transaction): Promise<void> {
-    await this.db.query('transactions').insert({
+    await DB.query('transactions').insert({
       id: transaction.id,
       account_id: transaction.accountId,
       type: transaction.type,
@@ -21,15 +19,14 @@ export class AtlasTransactionRepository implements ITransactionRepository {
   }
 
   async findByAccountId(accountId: string, limit = 10, offset = 0): Promise<Transaction[]> {
-    const rows = await this.db
-      .query('transactions')
+    const rows = await DB.query('transactions')
       .where('account_id', accountId)
       .orderBy('created_at', 'desc')
       .limit(limit)
       .offset(offset)
 
     return rows.map(
-      (row) =>
+      (row: any) =>
         new Transaction(
           row.id,
           row.account_id,
@@ -45,8 +42,7 @@ export class AtlasTransactionRepository implements ITransactionRepository {
   }
 
   async countByAccountId(accountId: string): Promise<number> {
-    const result = await this.db
-      .query('transactions')
+    const result = await DB.query('transactions')
       .where('account_id', accountId)
       .count('* as count')
       .first()

@@ -1,9 +1,9 @@
-import type { Database } from '@gravito/atlas'
+import { DB } from '@gravito/atlas'
 
-export async function migrate(db: Database): Promise<void> {
-  const hasAccountsTable = await db.schema.hasTable('accounts')
+export async function migrate(): Promise<void> {
+  const hasAccountsTable = await DB.schema.hasTable('accounts')
   if (!hasAccountsTable) {
-    await db.schema.createTable('accounts', (table) => {
+    await DB.schema.createTable('accounts', (table) => {
       table.text('id').primary()
       table.text('owner_name').notNullable()
       table.integer('balance').notNullable().defaultTo(0)
@@ -14,9 +14,9 @@ export async function migrate(db: Database): Promise<void> {
     })
   }
 
-  const hasTransactionsTable = await db.schema.hasTable('transactions')
+  const hasTransactionsTable = await DB.schema.hasTable('transactions')
   if (!hasTransactionsTable) {
-    await db.schema.createTable('transactions', (table) => {
+    await DB.schema.createTable('transactions', (table) => {
       table.text('id').primary()
       table.text('account_id').notNullable()
       table.text('type').notNullable()

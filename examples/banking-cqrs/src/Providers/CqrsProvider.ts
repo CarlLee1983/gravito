@@ -1,5 +1,4 @@
-import type { Database } from '@gravito/atlas'
-import type { Container } from '@gravito/core'
+import type { Container, PlanetCore } from '@gravito/core'
 import { ServiceProvider } from '@gravito/core'
 import { CommandBus } from '../Application/Bus/CommandBus'
 import { QueryBus } from '../Application/Bus/QueryBus'
@@ -15,16 +14,14 @@ import { AtlasTransactionRepository } from '../Infrastructure/Persistence/AtlasT
 
 export class CqrsProvider extends ServiceProvider {
   register(container: Container): void {
-    const db = container.make<Database>('db')
-
     // 儲存庫（單例）
-    container.singleton('banking.repository.account', () => new AtlasAccountRepository(db))
-    container.singleton('banking.repository.transaction', () => new AtlasTransactionRepository(db))
+    container.singleton('banking.repository.account', () => new AtlasAccountRepository())
+    container.singleton('banking.repository.transaction', () => new AtlasTransactionRepository())
 
     // Command Handlers
     container.bind(
       'cqrs.command.CreateAccountCommand',
-      (c) => new CreateAccountHandler(c.make('banking.repository.account'), this.core!)
+      (c) => new CreateAccountHandler(c.make('banking.repository.account'), this.core as PlanetCore)
     )
 
     container.bind(
@@ -33,7 +30,7 @@ export class CqrsProvider extends ServiceProvider {
         new DepositFundsHandler(
           c.make('banking.repository.account'),
           c.make('banking.repository.transaction'),
-          this.core!
+          this.core as PlanetCore
         )
     )
 
@@ -43,7 +40,7 @@ export class CqrsProvider extends ServiceProvider {
         new WithdrawFundsHandler(
           c.make('banking.repository.account'),
           c.make('banking.repository.transaction'),
-          this.core!
+          this.core as PlanetCore
         )
     )
 
@@ -53,7 +50,7 @@ export class CqrsProvider extends ServiceProvider {
         new TransferFundsHandler(
           c.make('banking.repository.account'),
           c.make('banking.repository.transaction'),
-          this.core!
+          this.core as PlanetCore
         )
     )
 

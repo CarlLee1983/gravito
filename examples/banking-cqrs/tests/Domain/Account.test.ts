@@ -16,7 +16,7 @@ describe('Account AggregateRoot', () => {
     const account = Account.create('acc-123', '王小明', 'TWD')
     const events = account.pullDomainEvents()
     expect(events.length).toBe(1)
-    expect(events[0].getEventName()).toBe('account.created')
+    expect(events[0].eventName).toBe('AccountCreated')
   })
 
   it('應該能存款', () => {
@@ -29,7 +29,7 @@ describe('Account AggregateRoot', () => {
     expect(account.balance.cents).toBe(10000)
     const events = account.pullDomainEvents()
     expect(events.length).toBe(1)
-    expect(events[0].getEventName()).toBe('funds.deposited')
+    expect(events[0].eventName).toBe('FundsDeposited')
   })
 
   it('應該能提款', () => {

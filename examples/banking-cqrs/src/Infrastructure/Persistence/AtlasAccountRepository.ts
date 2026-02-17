@@ -1,23 +1,21 @@
-import type { Database } from '@gravito/atlas'
+import { DB } from '@gravito/atlas'
 import { Account } from '../../Domain/Account/Account'
 import type { AccountStatus } from '../../Domain/Account/AccountStatus'
 import type { IAccountRepository } from '../../Domain/Account/IAccountRepository'
 import { Money } from '../../Domain/Shared/Money'
 
 export class AtlasAccountRepository implements IAccountRepository {
-  constructor(private db: Database) {}
-
   async save(account: Account): Promise<void> {
-    const existing = await this.db.query('accounts').where('id', account.id).first()
+    const existing = await DB.query('accounts').where('id', account.id).first()
 
     if (existing) {
-      await this.db.query('accounts').where('id', account.id).update({
+      await DB.query('accounts').where('id', account.id).update({
         balance: account.balance.cents,
         status: account.status,
         updated_at: new Date().toISOString(),
       })
     } else {
-      await this.db.query('accounts').insert({
+      await DB.query('accounts').insert({
         id: account.id,
         owner_name: account.ownerName,
         balance: account.balance.cents,
@@ -30,7 +28,7 @@ export class AtlasAccountRepository implements IAccountRepository {
   }
 
   async findById(accountId: string): Promise<Account | null> {
-    const row = await this.db.query('accounts').where('id', accountId).first()
+    const row = await DB.query('accounts').where('id', accountId).first()
 
     if (!row) return null
 
@@ -45,7 +43,7 @@ export class AtlasAccountRepository implements IAccountRepository {
   }
 
   async existsById(accountId: string): Promise<boolean> {
-    const row = await this.db.query('accounts').where('id', accountId).first()
+    const row = await DB.query('accounts').where('id', accountId).first()
     return !!row
   }
 }
