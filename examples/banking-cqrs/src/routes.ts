@@ -1,5 +1,6 @@
 import type { PlanetCore } from '@gravito/core'
 import { randomUUID } from 'crypto'
+import { z } from 'zod'
 import type { CommandBus } from './Application/Bus/CommandBus'
 import type { QueryBus } from './Application/Bus/QueryBus'
 import { CreateAccountCommand } from './Application/Commands/CreateAccount/CreateAccountCommand'
@@ -9,6 +10,13 @@ import { WithdrawFundsCommand } from './Application/Commands/WithdrawFunds/Withd
 import { GetAccountBalanceQuery } from './Application/Queries/GetAccountBalance/GetAccountBalanceQuery'
 import { GetAccountDetailsQuery } from './Application/Queries/GetAccountDetails/GetAccountDetailsQuery'
 import { GetTransactionHistoryQuery } from './Application/Queries/GetTransactionHistory/GetTransactionHistoryQuery'
+import {
+  createAccountSchema,
+  depositSchema,
+  transactionHistoryParamsSchema,
+  transferSchema,
+  withdrawSchema,
+} from './Application/Schemas/AccountSchemas'
 import { errorHandler } from './Middleware/ErrorHandler'
 
 /**
@@ -110,16 +118,31 @@ export function registerRoutes(router: any): void {
    */
   router.post('/api/accounts', async (ctx: any) => {
     try {
-      const body = (await ctx.req.json()) as { ownerName: string; currency?: string }
+      const body = await ctx.req.json()
+      const validated = createAccountSchema.parse(body)
       const core = ctx.get('core') as PlanetCore
       const bus = core.container.make<CommandBus>('cqrs.commandBus')
 
-      const command = new CreateAccountCommand(randomUUID(), body.ownerName, body.currency || 'TWD')
+      const command = new CreateAccountCommand(
+        randomUUID(),
+        validated.ownerName,
+        validated.currency
+      )
 
       await bus.dispatch(command)
 
       return ctx.json({ success: true, accountId: command.accountId }, 201)
     } catch (err) {
+      if (err instanceof z.ZodError) {
+        return ctx.json(
+          {
+            success: false,
+            error: `驗證失敗: ${err.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; ')}`,
+            code: 'VALIDATION_ERROR',
+          },
+          400
+        )
+      }
       return errorHandler(err as Error, ctx)
     }
   })
@@ -238,20 +261,31 @@ export function registerRoutes(router: any): void {
    */
   router.post('/api/accounts/:id/deposit', async (ctx: any) => {
     try {
-      const body = (await ctx.req.json()) as { amount: number; currency?: string }
+      const body = await ctx.req.json()
+      const validated = depositSchema.parse(body)
       const core = ctx.get('core') as PlanetCore
       const bus = core.container.make<CommandBus>('cqrs.commandBus')
 
       const command = new DepositFundsCommand(
         ctx.req.param('id') as string,
-        Math.round(body.amount * 100),
-        body.currency || 'TWD'
+        Math.round(validated.amount * 100),
+        validated.currency
       )
 
       await bus.dispatch(command)
 
       return ctx.json({ success: true })
     } catch (err) {
+      if (err instanceof z.ZodError) {
+        return ctx.json(
+          {
+            success: false,
+            error: `驗證失敗: ${err.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; ')}`,
+            code: 'VALIDATION_ERROR',
+          },
+          400
+        )
+      }
       return errorHandler(err as Error, ctx)
     }
   })
@@ -293,20 +327,31 @@ export function registerRoutes(router: any): void {
    */
   router.post('/api/accounts/:id/withdraw', async (ctx: any) => {
     try {
-      const body = (await ctx.req.json()) as { amount: number; currency?: string }
+      const body = await ctx.req.json()
+      const validated = withdrawSchema.parse(body)
       const core = ctx.get('core') as PlanetCore
       const bus = core.container.make<CommandBus>('cqrs.commandBus')
 
       const command = new WithdrawFundsCommand(
         ctx.req.param('id') as string,
-        Math.round(body.amount * 100),
-        body.currency || 'TWD'
+        Math.round(validated.amount * 100),
+        validated.currency
       )
 
       await bus.dispatch(command)
 
       return ctx.json({ success: true })
     } catch (err) {
+      if (err instanceof z.ZodError) {
+        return ctx.json(
+          {
+            success: false,
+            error: `驗證失敗: ${err.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; ')}`,
+            code: 'VALIDATION_ERROR',
+          },
+          400
+        )
+      }
       return errorHandler(err as Error, ctx)
     }
   })
@@ -359,25 +404,32 @@ export function registerRoutes(router: any): void {
    */
   router.post('/api/accounts/:id/transfer', async (ctx: any) => {
     try {
-      const body = (await ctx.req.json()) as {
-        toAccountId: string
-        amount: number
-        currency?: string
-      }
+      const body = await ctx.req.json()
+      const validated = transferSchema.parse(body)
       const core = ctx.get('core') as PlanetCore
       const bus = core.container.make<CommandBus>('cqrs.commandBus')
 
       const command = new TransferFundsCommand(
         ctx.req.param('id') as string,
-        body.toAccountId,
-        Math.round(body.amount * 100),
-        body.currency || 'TWD'
+        validated.toAccountId,
+        Math.round(validated.amount * 100),
+        validated.currency
       )
 
       await bus.dispatch(command)
 
       return ctx.json({ success: true })
     } catch (err) {
+      if (err instanceof z.ZodError) {
+        return ctx.json(
+          {
+            success: false,
+            error: `驗證失敗: ${err.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; ')}`,
+            code: 'VALIDATION_ERROR',
+          },
+          400
+        )
+      }
       return errorHandler(err as Error, ctx)
     }
   })
@@ -436,16 +488,32 @@ export function registerRoutes(router: any): void {
       const core = ctx.get('core') as PlanetCore
       const bus = core.container.make<QueryBus>('cqrs.queryBus')
 
-      const limitStr = ctx.req.query('limit') as string | undefined
-      const offsetStr = ctx.req.query('offset') as string | undefined
-      const limit = limitStr ? parseInt(limitStr) : 10
-      const offset = offsetStr ? parseInt(offsetStr) : 0
+      // Validate query parameters
+      const queryParams = {
+        limit: ctx.req.query('limit') ?? '10',
+        offset: ctx.req.query('offset') ?? '0',
+      }
+      const validated = transactionHistoryParamsSchema.parse(queryParams)
 
-      const query = new GetTransactionHistoryQuery(ctx.req.param('id') as string, limit, offset)
+      const query = new GetTransactionHistoryQuery(
+        ctx.req.param('id') as string,
+        validated.limit,
+        validated.offset
+      )
       const result = await bus.execute(query)
 
       return ctx.json({ success: true, data: result })
     } catch (err) {
+      if (err instanceof z.ZodError) {
+        return ctx.json(
+          {
+            success: false,
+            error: `查詢參數驗證失敗: ${err.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; ')}`,
+            code: 'VALIDATION_ERROR',
+          },
+          400
+        )
+      }
       return errorHandler(err as Error, ctx)
     }
   })
