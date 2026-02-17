@@ -4,8 +4,7 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["src/**", "build.ts", "package.json", "tsconfig.json", "biome.json"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "static/**"],
-      "cacheKey": "{workspaceRoot}/turbo.json-{env:CI}-{hash:src,build.ts,package.json,tsconfig.json,biome.json}"
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "static/**"]
     },
     "create-gravito-app#build": {
       "cache": false,
