@@ -80,17 +80,20 @@ export class AtlasAccountRepository implements IAccountRepository {
    * // Account now persisted in database
    * ```
    */
-  async save(account: Account): Promise<void> {
-    const existing = (await DB.table('accounts').where('id', account.id).first()) as any
+  async save(account: Account, trx?: any): Promise<void> {
+    // Use transaction if provided, otherwise use DB directly
+    const queryBuilder = trx ? trx.table('accounts') : DB.table('accounts')
+
+    const existing = (await queryBuilder.where('id', account.id).first()) as any
 
     if (existing) {
-      await DB.table('accounts').where('id', account.id).update({
+      await queryBuilder.where('id', account.id).update({
         balance: account.balance.cents,
         status: account.status,
         updated_at: new Date().toISOString(),
       })
     } else {
-      await DB.table('accounts').insert({
+      await queryBuilder.insert({
         id: account.id,
         owner_name: account.ownerName,
         balance: account.balance.cents,
@@ -132,8 +135,9 @@ export class AtlasAccountRepository implements IAccountRepository {
    * account.deposit(amount)
    * ```
    */
-  async findById(accountId: string): Promise<Account | null> {
-    const row = (await DB.table('accounts').where('id', accountId).first()) as any
+  async findById(accountId: string, trx?: any): Promise<Account | null> {
+    const queryBuilder = trx ? trx.table('accounts') : DB.table('accounts')
+    const row = (await queryBuilder.where('id', accountId).first()) as any
 
     if (!row) return null
 
@@ -165,8 +169,9 @@ export class AtlasAccountRepository implements IAccountRepository {
    * }
    * ```
    */
-  async existsById(accountId: string): Promise<boolean> {
-    const row = (await DB.table('accounts').where('id', accountId).first()) as any
+  async existsById(accountId: string, trx?: any): Promise<boolean> {
+    const queryBuilder = trx ? trx.table('accounts') : DB.table('accounts')
+    const row = (await queryBuilder.where('id', accountId).first()) as any
     return !!row
   }
 }

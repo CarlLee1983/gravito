@@ -93,8 +93,11 @@ export class AtlasTransactionRepository implements ITransactionRepository {
    * await repository.save(txn)
    * ```
    */
-  async save(transaction: Transaction): Promise<void> {
-    await DB.table('transactions').insert({
+  async save(transaction: Transaction, trx?: any): Promise<void> {
+    // Use transaction if provided, otherwise use DB directly
+    const queryBuilder = trx ? trx.table('transactions') : DB.table('transactions')
+
+    await queryBuilder.insert({
       id: transaction.id,
       account_id: transaction.accountId,
       type: transaction.type,
@@ -141,8 +144,15 @@ export class AtlasTransactionRepository implements ITransactionRepository {
    * const all = await repository.findByAccountId(accountId, 1000000, 0)
    * ```
    */
-  async findByAccountId(accountId: string, limit = 10, offset = 0): Promise<Transaction[]> {
-    const rows = (await DB.table('transactions')
+  async findByAccountId(
+    accountId: string,
+    limit = 10,
+    offset = 0,
+    trx?: any
+  ): Promise<Transaction[]> {
+    const queryBuilder = trx ? trx.table('transactions') : DB.table('transactions')
+
+    const rows = (await queryBuilder
       .where('account_id', accountId)
       .orderBy('created_at', 'desc')
       .limit(limit)
@@ -181,8 +191,10 @@ export class AtlasTransactionRepository implements ITransactionRepository {
    * console.log(`Total ${total} transactions, ${pages} pages`)
    * ```
    */
-  async countByAccountId(accountId: string): Promise<number> {
-    const result = (await DB.table('transactions')
+  async countByAccountId(accountId: string, trx?: any): Promise<number> {
+    const queryBuilder = trx ? trx.table('transactions') : DB.table('transactions')
+
+    const result = (await queryBuilder
       .where('account_id', accountId)
       .count('* as count')
       .first()) as any

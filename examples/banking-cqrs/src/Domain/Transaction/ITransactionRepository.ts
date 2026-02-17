@@ -13,9 +13,10 @@ export interface ITransactionRepository {
    * Persists a transaction record
    *
    * @param transaction - The transaction record to save
+   * @param trx - Optional database transaction object for atomicity
    * @returns Promise resolving when save is complete
    */
-  save(transaction: Transaction): Promise<void>
+  save(transaction: Transaction, trx?: any): Promise<void>
 
   /**
    * Retrieves transaction history for an account with pagination
@@ -23,15 +24,22 @@ export interface ITransactionRepository {
    * @param accountId - ID of the account
    * @param limit - Maximum number of records to return (optional)
    * @param offset - Number of records to skip (optional)
+   * @param trx - Optional database transaction object
    * @returns Promise resolving to an array of Transaction records
    */
-  findByAccountId(accountId: string, limit?: number, offset?: number): Promise<Transaction[]>
+  findByAccountId(
+    accountId: string,
+    limit?: number,
+    offset?: number,
+    trx?: any
+  ): Promise<Transaction[]>
 
   /**
    * Counts the total number of transactions for an account
    *
    * @param accountId - ID of the account
+   * @param trx - Optional database transaction object
    * @returns Promise resolving to the total count
    */
-  countByAccountId(accountId: string): Promise<number>
+  countByAccountId(accountId: string, trx?: any): Promise<number>
 }
