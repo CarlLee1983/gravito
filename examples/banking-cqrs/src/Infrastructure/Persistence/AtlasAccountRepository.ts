@@ -6,16 +6,16 @@ import { Money } from '../../Domain/Shared/Money'
 
 export class AtlasAccountRepository implements IAccountRepository {
   async save(account: Account): Promise<void> {
-    const existing = await DB.query('accounts').where('id', account.id).first()
+    const existing = (await DB.table('accounts').where('id', account.id).first()) as any
 
     if (existing) {
-      await DB.query('accounts').where('id', account.id).update({
+      await DB.table('accounts').where('id', account.id).update({
         balance: account.balance.cents,
         status: account.status,
         updated_at: new Date().toISOString(),
       })
     } else {
-      await DB.query('accounts').insert({
+      await DB.table('accounts').insert({
         id: account.id,
         owner_name: account.ownerName,
         balance: account.balance.cents,
@@ -28,22 +28,22 @@ export class AtlasAccountRepository implements IAccountRepository {
   }
 
   async findById(accountId: string): Promise<Account | null> {
-    const row = await DB.query('accounts').where('id', accountId).first()
+    const row = (await DB.table('accounts').where('id', accountId).first()) as any
 
     if (!row) return null
 
     return new Account(
-      row.id,
-      row.owner_name,
-      new Money(row.balance, row.currency),
+      row.id as string,
+      row.owner_name as string,
+      new Money(row.balance as number, row.currency as string),
       row.status as AccountStatus,
-      new Date(row.created_at),
-      new Date(row.updated_at)
+      new Date(row.created_at as string),
+      new Date(row.updated_at as string)
     )
   }
 
   async existsById(accountId: string): Promise<boolean> {
-    const row = await DB.query('accounts').where('id', accountId).first()
+    const row = (await DB.table('accounts').where('id', accountId).first()) as any
     return !!row
   }
 }

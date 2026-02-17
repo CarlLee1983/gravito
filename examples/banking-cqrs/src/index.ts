@@ -9,10 +9,9 @@ const core = new PlanetCore(
 
 const port = parseInt(process.env.PORT || '3000')
 
-core.boot(async () => {
+;(async () => {
   await bootstrapDatabase(core)
-})
-
-core.listen(port, () => {
   console.log(`🏦 CQRS 銀行應用已啟動: http://localhost:${port}`)
-})
+})()
+
+export default core.liftoff(port)
