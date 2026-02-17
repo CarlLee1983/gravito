@@ -197,10 +197,13 @@ jobs:
       - name: Build packages (generate .d.ts for typecheck)
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            # Build changed packages and their dependents
-            bunx turbo run build --filter="[origin/${{ github.base_ref }}]..." --concurrency=4
+            # Build changed packages and their dependents, excluding examples
+            bunx turbo run build \
+              --filter="[origin/${{ github.base_ref }}]..." \
+              --filter='!example-*' \
+              --concurrency=4
           else
-            # Main branch: Build all packages
+            # Main branch: Build all packages (excluding examples via bun run build)
             bun run build
           fi
 
