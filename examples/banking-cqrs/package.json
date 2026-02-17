@@ -1,0 +1,22 @@
+{
+  "name": "example-banking-cqrs",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --minify",
+    "test": "bun test",
+    "typecheck": "bun tsc --noEmit"
+  },
+  "dependencies": {
+    "@gravito/atlas": "workspace:*",
+    "@gravito/core": "workspace:*",
+    "@gravito/enterprise": "workspace:*",
+    "@gravito/photon": "workspace:*",
+    "@gravito/prism": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.9.3"
+  }
+}
