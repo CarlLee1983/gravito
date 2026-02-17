@@ -202,10 +202,13 @@ jobs:
 
       - name: Generate complete type definitions (.d.ts)
         run: |
-          # CRITICAL: Typecheck needs .d.ts from ALL packages, not just changed ones
-          # This second build ensures complete type definition chain for typecheck
-          # Turbo cache makes this fast (most packages already built in previous step)
-          echo "🔨 Building all packages for complete type definitions..."
+          # CRITICAL: Force rebuild of packages that generate .d.ts
+          # Even if cached, we need to ensure .d.ts files are present
+          echo "🔨 Forcing rebuild of type-critical packages..."
+          bunx turbo run build --filter=@gravito/stasis --filter=@gravito/core --filter=@gravito/photon --filter=@gravito/ion --filter=@gravito/nebula --force --concurrency=4
+
+          # Then build everything else to ensure complete type chain
+          echo "🔨 Building all remaining packages..."
           bun run build
           echo "✅ All type definitions generated successfully"
 
