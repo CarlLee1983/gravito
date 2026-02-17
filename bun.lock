@@ -105,6 +105,21 @@
         "bun-types": "latest",
       },
     },
+    "examples/banking-cqrs": {
+      "name": "example-banking-cqrs",
+      "version": "1.0.0",
+      "dependencies": {
+        "@gravito/atlas": "workspace:*",
+        "@gravito/core": "workspace:*",
+        "@gravito/enterprise": "workspace:*",
+        "@gravito/photon": "workspace:*",
+        "@gravito/prism": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^5.9.3",
+      },
+    },
     "examples/blog-mvc": {
       "name": "@examples/blog-mvc",
       "version": "0.2.4",
@@ -3945,6 +3960,8 @@
 
     "example-auth-verification": ["example-auth-verification@workspace:examples/auth-verification"],
 
+    "example-banking-cqrs": ["example-banking-cqrs@workspace:examples/banking-cqrs"],
+
     "example-ecommerce-mvc": ["example-ecommerce-mvc@workspace:examples/ecommerce-mvc"],
 
     "example-engine-atlas-microservice": ["example-engine-atlas-microservice@workspace:examples/engine-atlas-microservice"],
@@ -5836,6 +5853,8 @@
     "editorconfig/commander": ["commander@10.0.1", "", {}, "sha512-y4Mg2tXshplEbSGzx7amzPwKKOCGuoSRP/CjEdwwk0FOGlUbq6lKuoyDZTNZkmxHdJtp54hdfY/JUrdL7Xfdug=="],
 
     "editorconfig/minimatch": ["minimatch@9.0.1", "", { "dependencies": { "brace-expansion": "^2.0.1" } }, "sha512-0jWhJpD/MdhPXwPuiRkCbfYfSKp2qnn2eOc279qI7f+osl/l+prKSrvhg157zSYvx/1nmgn2NqdT6k2Z7zSH9w=="],
+
+    "example-banking-cqrs/@types/bun": ["@types/bun@1.3.9", "", { "dependencies": { "bun-types": "1.3.9" } }, "sha512-KQ571yULOdWJiMH+RIWIOZ7B2RXQGpL1YQrBtLIV3FqDcCu6FsbFUBwhdKUlCKUpS3PJDsHlJ1QKlpxoVR+xtw=="],
 
     "example-ecommerce-mvc/stripe": ["stripe@14.25.0", "", { "dependencies": { "@types/node": ">=8.1.0", "qs": "^6.11.0" } }, "sha512-wQS3GNMofCXwH8TSje8E1SE8zr6ODiGtHQgPtO95p9Mb4FhKC9jvXR2NUTpZ9ZINlckJcFidCmaTFV4P6vsb9g=="],
 

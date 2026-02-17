@@ -12,7 +12,20 @@ import { GetTransactionHistoryHandler } from '../Application/Queries/GetTransact
 import { AtlasAccountRepository } from '../Infrastructure/Persistence/AtlasAccountRepository'
 import { AtlasTransactionRepository } from '../Infrastructure/Persistence/AtlasTransactionRepository'
 
+/**
+ * CQRS Service Provider
+ *
+ * Registers all core CQRS components (buses, handlers, repositories)
+ * into the Gravito dependency injection container.
+ *
+ * @since 1.0.0
+ */
 export class CqrsProvider extends ServiceProvider {
+  /**
+   * Registers services into the container
+   *
+   * @param container - The IoC container
+   */
   register(container: Container): void {
     // 儲存庫（單例）
     container.singleton('banking.repository.account', () => new AtlasAccountRepository())

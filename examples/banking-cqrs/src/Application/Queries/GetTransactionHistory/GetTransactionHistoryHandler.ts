@@ -3,11 +3,30 @@ import type { ITransactionRepository } from '../../../Domain/Transaction/ITransa
 import type { GetTransactionHistoryQuery } from './GetTransactionHistoryQuery'
 import type { TransactionDTO, TransactionHistoryDTO } from './TransactionHistoryDTO'
 
+/**
+ * Get Transaction History Query Handler
+ *
+ * Fetches transaction records for a specific account with pagination support.
+ *
+ * @implements {QueryHandler<GetTransactionHistoryQuery, TransactionHistoryDTO>}
+ * @since 1.0.0
+ */
 export class GetTransactionHistoryHandler
   implements QueryHandler<GetTransactionHistoryQuery, TransactionHistoryDTO>
 {
+  /**
+   * Constructor
+   *
+   * @param repository - Transaction repository
+   */
   constructor(private repository: ITransactionRepository) {}
 
+  /**
+   * Handles the request for transaction history
+   *
+   * @param query - Pagination and account parameters
+   * @returns Paginated history DTO
+   */
   async handle(query: GetTransactionHistoryQuery): Promise<TransactionHistoryDTO> {
     const transactions = await this.repository.findByAccountId(
       query.accountId,

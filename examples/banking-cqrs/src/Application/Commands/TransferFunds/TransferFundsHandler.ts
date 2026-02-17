@@ -7,13 +7,37 @@ import type { ITransactionRepository } from '../../../Domain/Transaction/ITransa
 import { Transaction } from '../../../Domain/Transaction/Transaction'
 import type { TransferFundsCommand } from './TransferFundsCommand'
 
+/**
+ * Transfer Funds Command Handler
+ *
+ * Manages the atomicity of a transfer between two accounts.
+ * This handler updates both sender and recipient aggregates and creates
+ * corresponding transaction records for both sides.
+ *
+ * @implements {CommandHandler<TransferFundsCommand, void>}
+ * @since 1.0.0
+ */
 export class TransferFundsHandler implements CommandHandler<TransferFundsCommand, void> {
+  /**
+   * Constructor
+   *
+   * @param accountRepository - Repository for account data
+   * @param transactionRepository - Repository for transaction history
+   * @param core - PlanetCore for event hooks
+   */
   constructor(
     private accountRepository: IAccountRepository,
     private transactionRepository: ITransactionRepository,
     private core: PlanetCore
   ) {}
 
+  /**
+   * Handles the transfer operation
+   *
+   * @param command - Transfer parameters
+   * @throws Error if either account is not found
+   * @throws Error if rules (balance, limits) are violated
+   */
   async handle(command: TransferFundsCommand): Promise<void> {
     const fromAccount = await this.accountRepository.findById(command.fromAccountId)
     if (!fromAccount) {
