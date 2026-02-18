@@ -25,7 +25,7 @@ describe('GetAccountBalanceHandler', () => {
   it('should return account balance', async () => {
     const query = new GetAccountBalanceQuery('acc-123')
 
-    const result = await handler.execute(query)
+    const result = await handler.handle(query)
 
     expect(result).toBeDefined()
     expect(result.balanceCents).toBe(50000)
@@ -38,14 +38,14 @@ describe('GetAccountBalanceHandler', () => {
     const query = new GetAccountBalanceQuery('nonexistent')
 
     expect(async () => {
-      await handler.execute(query)
+      await handler.handle(query)
     }).toThrow()
   })
 
   it('should include account metadata in response', async () => {
     const query = new GetAccountBalanceQuery('acc-123')
 
-    const result = await handler.execute(query)
+    const result = await handler.handle(query)
 
     expect(result.accountId).toBe('acc-123')
     expect(result.ownerName).toBe('John Doe')
@@ -58,7 +58,7 @@ describe('GetAccountBalanceHandler', () => {
 
     const query = new GetAccountBalanceQuery('acc-zero')
 
-    const result = await handler.execute(query)
+    const result = await handler.handle(query)
 
     expect(result.balanceCents).toBe(0)
     expect(result.balanceDollars).toBe(0)

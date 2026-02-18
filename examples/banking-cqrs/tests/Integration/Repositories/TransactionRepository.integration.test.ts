@@ -18,7 +18,7 @@ describe('AtlasTransactionRepository - Integration', () => {
 
     expect(retrieved).toHaveLength(1)
     expect(retrieved[0].id).toBe('txn-001')
-    expect(retrieved[0].type).toBe('deposit')
+    expect(retrieved[0].type).toBe('deposit' as any)
     expect(retrieved[0].amount).toBe(50000)
   })
 
@@ -92,10 +92,10 @@ describe('AtlasTransactionRepository - Integration', () => {
 
     expect(retrieved).toHaveLength(4)
     const savedTypes = retrieved.map((t) => t.type)
-    expect(savedTypes).toContain('deposit')
-    expect(savedTypes).toContain('withdrawal')
-    expect(savedTypes).toContain('transfer_in')
-    expect(savedTypes).toContain('transfer_out')
+    expect(savedTypes).toContain('deposit' as any)
+    expect(savedTypes).toContain('withdrawal' as any)
+    expect(savedTypes).toContain('transfer_in' as any)
+    expect(savedTypes).toContain('transfer_out' as any)
   })
 
   it('should store transaction metadata', async () => {

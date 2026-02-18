@@ -78,7 +78,7 @@ describe('AtlasAccountRepository - Integration', () => {
 
     const retrieved = await repository.findById('test-acc-5')
 
-    expect(retrieved?.status).toBe('frozen')
+    expect(retrieved?.status).toBe('frozen' as any)
   })
 
   it('should handle different currencies', async () => {
