@@ -39,22 +39,12 @@ export class CqrsProvider extends ServiceProvider {
 
     container.bind(
       'cqrs.command.DepositFundsCommand',
-      (c) =>
-        new DepositFundsHandler(
-          c.make('banking.repository.account'),
-          c.make('banking.repository.transaction'),
-          this.core as PlanetCore
-        )
+      (c) => new DepositFundsHandler(c.make('banking.repository.account'), this.core as PlanetCore)
     )
 
     container.bind(
       'cqrs.command.WithdrawFundsCommand',
-      (c) =>
-        new WithdrawFundsHandler(
-          c.make('banking.repository.account'),
-          c.make('banking.repository.transaction'),
-          this.core as PlanetCore
-        )
+      (c) => new WithdrawFundsHandler(c.make('banking.repository.account'), this.core as PlanetCore)
     )
 
     container.bind(
