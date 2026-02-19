@@ -41,8 +41,10 @@ jobs:
             .turbo
             node_modules/.cache/turbo
             **/tsconfig.tsbuildinfo
-          key: turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-${{ github.sha }}
+            **/dist
+          key: turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}-${{ github.sha }}
           restore-keys: |
+            turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}-
             turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-
             turbo-${{ runner.os }}-
 
@@ -166,8 +168,10 @@ jobs:
             .turbo
             node_modules/.cache/turbo
             **/tsconfig.tsbuildinfo
-          key: turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-${{ github.sha }}
+            **/dist
+          key: turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}-${{ github.sha }}
           restore-keys: |
+            turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}-
             turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-
             turbo-${{ runner.os }}-
 
