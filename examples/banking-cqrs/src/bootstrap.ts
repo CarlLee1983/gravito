@@ -96,5 +96,5 @@ export async function bootstrapDatabase(core: PlanetCore): Promise<void> {
 
   // Register HTTP routes (endpoint handlers)
   const router = core.container.make('router')
-  registerRoutes(router)
+  registerRoutes(router, core)
 }

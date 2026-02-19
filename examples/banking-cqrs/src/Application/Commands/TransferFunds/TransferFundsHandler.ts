@@ -1,30 +1,78 @@
 import { DB } from '@gravito/atlas'
 import type { PlanetCore } from '@gravito/core'
 import type { CommandHandler } from '@gravito/enterprise'
-import { randomUUID } from 'crypto'
+import type { Account } from '../../../Domain/Account/Account'
 import type { IAccountRepository } from '../../../Domain/Account/IAccountRepository'
 import { Money } from '../../../Domain/Shared/Money'
 import type { ITransactionRepository } from '../../../Domain/Transaction/ITransactionRepository'
 import { Transaction } from '../../../Domain/Transaction/Transaction'
+import { TransactionType } from '../../../Domain/Transaction/TransactionType'
+import { publishDomainEvents } from '../../Bus/publishDomainEvents'
 import type { TransferFundsCommand } from './TransferFundsCommand'
 
 /**
  * Transfer Funds Command Handler
  *
- * Manages the atomicity of a transfer between two accounts.
- * This handler updates both sender and recipient aggregates and creates
- * corresponding transaction records for both sides.
+ * Implements the business logic for transferring funds between two bank accounts.
+ * This handler ensures atomicity and consistency of the transfer operation.
+ *
+ * **Execution Flow:**
+ * ```
+ * CommandBus.dispatch(TransferFundsCommand)
+ *   → TransferFundsHandler.handle()
+ *     1. Begin database transaction
+ *     2. Load fromAccount and toAccount within transaction
+ *     3. Call transferTo() on sender account
+ *     4. Call receiveTransfer() on receiver account
+ *     5. Save both accounts within transaction
+ *     6. Commit transaction
+ *     7. Publish domain events from both aggregates
+ * ```
+ *
+ * **Transaction Semantics:**
+ * - Both account updates are ACID-compliant: all-or-nothing
+ * - If either update fails, entire transaction rolls back
+ * - After commit, both accounts have generated events
+ *
+ * **Domain Events:**
+ * Each account generates its own event (transferred out / in),
+ * both published to subscribers for audit and balance reconciliation.
+ *
+ * **Critical Bug Fix:**
+ * Previous implementation re-fetched aggregates from DB after commit,
+ * causing domain events to be lost (new aggregates have empty event lists).
+ * This version keeps references to in-transaction aggregates.
+ *
+ * **Error Handling:**
+ * - Throws if either account not found
+ * - Throws if insufficient funds or validation fails
+ * - Database transaction automatically rolls back on error
+ *
+ * **Dependencies:**
+ * - IAccountRepository: for loading and persistence
+ * - ITransactionRepository: for recording transfers
+ * - Atlas DB: for transaction management
+ * - PlanetCore: for event hook publishing
  *
  * @implements {CommandHandler<TransferFundsCommand, void>}
+ *
+ * @example
+ * ```typescript
+ * const handler = new TransferFundsHandler(accountRepo, transactionRepo, core)
+ * const command = new TransferFundsCommand('from-123', 'to-456', 50000, 'TWD')
+ * await handler.handle(command)
+ * // Both accounts updated atomically, both events published
+ * ```
+ *
  * @since 1.0.0
  */
 export class TransferFundsHandler implements CommandHandler<TransferFundsCommand, void> {
   /**
    * Constructor
    *
-   * @param accountRepository - Repository for account data
-   * @param transactionRepository - Repository for transaction history
-   * @param core - PlanetCore for event hooks
+   * @param accountRepository - Account repository for loading and persistence
+   * @param transactionRepository - Transaction repository for recording transfers
+   * @param core - PlanetCore instance for event publishing
    */
   constructor(
     private accountRepository: IAccountRepository,
@@ -33,87 +81,85 @@ export class TransferFundsHandler implements CommandHandler<TransferFundsCommand
   ) {}
 
   /**
-   * Handles the transfer operation with ACID guarantees
+   * Handles the TransferFundsCommand
    *
-   * Executes the transfer within a database transaction to ensure atomicity.
-   * If any step fails, the entire operation is rolled back, preventing partial updates.
+   * **Preconditions:**
+   * - Both fromAccount and toAccount must exist
+   * - fromAccount must have sufficient balance
+   * - Currencies must match
    *
-   * **Transaction Flow:**
-   * 1. Load both sender and recipient accounts (with row locks)
-   * 2. Execute business logic (transferTo/receiveTransfer)
-   * 3. Save both accounts
-   * 4. Create outgoing and incoming transaction records
-   * 5. Publish domain events (outside transaction to avoid nested transactions)
+   * **Side Effects:**
+   * - Updates both account balances atomically
+   * - Records transfer transaction for audit trail
+   * - Publishes FundsTransferred events from both aggregates
    *
-   * @param command - Transfer parameters
-   * @throws Error if either account is not found
-   * @throws Error if rules (balance, limits) are violated
-   * @throws Database error if transaction fails
+   * **Transaction Guarantee:**
+   * All updates happen within a single DB transaction.
+   * If any step fails, the entire transaction rolls back.
+   *
+   * @param command - TransferFundsCommand with fromAccountId, toAccountId, amountCents, currency
+   * @throws Error if account not found
+   * @throws Error if insufficient funds
+   * @throws Error if currency mismatch
+   *
+   * @example
+   * ```typescript
+   * const command = new TransferFundsCommand('acc-001', 'acc-002', 50000, 'TWD')
+   * await handler.handle(command)
+   * // Both accounts updated, events published
+   * ```
    */
   async handle(command: TransferFundsCommand): Promise<void> {
-    // Execute entire transfer within a database transaction
+    // Keep references to aggregates outside transaction
+    // so we can publish their events after commit
+    let fromAccount: Account | null = null
+    let toAccount: Account | null = null
+
     await DB.transaction(async (trx) => {
-      const fromAccount = await this.accountRepository.findById(command.fromAccountId, trx)
+      // Load both accounts within transaction
+      fromAccount = await this.accountRepository.findById(command.fromAccountId, trx)
       if (!fromAccount) {
         throw new Error(`帳戶 ${command.fromAccountId} 不存在`)
       }
 
-      const toAccount = await this.accountRepository.findById(command.toAccountId, trx)
+      toAccount = await this.accountRepository.findById(command.toAccountId, trx)
       if (!toAccount) {
         throw new Error(`帳戶 ${command.toAccountId} 不存在`)
       }
 
-      const amount = new Money(command.amountCents, command.currency)
+      const transferAmount = new Money(command.amountCents, command.currency)
 
-      // Execute domain logic
-      fromAccount.transferTo(command.toAccountId, amount)
-      toAccount.receiveTransfer(command.fromAccountId, amount)
+      // Execute transfer: sender side
+      fromAccount.transferTo(command.toAccountId, transferAmount)
 
-      // Persist state changes within transaction
+      // Execute transfer: receiver side
+      toAccount.receiveTransfer(command.fromAccountId, transferAmount)
+
+      // Persist both updated accounts within transaction
       await this.accountRepository.save(fromAccount, trx)
       await this.accountRepository.save(toAccount, trx)
 
-      // Create transaction audit records within transaction
-      const transactionId = randomUUID()
-      const outgoingTx = Transaction.transfer(
+      // Record transfer transaction for audit trail
+      const transactionId = `txn-${Date.now()}`
+      const transferTransaction = new Transaction(
         transactionId,
         command.fromAccountId,
-        command.toAccountId,
+        TransactionType.TRANSFER_OUT,
         command.amountCents,
         fromAccount.balance.cents,
         command.currency,
-        true
-      )
-      const incomingTx = Transaction.transfer(
-        randomUUID(),
         command.toAccountId,
-        command.fromAccountId,
-        command.amountCents,
-        toAccount.balance.cents,
-        command.currency,
-        false
+        `轉帳給 ${command.toAccountId}`,
+        new Date()
       )
-
-      await this.transactionRepository.save(outgoingTx, trx)
-      await this.transactionRepository.save(incomingTx, trx)
+      await this.transactionRepository.save(transferTransaction, trx)
     })
 
-    // Publish domain events after successful transaction commit
-    // This ensures events are only published if database changes persist
-    const fromAccount = await this.accountRepository.findById(command.fromAccountId)
-    if (fromAccount) {
-      const events = fromAccount.pullDomainEvents()
-      for (const event of events) {
-        this.core.hooks.doAction(`cqrs:domain-event`, event)
-      }
-    }
-
-    const toAccount = await this.accountRepository.findById(command.toAccountId)
-    if (toAccount) {
-      const events = toAccount.pullDomainEvents()
-      for (const event of events) {
-        this.core.hooks.doAction(`cqrs:domain-event`, event)
-      }
+    // Publish events from both aggregates
+    // Critical: aggregates still have their events because they were
+    // kept in scope from inside the transaction
+    if (fromAccount && toAccount) {
+      await publishDomainEvents(this.core, fromAccount, toAccount)
     }
   }
 }
