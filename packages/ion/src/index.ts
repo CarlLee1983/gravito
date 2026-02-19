@@ -250,6 +250,26 @@ export class OrbitIon implements GravitoOrbit {
     const csrfEnabled = this.options.csrf?.enabled !== false
     const csrfCookieName = this.options.csrf?.cookieName ?? 'XSRF-TOKEN'
 
+    // Version caching: Cache dynamic version() calls for 60 seconds
+    const VERSION_CACHE_TTL = 60_000
+    let cachedVersion: string | undefined
+    let versionCacheTime = 0
+
+    const resolveAppVersion = async (): Promise<string | undefined> => {
+      if (typeof appVersion !== 'function') {
+        return appVersion
+      }
+
+      const now = Date.now()
+      if (cachedVersion && now - versionCacheTime < VERSION_CACHE_TTL) {
+        return cachedVersion
+      }
+
+      cachedVersion = await appVersion()
+      versionCacheTime = now
+      return cachedVersion
+    }
+
     // CSRF token middleware
     if (csrfEnabled) {
       core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
@@ -263,7 +283,7 @@ export class OrbitIon implements GravitoOrbit {
 
     core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       const service = new InertiaService(c, {
-        version: appVersion as any,
+        version: resolveAppVersion as any,
         rootView,
         ssr: this.options.ssr,
       })

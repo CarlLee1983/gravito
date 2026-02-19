@@ -891,6 +891,69 @@ describe('Inertia v2 - location() method', () => {
   })
 })
 
+describe('Performance - Version Caching', () => {
+  it('should accept dynamic version functions and resolve them on render', async () => {
+    let callCount = 0
+    const versionFactory = async () => {
+      callCount++
+      return `v${callCount}`
+    }
+
+    const req = {
+      url: '/test',
+      header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+    }
+
+    const ctx = {
+      req,
+      header: mock(),
+      json: mock((data: any) => data),
+    } as any
+
+    const service = new InertiaService(ctx, {
+      version: versionFactory,
+    })
+
+    // First render
+    await service.render('Test', {})
+    const call1 = (ctx.json as any).mock.calls[0][0]
+    expect(callCount).toBe(1)
+    expect(call1.version).toBe('v1')
+
+    // Second render with same service
+    await service.render('Test', {})
+    const call2 = (ctx.json as any).mock.calls[1][0]
+    expect(callCount).toBe(2)
+    expect(call2.version).toBe('v2')
+  })
+
+  it('should support static version strings without caching overhead', async () => {
+    const req = {
+      url: '/test',
+      header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+    }
+
+    const ctx = {
+      req,
+      header: mock(),
+      json: mock((data: any) => data),
+    } as any
+
+    const service = new InertiaService(ctx, {
+      version: '1.2.3',
+    })
+
+    // Multiple renders with static version
+    await service.render('Test1', {})
+    const call1 = (ctx.json as any).mock.calls[0][0]
+    expect(call1.version).toBe('1.2.3')
+
+    await service.render('Test2', {})
+    const call2 = (ctx.json as any).mock.calls[1][0]
+    expect(call2.version).toBe('1.2.3')
+  })
+})
+
 describe('Performance & Chaining', () => {
   it('should support method chaining', async () => {
     const req = {
