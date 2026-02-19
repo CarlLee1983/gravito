@@ -51,14 +51,18 @@ export class AtlasAccountRepository implements IAccountRepository {
   /**
    * Saves an account aggregate to the database
    *
-   * Implements insert-or-update (upsert) logic:
-   * - If account exists: updates balance, status, and updated_at
-   * - If new account: inserts all fields (id, owner_name, balance, currency, status, timestamps)
+   * Implements atomic insert-or-update (upsert) using SQLite's ON CONFLICT clause.
+   * This prevents race conditions when concurrent requests try to save the same account.
    *
    * **Data Mapping:**
    * - Account.balance (Money) → balance (cents as integer)
    * - Currency preserved for validation and formatting
    * - Timestamps converted to ISO string format
+   *
+   * **Concurrency Safety:**
+   * - Uses INSERT ... ON CONFLICT(id) DO UPDATE for atomic upsert
+   * - Prevents race condition where two threads SELECT null, both INSERT
+   * - Only updates mutable fields (balance, status, updated_at) on conflict
    *
    * **Preconditions:**
    * - Account.id must be a valid UUID
@@ -66,10 +70,11 @@ export class AtlasAccountRepository implements IAccountRepository {
    * - Account.balance must be non-negative (enforced by Money ValueObject)
    *
    * **Side Effects:**
-   * - Creates or updates row in accounts table
-   * - Sets updated_at to current timestamp
+   * - Creates or updates row in accounts table atomically
+   * - Sets updated_at to current timestamp on every save
    *
    * @param account - Account aggregate to persist
+   * @param trx - Optional database transaction for atomicity
    * @throws Database error if insert/update fails (e.g., constraint violation)
    *
    * @example
@@ -80,26 +85,32 @@ export class AtlasAccountRepository implements IAccountRepository {
    * // Account now persisted in database
    * ```
    */
-  async save(account: Account): Promise<void> {
-    const existing = (await DB.table('accounts').where('id', account.id).first()) as any
+  async save(account: Account, trx?: any): Promise<void> {
+    const queryBuilder = trx ? trx : DB
 
-    if (existing) {
-      await DB.table('accounts').where('id', account.id).update({
-        balance: account.balance.cents,
-        status: account.status,
-        updated_at: new Date().toISOString(),
-      })
-    } else {
-      await DB.table('accounts').insert({
-        id: account.id,
-        owner_name: account.ownerName,
-        balance: account.balance.cents,
-        currency: account.balance.currency,
-        status: account.status,
-        created_at: account.createdAt.toISOString(),
-        updated_at: account.updatedAt.toISOString(),
-      })
-    }
+    // Use raw SQL for atomic UPSERT to prevent race conditions
+    // SQLite: INSERT ... ON CONFLICT(id) DO UPDATE SET ...
+    const now = new Date().toISOString()
+
+    await queryBuilder.raw(
+      `
+      INSERT INTO accounts (id, owner_name, balance, currency, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        balance = excluded.balance,
+        status = excluded.status,
+        updated_at = excluded.updated_at
+      `,
+      [
+        account.id,
+        account.ownerName,
+        account.balance.cents,
+        account.balance.currency,
+        account.status,
+        account.createdAt.toISOString(),
+        now,
+      ]
+    )
   }
 
   /**
@@ -132,8 +143,9 @@ export class AtlasAccountRepository implements IAccountRepository {
    * account.deposit(amount)
    * ```
    */
-  async findById(accountId: string): Promise<Account | null> {
-    const row = (await DB.table('accounts').where('id', accountId).first()) as any
+  async findById(accountId: string, trx?: any): Promise<Account | null> {
+    const queryBuilder = trx ? trx.table('accounts') : DB.table('accounts')
+    const row = (await queryBuilder.where('id', accountId).first()) as any
 
     if (!row) return null
 
@@ -165,8 +177,9 @@ export class AtlasAccountRepository implements IAccountRepository {
    * }
    * ```
    */
-  async existsById(accountId: string): Promise<boolean> {
-    const row = (await DB.table('accounts').where('id', accountId).first()) as any
+  async existsById(accountId: string, trx?: any): Promise<boolean> {
+    const queryBuilder = trx ? trx.table('accounts') : DB.table('accounts')
+    const row = (await queryBuilder.where('id', accountId).first()) as any
     return !!row
   }
 }

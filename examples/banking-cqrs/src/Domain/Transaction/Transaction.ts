@@ -127,4 +127,40 @@ export class Transaction {
       new Date()
     )
   }
+
+  /**
+   * Generic factory method for creating a transaction
+   *
+   * @param id - Transaction ID
+   * @param accountId - Account ID
+   * @param type - Transaction type ('deposit', 'withdrawal', 'transfer_out', 'transfer_in')
+   * @param amount - Amount in cents
+   * @param balanceAfter - New balance in cents
+   * @param currency - Currency code
+   * @param referenceId - Optional reference ID
+   * @param description - Optional description
+   * @returns New Transaction instance
+   */
+  static create(
+    id: string,
+    accountId: string,
+    type: TransactionType | string,
+    amount: number,
+    balanceAfter: number,
+    currency: string,
+    referenceId?: string | null,
+    description?: string | null
+  ): Transaction {
+    return new Transaction(
+      id,
+      accountId,
+      type as TransactionType,
+      amount,
+      balanceAfter,
+      currency,
+      referenceId ?? null,
+      description ?? null,
+      new Date()
+    )
+  }
 }
