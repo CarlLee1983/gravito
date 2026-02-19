@@ -1,8 +1,11 @@
 import {
   DeleteObjectCommand,
   GetObjectCommand,
+  type GetObjectCommandOutput,
   HeadObjectCommand,
+  type HeadObjectCommandOutput,
   ListObjectsV2Command,
+  type ListObjectsV2CommandOutput,
   PutObjectCommand,
   S3Client,
   type S3ClientConfig,
@@ -135,7 +138,7 @@ export class S3Store implements StorageStore {
         Key: key,
       })
 
-      const response = await this.client.send(command)
+      const response: GetObjectCommandOutput = await this.client.send(command)
 
       if (!response.Body) {
         return null
@@ -242,17 +245,17 @@ export class S3Store implements StorageStore {
         Key: key,
       })
 
-      const response = await this.client.send(command)
+      const response: HeadObjectCommandOutput = await this.client.send(command)
 
       // Decode URL-encoded metadata values
       const decodedMetadata = response.Metadata
         ? Object.fromEntries(
             Object.entries(response.Metadata).map(([k, v]) => {
               try {
-                return [k, decodeURIComponent(v)]
+                return [k, decodeURIComponent(v as string)]
               } catch {
                 // If decode fails, return original value
-                return [k, v]
+                return [k, v as string]
               }
             })
           )
@@ -264,7 +267,7 @@ export class S3Store implements StorageStore {
         mimeType: response.ContentType,
         lastModified: response.LastModified,
         etag: response.ETag?.replace(/"/g, ''),
-        customMetadata: decodedMetadata,
+        customMetadata: decodedMetadata as Record<string, string> | undefined,
       }
     } catch (error: any) {
       if (error.name === 'NotFound' || error.name === 'NoSuchKey') {
@@ -385,7 +388,7 @@ export class S3Store implements StorageStore {
         Key: key,
       })
 
-      const response = await this.client.send(command)
+      const response: GetObjectCommandOutput = await this.client.send(command)
 
       if (!response.Body) {
         return null
@@ -429,7 +432,7 @@ export class S3Store implements StorageStore {
       ContinuationToken: options?.cursor,
     })
 
-    const response = await this.client.send(command)
+    const response: ListObjectsV2CommandOutput = await this.client.send(command)
 
     const items: StorageItem[] = (response.Contents ?? []).map((obj) => ({
       key: obj.Key!,
