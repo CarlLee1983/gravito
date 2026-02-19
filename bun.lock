@@ -105,6 +105,22 @@
         "bun-types": "latest",
       },
     },
+    "examples/banking-cqrs": {
+      "name": "example-banking-cqrs",
+      "version": "1.0.0",
+      "dependencies": {
+        "@gravito/atlas": "workspace:*",
+        "@gravito/core": "workspace:*",
+        "@gravito/enterprise": "workspace:*",
+        "@gravito/photon": "workspace:*",
+        "@gravito/prism": "workspace:*",
+        "zod": "^3.22.0",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^5.9.3",
+      },
+    },
     "examples/banking-event-driven": {
       "name": "@gravito/example-banking-event-driven",
       "version": "0.0.1",
@@ -1506,8 +1522,8 @@
       "name": "@gravito/nebula-s3",
       "version": "1.0.0",
       "dependencies": {
-        "@aws-sdk/client-s3": "^3.710.0",
-        "@aws-sdk/s3-request-presigner": "^3.710.0",
+        "@aws-sdk/client-s3": "^3.993.0",
+        "@aws-sdk/s3-request-presigner": "^3.993.0",
         "@gravito/nebula": "workspace:*",
       },
       "devDependencies": {
@@ -3961,6 +3977,8 @@
     "exact-mirror": ["exact-mirror@0.2.7", "", { "peerDependencies": { "@sinclair/typebox": "^0.34.15" }, "optionalPeers": ["@sinclair/typebox"] }, "sha512-+MeEmDcLA4o/vjK2zujgk+1VTxPR4hdp23qLqkWfStbECtAq9gmsvQa3LW6z/0GXZyHJobrCnmy1cdeE7BjsYg=="],
 
     "example-auth-verification": ["example-auth-verification@workspace:examples/auth-verification"],
+
+    "example-banking-cqrs": ["example-banking-cqrs@workspace:examples/banking-cqrs"],
 
     "example-ecommerce-mvc": ["example-ecommerce-mvc@workspace:examples/ecommerce-mvc"],
 
