@@ -551,3 +551,404 @@ describe('OrbitIon Integration', () => {
     expect(next).toHaveBeenCalled()
   })
 })
+
+describe('Inertia v2 - Deferred Props', () => {
+  it('should defer props and not include them in initial render', async () => {
+    const req = {
+      url: '/dashboard',
+      header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+    }
+
+    const ctx = {
+      req,
+      header: mock(),
+      json: mock((data: any) => data),
+    } as any
+
+    const service = new InertiaService(ctx, { version: '1.0' })
+
+    await service.render('Dashboard', {
+      user: { id: 1, name: 'Carl' },
+      stats: InertiaService.defer(() => Promise.resolve({ total: 42 })),
+      notifications: InertiaService.defer(() => Promise.resolve([]), 'notifications'),
+    })
+
+    const jsonCall = (ctx.json as any).mock.calls[0][0]
+    expect(jsonCall.props).toEqual({ user: { id: 1, name: 'Carl' } })
+    expect(jsonCall.props.stats).toBeUndefined()
+    expect(jsonCall.props.notifications).toBeUndefined()
+    expect(jsonCall.deferredProps).toBeDefined()
+    expect(jsonCall.deferredProps.default).toContain('stats')
+    expect(jsonCall.deferredProps.notifications).toContain('notifications')
+  })
+
+  it('should execute deferred props during non-partial reloads if requested', async () => {
+    const req = {
+      url: '/dashboard',
+      header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+    }
+
+    const ctx = {
+      req,
+      header: mock(),
+      json: mock((data: any) => data),
+    } as any
+
+    const service = new InertiaService(ctx, { version: '1.0' })
+    const statsFactory = mock(() => Promise.resolve({ total: 42 }))
+
+    await service.render('Dashboard', {
+      stats: InertiaService.defer(statsFactory),
+    })
+
+    // Deferred props should NOT be executed, only marked
+    expect(statsFactory).not.toHaveBeenCalled()
+  })
+
+  it('should group deferred props by name', async () => {
+    const req = {
+      url: '/dashboard',
+      header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+    }
+
+    const ctx = {
+      req,
+      header: mock(),
+      json: mock((data: any) => data),
+    } as any
+
+    const service = new InertiaService(ctx, { version: '1.0' })
+
+    await service.render('Dashboard', {
+      stats1: InertiaService.defer(() => Promise.resolve({}), 'heavy'),
+      stats2: InertiaService.defer(() => Promise.resolve({}), 'heavy'),
+      notifications: InertiaService.defer(() => Promise.resolve([]), 'notifications'),
+    })
+
+    const jsonCall = (ctx.json as any).mock.calls[0][0]
+    expect(jsonCall.deferredProps.heavy).toHaveLength(2)
+    expect(jsonCall.deferredProps.notifications).toHaveLength(1)
+  })
+})
+
+describe('Inertia v2 - Merge Props', () => {
+  it('should mark shallow merge props', async () => {
+    const req = {
+      url: '/products',
+      header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+    }
+
+    const ctx = {
+      req,
+      header: mock(),
+      json: mock((data: any) => data),
+    } as any
+
+    const service = new InertiaService(ctx, { version: '1.0' })
+
+    await service.render('Products/List', {
+      filters: InertiaService.merge({ status: 'active' }),
+      items: [{ id: 1 }],
+    })
+
+    const jsonCall = (ctx.json as any).mock.calls[0][0]
+    expect(jsonCall.props.filters).toEqual({ status: 'active' })
+    expect(jsonCall.mergeProps).toBeDefined()
+    expect(jsonCall.mergeProps[0]._type || jsonCall.mergeProps[0]?.mode).toBe('merge')
+    expect(jsonCall.mergeProps[0].keys).toContain('filters')
+  })
+
+  it('should mark prepend props for arrays', async () => {
+    const req = {
+      url: '/products',
+      header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+    }
+
+    const ctx = {
+      req,
+      header: mock(),
+      json: mock((data: any) => data),
+    } as any
+
+    const service = new InertiaService(ctx, { version: '1.0' })
+
+    await service.render('Products/List', {
+      items: InertiaService.prepend([{ id: 99, name: 'New' }]),
+    })
+
+    const jsonCall = (ctx.json as any).mock.calls[0][0]
+    expect(jsonCall.props.items).toEqual([{ id: 99, name: 'New' }])
+    expect(jsonCall.mergeProps[0]._type || jsonCall.mergeProps[0]?.mode).toBe('prepend')
+  })
+
+  it('should mark deep merge props for objects', async () => {
+    const req = {
+      url: '/config',
+      header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+    }
+
+    const ctx = {
+      req,
+      header: mock(),
+      json: mock((data: any) => data),
+    } as any
+
+    const service = new InertiaService(ctx, { version: '1.0' })
+
+    await service.render('Config', {
+      settings: InertiaService.deepMerge({ theme: 'dark', locale: 'en' }),
+    })
+
+    const jsonCall = (ctx.json as any).mock.calls[0][0]
+    expect(jsonCall.props.settings).toEqual({ theme: 'dark', locale: 'en' })
+    expect(jsonCall.mergeProps[0]._type || jsonCall.mergeProps[0]?.mode).toBe('deepMerge')
+  })
+
+  it('should group merge props by mode', async () => {
+    const req = {
+      url: '/dashboard',
+      header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+    }
+
+    const ctx = {
+      req,
+      header: mock(),
+      json: mock((data: any) => data),
+    } as any
+
+    const service = new InertiaService(ctx, { version: '1.0' })
+
+    await service.render('Dashboard', {
+      items: InertiaService.prepend([{ id: 1 }]),
+      moreItems: InertiaService.prepend([{ id: 2 }]),
+      filters: InertiaService.merge({ active: true }),
+    })
+
+    const jsonCall = (ctx.json as any).mock.calls[0][0]
+    expect(jsonCall.mergeProps).toHaveLength(2)
+    const prependGroup = jsonCall.mergeProps.find((m: any) => m.mode === 'prepend')
+    const mergeGroup = jsonCall.mergeProps.find((m: any) => m.mode === 'merge')
+    expect(prependGroup.keys).toContain('items')
+    expect(prependGroup.keys).toContain('moreItems')
+    expect(mergeGroup.keys).toContain('filters')
+  })
+})
+
+describe('Inertia v2 - History Encryption', () => {
+  it('should set encryptHistory flag in page object', async () => {
+    const req = {
+      url: '/secure',
+      header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+    }
+
+    const ctx = {
+      req,
+      header: mock(),
+      json: mock((data: any) => data),
+    } as any
+
+    const service = new InertiaService(ctx, { version: '1.0' })
+
+    await service.encryptHistory(true).render('SecurePage', { data: 'sensitive' })
+
+    const jsonCall = (ctx.json as any).mock.calls[0][0]
+    expect(jsonCall.encryptHistory).toBe(true)
+  })
+
+  it('should clear history flag in page object', async () => {
+    const req = {
+      url: '/finish',
+      header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+    }
+
+    const ctx = {
+      req,
+      header: mock(),
+      json: mock((data: any) => data),
+    } as any
+
+    const service = new InertiaService(ctx, { version: '1.0' })
+
+    await service.clearHistory().render('SuccessPage')
+
+    const jsonCall = (ctx.json as any).mock.calls[0][0]
+    expect(jsonCall.clearHistory).toBe(true)
+  })
+})
+
+describe('Inertia v2 - Error Bags', () => {
+  it('should register errors in default bag', async () => {
+    const req = {
+      url: '/form',
+      header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+    }
+
+    const ctx = {
+      req,
+      header: mock(),
+      json: mock((data: any) => data),
+    } as any
+
+    const service = new InertiaService(ctx, { version: '1.0' })
+
+    await service
+      .withErrors({
+        email: 'Email is required',
+        password: 'Password must be 8+ characters',
+      })
+      .render('Login')
+
+    const jsonCall = (ctx.json as any).mock.calls[0][0]
+    expect(jsonCall.errorBags).toBeDefined()
+    expect(jsonCall.errorBags.default).toEqual({
+      email: 'Email is required',
+      password: 'Password must be 8+ characters',
+    })
+  })
+
+  it('should register errors in named bags', async () => {
+    const req = {
+      url: '/import',
+      header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+    }
+
+    const ctx = {
+      req,
+      header: mock(),
+      json: mock((data: any) => data),
+    } as any
+
+    const service = new InertiaService(ctx, { version: '1.0' })
+
+    service.withErrors({ email: 'Email is required' }, 'login')
+    await service.withErrors({ line_1: 'Invalid CSV format' }, 'import').render('Dashboard')
+
+    const jsonCall = (ctx.json as any).mock.calls[0][0]
+    expect(jsonCall.errorBags.login).toEqual({ email: 'Email is required' })
+    expect(jsonCall.errorBags.import).toEqual({ line_1: 'Invalid CSV format' })
+  })
+
+  it('should support error arrays', async () => {
+    const req = {
+      url: '/form',
+      header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+    }
+
+    const ctx = {
+      req,
+      header: mock(),
+      json: mock((data: any) => data),
+    } as any
+
+    const service = new InertiaService(ctx, { version: '1.0' })
+
+    await service
+      .withErrors({
+        items: ['Item 1 is required', 'Item 2 is required'],
+      })
+      .render('Form')
+
+    const jsonCall = (ctx.json as any).mock.calls[0][0]
+    expect(jsonCall.errorBags.default.items).toEqual(['Item 1 is required', 'Item 2 is required'])
+  })
+})
+
+describe('Inertia v2 - location() method', () => {
+  it('should return 409 with X-Inertia-Location header for Inertia requests', async () => {
+    const req = {
+      url: '/dashboard',
+      header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+    }
+
+    const ctx = {
+      req,
+      header: mock(),
+    } as any
+
+    const service = new InertiaService(ctx, { version: '1.0' })
+    const response = service.location('/login')
+
+    expect(response.status).toBe(409)
+    expect(ctx.header).toHaveBeenCalledWith('X-Inertia-Location', '/login')
+  })
+
+  it('should return 302 redirect for non-Inertia requests', async () => {
+    const req = {
+      url: '/dashboard',
+      header: () => undefined,
+    }
+
+    const ctx = {
+      req,
+      header: mock(),
+    } as any
+
+    const service = new InertiaService(ctx, { version: '1.0' })
+    const response = service.location('/login')
+
+    expect(response.status).toBe(302)
+    expect(ctx.header).toHaveBeenCalledWith('Location', '/login')
+  })
+})
+
+describe('Performance & Chaining', () => {
+  it('should support method chaining', async () => {
+    const req = {
+      url: '/test',
+      header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+    }
+
+    const ctx = {
+      req,
+      header: mock(),
+      json: mock((data: any) => data),
+    } as any
+
+    const service = new InertiaService(ctx, { version: '1.0' })
+
+    const result = service
+      .encryptHistory()
+      .clearHistory()
+      .withErrors({ test: 'error' })
+      .render('Page', {})
+
+    expect(result).toBeInstanceOf(Promise)
+    await result
+
+    const jsonCall = (ctx.json as any).mock.calls[0][0]
+    expect(jsonCall.encryptHistory).toBe(true)
+    expect(jsonCall.clearHistory).toBe(true)
+    expect(jsonCall.errorBags?.default).toBeDefined()
+  })
+
+  it('should apply X-Inertia-Reset header to reset props', async () => {
+    const req = {
+      url: '/test',
+      header: (key: string) => {
+        if (key === 'X-Inertia') return 'true'
+        if (key === 'X-Inertia-Reset') return 'oldField,anotherField'
+        if (key === 'X-Inertia-Partial-Component') return 'Dashboard'
+        return undefined
+      },
+    }
+
+    const ctx = {
+      req,
+      header: mock(),
+      json: mock((data: any) => data),
+    } as any
+
+    const service = new InertiaService(ctx, { version: '1.0' })
+
+    await service.render('Dashboard', {
+      oldField: 'should be reset',
+      anotherField: 'also reset',
+      keepField: 'should remain',
+    })
+
+    const jsonCall = (ctx.json as any).mock.calls[0][0]
+    expect(jsonCall.props.oldField).toBeUndefined()
+    expect(jsonCall.props.anotherField).toBeUndefined()
+    expect(jsonCall.props.keepField).toBe('should remain')
+  })
+})

@@ -9,6 +9,7 @@
 
 import type { GravitoContext, GravitoVariables, ViewService } from '@gravito/core'
 import { InertiaConfigError, InertiaDataError, InertiaError } from './errors'
+import type { DeferredPropDefinition, InertiaPageObject, MergedPropDefinition } from './types'
 
 /**
  * Configuration options for the InertiaService instance.
@@ -117,8 +118,78 @@ export interface RenderMetrics {
  */
 export class InertiaService {
   private sharedProps: Record<string, unknown> = {}
+  private errorBags: Record<string, Record<string, string | string[]>> = {}
+  private encryptHistoryFlag = false
+  private clearHistoryFlag = false
   private readonly logLevel: 'debug' | 'info' | 'warn' | 'error' | 'silent'
   private readonly onRenderCallback?: (metrics: RenderMetrics) => void
+
+  /**
+   * Creates a deferred prop that will be loaded after the initial render.
+   *
+   * @param factory - Function that resolves to the prop value.
+   * @param group - Optional group name for organizing deferred props.
+   * @returns A deferred prop definition.
+   *
+   * @example
+   * ```typescript
+   * props: {
+   *   user: { id: 1 },
+   *   stats: InertiaService.defer(() => fetchStats())
+   * }
+   * ```
+   */
+  static defer<T = unknown>(
+    factory: () => T | Promise<T>,
+    group = 'default'
+  ): DeferredPropDefinition<T> {
+    return {
+      _type: 'deferred',
+      factory,
+      group,
+    }
+  }
+
+  /**
+   * Marks a prop to be merged (shallow) with existing data during partial reloads.
+   *
+   * @param value - The prop value to merge.
+   * @param matchOn - Optional key(s) to match on when merging arrays.
+   * @returns A merge prop definition.
+   */
+  static merge<T = unknown>(value: T, matchOn?: string | string[]): MergedPropDefinition<T> {
+    return {
+      _type: 'merge',
+      value,
+      matchOn,
+    }
+  }
+
+  /**
+   * Marks a prop to prepend to an array during partial reloads.
+   *
+   * @param value - The prop value to prepend.
+   * @returns A prepend prop definition.
+   */
+  static prepend<T = unknown>(value: T): MergedPropDefinition<T> {
+    return {
+      _type: 'prepend',
+      value,
+    }
+  }
+
+  /**
+   * Marks a prop to be deep-merged with existing data during partial reloads.
+   *
+   * @param value - The prop value to deep merge.
+   * @returns A deep merge prop definition.
+   */
+  static deepMerge<T = unknown>(value: T): MergedPropDefinition<T> {
+    return {
+      _type: 'deepMerge',
+      value,
+    }
+  }
 
   /**
    * Initializes a new instance of the Inertia service.
@@ -240,18 +311,69 @@ export class InertiaService {
         const partialData = this.context.req.header('X-Inertia-Partial-Data')
         const partialExcept = this.context.req.header('X-Inertia-Partial-Except')
         const partialComponent = this.context.req.header('X-Inertia-Partial-Component')
+        const resetKeys = this.context.req.header('X-Inertia-Reset')
 
         const isPartial = partialComponent === component
         const only = partialData && isPartial ? partialData.split(',') : []
         const except = partialExcept && isPartial ? partialExcept.split(',') : []
+        const resetKeyList = resetKeys ? resetKeys.split(',') : []
 
         const resolved: Record<string, unknown> = {}
+        const deferredGroups: Record<string, string[]> = {}
+        const mergedKeys: Array<{
+          keys: string[]
+          mode: 'merge' | 'prepend' | 'deepMerge'
+        }> = []
 
         for (const [key, value] of Object.entries(p)) {
           if (only.length > 0 && !only.includes(key)) {
             continue
           }
           if (except.length > 0 && except.includes(key)) {
+            continue
+          }
+
+          // Handle deferred props (Inertia v2)
+          if (
+            value &&
+            typeof value === 'object' &&
+            '_type' in value &&
+            (value as any)._type === 'deferred'
+          ) {
+            const deferred = value as DeferredPropDefinition
+            const group = deferred.group ?? 'default'
+            if (!deferredGroups[group]) {
+              deferredGroups[group] = []
+            }
+            deferredGroups[group].push(key)
+            // Don't include deferred props in initial render
+            continue
+          }
+
+          // Handle merged props (Inertia v2)
+          if (
+            value &&
+            typeof value === 'object' &&
+            '_type' in value &&
+            ['merge', 'prepend', 'deepMerge'].includes((value as any)._type)
+          ) {
+            const merged = value as MergedPropDefinition
+            const existing = mergedKeys.find((m) => m.mode === merged._type)
+            if (existing) {
+              existing.keys.push(key)
+            } else {
+              mergedKeys.push({
+                keys: [key],
+                mode: merged._type,
+              })
+            }
+            resolved[key] = merged.value
+            continue
+          }
+
+          // Reset prop if specified in X-Inertia-Reset header
+          if (resetKeyList.includes(key)) {
+            resolved[key] = undefined
             continue
           }
 
@@ -271,7 +393,7 @@ export class InertiaService {
           }
         }
 
-        return resolved
+        return { resolved, deferredGroups, mergedKeys }
       }
 
       const resolveVersion = async () => {
@@ -292,11 +414,34 @@ export class InertiaService {
         return { ...this.sharedProps, ...propsToMerge }
       }
 
-      const page = {
+      const {
+        resolved: resolvedPropsData,
+        deferredGroups,
+        mergedKeys,
+      } = await resolveProps(getMergedProps())
+
+      const page: InertiaPageObject = {
         component,
-        props: await resolveProps(getMergedProps()),
+        props: resolvedPropsData,
         url: pageUrl,
         version,
+      }
+
+      // Add Inertia v2 features if present
+      if (Object.keys(deferredGroups).length > 0) {
+        page.deferredProps = deferredGroups
+      }
+      if (mergedKeys.length > 0) {
+        page.mergeProps = mergedKeys
+      }
+      if (this.encryptHistoryFlag) {
+        page.encryptHistory = true
+      }
+      if (this.clearHistoryFlag) {
+        page.clearHistory = true
+      }
+      if (Object.keys(this.errorBags).length > 0) {
+        page.errorBags = this.errorBags
       }
 
       let pageJson: string
@@ -442,7 +587,7 @@ export class InertiaService {
    * ```
    */
   public shareAll(props: Record<string, unknown>): void {
-    Object.assign(this.sharedProps, props)
+    this.sharedProps = { ...this.sharedProps, ...props }
   }
 
   /**
@@ -462,5 +607,100 @@ export class InertiaService {
    */
   public getSharedProps(): Record<string, unknown> {
     return { ...this.sharedProps }
+  }
+
+  /**
+   * Instructs the Inertia client to navigate to a different URL.
+   *
+   * For Inertia AJAX requests, this returns a 409 Conflict with the `X-Inertia-Location` header.
+   * For regular page loads, this returns a 302 Found redirect.
+   *
+   * This is useful for server-side redirects triggered by authentication or authorization checks.
+   *
+   * @param url - The URL to redirect to.
+   * @returns A redirect response.
+   *
+   * @example
+   * ```typescript
+   * if (!ctx.get('user')) {
+   *   return inertia.location('/login');
+   * }
+   * ```
+   */
+  public location(url: string): Response {
+    const isInertiaRequest = Boolean(this.context.req.header('X-Inertia'))
+
+    if (isInertiaRequest) {
+      this.context.header('X-Inertia-Location', url)
+      return new Response('', { status: 409 })
+    }
+
+    // Standard HTTP redirect for regular requests
+    this.context.header('Location', url)
+    return new Response('', { status: 302 })
+  }
+
+  /**
+   * Controls whether the Inertia client should encrypt browser history.
+   *
+   * When enabled, history is not written to the browser's History API,
+   * preventing users from using the browser back button to return to previous pages.
+   *
+   * @param encrypt - Whether to encrypt history (defaults to true).
+   * @returns The service instance for method chaining.
+   *
+   * @example
+   * ```typescript
+   * return await inertia.encryptHistory(true).render('SecurePage');
+   * ```
+   */
+  public encryptHistory(encrypt = true): this {
+    this.encryptHistoryFlag = encrypt
+    return this
+  }
+
+  /**
+   * Clears the browser history after the page load.
+   *
+   * Useful for sensitive operations or multi-step wizards where you don't want
+   * users navigating back to previous states.
+   *
+   * @returns The service instance for method chaining.
+   *
+   * @example
+   * ```typescript
+   * return await inertia.clearHistory().render('SuccessPage');
+   * ```
+   */
+  public clearHistory(): this {
+    this.clearHistoryFlag = true
+    return this
+  }
+
+  /**
+   * Registers form validation errors organized into named bags.
+   *
+   * Error bags allow multiple validation failure scenarios to coexist.
+   * For example, you might have 'default' errors and 'import' errors from different forms.
+   *
+   * @param errors - Validation errors, with field names as keys and error messages as values.
+   * @param bag - The error bag name (defaults to 'default').
+   * @returns The service instance for method chaining.
+   *
+   * @example
+   * ```typescript
+   * inertia.withErrors({
+   *   email: 'Email is required',
+   *   password: 'Must be 8+ characters'
+   * }, 'login');
+   *
+   * inertia.withErrors({
+   *   line_1: 'Invalid CSV format'
+   * }, 'import');
+   * ```
+   */
+  public withErrors(errors: Record<string, string | string[]>, bag = 'default'): this {
+    this.errorBags[bag] = errors
+    return this
   }
 }
