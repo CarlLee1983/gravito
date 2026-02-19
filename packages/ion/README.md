@@ -1,18 +1,19 @@
 # 🛰️ Orbit Inertia (Ion)
 
-> Inertia.js adapter for Gravito. Build modern monoliths with React/Vue/Svelte.
+> Inertia.js v2 adapter for Gravito. Build modern monoliths with React/Vue/Svelte.
 
-**Orbit Inertia** (@gravito/ion) is a high-performance adapter that allows you to build single-page apps using classic server-side routing and controllers. It acts as the "glue" between Gravito (Photon) and your frontend framework, eliminating the need for a separate REST/GraphQL API.
+**Orbit Inertia** (@gravito/ion) is a high-performance adapter implementing the **Inertia.js v2 protocol** for Gravito. It allows you to build single-page apps using classic server-side routing and controllers, acting as the "glue" between Gravito (Photon) and your frontend framework, eliminating the need for a separate REST/GraphQL API.
 
 ## ✨ Key Features
 
 - **🚀 Modern Monolith Architecture**: Combine the productivity of server-side routing with the interactivity of SPA frameworks.
 - **🛠️ Zero API Development**: Pass data directly from controllers to components as typed props—no more managing endpoints or manual serialization.
-- **⚡ High-Performance Rendering**: Built-in multi-layer caching for components and metadata, ensuring sub-millisecond overhead.
+- **⚡ High-Performance Rendering**: Built-in multi-layer caching, version caching (60s TTL), and component metadata optimization.
 - **🛡️ Native Type Safety**: Full TypeScript support with generics for props, ensuring end-to-end type safety from server to client.
 - **🔗 Ecosystem Integration**: Seamlessly works with `OrbitPrism` for root templates and Gravito's session/auth modules.
 - **🔍 SEO & SSR Friendly**: Designed for modern web requirements, supporting Server-Side Rendering patterns for optimal visibility.
 - **🎨 Multi-Framework Support**: Official support for **React**, **Vue**, and **Svelte**.
+- **✨ Inertia v2 Protocol**: Full support for deferred props, merge strategies, error bags, and CSRF protection.
 
 ## 📦 Installation
 
@@ -74,6 +75,71 @@ export class DashboardController {
 }
 ```
 
+## 🔧 Inertia v2 Protocol Features
+
+### Deferred Props (Lazy Loading)
+Skip initial render, load props separately post-render:
+
+```typescript
+inertia.render('Dashboard', {
+  user: { id: 1, name: 'Carl' }, // Initial
+  stats: InertiaService.defer(() => fetchStats(), 'heavy'), // Deferred
+  notifications: InertiaService.defer(() => fetchNotifications(), 'notifications')
+});
+```
+
+### Merge Strategies (Partial Reloads)
+Control how props merge during partial reloads:
+
+```typescript
+inertia.render('Products/List', {
+  items: InertiaService.prepend([newProduct]), // Add to start
+  filters: InertiaService.deepMerge({ status: 'active' }), // Recursive merge
+  config: InertiaService.merge({ sortBy: 'name' }) // Shallow merge
+});
+```
+
+### Error Bags (Form Validation)
+Organize validation errors by category:
+
+```typescript
+inertia.withErrors({
+  email: 'Email is required',
+  password: 'Must be 8+ characters'
+}, 'login'); // Named bag
+
+inertia.withErrors({
+  line_1: 'Invalid CSV format'
+}, 'import');
+```
+
+### Smart Redirects
+Automatic 409 response for Inertia requests, 302 for regular requests:
+
+```typescript
+if (!user) {
+  return inertia.location('/login'); // Smart redirect
+}
+```
+
+### History Control
+```typescript
+inertia.encryptHistory(true);   // Disable back button
+inertia.clearHistory();         // Clear history after load
+```
+
+### CSRF Protection
+Automatic XSRF-TOKEN cookie generation (Axios-compatible):
+
+```typescript
+const ion = new OrbitIon({
+  csrf: {
+    enabled: true,
+    cookieName: 'XSRF-TOKEN' // Axios reads this automatically
+  }
+});
+```
+
 ## 🔧 Advanced Features
 
 ### Shared Props
@@ -84,7 +150,18 @@ inertia.share('auth', { user: 'Carl' });
 ```
 
 ### Partial Reloads
-Ion supports Inertia's partial reloads, allowing the client to request only specific data to save bandwidth.
+Ion supports Inertia's partial reloads with smart merge strategies, allowing the client to request only specific data to save bandwidth.
+
+### Method Chaining
+All methods support fluent interface:
+
+```typescript
+return await inertia
+  .encryptHistory()
+  .clearHistory()
+  .withErrors({ email: 'Invalid' })
+  .render('SecurePage', props);
+```
 
 ### Manual Serialization Control
 Customize how your data is converted to JSON for the client:

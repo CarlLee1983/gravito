@@ -1,18 +1,19 @@
 # 🛰️ Orbit Inertia (Ion)
 
-> Gravito 的 Inertia.js 轉接器，用於建立現代化單體應用 (Modern Monolith)。支援 React、Vue 與 Svelte。
+> Gravito 的 Inertia.js v2 轉接器，用於建立現代化單體應用 (Modern Monolith)。支援 React、Vue 與 Svelte。
 
-**Orbit Inertia** (@gravito/ion) 是一個高效能的轉接器，讓您能夠使用傳統的伺服器端路由與控制器來建立單頁應用程式 (SPA)。它扮演了 Gravito (Photon) 與前端框架之間的「膠水」，消除了開發獨立 REST 或 GraphQL API 的需求。
+**Orbit Inertia** (@gravito/ion) 是一個高效能的轉接器，實現 **Inertia.js v2 協議**，讓您能夠使用傳統的伺服器端路由與控制器來建立單頁應用程式 (SPA)。它扮演了 Gravito (Photon) 與前端框架之間的「膠水」，消除了開發獨立 REST 或 GraphQL API 的需求。
 
 ## ✨ 核心特性
 
 - **🚀 現代化單體架構**：結合伺服器端開發的高效率與 SPA 框架的高互動性。
 - **🛠️ 零 API 開發**：直接將資料從控制器傳遞到組件作為具備型別的 Props，不再需要管理 API 端點或手動處理序列化。
-- **⚡ 高效能渲染**：內建針對組件與元資料 (Metadata) 的多層快取機制，確保毫秒級的極低開銷。
+- **⚡ 高效能渲染**：內建多層快取、版本快取 (60 秒 TTL) 與組件元資料最佳化，確保毫秒級的極低開銷。
 - **🛡️ 原生型別安全**：完整的 TypeScript 支援，透過 Generics 確保從伺服器到前端的端到端型別安全。
 - **🔗 生態系整合**：與 `OrbitPrism` (模板引擎) 及 Gravito 的 Session/Auth 模組完美協作。
 - **🔍 SEO 與 SSR 友善**：專為現代 Web 需求設計，支援伺服器端渲染 (SSR) 模式以優化搜尋引擎可見度。
 - **🎨 多框架支援**：官方支援 **React**、**Vue** 與 **Svelte**。
+- **✨ Inertia v2 協議**：完整支援延遲 Props、合併策略、錯誤包與 CSRF 防護。
 
 ## 📦 安裝
 
@@ -74,6 +75,71 @@ export class DashboardController {
 }
 ```
 
+## 🔧 Inertia v2 協議功能
+
+### 延遲 Props (Deferred Props)
+跳過初始渲染，在後續操作中單獨載入 Props：
+
+```typescript
+inertia.render('Dashboard', {
+  user: { id: 1, name: 'Carl' }, // 初始載入
+  stats: InertiaService.defer(() => fetchStats(), 'heavy'), // 延遲載入
+  notifications: InertiaService.defer(() => fetchNotifications(), 'notifications')
+});
+```
+
+### 合併策略 (Merge Strategies)
+控制局部重新載入時 Props 如何合併：
+
+```typescript
+inertia.render('Products/List', {
+  items: InertiaService.prepend([newProduct]), // 加到開頭
+  filters: InertiaService.deepMerge({ status: 'active' }), // 遞迴合併
+  config: InertiaService.merge({ sortBy: 'name' }) // 淺合併
+});
+```
+
+### 錯誤包 (Error Bags)
+按類別組織表單驗證錯誤：
+
+```typescript
+inertia.withErrors({
+  email: '電郵為必填',
+  password: '必須為 8 個字元以上'
+}, 'login'); // 命名包
+
+inertia.withErrors({
+  line_1: '無效的 CSV 格式'
+}, 'import');
+```
+
+### 智慧重定向 (Smart Redirects)
+自動為 Inertia 請求回傳 409，普通請求回傳 302：
+
+```typescript
+if (!user) {
+  return inertia.location('/login'); // 智慧重定向
+}
+```
+
+### 瀏覽歷史控制 (History Control)
+```typescript
+inertia.encryptHistory(true);   // 停用返回按鈕
+inertia.clearHistory();         // 載入後清除歷史
+```
+
+### CSRF 防護
+自動產生 XSRF-TOKEN Cookie (與 Axios 相容)：
+
+```typescript
+const ion = new OrbitIon({
+  csrf: {
+    enabled: true,
+    cookieName: 'XSRF-TOKEN' // Axios 會自動讀取
+  }
+});
+```
+
 ## 🔧 進階功能
 
 ### 共享 Props (Shared Props)
@@ -84,7 +150,18 @@ inertia.share('auth', { user: 'Carl' });
 ```
 
 ### 局部重新載入 (Partial Reloads)
-Ion 支援 Inertia 的局部重載機制，允許客戶端僅請求特定資料以節省頻寬。
+Ion 支援 Inertia 的局部重載機制，搭配智慧合併策略，允許客戶端僅請求特定資料以節省頻寬。
+
+### 方法鏈式調用 (Method Chaining)
+所有方法都支援流暢介面：
+
+```typescript
+return await inertia
+  .encryptHistory()
+  .clearHistory()
+  .withErrors({ email: '無效' })
+  .render('SecurePage', props);
+```
 
 ### 手動序列化控制
 自定義資料如何轉換為 JSON 傳遞給客戶端：
