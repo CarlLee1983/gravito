@@ -16,7 +16,7 @@
 ## 🏗️ 核心概念 (Concepts & Architecture)
 
 - **[架構總覽 (Architecture)](./concepts/architecture.md)**  
-  專案結構、分層職責 (Domain, Application, Infrastructure) 與依賴關係。
+  專案結構、分層職責、Controller-Action 模式、Smart Validation 與 Query Caching 機制。
 
 - **[DDD 概論 (DDD Overview)](./concepts/ddd-overview.md)**  
   深入解析 Aggregate Root, Entity, Value Object 等核心 DDD 概念。

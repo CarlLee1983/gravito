@@ -5,60 +5,34 @@
 ```
 examples/banking-cqrs/
 ├── src/
-│   ├── Domain/                     # 領域層（業務規則）
-│   │   ├── Account/
-│   │   │   ├── Account.ts          # Aggregate Root
-│   │   │   ├── AccountStatus.ts
-│   │   │   ├── IAccountRepository.ts
-│   │   │   └── Events/             # 領域事件
-│   │   ├── Transaction/
-│   │   │   ├── Transaction.ts      # Entity
-│   │   │   ├── TransactionType.ts
-│   │   │   └── ITransactionRepository.ts
-│   │   └── Shared/
-│   │       └── Money.ts            # Value Object
+│   ├── Domain/                     # 領域層（純粹業務邏輯）
+│   │   ├── Account/                # 帳戶聚合 (Aggregate Root)
+│   │   ├── Transaction/            # 交易實體 (Entity)
+│   │   └── Shared/                 # 共享值對象 (Value Object)
 │   │
-│   ├── Application/                # 應用層（協調）
-│   │   ├── Bus/
-│   │   │   ├── CommandBus.ts
-│   │   │   └── QueryBus.ts
-│   │   ├── Commands/               # 寫操作
-│   │   │   ├── CreateAccount/
-│   │   │   ├── DepositFunds/
-│   │   │   ├── WithdrawFunds/
-│   │   │   └── TransferFunds/
-│   │   └── Queries/                # 讀操作
-│   │       ├── GetAccountBalance/
-│   │       ├── GetAccountDetails/
-│   │       └── GetTransactionHistory/
+│   ├── Application/                # 應用層（任務協調）
+│   │   ├── Actions/                # 介面層與 Bus 之間的過渡
+│   │   ├── Bus/                    # 命令與查詢匯流排 (Smart Bus)
+│   │   ├── Commands/               # 寫操作處理器
+│   │   ├── Queries/                # 讀操作處理器
+│   │   ├── Validation/             # 命令驗證層 (Smart Validation)
+│   │   └── Cache/                  # 查詢快取層 (Memory Cache)
 │   │
-│   ├── Infrastructure/             # 基礎設施層（外部依賴）
-│   │   ├── Persistence/
-│   │   │   ├── AtlasAccountRepository.ts
-│   │   │   └── AtlasTransactionRepository.ts
-│   │   └── EventPublisher/
-│   │       └── GravitoEventPublisher.ts
+│   ├── Infrastructure/             # 基礎設施層（外部實現）
+│   │   ├── Persistence/            # 資料庫持久化 (Atlas Repositories)
+│   │   └── EventPublisher/         # 領域事件發布
 │   │
-│   ├── Providers/
-│   │   └── CqrsProvider.ts         # 容器綁定
+│   ├── Presentation/               # 表現層 (HTTP Controllers)
+│   │   └── Controllers/
 │   │
-│   ├── routes.ts                   # HTTP 路由
-│   ├── bootstrap.ts                # 應用啟動
-│   └── index.ts                    # 入口點
-│
-├── database/
-│   └── migrations/index.ts         # 資料庫遷移
-│
-├── tests/
-│   ├── Domain/                     # 領域層單元測試
-│   │   ├── Account.test.ts
-│   │   └── Money.test.ts
-│   └── setup.ts                    # 測試工具函數
+│   ├── Providers/                  # Gravito Provider 註冊
+│   ├── routes.ts                   # 路由定義
+│   └── bootstrap.ts                # 啟動引導
 │
 └── docs/
-    ├── CQRS-overview.md            # CQRS 理論
-    ├── CQRS-quick-start.md         # 快速入門
-    └── architecture.md             # 本文件
+    ├── concepts/                   # 核心概念文檔
+    ├── guides/                     # 操作指南
+    └── reports/                    # 審查報告
 ```
 
 ## 各層職責
@@ -129,10 +103,11 @@ class CommandBus {
 
 流程：
 1. 接收 Command
-2. 從 Repository 加載 AggregateRoot
-3. 調用業務方法
-4. 保存修改
-5. 發布領域事件
+2. 若有 Validator，進行 **命令驗證 (Smart Validation)**
+3. 從 Repository 加載 AggregateRoot
+4. 調用業務方法
+5. 保存修改
+6. 發布領域事件
 
 ```typescript
 class DepositFundsHandler implements CommandHandler {
@@ -152,9 +127,10 @@ class DepositFundsHandler implements CommandHandler {
 
 流程：
 1. 接收 Query
-2. 從 Repository 讀取資料（不修改）
-3. 構建 DTO
-4. 返回結果
+2. 檢查 **查詢快取 (Smart Cache)** 命中
+3. 未命中則從 Repository 讀取資料
+4. 構建 DTO 並存入快取
+5. 返回結果
 
 ```typescript
 class GetAccountBalanceHandler implements QueryHandler {
@@ -217,73 +193,84 @@ CREATE TABLE transactions (
 )
 ```
 
-### 4. Interface Layer（介面層）
+### 4. Presentation Layer（表現層）
 
-**職責**：HTTP 端點和請求/響應轉換。
+**職責**：處理 HTTP 端點、輸入解析與初步驗證。
+
+#### Controllers & Actions
+專案採用 **Controller-Action 模式** 將路由邏輯與業務協調分離。
+
+1. **Controller**: 負責解析 HTTP 請求 (Body, Params) 並調用對應的 Action。
+2. **Action**: 封裝單個用例的執行邏輯，負責建立 Command/Query 並透過 Bus 發送。
 
 ```typescript
-router.post('/api/accounts/:id/deposit', async (ctx) => {
-  const body = await ctx.req.json()
-
-  // 1. 建立 Command
-  const command = new DepositFundsCommand(
-    ctx.req.param('id'),
-    Math.round(body.amount * 100),
-    body.currency || 'TWD'
-  )
-
-  // 2. 透過 CommandBus 執行
-  await commandBus.dispatch(command)
-
-  // 3. 返回響應
-  return ctx.json({ success: true })
-})
+// AccountController.ts
+async deposit(ctx: HttpContext): Promise<Response> {
+  return this.execute(ctx, async () => {
+    const body = await ctx.req.json()
+    const validated = depositSchema.parse(body) // 初步結構驗證
+    
+    const action = new DepositFundsAction(this.commandBus)
+    await action.execute(ctx.req.param('id'), validated)
+    
+    return this.success(ctx)
+  })
+}
 ```
+
+### 5. Smart Services（智能輔助層）
+
+#### 命令驗證 (Smart Validation)
+`CommandBus` 整合了 `ValidatorRegistry`。在 Command 被派發到 Handler 之前，會根據 `Command` 名稱自動查找對應的 `Validator`（基於 Zod 實作）。這確保了 Handler 只處理格式正確且符合業務預設條件的數據。
+
+#### 查詢快取 (Smart Cache)
+`QueryBus` 整合了 `QueryCache`。讀取操作會先檢查內存快取，若命中則直接回傳 DTO，避免不必要的資料庫操作。當對應的聚合發生變更（Command 執行後），可呼叫 `invalidateCache()` 確保數據一致性。
 
 ## 數據流向
 
-### Command 流程
+### Command 流程 (寫操作)
 
 ```
-HTTP Request
+HTTP POST Request
     ↓
-Controller (routes.ts)
+AccountController (解析 Body & 驗證結構)
     ↓
-建立 Command 對象
+DepositFundsAction (建立 Command)
     ↓
 CommandBus.dispatch(command)
-    ↓
-Container 解析 Handler
-    ↓
-Handler.handle()
-    ├─ 從 Repository 加載 Account
-    ├─ 調用業務方法（account.deposit）
-    ├─ 保存 Account 到 Repository
+    ├─ ValidatorRegistry (自動執行業務規則檢查)
+    └─ 解析對應 Handler
+        ↓
+DepositFundsHandler.handle()
+    ├─ 從 Repository 加載 Aggregate
+    ├─ 調用領域模型 (account.deposit)
+    ├─ 保存聚合導 Repository
     ├─ 保存 Transaction 記錄
     └─ 發布領域事件
     ↓
-返回 HTTP 響應
+返回 HTTP 200 OK
 ```
 
-### Query 流程
+### Query 流程 (讀操作)
 
 ```
-HTTP Request
+HTTP GET Request
     ↓
-Controller (routes.ts)
+AccountController (解析 Params)
     ↓
-建立 Query 對象
+GetAccountDetailsAction (建立 Query)
     ↓
 QueryBus.execute(query)
+    ├─ QueryCache.get() (檢查快取命中)
+    │   ├─ [命中] 直接返回 DTO
+    │   └─ [未命中] 解析對應 Handler
+    │       ↓
+    │   GetAccountDetailsHandler.handle()
+    │       ├─ 從 Repository 讀取資料
+    │       └─ 構建 DTO
+    └─ QueryCache.set() (存入快取)
     ↓
-Container 解析 Handler
-    ↓
-Handler.handle()
-    ├─ 從 Repository 讀取資料
-    ├─ 無修改操作
-    └─ 構建 DTO
-    ↓
-返回 HTTP 響應（含 DTO）
+返回 HTTP 200 OK (JSON)
 ```
 
 ## 容器綁定命名規範
