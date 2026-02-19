@@ -2,6 +2,9 @@ import type { PlanetCore } from '@gravito/core'
 import type { CommandHandler } from '@gravito/enterprise'
 import type { IAccountRepository } from '../../../Domain/Account/IAccountRepository'
 import { Money } from '../../../Domain/Shared/Money'
+import type { ITransactionRepository } from '../../../Domain/Transaction/ITransactionRepository'
+import { Transaction } from '../../../Domain/Transaction/Transaction'
+import { TransactionType } from '../../../Domain/Transaction/TransactionType'
 import { publishDomainEvents } from '../../Bus/publishDomainEvents'
 import type { WithdrawFundsCommand } from './WithdrawFundsCommand'
 
@@ -52,10 +55,12 @@ export class WithdrawFundsHandler implements CommandHandler<WithdrawFundsCommand
    * Constructor
    *
    * @param repository - Account repository for loading and persistence
+   * @param transactionRepository - Transaction repository for recording withdrawals
    * @param core - PlanetCore instance for event publishing
    */
   constructor(
     private repository: IAccountRepository,
+    private transactionRepository: ITransactionRepository,
     private core: PlanetCore
   ) {}
 
@@ -68,6 +73,7 @@ export class WithdrawFundsHandler implements CommandHandler<WithdrawFundsCommand
    *
    * **Side Effects:**
    * - Updates account balance (in memory and database)
+   * - Records withdrawal transaction for audit trail
    * - Publishes FundsWithdrawn domain event
    *
    * @param command - WithdrawFundsCommand with accountId, amountCents, currency
@@ -89,6 +95,17 @@ export class WithdrawFundsHandler implements CommandHandler<WithdrawFundsCommand
     account.withdraw(new Money(command.amountCents, command.currency))
 
     await this.repository.save(account)
+
+    // Record withdrawal transaction for audit trail
+    const transactionId = `txn-${Date.now()}`
+    const withdrawalTransaction = Transaction.withdrawal(
+      transactionId,
+      command.accountId,
+      command.amountCents,
+      account.balance.cents,
+      command.currency
+    )
+    await this.transactionRepository.save(withdrawalTransaction)
 
     await publishDomainEvents(this.core, account)
   }

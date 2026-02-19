@@ -8,6 +8,7 @@ import { Money } from '../../../src/Domain/Shared/Money'
 describe('DepositFundsHandler', () => {
   let handler: DepositFundsHandler
   let mockAccountRepository: any
+  let mockTransactionRepository: any
   let mockCore: any
   let testAccount: Account
 
@@ -19,13 +20,21 @@ describe('DepositFundsHandler', () => {
       save: mock(async () => {}),
     }
 
+    mockTransactionRepository = {
+      save: mock(async () => {}),
+    }
+
     mockCore = {
       hooks: {
         doAction: mock(async () => {}),
       },
     }
 
-    handler = new DepositFundsHandler(mockAccountRepository, mockCore as PlanetCore)
+    handler = new DepositFundsHandler(
+      mockAccountRepository,
+      mockTransactionRepository,
+      mockCore as PlanetCore
+    )
   })
 
   it('should deposit funds successfully', async () => {

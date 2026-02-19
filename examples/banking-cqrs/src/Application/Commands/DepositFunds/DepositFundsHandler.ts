@@ -2,6 +2,9 @@ import type { PlanetCore } from '@gravito/core'
 import type { CommandHandler } from '@gravito/enterprise'
 import type { IAccountRepository } from '../../../Domain/Account/IAccountRepository'
 import { Money } from '../../../Domain/Shared/Money'
+import type { ITransactionRepository } from '../../../Domain/Transaction/ITransactionRepository'
+import { Transaction } from '../../../Domain/Transaction/Transaction'
+import { TransactionType } from '../../../Domain/Transaction/TransactionType'
 import { publishDomainEvents } from '../../Bus/publishDomainEvents'
 import type { DepositFundsCommand } from './DepositFundsCommand'
 
@@ -52,10 +55,12 @@ export class DepositFundsHandler implements CommandHandler<DepositFundsCommand, 
    * Constructor
    *
    * @param repository - Account repository for loading and persistence
+   * @param transactionRepository - Transaction repository for recording deposits
    * @param core - PlanetCore instance for event publishing
    */
   constructor(
     private repository: IAccountRepository,
+    private transactionRepository: ITransactionRepository,
     private core: PlanetCore
   ) {}
 
@@ -68,6 +73,7 @@ export class DepositFundsHandler implements CommandHandler<DepositFundsCommand, 
    *
    * **Side Effects:**
    * - Updates account balance (in memory and database)
+   * - Records deposit transaction for audit trail
    * - Publishes FundsDeposited domain event
    *
    * @param command - DepositFundsCommand with accountId, amountCents, currency
@@ -89,6 +95,17 @@ export class DepositFundsHandler implements CommandHandler<DepositFundsCommand, 
     account.deposit(new Money(command.amountCents, command.currency))
 
     await this.repository.save(account)
+
+    // Record deposit transaction for audit trail
+    const transactionId = `txn-${Date.now()}`
+    const depositTransaction = Transaction.deposit(
+      transactionId,
+      command.accountId,
+      command.amountCents,
+      account.balance.cents,
+      command.currency
+    )
+    await this.transactionRepository.save(depositTransaction)
 
     await publishDomainEvents(this.core, account)
   }
