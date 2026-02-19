@@ -18,6 +18,7 @@ import { TransferFundsCommandValidator } from '../Application/Validation/Validat
 import { WithdrawFundsCommandValidator } from '../Application/Validation/Validators/WithdrawFundsCommandValidator'
 import { AtlasAccountRepository } from '../Infrastructure/Persistence/AtlasAccountRepository'
 import { AtlasTransactionRepository } from '../Infrastructure/Persistence/AtlasTransactionRepository'
+import { AccountController } from '../Presentation/Controllers/AccountController'
 
 // 確保 ValidationError 可被 instanceof 正確識別（重新匯出供外部使用）
 export { ValidationError }
@@ -26,11 +27,12 @@ export { ValidationError }
  * CQRS Service Provider
  *
  * Registers all core CQRS components (buses, handlers, repositories,
- * validators, cache) into the Gravito dependency injection container.
+ * validators, cache, controllers) into the Gravito dependency injection container.
  *
  * **已整合的新功能：**
  * - ValidatorRegistry：CommandBus 在 dispatch 前自動驗證輸入
  * - QueryCache（30 秒 TTL）：QueryBus 自動快取查詢結果
+ * - Controller 層：HTTP 請求處理與回應格式化
  *
  * @since 1.0.0
  */
@@ -110,5 +112,15 @@ export class CqrsProvider extends ServiceProvider {
     // Buses（注入驗證器與快取）
     container.singleton('cqrs.commandBus', (c) => new CommandBus(c, validatorRegistry))
     container.singleton('cqrs.queryBus', (c) => new QueryBus(c, queryCache))
+
+    // ─── Controller（單例，注入 Bus） ───
+    container.singleton(
+      'controller.account',
+      (c) =>
+        new AccountController(
+          c.make<CommandBus>('cqrs.commandBus'),
+          c.make<QueryBus>('cqrs.queryBus')
+        )
+    )
   }
 }
