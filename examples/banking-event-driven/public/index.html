@@ -447,7 +447,9 @@
         const container = $('#toast-container')
         const el = document.createElement('div')
         el.className = `toast-enter flex items-center gap-2 px-4 py-2.5 rounded-lg text-white text-sm shadow-lg ${colors[type] || colors.info}`
-        el.innerHTML = `<span>${message}</span>`
+        const span = document.createElement('span')
+        span.textContent = message
+        el.appendChild(span)
         container.appendChild(el)
         setTimeout(() => {
           el.style.transition = 'opacity 0.3s'
