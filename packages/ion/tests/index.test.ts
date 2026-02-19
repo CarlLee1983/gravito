@@ -509,6 +509,69 @@ describe('InertiaService - Error Handling', () => {
       expect((error as any).code).toBe('CONFIG_ERROR')
     }
   })
+
+  it('should provide enhanced error page in development mode for unexpected errors', async () => {
+    const originalEnv = process.env.NODE_ENV
+    process.env.NODE_ENV = 'development'
+
+    try {
+      const req = {
+        url: '/test',
+        header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+      }
+
+      const ctx = {
+        req,
+        header: mock(),
+        html: mock((html: string) => html),
+        json: mock(() => {
+          throw new Error('Render error in component')
+        }),
+      } as any
+
+      const service = new InertiaService(ctx, { version: '1.0' })
+      await service.render('ErrorComponent', {})
+
+      // In dev mode, should return HTML error page
+      expect(ctx.html).toHaveBeenCalled()
+      const htmlCall = (ctx.html as any).mock.calls[0]
+      expect(htmlCall[0]).toContain('Inertia Render Error')
+      expect(htmlCall[0]).toContain('ErrorComponent')
+      expect(htmlCall[1]).toBe(500)
+    } finally {
+      process.env.NODE_ENV = originalEnv
+    }
+  })
+
+  it('should return plain error message in production mode', async () => {
+    const originalEnv = process.env.NODE_ENV
+    process.env.NODE_ENV = 'production'
+
+    try {
+      const req = {
+        url: '/test',
+        header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+      }
+
+      const ctx = {
+        req,
+        header: mock(),
+        html: mock((html: string) => html),
+        json: mock(() => {
+          throw new Error('Render error in component')
+        }),
+      } as any
+
+      const service = new InertiaService(ctx, { version: '1.0' })
+      const response = await service.render('ErrorComponent', {})
+
+      // In production mode, should return plain Response
+      expect(response.status).toBe(500)
+      expect(ctx.html).not.toHaveBeenCalled()
+    } finally {
+      process.env.NODE_ENV = originalEnv
+    }
+  })
 })
 
 describe('OrbitIon Integration', () => {
@@ -517,9 +580,12 @@ describe('OrbitIon Integration', () => {
     const app = {
       use: mock((_path: string, handler: any) => {
         // Store the middleware handler to call it later
-        app._middleware = handler
+        if (!app._middlewares) {
+          app._middlewares = []
+        }
+        app._middlewares.push(handler)
       }),
-      _middleware: null as any,
+      _middlewares: [] as any[],
     }
 
     const core = {
@@ -532,23 +598,94 @@ describe('OrbitIon Integration', () => {
     const orbit = new OrbitIon()
     orbit.install(core)
 
-    // 1. Verify middleware was registered
+    // 1. Verify middlewares were registered (CSRF + Inertia)
     expect(app.use).toHaveBeenCalled()
-    expect(app._middleware).toBeTypeOf('function')
+    expect(app._middlewares.length).toBeGreaterThanOrEqual(2)
 
     // 2. Simulate request to trigger middleware
     const ctx = {
       set: mock(),
+      header: mock(),
       req: { header: () => undefined },
     } as any
 
     const next = mock(() => Promise.resolve())
 
-    await app._middleware(ctx, next)
+    // Execute the Inertia middleware (second one)
+    const inertiaMiddleware = app._middlewares[1]
+    await inertiaMiddleware(ctx, next)
 
     // 3. Verify injection
     expect(ctx.set).toHaveBeenCalledWith('inertia', expect.any(Function))
     expect(next).toHaveBeenCalled()
+  })
+})
+
+describe('OrbitIon - CSRF Integration', () => {
+  it('should set XSRF-TOKEN cookie when CSRF is enabled', async () => {
+    const app = {
+      use: mock((_path: string, handler: any) => {
+        if (!app._middlewares) {
+          app._middlewares = []
+        }
+        app._middlewares.push(handler)
+      }),
+      _middlewares: [] as any[],
+    }
+
+    const core = {
+      app,
+      adapter: app,
+      logger: { info: () => {} },
+      config: { get: () => '1.0.0' },
+    } as any
+
+    const orbit = new OrbitIon({ csrf: { enabled: true, cookieName: 'XSRF-TOKEN' } })
+    orbit.install(core)
+
+    // Get CSRF middleware (first one)
+    const csrfMiddleware = app._middlewares[0]
+
+    const ctx = {
+      header: mock(),
+      req: { header: () => undefined },
+    } as any
+
+    const next = mock(() => Promise.resolve())
+    await csrfMiddleware(ctx, next)
+
+    // Verify Set-Cookie header was called with XSRF-TOKEN
+    expect(ctx.header).toHaveBeenCalled()
+    const headerCalls = (ctx.header as any).mock.calls
+    const setCookieCall = headerCalls.find((call: any) => call[0] === 'Set-Cookie')
+    expect(setCookieCall).toBeDefined()
+    expect(setCookieCall[1]).toContain('XSRF-TOKEN=')
+    expect(setCookieCall[1]).toContain('SameSite=Lax')
+  })
+
+  it('should skip CSRF middleware when disabled', async () => {
+    const app = {
+      use: mock((_path: string, handler: any) => {
+        if (!app._middlewares) {
+          app._middlewares = []
+        }
+        app._middlewares.push(handler)
+      }),
+      _middlewares: [] as any[],
+    }
+
+    const core = {
+      app,
+      adapter: app,
+      logger: { info: () => {} },
+      config: { get: () => '1.0.0' },
+    } as any
+
+    const orbit = new OrbitIon({ csrf: { enabled: false } })
+    orbit.install(core)
+
+    // Only Inertia middleware should be registered (no CSRF)
+    expect(app._middlewares.length).toBe(1)
   })
 })
 

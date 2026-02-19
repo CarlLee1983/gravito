@@ -545,6 +545,52 @@ export class InertiaService {
         duration: `${duration.toFixed(2)}ms`,
         error,
       })
+
+      // Enhanced error page in development mode
+      const isDev = process.env.NODE_ENV !== 'production'
+      if (isDev && error instanceof Error) {
+        const errorHtml = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <title>Inertia Render Error</title>
+              <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto; background: #f5f5f5; padding: 20px; }
+                .container { max-width: 800px; margin: 40px auto; background: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+                h1 { color: #d32f2f; margin-bottom: 10px; font-size: 24px; }
+                .meta { color: #666; margin-bottom: 20px; font-size: 14px; }
+                .component { background: #f5f5f5; padding: 10px 15px; border-left: 3px solid #1976d2; margin-bottom: 20px; font-family: monospace; }
+                .error-message { background: #ffebee; border: 1px solid #ef5350; border-radius: 4px; padding: 15px; margin-bottom: 20px; color: #c62828; }
+                .stack { background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 15px; overflow-x: auto; font-family: monospace; font-size: 12px; color: #333; line-height: 1.5; }
+                .hint { background: #e8f5e9; border-left: 3px solid #4caf50; padding: 15px; margin-top: 20px; color: #2e7d32; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h1>🚨 Inertia Render Error</h1>
+                <div class="meta">Component: <span class="component">${component}</span></div>
+                <div class="error-message">${error.message || 'Unknown error'}</div>
+                ${
+                  error.stack
+                    ? `<div><strong>Stack Trace:</strong><div class="stack">${error.stack
+                        .split('\n')
+                        .map((line) => line.replace(/</g, '&lt;').replace(/>/g, '&gt;'))
+                        .join('\n')}</div></div>`
+                    : ''
+                }
+                <div class="hint">
+                  <strong>💡 Dev Mode Tip:</strong> This enhanced error page is only visible in development mode. In production, a generic error message is shown.
+                </div>
+              </div>
+            </body>
+          </html>
+        `
+        return this.context.html(errorHtml, 500)
+      }
+
       return new Response('Inertia Render Error', { status: 500 })
     }
   }
