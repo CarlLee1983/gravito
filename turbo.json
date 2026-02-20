@@ -2,21 +2,9 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "inputs": [
-        "src/**",
-        "package.json",
-        "tsconfig.json",
-        "biome.json"
-      ],
-      "outputs": [
-        "dist/**",
-        ".next/**",
-        "!.next/cache/**",
-        "static/**"
-      ]
+      "dependsOn": ["^build"],
+      "inputs": ["src/**", "package.json", "tsconfig.json", "biome.json"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "static/**"]
     },
     "create-gravito-app#build": {
       "cache": false,
@@ -25,59 +13,25 @@
     },
     "my-gravito-app#build": {
       "cache": true,
-      "outputs": [
-        "dist/**"
-      ],
-      "inputs": [
-        "src/**",
-        "package.json",
-        "tsconfig.json",
-        "biome.json"
-      ],
-      "dependsOn": [
-        "^build"
-      ]
+      "outputs": ["dist/**"],
+      "inputs": ["src/**", "package.json", "tsconfig.json", "biome.json"],
+      "dependsOn": ["^build"]
     },
     "my-gravito-inertia-app#build": {
       "cache": true,
-      "outputs": [
-        "dist/**",
-        "static/**"
-      ],
-      "inputs": [
-        "src/**",
-        "package.json",
-        "tsconfig.json",
-        "vite.config.ts",
-        "biome.json"
-      ],
-      "dependsOn": [
-        "^build"
-      ]
+      "outputs": ["dist/**", "static/**"],
+      "inputs": ["src/**", "package.json", "tsconfig.json", "vite.config.ts", "biome.json"],
+      "dependsOn": ["^build"]
     },
     "my-gravito-inertia-vue-app#build": {
       "cache": true,
-      "outputs": [
-        "dist/**",
-        "static/**"
-      ],
-      "inputs": [
-        "src/**",
-        "package.json",
-        "tsconfig.json",
-        "vite.config.ts",
-        "biome.json"
-      ],
-      "dependsOn": [
-        "^build"
-      ]
+      "outputs": ["dist/**", "static/**"],
+      "inputs": ["src/**", "package.json", "tsconfig.json", "vite.config.ts", "biome.json"],
+      "dependsOn": ["^build"]
     },
     "my-gravito-static-site#build": {
       "cache": true,
-      "outputs": [
-        "dist/**",
-        "dist-static/**"
-      ],
+      "outputs": ["dist/**", "dist-static/**"],
       "inputs": [
         "src/**",
         "package.json",
@@ -86,19 +40,11 @@
         "build-static.ts",
         "biome.json"
       ],
-      "dependsOn": [
-        "^build"
-      ]
+      "dependsOn": ["^build"]
     },
     "test": {
       "dependsOn": [],
-      "inputs": [
-        "src/**",
-        "tests/**",
-        "package.json",
-        "tsconfig.json",
-        "bunfig.toml"
-      ],
+      "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json", "bunfig.toml"],
       "outputs": []
     },
     "test:unit": {
@@ -128,45 +74,21 @@
     },
     "test:ci": {
       "dependsOn": [],
-      "inputs": [
-        "src/**",
-        "tests/**",
-        "package.json",
-        "tsconfig.json",
-        "bunfig.toml"
-      ],
+      "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json", "bunfig.toml"],
       "outputs": []
     },
     "test:coverage": {
       "dependsOn": [],
-      "inputs": [
-        "src/**",
-        "tests/**",
-        "package.json",
-        "tsconfig.json",
-        "bunfig.toml"
-      ],
+      "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json", "bunfig.toml"],
       "outputs": []
     },
     "typecheck": {
-      "dependsOn": [
-        "^build"
-      ],
-      "inputs": [
-        "src/**",
-        "tests/**",
-        "package.json",
-        "tsconfig.json"
-      ],
+      "dependsOn": ["^build"],
+      "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json"],
       "outputs": []
     },
     "lint": {
-      "inputs": [
-        "src/**",
-        "tests/**",
-        "package.json",
-        "biome.json"
-      ],
+      "inputs": ["src/**", "tests/**", "package.json", "biome.json"],
       "outputs": [],
       "cache": true
     },
@@ -175,26 +97,13 @@
       "persistent": true
     },
     "example-banking-cqrs#typecheck": {
-      "dependsOn": [
-        "^build"
-      ],
-      "inputs": [
-        "src/**",
-        "tests/**",
-        "package.json",
-        "tsconfig.json"
-      ],
+      "dependsOn": ["^build"],
+      "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json"],
       "outputs": []
     },
     "example-banking-cqrs#test": {
       "dependsOn": [],
-      "inputs": [
-        "src/**",
-        "tests/**",
-        "package.json",
-        "tsconfig.json",
-        "bunfig.toml"
-      ],
+      "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json", "bunfig.toml"],
       "outputs": []
     }
   }

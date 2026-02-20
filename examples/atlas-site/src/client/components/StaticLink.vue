@@ -38,33 +38,33 @@ const isStaticSite = (): boolean => {
   return staticDomains.some((domain) => hostname === domain || hostname.endsWith(`.${domain}`))
 }
 
-const target = computed(() => props.to || props.href || '#')
+const linkUrl = computed(() => props.to || props.href || '#')
 const isStatic = computed(() => isStaticSite())
 
 // 判斷是否為外部連結
 const isExternal = computed(() => {
-  return target.value.startsWith('http') || target.value.startsWith('//')
+  return linkUrl.value.startsWith('http') || linkUrl.value.startsWith('//')
 })
 
 // 判斷是否為錨點連結
 const isAnchor = computed(() => {
-  return target.value.startsWith('#')
+  return linkUrl.value.startsWith('#')
 })
 
 const basePath = computed(() => import.meta.env.BASE_URL || '/')
 
 const staticTarget = computed(() => {
-  if (isExternal.value || target.value.startsWith('#')) {
-    return target.value
+  if (isExternal.value || linkUrl.value.startsWith('#')) {
+    return linkUrl.value
   }
-  if (target.value.startsWith('/')) {
+  if (linkUrl.value.startsWith('/')) {
     const base = basePath.value.endsWith('/') ? basePath.value.slice(0, -1) : basePath.value
-    return `${base}${target.value}`
+    return `${base}${linkUrl.value}`
   }
-  return target.value
+  return linkUrl.value
 })
 
-const isActive = computed(() => route.path === target.value)
+const isActive = computed(() => route.path === linkUrl.value)
 const staticClass = computed(() => {
   if (!props.activeClass) {
     return props.class
@@ -75,7 +75,7 @@ const staticClass = computed(() => {
 
 <template>
   <!-- 如果是外部連結或錨點連結，使用 <a> -->
-  <a v-if="isExternal || isAnchor" :href="target" :class="props.class" :target="isAnchor ? undefined : (props.target || '_blank')" :rel="isAnchor ? undefined : (props.rel || 'noopener noreferrer')">
+  <a v-if="isExternal || isAnchor" :href="linkUrl" :class="props.class" :target="isAnchor ? undefined : (props.target || '_blank')" :rel="isAnchor ? undefined : (props.rel || 'noopener noreferrer')">
     <slot />
   </a>
 
@@ -86,7 +86,7 @@ const staticClass = computed(() => {
   </a>
 
   <!-- 在開發環境或 SPA 環境中，使用 router-link -->
-  <router-link v-else :to="target" :class="props.class" :active-class="props.activeClass">
+  <router-link v-else :to="linkUrl" :class="props.class" :active-class="props.activeClass">
     <slot />
   </router-link>
 </template>
