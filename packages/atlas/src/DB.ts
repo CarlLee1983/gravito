@@ -3,6 +3,7 @@ import { Connection } from './connection/Connection'
 import { ConnectionManager } from './connection/ConnectionManager'
 import { Grammar } from './grammar/Grammar'
 import { type AtlasMetrics, AtlasObservability, type AtlasTracer } from './observability'
+import type { ShardingManager } from './sharding/ShardingManager'
 import type {
   AtlasConfig,
   CacheInterface,
@@ -36,6 +37,7 @@ import type {
  */
 export class DB {
   private static manager: ConnectionManager = new ConnectionManager()
+  private static shardingManagers: Map<string, ShardingManager> = new Map()
   private static initialized = false
   private static cache: CacheInterface | undefined
   private static _debug = false
@@ -53,6 +55,30 @@ export class DB {
     duration: number
     timestamp: number
   }) => void
+
+  /**
+   * Registers a ShardingManager for distributed database architectures.
+   *
+   * @param name - Unique identifier for the sharding cluster
+   * @param manager - The initialized ShardingManager instance
+   */
+  static addShardingManager(name: string, manager: ShardingManager): void {
+    DB.shardingManagers.set(name, manager)
+  }
+
+  /**
+   * Retrieves a registered ShardingManager.
+   *
+   * @param name - Name of the sharding cluster (defaults to 'default')
+   * @throws Error if the manager is not found
+   */
+  static getShardingManager(name = 'default'): ShardingManager {
+    const manager = DB.shardingManagers.get(name)
+    if (!manager) {
+      throw new Error(`ShardingManager '${name}' is not registered.`)
+    }
+    return manager
+  }
 
   /**
    * Sets the global cache provider for query results.
@@ -494,6 +520,53 @@ export class DB {
     } finally {
       span?.end()
     }
+  }
+
+  /**
+   * Executes logic within a managed database transaction with automatic retry on serialization/stale data failures.
+   *
+   * Particularly useful for high-concurrency environments utilizing optimistic locking,
+   * where `StaleModelError` is thrown due to concurrent writes.
+   *
+   * @template T - Logic result type.
+   * @param callback - The transactional logic.
+   * @param connectionName - Optional specific connection.
+   * @param maxRetries - Maximum number of retries (default: 5).
+   * @returns The callback's return value.
+   * @throws Rethrows the error if max retries are exceeded.
+   */
+  static async transactionWithRetry<T>(
+    callback: (connection: ConnectionContract, attempt: number) => Promise<T>,
+    connectionName?: string,
+    maxRetries = 5
+  ): Promise<T> {
+    let attempts = 0
+    // Optional delay generator (exponential backoff with jitter)
+    const delay = (ms: number) => new Promise((res) => setTimeout(res, ms))
+
+    while (attempts < maxRetries) {
+      try {
+        attempts++
+        return await DB.transaction(async (conn) => {
+          return await callback(conn, attempts)
+        }, connectionName)
+      } catch (error: any) {
+        if (
+          error.name === 'StaleModelError' ||
+          (error.code && ['40001', 'ER_LOCK_DEADLOCK', 'SQLITE_BUSY'].includes(error.code))
+        ) {
+          if (attempts >= maxRetries) {
+            throw error
+          }
+          // Backoff before retry
+          await delay(Math.random() * 50 * attempts)
+          continue
+        }
+        // If not a retryable error, rethrow immediately
+        throw error
+      }
+    }
+    throw new Error('Transaction failed after exceeding max retries')
   }
 
   /**

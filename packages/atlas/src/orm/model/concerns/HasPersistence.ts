@@ -1,5 +1,5 @@
 import { DB } from '../../../DB'
-import { COLUMN_KEY, SOFT_DELETES_KEY, VERSION_KEY } from '../decorators'
+import { COLUMN_KEY, SHARDED_KEY, SOFT_DELETES_KEY, VERSION_KEY } from '../decorators'
 import { StaleModelError } from '../errors'
 
 /**
@@ -23,6 +23,27 @@ export class HasPersistence {
   }
 
   /**
+   * Internal helper to retrieve the correct connection depending on sharding configuration
+   * @internal
+   */
+  protected _getConnection(): import('../../../types').ConnectionContract {
+    const modelCtor = this.constructor as any
+    const shardedConfig = modelCtor[SHARDED_KEY]
+
+    if (shardedConfig) {
+      const shardKey = (this as any)._attributes[shardedConfig.key]
+      if (shardKey === undefined || shardKey === null) {
+        throw new Error(
+          `Shard key '${shardedConfig.key}' is missing on ${modelCtor.name} instance.`
+        )
+      }
+      return DB.getShardingManager(shardedConfig.manager).getShard(shardKey)
+    }
+
+    return DB.connection(modelCtor.connection)
+  }
+
+  /**
    * Save the model instance to the database (insert or update).
    *
    * @returns A promise that resolves to the model instance
@@ -34,7 +55,7 @@ export class HasPersistence {
    */
   async save(): Promise<this> {
     const modelCtor = this.constructor as any
-    const connection = DB.connection(modelCtor.connection)
+    const connection = this._getConnection()
     const tracer = connection.getTracer()
     const span = tracer?.startSpan(
       `Atlas:${this._exists ? 'Update' : 'Insert'}:${modelCtor.name}`,
@@ -85,8 +106,8 @@ export class HasPersistence {
    */
   protected async _performInsert(): Promise<this> {
     const modelCtor = this.constructor as any
-    const connectionName = modelCtor.connection || 'default'
-    const connection = DB.connection(connectionName)
+    const connection = this._getConnection()
+    const connectionName = connection.getName?.() || modelCtor.connection || 'default'
 
     // Trigger 'creating' event
     await (this as any).emit('creating')
@@ -247,7 +268,14 @@ export class HasPersistence {
       return this
     }
 
-    const query = modelCtor.query().where(modelCtor.primaryKey, (this as any).getKey())
+    let query: any
+    const shardedConfig = modelCtor[SHARDED_KEY]
+    if (shardedConfig) {
+      const shardKey = (this as any)._attributes[shardedConfig.key]
+      query = modelCtor.shard(shardKey).where(modelCtor.primaryKey, (this as any).getKey())
+    } else {
+      query = modelCtor.query().where(modelCtor.primaryKey, (this as any).getKey())
+    }
 
     // Add version check
     if (versionKey && currentVersion !== undefined) {
@@ -289,7 +317,7 @@ export class HasPersistence {
     }
 
     const modelCtor = this.constructor as any
-    const connection = DB.connection(modelCtor.connection)
+    const connection = this._getConnection()
     const tracer = connection.getTracer()
     const span = tracer?.startSpan(`Atlas:Delete:${modelCtor.name}`, {
       'db.system': connection.getDriver().getDriverName(),
@@ -346,10 +374,20 @@ export class HasPersistence {
     ;(this as any)._setAttribute(column, null)
     // We must use withTrashed() here because otherwise save() -> _performUpdate()
     // will use query() which filters out soft-deleted records.
-    const query = modelCtor
-      .query()
-      .withTrashed()
-      .where(modelCtor.primaryKey, (this as any).getKey())
+    let query: any
+    const shardedConfig = modelCtor[SHARDED_KEY]
+    if (shardedConfig) {
+      const shardKey = (this as any)._attributes[shardedConfig.key]
+      query = modelCtor
+        .shard(shardKey)
+        .withTrashed()
+        .where(modelCtor.primaryKey, (this as any).getKey())
+    } else {
+      query = modelCtor
+        .query()
+        .withTrashed()
+        .where(modelCtor.primaryKey, (this as any).getKey())
+    }
 
     // Manual update to bypass the standard save() which might have versioning conflicts or scope issues
     const affected = await query.update({ [column]: null })
@@ -379,7 +417,7 @@ export class HasPersistence {
    */
   async forceDelete(): Promise<boolean> {
     const modelCtor = this.constructor as any
-    const connection = DB.connection(modelCtor.connection)
+    const connection = this._getConnection()
     const affected = await connection
       .table(modelCtor.getTable())
       .where(modelCtor.primaryKey, (this as any).getKey())
@@ -414,7 +452,14 @@ export class HasPersistence {
     }
 
     // Fetch from database
-    const row = await modelCtor.query().where(primaryKey, primaryValue).first()
+    let row: any
+    const shardedConfig = modelCtor[SHARDED_KEY]
+    if (shardedConfig) {
+      const shardKey = (this as any)._attributes[shardedConfig.key]
+      row = await modelCtor.shard(shardKey).where(primaryKey, primaryValue).first()
+    } else {
+      row = await modelCtor.query().where(primaryKey, primaryValue).first()
+    }
 
     if (row) {
       // Update attributes (from HasAttributes concern)

@@ -135,6 +135,8 @@ export {
 export type { FactoryDefinition, Seeder, SeederFile, SeederRunnerOptions } from './seed'
 // Seed
 export { Factory, factory, SeederRunner } from './seed'
+// Sharding
+export { type ShardingConfig, ShardingManager } from './sharding/ShardingManager'
 // Types
 export type {
   BooleanOperator,

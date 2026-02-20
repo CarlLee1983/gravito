@@ -36,6 +36,46 @@ export const COLUMN_KEY = Symbol.for('gravito:atlas:column')
 export const VERSION_KEY = Symbol.for('gravito:atlas:version')
 
 /**
+ * Metadata key for Sharded configuration.
+ * @internal
+ */
+export const SHARDED_KEY = Symbol.for('gravito:atlas:sharded')
+
+/**
+ * Options for the Sharded decorator.
+ */
+export interface ShardedOptions {
+  /**
+   * The name of the ShardingManager to use.
+   * @default 'default'
+   */
+  manager?: string
+  /**
+   * The property name of the shard key (e.g. 'tenantId').
+   */
+  key: string
+}
+
+/**
+ * Sharded Decorator
+ *
+ * Marks a model as being horizontally sharded across multiple databases.
+ * Active Record operations will automatically route to the correct connection
+ * based on the shard key provided.
+ *
+ * @param options - Configuration for sharding containing the distribution key
+ */
+export function sharded(options: ShardedOptions): ClassDecorator {
+  return (target: Function) => {
+    const manager = options.manager || 'default'
+    ;(target as unknown as Record<string | symbol, unknown>)[SHARDED_KEY] = {
+      manager,
+      key: options.key,
+    }
+  }
+}
+
+/**
  * Soft Deletes Decorator
  *
  * Automatically adds a global scope to filter out deleted records.
