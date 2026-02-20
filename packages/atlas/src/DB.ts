@@ -1,3 +1,4 @@
+import { fromEnv } from './config/defineConfig'
 import { Connection } from './connection/Connection'
 import { ConnectionManager } from './connection/ConnectionManager'
 import { Grammar } from './grammar/Grammar'
@@ -301,7 +302,6 @@ export class DB {
    * @param connectionName - The name to assign to the primary connection.
    */
   static configureFromEnv(connectionName = 'default'): void {
-    const { fromEnv } = require('./config/defineConfig')
     const config = fromEnv(connectionName)
     DB.configure(config)
   }
@@ -325,8 +325,9 @@ export class DB {
    * @param configPath - Optional path to try first.
    */
   static async autoConfigure(configPath?: string): Promise<void> {
-    const { autoConfigure: autoConfigureImpl } = await import('./config/loadConfig')
-    await autoConfigureImpl(configPath)
+    const { loadConfig } = await import('./config/loadConfig')
+    const config = await loadConfig({ configPath, useEnv: true })
+    this.configure(config)
   }
 
   /**
@@ -347,7 +348,6 @@ export class DB {
    * @param prefix - Env variable prefix (e.g. "READ_ONLY").
    */
   static addConnectionFromEnv(name: string, prefix = ''): void {
-    const { fromEnv } = require('./config/defineConfig')
     const config = fromEnv(name, prefix)
     DB.manager.addConnection(name, config.connections[name])
     if (!DB.initialized) {

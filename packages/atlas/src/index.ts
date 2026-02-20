@@ -44,12 +44,16 @@
 
 export type { AtlasConfig } from './config'
 // Configuration
-export { autoConfigure, defineConfig, fromEnv, loadConfig, loadConfigFile } from './config'
+export { defineConfig, fromEnv, loadConfig, loadConfigFile } from './config'
 // Connection
 export { Connection } from './connection/Connection'
 export { ConnectionManager } from './connection/ConnectionManager'
 // Main DB Facade
 export { DB } from './DB'
+
+// Standalone autoConfigure (proxies to DB.autoConfigure)
+import { DB } from './DB'
+export const autoConfigure = DB.autoConfigure.bind(DB)
 export { BunSQLDriver } from './drivers/BunSQLDriver'
 // Drivers
 export { PostgresDriver } from './drivers/PostgresDriver'

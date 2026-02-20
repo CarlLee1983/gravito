@@ -1,5 +1,7 @@
+import { SchemaRegistry } from '../../schema/SchemaRegistry'
 import type { ColumnType, TableSchema } from '../../schema/types'
 import { DirtyTracker } from '../DirtyTracker'
+import { ColumnNotFoundError, NullableConstraintError, TypeMismatchError } from '../errors'
 
 export type ModelAttributes = Record<string, unknown>
 
@@ -8,6 +10,22 @@ export type ModelAttributes = Record<string, unknown>
  * @description Provides attribute management functionality including getting/setting, casting, and dirty tracking.
  */
 export class HasAttributes {
+  /**
+   * Static schema registry for JIT validation.
+   * @internal
+   */
+  public static schemaRegistry?: any
+
+  /**
+   * Static error classes for validation.
+   * @internal
+   */
+  public static validationErrors?: {
+    ColumnNotFoundError: any
+    NullableConstraintError: any
+    TypeMismatchError: any
+  }
+
   /**
    * Model attributes storage
    * @internal
@@ -253,7 +271,6 @@ export class HasAttributes {
    */
   protected async _getSchema(): Promise<TableSchema> {
     const modelCtor = this.constructor as any
-    const { SchemaRegistry } = await import('../../schema/SchemaRegistry')
 
     if (!this._schema) {
       const registry = SchemaRegistry.getInstance()
@@ -282,7 +299,6 @@ export class HasAttributes {
 
     if (!column) {
       if (modelCtor.strictMode) {
-        const { ColumnNotFoundError } = await import('../errors')
         // 提供可用欄位列表以改善錯誤訊息
         const availableColumns = Array.from(schema.columns.keys())
         throw new ColumnNotFoundError(table, key, availableColumns)
@@ -292,7 +308,6 @@ export class HasAttributes {
 
     // Null check
     if (value === null && !column.nullable) {
-      const { NullableConstraintError } = await import('../errors')
       throw new NullableConstraintError(modelCtor.table, key)
     }
 
@@ -308,7 +323,6 @@ export class HasAttributes {
       }
 
       if (!expectedTypes.includes(jsType)) {
-        const { TypeMismatchError } = await import('../errors')
         throw new TypeMismatchError(table, key, expectedTypes.join(' | '), jsType, value)
       }
     }

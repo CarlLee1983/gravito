@@ -1,4 +1,5 @@
 import { DB } from '../../../DB'
+import { QueryBuilder } from '../../../query/QueryBuilder'
 import type { Model, ModelConstructor } from '../Model'
 import { ModelRegistry } from '../ModelRegistry'
 
@@ -257,15 +258,13 @@ export class HasRelationships {
    * @example await user.load('posts')
    */
   async load(relation: string | string[]): Promise<this> {
-    const { QueryBuilder } = await import('../../../query/QueryBuilder')
     const resolver = QueryBuilder.relationshipResolver
-
     const relations = Array.isArray(relation) ? relation : [relation]
 
     if (resolver) {
       await resolver.eagerLoadMany([this as unknown as any], relations)
     } else {
-      // Fallback
+      // This should ideally not happen if Model is used
       const { eagerLoadMany } = await import('../relationships')
       await eagerLoadMany([this as unknown as any], relations)
     }

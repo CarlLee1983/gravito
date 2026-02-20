@@ -108,15 +108,3 @@ export async function loadConfig(
 
   throw new Error('No database configuration provided')
 }
-
-/**
- * Auto-configure database from config file or environment
- * This is a convenience function that tries config file first, then environment
- *
- * @param configPath - Optional path to config file
- */
-export async function autoConfigure(configPath?: string): Promise<void> {
-  const { DB } = await import('../DB')
-  const config = await loadConfig({ configPath, useEnv: true })
-  DB.configure(config)
-}
