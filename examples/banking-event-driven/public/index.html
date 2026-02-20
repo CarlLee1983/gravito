@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gravito Banking Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a5a' },
+            sidebar: { DEFAULT: '#0f172a', hover: '#1e293b', active: '#334155' },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .pulse-dot { animation: pulse-dot 1.5s ease-in-out infinite; }
+    .event-row { transition: background-color 0.2s; }
+    .event-row:hover { background-color: #f8fafc; }
+    .saga-step { transition: all 0.4s ease; }
+    .toast-enter { animation: slideInRight 0.3s ease-out; }
+    @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .modal-backdrop { background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); }
+    .btn-primary { transition: all 0.15s ease; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+    .btn-primary:active { transform: translateY(0); }
+    .stat-card { transition: all 0.2s ease; }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+  </style>
+</head>
+<body class="bg-gray-50 h-screen flex overflow-hidden">
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="w-64 bg-sidebar flex-shrink-0 flex flex-col h-full">
+    <div class="p-6 border-b border-slate-700">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-primary-500 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <div>
+          <h1 class="text-white font-bold text-lg leading-tight">Gravito</h1>
+          <p class="text-slate-400 text-xs">Banking System</p>
+        </div>
+      </div>
+    </div>
+    <nav class="flex-1 py-4 px-3 space-y-1">
+      <a href="#" data-page="dashboard" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-sidebar-hover hover:text-white transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
+        <span class="text-sm font-medium">Dashboard</span>
+      </a>
+      <a href="#" data-page="accounts" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-sidebar-hover hover:text-white transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span class="text-sm font-medium">Accounts</span>
+      </a>
+      <a href="#" data-page="transfers" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-sidebar-hover hover:text-white transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+        <span class="text-sm font-medium">Transfers</span>
+      </a>
+      <a href="#" data-page="events" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-sidebar-hover hover:text-white transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        <span class="text-sm font-medium">Event Log</span>
+      </a>
+    </nav>
+    <div class="p-4 border-t border-slate-700">
+      <div class="flex items-center gap-2 px-3 py-2">
+        <div id="sse-indicator" class="w-2 h-2 rounded-full bg-red-500"></div>
+        <span id="sse-status" class="text-slate-400 text-xs">Disconnected</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 flex flex-col overflow-hidden">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between flex-shrink-0">
+      <div>
+        <h2 id="page-title" class="text-xl font-bold text-gray-900">Dashboard</h2>
+        <p id="page-subtitle" class="text-sm text-gray-500">Overview of your banking system</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="App.refreshData()" class="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Refresh
+        </button>
+        <div class="text-right">
+          <p id="clock" class="text-sm font-medium text-gray-700"></p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content Area -->
+    <div class="flex-1 overflow-y-auto scrollbar-thin">
+      <!-- Dashboard Page -->
+      <div id="page-dashboard" class="page p-8 space-y-6">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+          <div class="stat-card bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm font-medium text-gray-500">Total Accounts</span>
+              <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              </div>
+            </div>
+            <p id="stat-accounts" class="text-3xl font-bold text-gray-900">--</p>
+          </div>
+          <div class="stat-card bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm font-medium text-gray-500">Total Balance</span>
+              <div class="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+            </div>
+            <p id="stat-balance" class="text-3xl font-bold text-gray-900">--</p>
+          </div>
+          <div class="stat-card bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm font-medium text-gray-500">Today's Transactions</span>
+              <div class="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              </div>
+            </div>
+            <p id="stat-transactions" class="text-3xl font-bold text-gray-900">--</p>
+          </div>
+          <div class="stat-card bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm font-medium text-gray-500">Frozen Accounts</span>
+              <div class="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              </div>
+            </div>
+            <p id="stat-frozen" class="text-3xl font-bold text-gray-900">--</p>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+            <h3 class="text-sm font-semibold text-gray-700 mb-4">Balance Trend</h3>
+            <div class="h-64"><canvas id="chart-balance"></canvas></div>
+          </div>
+          <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+            <h3 class="text-sm font-semibold text-gray-700 mb-4">Transaction Distribution</h3>
+            <div class="h-64 flex items-center justify-center"><canvas id="chart-distribution"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Recent Events -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
+          <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-gray-700">Recent Events</h3>
+            <span id="event-count-badge" class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">0 events</span>
+          </div>
+          <div id="dashboard-events" class="divide-y divide-gray-50 max-h-80 overflow-y-auto scrollbar-thin"></div>
+          <div id="dashboard-events-empty" class="p-8 text-center text-gray-400 text-sm">
+            Waiting for events...
+          </div>
+        </div>
+      </div>
+
+      <!-- Accounts Page -->
+      <div id="page-accounts" class="page p-8 space-y-6 hidden">
+        <!-- Create Account Form -->
+        <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+          <h3 class="text-sm font-semibold text-gray-700 mb-4">Open New Account</h3>
+          <form id="create-account-form" class="flex flex-wrap items-end gap-4">
+            <div class="flex-1 min-w-[200px]">
+              <label class="block text-xs font-medium text-gray-500 mb-1.5">Owner Name</label>
+              <input type="text" id="owner-name" required placeholder="Enter owner name"
+                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow" />
+            </div>
+            <div class="w-48">
+              <label class="block text-xs font-medium text-gray-500 mb-1.5">Initial Deposit</label>
+              <input type="number" id="initial-deposit" min="0" step="0.01" value="0" placeholder="0.00"
+                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow" />
+            </div>
+            <button type="submit" class="btn-primary px-5 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors">
+              Create Account
+            </button>
+          </form>
+        </div>
+
+        <!-- Accounts Table -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-gray-700">Account List</h3>
+            <button onclick="App.loadAccounts()" class="text-xs text-primary-600 hover:text-primary-700 font-medium">Refresh</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="bg-gray-50 text-left">
+                  <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Account ID</th>
+                  <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Owner</th>
+                  <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Balance</th>
+                  <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Status</th>
+                  <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="accounts-tbody" class="divide-y divide-gray-50"></tbody>
+            </table>
+          </div>
+          <div id="accounts-empty" class="p-8 text-center text-gray-400 text-sm hidden">
+            No accounts found. Create one above.
+          </div>
+        </div>
+      </div>
+
+      <!-- Transfers Page -->
+      <div id="page-transfers" class="page p-8 space-y-6 hidden">
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <!-- Transfer Form -->
+          <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+            <h3 class="text-sm font-semibold text-gray-700 mb-4">Initiate Transfer</h3>
+            <form id="transfer-form" class="space-y-4">
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Source Account</label>
+                <select id="transfer-from" required
+                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white">
+                  <option value="">Select source account</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Destination Account</label>
+                <select id="transfer-to" required
+                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white">
+                  <option value="">Select destination account</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Amount</label>
+                <input type="number" id="transfer-amount" min="0.01" step="0.01" required placeholder="0.00"
+                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
+              </div>
+              <button type="submit" class="btn-primary w-full py-2.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors">
+                Send Transfer
+              </button>
+            </form>
+          </div>
+
+          <!-- Saga Progress -->
+          <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+            <h3 class="text-sm font-semibold text-gray-700 mb-6">Transfer Progress</h3>
+            <div id="saga-container" class="hidden">
+              <div id="saga-status-badge" class="mb-6 text-center">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                  Waiting...
+                </span>
+              </div>
+              <!-- Saga Steps -->
+              <div class="relative">
+                <div class="absolute left-5 top-6 bottom-6 w-0.5 bg-gray-200" id="saga-line"></div>
+                <div class="space-y-6">
+                  <div class="saga-step flex items-start gap-4" data-step="initiated">
+                    <div class="w-10 h-10 rounded-full border-2 border-gray-200 bg-white flex items-center justify-center flex-shrink-0 z-10 saga-icon">
+                      <span class="text-gray-400 text-sm">1</span>
+                    </div>
+                    <div class="pt-2">
+                      <p class="text-sm font-medium text-gray-700">Initiated</p>
+                      <p class="text-xs text-gray-400 mt-0.5">Transfer request submitted</p>
+                    </div>
+                  </div>
+                  <div class="saga-step flex items-start gap-4" data-step="debited">
+                    <div class="w-10 h-10 rounded-full border-2 border-gray-200 bg-white flex items-center justify-center flex-shrink-0 z-10 saga-icon">
+                      <span class="text-gray-400 text-sm">2</span>
+                    </div>
+                    <div class="pt-2">
+                      <p class="text-sm font-medium text-gray-700">Debit Applied</p>
+                      <p class="text-xs text-gray-400 mt-0.5">Source account debited</p>
+                    </div>
+                  </div>
+                  <div class="saga-step flex items-start gap-4" data-step="credited">
+                    <div class="w-10 h-10 rounded-full border-2 border-gray-200 bg-white flex items-center justify-center flex-shrink-0 z-10 saga-icon">
+                      <span class="text-gray-400 text-sm">3</span>
+                    </div>
+                    <div class="pt-2">
+                      <p class="text-sm font-medium text-gray-700">Credit Applied</p>
+                      <p class="text-xs text-gray-400 mt-0.5">Destination account credited</p>
+                    </div>
+                  </div>
+                  <div class="saga-step flex items-start gap-4" data-step="completed">
+                    <div class="w-10 h-10 rounded-full border-2 border-gray-200 bg-white flex items-center justify-center flex-shrink-0 z-10 saga-icon">
+                      <span class="text-gray-400 text-sm">4</span>
+                    </div>
+                    <div class="pt-2">
+                      <p class="text-sm font-medium text-gray-700">Completed</p>
+                      <p class="text-xs text-gray-400 mt-0.5">Transfer finalized</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="saga-empty" class="py-16 text-center text-gray-400 text-sm">
+              <svg class="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+              Submit a transfer to see the Saga progress
+            </div>
+          </div>
+        </div>
+
+        <!-- Transfer History -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
+          <div class="px-6 py-4 border-b border-gray-100">
+            <h3 class="text-sm font-semibold text-gray-700">Transfer History</h3>
+          </div>
+          <div id="transfer-history" class="divide-y divide-gray-50 max-h-80 overflow-y-auto scrollbar-thin"></div>
+          <div id="transfer-history-empty" class="p-8 text-center text-gray-400 text-sm">
+            No transfers yet.
+          </div>
+        </div>
+      </div>
+
+      <!-- Events Page -->
+      <div id="page-events" class="page p-8 space-y-6 hidden">
+        <!-- Event Filters -->
+        <div class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm flex flex-wrap items-center gap-3">
+          <span class="text-xs font-medium text-gray-500">Filter:</span>
+          <button data-filter="all" class="event-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-50 text-primary-600 transition-colors">All</button>
+          <button data-filter="deposit" class="event-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors">Deposit</button>
+          <button data-filter="withdraw" class="event-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors">Withdraw</button>
+          <button data-filter="transfer" class="event-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors">Transfer</button>
+          <button data-filter="freeze" class="event-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors">Freeze</button>
+          <button data-filter="account" class="event-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors">Account</button>
+          <div class="flex-1"></div>
+          <button onclick="App.clearEvents()" class="text-xs text-red-500 hover:text-red-600 font-medium">Clear All</button>
+        </div>
+
+        <!-- Event Stream -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
+          <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm font-semibold text-gray-700">Event Stream</h3>
+              <div id="sse-live-dot" class="w-2 h-2 rounded-full bg-red-400"></div>
+            </div>
+            <span id="events-total" class="text-xs text-gray-400">0 events</span>
+          </div>
+          <div id="events-list" class="divide-y divide-gray-50 max-h-[600px] overflow-y-auto scrollbar-thin"></div>
+          <div id="events-empty" class="p-12 text-center text-gray-400 text-sm">
+            <svg class="w-12 h-12 mx-auto mb-3 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+            Listening for events...
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+  <!-- Modal: Deposit/Withdraw -->
+  <div id="modal-overlay" class="fixed inset-0 z-40 hidden modal-backdrop flex items-center justify-center">
+    <div id="modal-box" class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 fade-in">
+      <div class="px-6 py-4 border-b border-gray-100">
+        <h3 id="modal-title" class="text-sm font-semibold text-gray-700">Action</h3>
+      </div>
+      <form id="modal-form" class="p-6 space-y-4">
+        <input type="hidden" id="modal-account-id" />
+        <input type="hidden" id="modal-action" />
+        <div id="modal-amount-group">
+          <label class="block text-xs font-medium text-gray-500 mb-1.5">Amount</label>
+          <input type="number" id="modal-amount" min="0.01" step="0.01" placeholder="0.00"
+            class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
+        </div>
+        <div class="flex gap-3">
+          <button type="button" onclick="App.closeModal()" class="flex-1 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
+          <button type="submit" id="modal-submit-btn" class="flex-1 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors">Confirm</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const App = (() => {
+      // State
+      const state = {
+        accounts: [],
+        events: [],
+        eventFilter: 'all',
+        transfers: [],
+        currentSaga: null,
+        balanceHistory: [],
+        transactionCounts: { deposit: 0, withdraw: 0, transfer: 0, freeze: 0, other: 0 },
+        sse: null,
+        charts: {},
+      }
+
+      const MAX_EVENTS = 50
+
+      // Helpers
+      function $(sel) { return document.querySelector(sel) }
+      function $$(sel) { return document.querySelectorAll(sel) }
+
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0)
+      }
+
+      function shortId(id) {
+        if (!id) return '--'
+        return typeof id === 'string' && id.length > 12 ? id.slice(0, 8) + '...' : id
+      }
+
+      function timeAgo(ts) {
+        if (!ts) return ''
+        const diff = Date.now() - new Date(ts).getTime()
+        if (diff < 1000) return 'just now'
+        if (diff < 60000) return Math.floor(diff / 1000) + 's ago'
+        if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago'
+        return Math.floor(diff / 3600000) + 'h ago'
+      }
+
+      function eventColor(type) {
+        const t = (type || '').toLowerCase()
+        if (t.includes('deposit') || t.includes('credited')) return { bg: 'bg-green-50', text: 'text-green-700', dot: 'bg-green-500', border: 'border-green-200' }
+        if (t.includes('withdraw') || t.includes('debited')) return { bg: 'bg-orange-50', text: 'text-orange-700', dot: 'bg-orange-500', border: 'border-orange-200' }
+        if (t.includes('transfer')) return { bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-500', border: 'border-blue-200' }
+        if (t.includes('freeze') || t.includes('frozen') || t.includes('unfreeze') || t.includes('unfrozen')) return { bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', border: 'border-red-200' }
+        if (t.includes('account') || t.includes('created') || t.includes('opened')) return { bg: 'bg-purple-50', text: 'text-purple-700', dot: 'bg-purple-500', border: 'border-purple-200' }
+        return { bg: 'bg-gray-50', text: 'text-gray-600', dot: 'bg-gray-400', border: 'border-gray-200' }
+      }
+
+      function matchesFilter(type) {
+        if (state.eventFilter === 'all') return true
+        const t = (type || '').toLowerCase()
+        return t.includes(state.eventFilter)
+      }
+
+      // Toast
+      function toast(message, type = 'info') {
+        const colors = {
+          success: 'bg-green-500',
+          error: 'bg-red-500',
+          info: 'bg-blue-500',
+          warning: 'bg-yellow-500',
+        }
+        const container = $('#toast-container')
+        const el = document.createElement('div')
+        el.className = `toast-enter flex items-center gap-2 px-4 py-2.5 rounded-lg text-white text-sm shadow-lg ${colors[type] || colors.info}`
+        const span = document.createElement('span')
+        span.textContent = message
+        el.appendChild(span)
+        container.appendChild(el)
+        setTimeout(() => {
+          el.style.transition = 'opacity 0.3s'
+          el.style.opacity = '0'
+          setTimeout(() => el.remove(), 300)
+        }, 3000)
+      }
+
+      // API
+      async function api(url, options = {}) {
+        try {
+          const res = await fetch(url, {
+            headers: { 'Content-Type': 'application/json' },
+            ...options,
+          })
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({ error: res.statusText }))
+            throw new Error(err.error || err.message || `HTTP ${res.status}`)
+          }
+          return res.json()
+        } catch (err) {
+          if (err.message === 'Failed to fetch') {
+            throw new Error('Cannot connect to server')
+          }
+          throw err
+        }
+      }
+
+      // Navigation
+      function navigate(page) {
+        $$('.page').forEach(p => p.classList.add('hidden'))
+        $(`#page-${page}`).classList.remove('hidden')
+        $$('.nav-link').forEach(l => {
+          l.classList.remove('bg-sidebar-active', 'text-white')
+          l.classList.add('text-slate-300')
+        })
+        const activeLink = $(`.nav-link[data-page="${page}"]`)
+        if (activeLink) {
+          activeLink.classList.add('bg-sidebar-active', 'text-white')
+          activeLink.classList.remove('text-slate-300')
+        }
+        const titles = {
+          dashboard: ['Dashboard', 'Overview of your banking system'],
+          accounts: ['Accounts', 'Manage bank accounts'],
+          transfers: ['Transfers', 'Send money between accounts'],
+          events: ['Event Log', 'Real-time system events'],
+        }
+        const [title, subtitle] = titles[page] || ['', '']
+        $('#page-title').textContent = title
+        $('#page-subtitle').textContent = subtitle
+
+        if (page === 'accounts') loadAccounts()
+        if (page === 'transfers') populateTransferDropdowns()
+      }
+
+      // Load Accounts
+      async function loadAccounts() {
+        try {
+          const data = await api('/api/accounts')
+          state.accounts = Array.isArray(data) ? data : (data.accounts || data.data || [])
+          renderAccounts()
+          updateStats()
+        } catch (err) {
+          toast('Failed to load accounts: ' + err.message, 'error')
+        }
+      }
+
+      function renderAccounts() {
+        const tbody = $('#accounts-tbody')
+        const empty = $('#accounts-empty')
+
+        if (state.accounts.length === 0) {
+          tbody.innerHTML = ''
+          empty.classList.remove('hidden')
+          return
+        }
+
+        empty.classList.add('hidden')
+        tbody.innerHTML = state.accounts.map(acc => {
+          const id = acc.id || acc.accountId
+          const owner = acc.owner || acc.ownerName || acc.name || '--'
+          const balance = acc.balance ?? 0
+          const status = acc.status || 'active'
+          const isFrozen = status === 'frozen'
+          const statusBadge = isFrozen
+            ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">Frozen</span>'
+            : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">Active</span>'
+
+          return `
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="px-6 py-3.5 text-sm font-mono text-gray-600">${shortId(id)}</td>
+              <td class="px-6 py-3.5 text-sm font-medium text-gray-900">${owner}</td>
+              <td class="px-6 py-3.5 text-sm text-right font-medium text-gray-900">${formatCurrency(balance)}</td>
+              <td class="px-6 py-3.5 text-center">${statusBadge}</td>
+              <td class="px-6 py-3.5 text-right">
+                <div class="flex items-center justify-end gap-1.5">
+                  <button onclick="App.openModal('${id}', 'deposit')" class="px-2.5 py-1 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-md transition-colors" ${isFrozen ? 'disabled' : ''}>Deposit</button>
+                  <button onclick="App.openModal('${id}', 'withdraw')" class="px-2.5 py-1 text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-md transition-colors" ${isFrozen ? 'disabled' : ''}>Withdraw</button>
+                  ${isFrozen
+                    ? `<button onclick="App.unfreezeAccount('${id}')" class="px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors">Unfreeze</button>`
+                    : `<button onclick="App.freezeAccount('${id}')" class="px-2.5 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-md transition-colors">Freeze</button>`
+                  }
+                </div>
+              </td>
+            </tr>`
+        }).join('')
+      }
+
+      function updateStats() {
+        const accounts = state.accounts
+        const total = accounts.length
+        const totalBalance = accounts.reduce((sum, a) => sum + (a.balance ?? 0), 0)
+        const frozen = accounts.filter(a => (a.status || 'active') === 'frozen').length
+
+        $('#stat-accounts').textContent = total
+        $('#stat-balance').textContent = formatCurrency(totalBalance)
+        $('#stat-frozen').textContent = frozen
+        $('#stat-transactions').textContent = state.events.length
+
+        // Update balance history for chart
+        state.balanceHistory.push({ time: new Date(), balance: totalBalance })
+        if (state.balanceHistory.length > 20) state.balanceHistory.shift()
+        updateCharts()
+      }
+
+      // Charts
+      function initCharts() {
+        const balanceCtx = $('#chart-balance')
+        const distCtx = $('#chart-distribution')
+        if (!balanceCtx || !distCtx) return
+
+        state.charts.balance = new Chart(balanceCtx.getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: [],
+            datasets: [{
+              label: 'Total Balance',
+              data: [],
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              fill: true,
+              tension: 0.4,
+              pointRadius: 3,
+              pointHoverRadius: 5,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { display: true, grid: { display: false }, ticks: { font: { size: 10 } } },
+              y: { display: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 }, callback: v => '$' + v.toLocaleString() } },
+            }
+          }
+        })
+
+        state.charts.distribution = new Chart(distCtx.getContext('2d'), {
+          type: 'doughnut',
+          data: {
+            labels: ['Deposit', 'Withdraw', 'Transfer', 'Freeze', 'Other'],
+            datasets: [{
+              data: [0, 0, 0, 0, 0],
+              backgroundColor: ['#22c55e', '#f97316', '#3b82f6', '#ef4444', '#94a3b8'],
+              borderWidth: 0,
+              hoverOffset: 4,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom', labels: { boxWidth: 12, padding: 16, font: { size: 11 } } },
+            },
+            cutout: '65%',
+          }
+        })
+      }
+
+      function updateCharts() {
+        if (state.charts.balance) {
+          const labels = state.balanceHistory.map(h => {
+            const d = new Date(h.time)
+            return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0') + ':' + d.getSeconds().toString().padStart(2, '0')
+          })
+          state.charts.balance.data.labels = labels
+          state.charts.balance.data.datasets[0].data = state.balanceHistory.map(h => h.balance)
+          state.charts.balance.update('none')
+        }
+
+        if (state.charts.distribution) {
+          const c = state.transactionCounts
+          state.charts.distribution.data.datasets[0].data = [c.deposit, c.withdraw, c.transfer, c.freeze, c.other]
+          state.charts.distribution.update('none')
+        }
+      }
+
+      // Account Actions
+      async function createAccount(e) {
+        e.preventDefault()
+        const owner = $('#owner-name').value.trim()
+        const deposit = parseFloat($('#initial-deposit').value) || 0
+        if (!owner) return toast('Owner name is required', 'warning')
+
+        try {
+          await api('/api/accounts', {
+            method: 'POST',
+            body: JSON.stringify({ owner, initialBalance: deposit }),
+          })
+          toast('Account created successfully', 'success')
+          $('#owner-name').value = ''
+          $('#initial-deposit').value = '0'
+          await loadAccounts()
+        } catch (err) {
+          toast('Failed to create account: ' + err.message, 'error')
+        }
+      }
+
+      function openModal(accountId, action) {
+        $('#modal-account-id').value = accountId
+        $('#modal-action').value = action
+        const isAmountAction = action === 'deposit' || action === 'withdraw'
+        $('#modal-amount-group').style.display = isAmountAction ? 'block' : 'none'
+        const titles = { deposit: 'Deposit Funds', withdraw: 'Withdraw Funds' }
+        $('#modal-title').textContent = titles[action] || 'Action'
+        const btnColors = { deposit: 'bg-green-600 hover:bg-green-700', withdraw: 'bg-orange-600 hover:bg-orange-700' }
+        const btn = $('#modal-submit-btn')
+        btn.className = `flex-1 py-2 text-white text-sm font-medium rounded-lg transition-colors ${btnColors[action] || 'bg-primary-600 hover:bg-primary-700'}`
+        btn.textContent = action.charAt(0).toUpperCase() + action.slice(1)
+        $('#modal-amount').value = ''
+        $('#modal-overlay').classList.remove('hidden')
+      }
+
+      function closeModal() {
+        $('#modal-overlay').classList.add('hidden')
+      }
+
+      async function handleModalSubmit(e) {
+        e.preventDefault()
+        const accountId = $('#modal-account-id').value
+        const action = $('#modal-action').value
+        const amount = parseFloat($('#modal-amount').value)
+
+        if ((action === 'deposit' || action === 'withdraw') && (!amount || amount <= 0)) {
+          return toast('Please enter a valid amount', 'warning')
+        }
+
+        try {
+          await api(`/api/accounts/${accountId}/${action}`, {
+            method: 'POST',
+            body: JSON.stringify({ amount }),
+          })
+          toast(`${action.charAt(0).toUpperCase() + action.slice(1)} successful`, 'success')
+          closeModal()
+          await loadAccounts()
+        } catch (err) {
+          toast(`${action} failed: ${err.message}`, 'error')
+        }
+      }
+
+      async function freezeAccount(id) {
+        try {
+          await api(`/api/accounts/${id}/freeze`, { method: 'POST' })
+          toast('Account frozen', 'success')
+          await loadAccounts()
+        } catch (err) {
+          toast('Freeze failed: ' + err.message, 'error')
+        }
+      }
+
+      async function unfreezeAccount(id) {
+        try {
+          await api(`/api/accounts/${id}/unfreeze`, { method: 'POST' })
+          toast('Account unfrozen', 'success')
+          await loadAccounts()
+        } catch (err) {
+          toast('Unfreeze failed: ' + err.message, 'error')
+        }
+      }
+
+      // Transfers
+      function populateTransferDropdowns() {
+        const fromSel = $('#transfer-from')
+        const toSel = $('#transfer-to')
+        const activeAccounts = state.accounts.filter(a => (a.status || 'active') !== 'frozen')
+        const optionsHtml = '<option value="">Select account</option>' +
+          activeAccounts.map(a => {
+            const id = a.id || a.accountId
+            const owner = a.owner || a.ownerName || a.name || '--'
+            return `<option value="${id}">${shortId(id)} - ${owner} (${formatCurrency(a.balance)})</option>`
+          }).join('')
+        fromSel.innerHTML = optionsHtml
+        toSel.innerHTML = optionsHtml
+      }
+
+      async function submitTransfer(e) {
+        e.preventDefault()
+        const fromId = $('#transfer-from').value
+        const toId = $('#transfer-to').value
+        const amount = parseFloat($('#transfer-amount').value)
+
+        if (!fromId || !toId) return toast('Please select both accounts', 'warning')
+        if (fromId === toId) return toast('Source and destination must differ', 'warning')
+        if (!amount || amount <= 0) return toast('Enter a valid amount', 'warning')
+
+        state.currentSaga = { status: 'initiated', fromId, toId, amount }
+        updateSagaUI()
+        $('#saga-container').classList.remove('hidden')
+        $('#saga-empty').classList.add('hidden')
+
+        try {
+          const result = await api('/api/transfers', {
+            method: 'POST',
+            body: JSON.stringify({ fromAccountId: fromId, toAccountId: toId, amount }),
+          })
+          state.currentSaga.status = 'completed'
+          state.currentSaga.result = result
+          updateSagaUI()
+          toast('Transfer completed successfully', 'success')
+
+          state.transfers.unshift({
+            ...state.currentSaga,
+            timestamp: new Date().toISOString(),
+          })
+          renderTransferHistory()
+          await loadAccounts()
+        } catch (err) {
+          state.currentSaga.status = 'failed'
+          state.currentSaga.error = err.message
+          updateSagaUI()
+          toast('Transfer failed: ' + err.message, 'error')
+        }
+      }
+
+      function updateSagaUI() {
+        if (!state.currentSaga) return
+        const saga = state.currentSaga
+        const steps = ['initiated', 'debited', 'credited', 'completed']
+        const statusMap = {
+          initiated: 0,
+          debited: 1,
+          credited: 2,
+          completed: 3,
+          failed: -1,
+        }
+        const currentIdx = statusMap[saga.status] ?? -1
+        const isFailed = saga.status === 'failed'
+
+        // Status badge
+        const badge = $('#saga-status-badge')
+        if (isFailed) {
+          badge.innerHTML = '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">Failed</span>'
+        } else if (saga.status === 'completed') {
+          badge.innerHTML = '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">Completed</span>'
+        } else {
+          badge.innerHTML = '<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 pulse-dot">In Progress</span>'
+        }
+
+        // Steps
+        steps.forEach((step, idx) => {
+          const el = $(`.saga-step[data-step="${step}"]`)
+          const icon = el.querySelector('.saga-icon')
+          if (idx <= currentIdx && !isFailed) {
+            icon.className = 'w-10 h-10 rounded-full bg-green-500 border-2 border-green-500 flex items-center justify-center flex-shrink-0 z-10 saga-icon'
+            icon.innerHTML = '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>'
+          } else if (isFailed && idx === currentIdx + 1) {
+            icon.className = 'w-10 h-10 rounded-full bg-red-500 border-2 border-red-500 flex items-center justify-center flex-shrink-0 z-10 saga-icon'
+            icon.innerHTML = '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>'
+          } else {
+            icon.className = 'w-10 h-10 rounded-full border-2 border-gray-200 bg-white flex items-center justify-center flex-shrink-0 z-10 saga-icon'
+            icon.innerHTML = `<span class="text-gray-400 text-sm">${idx + 1}</span>`
+          }
+        })
+      }
+
+      function renderTransferHistory() {
+        const container = $('#transfer-history')
+        const empty = $('#transfer-history-empty')
+        if (state.transfers.length === 0) {
+          container.innerHTML = ''
+          empty.classList.remove('hidden')
+          return
+        }
+        empty.classList.add('hidden')
+        container.innerHTML = state.transfers.map(t => {
+          const statusColor = t.status === 'completed' ? 'text-green-600 bg-green-50' : t.status === 'failed' ? 'text-red-600 bg-red-50' : 'text-blue-600 bg-blue-50'
+          return `
+            <div class="px-6 py-3 flex items-center justify-between event-row">
+              <div class="flex items-center gap-4">
+                <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                  <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-700">${shortId(t.fromId)} &rarr; ${shortId(t.toId)}</p>
+                  <p class="text-xs text-gray-400">${timeAgo(t.timestamp)}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-sm font-medium text-gray-900">${formatCurrency(t.amount)}</span>
+                <span class="text-xs font-medium px-2 py-0.5 rounded-full ${statusColor}">${t.status}</span>
+              </div>
+            </div>`
+        }).join('')
+      }
+
+      // SSE Events
+      function connectSSE() {
+        if (state.sse) {
+          state.sse.close()
+        }
+
+        const indicator = $('#sse-indicator')
+        const statusText = $('#sse-status')
+        const liveDot = $('#sse-live-dot')
+
+        try {
+          state.sse = new EventSource('/api/events/stream')
+
+          state.sse.onopen = () => {
+            indicator.className = 'w-2 h-2 rounded-full bg-green-500 pulse-dot'
+            statusText.textContent = 'Connected'
+            liveDot.className = 'w-2 h-2 rounded-full bg-green-500 pulse-dot'
+          }
+
+          state.sse.onmessage = (e) => {
+            try {
+              const event = JSON.parse(e.data)
+              handleEvent(event)
+            } catch (err) {
+              // Non-JSON data, try as string event
+              handleEvent({ type: 'message', data: e.data, timestamp: new Date().toISOString() })
+            }
+          }
+
+          state.sse.onerror = () => {
+            indicator.className = 'w-2 h-2 rounded-full bg-red-500'
+            statusText.textContent = 'Reconnecting...'
+            liveDot.className = 'w-2 h-2 rounded-full bg-red-400'
+          }
+        } catch (err) {
+          indicator.className = 'w-2 h-2 rounded-full bg-red-500'
+          statusText.textContent = 'Disconnected'
+        }
+      }
+
+      function handleEvent(event) {
+        const eventObj = {
+          ...event,
+          _id: Date.now() + Math.random().toString(36).slice(2, 6),
+          _receivedAt: new Date().toISOString(),
+        }
+
+        state.events.unshift(eventObj)
+        if (state.events.length > MAX_EVENTS) state.events.pop()
+
+        // Count transaction type
+        const type = (event.type || event.eventType || '').toLowerCase()
+        if (type.includes('deposit') || type.includes('credited')) state.transactionCounts.deposit++
+        else if (type.includes('withdraw') || type.includes('debited')) state.transactionCounts.withdraw++
+        else if (type.includes('transfer')) state.transactionCounts.transfer++
+        else if (type.includes('freeze') || type.includes('frozen') || type.includes('unfreeze')) state.transactionCounts.freeze++
+        else state.transactionCounts.other++
+
+        // Update Saga progress from events
+        if (state.currentSaga && state.currentSaga.status !== 'completed' && state.currentSaga.status !== 'failed') {
+          if (type.includes('debit') || type.includes('debited')) {
+            state.currentSaga.status = 'debited'
+            updateSagaUI()
+          } else if (type.includes('credit') || type.includes('credited')) {
+            state.currentSaga.status = 'credited'
+            updateSagaUI()
+          } else if (type.includes('completed') || type.includes('complete')) {
+            state.currentSaga.status = 'completed'
+            updateSagaUI()
+          } else if (type.includes('failed') || type.includes('error') || type.includes('rollback')) {
+            state.currentSaga.status = 'failed'
+            updateSagaUI()
+          }
+        }
+
+        renderEvents()
+        updateStats()
+
+        // Auto-refresh accounts on relevant events
+        if (type.includes('deposit') || type.includes('withdraw') || type.includes('transfer') || type.includes('freeze') || type.includes('account')) {
+          loadAccounts()
+        }
+      }
+
+      function renderEvents() {
+        renderDashboardEvents()
+        renderEventsList()
+      }
+
+      function renderDashboardEvents() {
+        const container = $('#dashboard-events')
+        const empty = $('#dashboard-events-empty')
+        const badge = $('#event-count-badge')
+        badge.textContent = state.events.length + ' events'
+
+        const recent = state.events.slice(0, 10)
+        if (recent.length === 0) {
+          container.innerHTML = ''
+          empty.classList.remove('hidden')
+          return
+        }
+        empty.classList.add('hidden')
+        container.innerHTML = recent.map(ev => renderEventRow(ev, true)).join('')
+      }
+
+      function renderEventsList() {
+        const container = $('#events-list')
+        const empty = $('#events-empty')
+        const total = $('#events-total')
+
+        const filtered = state.events.filter(ev => matchesFilter(ev.type || ev.eventType || ''))
+        total.textContent = filtered.length + ' events'
+
+        if (filtered.length === 0) {
+          container.innerHTML = ''
+          empty.classList.remove('hidden')
+          return
+        }
+        empty.classList.add('hidden')
+        container.innerHTML = filtered.map(ev => renderEventRow(ev, false)).join('')
+      }
+
+      function renderEventRow(ev, compact) {
+        const type = ev.type || ev.eventType || 'unknown'
+        const color = eventColor(type)
+        const timestamp = ev.timestamp || ev._receivedAt || ''
+        const payload = ev.payload || ev.data || ev
+
+        return `
+          <div class="event-row px-6 py-3 flex items-start gap-3 fade-in">
+            <div class="w-2 h-2 rounded-full ${color.dot} mt-2 flex-shrink-0"></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-0.5">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${color.bg} ${color.text}">${type}</span>
+                <span class="text-xs text-gray-400">${timeAgo(timestamp)}</span>
+              </div>
+              ${compact ? '' : `
+                <button onclick="this.nextElementSibling.classList.toggle('hidden');this.textContent=this.textContent==='Show Details'?'Hide Details':'Show Details'"
+                  class="text-xs text-primary-500 hover:text-primary-600 mt-1 font-medium">Show Details</button>
+                <pre class="hidden mt-2 p-3 bg-gray-50 rounded-lg text-xs text-gray-600 overflow-x-auto max-h-40 scrollbar-thin">${JSON.stringify(payload, null, 2)}</pre>
+              `}
+            </div>
+          </div>`
+      }
+
+      function clearEvents() {
+        state.events = []
+        state.transactionCounts = { deposit: 0, withdraw: 0, transfer: 0, freeze: 0, other: 0 }
+        renderEvents()
+        updateCharts()
+        toast('Events cleared', 'info')
+      }
+
+      // Event Filters
+      function setupEventFilters() {
+        $$('.event-filter-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.eventFilter = btn.dataset.filter
+            $$('.event-filter-btn').forEach(b => {
+              b.className = 'event-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors'
+            })
+            btn.className = 'event-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-50 text-primary-600 transition-colors'
+            renderEventsList()
+          })
+        })
+      }
+
+      // Clock
+      function updateClock() {
+        const now = new Date()
+        $('#clock').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      }
+
+      // Refresh
+      async function refreshData() {
+        await loadAccounts()
+        toast('Data refreshed', 'info')
+      }
+
+      // Init
+      function init() {
+        // Navigation
+        $$('.nav-link').forEach(link => {
+          link.addEventListener('click', (e) => {
+            e.preventDefault()
+            navigate(link.dataset.page)
+          })
+        })
+
+        // Forms
+        $('#create-account-form').addEventListener('submit', createAccount)
+        $('#modal-form').addEventListener('submit', handleModalSubmit)
+        $('#transfer-form').addEventListener('submit', submitTransfer)
+
+        // Modal close on backdrop click
+        $('#modal-overlay').addEventListener('click', (e) => {
+          if (e.target === $('#modal-overlay')) closeModal()
+        })
+
+        // Keyboard ESC for modal
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') closeModal()
+        })
+
+        setupEventFilters()
+        initCharts()
+        updateClock()
+        setInterval(updateClock, 1000)
+
+        // Navigate to dashboard
+        navigate('dashboard')
+
+        // Load initial data
+        loadAccounts()
+
+        // Connect SSE
+        connectSSE()
+      }
+
+      // Public API
+      return {
+        init,
+        loadAccounts,
+        openModal,
+        closeModal,
+        freezeAccount,
+        unfreezeAccount,
+        refreshData,
+        clearEvents,
+      }
+    })()
+
+    document.addEventListener('DOMContentLoaded', App.init)
+  </script>
+</body>
+</html>

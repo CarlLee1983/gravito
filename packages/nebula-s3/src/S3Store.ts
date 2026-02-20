@@ -1,8 +1,11 @@
 import {
   DeleteObjectCommand,
   GetObjectCommand,
+  type GetObjectCommandOutput,
   HeadObjectCommand,
+  type HeadObjectCommandOutput,
   ListObjectsV2Command,
+  type ListObjectsV2CommandOutput,
   PutObjectCommand,
   S3Client,
   type S3ClientConfig,
@@ -249,10 +252,10 @@ export class S3Store implements StorageStore {
         ? Object.fromEntries(
             Object.entries(response.Metadata).map(([k, v]: [string, any]) => {
               try {
-                return [k, decodeURIComponent(v)]
+                return [k, decodeURIComponent(v as string)]
               } catch {
                 // If decode fails, return original value
-                return [k, v]
+                return [k, v as string]
               }
             })
           )
@@ -264,7 +267,7 @@ export class S3Store implements StorageStore {
         mimeType: response.ContentType,
         lastModified: response.LastModified,
         etag: response.ETag?.replace(/"/g, ''),
-        customMetadata: decodedMetadata,
+        customMetadata: decodedMetadata as Record<string, string> | undefined,
       }
     } catch (error: any) {
       if (error.name === 'NotFound' || error.name === 'NoSuchKey') {

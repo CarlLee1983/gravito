@@ -5,7 +5,6 @@
     "baseUrl": ".",
     "skipLibCheck": true,
     "types": [
-      "node",
       "bun-types"
     ],
     "paths": {
