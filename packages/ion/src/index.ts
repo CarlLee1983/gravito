@@ -12,6 +12,7 @@ import { InertiaService } from './InertiaService'
 
 export * from './errors'
 export * from './InertiaService'
+export * from './types'
 
 /**
  * Enhanced helper interface for Inertia operations within the Gravito context.
@@ -100,6 +101,38 @@ export interface InertiaHelper {
   ): Promise<Response>
 
   /**
+   * Instructs the client to navigate to a different URL.
+   *
+   * @param url - The URL to navigate to.
+   * @returns A redirect response.
+   */
+  location(url: string): Response
+
+  /**
+   * Encrypts the browser history to prevent navigation via back button.
+   *
+   * @param encrypt - Whether to enable history encryption (defaults to true).
+   * @returns The helper for method chaining.
+   */
+  encryptHistory(encrypt?: boolean): InertiaHelper
+
+  /**
+   * Clears the browser history after page load.
+   *
+   * @returns The helper for method chaining.
+   */
+  clearHistory(): InertiaHelper
+
+  /**
+   * Registers form validation errors organized by bag name.
+   *
+   * @param errors - Error map with field names as keys.
+   * @param bag - The error bag name (defaults to 'default').
+   * @returns The helper for method chaining.
+   */
+  withErrors(errors: Record<string, string | string[]>, bag?: string): InertiaHelper
+
+  /**
    * Direct access to the low-level `InertiaService` instance.
    *
    * Use this for advanced operations not exposed by the helper interface.
@@ -145,6 +178,20 @@ export interface OrbitIonOptions {
      * Receives the Inertia page object and should return the rendered HTML.
      */
     render?: (page: any) => Promise<{ head: string[]; body: string }>
+  }
+
+  /**
+   * CSRF protection configuration.
+   *
+   * Automatically sets the XSRF-TOKEN cookie for CSRF protection.
+   *
+   * @defaultValue { enabled: true, cookieName: 'XSRF-TOKEN' }
+   */
+  csrf?: {
+    /** Whether CSRF protection is enabled. */
+    enabled?: boolean
+    /** Name of the CSRF token cookie (commonly read by Axios). */
+    cookieName?: string
   }
 }
 
@@ -200,10 +247,43 @@ export class OrbitIon implements GravitoOrbit {
 
     const appVersion = this.options.version ?? core.config.get('APP_VERSION', '1.0.0')
     const rootView = this.options.rootView ?? 'app'
+    const csrfEnabled = this.options.csrf?.enabled !== false
+    const csrfCookieName = this.options.csrf?.cookieName ?? 'XSRF-TOKEN'
+
+    // Version caching: Cache dynamic version() calls for 60 seconds
+    const VERSION_CACHE_TTL = 60_000
+    let cachedVersion: string | undefined
+    let versionCacheTime = 0
+
+    const resolveAppVersion = async (): Promise<string | undefined> => {
+      if (typeof appVersion !== 'function') {
+        return appVersion
+      }
+
+      const now = Date.now()
+      if (cachedVersion && now - versionCacheTime < VERSION_CACHE_TTL) {
+        return cachedVersion
+      }
+
+      cachedVersion = await appVersion()
+      versionCacheTime = now
+      return cachedVersion
+    }
+
+    // CSRF token middleware
+    if (csrfEnabled) {
+      core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
+        const token = crypto.randomUUID()
+        const secure = process.env.NODE_ENV === 'production'
+        const cookieValue = `${csrfCookieName}=${token}; Path=/; ${secure ? 'Secure; ' : ''}SameSite=Lax`
+        c.header('Set-Cookie', cookieValue)
+        return await next()
+      })
+    }
 
     core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       const service = new InertiaService(c, {
-        version: appVersion as any,
+        version: resolveAppVersion as any,
         rootView,
         ssr: this.options.ssr,
       })
@@ -222,6 +302,10 @@ export class OrbitIon implements GravitoOrbit {
         shareAll: service.shareAll.bind(service),
         getSharedProps: service.getSharedProps.bind(service),
         render: service.render.bind(service),
+        location: service.location.bind(service),
+        encryptHistory: service.encryptHistory.bind(service),
+        clearHistory: service.clearHistory.bind(service),
+        withErrors: service.withErrors.bind(service),
         service,
       })
 
