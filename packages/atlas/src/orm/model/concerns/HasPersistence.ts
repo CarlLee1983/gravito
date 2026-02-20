@@ -91,6 +91,12 @@ export class HasPersistence {
     // Trigger 'creating' event
     await (this as any).emit('creating')
 
+    // Initialize version if exists
+    const versionKey = (modelCtor as any)[VERSION_KEY] as string | undefined
+    if (versionKey && (this as any)._attributes[versionKey] === undefined) {
+      ;(this as any)._setAttribute(versionKey, 1)
+    }
+
     const result = await connection.table(modelCtor.getTable()).insert((this as any)._attributes)
 
     // Set primary key from result

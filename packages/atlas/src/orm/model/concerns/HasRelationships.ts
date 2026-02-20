@@ -257,9 +257,19 @@ export class HasRelationships {
    * @example await user.load('posts')
    */
   async load(relation: string | string[]): Promise<this> {
-    const { eagerLoadMany } = await import('../relationships')
+    const { QueryBuilder } = await import('../../../query/QueryBuilder')
+    const resolver = QueryBuilder.relationshipResolver
+
     const relations = Array.isArray(relation) ? relation : [relation]
-    await eagerLoadMany([this as unknown as any], relations)
+
+    if (resolver) {
+      await resolver.eagerLoadMany([this as unknown as any], relations)
+    } else {
+      // Fallback
+      const { eagerLoadMany } = await import('../relationships')
+      await eagerLoadMany([this as unknown as any], relations)
+    }
+
     return this
   }
 
