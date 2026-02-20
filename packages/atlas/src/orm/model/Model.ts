@@ -1,4 +1,5 @@
 import { DB } from '../../DB'
+import { QueryBuilder } from '../../query/QueryBuilder'
 import { Factory } from '../../seed/Factory'
 import type { Operator, QueryBuilderContract } from '../../types'
 import { SchemaRegistry } from '../schema/SchemaRegistry'
@@ -18,6 +19,7 @@ import {
   NullableConstraintError,
   TypeMismatchError,
 } from './errors'
+import * as relationshipResolver from './relationships'
 import { getRelationships } from './relationships'
 
 /**
@@ -205,6 +207,12 @@ export abstract class Model {
     if (cached !== undefined) {
       return cached
     }
+
+    // Prevent memory leaks by capping cache size (LRU-lite)
+    if (Model._studlyCache.size > 5000) {
+      Model._studlyCache.clear()
+    }
+
     const studly = prop.replace(/(?:^|_|(?=[A-Z]))(.)/g, (_, c) => c.toUpperCase())
     Model._studlyCache.set(prop, studly)
     return studly
@@ -997,8 +1005,7 @@ export abstract class Model {
 
       const eagerLoads = (builder as any).getEagerLoads?.()
       if (eagerLoads && eagerLoads.size > 0 && models.length > 0) {
-        const { eagerLoadMany } = await import('./relationships')
-        await eagerLoadMany(models, eagerLoads)
+        await relationshipResolver.eagerLoadMany(models, eagerLoads)
       }
 
       return models
@@ -1020,8 +1027,7 @@ export abstract class Model {
 
         const eagerLoads = (builder as any).getEagerLoads?.()
         if (eagerLoads && eagerLoads.size > 0) {
-          const { eagerLoadMany } = await import('./relationships')
-          await eagerLoadMany([model], eagerLoads)
+          await relationshipResolver.eagerLoadMany([model], eagerLoads)
         }
 
         return model
@@ -1205,3 +1211,6 @@ export abstract class Model {
  * Applies lifecycle, persistence, relationship, and serialization concerns to the base class.
  */
 applyMixins(Model as any, [HasEvents, HasPersistence, HasRelationships, HasSerialization])
+
+// Inject relationship resolver into QueryBuilder to avoid circular dependencies
+QueryBuilder.relationshipResolver = relationshipResolver as any
