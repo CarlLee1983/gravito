@@ -1,8 +1,7 @@
 import type { EventManager } from '@gravito/core'
 import { Command, type CommandHandler } from '@gravito/enterprise'
-import type { MoneyDeposited } from '../../domain/account/events/MoneyDeposited'
-import type { UpdateReadModelListener } from '../../infrastructure/listeners/UpdateReadModelListener'
 import type { IAccountRepository } from '../../infrastructure/repositories/IAccountRepository'
+import { dispatchAggregateEvents } from '../utils/EventDispatcher'
 
 export class DepositMoneyCommand extends Command {
   constructor(
@@ -16,8 +15,7 @@ export class DepositMoneyCommand extends Command {
 export class DepositMoneyCommandHandler implements CommandHandler<DepositMoneyCommand, void> {
   constructor(
     private readonly repository: IAccountRepository,
-    private readonly eventManager: EventManager,
-    private readonly readModelListener: UpdateReadModelListener
+    private readonly eventManager: EventManager
   ) {}
 
   async handle(command: DepositMoneyCommand): Promise<void> {
@@ -28,13 +26,6 @@ export class DepositMoneyCommandHandler implements CommandHandler<DepositMoneyCo
 
     account.deposit(command.amountCents)
     await this.repository.save(account)
-
-    const events = account.pullDomainEvents()
-    for (const event of events) {
-      if (event.constructor.name === 'MoneyDeposited') {
-        this.readModelListener.handleMoneyDeposited(event as MoneyDeposited)
-      }
-      await this.eventManager.dispatch(event as any)
-    }
+    await dispatchAggregateEvents(account, this.eventManager)
   }
 }

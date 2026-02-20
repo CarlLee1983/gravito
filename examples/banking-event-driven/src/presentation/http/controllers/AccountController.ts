@@ -18,8 +18,15 @@ import { GetAccountBalanceQuery } from '../../../application/queries/GetAccountB
 import type { GetAllAccountsQueryHandler } from '../../../application/queries/GetAllAccountsQuery'
 import { GetAllAccountsQuery } from '../../../application/queries/GetAllAccountsQuery'
 import type { IAccountRepository } from '../../../infrastructure/repositories/IAccountRepository'
+import { AccountParamRequest } from '../requests/AccountParamRequest'
+import { DepositMoneyRequest } from '../requests/DepositMoneyRequest'
+import { FreezeAccountRequest } from '../requests/FreezeAccountRequest'
+import { GetAllAccountsRequest } from '../requests/GetAllAccountsRequest'
+import { OpenAccountRequest } from '../requests/OpenAccountRequest'
+import { WithdrawMoneyRequest } from '../requests/WithdrawMoneyRequest'
+import { BaseController } from './BaseController'
 
-export class AccountController {
+export class AccountController extends BaseController {
   constructor(
     private readonly openAccountHandler: OpenAccountCommandHandler,
     private readonly depositHandler: DepositMoneyCommandHandler,
@@ -29,25 +36,21 @@ export class AccountController {
     private readonly getBalanceHandler: GetAccountBalanceQueryHandler,
     private readonly getAllAccountsHandler: GetAllAccountsQueryHandler,
     private readonly repository: IAccountRepository
-  ) {}
+  ) {
+    super()
+  }
 
   async openAccount(c: GravitoContext): Promise<Response> {
     try {
-      const body = await c.req.json<{
-        ownerId: string
-        ownerName: string
-        currency?: string
-        initialDepositCents?: number
-      }>()
-
+      const data = await this.validate(c, OpenAccountRequest)
       const accountId = crypto.randomUUID()
       await this.openAccountHandler.handle(
         new OpenAccountCommand(
           accountId,
-          body.ownerId,
-          body.ownerName,
-          body.currency ?? 'TWD',
-          body.initialDepositCents ?? 0
+          data.ownerId,
+          data.ownerName,
+          data.currency,
+          data.initialDepositCents
         )
       )
 
@@ -62,11 +65,8 @@ export class AccountController {
 
   async getAccount(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id')
-      if (!id) {
-        return c.json({ success: false, error: '缺少帳戶 ID' }, 400)
-      }
-      const account = await this.repository.findById(id)
+      const data = await this.validate(c, AccountParamRequest)
+      const account = await this.repository.findById(data.id)
       if (!account) {
         return c.json({ success: false, error: '帳戶不存在' }, 404)
       }
@@ -94,10 +94,10 @@ export class AccountController {
 
   async getAllAccounts(c: GravitoContext): Promise<Response> {
     try {
-      const limit = Number(c.req.query('limit') ?? '20')
-      const offset = Number(c.req.query('offset') ?? '0')
-
-      const result = await this.getAllAccountsHandler.handle(new GetAllAccountsQuery(limit, offset))
+      const data = await this.validate(c, GetAllAccountsRequest)
+      const result = await this.getAllAccountsHandler.handle(
+        new GetAllAccountsQuery(data.limit, data.offset)
+      )
       return c.json({ success: true, ...result })
     } catch (error) {
       return c.json(
@@ -109,11 +109,8 @@ export class AccountController {
 
   async getBalance(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id')
-      if (!id) {
-        return c.json({ success: false, error: '缺少帳戶 ID' }, 400)
-      }
-      const record = await this.getBalanceHandler.handle(new GetAccountBalanceQuery(id))
+      const data = await this.validate(c, AccountParamRequest)
+      const record = await this.getBalanceHandler.handle(new GetAccountBalanceQuery(data.id))
       if (!record) {
         return c.json({ success: false, error: '帳戶不存在' }, 404)
       }
@@ -129,13 +126,10 @@ export class AccountController {
 
   async depositMoney(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id')
-      if (!id) {
-        return c.json({ success: false, error: '缺少帳戶 ID' }, 400)
-      }
-      const body = await c.req.json<{ amountCents: number }>()
+      const id = c.req.param('id') as string
+      const data = await this.validate(c, DepositMoneyRequest)
 
-      await this.depositHandler.handle(new DepositMoneyCommand(id, body.amountCents))
+      await this.depositHandler.handle(new DepositMoneyCommand(id, data.amountCents))
       return c.json({ success: true, message: '入款成功' })
     } catch (error) {
       return c.json(
@@ -147,13 +141,10 @@ export class AccountController {
 
   async withdrawMoney(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id')
-      if (!id) {
-        return c.json({ success: false, error: '缺少帳戶 ID' }, 400)
-      }
-      const body = await c.req.json<{ amountCents: number }>()
+      const id = c.req.param('id') as string
+      const data = await this.validate(c, WithdrawMoneyRequest)
 
-      await this.withdrawHandler.handle(new WithdrawMoneyCommand(id, body.amountCents))
+      await this.withdrawHandler.handle(new WithdrawMoneyCommand(id, data.amountCents))
       return c.json({ success: true, message: '出款成功' })
     } catch (error) {
       return c.json(
@@ -165,13 +156,10 @@ export class AccountController {
 
   async freezeAccount(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id')
-      if (!id) {
-        return c.json({ success: false, error: '缺少帳戶 ID' }, 400)
-      }
-      const body = await c.req.json<{ reason?: string }>().catch(() => ({}))
+      const id = c.req.param('id') as string
+      const data = await this.validate(c, FreezeAccountRequest)
 
-      await this.freezeHandler.handle(new FreezeAccountCommand(id, (body as any).reason))
+      await this.freezeHandler.handle(new FreezeAccountCommand(id, data.reason))
       return c.json({ success: true, message: '帳戶已凍結' })
     } catch (error) {
       return c.json(
@@ -183,12 +171,9 @@ export class AccountController {
 
   async unfreezeAccount(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id')
-      if (!id) {
-        return c.json({ success: false, error: '缺少帳戶 ID' }, 400)
-      }
+      const data = await this.validate(c, AccountParamRequest)
 
-      await this.unfreezeHandler.handle(new UnfreezeAccountCommand(id))
+      await this.unfreezeHandler.handle(new UnfreezeAccountCommand(data.id))
       return c.json({ success: true, message: '帳戶已解凍' })
     } catch (error) {
       return c.json(

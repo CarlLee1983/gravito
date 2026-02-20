@@ -1,9 +1,7 @@
 import type { EventManager } from '@gravito/core'
 import { Command, type CommandHandler } from '@gravito/enterprise'
-import type { AccountFrozen } from '../../domain/account/events/AccountFrozen'
-import type { AccountUnfrozen } from '../../domain/account/events/AccountUnfrozen'
-import type { UpdateReadModelListener } from '../../infrastructure/listeners/UpdateReadModelListener'
 import type { IAccountRepository } from '../../infrastructure/repositories/IAccountRepository'
+import { dispatchAggregateEvents } from '../utils/EventDispatcher'
 
 export class FreezeAccountCommand extends Command {
   constructor(
@@ -23,8 +21,7 @@ export class UnfreezeAccountCommand extends Command {
 export class FreezeAccountCommandHandler implements CommandHandler<FreezeAccountCommand, void> {
   constructor(
     private readonly repository: IAccountRepository,
-    private readonly eventManager: EventManager,
-    private readonly readModelListener: UpdateReadModelListener
+    private readonly eventManager: EventManager
   ) {}
 
   async handle(command: FreezeAccountCommand): Promise<void> {
@@ -35,22 +32,14 @@ export class FreezeAccountCommandHandler implements CommandHandler<FreezeAccount
 
     account.freeze(command.reason)
     await this.repository.save(account)
-
-    const events = account.pullDomainEvents()
-    for (const event of events) {
-      if (event.constructor.name === 'AccountFrozen') {
-        this.readModelListener.handleAccountFrozen(event as AccountFrozen)
-      }
-      await this.eventManager.dispatch(event as any)
-    }
+    await dispatchAggregateEvents(account, this.eventManager)
   }
 }
 
 export class UnfreezeAccountCommandHandler implements CommandHandler<UnfreezeAccountCommand, void> {
   constructor(
     private readonly repository: IAccountRepository,
-    private readonly eventManager: EventManager,
-    private readonly readModelListener: UpdateReadModelListener
+    private readonly eventManager: EventManager
   ) {}
 
   async handle(command: UnfreezeAccountCommand): Promise<void> {
@@ -61,13 +50,6 @@ export class UnfreezeAccountCommandHandler implements CommandHandler<UnfreezeAcc
 
     account.unfreeze()
     await this.repository.save(account)
-
-    const events = account.pullDomainEvents()
-    for (const event of events) {
-      if (event.constructor.name === 'AccountUnfrozen') {
-        this.readModelListener.handleAccountUnfrozen(event as AccountUnfrozen)
-      }
-      await this.eventManager.dispatch(event as any)
-    }
+    await dispatchAggregateEvents(account, this.eventManager)
   }
 }

@@ -4,29 +4,31 @@ import { InitiateTransferCommand } from '../../../application/commands/InitiateT
 import type { GetTransactionHistoryQueryHandler } from '../../../application/queries/GetTransactionHistoryQuery'
 import { GetTransactionHistoryQuery } from '../../../application/queries/GetTransactionHistoryQuery'
 import type { TransferSaga } from '../../../application/sagas/TransferSaga'
+import { AccountParamRequest } from '../requests/AccountParamRequest'
+import { GetTransactionHistoryRequest } from '../requests/GetTransactionHistoryRequest'
+import { InitiateTransferRequest } from '../requests/InitiateTransferRequest'
+import { BaseController } from './BaseController'
 
-export class TransferController {
+export class TransferController extends BaseController {
   constructor(
     private readonly initiateTransferHandler: InitiateTransferCommandHandler,
     private readonly getTransactionHistoryHandler: GetTransactionHistoryQueryHandler,
     private readonly transferSaga: TransferSaga
-  ) {}
+  ) {
+    super()
+  }
 
   async initiateTransfer(c: GravitoContext): Promise<Response> {
     try {
-      const body = await c.req.json<{
-        fromAccountId: string
-        toAccountId: string
-        amountCents: number
-      }>()
+      const data = await this.validate(c, InitiateTransferRequest)
 
       const transferId = crypto.randomUUID()
       await this.initiateTransferHandler.handle(
         new InitiateTransferCommand(
           transferId,
-          body.fromAccountId,
-          body.toAccountId,
-          body.amountCents
+          data.fromAccountId,
+          data.toAccountId,
+          data.amountCents
         )
       )
 
@@ -41,11 +43,8 @@ export class TransferController {
 
   async getTransferStatus(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id')
-      if (!id) {
-        return c.json({ success: false, error: '缺少轉帳 ID' }, 400)
-      }
-      const state = this.transferSaga.getSagaState(id)
+      const data = await this.validate(c, AccountParamRequest)
+      const state = this.transferSaga.getSagaState(data.id)
 
       if (!state) {
         return c.json({ success: false, error: '轉帳記錄不存在' }, 404)
@@ -62,15 +61,11 @@ export class TransferController {
 
   async getTransactionHistory(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id')
-      if (!id) {
-        return c.json({ success: false, error: '缺少帳戶 ID' }, 400)
-      }
-      const limit = Number(c.req.query('limit') ?? '20')
-      const offset = Number(c.req.query('offset') ?? '0')
+      const id = c.req.param('id') as string
+      const data = await this.validate(c, GetTransactionHistoryRequest)
 
       const transactions = await this.getTransactionHistoryHandler.handle(
-        new GetTransactionHistoryQuery(id, limit, offset)
+        new GetTransactionHistoryQuery(id, data.limit, data.offset)
       )
 
       return c.json({ success: true, data: transactions })

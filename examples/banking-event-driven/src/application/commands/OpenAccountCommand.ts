@@ -1,9 +1,8 @@
 import type { EventManager } from '@gravito/core'
 import { Command, type CommandHandler } from '@gravito/enterprise'
 import { Account } from '../../domain/account/Account'
-import type { AccountOpened } from '../../domain/account/events/AccountOpened'
-import type { UpdateReadModelListener } from '../../infrastructure/listeners/UpdateReadModelListener'
 import type { IAccountRepository } from '../../infrastructure/repositories/IAccountRepository'
+import { dispatchAggregateEvents } from '../utils/EventDispatcher'
 
 export class OpenAccountCommand extends Command {
   constructor(
@@ -20,8 +19,7 @@ export class OpenAccountCommand extends Command {
 export class OpenAccountCommandHandler implements CommandHandler<OpenAccountCommand, string> {
   constructor(
     private readonly repository: IAccountRepository,
-    private readonly eventManager: EventManager,
-    private readonly readModelListener: UpdateReadModelListener
+    private readonly eventManager: EventManager
   ) {}
 
   async handle(command: OpenAccountCommand): Promise<string> {
@@ -35,13 +33,7 @@ export class OpenAccountCommandHandler implements CommandHandler<OpenAccountComm
 
     await this.repository.save(account)
 
-    const events = account.pullDomainEvents()
-    for (const event of events) {
-      if (event.constructor.name === 'AccountOpened') {
-        this.readModelListener.handleAccountOpened(event as AccountOpened)
-      }
-      await this.eventManager.dispatch(event as any)
-    }
+    await dispatchAggregateEvents(account, this.eventManager)
 
     return account.id
   }

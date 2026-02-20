@@ -5,8 +5,8 @@ import type { TransferDebitApplied } from '../../domain/account/events/TransferD
 import { TransferFailed } from '../../domain/account/events/TransferFailed'
 import type { TransferInitiated } from '../../domain/account/events/TransferInitiated'
 import type { DeadLetterListener } from '../../infrastructure/listeners/DeadLetterListener'
-import type { UpdateReadModelListener } from '../../infrastructure/listeners/UpdateReadModelListener'
 import type { IAccountRepository } from '../../infrastructure/repositories/IAccountRepository'
+import { dispatchAggregateEvents } from '../utils/EventDispatcher'
 
 export type SagaStatus = 'initiated' | 'debit_applied' | 'credit_applied' | 'completed' | 'failed'
 
@@ -29,7 +29,6 @@ export class TransferSaga {
   constructor(
     private readonly repository: IAccountRepository,
     private readonly eventManager: EventManager,
-    private readonly readModelListener: UpdateReadModelListener,
     private readonly deadLetterListener: DeadLetterListener
   ) {}
 
@@ -62,13 +61,7 @@ export class TransferSaga {
       const state = this.sagaStates.get(transferId)!
       this.sagaStates.set(transferId, { ...state, status: 'debit_applied' })
 
-      const events = fromAccount.pullDomainEvents()
-      for (const domainEvent of events) {
-        if (domainEvent.constructor.name === 'TransferDebitApplied') {
-          this.readModelListener.handleTransferDebitApplied(domainEvent as TransferDebitApplied)
-        }
-        await this.eventManager.dispatch(domainEvent as any)
-      }
+      await dispatchAggregateEvents(fromAccount, this.eventManager)
     } catch (error) {
       await this.compensate(transferId, error instanceof Error ? error.message : '扣款失敗')
     }
@@ -94,13 +87,7 @@ export class TransferSaga {
       // 更新 Saga 狀態
       this.sagaStates.set(transferId, { ...state, status: 'credit_applied' })
 
-      const events = toAccount.pullDomainEvents()
-      for (const domainEvent of events) {
-        if (domainEvent.constructor.name === 'TransferCreditApplied') {
-          this.readModelListener.handleTransferCreditApplied(domainEvent as TransferCreditApplied)
-        }
-        await this.eventManager.dispatch(domainEvent as any)
-      }
+      await dispatchAggregateEvents(toAccount, this.eventManager)
     } catch (error) {
       // 需要補償：退還已扣款
       await this.compensateWithRefund(
@@ -128,7 +115,6 @@ export class TransferSaga {
       amountCents: state.amountCents,
     })
 
-    this.readModelListener.handleTransferCompleted(completedEvent)
     await this.eventManager.dispatch(completedEvent as any)
   }
 
@@ -149,7 +135,6 @@ export class TransferSaga {
       reason,
     })
 
-    this.readModelListener.handleTransferFailed(failedEvent)
     this.deadLetterListener.handleTransferFailed(failedEvent)
     await this.eventManager.dispatch(failedEvent as any)
   }
@@ -184,7 +169,6 @@ export class TransferSaga {
       reason,
     })
 
-    this.readModelListener.handleTransferFailed(failedEvent)
     this.deadLetterListener.handleTransferFailed(failedEvent)
     await this.eventManager.dispatch(failedEvent as any)
   }

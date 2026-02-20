@@ -45,32 +45,17 @@ export class BankingServiceProvider extends ServiceProvider {
     // ========================================================================
     container.singleton('OpenAccountCommandHandler', () => {
       const repository = container.make<InMemoryAccountRepository>('AccountRepository')
-      const readModelListener = container.make<UpdateReadModelListener>('UpdateReadModelListener')
-      return new OpenAccountCommandHandler(
-        repository,
-        (this.core as PlanetCore).events,
-        readModelListener
-      )
+      return new OpenAccountCommandHandler(repository, (this.core as PlanetCore).events)
     })
 
     container.singleton('DepositMoneyCommandHandler', () => {
       const repository = container.make<InMemoryAccountRepository>('AccountRepository')
-      const readModelListener = container.make<UpdateReadModelListener>('UpdateReadModelListener')
-      return new DepositMoneyCommandHandler(
-        repository,
-        (this.core as PlanetCore).events,
-        readModelListener
-      )
+      return new DepositMoneyCommandHandler(repository, (this.core as PlanetCore).events)
     })
 
     container.singleton('WithdrawMoneyCommandHandler', () => {
       const repository = container.make<InMemoryAccountRepository>('AccountRepository')
-      const readModelListener = container.make<UpdateReadModelListener>('UpdateReadModelListener')
-      return new WithdrawMoneyCommandHandler(
-        repository,
-        (this.core as PlanetCore).events,
-        readModelListener
-      )
+      return new WithdrawMoneyCommandHandler(repository, (this.core as PlanetCore).events)
     })
 
     container.singleton('InitiateTransferCommandHandler', () => {
@@ -80,22 +65,12 @@ export class BankingServiceProvider extends ServiceProvider {
 
     container.singleton('FreezeAccountCommandHandler', () => {
       const repository = container.make<InMemoryAccountRepository>('AccountRepository')
-      const readModelListener = container.make<UpdateReadModelListener>('UpdateReadModelListener')
-      return new FreezeAccountCommandHandler(
-        repository,
-        (this.core as PlanetCore).events,
-        readModelListener
-      )
+      return new FreezeAccountCommandHandler(repository, (this.core as PlanetCore).events)
     })
 
     container.singleton('UnfreezeAccountCommandHandler', () => {
       const repository = container.make<InMemoryAccountRepository>('AccountRepository')
-      const readModelListener = container.make<UpdateReadModelListener>('UpdateReadModelListener')
-      return new UnfreezeAccountCommandHandler(
-        repository,
-        (this.core as PlanetCore).events,
-        readModelListener
-      )
+      return new UnfreezeAccountCommandHandler(repository, (this.core as PlanetCore).events)
     })
 
     // ========================================================================
@@ -121,14 +96,8 @@ export class BankingServiceProvider extends ServiceProvider {
     // ========================================================================
     container.singleton('TransferSaga', () => {
       const repository = container.make<InMemoryAccountRepository>('AccountRepository')
-      const readModelListener = container.make<UpdateReadModelListener>('UpdateReadModelListener')
       const deadLetterListener = container.make<DeadLetterListener>('DeadLetterListener')
-      return new TransferSaga(
-        repository,
-        (this.core as PlanetCore).events,
-        readModelListener,
-        deadLetterListener
-      )
+      return new TransferSaga(repository, (this.core as PlanetCore).events, deadLetterListener)
     })
 
     // ========================================================================

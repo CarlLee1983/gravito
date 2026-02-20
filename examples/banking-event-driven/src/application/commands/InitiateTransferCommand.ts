@@ -1,6 +1,7 @@
 import type { EventManager } from '@gravito/core'
 import { Command, type CommandHandler } from '@gravito/enterprise'
 import type { IAccountRepository } from '../../infrastructure/repositories/IAccountRepository'
+import { dispatchAggregateEvents } from '../utils/EventDispatcher'
 
 export class InitiateTransferCommand extends Command {
   constructor(
@@ -35,10 +36,6 @@ export class InitiateTransferCommandHandler
     // 發起轉帳（TransferSaga 會接手後續處理）
     fromAccount.initiateTransfer(command.transferId, command.toAccountId, command.amountCents)
     await this.repository.save(fromAccount)
-
-    const events = fromAccount.pullDomainEvents()
-    for (const event of events) {
-      await this.eventManager.dispatch(event as any)
-    }
+    await dispatchAggregateEvents(fromAccount, this.eventManager)
   }
 }
