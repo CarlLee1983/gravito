@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features
 
+* **ion:** implement Inertia v2 protocol (deferred props, merge strategies, error bags, CSRF protection)
+* **ion:** add version caching (60s TTL) for dynamic version() functions
+* **ion:** implement dev mode enhanced error pages with stack traces
 * **ripple:** implement multi-runtime engine architecture (Bun, Node/uWS, Node/ws)
 * **ripple:** implement protobuf serializer for high-performance binary messaging
 * **signal:** add presence channels with NATS KV store integration

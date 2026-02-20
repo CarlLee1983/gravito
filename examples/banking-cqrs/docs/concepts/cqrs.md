@@ -57,6 +57,8 @@ Query Request → QueryBus → QueryHandler → Repository → Database
 │ 2. 建立 DepositFundsCommand(accountId, amount)      │
 ├─────────────────────────────────────────────────────┤
 │ 3. CommandBus.dispatch(command)                     │
+│    - **執行驗證器 (Validator)**                      │
+│    - 若失敗拋出 ValidationError                      │
 ├─────────────────────────────────────────────────────┤
 │ 4. Container 解析對應的 Handler                      │
 │    (cqrs.command.DepositFundsCommand)               │
@@ -83,14 +85,15 @@ Query Request → QueryBus → QueryHandler → Repository → Database
 │ 2. 建立 GetAccountBalanceQuery(accountId)            │
 ├─────────────────────────────────────────────────────┤
 │ 3. QueryBus.execute(query)                          │
+│    - **檢查內存快取 (Cache hit?)**                  │
+│    - 若命中則跳過 4, 5 直接到 6                      │
 ├─────────────────────────────────────────────────────┤
 │ 4. Container 解析對應的 Handler                      │
 │    (cqrs.query.GetAccountBalanceQuery)              │
 ├─────────────────────────────────────────────────────┤
 │ 5. Handler.handle(query)                            │
 │    - 從 Repository 讀取 Account                     │
-│    - 不修改任何資料                                 │
-│    - 構建 DTO 返回給客戶端                           │
+│    - 構建 DTO 並存入快取                             │
 ├─────────────────────────────────────────────────────┤
 │ 6. 返回查詢結果                                     │
 └─────────────────────────────────────────────────────┘
@@ -246,6 +249,8 @@ Event Sourcing 與 CQRS 經常搭配使用，表示不存儲當前狀態，而�
 
 ✅ 命令與查詢的清晰分離
 ✅ 領域驅動設計（Domain-Driven Design）
+✅ **智能命令驗證 (Smart Validation)** - 基於 Zod 的自動檢查
+✅ **高效讀取快取 (Smart Caching)** - 降低 DB 負載
 ✅ 值對象和聚合根的使用
 ✅ 領域事件發布
 ✅ 完整的應用、領域和基礎設施層

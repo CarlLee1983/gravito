@@ -13,13 +13,6 @@ const createdClients: Array<{
   instance: MongoClientMock
 }> = []
 
-class MongoQueryBuilderMock {
-  constructor(
-    public collection: Record<string, unknown>,
-    public name: string
-  ) {}
-}
-
 const createDbMock = () => ({
   collection: (name: string) => ({ name }),
   listCollections: () => ({
@@ -74,19 +67,17 @@ mock.module('mongodb', () => {
     GridFSBucket: _GridFSBucket,
   }
 })
-mock.module('../src/MongoQueryBuilder', () => ({
-  MongoQueryBuilder: MongoQueryBuilderMock,
-  MongoAggregateBuilder: class {},
-}))
 
 let Mongo: typeof import('../src/Mongo').Mongo
 let MongoClient: typeof import('../src/MongoClient').MongoClient
 let MongoManager: typeof import('../src/MongoManager').MongoManager
+let MongoQueryBuilder: typeof import('../src/MongoQueryBuilder').MongoQueryBuilder
 
 beforeAll(async () => {
   ;({ Mongo } = await import('../src/Mongo'))
   ;({ MongoClient } = await import('../src/MongoClient'))
   ;({ MongoManager } = await import('../src/MongoManager'))
+  ;({ MongoQueryBuilder } = await import('../src/MongoQueryBuilder'))
 })
 
 beforeEach(() => {
@@ -203,8 +194,8 @@ describe('MongoClient', () => {
     await client.connect()
 
     const query = client.collection('users')
-    expect(query).toBeInstanceOf(MongoQueryBuilderMock)
-    expect(query.name).toBe('users')
+    expect(query).toBeInstanceOf(MongoQueryBuilder)
+    expect((query as any).collectionName).toBe('users')
 
     const db = client.database()
     const collections = await db.listCollections()

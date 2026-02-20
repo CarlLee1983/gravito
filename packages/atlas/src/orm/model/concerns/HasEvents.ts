@@ -20,7 +20,7 @@ export class HasEvents {
    * ```
    */
   static observe<T extends Model>(observer: Partial<ModelObserver<T>>): void {
-    const modelCtor = this as unknown as typeof import('../Model').Model & {
+    const modelCtor = this as unknown as typeof Model & {
       observers?: Partial<ModelObserver<Model>>[]
     }
     if (!modelCtor.observers) {
@@ -38,7 +38,7 @@ export class HasEvents {
   static async fire(event: string): Promise<void> {
     const observers =
       (
-        this as unknown as typeof import('../Model').Model & {
+        this as unknown as typeof Model & {
           observers?: Partial<ModelObserver<Model>>[]
         }
       ).observers || []

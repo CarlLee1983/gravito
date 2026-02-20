@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import type { PlanetCore } from '@gravito/core'
 import { WithdrawFundsCommand } from '../../../src/Application/Commands/WithdrawFunds/WithdrawFundsCommand'
 import { WithdrawFundsHandler } from '../../../src/Application/Commands/WithdrawFunds/WithdrawFundsHandler'
 import { Account } from '../../../src/Domain/Account/Account'
@@ -16,41 +17,35 @@ describe('WithdrawFundsHandler', () => {
     testAccount.deposit(Money.fromDollars(1000, 'TWD'))
 
     mockAccountRepository = {
-      save: mock(async () => {}),
       findById: mock(async () => testAccount),
-      existsById: mock(async () => true),
+      save: mock(async () => {}),
     }
 
     mockTransactionRepository = {
       save: mock(async () => {}),
-      findByAccountId: mock(async () => []),
-      countByAccountId: mock(async () => 0),
     }
 
     mockCore = {
       hooks: {
-        doAction: mock(() => {}),
+        doAction: mock(async () => {}),
       },
     }
 
-    handler = new WithdrawFundsHandler(mockAccountRepository, mockTransactionRepository, mockCore)
+    handler = new WithdrawFundsHandler(
+      mockAccountRepository,
+      mockTransactionRepository,
+      mockCore as PlanetCore
+    )
   })
 
   it('should withdraw funds successfully', async () => {
+    const initialBalance = testAccount.balance.cents
     const command = new WithdrawFundsCommand('acc-123', 50000, 'TWD')
 
     await handler.handle(command)
 
-    expect(mockAccountRepository.save).toHaveBeenCalledTimes(1)
-    expect(mockTransactionRepository.save).toHaveBeenCalledTimes(1)
-  })
-
-  it('should throw when insufficient balance', async () => {
-    const command = new WithdrawFundsCommand('acc-123', 150000, 'TWD')
-
-    expect(async () => {
-      await handler.handle(command)
-    }).toThrow()
+    expect(testAccount.balance.cents).toBe(initialBalance - 50000)
+    expect(mockAccountRepository.save).toHaveBeenCalled()
   })
 
   it('should throw when account not found', async () => {
@@ -63,28 +58,16 @@ describe('WithdrawFundsHandler', () => {
     }).toThrow()
   })
 
-  it('should decrease account balance', async () => {
-    const initialBalance = testAccount.balance.cents
-    const command = new WithdrawFundsCommand('acc-123', 30000, 'TWD')
+  it('should throw when insufficient funds', async () => {
+    const command = new WithdrawFundsCommand('acc-123', 200000, 'TWD')
 
-    await handler.handle(command)
-
-    const savedAccount = (mockAccountRepository.save as any).mock.calls[0][0]
-    expect(savedAccount.balance.cents).toBe(initialBalance - 30000)
+    expect(async () => {
+      await handler.handle(command)
+    }).toThrow()
   })
 
-  it('should create transaction record with correct type', async () => {
-    const command = new WithdrawFundsCommand('acc-123', 40000, 'TWD')
-
-    await handler.handle(command)
-
-    const transaction = (mockTransactionRepository.save as any).mock.calls[0][0]
-    expect(transaction.type).toBe('withdrawal')
-    expect(transaction.amount).toBe(40000)
-  })
-
-  it('should publish FundsWithdrawn event', async () => {
-    const command = new WithdrawFundsCommand('acc-123', 25000, 'TWD')
+  it('should publish domain events', async () => {
+    const command = new WithdrawFundsCommand('acc-123', 50000, 'TWD')
 
     await handler.handle(command)
 

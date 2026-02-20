@@ -1,3 +1,5 @@
+import { ValidationError } from '../Application/Validation/ValidationError'
+
 /**
  * Global Error Handler Middleware
  *
@@ -5,6 +7,7 @@
  * Provides consistent error responses across all API endpoints.
  *
  * **Error Mapping Strategy:**
+ * - ValidationError（輸入驗證失敗）→ 400 Bad Request，包含詳細 violations
  * - Business validation errors (not found, insufficient balance, etc.) → 4xx
  * - Business rule violations (account frozen, limit exceeded) → 4xx
  * - System errors (unexpected exceptions) → 500
@@ -18,6 +21,16 @@
  * }
  * ```
  *
+ * **ValidationError Response Format:**
+ * ```json
+ * {
+ *   "success": false,
+ *   "error": "驗證失敗（CreateAccountCommand）：[field] message",
+ *   "code": "VALIDATION_ERROR",
+ *   "violations": [{ "field": "accountId", "message": "帳戶 ID 不得為空" }]
+ * }
+ * ```
+ *
  * @since 1.0.0
  */
 
@@ -25,6 +38,10 @@ interface ErrorResponse {
   success: false
   error: string
   code?: string
+}
+
+interface ValidationErrorResponse extends ErrorResponse {
+  violations: ReadonlyArray<{ readonly field: string; readonly message: string }>
 }
 
 /**
@@ -62,6 +79,19 @@ const errorMap: Record<string, { status: number; code: string }> = {
  */
 export function createErrorHandler() {
   return (err: Error, ctx: any) => {
+    // 優先處理 ValidationError（輸入驗證失敗），回傳 400 Bad Request 及詳細 violations
+    if (err instanceof ValidationError) {
+      return ctx.json(
+        {
+          success: false,
+          error: err.message,
+          code: 'VALIDATION_ERROR',
+          violations: err.violations,
+        } as ValidationErrorResponse,
+        400
+      )
+    }
+
     // Try to match known business errors
     for (const [keyword, { status, code }] of Object.entries(errorMap)) {
       if (err.message.includes(keyword)) {

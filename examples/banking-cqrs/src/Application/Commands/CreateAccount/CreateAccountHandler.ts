@@ -2,6 +2,7 @@ import type { PlanetCore } from '@gravito/core'
 import type { CommandHandler } from '@gravito/enterprise'
 import { Account } from '../../../Domain/Account/Account'
 import type { IAccountRepository } from '../../../Domain/Account/IAccountRepository'
+import { publishDomainEvents } from '../../Bus/publishDomainEvents'
 import type { CreateAccountCommand } from './CreateAccountCommand'
 
 /**
@@ -17,8 +18,7 @@ import type { CreateAccountCommand } from './CreateAccountCommand'
  *     1. Check account doesn't exist (idempotence)
  *     2. Create Account aggregate via factory method
  *     3. Persist to database
- *     4. Pull domain events from aggregate
- *     5. Publish events via Gravito hooks
+ *     4. Publish domain events via publishDomainEvents helper
  * ```
  *
  * **Domain Events:**
@@ -98,9 +98,6 @@ export class CreateAccountHandler implements CommandHandler<CreateAccountCommand
 
     await this.repository.save(account)
 
-    const events = account.pullDomainEvents()
-    for (const event of events) {
-      this.core.hooks.doAction(`cqrs:domain-event`, event)
-    }
+    await publishDomainEvents(this.core, account)
   }
 }

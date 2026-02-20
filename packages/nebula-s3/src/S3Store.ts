@@ -138,7 +138,7 @@ export class S3Store implements StorageStore {
         Key: key,
       })
 
-      const response: GetObjectCommandOutput = await this.client.send(command)
+      const response = (await this.client.send(command)) as any
 
       if (!response.Body) {
         return null
@@ -245,12 +245,12 @@ export class S3Store implements StorageStore {
         Key: key,
       })
 
-      const response: HeadObjectCommandOutput = await this.client.send(command)
+      const response = (await this.client.send(command)) as any
 
       // Decode URL-encoded metadata values
       const decodedMetadata = response.Metadata
         ? Object.fromEntries(
-            Object.entries(response.Metadata).map(([k, v]) => {
+            Object.entries(response.Metadata).map(([k, v]: [string, any]) => {
               try {
                 return [k, decodeURIComponent(v as string)]
               } catch {
@@ -388,7 +388,7 @@ export class S3Store implements StorageStore {
         Key: key,
       })
 
-      const response: GetObjectCommandOutput = await this.client.send(command)
+      const response = (await this.client.send(command)) as any
 
       if (!response.Body) {
         return null
@@ -432,9 +432,9 @@ export class S3Store implements StorageStore {
       ContinuationToken: options?.cursor,
     })
 
-    const response: ListObjectsV2CommandOutput = await this.client.send(command)
+    const response = (await this.client.send(command)) as any
 
-    const items: StorageItem[] = (response.Contents ?? []).map((obj) => ({
+    const items: StorageItem[] = (response.Contents ?? []).map((obj: any) => ({
       key: obj.Key!,
       isDirectory: obj.Key?.endsWith('/') === true,
       size: obj.Size,

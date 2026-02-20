@@ -51,6 +51,7 @@ export class SchemaRegistry {
   private static instance: SchemaRegistry | null = null
 
   private cache: Map<string, TableSchema> = new Map()
+  private pendingSniffs: Map<string, Promise<TableSchema>> = new Map()
   private sniffer: SchemaSniffer
   private mode: SchemaMode
   private lockPath: string
@@ -129,8 +130,23 @@ export class SchemaRegistry {
 
     // JIT Mode: Sniff from database
     if (this.mode === 'jit') {
-      const sniffer = connection ? new SchemaSniffer(connection) : this.sniffer
-      const schema = await sniffer.sniff(table)
+      // Check for pending sniffs to avoid race conditions (Promise deduplication)
+      let pending = this.pendingSniffs.get(cacheKey)
+      if (!pending) {
+        const sniffer = connection ? new SchemaSniffer(connection) : this.sniffer
+        pending = sniffer.sniff(table).finally(() => {
+          this.pendingSniffs.delete(cacheKey)
+        })
+        this.pendingSniffs.set(cacheKey, pending)
+      }
+
+      const schema = await pending
+
+      // Limit cache size to prevent OOM
+      if (this.cache.size > 2000) {
+        this.cache.clear()
+      }
+
       this.cache.set(cacheKey, schema)
       return schema
     }
@@ -201,6 +217,12 @@ export class SchemaRegistry {
 
     this.cache.delete(table)
     const schema = await this.sniffer.sniff(table)
+
+    // Limit cache size to prevent OOM
+    if (this.cache.size > 2000) {
+      this.cache.clear()
+    }
+
     this.cache.set(table, schema)
     return schema
   }
