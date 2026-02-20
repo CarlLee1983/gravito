@@ -131,3 +131,20 @@
    - **願景**：讓 Atlas 在高寫入的高可用性場景中具備更高等級的安全預防措施。
 
 ---
+
+## 優化執行紀錄 (2026-02-20 更新)
+
+計畫所列載之所有重大效能與架構瓶頸，目前已全數修復完畢：
+
+### ✅ 短期改進 (已完成)
+- **修復 JIT Schema 重複嗅探**：實作 Promise Deduplication，避免了 Node/Bun 下因高並發發生的 `DESCRIBE TABLE` Request 競態問題。
+- **清除記憶體溢出風險**：拔除無上限之 `_studlyCache` Map，強制設立 Capacity 限制 (Cap model property cache size) 防禦 OOM 錯誤發生。
+
+### ✅ 中期重構 (已完成)
+- **移除 Require / Import 循環相依**：導入靜態 Relationship Resolver 注入模式，解開 QueryBuilder 與 Model 間的動態加載耦合，確保 ESM 靜態分析與打包效率。
+
+### ✅ 長期演進 (已完成)
+- **實作分庫 (Sharding) 架構**：引入了 `@sharded` Model 裝飾器與 `ShardingManager` 支援自動分發連線，並打通 Active Record API 可利用 `.shard(key)` 動態切換連線。
+- **支援全局樂觀鎖重試防護**：於底層 `DB` Facade 新增 `transactionWithRetry` 方法，以防範並發寫入衝突 (StaleModelError / DB Deadlocks) 後自動進行 Exponential Backoff（指數退避）與重試策略，達到防護高寫入場景。
+
+---
