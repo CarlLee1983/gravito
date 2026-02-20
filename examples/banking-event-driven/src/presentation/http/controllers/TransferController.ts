@@ -10,6 +10,7 @@ import {
   AccountParamRequest,
   GetTransactionHistoryRequest,
   InitiateTransferRequest,
+  TransferParamRequest,
 } from '#presentation/http/requests'
 import { BaseController } from './BaseController'
 
@@ -56,7 +57,7 @@ export class TransferController extends BaseController {
    */
   async getTransferStatus(c: GravitoContext): Promise<Response> {
     try {
-      const data = await this.validate(c, AccountParamRequest)
+      const data = await this.validate(c, TransferParamRequest)
       const state = this.transferSaga.getSagaState(data.id)
 
       if (!state) {
@@ -75,11 +76,13 @@ export class TransferController extends BaseController {
    */
   async getTransactionHistory(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id') as string
+      // Validate route parameter
+      const params = await this.validate(c, AccountParamRequest)
+      // Validate query parameters
       const data = await this.validate(c, GetTransactionHistoryRequest)
 
       const transactions = await this.getTransactionHistoryHandler.handle(
-        new GetTransactionHistoryQuery(id, data.limit, data.offset)
+        new GetTransactionHistoryQuery(params.id, data.limit, data.offset)
       )
 
       return c.json({ success: true, data: transactions })

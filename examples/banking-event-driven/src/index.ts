@@ -31,14 +31,29 @@ async function bootstrap(): Promise<void> {
     // =========================================================================
     // 3. Add CORS Middleware (Support cross-origin requests)
     // =========================================================================
+    // SECURITY: Restrict CORS to known origins only
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5173', // Vite dev server
+      'http://localhost:8080', // Common dev port
+      // In production, add your actual domain(s) here
+      // e.g., 'https://banking.example.com'
+    ]
+
     core.adapter.use(
       '*',
       cors({
-        origin: '*',
+        origin: (requestOrigin: string | undefined) => {
+          if (!requestOrigin) {
+            return 'http://localhost:3000' // Default for non-browser requests
+          }
+          return allowedOrigins.includes(requestOrigin) ? requestOrigin : false
+        },
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
         exposedHeaders: ['Content-Length'],
         maxAge: 600,
+        credentials: true, // Allow cookies/auth headers
       })
     )
 

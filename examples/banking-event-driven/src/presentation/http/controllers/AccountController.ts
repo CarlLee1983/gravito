@@ -141,10 +141,12 @@ export class AccountController extends BaseController {
    */
   async depositMoney(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id') as string
+      // Validate route parameter
+      const params = await this.validate(c, AccountParamRequest)
+      // Validate request body
       const data = await this.validate(c, DepositMoneyRequest)
 
-      await this.depositHandler.handle(new DepositMoneyCommand(id, data.amountCents))
+      await this.depositHandler.handle(new DepositMoneyCommand(params.id, data.amountCents))
       return c.json({ success: true, message: 'Deposit successful' })
     } catch (error) {
       return this.handleError(c, error)
@@ -157,10 +159,12 @@ export class AccountController extends BaseController {
    */
   async withdrawMoney(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id') as string
+      // Validate route parameter
+      const params = await this.validate(c, AccountParamRequest)
+      // Validate request body
       const data = await this.validate(c, WithdrawMoneyRequest)
 
-      await this.withdrawHandler.handle(new WithdrawMoneyCommand(id, data.amountCents))
+      await this.withdrawHandler.handle(new WithdrawMoneyCommand(params.id, data.amountCents))
       return c.json({ success: true, message: 'Withdrawal successful' })
     } catch (error) {
       return this.handleError(c, error)
@@ -173,10 +177,12 @@ export class AccountController extends BaseController {
    */
   async freezeAccount(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id') as string
+      // Validate route parameter
+      const params = await this.validate(c, AccountParamRequest)
+      // Validate request body
       const data = await this.validate(c, FreezeAccountRequest)
 
-      await this.freezeHandler.handle(new FreezeAccountCommand(id, data.reason))
+      await this.freezeHandler.handle(new FreezeAccountCommand(params.id, data.reason))
       return c.json({ success: true, message: 'Account frozen' })
     } catch (error) {
       return this.handleError(c, error)

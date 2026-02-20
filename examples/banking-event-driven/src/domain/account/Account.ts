@@ -17,6 +17,9 @@ export type AccountStatus = 'active' | 'frozen'
 /**
  * Account - Core Aggregate Root for the banking domain.
  * Manages balance, status, and transaction-related domain events.
+ *
+ * Implements Optimistic Concurrency Control (OCC) using a version field
+ * to detect and prevent concurrent modification conflicts.
  */
 export class Account extends AggregateRoot<string> {
   private _ownerId: string
@@ -24,6 +27,7 @@ export class Account extends AggregateRoot<string> {
   private _balance: Money
   private _status: AccountStatus
   private _currency: string
+  private _version: number
   private _createdAt: Date
   private _updatedAt: Date
 
@@ -34,6 +38,7 @@ export class Account extends AggregateRoot<string> {
     balance: Money,
     status: AccountStatus,
     currency: string,
+    version: number,
     createdAt: Date,
     updatedAt: Date
   ) {
@@ -43,6 +48,7 @@ export class Account extends AggregateRoot<string> {
     this._balance = balance
     this._status = status
     this._currency = currency
+    this._version = version
     this._createdAt = createdAt
     this._updatedAt = updatedAt
   }
@@ -62,6 +68,9 @@ export class Account extends AggregateRoot<string> {
   }
   get currency(): string {
     return this._currency
+  }
+  get version(): number {
+    return this._version
   }
   get createdAt(): Date {
     return this._createdAt
@@ -95,6 +104,7 @@ export class Account extends AggregateRoot<string> {
       Money.of(initialDepositCents),
       'active',
       currency,
+      1, // Initialize version to 1
       now,
       now
     )
@@ -121,6 +131,7 @@ export class Account extends AggregateRoot<string> {
     this.assertActive()
     this._balance = this._balance.add(Money.of(amountCents))
     this._updatedAt = new Date()
+    this._version++
 
     this.addDomainEvent(
       new MoneyDeposited(this.id, {
@@ -146,6 +157,7 @@ export class Account extends AggregateRoot<string> {
     }
     this._balance = this._balance.subtract(amount)
     this._updatedAt = new Date()
+    this._version++
 
     this.addDomainEvent(
       new MoneyWithdrawn(this.id, {
@@ -172,6 +184,7 @@ export class Account extends AggregateRoot<string> {
     }
     this._balance = this._balance.subtract(amount)
     this._updatedAt = new Date()
+    this._version++
 
     this.addDomainEvent(
       new TransferDebitApplied(this.id, {
@@ -193,6 +206,7 @@ export class Account extends AggregateRoot<string> {
     this.assertActive()
     this._balance = this._balance.add(Money.of(amountCents))
     this._updatedAt = new Date()
+    this._version++
 
     this.addDomainEvent(
       new TransferCreditApplied(this.id, {
@@ -235,6 +249,7 @@ export class Account extends AggregateRoot<string> {
     }
     this._status = 'frozen'
     this._updatedAt = new Date()
+    this._version++
 
     this.addDomainEvent(new AccountFrozen(this.id, { reason }))
   }
@@ -250,6 +265,7 @@ export class Account extends AggregateRoot<string> {
     }
     this._status = 'active'
     this._updatedAt = new Date()
+    this._version++
 
     this.addDomainEvent(new AccountUnfrozen(this.id, {}))
   }
