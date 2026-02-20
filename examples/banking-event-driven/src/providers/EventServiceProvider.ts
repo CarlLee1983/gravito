@@ -1,10 +1,10 @@
 import { type Container, type PlanetCore, ServiceProvider } from '@gravito/core'
-import type { TransferSaga } from '../application/sagas/TransferSaga'
-import type { TransferCreditApplied } from '../domain/account/events/TransferCreditApplied'
-import type { TransferDebitApplied } from '../domain/account/events/TransferDebitApplied'
-import type { TransferInitiated } from '../domain/account/events/TransferInitiated'
-import type { UpdateReadModelListener } from '../infrastructure/listeners/UpdateReadModelListener'
-import type { SSEManager } from '../presentation/http/SSEManager'
+import type { TransferSaga } from '#application/sagas/TransferSaga'
+import type { TransferCreditApplied } from '#domain/account/events/TransferCreditApplied'
+import type { TransferDebitApplied } from '#domain/account/events/TransferDebitApplied'
+import type { TransferInitiated } from '#domain/account/events/TransferInitiated'
+import type { UpdateReadModelListener } from '#infrastructure/listeners/UpdateReadModelListener'
+import type { SSEManager } from '#presentation/http/SSEManager'
 
 /**
  * Service Provider responsible for configuring event-driven logic,

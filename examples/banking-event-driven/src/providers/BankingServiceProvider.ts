@@ -1,24 +1,26 @@
 import { type Container, type PlanetCore, ServiceProvider } from '@gravito/core'
-import { DepositMoneyCommandHandler } from '../application/commands/DepositMoneyCommand'
 import {
+  DepositMoneyCommandHandler,
   FreezeAccountCommandHandler,
+  InitiateTransferCommandHandler,
+  OpenAccountCommandHandler,
   UnfreezeAccountCommandHandler,
-} from '../application/commands/FreezeAccountCommand'
-import { InitiateTransferCommandHandler } from '../application/commands/InitiateTransferCommand'
-import { OpenAccountCommandHandler } from '../application/commands/OpenAccountCommand'
-import { WithdrawMoneyCommandHandler } from '../application/commands/WithdrawMoneyCommand'
-import { GetAccountBalanceQueryHandler } from '../application/queries/GetAccountBalanceQuery'
-import { GetAllAccountsQueryHandler } from '../application/queries/GetAllAccountsQuery'
-import { GetTransactionHistoryQueryHandler } from '../application/queries/GetTransactionHistoryQuery'
-import { TransferSaga } from '../application/sagas/TransferSaga'
-import { DeadLetterListener } from '../infrastructure/listeners/DeadLetterListener'
-import { UpdateReadModelListener } from '../infrastructure/listeners/UpdateReadModelListener'
-import { AccountReadModel } from '../infrastructure/projections/AccountReadModel'
-import { TransactionReadModel } from '../infrastructure/projections/TransactionReadModel'
-import { InMemoryAccountRepository } from '../infrastructure/repositories/InMemoryAccountRepository'
-import { AccountController } from '../presentation/http/controllers/AccountController'
-import { TransferController } from '../presentation/http/controllers/TransferController'
-import { SSEManager } from '../presentation/http/SSEManager'
+  WithdrawMoneyCommandHandler,
+} from '#application/commands'
+import {
+  GetAccountBalanceQueryHandler,
+  GetAllAccountsQueryHandler,
+  GetTransactionHistoryQueryHandler,
+} from '#application/queries'
+import { TransferSaga } from '#application/sagas/TransferSaga'
+import { DeadLetterListener } from '#infrastructure/listeners/DeadLetterListener'
+import { UpdateReadModelListener } from '#infrastructure/listeners/UpdateReadModelListener'
+import { AccountReadModel } from '#infrastructure/projections/AccountReadModel'
+import { TransactionReadModel } from '#infrastructure/projections/TransactionReadModel'
+import { InMemoryAccountRepository } from '#infrastructure/repositories/InMemoryAccountRepository'
+import { AccountController } from '#presentation/http/controllers/AccountController'
+import { TransferController } from '#presentation/http/controllers/TransferController'
+import { SSEManager } from '#presentation/http/SSEManager'
 
 /**
  * Service Provider responsible for registering and configuring all banking-related

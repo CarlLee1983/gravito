@@ -17,6 +17,9 @@
       ],
       "#presentation/*": [
         "src/presentation/*"
+      ],
+      "#domain/*": [
+        "src/domain/*"
       ]
     }
   },
