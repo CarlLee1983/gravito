@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { autoConfigure, loadConfigFile } from '../src/config/loadConfig'
+import { loadConfigFile } from '../src/config/loadConfig'
 import { DB } from '../src/DB'
 
 describe('loadConfig', () => {
@@ -18,7 +18,7 @@ describe('loadConfig', () => {
       process.env.DB_DRIVER = 'sqlite'
       process.env.DB_DATABASE = ':memory:'
 
-      await autoConfigure()
+      await DB.autoConfigure()
       expect(DB.connection().getConfig().driver).toBe('sqlite')
     } finally {
       delete process.env.DB_DRIVER

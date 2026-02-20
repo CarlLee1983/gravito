@@ -22,6 +22,7 @@ import {
 } from './clauses'
 import { Expression } from './Expression'
 import { NPlusOneDetector } from './NPlusOneDetector'
+import type { RelationshipResolver } from './RelationshipResolver'
 
 export class QueryBuilderError extends Error {
   constructor(message: string) {
@@ -57,6 +58,12 @@ export class RecordNotFoundError extends Error {
  * ```
  */
 export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderContract<T> {
+  /**
+   * Global relationship resolver to avoid circular dependencies and require() calls.
+   * Injected by the Model layer.
+   */
+  public static relationshipResolver?: RelationshipResolver
+
   /**
    * Name of the target database table.
    */
@@ -1218,8 +1225,23 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       )
     }
 
-    const { getRelationships } = require('../orm/model/relationships')
-    const relations = getRelationships(this.modelClass)
+    const resolver = (this.constructor as typeof QueryBuilder).relationshipResolver
+    let relations: Map<string, any>
+
+    if (resolver) {
+      relations = resolver.getRelationships(this.modelClass)
+    } else {
+      // Fallback for standalone QueryBuilder (avoid circular dependency with require)
+      try {
+        const { getRelationships } = require('../orm/model/relationships')
+        relations = getRelationships(this.modelClass)
+      } catch (e: any) {
+        throw new Error(
+          `whereHas() failed: Relationship resolver not configured and fallback 'require' failed. Error: ${e.message}`
+        )
+      }
+    }
+
     const meta = relations.get(relation)
 
     if (!meta) {
