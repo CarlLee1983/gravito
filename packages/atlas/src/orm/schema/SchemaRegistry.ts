@@ -141,6 +141,12 @@ export class SchemaRegistry {
       }
 
       const schema = await pending
+
+      // Limit cache size to prevent OOM
+      if (this.cache.size > 2000) {
+        this.cache.clear()
+      }
+
       this.cache.set(cacheKey, schema)
       return schema
     }
@@ -211,6 +217,12 @@ export class SchemaRegistry {
 
     this.cache.delete(table)
     const schema = await this.sniffer.sniff(table)
+
+    // Limit cache size to prevent OOM
+    if (this.cache.size > 2000) {
+      this.cache.clear()
+    }
+
     this.cache.set(table, schema)
     return schema
   }
