@@ -5,19 +5,29 @@ import type { TransferDebitApplied } from '../domain/account/events/TransferDebi
 import type { TransferInitiated } from '../domain/account/events/TransferInitiated'
 import type { UpdateReadModelListener } from '../infrastructure/listeners/UpdateReadModelListener'
 import type { SSEManager } from '../presentation/http/SSEManager'
+
+/**
+ * Service Provider responsible for configuring event-driven logic,
+ * including saga orchestration, read model updates, and real-time broadcasting.
+ */
 export class EventServiceProvider extends ServiceProvider {
   register(_container: Container): void {
-    // 事件監聽器在 boot 中設定
+    // Event listeners are configured in the boot method
   }
 
+  /**
+   * Initializes all event listeners and hooks.
+   *
+   * @param core - The PlanetCore instance.
+   */
   async boot(core: PlanetCore): Promise<void> {
     const container = core.container
     const transferSaga = container.make<TransferSaga>('TransferSaga')
     const sseManager = container.make<SSEManager>('SSEManager')
 
     // ========================================================================
-    // TransferSaga 事件監聽（Choreography 模式）
-    // 使用 HookManager 監聽事件，避免 EventManager 的類型限制
+    // TransferSaga Event Listeners (Choreography Pattern)
+    // We use HookManager to listen for events to avoid EventManager type constraints.
     // ========================================================================
     core.hooks.addAction('event:TransferInitiated', async (event: TransferInitiated) => {
       await transferSaga.handleTransferInitiated(event)
@@ -32,7 +42,7 @@ export class EventServiceProvider extends ServiceProvider {
     })
 
     // ========================================================================
-    // SSE 廣播：將所有領域事件廣播至 SSE 客戶端
+    // SSE Broadcasting: Stream all domain events to connected SSE clients.
     // ========================================================================
     const sseEvents = [
       'AccountOpened',
@@ -58,7 +68,7 @@ export class EventServiceProvider extends ServiceProvider {
     }
 
     // ========================================================================
-    // ReadModelListener 事件監聽（自動更新讀取模型）
+    // ReadModelListener: Automatically update read models in response to events.
     // ========================================================================
     const readModelListener = container.make<UpdateReadModelListener>('UpdateReadModelListener')
 
@@ -90,6 +100,6 @@ export class EventServiceProvider extends ServiceProvider {
       readModelListener.handleTransferFailed(event)
     )
 
-    console.log('[EventServiceProvider] 所有事件監聽器已啟動')
+    console.log('[EventServiceProvider] All event listeners have been initialized.')
   }
 }

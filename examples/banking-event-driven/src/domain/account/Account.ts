@@ -9,8 +9,15 @@ import { TransferCreditApplied } from './events/TransferCreditApplied'
 import { TransferDebitApplied } from './events/TransferDebitApplied'
 import { TransferInitiated } from './events/TransferInitiated'
 
+/**
+ * Represents the current status of an account.
+ */
 export type AccountStatus = 'active' | 'frozen'
 
+/**
+ * Account - Core Aggregate Root for the banking domain.
+ * Manages balance, status, and transaction-related domain events.
+ */
 export class Account extends AggregateRoot<string> {
   private _ownerId: string
   private _ownerName: string
@@ -63,6 +70,16 @@ export class Account extends AggregateRoot<string> {
     return this._updatedAt
   }
 
+  /**
+   * Factory method to open a new account.
+   *
+   * @param id - The unique identifier for the account.
+   * @param ownerId - The owner's unique identifier.
+   * @param ownerName - The owner's display name.
+   * @param currency - The account's currency.
+   * @param initialDepositCents - Initial deposit amount in cents.
+   * @returns A new Account instance.
+   */
   static open(
     id: string,
     ownerId: string,
@@ -94,6 +111,12 @@ export class Account extends AggregateRoot<string> {
     return account
   }
 
+  /**
+   * Deposits money into the account.
+   *
+   * @param amountCents - Amount to deposit in cents.
+   * @throws {Error} If the account is frozen.
+   */
   deposit(amountCents: number): void {
     this.assertActive()
     this._balance = this._balance.add(Money.of(amountCents))
@@ -107,11 +130,19 @@ export class Account extends AggregateRoot<string> {
     )
   }
 
+  /**
+   * Withdraws money from the account.
+   *
+   * @param amountCents - Amount to withdraw in cents.
+   * @throws {Error} If account is frozen or has insufficient balance.
+   */
   withdraw(amountCents: number): void {
     this.assertActive()
     const amount = Money.of(amountCents)
     if (!this._balance.isGreaterThanOrEqual(amount)) {
-      throw new Error(`餘額不足: 現有 ${this._balance.cents} 分，需要 ${amountCents} 分`)
+      throw new Error(
+        `Insufficient funds: Current balance ${this._balance.cents}, needed ${amountCents}`
+      )
     }
     this._balance = this._balance.subtract(amount)
     this._updatedAt = new Date()
@@ -124,11 +155,20 @@ export class Account extends AggregateRoot<string> {
     )
   }
 
+  /**
+   * Applies a debit for a fund transfer.
+   *
+   * @param amountCents - Amount to debit in cents.
+   * @param transferId - The ID of the transfer transaction.
+   * @throws {Error} If account is frozen or has insufficient balance for transfer.
+   */
   applyTransferDebit(amountCents: number, transferId: string): void {
     this.assertActive()
     const amount = Money.of(amountCents)
     if (!this._balance.isGreaterThanOrEqual(amount)) {
-      throw new Error(`轉帳餘額不足: 現有 ${this._balance.cents} 分，需要 ${amountCents} 分`)
+      throw new Error(
+        `Insufficient funds for transfer: Current balance ${this._balance.cents}, needed ${amountCents}`
+      )
     }
     this._balance = this._balance.subtract(amount)
     this._updatedAt = new Date()
@@ -142,6 +182,13 @@ export class Account extends AggregateRoot<string> {
     )
   }
 
+  /**
+   * Applies a credit for an incoming fund transfer.
+   *
+   * @param amountCents - Amount to credit in cents.
+   * @param transferId - The ID of the transfer transaction.
+   * @throws {Error} If the account is frozen.
+   */
   applyTransferCredit(amountCents: number, transferId: string): void {
     this.assertActive()
     this._balance = this._balance.add(Money.of(amountCents))
@@ -156,6 +203,14 @@ export class Account extends AggregateRoot<string> {
     )
   }
 
+  /**
+   * Initiates a fund transfer request.
+   *
+   * @param transferId - Unique identifier for the transfer.
+   * @param toAccountId - The recipient account ID.
+   * @param amountCents - Amount to transfer in cents.
+   * @throws {Error} If the account is frozen.
+   */
   initiateTransfer(transferId: string, toAccountId: string, amountCents: number): void {
     this.assertActive()
     this.addDomainEvent(
@@ -168,9 +223,15 @@ export class Account extends AggregateRoot<string> {
     )
   }
 
+  /**
+   * Freezes the account to prevent further transactions.
+   *
+   * @param reason - Optional explanation for freezing the account.
+   * @throws {Error} If the account is already frozen.
+   */
   freeze(reason?: string): void {
     if (this._status === 'frozen') {
-      throw new Error('帳戶已凍結')
+      throw new Error('Account is already frozen')
     }
     this._status = 'frozen'
     this._updatedAt = new Date()
@@ -178,9 +239,14 @@ export class Account extends AggregateRoot<string> {
     this.addDomainEvent(new AccountFrozen(this.id, { reason }))
   }
 
+  /**
+   * Unfreezes the account to allow transactions again.
+   *
+   * @throws {Error} If the account is already active.
+   */
   unfreeze(): void {
     if (this._status === 'active') {
-      throw new Error('帳戶已啟用')
+      throw new Error('Account is already active')
     }
     this._status = 'active'
     this._updatedAt = new Date()
@@ -188,9 +254,14 @@ export class Account extends AggregateRoot<string> {
     this.addDomainEvent(new AccountUnfrozen(this.id, {}))
   }
 
+  /**
+   * Asserts that the account is active.
+   *
+   * @throws {Error} If the account status is not active.
+   */
   private assertActive(): void {
     if (this._status !== 'active') {
-      throw new Error(`帳戶已凍結，無法執行操作`)
+      throw new Error(`Account is frozen, operation not allowed`)
     }
   }
 }

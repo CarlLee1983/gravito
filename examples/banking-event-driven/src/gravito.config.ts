@@ -1,8 +1,9 @@
 /**
- * Banking Event-Driven 應用配置
- * 使用 CQRS + EDA 模式的銀行後端
+ * Banking Event-Driven Application Configuration
+ * Configures the CQRS + EDA (Event-Driven Architecture) banking backend.
  */
 export const gravitoConfig = {
+  /** Application metadata */
   app: {
     name: 'Banking Event-Driven',
     version: '0.0.1',
@@ -10,6 +11,7 @@ export const gravitoConfig = {
     debug: process.env.DEBUG === 'true',
   },
 
+  /** HTTP server settings */
   http: {
     host: process.env.HTTP_HOST ?? '0.0.0.0',
     port: parseInt(process.env.HTTP_PORT ?? '3000'),
@@ -18,6 +20,7 @@ export const gravitoConfig = {
     corsCredentials: false,
   },
 
+  /** Event bus settings */
   event: {
     driver: 'sync',
   },

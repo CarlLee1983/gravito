@@ -8,8 +8,14 @@ import type { DeadLetterListener } from '../../infrastructure/listeners/DeadLett
 import type { IAccountRepository } from '../../infrastructure/repositories/IAccountRepository'
 import { dispatchAggregateEvents } from '../utils/EventDispatcher'
 
+/**
+ * Represents the current lifecycle state of a transfer saga.
+ */
 export type SagaStatus = 'initiated' | 'debit_applied' | 'credit_applied' | 'completed' | 'failed'
 
+/**
+ * State object stored for each active transfer saga.
+ */
 export interface SagaState {
   transferId: string
   fromAccountId: string
@@ -20,10 +26,13 @@ export interface SagaState {
 }
 
 /**
- * TransferSaga - 使用 Choreography 模式的轉帳 Saga
- * 監聽事件並依序觸發補償或繼續操作
+ * TransferSaga - Orchestrates a fund transfer using the Choreography pattern.
+ *
+ * This saga listens to domain events and triggers subsequent steps or compensation
+ * operations to ensure eventual consistency across different account aggregates.
  */
 export class TransferSaga {
+  /** In-memory storage for saga states. In production, this would be a persistent store. */
   private readonly sagaStates = new Map<string, SagaState>()
 
   constructor(
@@ -33,12 +42,14 @@ export class TransferSaga {
   ) {}
 
   /**
-   * 步驟 1: 監聽 TransferInitiated → 執行 applyTransferDebit
+   * Step 1: Listen for TransferInitiated and trigger debit application.
+   *
+   * @param event - The TransferInitiated event.
    */
   async handleTransferInitiated(event: TransferInitiated): Promise<void> {
     const { transferId, fromAccountId, toAccountId, amountCents } = event.payload
 
-    // 記錄 Saga 狀態
+    // Initialize Saga State
     this.sagaStates.set(transferId, {
       transferId,
       fromAccountId,
@@ -51,24 +62,29 @@ export class TransferSaga {
     try {
       const fromAccount = await this.repository.findById(fromAccountId)
       if (!fromAccount) {
-        throw new Error(`來源帳戶不存在: ${fromAccountId}`)
+        throw new Error(`Source account not found: ${fromAccountId}`)
       }
 
+      // Apply debit to source account
       fromAccount.applyTransferDebit(amountCents, transferId)
       await this.repository.save(fromAccount)
 
-      // 更新 Saga 狀態
+      // Update Saga state
       const state = this.sagaStates.get(transferId)!
       this.sagaStates.set(transferId, { ...state, status: 'debit_applied' })
 
+      // Dispatch resulting events (TransferDebitApplied)
       await dispatchAggregateEvents(fromAccount, this.eventManager)
     } catch (error) {
-      await this.compensate(transferId, error instanceof Error ? error.message : '扣款失敗')
+      // Trigger compensation if debit fails
+      await this.compensate(transferId, error instanceof Error ? error.message : 'Debit failed')
     }
   }
 
   /**
-   * 步驟 2: 監聽 TransferDebitApplied → 執行 applyTransferCredit
+   * Step 2: Listen for TransferDebitApplied and trigger credit application to target.
+   *
+   * @param event - The TransferDebitApplied event.
    */
   async handleTransferDebitApplied(event: TransferDebitApplied): Promise<void> {
     const { transferId } = event.payload
@@ -78,28 +94,32 @@ export class TransferSaga {
     try {
       const toAccount = await this.repository.findById(state.toAccountId)
       if (!toAccount) {
-        throw new Error(`目標帳戶不存在: ${state.toAccountId}`)
+        throw new Error(`Target account not found: ${state.toAccountId}`)
       }
 
+      // Apply credit to target account
       toAccount.applyTransferCredit(state.amountCents, transferId)
       await this.repository.save(toAccount)
 
-      // 更新 Saga 狀態
+      // Update Saga state
       this.sagaStates.set(transferId, { ...state, status: 'credit_applied' })
 
+      // Dispatch resulting events (TransferCreditApplied)
       await dispatchAggregateEvents(toAccount, this.eventManager)
     } catch (error) {
-      // 需要補償：退還已扣款
+      // Compensation required: Refund the already debited amount
       await this.compensateWithRefund(
         transferId,
         state,
-        error instanceof Error ? error.message : '入帳失敗'
+        error instanceof Error ? error.message : 'Credit application failed'
       )
     }
   }
 
   /**
-   * 步驟 3: 監聽 TransferCreditApplied → 發送 TransferCompleted
+   * Step 3: Listen for TransferCreditApplied and finalize the saga.
+   *
+   * @param event - The TransferCreditApplied event.
    */
   async handleTransferCreditApplied(event: TransferCreditApplied): Promise<void> {
     const { transferId } = event.payload
@@ -115,11 +135,15 @@ export class TransferSaga {
       amountCents: state.amountCents,
     })
 
+    // Dispatch final completion event
     await this.eventManager.dispatch(completedEvent as any)
   }
 
   /**
-   * 補償機制（無需退款時）
+   * Compensation mechanism (when no refund is needed).
+   *
+   * @param transferId - The ID of the failed transfer.
+   * @param reason - Description of the failure.
    */
   private async compensate(transferId: string, reason: string): Promise<void> {
     const state = this.sagaStates.get(transferId)
@@ -135,12 +159,17 @@ export class TransferSaga {
       reason,
     })
 
+    // Log to dead letter queue
     this.deadLetterListener.handleTransferFailed(failedEvent)
     await this.eventManager.dispatch(failedEvent as any)
   }
 
   /**
-   * 補償機制（退還已扣款）
+   * Compensation mechanism with refund (when source has already been debited).
+   *
+   * @param transferId - The ID of the failed transfer.
+   * @param state - Current state of the saga.
+   * @param reason - Description of the failure.
    */
   private async compensateWithRefund(
     transferId: string,
@@ -150,15 +179,15 @@ export class TransferSaga {
     this.sagaStates.set(transferId, { ...state, status: 'failed' })
 
     try {
-      // 退還扣款
+      // Refund the debited amount
       const fromAccount = await this.repository.findById(state.fromAccountId)
       if (fromAccount) {
         fromAccount.deposit(state.amountCents)
         await this.repository.save(fromAccount)
-        fromAccount.pullDomainEvents() // 清除退款事件，不再分發
+        fromAccount.pullDomainEvents() // Clear refund events to prevent infinite loops
       }
     } catch {
-      // 退款失敗，記錄到 DLQ
+      // Refund failed, must be handled manually or logged to DLQ
     }
 
     const failedEvent = new TransferFailed(state.fromAccountId, {
@@ -173,6 +202,12 @@ export class TransferSaga {
     await this.eventManager.dispatch(failedEvent as any)
   }
 
+  /**
+   * Retrieves the current state of a saga by transfer ID.
+   *
+   * @param transferId - The unique ID of the transfer.
+   * @returns The saga state or null if not found.
+   */
   getSagaState(transferId: string): SagaState | null {
     return this.sagaStates.get(transferId) ?? null
   }

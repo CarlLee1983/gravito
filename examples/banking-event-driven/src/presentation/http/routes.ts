@@ -4,6 +4,15 @@ import type { AccountController } from './controllers/AccountController'
 import type { TransferController } from './controllers/TransferController'
 import type { SSEManager } from './SSEManager'
 
+/**
+ * Registers all HTTP routes for the Banking Event-Driven application.
+ *
+ * @param router - The core router instance.
+ * @param accountController - Controller for account operations.
+ * @param transferController - Controller for fund transfers.
+ * @param sseManager - Manager for real-time event streaming.
+ * @param deadLetterListener - Listener for failed operations (DLQ).
+ */
 export function registerRoutes(
   router: Router,
   accountController: AccountController,
@@ -49,7 +58,7 @@ export function registerRoutes(
       start(controller) {
         sseManager.registerClient(controller)
 
-        // 發送連線成功訊息
+        // Send connection success message
         const encoder = new TextEncoder()
         controller.enqueue(encoder.encode('event: connected\ndata: {"status":"connected"}\n\n'))
       },
@@ -77,7 +86,7 @@ export function registerRoutes(
   })
 
   // ============================================================================
-  // 前端靜態檔案服務（serving public/index.html）
+  // Frontend static file serving (serving public/index.html)
   // ============================================================================
   router.get('/', async () => {
     const file = Bun.file(new URL('../../../../public/index.html', import.meta.url).pathname)

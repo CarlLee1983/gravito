@@ -1,14 +1,22 @@
 import type { GravitoContext } from '@gravito/core'
-import type { InitiateTransferCommandHandler } from '../../../application/commands/InitiateTransferCommand'
-import { InitiateTransferCommand } from '../../../application/commands/InitiateTransferCommand'
-import type { GetTransactionHistoryQueryHandler } from '../../../application/queries/GetTransactionHistoryQuery'
-import { GetTransactionHistoryQuery } from '../../../application/queries/GetTransactionHistoryQuery'
-import type { TransferSaga } from '../../../application/sagas/TransferSaga'
-import { AccountParamRequest } from '../requests/AccountParamRequest'
-import { GetTransactionHistoryRequest } from '../requests/GetTransactionHistoryRequest'
-import { InitiateTransferRequest } from '../requests/InitiateTransferRequest'
+import { InitiateTransferCommand, type InitiateTransferCommandHandler } from '#application/commands'
+import {
+  GetTransactionHistoryQuery,
+  type GetTransactionHistoryQueryHandler,
+} from '#application/queries'
+import type { TransferSaga } from '#application/sagas/TransferSaga'
+import { NotFoundError } from '#presentation/http/errors'
+import {
+  AccountParamRequest,
+  GetTransactionHistoryRequest,
+  InitiateTransferRequest,
+} from '#presentation/http/requests'
 import { BaseController } from './BaseController'
 
+/**
+ * Controller handling HTTP requests related to fund transfers.
+ * Orchestrates transfer initiation, status tracking, and transaction history.
+ */
 export class TransferController extends BaseController {
   constructor(
     private readonly initiateTransferHandler: InitiateTransferCommandHandler,
@@ -18,6 +26,10 @@ export class TransferController extends BaseController {
     super()
   }
 
+  /**
+   * Endpoint to initiate a fund transfer between two accounts.
+   * POST /api/transfers
+   */
   async initiateTransfer(c: GravitoContext): Promise<Response> {
     try {
       const data = await this.validate(c, InitiateTransferRequest)
@@ -34,31 +46,33 @@ export class TransferController extends BaseController {
 
       return c.json({ success: true, data: { transferId } }, 201)
     } catch (error) {
-      return c.json(
-        { success: false, error: error instanceof Error ? error.message : '未知錯誤' },
-        400
-      )
+      return this.handleError(c, error)
     }
   }
 
+  /**
+   * Endpoint to check the current status of a transfer saga.
+   * GET /api/transfers/:id
+   */
   async getTransferStatus(c: GravitoContext): Promise<Response> {
     try {
       const data = await this.validate(c, AccountParamRequest)
       const state = this.transferSaga.getSagaState(data.id)
 
       if (!state) {
-        return c.json({ success: false, error: '轉帳記錄不存在' }, 404)
+        throw new NotFoundError('Transfer record not found')
       }
 
       return c.json({ success: true, data: state })
     } catch (error) {
-      return c.json(
-        { success: false, error: error instanceof Error ? error.message : '未知錯誤' },
-        500
-      )
+      return this.handleError(c, error)
     }
   }
 
+  /**
+   * Endpoint to retrieve transaction history for a specific account.
+   * GET /api/accounts/:id/transactions
+   */
   async getTransactionHistory(c: GravitoContext): Promise<Response> {
     try {
       const id = c.req.param('id') as string
@@ -70,10 +84,7 @@ export class TransferController extends BaseController {
 
       return c.json({ success: true, data: transactions })
     } catch (error) {
-      return c.json(
-        { success: false, error: error instanceof Error ? error.message : '未知錯誤' },
-        500
-      )
+      return this.handleError(c, error)
     }
   }
 }

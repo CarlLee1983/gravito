@@ -10,21 +10,26 @@ import type { SSEManager } from './presentation/http/SSEManager'
 import { BankingServiceProvider } from './providers/BankingServiceProvider'
 import { EventServiceProvider } from './providers/EventServiceProvider'
 
+/**
+ * Bootstraps the Banking Event-Driven application.
+ * Initializes the core framework, registers service providers, configures middleware,
+ * and starts the HTTP server.
+ */
 async function bootstrap(): Promise<void> {
   try {
     // =========================================================================
-    // 1. 初始化 PlanetCore
+    // 1. Initialize PlanetCore
     // =========================================================================
     const core = new PlanetCore({ config: gravitoConfig as Record<string, unknown> })
 
     // =========================================================================
-    // 2. 註冊所有 ServiceProvider
+    // 2. Register Service Providers
     // =========================================================================
     core.register(new BankingServiceProvider())
     core.register(new EventServiceProvider())
 
     // =========================================================================
-    // 3. 添加 CORS 中間件（支援前端跨域請求）
+    // 3. Add CORS Middleware (Support cross-origin requests)
     // =========================================================================
     core.adapter.use(
       '*',
@@ -38,12 +43,12 @@ async function bootstrap(): Promise<void> {
     )
 
     // =========================================================================
-    // 4. Bootstrap（初始化所有 Providers）
+    // 4. Bootstrap (Initialize all providers)
     // =========================================================================
     await core.bootstrap()
 
     // =========================================================================
-    // 5. 註冊 HTTP 路由
+    // 5. Register HTTP Routes
     // =========================================================================
     const accountController = core.container.make<AccountController>('AccountController')
     const transferController = core.container.make<TransferController>('TransferController')
@@ -59,7 +64,7 @@ async function bootstrap(): Promise<void> {
     )
 
     // =========================================================================
-    // 6. 啟動 HTTP 伺服器
+    // 6. Start HTTP Server
     // =========================================================================
     const { fetch } = core.liftoff()
     const finalPort = gravitoConfig.http.port
@@ -75,37 +80,37 @@ async function bootstrap(): Promise<void> {
 
     const baseUrl = `http://localhost:${finalPort}`
 
-    console.log('\n=== Banking Event-Driven API 已啟動 ===')
-    console.log(`地址: ${baseUrl}`)
-    console.log('\n=== API 端點 ===')
-    console.log('POST   /api/accounts              - 開立帳戶')
-    console.log('GET    /api/accounts              - 查詢所有帳戶')
-    console.log('GET    /api/accounts/:id          - 查詢帳戶詳情')
-    console.log('GET    /api/accounts/:id/balance  - 查詢餘額')
-    console.log('POST   /api/accounts/:id/deposit  - 存款')
-    console.log('POST   /api/accounts/:id/withdraw - 提款')
-    console.log('POST   /api/accounts/:id/freeze   - 凍結帳戶')
-    console.log('POST   /api/accounts/:id/unfreeze - 解凍帳戶')
-    console.log('POST   /api/transfers             - 發起轉帳')
-    console.log('GET    /api/transfers/:id         - 查詢轉帳狀態')
-    console.log('GET    /api/accounts/:id/transactions - 查詢交易歷史')
-    console.log('GET    /api/events/stream         - SSE 事件串流')
-    console.log('GET    /api/dlq                   - 死信佇列')
-    console.log('GET    /api/health                - 健康檢查')
+    console.log('\n=== Banking Event-Driven API Started ===')
+    console.log(`Address: ${baseUrl}`)
+    console.log('\n=== API Endpoints ===')
+    console.log('POST   /api/accounts              - Open Account')
+    console.log('GET    /api/accounts              - List All Accounts')
+    console.log('GET    /api/accounts/:id          - Account Details')
+    console.log('GET    /api/accounts/:id/balance  - Check Balance')
+    console.log('POST   /api/accounts/:id/deposit  - Deposit Funds')
+    console.log('POST   /api/accounts/:id/withdraw - Withdraw Funds')
+    console.log('POST   /api/accounts/:id/freeze   - Freeze Account')
+    console.log('POST   /api/accounts/:id/unfreeze - Unfreeze Account')
+    console.log('POST   /api/transfers             - Initiate Transfer')
+    console.log('GET    /api/transfers/:id         - Track Transfer Status')
+    console.log('GET    /api/accounts/:id/transactions - Transaction History')
+    console.log('GET    /api/events/stream         - SSE Event Stream')
+    console.log('GET    /api/dlq                   - Dead Letter Queue')
+    console.log('GET    /api/health                - Health Check')
     console.log('=====================================\n')
 
     // =========================================================================
-    // 7. 優雅關閉
+    // 7. Graceful Shutdown
     // =========================================================================
     const handleShutdown = (signal: string) => {
-      console.log(`\n收到 ${signal} 信號，開始關閉...`)
+      console.log(`\nReceived ${signal}, shutting down...`)
       process.exit(0)
     }
 
     process.on('SIGTERM', () => handleShutdown('SIGTERM'))
     process.on('SIGINT', () => handleShutdown('SIGINT'))
   } catch (error) {
-    console.error('應用啟動失敗:', error)
+    console.error('Application failed to start:', error)
     process.exit(1)
   }
 }

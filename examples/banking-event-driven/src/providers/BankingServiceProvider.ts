@@ -20,17 +20,26 @@ import { AccountController } from '../presentation/http/controllers/AccountContr
 import { TransferController } from '../presentation/http/controllers/TransferController'
 import { SSEManager } from '../presentation/http/SSEManager'
 
+/**
+ * Service Provider responsible for registering and configuring all banking-related
+ * services, repositories, and handlers in the IoC container.
+ */
 export class BankingServiceProvider extends ServiceProvider {
+  /**
+   * Register all banking dependencies.
+   *
+   * @param container - The application IoC container.
+   */
   register(container: Container): void {
     // ========================================================================
-    // 基礎設施層
+    // Infrastructure Layer
     // ========================================================================
     container.singleton('AccountRepository', () => new InMemoryAccountRepository())
     container.singleton('AccountReadModel', () => new AccountReadModel())
     container.singleton('TransactionReadModel', () => new TransactionReadModel())
 
     // ========================================================================
-    // 監聽器
+    // Listeners
     // ========================================================================
     container.singleton('UpdateReadModelListener', () => {
       const accountReadModel = container.make<AccountReadModel>('AccountReadModel')

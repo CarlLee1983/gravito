@@ -2,9 +2,11 @@ import type { EventManager } from '@gravito/core'
 import type { AggregateRoot } from '@gravito/enterprise'
 
 /**
- * 統一處理聚合根的領域事件派發
- * @param aggregate 聚合根實例
- * @param eventManager 事件管理器
+ * Utility to unified dispatching of domain events from an aggregate root.
+ * Extracts all pending events from the aggregate and dispatches them via the event manager.
+ *
+ * @param aggregate - The aggregate root instance containing domain events.
+ * @param eventManager - The core event manager used to dispatch the events.
  */
 export async function dispatchAggregateEvents(
   aggregate: AggregateRoot<any>,
