@@ -1,10 +1,16 @@
 import type { EventManager } from '@gravito/core'
 import { Command, type CommandHandler } from '@gravito/enterprise'
-import type { MoneyWithdrawn } from '../../domain/account/events/MoneyWithdrawn'
-import type { UpdateReadModelListener } from '../../infrastructure/listeners/UpdateReadModelListener'
 import type { IAccountRepository } from '../../infrastructure/repositories/IAccountRepository'
+import { dispatchAggregateEvents } from '../utils/EventDispatcher'
 
+/**
+ * Command to withdraw money from a specific account.
+ */
 export class WithdrawMoneyCommand extends Command {
+  /**
+   * @param accountId - The unique identifier of the source account.
+   * @param amountCents - The amount to withdraw in cents.
+   */
   constructor(
     public readonly accountId: string,
     public readonly amountCents: number
@@ -13,28 +19,29 @@ export class WithdrawMoneyCommand extends Command {
   }
 }
 
+/**
+ * Handles the logic for withdrawing money from an account.
+ */
 export class WithdrawMoneyCommandHandler implements CommandHandler<WithdrawMoneyCommand, void> {
   constructor(
     private readonly repository: IAccountRepository,
-    private readonly eventManager: EventManager,
-    private readonly readModelListener: UpdateReadModelListener
+    private readonly eventManager: EventManager
   ) {}
 
+  /**
+   * Executes the withdrawal operation.
+   *
+   * @param command - The withdrawal command.
+   * @throws {Error} If the account does not exist or has insufficient funds.
+   */
   async handle(command: WithdrawMoneyCommand): Promise<void> {
     const account = await this.repository.findById(command.accountId)
     if (!account) {
-      throw new Error(`帳戶不存在: ${command.accountId}`)
+      throw new Error(`Account not found: ${command.accountId}`)
     }
 
     account.withdraw(command.amountCents)
     await this.repository.save(account)
-
-    const events = account.pullDomainEvents()
-    for (const event of events) {
-      if (event.constructor.name === 'MoneyWithdrawn') {
-        this.readModelListener.handleMoneyWithdrawn(event as MoneyWithdrawn)
-      }
-      await this.eventManager.dispatch(event as any)
-    }
+    await dispatchAggregateEvents(account, this.eventManager)
   }
 }

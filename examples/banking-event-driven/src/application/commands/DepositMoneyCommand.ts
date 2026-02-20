@@ -1,10 +1,16 @@
 import type { EventManager } from '@gravito/core'
 import { Command, type CommandHandler } from '@gravito/enterprise'
-import type { MoneyDeposited } from '../../domain/account/events/MoneyDeposited'
-import type { UpdateReadModelListener } from '../../infrastructure/listeners/UpdateReadModelListener'
 import type { IAccountRepository } from '../../infrastructure/repositories/IAccountRepository'
+import { dispatchAggregateEvents } from '../utils/EventDispatcher'
 
+/**
+ * Command to deposit money into a specific account.
+ */
 export class DepositMoneyCommand extends Command {
+  /**
+   * @param accountId - The unique identifier of the target account.
+   * @param amountCents - The amount to deposit in cents to avoid precision issues.
+   */
   constructor(
     public readonly accountId: string,
     public readonly amountCents: number
@@ -13,28 +19,29 @@ export class DepositMoneyCommand extends Command {
   }
 }
 
+/**
+ * Handles the logic for depositing money into an account.
+ */
 export class DepositMoneyCommandHandler implements CommandHandler<DepositMoneyCommand, void> {
   constructor(
     private readonly repository: IAccountRepository,
-    private readonly eventManager: EventManager,
-    private readonly readModelListener: UpdateReadModelListener
+    private readonly eventManager: EventManager
   ) {}
 
+  /**
+   * Executes the deposit operation.
+   *
+   * @param command - The deposit command containing account ID and amount.
+   * @throws {Error} If the target account does not exist.
+   */
   async handle(command: DepositMoneyCommand): Promise<void> {
     const account = await this.repository.findById(command.accountId)
     if (!account) {
-      throw new Error(`帳戶不存在: ${command.accountId}`)
+      throw new Error(`Account not found: ${command.accountId}`)
     }
 
     account.deposit(command.amountCents)
     await this.repository.save(account)
-
-    const events = account.pullDomainEvents()
-    for (const event of events) {
-      if (event.constructor.name === 'MoneyDeposited') {
-        this.readModelListener.handleMoneyDeposited(event as MoneyDeposited)
-      }
-      await this.eventManager.dispatch(event as any)
-    }
+    await dispatchAggregateEvents(account, this.eventManager)
   }
 }

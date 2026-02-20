@@ -1,25 +1,39 @@
 import type { GravitoContext } from '@gravito/core'
-import type { DepositMoneyCommandHandler } from '../../../application/commands/DepositMoneyCommand'
-import { DepositMoneyCommand } from '../../../application/commands/DepositMoneyCommand'
-import type {
-  FreezeAccountCommandHandler,
-  UnfreezeAccountCommandHandler,
-} from '../../../application/commands/FreezeAccountCommand'
 import {
+  DepositMoneyCommand,
+  type DepositMoneyCommandHandler,
   FreezeAccountCommand,
+  type FreezeAccountCommandHandler,
+  OpenAccountCommand,
+  type OpenAccountCommandHandler,
   UnfreezeAccountCommand,
-} from '../../../application/commands/FreezeAccountCommand'
-import type { OpenAccountCommandHandler } from '../../../application/commands/OpenAccountCommand'
-import { OpenAccountCommand } from '../../../application/commands/OpenAccountCommand'
-import type { WithdrawMoneyCommandHandler } from '../../../application/commands/WithdrawMoneyCommand'
-import { WithdrawMoneyCommand } from '../../../application/commands/WithdrawMoneyCommand'
-import type { GetAccountBalanceQueryHandler } from '../../../application/queries/GetAccountBalanceQuery'
-import { GetAccountBalanceQuery } from '../../../application/queries/GetAccountBalanceQuery'
-import type { GetAllAccountsQueryHandler } from '../../../application/queries/GetAllAccountsQuery'
-import { GetAllAccountsQuery } from '../../../application/queries/GetAllAccountsQuery'
-import type { IAccountRepository } from '../../../infrastructure/repositories/IAccountRepository'
+  type UnfreezeAccountCommandHandler,
+  WithdrawMoneyCommand,
+  type WithdrawMoneyCommandHandler,
+} from '#application/commands'
+import {
+  GetAccountBalanceQuery,
+  type GetAccountBalanceQueryHandler,
+  GetAllAccountsQuery,
+  type GetAllAccountsQueryHandler,
+} from '#application/queries'
+import type { IAccountRepository } from '#infrastructure/repositories/IAccountRepository'
+import { NotFoundError } from '#presentation/http/errors'
+import {
+  AccountParamRequest,
+  DepositMoneyRequest,
+  FreezeAccountRequest,
+  GetAllAccountsRequest,
+  OpenAccountRequest,
+  WithdrawMoneyRequest,
+} from '#presentation/http/requests'
+import { BaseController } from './BaseController'
 
-export class AccountController {
+/**
+ * Controller handling HTTP requests related to bank accounts.
+ * Manages account lifecycle and basic operations through commands and queries.
+ */
+export class AccountController extends BaseController {
   constructor(
     private readonly openAccountHandler: OpenAccountCommandHandler,
     private readonly depositHandler: DepositMoneyCommandHandler,
@@ -29,46 +43,44 @@ export class AccountController {
     private readonly getBalanceHandler: GetAccountBalanceQueryHandler,
     private readonly getAllAccountsHandler: GetAllAccountsQueryHandler,
     private readonly repository: IAccountRepository
-  ) {}
+  ) {
+    super()
+  }
 
+  /**
+   * Endpoint to open a new account.
+   * POST /api/accounts
+   */
   async openAccount(c: GravitoContext): Promise<Response> {
     try {
-      const body = await c.req.json<{
-        ownerId: string
-        ownerName: string
-        currency?: string
-        initialDepositCents?: number
-      }>()
-
+      const data = await this.validate(c, OpenAccountRequest)
       const accountId = crypto.randomUUID()
       await this.openAccountHandler.handle(
         new OpenAccountCommand(
           accountId,
-          body.ownerId,
-          body.ownerName,
-          body.currency ?? 'TWD',
-          body.initialDepositCents ?? 0
+          data.ownerId,
+          data.ownerName,
+          data.currency,
+          data.initialDepositCents
         )
       )
 
       return c.json({ success: true, data: { accountId } }, 201)
     } catch (error) {
-      return c.json(
-        { success: false, error: error instanceof Error ? error.message : '未知錯誤' },
-        400
-      )
+      return this.handleError(c, error)
     }
   }
 
+  /**
+   * Endpoint to retrieve details of a specific account.
+   * GET /api/accounts/:id
+   */
   async getAccount(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id')
-      if (!id) {
-        return c.json({ success: false, error: '缺少帳戶 ID' }, 400)
-      }
-      const account = await this.repository.findById(id)
+      const data = await this.validate(c, AccountParamRequest)
+      const account = await this.repository.findById(data.id)
       if (!account) {
-        return c.json({ success: false, error: '帳戶不存在' }, 404)
+        throw new NotFoundError('Account not found')
       }
 
       return c.json({
@@ -85,116 +97,110 @@ export class AccountController {
         },
       })
     } catch (error) {
-      return c.json(
-        { success: false, error: error instanceof Error ? error.message : '未知錯誤' },
-        500
-      )
+      return this.handleError(c, error)
     }
   }
 
+  /**
+   * Endpoint to list all accounts with pagination support.
+   * GET /api/accounts
+   */
   async getAllAccounts(c: GravitoContext): Promise<Response> {
     try {
-      const limit = Number(c.req.query('limit') ?? '20')
-      const offset = Number(c.req.query('offset') ?? '0')
-
-      const result = await this.getAllAccountsHandler.handle(new GetAllAccountsQuery(limit, offset))
+      const data = await this.validate(c, GetAllAccountsRequest)
+      const result = await this.getAllAccountsHandler.handle(
+        new GetAllAccountsQuery(data.limit, data.offset)
+      )
       return c.json({ success: true, ...result })
     } catch (error) {
-      return c.json(
-        { success: false, error: error instanceof Error ? error.message : '未知錯誤' },
-        500
-      )
+      return this.handleError(c, error)
     }
   }
 
+  /**
+   * Endpoint to check the balance of a specific account.
+   * GET /api/accounts/:id/balance
+   */
   async getBalance(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id')
-      if (!id) {
-        return c.json({ success: false, error: '缺少帳戶 ID' }, 400)
-      }
-      const record = await this.getBalanceHandler.handle(new GetAccountBalanceQuery(id))
+      const data = await this.validate(c, AccountParamRequest)
+      const record = await this.getBalanceHandler.handle(new GetAccountBalanceQuery(data.id))
       if (!record) {
-        return c.json({ success: false, error: '帳戶不存在' }, 404)
+        throw new NotFoundError('Account not found')
       }
 
       return c.json({ success: true, data: record })
     } catch (error) {
-      return c.json(
-        { success: false, error: error instanceof Error ? error.message : '未知錯誤' },
-        500
-      )
+      return this.handleError(c, error)
     }
   }
 
+  /**
+   * Endpoint to deposit funds into an account.
+   * POST /api/accounts/:id/deposit
+   */
   async depositMoney(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id')
-      if (!id) {
-        return c.json({ success: false, error: '缺少帳戶 ID' }, 400)
-      }
-      const body = await c.req.json<{ amountCents: number }>()
+      // Validate route parameter
+      const params = await this.validate(c, AccountParamRequest)
+      // Validate request body
+      const data = await this.validate(c, DepositMoneyRequest)
 
-      await this.depositHandler.handle(new DepositMoneyCommand(id, body.amountCents))
-      return c.json({ success: true, message: '入款成功' })
+      await this.depositHandler.handle(new DepositMoneyCommand(params.id, data.amountCents))
+      return c.json({ success: true, message: 'Deposit successful' })
     } catch (error) {
-      return c.json(
-        { success: false, error: error instanceof Error ? error.message : '未知錯誤' },
-        400
-      )
+      return this.handleError(c, error)
     }
   }
 
+  /**
+   * Endpoint to withdraw funds from an account.
+   * POST /api/accounts/:id/withdraw
+   */
   async withdrawMoney(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id')
-      if (!id) {
-        return c.json({ success: false, error: '缺少帳戶 ID' }, 400)
-      }
-      const body = await c.req.json<{ amountCents: number }>()
+      // Validate route parameter
+      const params = await this.validate(c, AccountParamRequest)
+      // Validate request body
+      const data = await this.validate(c, WithdrawMoneyRequest)
 
-      await this.withdrawHandler.handle(new WithdrawMoneyCommand(id, body.amountCents))
-      return c.json({ success: true, message: '出款成功' })
+      await this.withdrawHandler.handle(new WithdrawMoneyCommand(params.id, data.amountCents))
+      return c.json({ success: true, message: 'Withdrawal successful' })
     } catch (error) {
-      return c.json(
-        { success: false, error: error instanceof Error ? error.message : '未知錯誤' },
-        400
-      )
+      return this.handleError(c, error)
     }
   }
 
+  /**
+   * Endpoint to freeze a bank account.
+   * POST /api/accounts/:id/freeze
+   */
   async freezeAccount(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id')
-      if (!id) {
-        return c.json({ success: false, error: '缺少帳戶 ID' }, 400)
-      }
-      const body = await c.req.json<{ reason?: string }>().catch(() => ({}))
+      // Validate route parameter
+      const params = await this.validate(c, AccountParamRequest)
+      // Validate request body
+      const data = await this.validate(c, FreezeAccountRequest)
 
-      await this.freezeHandler.handle(new FreezeAccountCommand(id, (body as any).reason))
-      return c.json({ success: true, message: '帳戶已凍結' })
+      await this.freezeHandler.handle(new FreezeAccountCommand(params.id, data.reason))
+      return c.json({ success: true, message: 'Account frozen' })
     } catch (error) {
-      return c.json(
-        { success: false, error: error instanceof Error ? error.message : '未知錯誤' },
-        400
-      )
+      return this.handleError(c, error)
     }
   }
 
+  /**
+   * Endpoint to unfreeze a previously frozen account.
+   * POST /api/accounts/:id/unfreeze
+   */
   async unfreezeAccount(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id')
-      if (!id) {
-        return c.json({ success: false, error: '缺少帳戶 ID' }, 400)
-      }
+      const data = await this.validate(c, AccountParamRequest)
 
-      await this.unfreezeHandler.handle(new UnfreezeAccountCommand(id))
-      return c.json({ success: true, message: '帳戶已解凍' })
+      await this.unfreezeHandler.handle(new UnfreezeAccountCommand(data.id))
+      return c.json({ success: true, message: 'Account unfrozen' })
     } catch (error) {
-      return c.json(
-        { success: false, error: error instanceof Error ? error.message : '未知錯誤' },
-        400
-      )
+      return this.handleError(c, error)
     }
   }
 }

@@ -1,84 +1,93 @@
 import type { GravitoContext } from '@gravito/core'
-import type { InitiateTransferCommandHandler } from '../../../application/commands/InitiateTransferCommand'
-import { InitiateTransferCommand } from '../../../application/commands/InitiateTransferCommand'
-import type { GetTransactionHistoryQueryHandler } from '../../../application/queries/GetTransactionHistoryQuery'
-import { GetTransactionHistoryQuery } from '../../../application/queries/GetTransactionHistoryQuery'
-import type { TransferSaga } from '../../../application/sagas/TransferSaga'
+import { InitiateTransferCommand, type InitiateTransferCommandHandler } from '#application/commands'
+import {
+  GetTransactionHistoryQuery,
+  type GetTransactionHistoryQueryHandler,
+} from '#application/queries'
+import type { TransferSaga } from '#application/sagas/TransferSaga'
+import { NotFoundError } from '#presentation/http/errors'
+import {
+  AccountParamRequest,
+  GetTransactionHistoryRequest,
+  InitiateTransferRequest,
+  TransferParamRequest,
+} from '#presentation/http/requests'
+import { BaseController } from './BaseController'
 
-export class TransferController {
+/**
+ * Controller handling HTTP requests related to fund transfers.
+ * Orchestrates transfer initiation, status tracking, and transaction history.
+ */
+export class TransferController extends BaseController {
   constructor(
     private readonly initiateTransferHandler: InitiateTransferCommandHandler,
     private readonly getTransactionHistoryHandler: GetTransactionHistoryQueryHandler,
     private readonly transferSaga: TransferSaga
-  ) {}
+  ) {
+    super()
+  }
 
+  /**
+   * Endpoint to initiate a fund transfer between two accounts.
+   * POST /api/transfers
+   */
   async initiateTransfer(c: GravitoContext): Promise<Response> {
     try {
-      const body = await c.req.json<{
-        fromAccountId: string
-        toAccountId: string
-        amountCents: number
-      }>()
+      const data = await this.validate(c, InitiateTransferRequest)
 
       const transferId = crypto.randomUUID()
       await this.initiateTransferHandler.handle(
         new InitiateTransferCommand(
           transferId,
-          body.fromAccountId,
-          body.toAccountId,
-          body.amountCents
+          data.fromAccountId,
+          data.toAccountId,
+          data.amountCents
         )
       )
 
       return c.json({ success: true, data: { transferId } }, 201)
     } catch (error) {
-      return c.json(
-        { success: false, error: error instanceof Error ? error.message : '未知錯誤' },
-        400
-      )
+      return this.handleError(c, error)
     }
   }
 
+  /**
+   * Endpoint to check the current status of a transfer saga.
+   * GET /api/transfers/:id
+   */
   async getTransferStatus(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id')
-      if (!id) {
-        return c.json({ success: false, error: '缺少轉帳 ID' }, 400)
-      }
-      const state = this.transferSaga.getSagaState(id)
+      const data = await this.validate(c, TransferParamRequest)
+      const state = this.transferSaga.getSagaState(data.id)
 
       if (!state) {
-        return c.json({ success: false, error: '轉帳記錄不存在' }, 404)
+        throw new NotFoundError('Transfer record not found')
       }
 
       return c.json({ success: true, data: state })
     } catch (error) {
-      return c.json(
-        { success: false, error: error instanceof Error ? error.message : '未知錯誤' },
-        500
-      )
+      return this.handleError(c, error)
     }
   }
 
+  /**
+   * Endpoint to retrieve transaction history for a specific account.
+   * GET /api/accounts/:id/transactions
+   */
   async getTransactionHistory(c: GravitoContext): Promise<Response> {
     try {
-      const id = c.req.param('id')
-      if (!id) {
-        return c.json({ success: false, error: '缺少帳戶 ID' }, 400)
-      }
-      const limit = Number(c.req.query('limit') ?? '20')
-      const offset = Number(c.req.query('offset') ?? '0')
+      // Validate route parameter
+      const params = await this.validate(c, AccountParamRequest)
+      // Validate query parameters
+      const data = await this.validate(c, GetTransactionHistoryRequest)
 
       const transactions = await this.getTransactionHistoryHandler.handle(
-        new GetTransactionHistoryQuery(id, limit, offset)
+        new GetTransactionHistoryQuery(params.id, data.limit, data.offset)
       )
 
       return c.json({ success: true, data: transactions })
     } catch (error) {
-      return c.json(
-        { success: false, error: error instanceof Error ? error.message : '未知錯誤' },
-        500
-      )
+      return this.handleError(c, error)
     }
   }
 }

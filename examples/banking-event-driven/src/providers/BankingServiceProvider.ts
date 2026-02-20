@@ -1,36 +1,47 @@
 import { type Container, type PlanetCore, ServiceProvider } from '@gravito/core'
-import { DepositMoneyCommandHandler } from '../application/commands/DepositMoneyCommand'
 import {
+  DepositMoneyCommandHandler,
   FreezeAccountCommandHandler,
+  InitiateTransferCommandHandler,
+  OpenAccountCommandHandler,
   UnfreezeAccountCommandHandler,
-} from '../application/commands/FreezeAccountCommand'
-import { InitiateTransferCommandHandler } from '../application/commands/InitiateTransferCommand'
-import { OpenAccountCommandHandler } from '../application/commands/OpenAccountCommand'
-import { WithdrawMoneyCommandHandler } from '../application/commands/WithdrawMoneyCommand'
-import { GetAccountBalanceQueryHandler } from '../application/queries/GetAccountBalanceQuery'
-import { GetAllAccountsQueryHandler } from '../application/queries/GetAllAccountsQuery'
-import { GetTransactionHistoryQueryHandler } from '../application/queries/GetTransactionHistoryQuery'
-import { TransferSaga } from '../application/sagas/TransferSaga'
-import { DeadLetterListener } from '../infrastructure/listeners/DeadLetterListener'
-import { UpdateReadModelListener } from '../infrastructure/listeners/UpdateReadModelListener'
-import { AccountReadModel } from '../infrastructure/projections/AccountReadModel'
-import { TransactionReadModel } from '../infrastructure/projections/TransactionReadModel'
-import { InMemoryAccountRepository } from '../infrastructure/repositories/InMemoryAccountRepository'
-import { AccountController } from '../presentation/http/controllers/AccountController'
-import { TransferController } from '../presentation/http/controllers/TransferController'
-import { SSEManager } from '../presentation/http/SSEManager'
+  WithdrawMoneyCommandHandler,
+} from '#application/commands'
+import {
+  GetAccountBalanceQueryHandler,
+  GetAllAccountsQueryHandler,
+  GetTransactionHistoryQueryHandler,
+} from '#application/queries'
+import { TransferSaga } from '#application/sagas/TransferSaga'
+import { DeadLetterListener } from '#infrastructure/listeners/DeadLetterListener'
+import { UpdateReadModelListener } from '#infrastructure/listeners/UpdateReadModelListener'
+import { AccountReadModel } from '#infrastructure/projections/AccountReadModel'
+import { TransactionReadModel } from '#infrastructure/projections/TransactionReadModel'
+import { InMemoryAccountRepository } from '#infrastructure/repositories/InMemoryAccountRepository'
+import { AccountController } from '#presentation/http/controllers/AccountController'
+import { TransferController } from '#presentation/http/controllers/TransferController'
+import { SSEManager } from '#presentation/http/SSEManager'
 
+/**
+ * Service Provider responsible for registering and configuring all banking-related
+ * services, repositories, and handlers in the IoC container.
+ */
 export class BankingServiceProvider extends ServiceProvider {
+  /**
+   * Register all banking dependencies.
+   *
+   * @param container - The application IoC container.
+   */
   register(container: Container): void {
     // ========================================================================
-    // 基礎設施層
+    // Infrastructure Layer
     // ========================================================================
     container.singleton('AccountRepository', () => new InMemoryAccountRepository())
     container.singleton('AccountReadModel', () => new AccountReadModel())
     container.singleton('TransactionReadModel', () => new TransactionReadModel())
 
     // ========================================================================
-    // 監聽器
+    // Listeners
     // ========================================================================
     container.singleton('UpdateReadModelListener', () => {
       const accountReadModel = container.make<AccountReadModel>('AccountReadModel')
@@ -45,32 +56,17 @@ export class BankingServiceProvider extends ServiceProvider {
     // ========================================================================
     container.singleton('OpenAccountCommandHandler', () => {
       const repository = container.make<InMemoryAccountRepository>('AccountRepository')
-      const readModelListener = container.make<UpdateReadModelListener>('UpdateReadModelListener')
-      return new OpenAccountCommandHandler(
-        repository,
-        (this.core as PlanetCore).events,
-        readModelListener
-      )
+      return new OpenAccountCommandHandler(repository, (this.core as PlanetCore).events)
     })
 
     container.singleton('DepositMoneyCommandHandler', () => {
       const repository = container.make<InMemoryAccountRepository>('AccountRepository')
-      const readModelListener = container.make<UpdateReadModelListener>('UpdateReadModelListener')
-      return new DepositMoneyCommandHandler(
-        repository,
-        (this.core as PlanetCore).events,
-        readModelListener
-      )
+      return new DepositMoneyCommandHandler(repository, (this.core as PlanetCore).events)
     })
 
     container.singleton('WithdrawMoneyCommandHandler', () => {
       const repository = container.make<InMemoryAccountRepository>('AccountRepository')
-      const readModelListener = container.make<UpdateReadModelListener>('UpdateReadModelListener')
-      return new WithdrawMoneyCommandHandler(
-        repository,
-        (this.core as PlanetCore).events,
-        readModelListener
-      )
+      return new WithdrawMoneyCommandHandler(repository, (this.core as PlanetCore).events)
     })
 
     container.singleton('InitiateTransferCommandHandler', () => {
@@ -80,22 +76,12 @@ export class BankingServiceProvider extends ServiceProvider {
 
     container.singleton('FreezeAccountCommandHandler', () => {
       const repository = container.make<InMemoryAccountRepository>('AccountRepository')
-      const readModelListener = container.make<UpdateReadModelListener>('UpdateReadModelListener')
-      return new FreezeAccountCommandHandler(
-        repository,
-        (this.core as PlanetCore).events,
-        readModelListener
-      )
+      return new FreezeAccountCommandHandler(repository, (this.core as PlanetCore).events)
     })
 
     container.singleton('UnfreezeAccountCommandHandler', () => {
       const repository = container.make<InMemoryAccountRepository>('AccountRepository')
-      const readModelListener = container.make<UpdateReadModelListener>('UpdateReadModelListener')
-      return new UnfreezeAccountCommandHandler(
-        repository,
-        (this.core as PlanetCore).events,
-        readModelListener
-      )
+      return new UnfreezeAccountCommandHandler(repository, (this.core as PlanetCore).events)
     })
 
     // ========================================================================
@@ -121,14 +107,8 @@ export class BankingServiceProvider extends ServiceProvider {
     // ========================================================================
     container.singleton('TransferSaga', () => {
       const repository = container.make<InMemoryAccountRepository>('AccountRepository')
-      const readModelListener = container.make<UpdateReadModelListener>('UpdateReadModelListener')
       const deadLetterListener = container.make<DeadLetterListener>('DeadLetterListener')
-      return new TransferSaga(
-        repository,
-        (this.core as PlanetCore).events,
-        readModelListener,
-        deadLetterListener
-      )
+      return new TransferSaga(repository, (this.core as PlanetCore).events, deadLetterListener)
     })
 
     // ========================================================================

@@ -4,6 +4,15 @@ import type { AccountController } from './controllers/AccountController'
 import type { TransferController } from './controllers/TransferController'
 import type { SSEManager } from './SSEManager'
 
+/**
+ * Registers all HTTP routes for the Banking Event-Driven application.
+ *
+ * @param router - The core router instance.
+ * @param accountController - Controller for account operations.
+ * @param transferController - Controller for fund transfers.
+ * @param sseManager - Manager for real-time event streaming.
+ * @param deadLetterListener - Listener for failed operations (DLQ).
+ */
 export function registerRoutes(
   router: Router,
   accountController: AccountController,
@@ -45,16 +54,42 @@ export function registerRoutes(
   // SSE (Server-Sent Events) Stream
   // ============================================================================
   router.get('/api/events/stream', (c) => {
-    const stream = new ReadableStream({
-      start(controller) {
+    let controller: ReadableStreamDefaultController<Uint8Array> | null = null
+    let heartbeatInterval: NodeJS.Timeout | null = null
+
+    const stream = new ReadableStream<Uint8Array>({
+      start(ctrl) {
+        controller = ctrl
         sseManager.registerClient(controller)
 
-        // 發送連線成功訊息
+        // Send connection success message
         const encoder = new TextEncoder()
         controller.enqueue(encoder.encode('event: connected\ndata: {"status":"connected"}\n\n'))
+
+        // Set up heartbeat to prevent connection timeout (every 30 seconds)
+        heartbeatInterval = setInterval(() => {
+          if (controller) {
+            try {
+              const encoder = new TextEncoder()
+              controller.enqueue(encoder.encode(':ping\n\n'))
+            } catch {
+              // Client disconnected, cleanup will occur in cancel handler
+            }
+          }
+        }, 30000)
       },
-      cancel(controller) {
-        sseManager.unregisterClient(controller as any)
+      cancel() {
+        // Clean up heartbeat interval
+        if (heartbeatInterval) {
+          clearInterval(heartbeatInterval)
+          heartbeatInterval = null
+        }
+
+        // Unregister client from SSE manager
+        if (controller) {
+          sseManager.unregisterClient(controller)
+          controller = null
+        }
       },
     })
 
@@ -63,21 +98,33 @@ export function registerRoutes(
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         Connection: 'keep-alive',
-        'Access-Control-Allow-Origin': '*',
+        // CORS headers are handled by the CORS middleware in index.ts
       },
     })
   })
 
   // ============================================================================
-  // Dead Letter Queue
+  // Dead Letter Queue (Protected - Admin Only)
   // ============================================================================
   router.get('/api/dlq', (c) => {
+    // SECURITY: Require authorization to access DLQ
+    const authHeader = c.req.header('Authorization')
+
+    // Simple API key authentication for demo purposes
+    // In production, use OAuth2, JWT, or similar
+    const expectedApiKey = process.env.DLQ_API_KEY || 'demo-api-key-change-in-production'
+    const providedKey = authHeader?.replace(/^Bearer\s+/i, '')
+
+    if (!providedKey || providedKey !== expectedApiKey) {
+      return c.json({ success: false, error: 'Unauthorized access to DLQ' }, 401)
+    }
+
     const records = deadLetterListener.getDLQRecords()
     return c.json({ success: true, data: records, total: records.length })
   })
 
   // ============================================================================
-  // 前端靜態檔案服務（serving public/index.html）
+  // Frontend static file serving (serving public/index.html)
   // ============================================================================
   router.get('/', async () => {
     const file = Bun.file(new URL('../../../../public/index.html', import.meta.url).pathname)
