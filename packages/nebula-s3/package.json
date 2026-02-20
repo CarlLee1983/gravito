@@ -36,8 +36,9 @@
     "@gravito/nebula": "workspace:*"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "typescript": "^5.7.3"
+    "bun-types": "latest",
+    "tsup": "^8.0.0",
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "@gravito/core": "workspace:*"

@@ -10,7 +10,7 @@
     "skipLibCheck": true,
     "types": [
       "node",
-      "bun"
+      "bun-types"
     ],
     "esModuleInterop": true,
     "jsx": "react-jsx",
