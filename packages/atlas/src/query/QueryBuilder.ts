@@ -4,6 +4,7 @@ import type {
   BooleanOperator,
   CompiledQuery,
   ConnectionContract,
+  CursorPaginateResult,
   GrammarContract,
   JoinType,
   Operator,
@@ -11,6 +12,7 @@ import type {
   PaginateResult,
   QueryBuilderContract,
 } from '../types'
+import { buildCursorWhereClause, decodeCursor, encodeCursor } from '../utils/CursorEncoding'
 import {
   GroupByClause,
   HavingClause,
@@ -87,6 +89,13 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Read-only flag to bypass hydration for performance.
    */
   protected isReadOnly = false
+
+  /**
+   * When true, this query will always use the write (primary) connection,
+   * even if read replicas are configured. Use after a write to avoid
+   * replication lag issues.
+   */
+  protected _forceWrite = false
 
   /**
    * Map of relationships to load alongside query results.
@@ -534,6 +543,50 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   orWhereJsonContains(column: string, value: unknown): this {
     return this.orWhereRaw(this.grammar.compileJsonContains(column, value), [JSON.stringify(value)])
+  }
+
+  /**
+   * Spatial distance filter: matches records within a given radius.
+   *
+   * Generates dialect-appropriate SQL:
+   * - **PostgreSQL**: `ST_DWithin(column::geography, ST_MakePoint(lng, lat)::geography, distance)`
+   * - **MySQL**: `ST_Distance_Sphere(column, POINT(lng, lat)) <= distance`
+   *
+   * Requires a spatial/geometry column and a GIS extension.
+   *
+   * @param column - The geometry/geography column name
+   * @param point - GPS point `{ lat, lng }` in decimal degrees
+   * @param distanceMeters - Search radius in meters
+   *
+   * @example
+   * ```typescript
+   * // Find all stores within 5km of a location
+   * await Store.query().whereDistanceWithin('location', { lat: 25.04, lng: 121.52 }, 5000).get()
+   * ```
+   */
+  whereDistanceWithin(
+    column: string,
+    point: { lat: number; lng: number },
+    distanceMeters: number
+  ): this {
+    const driverName = this.connection.getDriver().getDriverName()
+    const { lat, lng } = point
+
+    if (driverName === 'postgres') {
+      // ST_DWithin uses geography type for meter-based distance
+      return this.whereRaw(`ST_DWithin(${column}::geography, ST_MakePoint(?, ?)::geography, ?)`, [
+        lng,
+        lat,
+        distanceMeters,
+      ])
+    }
+
+    // MySQL / MariaDB: ST_Distance_Sphere returns meters
+    return this.whereRaw(`ST_Distance_Sphere(${column}, POINT(?, ?)) <= ?`, [
+      lng,
+      lat,
+      distanceMeters,
+    ])
   }
 
   /**
@@ -1397,6 +1450,119 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   async simplePaginate(perPage = 15, page = 1, primaryKey = 'id'): Promise<PaginateResult<T>> {
     return this.paginate(perPage, page, primaryKey)
+  }
+
+  /**
+   * Forces this query to use the primary (write) connection.
+   *
+   * Essential after writes to avoid reading stale data from replicas.
+   * Example: after saving a model, use `.useWriteConnection()` to read back.
+   *
+   * @example
+   * ```typescript
+   * await User.create({ name: 'Alice' })
+   * const alice = await User.query().useWriteConnection().where('name', 'Alice').first()
+   * ```
+   */
+  useWriteConnection(): this {
+    this.ensureOwnState()
+    this._forceWrite = true
+    return this
+  }
+
+  /**
+   * Cursor-based pagination for large datasets.
+   *
+   * Achieves O(1) performance by using tuple comparison SQL instead of OFFSET.
+   * Ideal for infinite scroll, API cursors, and feeds with millions of records.
+   *
+   * @param limit - Number of records to fetch per page
+   * @param cursor - Opaque cursor from a previous page's `nextCursor` (undefined for first page)
+   * @param sortColumn - Column to sort by (defaults to primary key 'id')
+   * @param direction - Sort direction (defaults to 'asc')
+   * @returns CursorPaginateResult with data and cursor metadata
+   *
+   * @example
+   * ```typescript
+   * // First page
+   * const page1 = await User.query().orderBy('created_at').cursorPaginate(20)
+   *
+   * // Next page using cursor from previous result
+   * const page2 = await User.query().orderBy('created_at').cursorPaginate(20, page1.nextCursor)
+   * ```
+   */
+  async cursorPaginate(
+    limit = 15,
+    cursor?: string,
+    sortColumn = 'id',
+    direction: 'asc' | 'desc' = 'asc'
+  ): Promise<CursorPaginateResult<T>> {
+    this.ensureOwnState()
+
+    // Determine the primary key column name
+    const primaryKey = (this.modelClass as any)?.primaryKey ?? 'id'
+
+    // Apply cursor condition to WHERE clause
+    if (cursor) {
+      const payload = decodeCursor(cursor)
+      const { sql, bindings } = buildCursorWhereClause(payload, primaryKey)
+      this.whereRaw(sql, bindings)
+    }
+
+    // Ensure deterministic ordering
+    if (sortColumn !== primaryKey) {
+      // Only add sort column order if not already present
+      const existingOrders = this.orderByClause.getOrders()
+      const hasSortCol = existingOrders.some((o) => o.column === sortColumn)
+      if (!hasSortCol) {
+        this.orderByClause.orderBy(sortColumn, direction)
+      }
+    }
+    const existingOrders = this.orderByClause.getOrders()
+    const hasPkOrder = existingOrders.some((o) => o.column === primaryKey)
+    if (!hasPkOrder) {
+      this.orderByClause.orderBy(primaryKey, direction)
+    }
+
+    // Fetch limit + 1 to detect if there are more records
+    const rows = await this.clone()
+      .limit(limit + 1)
+      .get()
+
+    const hasMore = rows.length > limit
+    const data = hasMore ? rows.slice(0, limit) : rows
+
+    // Build next cursor from last record in the current page
+    let nextCursor: string | null = null
+    if (hasMore && data.length > 0) {
+      const lastRow = data[data.length - 1] as Record<string, unknown>
+      nextCursor = encodeCursor({
+        id: lastRow[primaryKey],
+        sortValue: lastRow[sortColumn] ?? lastRow[primaryKey],
+        sortColumn,
+        direction,
+      })
+    }
+
+    // Build prev cursor from first record of the current page
+    let prevCursor: string | null = null
+    if (cursor && data.length > 0) {
+      const firstRow = data[0] as Record<string, unknown>
+      prevCursor = encodeCursor({
+        id: firstRow[primaryKey],
+        sortValue: firstRow[sortColumn] ?? firstRow[primaryKey],
+        sortColumn,
+        direction: direction === 'asc' ? 'desc' : 'asc', // Reverse direction for prev
+      })
+    }
+
+    return {
+      data,
+      nextCursor,
+      prevCursor,
+      hasMore,
+      count: data.length,
+    }
   }
 
   /**

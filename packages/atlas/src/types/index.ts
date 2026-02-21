@@ -101,6 +101,42 @@ export type ConnectionConfig =
   | RedisConfig
   | BaseConnectionConfig
 
+/**
+ * Read/Write Replica configuration
+ * Defines a primary (write) node and one or more read replicas.
+ */
+export interface ReadWriteConnectionConfig {
+  /**
+   * Primary write node configuration
+   */
+  write: ConnectionConfig
+
+  /**
+   * Read replica configurations (Round-robin selected)
+   */
+  read: ConnectionConfig[]
+}
+
+/**
+ * Union type for Atlas connection entry (standard or replica)
+ */
+export type AtlasConnectionEntry = ConnectionConfig | ReadWriteConnectionConfig
+
+/**
+ * Type guard to check if a connection config is a read/write replica config
+ */
+export function isReadWriteConfig(
+  config: AtlasConnectionEntry
+): config is ReadWriteConnectionConfig {
+  return (
+    typeof config === 'object' &&
+    config !== null &&
+    'write' in config &&
+    'read' in config &&
+    Array.isArray((config as ReadWriteConnectionConfig).read)
+  )
+}
+
 export interface AtlasObservabilityConfig {
   enabled: boolean
   tracing?: boolean
@@ -110,7 +146,7 @@ export interface AtlasObservabilityConfig {
 
 export interface AtlasConfig {
   default: string
-  connections: Record<string, ConnectionConfig>
+  connections: Record<string, AtlasConnectionEntry>
   observability?: AtlasObservabilityConfig
 }
 
@@ -582,6 +618,38 @@ export interface PaginateResult<T> {
      */
     hasPrev: boolean
   }
+}
+
+/**
+ * Cursor-based pagination result
+ * Provides O(1) performance regardless of dataset size.
+ * Ideal for infinite scroll and large datasets.
+ */
+export interface CursorPaginateResult<T> {
+  /**
+   * Current page data
+   */
+  data: T[]
+
+  /**
+   * Opaque cursor pointing to the next page (null if no more data)
+   */
+  nextCursor: string | null
+
+  /**
+   * Opaque cursor pointing to the previous page (null if first page)
+   */
+  prevCursor: string | null
+
+  /**
+   * Whether more records exist beyond the current page
+   */
+  hasMore: boolean
+
+  /**
+   * Number of records returned
+   */
+  count: number
 }
 
 /**

@@ -6,8 +6,8 @@ import { type AtlasMetrics, AtlasObservability, type AtlasTracer } from './obser
 import type { ShardingManager } from './sharding/ShardingManager'
 import type {
   AtlasConfig,
+  AtlasConnectionEntry,
   CacheInterface,
-  ConnectionConfig,
   ConnectionContract,
   QueryBuilderContract,
   QueryResult,
@@ -360,9 +360,9 @@ export class DB {
    * Manually adds a connection to the manager.
    *
    * @param name - Unique connection name.
-   * @param config - Connection settings.
+   * @param config - Connection settings (standard or read/write replica).
    */
-  static addConnection(name: string, config: ConnectionConfig): void {
+  static addConnection(name: string, config: AtlasConnectionEntry): void {
     DB.manager.addConnection(name, config)
     DB.initialized = true
   }
@@ -414,6 +414,31 @@ export class DB {
   }
 
   /**
+   * Retrieves the read replica connection for the given connection name.
+   *
+   * Uses round-robin selection across configured read replicas.
+   * Falls back to the primary connection if no replicas are configured.
+   *
+   * @param name - Connection name (defaults to global default)
+   */
+  static readConnection(name?: string): ConnectionContract {
+    DB.ensureConfigured()
+    return DB.manager.readConnection(name)
+  }
+
+  /**
+   * Retrieves the write (primary) connection for the given connection name.
+   *
+   * Use this to force a query to run on the primary even inside a read context.
+   *
+   * @param name - Connection name (defaults to global default)
+   */
+  static writeConnection(name?: string): ConnectionContract {
+    DB.ensureConfigured()
+    return DB.manager.writeConnection(name)
+  }
+
+  /**
    * Checks if a specific connection has been configured.
    */
   static hasConnection(name: string): boolean {
@@ -430,7 +455,7 @@ export class DB {
   /**
    * Retrieves the raw configuration for a connection.
    */
-  static getConnectionConfig(name?: string): ConnectionConfig | undefined {
+  static getConnectionConfig(name?: string): AtlasConnectionEntry | undefined {
     const connectionName = name ?? DB.manager.getDefaultConnection()
     return DB.manager.getConfig(connectionName)
   }

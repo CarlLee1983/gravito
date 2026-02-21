@@ -48,6 +48,7 @@ export { defineConfig, fromEnv, loadConfig, loadConfigFile } from './config'
 // Connection
 export { Connection } from './connection/Connection'
 export { ConnectionManager } from './connection/ConnectionManager'
+export { ReplicaConnectionPool } from './connection/ReplicaConnectionPool'
 // Main DB Facade
 export { DB } from './DB'
 
@@ -132,6 +133,16 @@ export {
   SchemaGrammar,
   SQLiteSchemaGrammar,
 } from './schema/grammars'
+// Schema Tools (Phase 2)
+export { MigrationGenerator } from './schema/MigrationGenerator'
+export type {
+  ColumnDefinition as SchemaColumnDefinition,
+  SchemaDiffResult,
+} from './schema/SchemaDiff'
+export { SchemaDiff } from './schema/SchemaDiff'
+export type { ModelTypeMap, TypeGeneratorOptions } from './schema/TypeGenerator'
+export { TypeGenerator } from './schema/TypeGenerator'
+export { TypeWriter } from './schema/TypeWriter'
 export type { FactoryDefinition, Seeder, SeederFile, SeederRunnerOptions } from './seed'
 // Seed
 export { Factory, factory, SeederRunner } from './seed'
@@ -139,11 +150,13 @@ export { Factory, factory, SeederRunner } from './seed'
 export { type ShardingConfig, ShardingManager } from './sharding/ShardingManager'
 // Types
 export type {
+  AtlasConnectionEntry,
   BooleanOperator,
   CompiledQuery,
   // Configuration
   ConnectionConfig,
   ConnectionContract,
+  CursorPaginateResult,
   // Contracts
   DriverContract,
   DriverType,
@@ -151,6 +164,7 @@ export type {
   FieldInfo,
   GrammarContract,
   HavingClause,
+  isReadWriteConfig,
   JoinClause,
   JoinType,
   MySQLConfig,
@@ -164,7 +178,15 @@ export type {
   QueryBuilderContract,
   // Results
   QueryResult,
+  ReadWriteConnectionConfig,
   SQLiteConfig,
   SSLConfig,
   WhereClause,
 } from './types'
+export type { CursorPayload } from './utils/CursorEncoding'
+// Cursor Utilities (Phase 1-B)
+export {
+  buildCursorWhereClause,
+  decodeCursor,
+  encodeCursor,
+} from './utils/CursorEncoding'
