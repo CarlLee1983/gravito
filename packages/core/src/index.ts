@@ -223,6 +223,11 @@ export {
   PlanetCore,
   type ViewService,
 } from './PlanetCore'
+// Request Context
+export {
+  RequestContext,
+  type RequestContextData,
+} from './RequestContext'
 // Routing
 export { Route } from './Route'
 export {
@@ -243,7 +248,6 @@ export {
   getPresetRetryPolicy,
   RetryEngine,
 } from './reliability'
-
 // Service Provider
 export { ServiceProvider } from './ServiceProvider'
 // Security

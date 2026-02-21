@@ -1,9 +1,17 @@
+import { AsyncLocalStorage } from 'node:async_hooks'
+import type { RequestScopeManager } from './Container/RequestScopeManager'
 import { CircularDependencyException } from './exceptions/CircularDependencyException'
 
 /**
  * Factory type for creating service instances
  */
 export type Factory<T> = (container: Container) => T
+
+/**
+ * AsyncLocalStorage 實例，用於隔離請求範圍
+ * @internal
+ */
+const scopeStorage = new AsyncLocalStorage<RequestScopeManager>()
 
 /**
  * ServiceMap interface for type-safe IoC resolution.
@@ -43,6 +51,30 @@ export class Container {
   private bindings = new Map<ServiceKey, Binding>()
   private instances = new Map<ServiceKey, unknown>()
   private resolutionStack: ServiceKey[] = []
+
+  /**
+   * Run a function within a request scope context.
+   *
+   * All service resolutions within the function will use the provided scope,
+   * enabling request-scoped service instances to be properly isolated.
+   *
+   * @template T - The return type of the function.
+   * @param scope - The RequestScopeManager for this request.
+   * @param fn - The function to execute within the scope.
+   * @returns The result of the function.
+   *
+   * @example
+   * ```typescript
+   * const scope = new RequestScopeManager()
+   * const result = await Container.runWithScope(scope, async () => {
+   *   const service = container.make('requestScoped')
+   *   return service.doSomething()
+   * })
+   * ```
+   */
+  static runWithScope<T>(scope: RequestScopeManager, fn: () => T | Promise<T>): T | Promise<T> {
+    return scopeStorage.run(scope, fn)
+  }
 
   /**
    * Bind a service to the container.
@@ -167,13 +199,27 @@ export class Container {
       throw new Error(`Service '${String(key)}' not found in container`)
     }
 
-    // 4. Resolve instance
+    // 4. Handle request-scoped services
+    if (binding.scope === 'request') {
+      const scope = scopeStorage.getStore()
+      if (scope) {
+        // Use request scope manager to resolve
+        return scope.resolve(key, () => binding.factory(this)) as T
+      }
+      // Fallback: if no scope context, create temporary instance with warning
+      console.warn(
+        `Request-scoped service '${String(key)}' resolved outside request context. ` +
+          'This instance will not be shared across the request. Consider wrapping with Container.runWithScope().'
+      )
+    }
+
+    // 5. Resolve instance
     this.resolutionStack.push(key)
 
     try {
       const instance = binding.factory(this)
 
-      // 5. Cache if shared
+      // 6. Cache if shared
       if (binding.shared) {
         this.instances.set(key, instance)
       }

@@ -476,7 +476,7 @@ export class PlanetCore {
     }
 
     /**
-     * Core Middleware for Context Injection
+     * Core Middleware for Context Injection with Request Scope
      */
     this.adapter.use('*', async (c, next) => {
       c.set('core', this)
@@ -489,7 +489,12 @@ export class PlanetCore {
       // Add route helper
       c.route = (name: string, params?: any, query?: any) => this.router.url(name, params, query)
 
-      const result = await next()
+      // Execute the request within the container scope context
+      // This enables request-scoped services to be properly isolated
+      const requestScope = (c as any).requestScope?.()
+      const result = requestScope
+        ? await Container.runWithScope(requestScope, async () => next())
+        : await next()
 
       // Automatically attach queued cookies to response
       cookieJar.attach(c)
