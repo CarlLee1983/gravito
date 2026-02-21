@@ -84,6 +84,12 @@ export * from './middleware/htmx'
 export * from './middleware/ratelimit'
 
 /**
+ * Redis-based rate limiting storage.
+ * @public
+ */
+export * from './middleware/ratelimit-redis'
+
+/**
  * OpenAPI utilities
  * @public
  */

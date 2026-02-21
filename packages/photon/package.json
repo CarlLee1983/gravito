@@ -26,6 +26,22 @@
       "types": "./dist/jwt.d.ts",
       "default": "./dist/jwt.js"
     },
+    "./middleware/binary": {
+      "types": "./dist/middleware/binary.d.ts",
+      "default": "./dist/middleware/binary.js"
+    },
+    "./middleware/htmx": {
+      "types": "./dist/middleware/htmx.d.ts",
+      "default": "./dist/middleware/htmx.js"
+    },
+    "./middleware/ratelimit": {
+      "types": "./dist/middleware/ratelimit.d.ts",
+      "default": "./dist/middleware/ratelimit.js"
+    },
+    "./middleware/ratelimit-redis": {
+      "types": "./dist/middleware/ratelimit-redis.d.ts",
+      "default": "./dist/middleware/ratelimit-redis.js"
+    },
     "./http-exception": {
       "types": "./dist/http-exception.d.ts",
       "default": "./dist/http-exception.js"
