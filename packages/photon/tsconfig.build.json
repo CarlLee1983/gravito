@@ -11,6 +11,8 @@
     "skipLibCheck": true,
     "types": ["bun-types"],
     "paths": {
+      "@gravito/photon": ["./src/index.ts"],
+      "@gravito/photon/*": ["./src/*"],
       "hono/*": ["../../node_modules/hono/dist/types/*"]
     }
   },
