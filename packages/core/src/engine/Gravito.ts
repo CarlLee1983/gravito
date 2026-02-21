@@ -36,25 +36,49 @@ import type {
  * Precompile middleware chain into a single function
  */
 function compileMiddlewareChain(middleware: Middleware[], handler: Handler): CompiledHandler {
+  // Fast path: no middleware
   if (middleware.length === 0) {
     return handler as CompiledHandler
   }
 
+  // Single middleware optimization - avoid wrapping overhead
+  if (middleware.length === 1) {
+    const mw = middleware[0]!
+    return async (ctx) => {
+      let nextCalled = false
+      const result = await mw(ctx, async () => {
+        nextCalled = true
+        return undefined
+      })
+      if (result instanceof Response) {
+        return result
+      }
+      if (nextCalled) {
+        return await handler(ctx)
+      }
+      return ctx.json({ error: 'Middleware did not call next or return response' }, 500)
+    }
+  }
+
+  // Multiple middleware: compile right-to-left into a chain
   let compiled: CompiledHandler = handler as CompiledHandler
 
   for (let i = middleware.length - 1; i >= 0; i--) {
     const mw = middleware[i]!
     const nextHandler = compiled
     compiled = async (ctx) => {
-      let nextResult: Response | undefined
-      const next = async (): Promise<Response | undefined> => {
-        nextResult = (await nextHandler(ctx)) as Response
-        return nextResult
+      let nextCalled = false
+      const result = await mw(ctx, async () => {
+        nextCalled = true
+        return undefined
+      })
+      if (result instanceof Response) {
+        return result
       }
-
-      const result = await mw(ctx, next)
-      // If middleware returns undefined, fall back to the result of next()
-      return (result ?? nextResult) as Response
+      if (nextCalled) {
+        return await nextHandler(ctx)
+      }
+      return ctx.json({ error: 'Middleware did not call next or return response' }, 500)
     }
   }
 
@@ -78,9 +102,6 @@ export class Gravito {
 
   // Cache for precompiled dynamic routes
   private compiledDynamicRoutes = new Map<string, { compiled: CompiledHandler; version: number }>()
-
-  // Version tracking for cache invalidation
-  private middlewareVersion = 0
 
   /**
    * Create a new Gravito instance
@@ -201,7 +222,6 @@ export class Gravito {
       this.router.use(pathOrMiddleware, ...middleware)
     }
 
-    this.middlewareVersion++
     this.compileRoutes()
     return this
   }
@@ -354,13 +374,13 @@ export class Gravito {
     const cacheKey = `${method}:${match.routePattern ?? path}`
     let entry = this.compiledDynamicRoutes.get(cacheKey)
 
-    if (!entry || entry.version !== this.middlewareVersion) {
+    if (!entry || entry.version !== this.router.version) {
       const compiled = compileMiddlewareChain(match.middleware, match.handler)
       // Simple cache management: clear if too large
       if (this.compiledDynamicRoutes.size > 1000) {
         this.compiledDynamicRoutes.clear()
       }
-      entry = { compiled, version: this.middlewareVersion }
+      entry = { compiled, version: this.router.version }
       this.compiledDynamicRoutes.set(cacheKey, entry)
     }
 
@@ -455,7 +475,7 @@ export class Gravito {
     // Pre-mark routes
     for (const [key, route] of this.staticRoutes) {
       // Skip if already compiled for this version
-      if (route.compiledVersion === this.middlewareVersion) {
+      if (route.compiledVersion === this.router.version) {
         continue
       }
 
@@ -471,7 +491,7 @@ export class Gravito {
         route.compiled = compileMiddlewareChain(allMiddleware, route.handler)
       }
 
-      route.compiledVersion = this.middlewareVersion
+      route.compiledVersion = this.router.version
     }
   }
 

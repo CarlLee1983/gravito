@@ -83,11 +83,18 @@ PhotonAdapter:
 
 ---
 
-## 文件結構
+## 檔案結構
 
-本優化計劃已拆分為多個文件，方便實行時聚焦：
+### 📋 主要文件
 
-- **[00-baseline.md](./00-baseline.md)** - Phase 0: 基準測試基線建立（最高優先級）
+- **[PENDING_WORK.md](./PENDING_WORK.md)** ⭐ **← 從這裡開始**
+  - 所有待完成工作的清單
+  - 優先級分級與工作量估算
+  - 詳細實現方案與驗證清單
+
+### 📚 詳細設計文件（參考用）
+
+- **[00-baseline.md](./00-baseline.md)** - Phase 0: 基準測試基線建立
 - **[01-middleware-precompile.md](./01-middleware-precompile.md)** - Phase 1: 中間件鏈預編譯
 - **[02-minimal-context-query-cache.md](./02-minimal-context-query-cache.md)** - Phase 2: MinimalContext Query 快取
 - **[03-photon-adapter-proxy.md](./03-photon-adapter-proxy.md)** - Phase 3: PhotonAdapter Proxy 消除
@@ -95,6 +102,10 @@ PhotonAdapter:
 - **[05-headers-pooling.md](./05-headers-pooling.md)** - Phase 5: FastContext Headers 池化
 - **[06-container-symbol-key.md](./06-container-symbol-key.md)** - Phase 6: Container Symbol Key
 - **[07-micro-optimizations.md](./07-micro-optimizations.md)** - Phase 7: 其他微優化
+- **[08-comprehensive-code-review.md](./08-comprehensive-code-review.md)** - Phase 8: 深度代碼審查與新發現
+
+### ✓ 驗證相關
+
 - **[verification.md](./verification.md)** - 驗證計劃與測試清單
 - **[risks-and-compatibility.md](./risks-and-compatibility.md)** - 風險評估、修正版建議、向後相容性指南
 
@@ -102,69 +113,68 @@ PhotonAdapter:
 
 ## 實施優先級
 
-### Phase 0: 基線建立（必須先完成）
+⚠️ **詳見 [PENDING_WORK.md](./PENDING_WORK.md) 的完整待完成工作清單**
 
-- 實現基準測試套件
-- 記錄當前效能數據
-- 依據數據調整後續優先級
+### 快速摘要
 
-### 第一階段（高影響，P1-P2）
+| 優先級 | 項目 | 預估提升 | 複雜度 | 狀態 |
+|-------|-----|--------|-------|------|
+| P1 | Body Payload 快取 | 5-10% | 低 | 📋 計劃中 |
+| P1 | MinimalContext Query 快取 | 5-8% | 低 | 📋 計劃中 |
+| P1 | 基準測試基線 | - | 中 | 📋 計劃中 |
+| P2 | 中間件鏈預編譯 | 10-15% | 中 | 📋 計劃中 |
+| P2 | AOTRouter 中間件快取 | 5-10% | 低 | 📋 計劃中 |
+| P3 | PhotonAdapter Proxy 消除 | 15-25% | 高 | 📋 計劃中 |
+| P4 | Headers 優化 | 待驗證 | 低 | 📋 計劃中 |
 
-1. **Phase 1**: 中間件鏈預編譯
-   - 實現 `compileMiddlewareChain()`
-   - 整合到 `Gravito.compileRoutes()`
-   - 基準測試驗證
-
-2. **Phase 2**: MinimalContext Query 快取
-   - 修復 `MinimalContext.query()` 的重複解析問題
-   - 基準測試驗證
-
-### 第二階段（中影響，P3-P4）
-
-3. **Phase 3**: PhotonAdapter 優化（方案 C: Pool）
-   - 創建 `PhotonAdapterContextPool`
-   - 修改 handler 轉換函數
-   - 基準測試驗證
-
-4. **Phase 4**: AOTRouter 中間件快取
-   - 實現簡單快取機制
-   - 基準測試驗證
-
-### 第三階段（低影響/待驗證，P5-P6）
-
-5. **Phase 5**: Headers 優化（條件實施）
-   - 先基準測試驗證假設
-   - 依據結果決定是否實施
-
-6. **Phase 6**: Container Symbol Key（可選）
-   - 添加 Symbol 支援
-   - 更新文件推薦
+**已完成**：
+- ✅ 路徑提取優化（Phase 7.1）
+- ✅ RequestScope Phase 1-3
 
 ---
 
-## 結論
+## 現狀與結論
 
-本計劃聚焦於 `@gravito/core` 中**真正影響效能**的代碼路徑：
+### ✅ 已完成項目
 
-1. **每請求的物件創建**（閉包、Proxy、Headers）
-2. **路由匹配和中間件收集**的迭代開銷
-3. **中間件執行**的運行時開銷
+1. **RequestScope 完整實現** (Phase 1-3)
+   - Container 層級作用域管理
+   - FastContext/MinimalContext 集成
+   - 監控系統與 Orbit 整合示例
+   - 測試覆蓋率 100%
 
-### 關鍵修正
+2. **路徑提取優化** (Phase 7.1)
+   - 已使用無 URL 物件的優化實現
 
-與原計劃相比，本修訂版：
+### 📋 待完成項目
 
-1. ✅ 區分了 Gravito Engine 和 PhotonAdapter 兩條執行路徑
-2. ✅ 將「基準測試基線建立」列為最高優先級
-3. ✅ 新增「MinimalContext Query 快取」優化項目
-4. ✅ 標註「路徑提取優化」已實現，無需重複工作
-5. ✅ 標註「Headers 池化」需要先基準測試驗證
-6. ✅ 補充了向後相容性指南
-7. ✅ 調整了風險評估，增加 API 相容性風險
+根據 **Phase 08 深度代碼審查** 的最新發現，確認了以下優化項目：
 
-### 實施原則
+1. **P1 優先級**（關鍵）
+   - Body Payload 快取機制 - 防止 Body 重複讀取崩潰
+   - MinimalContext Query 快取 - 避免重複構造物件
+   - 基準測試基線建立 - 數據驅動優化決策
 
-1. **數據驅動**: 先建立基線，再進行優化
-2. **漸進式**: 每個 Phase 完成後進行驗證
-3. **向後相容**: 優先選擇不破壞 API 的方案
-4. **避免過早優化**: 基準測試證明有收益再實施
+2. **P2 優先級**（高影響）
+   - 中間件鏈預編譯 - 10-15% 性能提升
+   - AOTRouter 中間件快取 - 5-10% 性能提升
+   - Headers Object Spread 優化 - 消除淺複製開銷
+
+3. **P3 優先級**（中等影響）
+   - PhotonAdapter Proxy 消除 - 15-25% 性能提升（高風險）
+
+4. **P4 優先級**（可選）
+   - Headers 池化、Container Symbol Key、微優化等
+
+### 實施指南
+
+**立即開始**：
+1. 查看 [PENDING_WORK.md](./PENDING_WORK.md) 的完整清單
+2. 按優先級依序執行 Phase
+3. 每個 Phase 後執行基準測試驗證效果
+
+**重要原則**：
+- 🎯 **數據驅動**: Phase 0 基準測試必須先完成
+- 🔄 **漸進式**: 每個 Phase 完成後驗證無破壞性變更
+- 🛡️ **向後相容**: 優先選擇不破壞 API 的方案
+- ⚠️ **風險控制**: 詳見 [risks-and-compatibility.md](./risks-and-compatibility.md)
