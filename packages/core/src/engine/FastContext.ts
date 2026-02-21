@@ -30,6 +30,7 @@ class FastRequestImpl implements FastRequest {
   private _textParsed = false
   private _cachedFormData: FormData | undefined = undefined
   private _formDataParsed = false
+  private _cachedQueries: Record<string, string | string[]> | null = null
   // Back-reference for release check optimization
   private _ctx: FastContext
 
@@ -59,6 +60,7 @@ class FastRequestImpl implements FastRequest {
     this._textParsed = false
     this._cachedFormData = undefined
     this._formDataParsed = false
+    this._cachedQueries = null
     return this
   }
 
@@ -80,6 +82,7 @@ class FastRequestImpl implements FastRequest {
     this._textParsed = false
     this._cachedFormData = undefined
     this._formDataParsed = false
+    this._cachedQueries = null
   }
 
   private checkReleased(): void {
@@ -137,6 +140,11 @@ class FastRequestImpl implements FastRequest {
 
   queries(): Record<string, string | string[]> {
     this.checkReleased()
+    // Return cached queries object if available
+    if (this._cachedQueries !== null) {
+      return this._cachedQueries
+    }
+
     if (!this._query) {
       this._query = this.getUrl().searchParams
     }
@@ -152,6 +160,7 @@ class FastRequestImpl implements FastRequest {
         result[key] = [existing, value]
       }
     }
+    this._cachedQueries = result
     return result
   }
 
