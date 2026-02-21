@@ -26,6 +26,10 @@ class FastRequestImpl implements FastRequest {
   private _headers: Record<string, string> | null = null
   private _cachedJson: unknown = undefined
   private _jsonParsed = false
+  private _cachedText: string | undefined = undefined
+  private _textParsed = false
+  private _cachedFormData: FormData | undefined = undefined
+  private _formDataParsed = false
   // Back-reference for release check optimization
   private _ctx: FastContext
 
@@ -51,6 +55,10 @@ class FastRequestImpl implements FastRequest {
     this._headers = null
     this._cachedJson = undefined
     this._jsonParsed = false
+    this._cachedText = undefined
+    this._textParsed = false
+    this._cachedFormData = undefined
+    this._formDataParsed = false
     return this
   }
 
@@ -68,6 +76,10 @@ class FastRequestImpl implements FastRequest {
     this._headers = null
     this._cachedJson = undefined
     this._jsonParsed = false
+    this._cachedText = undefined
+    this._textParsed = false
+    this._cachedFormData = undefined
+    this._formDataParsed = false
   }
 
   private checkReleased(): void {
@@ -170,12 +182,20 @@ class FastRequestImpl implements FastRequest {
 
   async text(): Promise<string> {
     this.checkReleased()
-    return this._request.text()
+    if (!this._textParsed) {
+      this._cachedText = await this._request.text()
+      this._textParsed = true
+    }
+    return this._cachedText!
   }
 
   async formData(): Promise<FormData> {
     this.checkReleased()
-    return this._request.formData()
+    if (!this._formDataParsed) {
+      this._cachedFormData = await this._request.formData()
+      this._formDataParsed = true
+    }
+    return this._cachedFormData!
   }
 
   get raw(): Request {

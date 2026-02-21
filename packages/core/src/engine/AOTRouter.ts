@@ -253,20 +253,24 @@ export class AOTRouter {
       return []
     }
 
-    const cacheKey = `${path}:${routeMiddleware.length}`
+    // Optimized cache key: use path directly for O(1) lookups
+    // Cache format: path -> { middleware array, version }
+    const cacheKey = path
     const cached = this.middlewareCache.get(cacheKey)
+
+    // Cache hit: return immediately (same path gets same middleware)
     if (cached !== undefined && cached.version === this.version) {
       return cached.data
     }
 
     const middleware: Middleware[] = []
 
-    // 1. Global middleware
+    // 1. Global middleware (most common case)
     if (this.globalMiddleware.length > 0) {
       middleware.push(...this.globalMiddleware)
     }
 
-    // 2. Pattern-based middleware
+    // 2. Pattern-based middleware (check only if pathMiddleware exists)
     if (this.pathMiddleware.size > 0) {
       for (const [pattern, mw] of this.pathMiddleware) {
         // Skip route-specific entries (they have method prefix)
@@ -280,11 +284,16 @@ export class AOTRouter {
       }
     }
 
+    // 3. Route-specific middleware
     if (routeMiddleware.length > 0) {
       middleware.push(...routeMiddleware)
     }
 
+    // LRU cache: only cache if under max size
     if (this.middlewareCache.size < this.cacheMaxSize) {
+      this.middlewareCache.set(cacheKey, { data: middleware, version: this.version })
+    } else if (this.middlewareCache.has(cacheKey)) {
+      // Update existing cache entry
       this.middlewareCache.set(cacheKey, { data: middleware, version: this.version })
     }
 

@@ -36,25 +36,49 @@ import type {
  * Precompile middleware chain into a single function
  */
 function compileMiddlewareChain(middleware: Middleware[], handler: Handler): CompiledHandler {
+  // Fast path: no middleware
   if (middleware.length === 0) {
     return handler as CompiledHandler
   }
 
+  // Single middleware optimization - avoid wrapping overhead
+  if (middleware.length === 1) {
+    const mw = middleware[0]!
+    return async (ctx) => {
+      let nextCalled = false
+      const result = await mw(ctx, async () => {
+        nextCalled = true
+        return undefined
+      })
+      if (result instanceof Response) {
+        return result
+      }
+      if (nextCalled) {
+        return await handler(ctx)
+      }
+      return ctx.json({ error: 'Middleware did not call next or return response' }, 500)
+    }
+  }
+
+  // Multiple middleware: compile right-to-left into a chain
   let compiled: CompiledHandler = handler as CompiledHandler
 
   for (let i = middleware.length - 1; i >= 0; i--) {
     const mw = middleware[i]!
     const nextHandler = compiled
     compiled = async (ctx) => {
-      let nextResult: Response | undefined
-      const next = async (): Promise<Response | undefined> => {
-        nextResult = (await nextHandler(ctx)) as Response
-        return nextResult
+      let nextCalled = false
+      const result = await mw(ctx, async () => {
+        nextCalled = true
+        return undefined
+      })
+      if (result instanceof Response) {
+        return result
       }
-
-      const result = await mw(ctx, next)
-      // If middleware returns undefined, fall back to the result of next()
-      return (result ?? nextResult) as Response
+      if (nextCalled) {
+        return await nextHandler(ctx)
+      }
+      return ctx.json({ error: 'Middleware did not call next or return response' }, 500)
     }
   }
 

@@ -20,6 +20,10 @@ import type { FastRequest, FastContext as IFastContext } from './types'
  */
 class MinimalRequest implements FastRequest {
   private _searchParams: URLSearchParams | null = null
+  private _cachedQueries: Record<string, string | string[]> | null = null
+  private _cachedJsonPromise: Promise<unknown> | null = null
+  private _cachedTextPromise: Promise<string> | null = null
+  private _cachedFormDataPromise: Promise<FormData> | null = null
 
   constructor(
     private readonly _request: Request,
@@ -76,6 +80,11 @@ class MinimalRequest implements FastRequest {
   }
 
   queries(): Record<string, string | string[]> {
+    // Cache the parsed queries object to avoid repeated parsing
+    if (this._cachedQueries !== null) {
+      return this._cachedQueries
+    }
+
     const params = this.getSearchParams()
     const result: Record<string, string | string[]> = {}
     for (const [key, value] of params.entries()) {
@@ -88,6 +97,7 @@ class MinimalRequest implements FastRequest {
         result[key] = [existing, value]
       }
     }
+    this._cachedQueries = result
     return result
   }
 
@@ -104,15 +114,28 @@ class MinimalRequest implements FastRequest {
   }
 
   async json<T = unknown>(): Promise<T> {
-    return this._request.json()
+    // Cache the json promise to prevent "Body has already been consumed" errors
+    // when multiple handlers or middleware try to read the body
+    if (this._cachedJsonPromise === null) {
+      this._cachedJsonPromise = this._request.json()
+    }
+    return this._cachedJsonPromise as Promise<T>
   }
 
   async text(): Promise<string> {
-    return this._request.text()
+    // Cache the text promise to prevent "Body has already been consumed" errors
+    if (this._cachedTextPromise === null) {
+      this._cachedTextPromise = this._request.text()
+    }
+    return this._cachedTextPromise
   }
 
   async formData(): Promise<FormData> {
-    return this._request.formData()
+    // Cache the formData promise to prevent "Body has already been consumed" errors
+    if (this._cachedFormDataPromise === null) {
+      this._cachedFormDataPromise = this._request.formData()
+    }
+    return this._cachedFormDataPromise
   }
 
   get raw(): Request {
@@ -149,11 +172,10 @@ export class MinimalContext implements IFastContext {
   // }
 
   // Response helpers - merge custom headers with defaults
+  // Optimized: use Object.assign instead of spread to avoid shallow copy overhead
   private getHeaders(contentType: string): Record<string, string> {
-    return {
-      ...this._resHeaders,
-      'Content-Type': contentType,
-    }
+    const headers = Object.assign({ 'Content-Type': contentType }, this._resHeaders)
+    return headers
   }
 
   json<T>(data: T, status = 200): Response {
