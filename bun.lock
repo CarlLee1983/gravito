@@ -1552,7 +1552,7 @@
     },
     "packages/photon": {
       "name": "@gravito/photon",
-      "version": "1.0.0-beta.1",
+      "version": "1.0.0-rc.1",
       "dependencies": {
         "@hono/zod-openapi": "^1.2.0",
         "cborg": "^4.3.2",
