@@ -164,7 +164,7 @@ group('Middleware Collection Caching', () => {
 
   app.use(m1)
   app.use(m2)
-  app.usePattern('/api/*', m3)
+  app.use('/api/*', m3)
 
   // Setup routes
   for (let i = 0; i < 50; i++) {
