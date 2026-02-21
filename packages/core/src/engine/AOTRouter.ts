@@ -54,7 +54,15 @@ export class AOTRouter {
 
   private middlewareCache = new Map<string, { data: Middleware[]; version: number }>()
   private cacheMaxSize = 1000
-  private version = 0
+  private _version = 0
+
+  /**
+   * Get the current version for cache invalidation
+   * Incremented whenever middleware or routes are modified
+   */
+  public get version(): number {
+    return this._version
+  }
 
   /**
    * Register a route
@@ -152,7 +160,7 @@ export class AOTRouter {
    */
   use(...middleware: Middleware[]): void {
     this.globalMiddleware.push(...middleware)
-    this.version++
+    this._version++
   }
 
   /**
@@ -171,7 +179,7 @@ export class AOTRouter {
       const existing = this.pathMiddleware.get(pattern) ?? []
       this.pathMiddleware.set(pattern, [...existing, ...middleware])
     }
-    this.version++
+    this._version++
   }
 
   /**
@@ -259,7 +267,7 @@ export class AOTRouter {
     const cached = this.middlewareCache.get(cacheKey)
 
     // Cache hit: return immediately (same path gets same middleware)
-    if (cached !== undefined && cached.version === this.version) {
+    if (cached !== undefined && cached.version === this._version) {
       return cached.data
     }
 
@@ -291,10 +299,10 @@ export class AOTRouter {
 
     // LRU cache: only cache if under max size
     if (this.middlewareCache.size < this.cacheMaxSize) {
-      this.middlewareCache.set(cacheKey, { data: middleware, version: this.version })
+      this.middlewareCache.set(cacheKey, { data: middleware, version: this._version })
     } else if (this.middlewareCache.has(cacheKey)) {
       // Update existing cache entry
-      this.middlewareCache.set(cacheKey, { data: middleware, version: this.version })
+      this.middlewareCache.set(cacheKey, { data: middleware, version: this._version })
     }
 
     return middleware

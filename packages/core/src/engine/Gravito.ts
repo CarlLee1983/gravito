@@ -103,9 +103,6 @@ export class Gravito {
   // Cache for precompiled dynamic routes
   private compiledDynamicRoutes = new Map<string, { compiled: CompiledHandler; version: number }>()
 
-  // Version tracking for cache invalidation
-  private middlewareVersion = 0
-
   /**
    * Create a new Gravito instance
    *
@@ -225,7 +222,6 @@ export class Gravito {
       this.router.use(pathOrMiddleware, ...middleware)
     }
 
-    this.middlewareVersion++
     this.compileRoutes()
     return this
   }
@@ -378,13 +374,13 @@ export class Gravito {
     const cacheKey = `${method}:${match.routePattern ?? path}`
     let entry = this.compiledDynamicRoutes.get(cacheKey)
 
-    if (!entry || entry.version !== this.middlewareVersion) {
+    if (!entry || entry.version !== this.router.version) {
       const compiled = compileMiddlewareChain(match.middleware, match.handler)
       // Simple cache management: clear if too large
       if (this.compiledDynamicRoutes.size > 1000) {
         this.compiledDynamicRoutes.clear()
       }
-      entry = { compiled, version: this.middlewareVersion }
+      entry = { compiled, version: this.router.version }
       this.compiledDynamicRoutes.set(cacheKey, entry)
     }
 
@@ -479,7 +475,7 @@ export class Gravito {
     // Pre-mark routes
     for (const [key, route] of this.staticRoutes) {
       // Skip if already compiled for this version
-      if (route.compiledVersion === this.middlewareVersion) {
+      if (route.compiledVersion === this.router.version) {
         continue
       }
 
@@ -495,7 +491,7 @@ export class Gravito {
         route.compiled = compileMiddlewareChain(allMiddleware, route.handler)
       }
 
-      route.compiledVersion = this.middlewareVersion
+      route.compiledVersion = this.router.version
     }
   }
 
