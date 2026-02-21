@@ -32,7 +32,7 @@ export default {
     ts_desc: '全架構型別安全，從第一行程式開始。',
   },
   features: {
-    sectionBadge: '1.0 核心發佈',
+    sectionBadge: '1.6 核心發佈',
     sectionTitle: '架構之',
     sectionTitleHighlight: 'Gravito 生態系統',
     sectionDesc: 'Gravito 採用微內核設計，首波 1.0 版本將釋出最穩定且強大的基礎模組。',
@@ -41,7 +41,8 @@ export default {
     group_ops: '維運層',
     kernel_title: 'PlanetCore',
     kernel_subtitle: '核心靈魂',
-    kernel_desc: '自主開發的高效能微內核，負責極速 I/O 協調與生命週期管理，是所有模組的引力中心。',
+    kernel_desc:
+      '自主開發的高效能微內核，原生支援 AsyncLocalStorage 請求上下文與 DI 作用域，負責極速 I/O 協調與精確的生命週期管理。',
     inertia_title: 'Ion',
     inertia_subtitle: '全棧橋接 (Inertia)',
     inertia_desc: '讓後端完全掌控前端 UI，打造如 SPA 般的流暢體驗。',
@@ -49,7 +50,7 @@ export default {
     cli_subtitle: '生產力工具 (CLI)',
     cli_desc: '自動化骨架生成與開發指令，讓創意不再受阻。',
     atlas_title: 'Atlas',
-    atlas_subtitle: 'Bun 原生 ORM',
+    atlas_subtitle: 'Bun 原生 ORM & Sharding',
     atlas_desc: '靈感源於 Prisma 與 Drizzle，提供高效能 Active Record 開發體驗。',
     seo_title: 'Luminosity',
     seo_subtitle: '智慧索引 (SEO)',
@@ -125,7 +126,7 @@ export default {
       'Controller 路由、FormRequest 驗證、Resource Routes、Route Model Binding、命名路由與 URL 生成——全部內建。',
     vs_ioc_title: 'IoC 依賴注入容器',
     vs_ioc_desc:
-      '企業級依賴注入，支援單例管理、Service Providers 和 register/boot 生命週期——Hono 完全缺乏這些功能。',
+      '企業級依賴注入，支援單例管理、請求作用域 (Request Scopes) 與完整的 register/boot/shutdown 生命週期——Hono 完全缺乏這些功能。',
     vs_native_title: 'Bun Native Adapter',
     vs_native_desc:
       '在 Bun 環境運行時，Gravito 自動使用自研 RadixRouter，實現 O(log n) 路由匹配，零抽象開銷。',
@@ -156,7 +157,8 @@ export default {
     lux: 'Luminosity (Lux)',
     lux_note: 'Luminosity (Lux) — 基於 Gravito Core 的 Sitemap 引擎。',
     photon: 'Photon',
-    photon_note: 'Photon (Beta) — 基於 Hono 的超高速 HTTP 引擎。',
+    photon_note:
+      'Photon (Beta) — 高效能 HTTP 引擎，具備 JWT 安全防護、CBOR 支持與 RPC 型別安全通訊。',
     atlas: 'Atlas (ORM)',
     atlas_note: 'Atlas (ORM) — 高性能 Bun 原生 ORM。',
     zenith: 'Zenith',
@@ -192,7 +194,8 @@ export default {
     orbitTitle: '動力模組',
     galaxy_desc:
       '想要 React？加入 Ion。想要 Vue？加入 Ion。想要 HTML？加入 Prism。想要 SEO？加入 Luminosity。需要資料庫？加入 Atlas。根據需求加載模組，杜絕任何不必要的資源浪費。',
-    galaxy_atlas_stable: 'Atlas (ORM) — 高性能 Bun 原生 ORM (v1.4.0 已發佈，包含重大性能優化)。',
+    galaxy_atlas_stable:
+      'Atlas (ORM) — 高性能 Bun 原生 ORM (v1.6.0 已發佈，包含水平分表、Active Record 與 OTEL 整合)。',
     scaleTitle: '無限擴展能力',
     scaleDesc: '從單一文件的微型 API 到全球級企業系統，架構會根據項目的「引力」自動適配。',
     aiTitle: 'AI 優先的開發合約',
