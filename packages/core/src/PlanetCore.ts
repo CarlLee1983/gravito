@@ -191,6 +191,7 @@ export class PlanetCore {
   private providers: ServiceProvider[] = []
   private deferredProviders: Map<string, ServiceProvider> = new Map()
   private bootedProviders: Set<ServiceProvider> = new Set()
+  private isShuttingDown = false
 
   /**
    * Initialize observability asynchronously (metrics, tracing, Prometheus).
@@ -325,6 +326,14 @@ export class PlanetCore {
    * ```
    */
   async bootstrap(): Promise<void> {
+    // Phase 0: Validate configuration
+    try {
+      this.config.validate()
+    } catch (error) {
+      this.logger.error('Configuration validation failed:', error)
+      throw error
+    }
+
     // Phase 1: Register all bindings (supports async)
     this.logger.debug(`🔄 Bootstrapping ${this.providers.length} providers`)
     for (const provider of this.providers) {
@@ -347,6 +356,72 @@ export class PlanetCore {
       this.adapter.onError(errorHandler.handleError.bind(errorHandler))
       this.adapter.onNotFound(errorHandler.handleNotFound.bind(errorHandler))
     }
+
+    // Phase 5: Call ready() hook for final initialization
+    await this.ready()
+  }
+
+  /**
+   * Called when the application is ready to accept requests.
+   *
+   * Invokes the `onReady()` lifecycle hook on all providers.
+   * Called automatically at the end of `bootstrap()`.
+   *
+   * @returns Promise that resolves when all providers are ready.
+   *
+   * @example
+   * ```typescript
+   * await core.ready();
+   * ```
+   */
+  async ready(): Promise<void> {
+    this.logger.debug('🟢 Application ready phase started')
+    for (const provider of this.providers) {
+      if (provider.onReady) {
+        this.logger.debug(`  onReady: ${provider.constructor.name}`)
+        await provider.onReady(this)
+      }
+    }
+    this.hooks.doAction('app:ready', this)
+    this.logger.debug('✅ Application ready')
+  }
+
+  /**
+   * Gracefully shutdown the application.
+   *
+   * Invokes the `onShutdown()` lifecycle hook on all providers in reverse order (LIFO).
+   * Should be called when the application receives a termination signal.
+   *
+   * @returns Promise that resolves when all providers have shut down.
+   *
+   * @example
+   * ```typescript
+   * process.on('SIGTERM', () => core.shutdown());
+   * ```
+   */
+  async shutdown(): Promise<void> {
+    if (this.isShuttingDown) {
+      this.logger.warn('Shutdown already in progress')
+      return
+    }
+
+    this.isShuttingDown = true
+    this.logger.debug('🛑 Application shutdown started')
+
+    // Call onShutdown in reverse order (LIFO)
+    for (const provider of [...this.providers].reverse()) {
+      if (provider.onShutdown) {
+        try {
+          this.logger.debug(`  onShutdown: ${provider.constructor.name}`)
+          await provider.onShutdown(this)
+        } catch (error) {
+          this.logger.error(`Error during shutdown of ${provider.constructor.name}:`, error)
+        }
+      }
+    }
+
+    this.hooks.doAction('app:shutdown', this)
+    this.logger.debug('✅ Application shutdown complete')
   }
 
   /**
@@ -476,7 +551,7 @@ export class PlanetCore {
     }
 
     /**
-     * Core Middleware for Context Injection
+     * Core Middleware for Context Injection with Request Scope
      */
     this.adapter.use('*', async (c, next) => {
       c.set('core', this)
@@ -489,7 +564,12 @@ export class PlanetCore {
       // Add route helper
       c.route = (name: string, params?: any, query?: any) => this.router.url(name, params, query)
 
-      const result = await next()
+      // Execute the request within the container scope context
+      // This enables request-scoped services to be properly isolated
+      const requestScope = (c as any).requestScope?.()
+      const result = requestScope
+        ? await Container.runWithScope(requestScope, async () => next())
+        : await next()
 
       // Automatically attach queued cookies to response
       cookieJar.attach(c)
@@ -514,6 +594,26 @@ export class PlanetCore {
     const defaultHandler = this.container.make<ErrorHandler>('error.handler')
     this.adapter.onError(defaultHandler.handleError.bind(defaultHandler))
     this.adapter.onNotFound(defaultHandler.handleNotFound.bind(defaultHandler))
+
+    // Setup signal handlers for graceful shutdown
+    this.setupSignalHandlers()
+  }
+
+  /**
+   * Setup process signal handlers for graceful shutdown
+   *
+   * @internal
+   */
+  private setupSignalHandlers(): void {
+    const handleSignal = async (signal: string) => {
+      this.logger.info(`📍 Received ${signal}, initiating graceful shutdown...`)
+      await this.shutdown()
+      // Exit after shutdown completes
+      process.exit(0)
+    }
+
+    process.on('SIGTERM', () => handleSignal('SIGTERM'))
+    process.on('SIGINT', () => handleSignal('SIGINT'))
   }
 
   /**

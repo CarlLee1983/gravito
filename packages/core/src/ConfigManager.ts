@@ -3,6 +3,7 @@
  *
  * Unifies environment variables and application configuration access.
  */
+import type { ZodSchema } from 'zod'
 import { getRuntimeEnv } from './runtime'
 
 /**
@@ -12,6 +13,7 @@ import { getRuntimeEnv } from './runtime'
  */
 export class ConfigManager {
   private config: Map<string, unknown> = new Map()
+  private schema: ZodSchema | null = null
 
   constructor(initialConfig: Record<string, unknown> = {}) {
     // 1. Load initial config
@@ -88,5 +90,58 @@ export class ConfigManager {
    */
   has(key: string): boolean {
     return this.config.has(key)
+  }
+
+  /**
+   * Define a Zod schema for configuration validation.
+   *
+   * @param schema - Zod schema for validation
+   *
+   * @example
+   * ```typescript
+   * config.defineSchema(z.object({
+   *   DATABASE_URL: z.string().url(),
+   *   PORT: z.number().default(3000),
+   * }))
+   * ```
+   */
+  defineSchema(schema: ZodSchema): void {
+    this.schema = schema
+  }
+
+  /**
+   * Validate configuration against the defined schema.
+   *
+   * Should be called during bootstrap to catch configuration errors early.
+   *
+   * @throws Error if validation fails with details about missing/invalid fields
+   *
+   * @example
+   * ```typescript
+   * try {
+   *   config.validate()
+   * } catch (error) {
+   *   console.error('Config validation failed:', error.message)
+   *   process.exit(1)
+   * }
+   * ```
+   */
+  validate(): void {
+    if (!this.schema) {
+      return
+    }
+
+    const configObj = Object.fromEntries(this.config)
+    const result = this.schema.safeParse(configObj)
+
+    if (!result.success) {
+      const errors = result.error.issues
+        .map((issue) => {
+          const path = Array.isArray(issue.path) ? issue.path.join('.') : String(issue.path)
+          return `${path} - ${issue.message}`
+        })
+        .join('; ')
+      throw new Error(`Configuration validation failed: ${errors}`)
+    }
   }
 }

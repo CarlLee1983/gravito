@@ -83,6 +83,30 @@ export abstract class ServiceProvider {
   boot?(core: PlanetCore): void | Promise<void>
 
   /**
+   * Called when the application is ready to accept requests.
+   *
+   * This method is called after ALL providers have booted.
+   * Use this for final initialization before the server starts accepting traffic.
+   *
+   * @param core - The PlanetCore application instance
+   * @since 2.2.0
+   */
+  onReady?(core: PlanetCore): void | Promise<void>
+
+  /**
+   * Called when the application is shutting down.
+   *
+   * This method is called during graceful shutdown.
+   * Use this to clean up resources, close connections, etc.
+   *
+   * Providers are called in reverse order (LIFO).
+   *
+   * @param core - The PlanetCore application instance
+   * @since 2.2.0
+   */
+  onShutdown?(core: PlanetCore): void | Promise<void>
+
+  /**
    * Set the core instance reference.
    * Called internally by the application during registration.
    *
