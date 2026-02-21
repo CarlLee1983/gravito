@@ -110,23 +110,69 @@ export interface RateLimitState {
 // Memory Store (Default)
 // ─────────────────────────────────────────────────────────────────────────────
 
+interface ExpiryNode {
+  key: string
+  resetTime: number
+  prev?: ExpiryNode
+  next?: ExpiryNode
+}
+
 export class MemoryStore implements RateLimitStore {
-  private store = new Map<string, { count: number; resetTime: number }>()
-  private cleanupInterval: Timer | null = null
+  private store = new Map<string, { count: number; resetTime: number; node: ExpiryNode }>()
+  private head?: ExpiryNode
+  private tail?: ExpiryNode
+  private cleanupInterval: any = null
 
   constructor(
     private config: { maxRequests: number; windowMs: number },
     cleanupIntervalMs = 60000
   ) {
-    // Periodic cleanup of expired entries
+    // Efficient cleanup using O(M) complexity where M is number of expired entries
     this.cleanupInterval = setInterval(() => {
       const now = Date.now()
-      for (const [key, value] of this.store.entries()) {
-        if (value.resetTime < now) {
-          this.store.delete(key)
-        }
+      let current = this.head
+      while (current && current.resetTime < now) {
+        // Entry expired, remove from both Map and LinkedList
+        this.store.delete(current.key)
+        this.removeNode(current)
+        current = this.head // Move to the next head
       }
     }, cleanupIntervalMs)
+
+    // Prevent blocking the process from exiting naturally
+    if (this.cleanupInterval && typeof this.cleanupInterval.unref === 'function') {
+      this.cleanupInterval.unref()
+    }
+  }
+
+  private addNode(key: string, resetTime: number): ExpiryNode {
+    const node: ExpiryNode = { key, resetTime }
+    if (!this.tail) {
+      this.head = this.tail = node
+    } else {
+      this.tail.next = node
+      node.prev = this.tail
+      this.tail = node
+    }
+    return node
+  }
+
+  private removeNode(node: ExpiryNode): void {
+    if (node.prev) {
+      node.prev.next = node.next
+    } else {
+      this.head = node.next
+    }
+
+    if (node.next) {
+      node.next.prev = node.prev
+    } else {
+      this.tail = node.prev
+    }
+
+    // Help GC
+    node.prev = undefined
+    node.next = undefined
   }
 
   async increment(key: string): Promise<RateLimitState> {
@@ -135,8 +181,14 @@ export class MemoryStore implements RateLimitStore {
 
     if (!existing || existing.resetTime < now) {
       // New window or expired
+      if (existing) {
+        this.removeNode(existing.node)
+      }
+
       const resetTime = now + this.config.windowMs
-      this.store.set(key, { count: 1, resetTime })
+      const node = this.addNode(key, resetTime)
+      this.store.set(key, { count: 1, resetTime, node })
+
       return {
         count: 1,
         resetTime,
@@ -146,8 +198,7 @@ export class MemoryStore implements RateLimitStore {
 
     // Increment existing window
     existing.count++
-    this.store.set(key, existing)
-
+    // We don't update node's resetTime because it's a fixed window
     return {
       count: existing.count,
       resetTime: existing.resetTime,
@@ -156,7 +207,11 @@ export class MemoryStore implements RateLimitStore {
   }
 
   async reset(key: string): Promise<void> {
-    this.store.delete(key)
+    const existing = this.store.get(key)
+    if (existing) {
+      this.removeNode(existing.node)
+      this.store.delete(key)
+    }
   }
 
   async get(key: string): Promise<RateLimitState | null> {
@@ -183,6 +238,8 @@ export class MemoryStore implements RateLimitStore {
       this.cleanupInterval = null
     }
     this.store.clear()
+    this.head = undefined
+    this.tail = undefined
   }
 }
 

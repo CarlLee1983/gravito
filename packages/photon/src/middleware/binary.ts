@@ -38,20 +38,25 @@ export const binaryMiddleware = (): MiddlewareHandler => {
     if (accept === 'application/cbor') {
       const contentType = c.res.headers.get('Content-Type')
       if (contentType?.includes('application/json')) {
-        // Optimized: Read body directly without clone() - saves ~30% overhead
-        const body = await c.res.json()
-        const encoded = encode(body)
+        try {
+          // Optimized: Read body directly without clone() - saves ~30% overhead
+          const body = await c.res.json()
+          const encoded = encode(body)
 
-        // Reuse existing headers object instead of creating new Headers
-        const headers = c.res.headers
-        headers.set('Content-Type', 'application/cbor')
+          // Create new Headers instance to avoid Immutable Headers errors
+          const headers = new Headers(c.res.headers)
+          headers.set('Content-Type', 'application/cbor')
 
-        const buffer = new Uint8Array(encoded).buffer
+          const buffer = new Uint8Array(encoded).buffer
 
-        c.res = new Response(buffer, {
-          status: c.res.status,
-          headers,
-        })
+          c.res = new Response(buffer, {
+            status: c.res.status,
+            headers,
+          })
+        } catch {
+          // JSON parsing failed, likely not a valid JSON response body.
+          // In this case, we skip the CBOR conversion.
+        }
       }
     }
   }
