@@ -48,6 +48,7 @@ Detailed guides and references:
 - [🔌 **Middleware**](./doc/MIDDLEWARE.md) — Built-in middleware (HTMX, Binary, Logger) and custom MW.
 - [🛡️ **Security & JWT**](./doc/SECURITY.md) — Authentication, tokens, and best practices.
 - [🏗️ **Architecture**](./doc/ARCHITECTURE.md) — Internals and implementation details.
+- [🚀 **Evolution Plan**](./doc/EVOLUTION_PLAN.md) — Future roadmap and architectural enhancements.
 
 ---
 
