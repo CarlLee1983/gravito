@@ -104,9 +104,23 @@ export class Schema {
     // Fallback to default connection if Schema.connectionName is not set
     if (!config && !Schema.connectionName) {
       const defaultConfig = DB.getConnectionConfig()
-      return defaultConfig?.driver ?? 'postgres'
+      if (!defaultConfig) {
+        return 'postgres'
+      }
+      if ('driver' in defaultConfig) {
+        return defaultConfig.driver
+      }
+      // For ReadWriteConnectionConfig, use the write config driver
+      return defaultConfig.write.driver ?? 'postgres'
     }
-    return config?.driver ?? 'postgres'
+    if (!config) {
+      return 'postgres'
+    }
+    if ('driver' in config) {
+      return config.driver
+    }
+    // For ReadWriteConnectionConfig, use the write config driver
+    return config.write.driver ?? 'postgres'
   }
 
   private static createGrammar(driver: string): SchemaGrammar {

@@ -397,6 +397,13 @@ export class SchemaSniffer {
    */
   private getDriverName(): string {
     const config = DB.getConnectionConfig(this.connectionName)
-    return config?.driver ?? 'postgres'
+    if (!config) {
+      return 'postgres'
+    }
+    if ('driver' in config) {
+      return config.driver
+    }
+    // For ReadWriteConnectionConfig, use the write config driver
+    return config.write.driver ?? 'postgres'
   }
 }
