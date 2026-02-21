@@ -16,8 +16,15 @@ import {
 } from '../pool/PoolHealthChecker'
 import { createDefaultStrategies } from '../pool/PoolStrategy'
 import { DEFAULT_WARMER_CONFIG, PoolWarmer, type PoolWarmerConfig } from '../pool/PoolWarmer'
-import type { ConnectionConfig, ConnectionContract, PoolHealth } from '../types'
+import type {
+  AtlasConnectionEntry,
+  ConnectionConfig,
+  ConnectionContract,
+  PoolHealth,
+} from '../types'
+import { isReadWriteConfig } from '../types'
 import { Connection } from './Connection'
+import { ReplicaConnectionPool } from './ReplicaConnectionPool'
 
 /**
  * Connection Manager
@@ -37,11 +44,13 @@ export class ConnectionManager {
   private healthChecker?: PoolHealthChecker
   private warmer?: PoolWarmer
   private adaptiveManager?: AdaptivePoolManager
+  /** Replica pools keyed by connection name */
+  private replicaPools: Map<string, ReplicaConnectionPool> = new Map()
 
   private readonly MAX_IDLE_TIME = 1000 * 60 * 10 // 10 minutes
   private readonly CLEANUP_INTERVAL = 1000 * 60 * 5 // Check every 5 minutes
 
-  constructor(private readonly configs: Record<string, ConnectionConfig> = {}) {
+  constructor(private readonly configs: Record<string, AtlasConnectionEntry> = {}) {
     this.startCleanup()
   }
 
@@ -69,19 +78,95 @@ export class ConnectionManager {
       throw new Error(`Database connection "${connectionName}" is not configured`)
     }
 
-    // Inject Observability (Tracer & Metrics) into config
-    // This allows the Connection instance to access them without global lookup
-    const tracer = AtlasObservability.getTracer()
-    const metrics = AtlasObservability.getMetrics()
+    // ── Read/Write Replica mode ──
+    if (isReadWriteConfig(config)) {
+      const tracer = AtlasObservability.getTracer()
+      const metrics = AtlasObservability.getMetrics()
 
-    const enrichedConfig: ConnectionConfig = {
-      ...config,
-      tracer,
-      metrics,
+      // Build write connection
+      const writeConn = this._buildConnection(`${connectionName}:write`, {
+        ...config.write,
+        tracer,
+        metrics,
+      })
+
+      // Build read replica connections
+      const readConns = config.read.map((readCfg, i) =>
+        this._buildConnection(`${connectionName}:read:${i}`, { ...readCfg, tracer, metrics })
+      )
+
+      const pool = new ReplicaConnectionPool(writeConn, readConns)
+      this.replicaPools.set(connectionName, pool)
+
+      // Expose the write connection as the default for this named connection
+      // (so transactions and mutations work correctly out of the box)
+      this.connections.set(connectionName, writeConn)
+      this.lastUsed.set(connectionName, Date.now())
+      return writeConn
     }
 
-    const connection = new Connection(connectionName, enrichedConfig)
+    // ── Standard single connection mode ──
+    const enrichedConfig: ConnectionConfig = {
+      ...config,
+      tracer: AtlasObservability.getTracer(),
+      metrics: AtlasObservability.getMetrics(),
+    }
 
+    return this._buildAndRegisterConnection(connectionName, enrichedConfig)
+  }
+
+  /**
+   * Get the read replica connection for a named connection.
+   * Returns the round-robin selected read replica, or the write connection
+   * if no replicas are configured.
+   *
+   * @param name - Connection name (defaults to default)
+   */
+  readConnection(name?: string): ConnectionContract {
+    const connectionName = name ?? this.defaultConnectionName
+    // Ensure pool is initialized
+    this.connection(connectionName)
+    const pool = this.replicaPools.get(connectionName)
+    return pool ? pool.getReadConnection() : this.connection(connectionName)
+  }
+
+  /**
+   * Get the write (primary) connection for a named connection.
+   *
+   * @param name - Connection name (defaults to default)
+   */
+  writeConnection(name?: string): ConnectionContract {
+    return this.connection(name)
+  }
+
+  /**
+   * Check whether a given connection has read replicas.
+   */
+  hasReplicas(name?: string): boolean {
+    const connectionName = name ?? this.defaultConnectionName
+    return this.replicaPools.has(connectionName)
+  }
+
+  /**
+   * Build and register a Connection instance, wrapping it in a Proxy.
+   * @internal
+   */
+  private _buildAndRegisterConnection(
+    connectionName: string,
+    config: ConnectionConfig
+  ): ConnectionContract {
+    const conn = this._buildConnection(connectionName, config)
+    this.connections.set(connectionName, conn)
+    this.lastUsed.set(connectionName, Date.now())
+    return conn
+  }
+
+  /**
+   * Build a proxy-wrapped Connection from config without registering.
+   * @internal
+   */
+  private _buildConnection(connectionName: string, config: ConnectionConfig): ConnectionContract {
+    const connection = new Connection(connectionName, config)
     const proxy = new Proxy(connection, {
       get(target: Connection, prop: string | symbol) {
         if (prop in target) {
@@ -98,11 +183,7 @@ export class ConnectionManager {
         return undefined
       },
     }) as unknown as ConnectionContract
-
     connection.setProxy(proxy)
-    this.connections.set(connectionName, proxy)
-    this.lastUsed.set(connectionName, Date.now())
-
     return proxy
   }
 
@@ -110,9 +191,9 @@ export class ConnectionManager {
    * Add a connection configuration.
    *
    * @param name - Unique name for the connection.
-   * @param config - Connection configuration settings.
+   * @param config - Connection configuration settings (standard or read/write replica).
    */
-  addConnection(name: string, config: ConnectionConfig): void {
+  addConnection(name: string, config: AtlasConnectionEntry): void {
     this.configs[name] = config
   }
 
@@ -159,7 +240,7 @@ export class ConnectionManager {
    * @param name - The connection name.
    * @returns The connection configuration or undefined if not found.
    */
-  getConfig(name: string): ConnectionConfig | undefined {
+  getConfig(name: string): AtlasConnectionEntry | undefined {
     return this.configs[name]
   }
 
@@ -175,8 +256,14 @@ export class ConnectionManager {
       disconnectPromises.push(connection.disconnect())
     }
 
+    // Also disconnect all replica pools
+    for (const pool of this.replicaPools.values()) {
+      disconnectPromises.push(pool.disconnectAll())
+    }
+
     await Promise.all(disconnectPromises)
     this.connections.clear()
+    this.replicaPools.clear()
   }
 
   /**

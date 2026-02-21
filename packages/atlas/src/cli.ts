@@ -11,6 +11,10 @@ import { MakeMigrationCommand } from './commands/MakeMigrationCommand'
 import { MakeModelCommand } from './commands/MakeModelCommand'
 import { TinkerCommand } from './commands/TinkerCommand'
 import { Migrator } from './migration/Migrator'
+import { MigrationGenerator } from './schema/MigrationGenerator'
+import { SchemaDiff } from './schema/SchemaDiff'
+import { TypeGenerator } from './schema/TypeGenerator'
+import { TypeWriter } from './schema/TypeWriter'
 import { SeederRunner } from './seed/SeederRunner'
 
 async function main() {
@@ -151,6 +155,111 @@ async function main() {
         break
       }
 
+      case 'generate:types': {
+        const modelsDir = flags.models
+          ? resolve(process.cwd(), flags.models as string)
+          : resolve(process.cwd(), 'src/models')
+        const outFile = flags.out
+          ? resolve(process.cwd(), flags.out as string)
+          : resolve(process.cwd(), '.orbit/generated.d.ts')
+
+        console.log(`Scanning models in: ${modelsDir}`)
+        const gen = new TypeGenerator({ modelsDir, verbose: true })
+        const maps = await gen.generate()
+
+        if (maps.length === 0) {
+          console.log('No models with @Column decorators found.')
+        } else {
+          const writer = new TypeWriter({ outputPath: outFile })
+          await writer.write(maps)
+          console.log(`\n✓ Generated types for ${maps.length} model(s) → ${outFile}`)
+        }
+        break
+      }
+
+      case 'db:push': {
+        console.log('Comparing model schema vs live database...')
+        const { DB } = await import('./DB')
+        const connection = DB.connection()
+        const driver = connection.getDriver()
+        const dialect = driver.getDriverName()
+
+        if (dialect === 'sqlite' || dialect === 'mongodb' || dialect === 'redis') {
+          console.error(`db:push is not supported for ${dialect} driver.`)
+          process.exit(1)
+        }
+
+        const tables = flags.tables ? String(flags.tables).split(',') : []
+        if (tables.length === 0) {
+          console.error('Usage: bun orbit db:push --tables users,posts,...')
+          process.exit(1)
+        }
+
+        const generator = new MigrationGenerator({ dialect: dialect as any })
+        let totalChanges = 0
+
+        for (const table of tables) {
+          const differ = new SchemaDiff({ connection, table, desired: [] })
+          const diff = await differ.compare()
+
+          if (!diff.hasChanges) {
+            console.log(`  ✓ ${table}: up to date`)
+            continue
+          }
+
+          const statements = generator.generate(diff)
+          console.log(`  ~ ${table}: applying ${statements.length} change(s)...`)
+
+          for (const sql of statements) {
+            await connection.raw(sql, [])
+            console.log(`    → ${sql}`)
+            totalChanges++
+          }
+        }
+
+        console.log(`\n✓ db:push complete (${totalChanges} statement(s) applied)`)
+        break
+      }
+
+      case 'migrate:generate': {
+        const { DB } = await import('./DB')
+        const connection = DB.connection()
+        const driver = connection.getDriver()
+        const dialect = driver.getDriverName()
+        const table = String(flags.table ?? '')
+
+        if (!table) {
+          console.error('Usage: bun orbit migrate:generate --table <tableName>')
+          process.exit(1)
+        }
+
+        const differ = new SchemaDiff({ connection, table, desired: [] })
+        const diff = await differ.compare()
+
+        if (!diff.hasChanges) {
+          console.log(`Table '${table}' is up to date. No migration needed.`)
+          break
+        }
+
+        const gen = new MigrationGenerator({ dialect: dialect as any })
+        const content = gen.generateMigrationScript(diff)
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -1)
+        const filename = `${timestamp}_sync_${table}.ts`
+        const migrationFile = resolve(migrationsPath, filename)
+
+        const { writeFile, mkdir } = await import('node:fs/promises')
+        const { dirname } = await import('node:path')
+        await mkdir(dirname(migrationFile), { recursive: true })
+        await writeFile(migrationFile, content, 'utf8')
+
+        console.log(`\n✓ Migration generated: ${migrationFile}`)
+        const addedCount = diff.added.length
+        const removedCount = diff.removed.length
+        const modifiedCount = diff.modified.length
+        console.log(`  +${addedCount} added, -${removedCount} removed, ~${modifiedCount} modified`)
+        break
+      }
+
       default:
         console.log(`
 Orbit Database CLI
@@ -163,9 +272,14 @@ Commands:
   migrate:rollback    Rollback the last batch of migrations
   migrate:fresh       Drop all tables and re-run all migrations
   migrate:status      Show status of migrations
+  migrate:generate    Generate a migration from schema diff  --table <name>
   seed                Run all seeders
   make:model <name>   Create a new model
   make:migration <n>  Create a new migration
+  generate:types      Generate TypeScript types from @Column decorators
+                        --models <dir>   (default: src/models)
+                        --out    <file>  (default: .orbit/generated.d.ts)
+  db:push             Apply schema diff to live database --tables <table1,table2>
   doctor              Diagnose database connection and config
 `)
     }
