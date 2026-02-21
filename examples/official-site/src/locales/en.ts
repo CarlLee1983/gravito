@@ -34,7 +34,7 @@ export default {
     ts_desc: 'First-class type safety across the entire framework.',
   },
   features: {
-    sectionBadge: '1.0 Core Release',
+    sectionBadge: '1.6 Core Release',
     sectionTitle: 'The',
     sectionTitleHighlight: 'Gravito Ecosystem',
     sectionDesc:
@@ -45,7 +45,7 @@ export default {
     kernel_title: 'PlanetCore',
     kernel_subtitle: 'The Soul of Gravito',
     kernel_desc:
-      'Our self-developed high-performance micro-kernel. Precision-engineered for rapid I/O coordination and lifecycle management.',
+      'Our self-developed high-performance micro-kernel. Native support for Request Context (ALS) and DI Scopes, precision-engineered for rapid I/O coordination and lifecycle management.',
     inertia_title: 'Ion',
     inertia_subtitle: 'Full-stack Bridge (Inertia)',
     inertia_desc: 'Let the backend fully control UI, creating a seamless SPA-like experience.',
@@ -53,7 +53,7 @@ export default {
     cli_subtitle: 'Productivity Tool (CLI)',
     cli_desc: 'Automated scaffolding and dev commands for better workflow.',
     atlas_title: 'Atlas',
-    atlas_subtitle: 'Bun-Native ORM',
+    atlas_subtitle: 'Bun-Native ORM & Sharding',
     atlas_desc:
       'A modern Active Record layer inspired by Prisma and Drizzle, optimized for Bun performance.',
     seo_title: 'Luminosity',
@@ -132,7 +132,7 @@ export default {
       'Controller-based routing, FormRequest validation, Resource Routes, Route Model Binding, and Named Routes with URL generation—all built-in.',
     vs_ioc_title: 'IoC Container',
     vs_ioc_desc:
-      'Enterprise-grade dependency injection with singleton management, service providers, and a register/boot lifecycle—missing from Hono entirely.',
+      'Enterprise-grade dependency injection with singleton management, request scopes, and a full register/boot/shutdown lifecycle—missing from Hono entirely.',
     vs_native_title: 'Bun Native Adapter',
     vs_native_desc:
       'When running on Bun, Gravito automatically uses our custom RadixRouter for O(log n) route matching with zero abstraction overhead.',
@@ -163,7 +163,8 @@ export default {
     lux: 'Luminosity (Lux)',
     lux_note: 'Luminosity (Lux) — The sitemap engine built on Gravito Core.',
     photon: 'Photon',
-    photon_note: 'Photon (Beta) — Ultra-Fast HTTP Engine built on Hono.',
+    photon_note:
+      'Photon (Beta) — High-Performance HTTP Engine with JWT security, CBOR support, and RPC type-safe communication.',
     atlas: 'Atlas (ORM)',
     atlas_note: 'Atlas (ORM) — High-Performance Bun-Native ORM.',
     zenith: 'Zenith',
@@ -202,7 +203,7 @@ export default {
     galaxy_desc:
       'Want React? Add Ion. Want Vue? Add Ion. Want HTML? Add Prism. Want SEO? Add Luminosity. Need a Database? Add Atlas. Load only what you need, when you need it.',
     galaxy_atlas_stable:
-      'Atlas (ORM) — High-Performance Bun-Native ORM (v1.4.0 released with major performance optimizations).',
+      'Atlas (ORM) — High-Performance Bun-Native ORM (v1.6.0 released with Horizontal Sharding, Active Record, and OTEL integration).',
     scaleTitle: 'Infinite Scalability',
     scaleDesc:
       "From a single-file API to a global enterprise system, the architecture adapts dynamically to your project's gravity.",

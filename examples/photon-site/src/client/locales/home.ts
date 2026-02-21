@@ -84,7 +84,7 @@ export const homeTranslations: TranslationMap<HomeTranslations> = {
       initializing: 'INITIALIZING BASELINE_RUNNER...',
       warmup: 'JIT_FTL_WARMUP: COMPLETED (320ms)',
       targeting: 'TARGETING: APPLE_M3_SILICON',
-      result: 'RESULT: 98.8%_OF_NATIVE_BUN_THROUGHPUT',
+      result: 'RESULT: 99.2%_OF_NATIVE_BUN_THROUGHPUT',
     },
   },
   'zh-TW': {
@@ -111,7 +111,7 @@ export const homeTranslations: TranslationMap<HomeTranslations> = {
     overhead: '開銷。',
     desc_p1: '通用墊片 (Shims) 通常會造成 15-20% 的效能損耗。',
     desc_p2: 'Photon 專為隱形而生。在最新的基準測試中，我們達到了',
-    desc_p3: 'Bun 理論最大吞吐量的 98.8%。',
+    desc_p3: 'Bun 理論最大吞吐量的 99.2%。',
     view_metrics: '查看詳細指標',
     master: '精通引擎。',
     docs_intro: '文件_',
@@ -129,7 +129,7 @@ export const homeTranslations: TranslationMap<HomeTranslations> = {
       initializing: '正在初始化基準測試器...',
       warmup: 'JIT_FTL 預熱：已完成 (320ms)',
       targeting: '目標架構：APPLE_M3_SILICON',
-      result: '結果：達到了 98.8% 的原生 Bun 吞吐量',
+      result: '結果：達到了 99.2% 的原生 Bun 吞吐量',
     },
   },
 }
