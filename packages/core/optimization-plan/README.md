@@ -92,22 +92,11 @@ PhotonAdapter:
   - 優先級分級與工作量估算
   - 詳細實現方案與驗證清單
 
-### 📚 詳細設計文件（參考用）
+### 📚 優化歷史（已歸檔至 [history](./history/v1.6-optimizations/)）
 
-- **[00-baseline.md](./00-baseline.md)** - Phase 0: 基準測試基線建立
-- **[01-middleware-precompile.md](./01-middleware-precompile.md)** - Phase 1: 中間件鏈預編譯
-- **[02-minimal-context-query-cache.md](./02-minimal-context-query-cache.md)** - Phase 2: MinimalContext Query 快取
-- **[03-photon-adapter-proxy.md](./03-photon-adapter-proxy.md)** - Phase 3: PhotonAdapter Proxy 消除
-- **[04-aot-router-cache.md](./04-aot-router-cache.md)** - Phase 4: AOTRouter 中間件快取
-- **[05-headers-pooling.md](./05-headers-pooling.md)** - Phase 5: FastContext Headers 池化
-- **[06-container-symbol-key.md](./06-container-symbol-key.md)** - Phase 6: Container Symbol Key
-- **[07-micro-optimizations.md](./07-micro-optimizations.md)** - Phase 7: 其他微優化
-- **[08-comprehensive-code-review.md](./08-comprehensive-code-review.md)** - Phase 8: 深度代碼審查與新發現
-
-### ✓ 驗證相關
-
-- **[verification.md](./verification.md)** - 驗證計劃與測試清單
-- **[risks-and-compatibility.md](./risks-and-compatibility.md)** - 風險評估、修正版建議、向後相容性指南
+- **[實施日誌](./history/v1.6-optimizations/DETAILED_WORK_LOG.md)** - 已完成工作的摘要。
+- **[技術規格存檔](./history/v1.6-optimizations/PHASE_SPECS_ARCHIVE.md)** - Phase 0-8 的詳細設計規格整合。
+- **[驗證與測評存檔](./history/v1.6-optimizations/VERIFICATION_ARCHIVE.md)** - 基準測試數據與風險評估。
 
 ---
 
