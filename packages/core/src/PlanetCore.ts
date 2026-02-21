@@ -326,6 +326,14 @@ export class PlanetCore {
    * ```
    */
   async bootstrap(): Promise<void> {
+    // Phase 0: Validate configuration
+    try {
+      this.config.validate()
+    } catch (error) {
+      this.logger.error('Configuration validation failed:', error)
+      throw error
+    }
+
     // Phase 1: Register all bindings (supports async)
     this.logger.debug(`🔄 Bootstrapping ${this.providers.length} providers`)
     for (const provider of this.providers) {
