@@ -165,21 +165,27 @@ export const verifyWithJwks = ensure(honoJwt.verifyWithJwks, 'verifyWithJwks')
  * JWT Payload type compatibility.
  * @public
  */
-export type JwtPayload = any // Fallback to any for now to avoid deep internal imports that might break
+export type JwtPayload = Record<string, unknown>
+
 /**
  * JWT Header type compatibility.
  * @public
  */
-export type JwtHeader = any
+export type JwtHeader = Record<string, unknown>
 
 /**
  * JWT Options type compatibility.
  * @public
  */
-export type JwtOptions = any
+export type JwtOptions = {
+  secret: string | Buffer
+  cookie?: string
+  alg?: string
+  [key: string]: unknown
+}
 
 /**
  * JWT Middleware function type compatibility.
  * @public
  */
-export type JwtFunction = (options: any) => MiddlewareHandler
+export type JwtFunction = (options: JwtOptions) => MiddlewareHandler
