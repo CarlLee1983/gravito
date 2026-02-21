@@ -21,7 +21,8 @@
 
 ---
 
-## 🟡 待處理問題
+<details>
+<summary>🟡 待處理問題 (Pending Issues)</summary>
 
 ### 1. 依賴版本範圍（中優先級）
 
@@ -77,9 +78,10 @@ const honoJwt = require('hono/jwt') as Partial<typeof HonoJwt>
 - 使用 `import type` + runtime `require` 是合理的折衷方案
 - **建議**: 保持現狀，不需要改動
 
----
+</details>
 
-## ✅ 已完成項目詳情
+<details>
+<summary>✅ 已完成項目詳情 (Completed Items Details)</summary>
 
 ### Phase 1: binaryMiddleware 性能優化 ✅
 
@@ -195,9 +197,10 @@ import type { MiddlewareHandler } from 'hono' // Direct import to avoid circular
 - ✅ 添加完整 JSDoc 文檔
 - ✅ ESLint 規則忽略有正確註釋說明
 
----
+</details>
 
-## 剩餘行動項目
+<details>
+<summary>📋 剩餘行動項目 (Remaining Action Items)</summary>
 
 ### 短期處理（1-2 天）
 
@@ -213,7 +216,10 @@ import type { MiddlewareHandler } from 'hono' // Direct import to avoid circular
 
 ---
 
-## 驗證命令
+</details>
+
+<details>
+<summary>🧪 驗證命令 (Verification Commands)</summary>
 
 ```bash
 cd packages/photon
@@ -230,6 +236,8 @@ bun run typecheck
 # 構建驗證
 bun run build
 ```
+
+</details>
 
 ---
 
