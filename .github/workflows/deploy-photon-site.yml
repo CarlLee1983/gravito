@@ -37,9 +37,16 @@ jobs:
           SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
 
       - name: Build Dependencies
-        # Build core packages that photon-site depends on
-        # Use --include-dependencies to include transitive dependencies in correct order
-        run: bunx turbo run build --filter=@gravito/photon --filter=@gravito/prism --filter=@gravito/ion --filter=@gravito/freeze --filter=@gravito/freeze-react --include-dependencies
+        # Build all core packages that photon-site depends on with their transitive dependencies
+        run: |
+          bunx turbo run build \
+            --filter=@gravito/core \
+            --filter=@gravito/freeze \
+            --filter=@gravito/freeze-react \
+            --filter=@gravito/ion \
+            --filter=@gravito/photon \
+            --filter=@gravito/prism \
+            --include-dependencies
 
       - name: Build Photon Site
         working-directory: examples/photon-site
