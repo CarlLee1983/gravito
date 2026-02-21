@@ -38,7 +38,8 @@ jobs:
 
       - name: Build Dependencies
         # Build core packages that photon-site depends on
-        run: bunx turbo run build --filter=@gravito/core --filter=@gravito/photon --filter=@gravito/ion --filter=@gravito/prism --filter=@gravito/freeze --filter=@gravito/freeze-react
+        # Use --include-dependencies to include transitive dependencies in correct order
+        run: bunx turbo run build --filter=@gravito/photon --filter=@gravito/prism --filter=@gravito/ion --filter=@gravito/freeze --filter=@gravito/freeze-react --include-dependencies
 
       - name: Build Photon Site
         working-directory: examples/photon-site
