@@ -13,6 +13,8 @@ await build({
     'src/bun.ts',
     'src/jwt.ts',
     'src/http-exception.ts',
+    'src/middleware/streaming.ts',
+    'src/middleware/otel.ts',
     'src/router/reg-exp-router.ts',
     'src/router/trie-router.ts',
   ],
