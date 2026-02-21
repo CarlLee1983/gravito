@@ -17,6 +17,10 @@ await build({
     'src/middleware/otel.ts',
     'src/router/reg-exp-router.ts',
     'src/router/trie-router.ts',
+    // Edge adapter entrypoints
+    'src/adapter/cloudflare.ts',
+    'src/adapter/vercel.ts',
+    'src/adapter/deno.ts',
   ],
   outdir: 'dist',
   format: 'esm',

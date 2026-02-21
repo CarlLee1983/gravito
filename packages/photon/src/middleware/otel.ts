@@ -208,7 +208,8 @@ export function otelMiddleware(config: OtelMiddlewareConfig = {}): MiddlewareHan
 
     // 排除特定路徑
     if (shouldExcludePath(path, excludePaths)) {
-      return await next()
+      await next()
+      return
     }
 
     // 解析 span 名稱
