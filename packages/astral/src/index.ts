@@ -5,6 +5,7 @@ import { OpenApiGenerator } from './OpenApiGenerator'
 import type { AstralConfig, AstralOperation, AstralResource } from './types'
 
 export * from './errors'
+export * from './export-static'
 export * from './types'
 
 /**
@@ -268,6 +269,18 @@ export class OrbitAstral implements GravitoOrbit {
   }
 
   /**
+   * Pre-compiles the OpenAPI specification and Swagger UI to a static directory.
+   *
+   * @param core - The PlanetCore instance.
+   * @param outputDir - Directory to export static documents.
+   */
+  async exportStatic(core: PlanetCore, outputDir: string): Promise<void> {
+    // Avoid importing static export utilities globally if not used
+    const { generateStaticSite } = require('./export-static')
+    await generateStaticSite({ core, outputDir, astralConfig: this.config })
+  }
+
+  /**
    * Install the Astral orbit into the framework core.
    * Registers routes for serving the OpenAPI JSON specification and the Swagger UI.
    *
@@ -277,9 +290,17 @@ export class OrbitAstral implements GravitoOrbit {
   async install(core: PlanetCore): Promise<void> {
     const router = core.router
 
-    // 1. Serve OpenAPI JSON (with caching)
+    // 1. Serve OpenAPI JSON (with caching or from pre-built spec)
     router.get(this.config.jsonPath || '/openapi.json', (ctx: GravitoContext) => {
       if (this.cachedSpec) {
+        return ctx.json(this.cachedSpec)
+      }
+
+      if (this.config.specFilePath) {
+        // Read statically generated JSON instead of compiling routes dynamically
+        const { readFileSync } = require('node:fs')
+        const specContent = readFileSync(this.config.specFilePath, 'utf-8')
+        this.cachedSpec = JSON.parse(specContent)
         return ctx.json(this.cachedSpec)
       }
 

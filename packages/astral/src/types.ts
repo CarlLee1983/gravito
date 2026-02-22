@@ -297,6 +297,10 @@ export interface AstralConfig {
   externalDocs?: ExternalDocumentation
   /** An element to hold various schemas for the specification. */
   components?: ComponentsObject
+  /** Path to a pre-generated openapi.json file to use in production. */
+  specFilePath?: string
+  /** Whether to bundle Swagger UI assets for offline usage during static export. */
+  bundleOfflineAssets?: boolean
 }
 
 /**
@@ -316,12 +320,12 @@ export type InferInput<T extends AstralOperation> = T['input'] extends ZodSchema
  */
 export type InferOutput<T extends AstralOperation> =
   T['output'] extends ZodSchema<infer U>
-    ? U
-    : T['output'] extends Array<infer Item>
-      ? Item extends ZodSchema<infer V>
-        ? V[]
-        : any
-      : any
+  ? U
+  : T['output'] extends Array<infer Item>
+  ? Item extends ZodSchema<infer V>
+  ? V[]
+  : any
+  : any
 
 /**
  * Type utility to infer the path parameters type from an `AstralOperation`.
@@ -331,8 +335,8 @@ export type InferOutput<T extends AstralOperation> =
  */
 export type InferParams<T extends AstralOperation> =
   T['params'] extends Record<string, ZodSchema>
-    ? { [K in keyof T['params']]: T['params'][K] extends ZodSchema<infer U> ? U : any }
-    : Record<string, any>
+  ? { [K in keyof T['params']]: T['params'][K] extends ZodSchema<infer U> ? U : any }
+  : Record<string, any>
 
 /**
  * Type utility to infer the error response types from an `AstralOperation`.
@@ -342,5 +346,5 @@ export type InferParams<T extends AstralOperation> =
  */
 export type InferErrors<T extends AstralOperation> =
   T['errors'] extends Record<number, any>
-    ? { [K in keyof T['errors']]: T['errors'][K] extends ZodSchema<infer U> ? U : T['errors'][K] }
-    : Record<number, any>
+  ? { [K in keyof T['errors']]: T['errors'][K] extends ZodSchema<infer U> ? U : T['errors'][K] }
+  : Record<number, any>
