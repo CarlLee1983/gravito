@@ -6,68 +6,88 @@ const isDtsOnly = process.argv.includes('--dts-only')
 // Clean dist
 await rm('dist', { recursive: true, force: true })
 
-// Build JS/TS using bun's build (skip if dts-only)
-if (!isDtsOnly) {
-  const buildResult = await build({
-    entrypoints: [
-      'src/index.ts',
-      'src/client.ts',
-      'src/logger.ts',
-      'src/bun.ts',
-      'src/jwt.ts',
-      'src/http-exception.ts',
-      'src/openapi.ts',
-      'src/middleware/binary.ts',
-      'src/middleware/circuit-breaker.ts',
-      'src/middleware/htmx.ts',
-      'src/middleware/otel.ts',
-      'src/middleware/ratelimit-redis.ts',
-      'src/middleware/ratelimit.ts',
-      'src/middleware/sse.ts',
-      'src/middleware/streaming.ts',
-      'src/middleware/websocket.ts',
-      'src/adapter/cloudflare.ts',
-      'src/adapter/vercel.ts',
-      'src/adapter/deno.ts',
-      'src/router/reg-exp-router.ts',
-      'src/router/trie-router.ts',
-    ],
-    outdir: 'dist',
-    format: 'esm',
-    target: 'node',
-    splitting: false,
-    minify: process.env.NODE_ENV === 'production',
-    sourcemap: 'external',
-    external: ['hono', '@hono/zod-openapi', 'zod', 'cborg'],
-  })
-
-  if (!buildResult.success) {
-    console.error('❌ Build failed:', buildResult.logs)
-    process.exit(1)
+// Parallel build: JS/TS and type declarations can run simultaneously
+// since they output to different directories
+async function buildInParallel() {
+  if (isDtsOnly) {
+    console.log('📝 Generating type declarations only...')
+  } else {
+    console.log('🔨 Building JS and type declarations in parallel...')
   }
-}
 
-if (isDtsOnly) {
-  console.log('📝 Generating type declarations...')
-} else {
-  console.log('📝 Generating type declarations...')
-}
+  const tempDir = isDtsOnly ? 'dist' : '.tsc-temp'
+  if (!isDtsOnly) {
+    await rm(tempDir, { recursive: true, force: true })
+  }
 
-// Use temporary directory for tsc to avoid overwriting .js files
-const tempDir = isDtsOnly ? 'dist' : '.tsc-temp'
-if (!isDtsOnly) {
-  await rm(tempDir, { recursive: true, force: true })
-}
+  // Start both processes in parallel
+  const tasks: Promise<number>[] = []
 
-const tsc = Bun.spawn(['bunx', 'tsc', '-p', 'tsconfig.build.json', '--outDir', tempDir], {
-  stdout: 'inherit',
-  stderr: 'inherit',
-  cwd: import.meta.dirname,
-})
+  // Task 1: bun build (JS/TS)
+  if (!isDtsOnly) {
+    const buildPromise = (async () => {
+      const buildResult = await build({
+        entrypoints: [
+          'src/index.ts',
+          'src/client.ts',
+          'src/logger.ts',
+          'src/bun.ts',
+          'src/jwt.ts',
+          'src/http-exception.ts',
+          'src/openapi.ts',
+          'src/middleware/binary.ts',
+          'src/middleware/circuit-breaker.ts',
+          'src/middleware/htmx.ts',
+          'src/middleware/otel.ts',
+          'src/middleware/ratelimit-redis.ts',
+          'src/middleware/ratelimit.ts',
+          'src/middleware/sse.ts',
+          'src/middleware/streaming.ts',
+          'src/middleware/websocket.ts',
+          'src/adapter/cloudflare.ts',
+          'src/adapter/vercel.ts',
+          'src/adapter/deno.ts',
+          'src/router/reg-exp-router.ts',
+          'src/router/trie-router.ts',
+        ],
+        outdir: 'dist',
+        format: 'esm',
+        target: 'node',
+        splitting: false,
+        minify: process.env.NODE_ENV === 'production',
+        sourcemap: 'external',
+        external: ['hono', '@hono/zod-openapi', 'zod', 'cborg'],
+      })
 
-const exitCode = await tsc.exited
-if (exitCode !== 0) {
-  process.exit(1)
+      if (!buildResult.success) {
+        console.error('❌ JS/TS build failed:', buildResult.logs)
+        return 1
+      }
+      return 0
+    })()
+    tasks.push(buildPromise)
+  }
+
+  // Task 2: tsc (type declarations)
+  const tscPromise = (async () => {
+    const tsc = Bun.spawn(['bunx', 'tsc', '-p', 'tsconfig.build.json', '--outDir', tempDir], {
+      stdout: 'inherit',
+      stderr: 'inherit',
+      cwd: import.meta.dirname,
+    })
+    return await tsc.exited
+  })()
+  tasks.push(tscPromise)
+
+  // Wait for all tasks to complete
+  const results = await Promise.all(tasks)
+
+  // Check if any task failed
+  for (const result of results) {
+    if (result !== 0) {
+      process.exit(1)
+    }
+  }
 }
 
 // Recursively copy .d.ts files from temp to dist, preserving directory structure
@@ -81,21 +101,23 @@ async function copyDtsFiles(src: string, dest: string) {
     const destPath = `${dest}/${entry.name}`
 
     if (entry.isDirectory()) {
-      // Create directory in dest if it doesn't exist
       try {
         await import('node:fs/promises').then((m) => m.mkdir(destPath, { recursive: true }))
       } catch (_e) {
         // ignore if already exists
       }
-      // Recursively copy files from subdirectory
       await copyDtsFiles(srcPath, destPath)
     } else if (entry.isFile() && entry.name.endsWith('.d.ts')) {
-      // Copy .d.ts files
       await cp(srcPath, destPath)
     }
   }
 }
 
+// Execute parallel build
+await buildInParallel()
+
+// Post-build cleanup and file reorganization
+const tempDir = isDtsOnly ? 'dist' : '.tsc-temp'
 if (!isDtsOnly) {
   try {
     await copyDtsFiles(tempDir, 'dist')
