@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { cancel, isCancel, text } from '@clack/prompts'
@@ -30,6 +30,7 @@ import pc from 'picocolors'
  */
 export class MakeCommand {
   private searchPaths: string[] = []
+  private architecture: 'mvc' | 'ddd' | 'cqrs' = 'mvc'
 
   /**
    * Initializes a new MakeCommand instance.
@@ -73,6 +74,23 @@ export class MakeCommand {
 
     // Prune non-existent paths to optimize file system lookups
     this.searchPaths = this.searchPaths.filter((p) => existsSync(p))
+
+    // Detect project architecture
+    this.detectArchitecture()
+  }
+
+  /**
+   * 從 package.json 中檢測項目架構
+   */
+  private detectArchitecture() {
+    try {
+      const pkgPath = path.join(process.cwd(), 'package.json')
+      const content = readFileSync(pkgPath, 'utf-8')
+      const pkg = JSON.parse(content)
+      this.architecture = pkg.gravito?.architecture || 'mvc'
+    } catch {
+      this.architecture = 'mvc'
+    }
   }
 
   /**
@@ -265,21 +283,44 @@ export class MakeCommand {
   private resolveTargetPath(type: string, name: NormalizedName): string {
     const cwd = process.cwd()
 
-    // Define conventions
-    const map: Record<string, string> = {
-      controller: `src/controllers/${name.pascal}Controller.ts`,
-      model: `src/models/${name.pascal}.ts`,
-      middleware: `src/middleware/${name.camel}.ts`,
-      seeder: `src/database/seeders/${name.pascal}Seeder.ts`,
-      request: `src/requests/${name.pascal}Request.ts`,
-      command: `src/commands/${name.pascal}Command.ts`,
+    // Architecture-aware path mapping
+    const architecturePaths: Record<'mvc' | 'ddd' | 'cqrs', Record<string, string>> = {
+      mvc: {
+        controller: `src/Http/Controllers/${name.pascal}Controller.ts`,
+        model: `src/Models/${name.pascal}.ts`,
+        middleware: `src/Http/Middleware/${name.pascal}Middleware.ts`,
+        seeder: `database/seeders/${name.pascal}Seeder.ts`,
+        request: `src/Http/Requests/${name.pascal}Request.ts`,
+        command: `src/Commands/${name.pascal}Command.ts`,
+        service: `src/Services/${name.pascal}Service.ts`,
+      },
+      ddd: {
+        controller: `src/Presentation/Http/Controllers/${name.pascal}Controller.ts`,
+        model: `src/Domain/${name.pascal}.ts`,
+        middleware: `src/Presentation/Http/Middleware/${name.pascal}Middleware.ts`,
+        seeder: `database/seeders/${name.pascal}Seeder.ts`,
+        request: `src/Presentation/Http/Requests/${name.pascal}Request.ts`,
+        command: `src/Application/Commands/${name.pascal}Command.ts`,
+        service: `src/Application/Services/${name.pascal}Service.ts`,
+      },
+      cqrs: {
+        controller: `src/Presentation/Controllers/${name.pascal}Controller.ts`,
+        model: `src/Infrastructure/Persistence/${name.pascal}.ts`,
+        middleware: `src/Presentation/Middleware/${name.pascal}Middleware.ts`,
+        seeder: `database/seeders/${name.pascal}Seeder.ts`,
+        request: `src/Presentation/Requests/${name.pascal}Request.ts`,
+        command: `src/Application/Commands/${name.pascal}Command.ts`,
+        service: `src/Application/Services/${name.pascal}Service.ts`,
+      },
     }
 
-    if (!map[type]) {
-      throw new Error(`Unknown type: ${type}`)
+    // Get paths for current architecture
+    const paths = architecturePaths[this.architecture]
+    if (!paths || !paths[type]) {
+      throw new Error(`Unknown type: ${type} for architecture: ${this.architecture}`)
     }
 
-    return path.join(cwd, map[type])
+    return path.join(cwd, paths[type])
   }
 
   /**
