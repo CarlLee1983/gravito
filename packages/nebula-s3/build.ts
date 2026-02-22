@@ -10,7 +10,7 @@ await $`rm -rf dist`
 if (isDtsOnly) {
   await $`tsc --emitDeclarationOnly`
 } else {
-  await $`tsc`
+  await $`tsc --declaration`
 }
 
 console.log('✅ Build complete!')

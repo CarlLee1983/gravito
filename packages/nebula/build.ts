@@ -15,7 +15,7 @@ const tsup = spawn(
     'src/index.ts',
     '--format',
     isDtsOnly ? 'esm' : 'esm,cjs',
-    ...(isDtsOnly ? ['--dts', '--dts-only'] : []),
+    ...(isDtsOnly ? ['--dts-only'] : ['--dts']),
     '--external',
     '@gravito/core,@gravito/photon',
     '--outDir',

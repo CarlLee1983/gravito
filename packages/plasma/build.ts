@@ -10,19 +10,14 @@ await $`rm -rf dist`
 try {
   if (!isDtsOnly) {
     console.log('Building ESM/CJS...')
-    // Using Bun to build for Node/Bun
-    await Bun.build({
-      entrypoints: ['./src/index.ts'],
-      outdir: './dist',
-      target: 'node', // Plasma is mostly for backend (redis)
-      format: 'esm',
-      external: ['@gravito/core', '@gravito/photon', 'ioredis'],
-      naming: '[dir]/[name].mjs',
-    })
+    // Use tsup for proper ESM/CJS build (handles Bun builtins correctly)
+    await $`npx tsup src/index.ts --format esm,cjs --outDir dist --external @gravito/core,@gravito/photon,ioredis,bun`
   }
 
-  console.log('Generating Types...')
-  await $`npx tsc --emitDeclarationOnly --declaration --outDir dist`
+  if (isDtsOnly) {
+    console.log('Generating Types...')
+    await $`npx tsc --emitDeclarationOnly --declaration --outDir dist`
+  }
 
   console.log('✅ Build complete!')
 } catch (err) {
