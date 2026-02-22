@@ -191,7 +191,8 @@ export class EnterpriseMvcGenerator extends BaseGenerator {
   }
 
   private generateDatabaseConfig(): string {
-    return ConfigGenerator.generateDetailedDatabaseConfig()
+    const driver = (this.context?.profileConfig as any)?.drivers?.database ?? 'none'
+    return ConfigGenerator.generateDatabaseConfig(driver)
   }
 
   private generateAuthConfig(): string {

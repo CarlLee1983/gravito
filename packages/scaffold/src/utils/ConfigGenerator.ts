@@ -20,6 +20,23 @@ export interface GeneratorContext {
 
 export class ConfigGenerator {
   /**
+   * Generate database configuration based on driver type
+   */
+  static generateDatabaseConfig(driver: string): string {
+    switch (driver) {
+      case 'none':
+        return this.generateNoDatabaseConfig()
+      case 'sqlite':
+        return this.generateSimpleDatabaseConfig()
+      case 'postgresql':
+      case 'mysql':
+        return this.generateDetailedDatabaseConfig()
+      default:
+        return this.generateNoDatabaseConfig()
+    }
+  }
+
+  /**
    * Generate app configuration (simple version for Clean Architecture)
    */
   static generateSimpleAppConfig(context: GeneratorContext): string {
@@ -101,6 +118,59 @@ export default {
     // Application providers
     // 'AppServiceProvider',
   ],
+}
+`
+  }
+
+  /**
+   * Generate database configuration (no default driver - developer to choose)
+   */
+  static generateNoDatabaseConfig(): string {
+    return `/**
+ * Database Configuration
+ *
+ * Configure your database connection below.
+ * Choose one of the following drivers by installing the required package:
+ *
+ * SQLite:     bun add better-sqlite3
+ * PostgreSQL: bun add pg
+ * MySQL:      bun add mysql2
+ */
+export default {
+  default: process.env.DB_CONNECTION ?? 'sqlite',
+
+  connections: {
+    sqlite: {
+      driver: 'sqlite',
+      database: process.env.DB_DATABASE ?? 'database/database.sqlite',
+    },
+
+    postgresql: {
+      driver: 'postgresql',
+      host: process.env.DB_HOST ?? 'localhost',
+      port: Number(process.env.DB_PORT ?? 5432),
+      database: process.env.DB_DATABASE ?? 'forge',
+      username: process.env.DB_USERNAME ?? 'forge',
+      password: process.env.DB_PASSWORD ?? '',
+    },
+
+    mysql: {
+      driver: 'mysql',
+      host: process.env.DB_HOST ?? 'localhost',
+      port: Number(process.env.DB_PORT ?? 3306),
+      database: process.env.DB_DATABASE ?? 'forge',
+      username: process.env.DB_USERNAME ?? 'forge',
+      password: process.env.DB_PASSWORD ?? '',
+    },
+  },
+
+  /**
+   * Migration settings
+   */
+  migrations: {
+    table: 'migrations',
+    path: 'database/migrations',
+  },
 }
 `
   }

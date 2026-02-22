@@ -284,7 +284,8 @@ export class CleanArchitectureGenerator extends BaseGenerator {
   }
 
   private generateDatabaseConfig(): string {
-    return ConfigGenerator.generateSimpleDatabaseConfig()
+    const driver = (this.context?.profileConfig as any)?.drivers?.database ?? 'none'
+    return ConfigGenerator.generateDatabaseConfig(driver)
   }
 
   private generateAuthConfig(): string {

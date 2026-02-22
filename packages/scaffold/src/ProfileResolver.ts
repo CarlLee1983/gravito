@@ -39,7 +39,7 @@ export class ProfileResolver {
   private static readonly DEFAULTS: Record<ProfileType, ProfileConfig> = {
     core: {
       drivers: {
-        database: 'sqlite',
+        database: 'none',
         cache: 'memory',
         queue: 'sync',
         storage: 'local',

@@ -1,8 +1,12 @@
 import type { DirectoryNode } from '../../types'
+import { ConfigGenerator } from '../../utils/ConfigGenerator'
 import type { GeneratorContext } from '../BaseGenerator'
 
 export class BootstrapGenerator {
+  private context: GeneratorContext | null = null
+
   generate(context: GeneratorContext): DirectoryNode {
+    this.context = context
     return {
       type: 'directory',
       name: 'Bootstrap',
@@ -16,6 +20,7 @@ export class BootstrapGenerator {
   }
 
   generateConfigDirectory(context: GeneratorContext): DirectoryNode {
+    this.context = context
     return {
       type: 'directory',
       name: 'config',
@@ -219,13 +224,8 @@ export default {
   }
 
   private generateDatabaseConfig(): string {
-    return `export default {
-  default: process.env.DB_CONNECTION ?? 'sqlite',
-  connections: {
-    sqlite: { driver: 'sqlite', database: 'database/database.sqlite' },
-  },
-}
-`
+    const driver = (this.context?.profileConfig as any)?.drivers?.database ?? 'none'
+    return ConfigGenerator.generateDatabaseConfig(driver)
   }
 
   private generateCacheConfig(): string {

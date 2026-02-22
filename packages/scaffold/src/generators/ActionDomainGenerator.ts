@@ -9,6 +9,7 @@
  */
 
 import type { DirectoryNode } from '../types'
+import { ConfigGenerator } from '../utils/ConfigGenerator'
 import { BaseGenerator, type GeneratorContext } from './BaseGenerator'
 
 /**
@@ -217,16 +218,8 @@ export class ActionDomainGenerator extends BaseGenerator {
   }
 
   private generateDatabaseConfig(): string {
-    return `export default {
-  default: process.env.DB_CONNECTION ?? 'sqlite',
-  connections: {
-    sqlite: {
-      driver: 'sqlite',
-      database: process.env.DB_DATABASE ?? 'database/database.sqlite',
-    },
-  },
-}
-`
+    const driver = (this.context?.profileConfig as any)?.drivers?.database ?? 'none'
+    return ConfigGenerator.generateDatabaseConfig(driver)
   }
 
   // ─────────────────────────────────────────────────────────────

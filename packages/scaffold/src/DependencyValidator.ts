@@ -72,6 +72,11 @@ export class DependencyValidator {
    */
   private static readonly DRIVER_DEPENDENCIES: readonly DependencyRule[] = [
     {
+      driver: 'none',
+      requiredPackages: [],
+      description: 'No database driver - developer to choose and install',
+    },
+    {
       driver: 'redis',
       requiredPackages: ['@gravito/ion'],
       description: 'Redis cache/queue driver requires @gravito/ion',

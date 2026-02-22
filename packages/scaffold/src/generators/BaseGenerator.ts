@@ -33,6 +33,7 @@ export abstract class BaseGenerator {
   protected templateManager: TemplateManager
   protected fileMerger: FileMerger
   protected filesCreated: string[] = []
+  protected context: GeneratorContext | null = null
 
   constructor(config: GeneratorConfig) {
     this.config = config
@@ -46,6 +47,7 @@ export abstract class BaseGenerator {
   abstract getDirectoryStructure(context: GeneratorContext): DirectoryNode[]
 
   async generate(context: GeneratorContext): Promise<string[]> {
+    this.context = context
     this.filesCreated = []
     const structure = this.getDirectoryStructure(context)
     await this.createStructure(context.targetDir, structure, context)
