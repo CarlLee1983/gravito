@@ -82,7 +82,7 @@
       "outputs": []
     },
     "typecheck": {
-      "dependsOn": [],
+      "dependsOn": ["^build:dts"],
       "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json"],
       "outputs": []
     },
