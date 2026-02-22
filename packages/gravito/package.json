@@ -1,0 +1,27 @@
+{
+  "name": "gravito",
+  "version": "1.0.0",
+  "description": "The official CLI for Gravito Galaxy Architecture. Scaffold projects and manage your universe.",
+  "bin": {
+    "gravito": "bin/gravito.js"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "echo Skipping build...",
+    "test": "echo No tests..."
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@gravito/pulse": "workspace:*"
+  },
+  "author": "Carl Lee <carllee0520@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/gravito-framework/gravito#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gravito-framework/gravito.git",
+    "directory": "packages/gravito"
+  }
+}

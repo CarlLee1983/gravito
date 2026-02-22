@@ -19,7 +19,7 @@ describe('create-gravito-app', () => {
       exitCode = code
     }
     const resolve = (id: string) => {
-      expect(id).toBe('@gravito/cli/bin/gravito.mjs')
+      expect(id).toBe('@gravito/pulse/bin/gravito.mjs')
       return '/tmp/gravito-cli.mjs'
     }
 
