@@ -42,13 +42,13 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@gravito/core": "workspace:*",
+    "@gravito/core": "^1.6.0",
     "@aws-sdk/client-sns": "^3.734.0"
   },
   "peerDependencies": {
-    "@gravito/stream": "workspace:*",
-    "@gravito/signal": "workspace:*",
-    "@gravito/radiance": "workspace:*"
+    "@gravito/stream": "^2.0.1",
+    "@gravito/signal": "^3.0.3",
+    "@gravito/radiance": "^1.0.3"
   },
   "devDependencies": {
     "bun-types": "latest",

@@ -29,10 +29,10 @@
   },
   "dependencies": {
     "zod": "^3.23.0",
-    "@gravito/core": "workspace:*"
+    "@gravito/core": "^1.6.0"
   },
   "peerDependencies": {
-    "@gravito/photon": "workspace:*"
+    "@gravito/photon": "^1.0.0"
   },
   "devDependencies": {
     "bun-types": "^1.1.0",

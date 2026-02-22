@@ -50,8 +50,8 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "peerDependencies": {
-    "@gravito/core": "workspace:*",
-    "@gravito/photon": "workspace:*",
+    "@gravito/core": "^1.6.0",
+    "@gravito/photon": "^1.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "vue": "^3.0.0"
@@ -68,8 +68,8 @@
     }
   },
   "devDependencies": {
-    "@gravito/core": "workspace:*",
-    "@gravito/photon": "workspace:*",
+    "@gravito/core": "^1.6.0",
+    "@gravito/photon": "^1.0.0",
     "@types/react": "^19.0.0",
     "bun-types": "^1.3.5",
     "tsup": "^8.5.1",

@@ -44,7 +44,7 @@
   },
   "homepage": "https://github.com/gravito-framework/gravito#readme",
   "peerDependencies": {
-    "@gravito/core": "workspace:*",
+    "@gravito/core": "^1.6.0",
     "ioredis": "^5.0.0",
     "nats": "^2.23.0",
     "protobufjs": "^8.0.0",

@@ -49,7 +49,7 @@
     }
   },
   "dependencies": {
-    "@gravito/freeze": "workspace:*"
+    "@gravito/freeze": "^1.0.0-beta.6"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

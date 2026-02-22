@@ -5,8 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "dependencies": {
-    "@gravito/admin-sdk": "workspace:*",
-    "@gravito/admin-shell-react": "workspace:*",
+    "@gravito/admin-sdk": "^0.1.0",
+    "@gravito/admin-shell-react": "^0.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "lucide-react": "^0.562.0",

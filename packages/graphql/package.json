@@ -33,11 +33,11 @@
     "graphql-yoga": "^5.1.1"
   },
   "peerDependencies": {
-    "@gravito/core": "workspace:*",
+    "@gravito/core": "^1.6.0",
     "typescript": "^5.9.3"
   },
   "devDependencies": {
-    "@gravito/atlas": "workspace:*",
+    "@gravito/atlas": "^1.6.0",
     "@types/node": "^20.11.0",
     "bun-types": "latest",
     "tsup": "^8.0.1",

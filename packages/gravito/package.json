@@ -14,7 +14,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@gravito/pulse": "workspace:*"
+    "@gravito/pulse": "^3.2.0"
   },
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
