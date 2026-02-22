@@ -1,6 +1,6 @@
 {
   "name": "@gravito/example-rest-api",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "private": true,
   "scripts": {
     "dev": "bun run src/index.ts",

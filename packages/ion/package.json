@@ -1,6 +1,6 @@
 {
   "name": "@gravito/ion",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "Inertia.js v2 adapter for Gravito",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -28,13 +28,13 @@
     "test:integration": "test $(find tests -name '*.integration.test.ts' 2>/dev/null | wc -l) -gt 0 && find tests -name '*.integration.test.ts' -print0 | xargs -0 bun test --timeout=10000 || echo 'No integration tests found'"
   },
   "peerDependencies": {
-    "@gravito/core": "^1.6.0",
-    "@gravito/photon": "^1.0.0"
+    "@gravito/core": "^1.6.1",
+    "@gravito/photon": "^1.0.1"
   },
   "devDependencies": {
     "bun-types": "latest",
-    "@gravito/core": "^1.6.0",
-    "@gravito/photon": "^1.0.0",
+    "@gravito/core": "^1.6.1",
+    "@gravito/photon": "^1.0.1",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },

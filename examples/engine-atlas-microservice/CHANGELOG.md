@@ -1,5 +1,12 @@
 # example-engine-atlas-microservice
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.6.1
+
 ## 0.1.2
 
 ### Patch Changes

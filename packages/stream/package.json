@@ -1,6 +1,6 @@
 {
   "name": "@gravito/stream",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "publishConfig": {
     "access": "public"
   },
@@ -46,7 +46,7 @@
   "dependencies": {
     "@aws-sdk/client-sqs": "^3.955.0",
     "@gravito/atlas": "^1.6.0",
-    "@gravito/core": "^1.6.0",
+    "@gravito/core": "^1.6.1",
     "@grpc/grpc-js": "^1.14.3",
     "@grpc/proto-loader": "^0.8.0",
     "cron-parser": "^5.4.0",

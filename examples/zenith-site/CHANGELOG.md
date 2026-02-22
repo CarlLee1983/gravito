@@ -1,5 +1,17 @@
 # @examples/zenith-site
 
+## 0.1.8
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/constellation@3.1.1
+  - @gravito/core@1.6.1
+  - @gravito/ion@4.0.1
+  - @gravito/photon@1.0.1
+  - @gravito/prism@3.1.1
+  - @gravito/stasis@3.1.1
+
 ## 0.1.7
 
 ### Patch Changes

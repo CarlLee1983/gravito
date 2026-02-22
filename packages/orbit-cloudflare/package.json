@@ -1,6 +1,6 @@
 {
   "name": "@gravito/orbit-cloudflare",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publishConfig": {
     "access": "public"
   },
@@ -26,10 +26,10 @@
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
   "peerDependencies": {
-    "@gravito/core": "^1.6.0"
+    "@gravito/core": "^1.6.1"
   },
   "devDependencies": {
-    "@gravito/core": "^1.6.0",
+    "@gravito/core": "^1.6.1",
     "@cloudflare/workers-types": "^4.20250109.0",
     "tsup": "^8.3.5",
     "typescript": "^5.9.3"

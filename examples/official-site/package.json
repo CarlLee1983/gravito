@@ -1,6 +1,6 @@
 {
   "name": "gravito-official-site",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "type": "module",
   "scripts": {
     "predev": "bun run clean:ports",

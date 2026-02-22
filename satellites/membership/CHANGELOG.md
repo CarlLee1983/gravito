@@ -1,5 +1,17 @@
 # @gravito/satellite-membership
 
+## 0.1.8
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.6.1
+  - @gravito/cosmos@3.2.1
+  - @gravito/enterprise@1.0.4
+  - @gravito/sentinel@4.0.1
+  - @gravito/signal@3.0.4
+  - @gravito/stasis@3.1.1
+
 ## 0.1.7
 
 ### Patch Changes

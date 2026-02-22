@@ -1,5 +1,16 @@
 # example-workflow-verification
 
+## 1.0.6
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.6.1
+  - @gravito/flux@3.0.2
+  - @gravito/impulse@1.1.1
+  - @gravito/mass@3.0.2
+  - @gravito/photon@1.0.1
+
 ## 1.0.5
 
 ### Patch Changes

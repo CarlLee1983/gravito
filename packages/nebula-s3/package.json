@@ -1,6 +1,6 @@
 {
   "name": "@gravito/nebula-s3",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "S3 storage driver for @gravito/nebula",
   "type": "module",
   "main": "./dist/index.js",
@@ -33,7 +33,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.993.0",
     "@aws-sdk/s3-request-presigner": "^3.993.0",
-    "@gravito/nebula": "^4.1.0"
+    "@gravito/nebula": "^4.1.1"
   },
   "devDependencies": {
     "bun-types": "latest",
@@ -41,6 +41,6 @@
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "@gravito/core": "^1.6.0"
+    "@gravito/core": "^1.6.1"
   }
 }

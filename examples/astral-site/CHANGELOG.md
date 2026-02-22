@@ -1,5 +1,14 @@
 # @examples/astral-site
 
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/astral@1.0.2
+  - @gravito/core@1.6.1
+  - @gravito/impulse@1.1.1
+
 ## 0.1.3
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@gravito/core",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "",
   "module": "./dist/index.js",
   "main": "./dist/index.cjs",
@@ -121,7 +121,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@gravito/photon": "^1.0.0",
+    "@gravito/photon": "^1.0.1",
     "zod": "^4.3.6"
   }
 }

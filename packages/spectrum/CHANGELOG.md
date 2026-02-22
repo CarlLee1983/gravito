@@ -4,6 +4,21 @@
 
 ### Patch Changes
 
+- Convert all workspace:\* dependencies to version numbers for npm publishing
+
+  - Fixed 144 workspace:\* dependencies across 58 packages
+  - Ensures all packages work properly when installed from npm
+  - Resolves issues with bunx and npm installation of CLI tools
+  - All internal dependencies now use explicit version constraints
+
+- Updated dependencies
+  - @gravito/core@1.6.1
+  - @gravito/photon@1.0.1
+
+## 3.0.2
+
+### Patch Changes
+
 - Fixed config consistency: `maxItems` now properly passed to storage backends during initialization
 - Enhanced FileStorage.prune() to handle logs and queries in addition to requests
 - Added request-log-query correlation via `requestId` field for better debugging

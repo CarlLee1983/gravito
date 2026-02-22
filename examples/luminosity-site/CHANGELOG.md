@@ -1,5 +1,18 @@
 # luminosity-marketing-site
 
+## 1.0.7
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.6.1
+  - @gravito/freeze-vue@1.0.0
+  - @gravito/ion@4.0.1
+  - @gravito/luminosity-adapter-photon@1.0.2
+  - @gravito/photon@1.0.1
+  - @gravito/prism@3.1.1
+  - @gravito/stasis@3.1.1
+
 ## 1.0.6
 
 ### Patch Changes

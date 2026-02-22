@@ -1,5 +1,22 @@
 # @gravito/launchpad
 
+## 1.3.2
+
+### Patch Changes
+
+- Convert all workspace:\* dependencies to version numbers for npm publishing
+
+  - Fixed 144 workspace:\* dependencies across 58 packages
+  - Ensures all packages work properly when installed from npm
+  - Resolves issues with bunx and npm installation of CLI tools
+  - All internal dependencies now use explicit version constraints
+
+- Updated dependencies
+  - @gravito/core@1.6.1
+  - @gravito/enterprise@1.0.4
+  - @gravito/ripple@4.0.1
+  - @gravito/stasis@3.1.1
+
 ## 1.3.1
 
 ### Patch Changes

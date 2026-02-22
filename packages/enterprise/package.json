@@ -1,6 +1,6 @@
 {
   "name": "@gravito/enterprise",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Enterprise architecture primitives for Gravito framework (DDD/Clean Architecture)",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -32,7 +32,7 @@
   "author": "Gravito Team",
   "license": "MIT",
   "dependencies": {
-    "@gravito/core": "^1.6.0"
+    "@gravito/core": "^1.6.1"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

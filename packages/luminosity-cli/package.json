@@ -1,6 +1,6 @@
 {
   "name": "@gravito/luminosity-cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "CLI tool for Gravito SmartMap Engine",
   "bin": {
     "gravito-seo": "dist/bin/gravito-seo.js"

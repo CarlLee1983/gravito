@@ -4,6 +4,20 @@
 
 ### Patch Changes
 
+- Updated dependencies
+  - @gravito/constellation@3.1.1
+  - @gravito/core@1.6.1
+  - @gravito/freeze-react@1.0.0
+  - @gravito/ion@4.0.1
+  - @gravito/luminosity-adapter-photon@1.0.2
+  - @gravito/photon@1.0.1
+  - @gravito/prism@3.1.1
+  - @gravito/stasis@3.1.1
+
+## 0.1.8
+
+### Patch Changes
+
 - **Atlas 1.4.0 Integration**:
   - Updated version references to reflect Atlas ORM v1.4.0 performance optimizations.
   - Added release notes for v1.4.0 highlighting major performance improvements.

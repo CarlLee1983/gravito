@@ -1,6 +1,6 @@
 {
   "name": "@gravito/scaffold",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "Project scaffolding engine for Gravito - Generate enterprise-grade architecture templates",
   "type": "module",
   "main": "dist/index.js",
@@ -40,7 +40,7 @@
     "bun-types": "latest"
   },
   "peerDependencies": {
-    "@gravito/core": "^1.6.0"
+    "@gravito/core": "^1.6.1"
   },
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",

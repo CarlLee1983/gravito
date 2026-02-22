@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.1
+
+### Patch Changes
+
+- Convert all workspace:\* dependencies to version numbers for npm publishing
+
+  - Fixed 144 workspace:\* dependencies across 58 packages
+  - Ensures all packages work properly when installed from npm
+  - Resolves issues with bunx and npm installation of CLI tools
+  - All internal dependencies now use explicit version constraints
+
 本專案的所有重要變更都會記錄在此文件中。
 
 格式基於 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)，
@@ -8,6 +19,7 @@
 ## [Unreleased]
 
 ### 待實作功能
+
 - 虛擬滾動優化（支援 10000+ 訊息）
 - 離線訊息同步
 - 跨 Tab 狀態同步
@@ -20,12 +32,15 @@
 ### Added - 新增功能
 
 #### Phase 1: 核心功能完成
+
 - ✅ **完整的 TypeScript 類型定義系統**
+
   - 50+ 個類型和介面定義
   - 無任何 `any` 類型
   - 完整的 JSDoc 註解（繁體中文）
 
 - ✅ **API 整合層** (`src/api/supportApi.ts`)
+
   - 會話管理（建立、取得）
   - 訊息發送與接收
   - 分頁載入歷史訊息
@@ -33,6 +48,7 @@
   - 12 個單元測試，全部通過
 
 - ✅ **WebSocket 實時通信** (`src/hooks/useWebSocket.ts`)
+
   - 整合 `@gravito/ripple-client`
   - 連線狀態管理
   - 頻道訂閱與監聽
@@ -40,6 +56,7 @@
   - 組件卸載時自動清理
 
 - ✅ **訊息管理 Hook** (`src/hooks/useMessages.ts`)
+
   - 樂觀更新（Optimistic UI）
   - 分頁載入
   - 錯誤處理與重試
@@ -53,6 +70,7 @@
 #### Phase 2: 程式碼品質提升
 
 - ✅ **組件拆分**（9 個獨立組件）
+
   - `ChatWidget` - 主容器
   - `ChatHeader` - 標題列
   - `ChatMessages` - 訊息列表
@@ -64,6 +82,7 @@
   - `ErrorBoundary` - 錯誤邊界
 
 - ✅ **安全性強化**
+
   - 輸入驗證（使用 Zod）
   - XSS 防護（HTML 清理）
   - 安全的 localStorage 封裝
@@ -90,6 +109,7 @@
 ### Dependencies - 依賴變更
 
 #### Added
+
 - `zod` ^3.23.0 - 輸入驗證
 - `@testing-library/react` ^16.0.1 - React 測試
 - `@testing-library/jest-dom` ^6.6.3 - Jest DOM 匹配器
@@ -100,12 +120,14 @@
 ## [0.1.0] - 2026-01-XX
 
 ### Added
+
 - 基本 UI 實現
 - 本地狀態管理
 - 基礎樣式（Tailwind CSS）
 - Lucide React 圖標
 
 ### Known Issues - 已知問題
+
 - WebSocket 未實現
 - API 未整合
 - 訊息不持久化

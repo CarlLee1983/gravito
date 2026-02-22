@@ -1,10 +1,28 @@
 # @gravito/flare
 
+## 4.0.1
+
+### Patch Changes
+
+- Convert all workspace:\* dependencies to version numbers for npm publishing
+
+  - Fixed 144 workspace:\* dependencies across 58 packages
+  - Ensures all packages work properly when installed from npm
+  - Resolves issues with bunx and npm installation of CLI tools
+  - All internal dependencies now use explicit version constraints
+
+- Updated dependencies
+  - @gravito/core@1.6.1
+  - @gravito/radiance@1.0.4
+  - @gravito/signal@3.0.4
+  - @gravito/stream@2.0.2
+
 ## 3.4.1
 
 ### Improved
 
 #### 測試覆蓋率提升
+
 - 提升整體測試覆蓋率從 89.62% 到 96.90%
 - NotificationManager.ts: 100% 覆蓋率
 - SmsChannel.ts: 100% 覆蓋率
@@ -12,6 +30,7 @@
 - 新增 29 個測試案例（總計 207 個測試）
 
 #### 程式碼品質改進
+
 - 提取所有魔術數字為具名常數
   - `DEFAULT_TIMEOUT_MS = 30_000`
   - `SECONDS_PER_MINUTE = 60`
@@ -22,12 +41,14 @@
   - 保留 console.error 作為 fallback
 
 #### MemoryStore 增強
+
 - 新增定期清理機制（預設每 60 秒）
 - 新增 `destroy()` 方法正確釋放資源
 - 防止記憶體洩漏
 - 導出為公開 API
 
 ### Tests
+
 - 207 個測試全部通過
 - 392 個斷言
 - 測試覆蓋率: 96.90%
@@ -37,6 +58,7 @@
 ### Added
 
 #### Timeout Protection (風險 4.2 解決方案)
+
 - 新增 `TimeoutChannel` 裝飾器 (#P4-01)
   - 通用 timeout 包裝器，可為任何 Channel 加上超時保護
   - 支援 `timeout` 配置（毫秒）和 `onTimeout` 回調
@@ -48,6 +70,7 @@
 - 測試覆蓋率: 90.97%
 
 #### Lazy Loading for Queue (風險 4.1 解決方案)
+
 - 新增 `LazyNotification` 抽象基類 (#P4-03)
   - 只儲存 ID，延遲載入資料
   - 快取機制避免重複載入
@@ -62,6 +85,7 @@
 - 測試覆蓋率: 89.98%
 
 #### Rate Limiting (v1.1 短期優化)
+
 - 新增 `ChannelMiddleware` 介面 (#P4-06)
   - 定義中介層標準介面
   - 支援洋蔥模型（Onion Model）執行鏈
@@ -79,6 +103,7 @@
 - 測試覆蓋率: 91.97%
 
 #### Preference Driver (v1.1 短期優化)
+
 - 新增 `NotificationPreference` 介面 (#P4-10)
   - 定義用戶通知偏好的資料結構
   - 擴展 `Notifiable` 介面支援 `getNotificationPreferences()`
@@ -94,10 +119,12 @@
 - 測試覆蓋率: 89.62%
 
 ### Changed
+
 - 更新 `NotificationManager` 支援中介層鏈式執行
 - 所有 Channel 預設啟用 30 秒超時保護
 
 ### Documentation
+
 - 新增 `RATE_LIMITING.md` 使用文檔
 - 新增完整的使用範例檔案
   - `examples/timeout-example.ts`
@@ -111,6 +138,7 @@
   - `PHASE4_PREFERENCE_SUMMARY.md`
 
 ### Tests
+
 - 新增 178 個測試案例（從 0 增加）
 - 整體測試覆蓋率: 90.39%
 - 所有測試通過率: 100%

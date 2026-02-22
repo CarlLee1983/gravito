@@ -1,6 +1,6 @@
 {
   "name": "@gravito/example-event-registration-mvc",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "description": "Event Registration System - Gravito Framework MVC Example",
   "type": "module",

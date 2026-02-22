@@ -1,5 +1,12 @@
 # @gravito/satellite-analytics
 
+## 0.1.5
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.6.1
+
 ## 0.1.4
 
 ### Patch Changes

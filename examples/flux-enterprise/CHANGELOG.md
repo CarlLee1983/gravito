@@ -1,5 +1,14 @@
 # flux-enterprise
 
+## 0.1.7
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/flux@3.0.2
+  - @gravito/ripple@4.0.1
+  - @gravito/stream@2.0.2
+
 ## 0.1.6
 
 ### Patch Changes

@@ -1,5 +1,20 @@
 # @gravito/horizon
 
+## 3.2.1
+
+### Patch Changes
+
+- Convert all workspace:\* dependencies to version numbers for npm publishing
+
+  - Fixed 144 workspace:\* dependencies across 58 packages
+  - Ensures all packages work properly when installed from npm
+  - Resolves issues with bunx and npm installation of CLI tools
+  - All internal dependencies now use explicit version constraints
+
+- Updated dependencies
+  - @gravito/core@1.6.1
+  - @gravito/stasis@3.1.1
+
 ## 3.2.0
 
 ### ⚠ Breaking Changes
@@ -9,10 +24,11 @@
   - **新行為**: `withoutOverlapping(3600)` 使用執行鎖 (`task:running:{name}`)，並在任務完成時主動釋放。
   - **遷移指南**: 如果你希望保持舊行為（防止多伺服器同時執行），請改用 `onOneServer()`。如果需要兩者兼具，可同時使用：
     ```typescript
-    scheduler.task('my-task', callback)
+    scheduler
+      .task("my-task", callback)
       .everyMinute()
-      .onOneServer(300)         // 時間窗口鎖
-      .withoutOverlapping(3600) // 執行鎖
+      .onOneServer(300) // 時間窗口鎖
+      .withoutOverlapping(3600); // 執行鎖
     ```
 
 ### Features
@@ -51,7 +67,7 @@
 - **Enhanced Hooks & Metrics**:
   - Added `scheduler:task:retry` hook for monitoring retry attempts.
   - Success and failure hooks now include `attempts` count in their payload.
-- **Enhanced Validation**: 
+- **Enhanced Validation**:
   - Added `.timezone()` validation with helpful error messages.
   - Added `.cron()` syntax validation.
 - **Logging**: Added debug logging for due tasks in `SchedulerManager`.

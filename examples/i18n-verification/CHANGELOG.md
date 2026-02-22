@@ -1,5 +1,14 @@
 # example-i18n-verification
 
+## 1.0.5
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.6.1
+  - @gravito/cosmos@3.2.1
+  - @gravito/photon@1.0.1
+
 ## 1.0.4
 
 ### Patch Changes

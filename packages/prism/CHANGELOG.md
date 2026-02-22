@@ -1,27 +1,46 @@
 # @gravito/prism
 
+## 3.1.1
+
+### Patch Changes
+
+- Convert all workspace:\* dependencies to version numbers for npm publishing
+
+  - Fixed 144 workspace:\* dependencies across 58 packages
+  - Ensures all packages work properly when installed from npm
+  - Resolves issues with bunx and npm installation of CLI tools
+  - All internal dependencies now use explicit version constraints
+
+- Updated dependencies
+  - @gravito/core@1.6.1
+  - @gravito/photon@1.0.1
+
 ## 3.1.0
 
 ### Minor Changes
 
 - **Performance Optimization**
+
   - Added native LRU template cache with hash-based invalidation
   - 141x faster rendering (10k renders in 35ms, 7x faster for cached templates)
   - Configurable cache options: `new OrbitPrism({ cache: { maxSize: 500 } })`
   - Cache statistics tracking with `getStats()` and `getHitRate()`
 
 - **Modern Image Features**
+
   - Picture element generation with format negotiation (AVIF, WebP)
   - CDN loader integrations (Cloudinary, imgix, Vercel)
   - LQIP utilities for Chrome LCP compliance
   - Extended `ImageOptions` with 9 new optional properties
 
 - **SSG Enhancements**
+
   - Incremental builds with manifest tracking
   - Dynamic route generation (`[slug]`, `[...path]`)
   - Configurable concurrency and timeout
 
 - **Architecture Refactor (Phase 5)**
+
   - Extracted `TemplateCompiler` class for compilation logic
   - Reorganized directory structure (internal only, public API unchanged)
   - Unified type definitions in `src/types/`

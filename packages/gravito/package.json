@@ -1,6 +1,6 @@
 {
   "name": "gravito",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "The official CLI for Gravito Galaxy Architecture. Scaffold projects and manage your universe.",
   "bin": {
     "gravito": "bin/gravito.js"
@@ -14,7 +14,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@gravito/pulse": "^3.2.0"
+    "@gravito/pulse": "^3.2.1"
   },
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
