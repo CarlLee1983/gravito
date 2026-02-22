@@ -111,6 +111,8 @@ jobs:
           fi
 
       - name: Build
+        env:
+          NODE_OPTIONS: "--max-old-space-size=6144"
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             # Filter: Changed packages and their dependents (consumers)
