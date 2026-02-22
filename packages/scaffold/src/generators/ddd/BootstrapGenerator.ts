@@ -67,7 +67,9 @@ export async function createApp(): Promise<PlanetCore> {
   // 1. Configure
   const config = defineConfig({
     config: appConfig,
-    orbits: [new OrbitAtlas()],
+    orbits: [
+      new OrbitAtlas() as unknown as import('@gravito/core').GravitoOrbit,
+    ],
   })
 
   // 2. Boot Core
