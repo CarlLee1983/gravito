@@ -49,6 +49,11 @@ bun run typecheck
 
 # Run linting
 bun run check
+
+# Generate Static Documentation
+# When working on @gravito/astral static export, you can test the generation of offline API docs:
+cd examples/astral-site
+bun run build:docs
 ```
 
 ## Styleguides

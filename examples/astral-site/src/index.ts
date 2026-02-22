@@ -36,7 +36,7 @@ async function main() {
   })
 
   if (process.env.BUILD_STATIC_DOCS === 'true') {
-    astralOrbit.exportStatic(core, './dist/docs')
+    await astralOrbit.exportStatic(core, './dist/docs')
     process.exit(0)
   }
 

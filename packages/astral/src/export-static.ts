@@ -20,7 +20,7 @@ export interface StaticExportConfig {
  * @param config - Configuration including the PlanetCore instance, output directory, and astral configuration.
  * @public
  */
-export function generateStaticSite(config: StaticExportConfig): void {
+export async function generateStaticSite(config: StaticExportConfig): Promise<void> {
   const { core, outputDir, astralConfig } = config
 
   // Ensure the output directory exists
@@ -35,7 +35,37 @@ export function generateStaticSite(config: StaticExportConfig): void {
   const specPath = join(outputDir, 'openapi.json')
   writeFileSync(specPath, JSON.stringify(spec, null, 2))
 
-  // 3. Write index.html
+  // 3. Handle offline assets
+  let cssUrl = 'https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css'
+  let bundleJsUrl = 'https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js'
+  let standaloneJsUrl = 'https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js'
+
+  if (astralConfig.bundleOfflineAssets) {
+    console.log('Downloading Swagger UI assets for offline use...')
+    const downloadFile = async (url: string, filename: string) => {
+      const resp = await fetch(url)
+      if (!resp.ok) throw new Error(`Failed to download ${url}: ${resp.statusText}`)
+      const text = await resp.text()
+      writeFileSync(join(outputDir, filename), text)
+      return `./${filename}`
+    }
+
+    try {
+      [cssUrl, bundleJsUrl, standaloneJsUrl] = await Promise.all([
+        downloadFile(cssUrl, 'swagger-ui.css'),
+        downloadFile(bundleJsUrl, 'swagger-ui-bundle.js'),
+        downloadFile(standaloneJsUrl, 'swagger-ui-standalone-preset.js')
+      ])
+      console.log('Asset download complete.')
+    } catch (e) {
+      console.error('Failed to bundle offline assets. Falling back to CDNUrls.', e)
+      cssUrl = 'https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css'
+      bundleJsUrl = 'https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js'
+      standaloneJsUrl = 'https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js'
+    }
+  }
+
+  // 4. Write index.html
   const htmlPath = join(outputDir, 'index.html')
   const title = astralConfig.title || 'API Documentation'
 
@@ -46,7 +76,7 @@ export function generateStaticSite(config: StaticExportConfig): void {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${title}</title>
-  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css" />
+  <link rel="stylesheet" href="${cssUrl}" />
   <style>
     html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
     *, *:before, *:after { box-sizing: inherit; }
@@ -55,8 +85,8 @@ export function generateStaticSite(config: StaticExportConfig): void {
 </head>
 <body>
   <div id="swagger-ui"></div>
-  <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js"></script>
-  <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js"></script>
+  <script src="${bundleJsUrl}"></script>
+  <script src="${standaloneJsUrl}"></script>
   <script>
     window.onload = () => {
       window.ui = SwaggerUIBundle({

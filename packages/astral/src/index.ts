@@ -274,10 +274,10 @@ export class OrbitAstral implements GravitoOrbit {
    * @param core - The PlanetCore instance.
    * @param outputDir - Directory to export static documents.
    */
-  exportStatic(core: PlanetCore, outputDir: string): void {
+  async exportStatic(core: PlanetCore, outputDir: string): Promise<void> {
     // Avoid importing static export utilities globally if not used
     const { generateStaticSite } = require('./export-static')
-    generateStaticSite({ core, outputDir, astralConfig: this.config })
+    await generateStaticSite({ core, outputDir, astralConfig: this.config })
   }
 
   /**

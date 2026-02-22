@@ -8,6 +8,7 @@
 import { join } from 'node:path'
 import { defineConfig, PlanetCore } from '@gravito/core'
 import { astral, OrbitAstral } from '../src'
+import { z } from 'zod'
 
 // 1. Define typical API contracts
 const exampleContract = astral.resource('/api/hello', {
@@ -15,11 +16,9 @@ const exampleContract = astral.resource('/api/hello', {
     index: {
       summary: 'Hello world endpoint',
       status: 200,
-      output: [
-        {
-          message: 'Hello World',
-        },
-      ] as any, // typically a zod schema
+      output: z.object({
+        message: z.string()
+      }),
     },
   },
 })
@@ -29,6 +28,7 @@ const astralOrbit = OrbitAstral.configure({
   title: 'CI/CD Static Documentation API',
   version: '1.0.0',
   contracts: [exampleContract],
+  bundleOfflineAssets: true,
 })
 
 async function runStaticExport() {
@@ -53,7 +53,7 @@ async function runStaticExport() {
   const outputDir = join(process.cwd(), 'dist', 'docs')
   console.log(`Starting static export to ${outputDir}...`)
 
-  astralOrbit.exportStatic(core, outputDir)
+  await astralOrbit.exportStatic(core, outputDir)
 
   console.log('Done! Ready to be served or deployed to a CDN (GitHub Pages, S3, Netlify).')
   process.exit(0)
