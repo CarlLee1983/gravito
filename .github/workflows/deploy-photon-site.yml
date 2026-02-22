@@ -45,8 +45,7 @@ jobs:
             --filter=@gravito/freeze-react \
             --filter=@gravito/ion \
             --filter=@gravito/photon \
-            --filter=@gravito/prism \
-            --include-dependencies
+            --filter=@gravito/prism
 
       - name: Build Photon Site
         working-directory: examples/photon-site
