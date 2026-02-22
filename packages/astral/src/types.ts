@@ -297,6 +297,8 @@ export interface AstralConfig {
   externalDocs?: ExternalDocumentation
   /** An element to hold various schemas for the specification. */
   components?: ComponentsObject
+  /** Path to a pre-generated openapi.json file to use in production. */
+  specFilePath?: string
 }
 
 /**

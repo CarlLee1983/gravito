@@ -2,17 +2,17 @@ import { OrbitAstral } from '@gravito/astral'
 import { defineConfig, PlanetCore } from '@gravito/core'
 import { UserContract } from './contracts'
 
+const astralOrbit = OrbitAstral.configure({
+  title: 'Astral API Docs',
+  contracts: [UserContract],
+})
+
 const config = defineConfig({
   config: {
     APP_NAME: 'Astral Demo',
     PORT: 3005,
   },
-  orbits: [
-    OrbitAstral.configure({
-      title: 'Astral API Docs',
-      contracts: [UserContract],
-    }),
-  ],
+  orbits: [astralOrbit],
 })
 
 async function main() {
@@ -34,6 +34,11 @@ async function main() {
       createdAt: new Date().toISOString(),
     })
   })
+
+  if (process.env.BUILD_STATIC_DOCS === 'true') {
+    astralOrbit.exportStatic(core, './dist/docs')
+    process.exit(0)
+  }
 
   const liftoff = core.liftoff()
   const server = Bun.serve(liftoff as Parameters<typeof Bun.serve>[0])
