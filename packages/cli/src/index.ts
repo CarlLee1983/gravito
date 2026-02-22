@@ -1381,7 +1381,7 @@ cli.command('dev', 'Start development server with health checks').action(async (
 
 cli.help()
 
-cli.version('3.2.0')
+cli.version('3.3.0')
 
 /**
  * Dynamically loads and registers third-party plugins.
