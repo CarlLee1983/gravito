@@ -49,14 +49,7 @@
     },
     "test:unit": {
       "dependsOn": [],
-      "inputs": [
-        "src/**",
-        "tests/**/*.test.ts",
-        "!tests/**/*.integration.test.ts",
-        "package.json",
-        "tsconfig.json",
-        "bunfig.toml"
-      ],
+      "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json", "bunfig.toml"],
       "outputs": [],
       "cache": true
     },
