@@ -1,5 +1,11 @@
 # workflow-demo
 
+## 0.1.9
+
+### Patch Changes
+
+- @gravito/pulse@3.3.1
+
 ## 0.1.8
 
 ### Patch Changes
