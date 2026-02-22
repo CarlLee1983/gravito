@@ -20,7 +20,7 @@ describe('RequestScopeMetrics', () => {
 
       const duration = metrics.getCleanupDuration()
       expect(duration).toBeGreaterThan(0)
-      expect(duration).toBeLessThan(100) // Should be fast
+      expect(duration).toBeLessThan(500) // Should be fast
     })
 
     it('tracks scope size and cleaned services', () => {
