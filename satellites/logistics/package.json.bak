@@ -1,0 +1,33 @@
+{
+  "name": "@gravito/satellite-logistics",
+  "version": "0.1.4",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean --external @gravito/core --external @gravito/enterprise --external @gravito/atlas --external @gravito/stasis",
+    "test": "bun test",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test:unit": "bun test",
+    "test:integration": "bun test"
+  },
+  "dependencies": {
+    "@gravito/core": "workspace:*",
+    "@gravito/enterprise": "workspace:*",
+    "@gravito/atlas": "workspace:*",
+    "@gravito/stasis": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gravito-framework/gravito.git",
+    "directory": "satellites/logistics"
+  }
+}

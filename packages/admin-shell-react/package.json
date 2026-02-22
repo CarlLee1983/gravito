@@ -5,8 +5,9 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
+    "build": "tsup src/index.ts --format esm",
+    "build:dts": "tsup src/index.ts --format esm --dts",
     "dev": "vite",
-    "build": "tsup src/index.ts --format esm --dts",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
   "dependencies": {

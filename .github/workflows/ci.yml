@@ -111,11 +111,10 @@ jobs:
           fi
 
       - name: Build
-        env:
-          NODE_OPTIONS: "--max-old-space-size=6144"
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             # Filter: Changed packages and their dependents (consumers)
+            # Note: Incremental build only, no DTS needed for validate
             bunx turbo run build --filter="[origin/${{ github.base_ref }}]..."
           else
             bun run build
@@ -256,6 +255,12 @@ jobs:
             echo "RUN_PROMETHEUS_INTEGRATION=true" >> $GITHUB_ENV
           fi
 
+      - name: Build DTS (Full)
+        if: matrix.shard == 1
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+        run: bunx turbo run build:dts --concurrency=2
+
       - name: Calculate Shard Filter
         id: shard
         env:
@@ -266,9 +271,9 @@ jobs:
           else
              BASE_FILTER="./packages/*"
           fi
-          
+
           echo "Calculating shard ${{ matrix.shard }}/4 with base filter: $BASE_FILTER"
-          
+
           FILTERS=$(bun run scripts/calculate-shard.ts --shard ${{ matrix.shard }} --total 4 --filter "$BASE_FILTER")
           echo "filters=$FILTERS" >> $GITHUB_OUTPUT
 

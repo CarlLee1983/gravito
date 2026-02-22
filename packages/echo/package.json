@@ -19,6 +19,7 @@
   ],
   "scripts": {
     "build": "bun run build.ts",
+    "build:dts": "bun run build.ts --dts-only",
     "test": "bun test --timeout=10000",
     "test:unit": "bun test tests/unit",
     "test:integration": "test $(find tests -name '*.integration.test.ts' 2>/dev/null | wc -l) -gt 0 && find tests -name '*.integration.test.ts' -print0 | xargs -0 bun test --timeout=10000 || echo 'No integration tests found'",

@@ -1,5 +1,7 @@
 import { spawn } from 'bun'
 
+const isDtsOnly = process.argv.includes('--dts-only')
+
 console.log('Building @gravito/prism...')
 
 // Clean dist
@@ -23,8 +25,8 @@ const tsup = spawn(
     'src/index.ts',
     'src/vue.ts',
     '--format',
-    'esm,cjs',
-    '--dts',
+    isDtsOnly ? 'esm' : 'esm,cjs',
+    ...(isDtsOnly ? ['--dts', '--dts-only'] : []),
     '--external',
     external.join(','),
     '--outDir',

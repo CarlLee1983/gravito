@@ -16,6 +16,7 @@
   ],
   "scripts": {
     "build": "bun run build.ts",
+    "build:dts": "bun run build.ts --dts-only",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test": "bun test --timeout=10000",
     "prepublishOnly": "bun run build",

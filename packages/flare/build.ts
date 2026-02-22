@@ -1,5 +1,7 @@
 import { spawn } from 'bun'
 
+const isDtsOnly = process.argv.includes('--dts-only')
+
 console.log('Building @gravito/flare...')
 
 // Clean dist
@@ -14,8 +16,8 @@ const tsup = spawn(
     'tsup',
     'src/index.ts',
     '--format',
-    'esm,cjs',
-    '--dts',
+    isDtsOnly ? 'esm' : 'esm,cjs',
+    ...(isDtsOnly ? ['--dts', '--dts-only'] : []),
     '--external',
     external.join(','),
     '--outDir',

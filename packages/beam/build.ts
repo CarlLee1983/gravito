@@ -1,17 +1,27 @@
 import { build } from 'bun'
 
-await build({
-  entrypoints: ['src/index.ts'],
-  outdir: 'dist',
-  format: 'esm',
-  target: 'bun',
-  splitting: false,
-  minify: false,
-  sourcemap: 'external',
-  external: ['@gravito/photon'],
-})
+const isDtsOnly = process.argv.includes('--dts-only')
 
-console.log('📝 Generating type declarations...')
+// JS/TS build (skip if dts-only)
+if (!isDtsOnly) {
+  await build({
+    entrypoints: ['src/index.ts'],
+    outdir: 'dist',
+    format: 'esm',
+    target: 'bun',
+    splitting: false,
+    minify: false,
+    sourcemap: 'external',
+    external: ['@gravito/photon'],
+  })
+}
+
+if (isDtsOnly) {
+  console.log('📝 Generating type declarations...')
+} else {
+  console.log('📝 Generating type declarations...')
+}
+
 const tsc = Bun.spawn(['bunx', 'tsc', '-p', 'tsconfig.build.json'], {
   stdout: 'inherit',
   stderr: 'inherit',

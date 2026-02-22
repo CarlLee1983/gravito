@@ -39,6 +39,7 @@
   ],
   "scripts": {
     "build": "tsup",
+    "build:dts": "tsup --dts --dts-only",
     "dev:viewer": "node ./bin/flux.js dev --trace ./.flux/trace.ndjson --port 4280",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test": "bun test --timeout=10000",

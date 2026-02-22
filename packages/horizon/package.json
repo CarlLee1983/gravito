@@ -20,6 +20,7 @@
   ],
   "scripts": {
     "build": "bun run build.ts",
+    "build:dts": "bun run build.ts --dts-only",
     "test": "bun test --timeout=10000",
     "lint": "biome lint ./src",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",

@@ -1,15 +1,19 @@
 import { build } from 'bun'
 
-await build({
-  entrypoints: ['src/index.ts'],
-  outdir: 'dist',
-  format: 'esm',
-  target: 'bun',
-  splitting: false,
-  minify: false,
-  sourcemap: 'external',
-  external: ['@gravito/photon', '@gravito/luminosity'],
-})
+const isDtsOnly = process.argv.includes('--dts-only')
+
+if (!isDtsOnly) {
+  await build({
+    entrypoints: ['src/index.ts'],
+    outdir: 'dist',
+    format: 'esm',
+    target: 'bun',
+    splitting: false,
+    minify: false,
+    sourcemap: 'external',
+    external: ['@gravito/photon', '@gravito/luminosity'],
+  })
+}
 
 console.log('📝 Generating type declarations...')
 const tsc = Bun.spawn(['bunx', 'tsc', '--emitDeclarationOnly', '--skipLibCheck'], {
