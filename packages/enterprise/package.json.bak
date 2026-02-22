@@ -1,0 +1,45 @@
+{
+  "name": "@gravito/enterprise",
+  "version": "1.0.3",
+  "description": "Enterprise architecture primitives for Gravito framework (DDD/Clean Architecture)",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gravito-framework/gravito.git",
+    "directory": "packages/enterprise"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "test": "bun test --timeout=10000",
+    "lint": "biome check .",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test:coverage": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
+    "test:ci": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
+    "test:unit": "bun test tests/ --timeout=10000",
+    "test:integration": "test $(find tests -name '*.integration.test.ts' 2>/dev/null | wc -l) -gt 0 && find tests -name '*.integration.test.ts' -print0 | xargs -0 bun test --timeout=10000 || echo 'No integration tests found'"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "gravito",
+    "ddd",
+    "clean-architecture",
+    "enterprise"
+  ],
+  "author": "Gravito Team",
+  "license": "MIT",
+  "dependencies": {
+    "@gravito/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.9.3",
+    "bun-types": "latest"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

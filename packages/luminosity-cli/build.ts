@@ -1,5 +1,7 @@
 import { file, spawn, write } from 'bun'
 
+const isDtsOnly = process.argv.includes('--dts-only')
+
 console.log('Building @gravito/luminosity-cli...')
 
 // Clean dist
@@ -12,8 +14,8 @@ const tsupMain = spawn(
     'tsup',
     'src/index.ts',
     '--format',
-    'esm,cjs',
-    '--dts',
+    isDtsOnly ? 'esm' : 'esm,cjs',
+    ...(isDtsOnly ? ['--dts', '--dts-only'] : []),
     '--external',
     '@gravito/luminosity,commander,picocolors',
     '--outDir',

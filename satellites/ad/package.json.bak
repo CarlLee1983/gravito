@@ -1,0 +1,28 @@
+{
+  "name": "@gravito/satellite-ad",
+  "version": "0.1.4",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
+  },
+  "types": "dist/index.d.ts",
+  "dependencies": {
+    "@gravito/enterprise": "workspace:*",
+    "@gravito/atlas": "workspace:*",
+    "@gravito/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gravito-framework/gravito.git",
+    "directory": "satellites/ad"
+  }
+}

@@ -1,70 +1,60 @@
-import { spawn } from 'bun'
+const isDtsOnly = process.argv.includes('--dts-only')
 
-console.log('Building @gravito/core...')
+console.log(isDtsOnly ? 'Building @gravito/core DTS...' : 'Building @gravito/core...')
 
 // Clean dist
 await Bun.$`rm -rf dist`
 
 // Use tsup for multi-format build
-const tsup = spawn(
-  [
-    'npx',
-    'tsup',
-    'src/index.ts',
-    'src/compat.ts',
-    '--format',
-    'esm,cjs',
-    '--dts',
-    '--shims',
-    '--external',
-    '@gravito/photon', // Photon is a peer dependency
-    '--external',
-    'bun:test', // Bun test module
-    '--external',
-    'bun:sqlite', // Bun sqlite module (runtime-only)
-    '--outDir',
-    'dist',
-  ],
+const format = isDtsOnly ? 'esm' : 'esm,cjs'
+const args = ['bunx', 'tsup', 'src/index.ts', 'src/compat.ts', '--format', format]
 
-  {
-    stdout: 'inherit',
-    stderr: 'inherit',
-  }
+if (isDtsOnly) {
+  args.push('--dts', '--dts-only')
+}
+
+args.push(
+  '--shims',
+  '--external',
+  '@gravito/photon',
+  '--external',
+  'bun:test',
+  '--external',
+  'bun:sqlite',
+  '--outDir',
+  'dist'
 )
 
-const tsupCode = await tsup.exited
-if (tsupCode !== 0) {
+try {
+  await Bun.$`${args}`
+} catch (_error) {
   console.error('❌ tsup build failed')
   process.exit(1)
 }
 
-console.log('Building @gravito/core/engine...')
+console.log(isDtsOnly ? 'Building @gravito/core/engine DTS...' : 'Building @gravito/core/engine...')
 
 // Build Standalone Engine
-const tsupEngine = spawn(
-  [
-    'npx',
-    'tsup',
-    'src/engine/index.ts',
-    '--format',
-    'esm,cjs',
-    '--dts',
-    '--shims',
-    '--external',
-    '@gravito/photon',
-    '--external',
-    'bun:test',
-    '--outDir',
-    'dist/engine',
-  ],
-  {
-    stdout: 'inherit',
-    stderr: 'inherit',
-  }
+const engineFormat = isDtsOnly ? 'esm' : 'esm,cjs'
+const engineArgs = ['bunx', 'tsup', 'src/engine/index.ts', '--format', engineFormat]
+
+if (isDtsOnly) {
+  engineArgs.push('--dts', '--dts-only')
+}
+
+engineArgs.push(
+  '--shims',
+  '--external',
+  '@gravito/photon',
+  '--external',
+  'bun:test',
+  '--outDir',
+  'dist/engine'
 )
 
-const tsupEngineCode = await tsupEngine.exited
-if (tsupEngineCode !== 0) {
+try {
+  await Bun.$`${engineArgs}`
+} catch (_error) {
   console.error('❌ tsup engine build failed')
   process.exit(1)
 }

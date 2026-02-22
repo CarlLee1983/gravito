@@ -14,6 +14,7 @@
   },
   "scripts": {
     "build": "bun build.ts",
+    "build:dts": "bun run build.ts --dts-only",
     "test": "bun test",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test:unit": "bun test $(find tests -name '*.test.ts' ! -name '*.integration.test.ts' 2>/dev/null | tr '\\n' ' ') --timeout=10000",

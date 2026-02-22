@@ -21,7 +21,8 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "build": "tsup src/index.ts --format cjs,esm --clean",
+    "build:dts": "tsup src/index.ts --format cjs,esm --dts --clean",
     "test:ci": "echo \"No unit tests for orbit-cloudflare\" && exit 0",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },

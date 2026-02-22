@@ -1,5 +1,7 @@
 import { spawn } from 'bun'
 
+const isDtsOnly = process.argv.includes('--dts-only')
+
 console.log('Building @gravito/luminosity...')
 
 // Clean dist
@@ -13,8 +15,8 @@ const tsup = spawn(
     'src/index.ts',
     'src/cli.ts',
     '--format',
-    'esm,cjs',
-    '--dts',
+    isDtsOnly ? 'esm' : 'esm,cjs',
+    ...(isDtsOnly ? ['--dts', '--dts-only'] : []),
     '--external',
     'typescript',
     '--outDir',

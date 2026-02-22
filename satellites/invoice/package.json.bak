@@ -1,0 +1,29 @@
+{
+  "name": "@gravito/satellite-invoice",
+  "version": "0.1.4",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean --external @gravito/enterprise --external @gravito/atlas --external @gravito/core",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
+  },
+  "dependencies": {
+    "@gravito/enterprise": "workspace:*",
+    "@gravito/atlas": "workspace:*",
+    "@gravito/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.9.3"
+  },
+  "module": "dist/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gravito-framework/gravito.git",
+    "directory": "satellites/invoice"
+  }
+}

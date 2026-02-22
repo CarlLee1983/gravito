@@ -1,22 +1,26 @@
 import { execSync } from 'node:child_process'
 
-// Build with Bun
-await Bun.build({
-  entrypoints: ['./src/index.ts'],
-  outdir: './dist',
-  format: 'esm',
-  target: 'bun',
-  splitting: false,
-  sourcemap: 'external',
-  minify: false,
-  external: ['@gravito/core'],
-})
+const isDtsOnly = process.argv.includes('--dts-only')
 
-// Generate .cjs version
-const cjsCode = `"use strict";
+// Build with Bun (skip if dts-only)
+if (!isDtsOnly) {
+  await Bun.build({
+    entrypoints: ['./src/index.ts'],
+    outdir: './dist',
+    format: 'esm',
+    target: 'bun',
+    splitting: false,
+    sourcemap: 'external',
+    minify: false,
+    external: ['@gravito/core'],
+  })
+
+  // Generate .cjs version
+  const cjsCode = `"use strict";
 module.exports = require("./index.js");
 `
-await Bun.write('./dist/index.cjs', cjsCode)
+  await Bun.write('./dist/index.cjs', cjsCode)
+}
 
 // Generate type declarations
 execSync('bunx tsc --emitDeclarationOnly --declaration --outDir ./dist', {

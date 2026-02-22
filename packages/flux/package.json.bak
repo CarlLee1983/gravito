@@ -1,0 +1,91 @@
+{
+  "name": "@gravito/flux",
+  "version": "3.0.1",
+  "description": "Platform-agnostic workflow engine for Gravito",
+  "type": "module",
+  "main": "./dist/index.node.cjs",
+  "module": "./dist/index.node.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "bun": {
+        "import": "./dist/index.js"
+      },
+      "node": {
+        "import": "./dist/index.node.js",
+        "require": "./dist/index.node.cjs",
+        "types": "./dist/index.node.d.ts"
+      },
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./bun": {
+      "types": "./dist/bun.d.ts",
+      "bun": {
+        "import": "./dist/bun.js"
+      }
+    }
+  },
+  "bin": {
+    "flux": "bin/flux.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "bin",
+    "dev",
+    "assets"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev:viewer": "node ./bin/flux.js dev --trace ./.flux/trace.ndjson --port 4280",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test": "bun test --timeout=10000",
+    "test:coverage": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
+    "test:ci": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
+    "test:unit": "bun test tests/ --timeout=10000",
+    "test:integration": "test $(find tests -name '*.integration.test.ts' 2>/dev/null | wc -l) -gt 0 && find tests -name '*.integration.test.ts' -print0 | xargs -0 bun test --timeout=10000 || echo 'No integration tests found'"
+  },
+  "peerDependencies": {
+    "@gravito/core": "workspace:*",
+    "pg": "^8.18.0"
+  },
+  "peerDependenciesMeta": {
+    "@gravito/core": {
+      "optional": true
+    },
+    "pg": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@gravito/core": "workspace:*",
+    "@types/pg": "^8.16.0",
+    "bun-types": "latest",
+    "pg": "^8.18.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  },
+  "keywords": [
+    "gravito",
+    "workflow",
+    "state-machine",
+    "pipeline",
+    "bun",
+    "node"
+  ],
+  "author": "Gravito Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gravito-framework/gravito.git",
+    "directory": "packages/flux"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "cron-parser": "^5.5.0"
+  }
+}

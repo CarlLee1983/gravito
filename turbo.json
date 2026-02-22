@@ -3,8 +3,14 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**", "package.json", "tsconfig.json", "biome.json"],
+      "inputs": ["src/**", "package.json", "tsconfig.json", "biome.json", "build.ts", "tsup.config.ts"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**", "static/**"]
+    },
+    "build:dts": {
+      "dependsOn": ["^build:dts"],
+      "inputs": ["src/**", "package.json", "tsconfig.json", "tsconfig.build.json"],
+      "outputs": ["dist/**/*.d.ts", "dist/**/*.d.cts", "dist/**/*.d.ts.map"],
+      "cache": true
     },
     "create-gravito-app#build": {
       "cache": false,
@@ -76,7 +82,7 @@
       "outputs": []
     },
     "typecheck": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build:dts"],
       "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json"],
       "outputs": []
     },
@@ -97,6 +103,26 @@
     "example-banking-cqrs#test": {
       "dependsOn": [],
       "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json", "bunfig.toml"],
+      "outputs": []
+    },
+    "my-gravito-app#typecheck": {
+      "dependsOn": ["^build:dts"],
+      "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json"],
+      "outputs": []
+    },
+    "my-gravito-inertia-app#typecheck": {
+      "dependsOn": ["^build:dts"],
+      "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json"],
+      "outputs": []
+    },
+    "my-gravito-inertia-vue-app#typecheck": {
+      "dependsOn": ["^build:dts"],
+      "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json"],
+      "outputs": []
+    },
+    "my-gravito-static-site#typecheck": {
+      "dependsOn": ["^build:dts"],
+      "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json"],
       "outputs": []
     }
   }

@@ -11,7 +11,8 @@
     "directory": "packages/enterprise"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "build": "tsup src/index.ts --format cjs,esm",
+    "build:dts": "tsup src/index.ts --format cjs,esm --dts",
     "test": "bun test --timeout=10000",
     "lint": "biome check .",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",

@@ -1,18 +1,22 @@
 import { spawn } from 'bun'
 
-console.log('Building @gravito/mass...')
+const isDtsOnly = process.argv.includes('--dts-only')
+
+console.log(isDtsOnly ? 'Building @gravito/mass DTS...' : 'Building @gravito/mass...')
 
 // Clean dist
 await Bun.$`rm -rf dist`
 
-// Build with bun
-await Bun.build({
-  entrypoints: ['./src/index.ts'],
-  outdir: './dist',
-  target: 'bun',
-  format: 'esm',
-  external: ['@gravito/photon', '@sinclair/typebox', '@hono/typebox-validator'],
-})
+// Build with bun (skip if dts-only)
+if (!isDtsOnly) {
+  await Bun.build({
+    entrypoints: ['./src/index.ts'],
+    outdir: './dist',
+    target: 'bun',
+    format: 'esm',
+    external: ['@gravito/photon', '@sinclair/typebox', '@hono/typebox-validator'],
+  })
+}
 
 console.log('📝 Generating type declarations...')
 const tsc = spawn(

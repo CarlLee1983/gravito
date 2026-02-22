@@ -28,7 +28,8 @@
     "vitest": "^2.1.8"
   },
   "scripts": {
-    "build": "tsup src/index.tsx --format esm --dts",
+    "build": "tsup src/index.tsx --format esm",
+    "build:dts": "tsup src/index.tsx --format esm --dts",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test": "vitest run",
     "test:watch": "vitest",

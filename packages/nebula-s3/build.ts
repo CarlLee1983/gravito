@@ -1,10 +1,16 @@
 #!/usr/bin/env bun
 import { $ } from 'bun'
 
+const isDtsOnly = process.argv.includes('--dts-only')
+
 // Clean dist directory
 await $`rm -rf dist`
 
 // Run TypeScript compiler
-await $`tsc`
+if (isDtsOnly) {
+  await $`tsc --emitDeclarationOnly`
+} else {
+  await $`tsc --declaration`
+}
 
 console.log('✅ Build complete!')

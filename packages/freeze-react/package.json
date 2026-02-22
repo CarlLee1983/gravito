@@ -17,6 +17,7 @@
   ],
   "scripts": {
     "build": "tsup",
+    "build:dts": "tsup --dts --dts-only",
     "dev": "tsup --watch",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test": "bun test --timeout=10000",
