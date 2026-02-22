@@ -174,6 +174,9 @@ cli
 
 cli
   .command('create [name]', 'Create a new Gravito project')
+  .option('--architecture <arch>', 'Architecture pattern (mvc, ddd, cqrs)', {
+    default: 'mvc',
+  })
   .option('--template <template>', 'Template to use (basic, inertia-react)')
   .option('--profile <profile>', 'Profile preset (core, scale, enterprise)', { default: 'core' })
   .option('--with <features>', 'Feature add-ons (comma-separated, e.g. redis,queue)', {
@@ -238,6 +241,21 @@ cli
       process.exit(1)
     }
 
+    // Validate architecture option
+    const validArchitectures = ['mvc', 'ddd', 'cqrs']
+    if (!validArchitectures.includes(options.architecture)) {
+      console.error(pc.red(`❌ Invalid architecture: ${options.architecture}`))
+      console.log(pc.gray(`Available architectures: ${validArchitectures.join(', ')}`))
+      process.exit(1)
+    }
+
+    // Architecture-to-template mapping
+    const ARCHITECTURE_TEMPLATES: Record<string, string> = {
+      mvc: 'mvc-starter',
+      ddd: 'ddd-starter',
+      cqrs: 'cqrs-starter',
+    }
+
     const project = await group<ProjectConfig>({
       name: () => {
         if (name) {
@@ -259,12 +277,38 @@ cli
         })
       },
       template: () => {
+        // If --template is explicitly provided, use it (forward compatibility)
         if (options.template) {
           return Promise.resolve(options.template)
         }
+
+        // If --architecture is provided, use corresponding template
+        if (options.architecture && options.architecture !== 'mvc') {
+          const template = ARCHITECTURE_TEMPLATES[options.architecture]
+          if (template) {
+            return Promise.resolve(template)
+          }
+        }
+
+        // Default template selection dialog
         return select({
           message: 'Pick a starting point:',
           options: [
+            {
+              value: 'mvc-starter',
+              label: '🏗️ MVC (Recommended)',
+              hint: 'Traditional MVC for CRUD apps',
+            },
+            {
+              value: 'ddd-starter',
+              label: '🧩 DDD',
+              hint: 'Domain-Driven Design for complex business logic',
+            },
+            {
+              value: 'cqrs-starter',
+              label: '⚡ CQRS',
+              hint: 'Command Query Responsibility Segregation for high-concurrency',
+            },
             {
               value: 'basic',
               label: '🚀 Singularity (Light)',
@@ -656,6 +700,12 @@ cli
 
       // Update project name with a clean NPM-safe name
       pkg.name = packageName.toLowerCase().replace(/[^a-z0-9-_]/g, '-')
+
+      // Store architecture metadata for make:* generators
+      if (!pkg.gravito) {
+        pkg.gravito = {}
+      }
+      pkg.gravito.architecture = options.architecture
 
       // === 動態版本解析 (替換 workspace:*) ===
       s.start('載入 package 版本資訊...')

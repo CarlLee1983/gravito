@@ -1,0 +1,30 @@
+{
+  "name": "my-ddd-app",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
+    "start": "bun run src/index.ts",
+    "typecheck": "bun tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format --write ."
+  },
+  "dependencies": {
+    "@gravito/core": "workspace:*",
+    "@gravito/photon": "workspace:*",
+    "@gravito/atlas": "workspace:*",
+    "@gravito/sentinel": "workspace:*",
+    "@gravito/signal": "workspace:*",
+    "@gravito/prism": "workspace:*",
+    "zod": "^3.x"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "bun-types": "latest",
+    "typescript": "^5.9.3"
+  },
+  "gravito": {
+    "architecture": "ddd"
+  }
+}
