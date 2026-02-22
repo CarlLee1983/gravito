@@ -187,7 +187,14 @@ export class ActionDomainGenerator extends BaseGenerator {
       {
         type: 'directory',
         name: 'tests',
-        children: [{ type: 'file', name: '.gitkeep', content: '' }],
+        children: [
+          { type: 'file', name: '.gitkeep', content: '' },
+          {
+            type: 'file',
+            name: 'Example.test.ts',
+            content: `import { describe, it, expect } from 'bun:test'\n\ndescribe('Example Test', () => {\n  it('should pass', () => {\n    expect(true).toBe(true)\n  })\n})\n`,
+          },
+        ],
       },
     ]
   }
@@ -501,7 +508,7 @@ import {
 export async function bootstrap() {
   const config = defineConfig({
     config: appConfig,
-    orbits: [new OrbitAtlas()],
+    orbits: [new OrbitAtlas() as unknown as import('@gravito/core').GravitoOrbit],
   })
 
   const core = await PlanetCore.boot(config)

@@ -147,7 +147,14 @@ export class EnterpriseMvcGenerator extends BaseGenerator {
           {
             type: 'directory',
             name: 'Unit',
-            children: [{ type: 'file', name: '.gitkeep', content: '' }],
+            children: [
+              { type: 'file', name: '.gitkeep', content: '' },
+              {
+                type: 'file',
+                name: 'Example.test.ts',
+                content: `import { describe, it, expect } from 'bun:test'\n\ndescribe('Example Test', () => {\n  it('should pass', () => {\n    expect(true).toBe(true)\n  })\n})\n`,
+              },
+            ],
           },
           {
             type: 'directory',
@@ -701,7 +708,7 @@ export async function bootstrap() {
   const config = defineConfig({
     config: appConfig,
     orbits: [
-      new OrbitAtlas(),
+      new OrbitAtlas() as unknown as import('@gravito/core').GravitoOrbit,
 ${spectrumOrbit}
     ],
   })

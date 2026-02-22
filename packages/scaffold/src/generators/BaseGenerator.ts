@@ -141,6 +141,12 @@ dist
       this.generateArchitectureDoc(context)
     )
 
+    await this.writeFile(
+      context.targetDir,
+      'tests/Example.test.ts',
+      `import { describe, it, expect } from 'bun:test'\n\ndescribe('Example Test', () => {\n  it('should pass', () => {\n    expect(true).toBe(true)\n  })\n})\n`
+    )
+
     await this.generateCheckScripts(context)
     await this.generateSkills(context)
   }

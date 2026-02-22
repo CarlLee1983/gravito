@@ -11,12 +11,11 @@
     "emitDecoratorMetadata": true,
     "types": ["bun-types"],
     "outDir": "./dist",
-    "rootDir": "./src",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "config/**/*"],
   "exclude": ["node_modules", "dist"]
 }

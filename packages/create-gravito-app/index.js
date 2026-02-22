@@ -26,10 +26,10 @@ export async function run(options = {}) {
     env = process.env,
   } = options
 
-  // Find the @gravito/cli binary
+  // Find the @gravito/pulse binary
   // When installed, it should be in the dependencies
   try {
-    const cliPath = resolve('@gravito/cli/bin/gravito.mjs')
+    const cliPath = resolve('@gravito/pulse/bin/gravito.mjs')
 
     // Execute the CLI create command
     const child = spawnFn('bun', [cliPath, 'create', ...argv], {
@@ -42,7 +42,7 @@ export async function run(options = {}) {
     })
     return child
   } catch (err) {
-    console.error('❌ Failed to locate @gravito/cli. Please try again.')
+    console.error('❌ Failed to locate @gravito/pulse. Please try again.')
     exit(1)
     return null
   }
