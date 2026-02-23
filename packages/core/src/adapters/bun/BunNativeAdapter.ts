@@ -29,6 +29,10 @@ export class BunNativeAdapter implements HttpAdapter {
   private errorHandler: GravitoErrorHandler | null = null
   private notFoundHandler: GravitoNotFoundHandler | null = null
 
+  // Context pooling for P0 fix (state pollution)
+  private contextPool: BunContext[] = []
+  private readonly maxPoolSize = 100
+
   route(
     method: HttpMethod,
     path: string,
@@ -76,6 +80,57 @@ export class BunNativeAdapter implements HttpAdapter {
     this.middlewares.push({ path: fullPath, handlers: middleware })
   }
 
+  /**
+   * P1 Fix: Accurate path pattern matching for middleware
+   * Handles wildcards: *, /api/*, /api
+   */
+  private matchesPath(pattern: string, path: string): boolean {
+    if (pattern === '*') {
+      return true // Global wildcard
+    }
+
+    if (!pattern.includes('*')) {
+      return path === pattern // Exact match
+    }
+
+    // Handle /api/* format
+    if (pattern.endsWith('/*')) {
+      const basePattern = pattern.slice(0, -2) // Remove /*
+      return path === basePattern || path.startsWith(`${basePattern}/`)
+    }
+
+    // Handle /api* format (without slash)
+    if (pattern.endsWith('*')) {
+      const basePattern = pattern.slice(0, -1)
+      return path.startsWith(basePattern)
+    }
+
+    return false
+  }
+
+  /**
+   * P0 Fix: Context object pooling to prevent state pollution
+   */
+  private acquireContext(request: Request): BunContext {
+    const ctx = this.contextPool.pop()
+    if (ctx) {
+      ctx.reset(request)
+      return ctx
+    }
+    return BunContext.create(request) as any
+  }
+
+  /**
+   * P0 Fix: Release context back to pool
+   */
+  private releaseContext(ctx: BunContext): void {
+    if (this.contextPool.length < this.maxPoolSize) {
+      // Reset before returning to pool (with dummy request)
+      ctx.reset(new Request('http://localhost/'))
+      this.contextPool.push(ctx)
+    }
+  }
+
   mount(path: string, subAdapter: HttpAdapter): void {
     const fullPath = path.endsWith('/') ? `${path}*` : `${path}/*`
 
@@ -84,9 +139,6 @@ export class BunNativeAdapter implements HttpAdapter {
       const url = new URL(ctx.req.url)
       // Strip the mounting path prefix (e.g., '/orbit') from the pathname
       const prefix = path.endsWith('/') ? path.slice(0, -1) : path
-
-      console.log('[DEBUG] Mount Prefix:', prefix)
-      console.log('[DEBUG] Original Path:', url.pathname)
 
       if (url.pathname.startsWith(prefix)) {
         // Ensure we handle root correctly (e.g. /orbit needs to become / or similar based on router logic)
@@ -134,7 +186,8 @@ export class BunNativeAdapter implements HttpAdapter {
   }
 
   async fetch(request: Request, _server?: unknown): Promise<Response> {
-    const ctx = BunContext.create(request)
+    // P0 Fix: Use context pool to prevent state pollution
+    const ctx = this.acquireContext(request)
 
     try {
       const url = new URL(request.url)
@@ -145,8 +198,9 @@ export class BunNativeAdapter implements HttpAdapter {
 
       const handlers: Function[] = []
 
+      // P1 Fix: Use accurate path matching instead of simple startsWith
       for (const mw of this.middlewares) {
-        if (mw.path === '*' || path.startsWith(mw.path)) {
+        if (this.matchesPath(mw.path, path)) {
           handlers.push(...mw.handlers)
         }
       }
@@ -156,16 +210,9 @@ export class BunNativeAdapter implements HttpAdapter {
           ;(ctx.req as BunRequest).setParams(match.params)
         }
         handlers.push(...match.handlers)
-      } else {
-        if (this.notFoundHandler) {
-          handlers.push(this.notFoundHandler)
-        } else {
-          // Do NOT return response here, let it flow through chain in case middleware handles it?
-          // But if not found handler exists, we added it.
-          // If NO notFoundHandler, handlers ends after middleware.
-          // We can check if chain produced response.
-          // But middleware might run "on 404".
-        }
+      } else if (this.notFoundHandler) {
+        // P2 Fix: Add notFound handler only when needed
+        handlers.push(this.notFoundHandler)
       }
 
       return await this.executeChain(ctx, handlers)
@@ -182,6 +229,9 @@ export class BunNativeAdapter implements HttpAdapter {
       }
       console.error(err)
       return new Response('Internal Server Error', { status: 500 })
+    } finally {
+      // P0 Fix: Always release context back to pool
+      this.releaseContext(ctx)
     }
   }
 

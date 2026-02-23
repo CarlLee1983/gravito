@@ -29,7 +29,7 @@ describe('BunNativeAdapter', () => {
 
     it('應該處理 POST 請求', async () => {
       adapter.route('POST', '/api/users', (ctx) => {
-        return ctx.json({ created: true }, { status: 201 })
+        return ctx.json({ created: true }, 201)
       })
 
       const req = new Request('http://localhost/api/users', {
@@ -167,7 +167,7 @@ describe('BunNativeAdapter', () => {
 
     it('應該支持自定義 notFound handler', async () => {
       adapter.onNotFound((ctx) => {
-        return ctx.json({ error: 'Custom not found' }, { status: 404 })
+        return ctx.json({ error: 'Custom not found' }, 404)
       })
 
       const req = new Request('http://localhost/notfound')
