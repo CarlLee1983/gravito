@@ -64,6 +64,50 @@ bun run check
 - Use Biome for formatting and linting
 - Run `bun run check:fix` before committing
 
+## Bun Development
+
+Gravito leverages **Bun's advanced runtime features** for improved performance and developer experience. Here are key areas to understand:
+
+### Runtime Features
+
+- **Auto-install**: Dependencies can be imported directly without explicit package.json entries
+- **File Types**: Support for `.toml`, `.yaml`, `.json5`, `.wasm`, and more
+- **JSX Configuration**: Per-file JSX framework selection with `@jsxImportSource`
+- **Plugins**: Extensible loader and resolver system for custom file types
+
+For details, see:
+- **[Bun Runtime Features Guide](./docs/bun/RUNTIME_FEATURES.md)** — Comprehensive feature reference
+- **[Bun Quick Start](./docs/bun/QUICK_START.md)** — Common development tasks
+
+### Plugin Development
+
+Gravito provides a plugin system for extending Bun's build and runtime capabilities:
+
+- **[Plugin Usage Guide](./docs/bun/PLUGIN_USAGE.md)** — Creating custom loaders and resolvers
+- **[Built-in Plugins](./packages/luminosity-cli/src/plugins/)** — Example plugins for YAML, CSV, Markdown, and more
+
+### File System Router
+
+For static site generation and API route discovery, use the Astral File System Router:
+
+- **[Astral Router Integration](./docs/bun/ASTRAL_ROUTER_INTEGRATION.md)** — Next.js-style routing patterns
+- **Implementation**: `packages/astral/src/routing/`
+
+### Verification
+
+Before submitting a PR, ensure all Bun-specific features work correctly:
+
+```bash
+# Typecheck (validates all Bun APIs)
+bun run typecheck
+
+# Test (including Bun runtime tests)
+bun test
+
+# Lint (Biome checks Bun syntax)
+bun run check
+```
+
 ## License
 
 By contributing, you agree that your contributions will be licensed under the MIT License.

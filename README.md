@@ -92,6 +92,7 @@ For a full-stack integrated example, check out:
 ## 🤝 Community & Support
 
 - **Documentation**: [docs/README.md](./docs/README.md)
+- **Bun Runtime Guides**: [docs/bun/README.md](./docs/bun/README.md) — Learn Bun integration, plugins, and file system router
 - **Contributing**: [CONTRIBUTING.md](./CONTRIBUTING.md)
 - **License**: MIT © Carl Lee
 
