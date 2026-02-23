@@ -15,6 +15,7 @@
 - 🚀 **High Performance**: zero-cost Query Cloning (CoW) and optimized Model Hydration.
 - 🧩 **Horizontal Sharding**: Scale your database horizontally with simple decorators.
 - 🛡️ **Type-Safe ORM**: Comprehensive Active Record implementation with relationship support.
+- 🛡️ **SQL Injection Protection**: Tagged template literals with automatic parameter binding (SafeQueryBuilder).
 - 🔌 **Multi-Driver**: Native support for PostgreSQL, MySQL, SQLite, MongoDB, and Redis.
 - 📊 **Observability**: Built-in OpenTelemetry integration for distributed tracing.
 - 🛠️ **Developer Experience**: "Smart Guard" error suggestions and N+1 detection.
@@ -26,11 +27,13 @@
 Detailed documentation is available in the `docs/` directory:
 
 - [Architecture Overview](docs/architecture.md) - Understanding the Orbit Engine.
+- [Safe Queries](docs/safe-queries.md) - SQL injection-proof queries with tagged templates.
 - [Active Record ORM](docs/orm.md) - Models, hydration, and persistence.
 - [Database Sharding](docs/sharding.md) - Scaling horizontally with `@sharded`.
 - [Fluent Query Builder](docs/query-builder.md) - Advanced query construction.
 - [Database Drivers](docs/drivers.md) - Connectivity and platform support.
 - [Observability](docs/observability.md) - Tracing and performance monitoring.
+- [Performance Results](docs/BUN_SQL_OPTIMIZATION_RESULTS.md) - Optimization metrics and benchmarks.
 
 ---
 
@@ -80,6 +83,12 @@ const activeUsers = await User.where('status', 'active')
   .orderBy('created_at', 'desc')
   .limit(10)
   .get()
+
+// Safe queries with SQL injection protection
+const userId = 123
+const safeUser = await User.connection().sql`
+  SELECT * FROM users WHERE id = ${userId}
+`.first()
 ```
 
 ---
