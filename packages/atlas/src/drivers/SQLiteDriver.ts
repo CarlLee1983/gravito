@@ -20,10 +20,95 @@ import type {
   QueryResult,
   SQLiteConfig,
 } from '../types'
-import type { SQLiteClient } from './types'
+import type { SQLiteClient, SQLiteStatement } from './types'
 
 // biome-ignore lint/suspicious/noExplicitAny: Bun global type
 declare const Bun: { sql: (path: string) => SQLiteClient } | undefined
+
+/**
+ * SQLite Prepared Statement Cache Entry
+ */
+interface PreparedStatementEntry {
+  stmt: SQLiteStatement
+  lastUsed: number
+  useCount: number
+}
+
+/**
+ * Simple LRU cache for SQLite prepared statements
+ */
+class SQLitePreparedStatementCache {
+  private cache = new Map<string, PreparedStatementEntry>()
+  private readonly maxSize: number
+  private readonly idleTimeout: number
+
+  constructor(maxSize = 100, idleTimeout = 60000) {
+    this.maxSize = maxSize
+    this.idleTimeout = idleTimeout
+  }
+
+  get(sql: string, client: SQLiteClient): SQLiteStatement {
+    const entry = this.cache.get(sql)
+    if (entry) {
+      entry.lastUsed = Date.now()
+      entry.useCount++
+      return entry.stmt
+    }
+
+    // Cache miss - prepare new statement
+    const stmt = client.prepare(sql)
+    if (this.cache.size >= this.maxSize) {
+      this.evictLeastRecentlyUsed()
+    }
+
+    this.cache.set(sql, {
+      stmt,
+      lastUsed: Date.now(),
+      useCount: 0,
+    })
+
+    return stmt
+  }
+
+  private evictLeastRecentlyUsed(): void {
+    let oldestKey: string | null = null
+    let oldestTime = Number.POSITIVE_INFINITY
+
+    for (const [key, entry] of this.cache) {
+      if (entry.lastUsed < oldestTime) {
+        oldestTime = entry.lastUsed
+        oldestKey = key
+      }
+    }
+
+    if (oldestKey) {
+      this.cache.delete(oldestKey)
+    }
+  }
+
+  cleanup(): void {
+    const now = Date.now()
+    const toRemove: string[] = []
+
+    for (const [key, entry] of this.cache) {
+      if (now - entry.lastUsed > this.idleTimeout) {
+        toRemove.push(key)
+      }
+    }
+
+    for (const key of toRemove) {
+      this.cache.delete(key)
+    }
+  }
+
+  clear(): void {
+    this.cache.clear()
+  }
+
+  getSize(): number {
+    return this.cache.size
+  }
+}
 
 /**
 
@@ -46,6 +131,10 @@ export class SQLiteDriver implements DriverContract {
   private client: SQLiteClient | null = null
 
   private inTransactionState = false
+
+  private preparedStatementCache?: SQLitePreparedStatementCache
+
+  private cleanupTimer?: Timer
 
   constructor(config: ConnectionConfig) {
     if (config.driver !== 'sqlite') {
@@ -100,6 +189,14 @@ export class SQLiteDriver implements DriverContract {
   }
 
   async disconnect(): Promise<void> {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer)
+      this.cleanupTimer = undefined
+    }
+    if (this.preparedStatementCache) {
+      this.preparedStatementCache.clear()
+      this.preparedStatementCache = undefined
+    }
     if (this.client) {
       this.client.close()
 
@@ -148,13 +245,31 @@ export class SQLiteDriver implements DriverContract {
       await this.connect()
     }
 
+    // Initialize prepared statement cache on first use
+    if (!this.preparedStatementCache && this.client) {
+      const cacheConfig = (this.config as any).preparedStatementCache ?? {}
+      this.preparedStatementCache = new SQLitePreparedStatementCache(
+        cacheConfig.maxStatements ?? 100,
+        cacheConfig.idleTimeout ?? 60000
+      )
+      // Start periodic cleanup every 30 seconds
+      this.cleanupTimer = setInterval(() => {
+        this.preparedStatementCache?.cleanup()
+      }, 30000)
+    }
+
     const params = this.normalizeBindings(bindings)
 
     try {
       if (!this.client) {
         throw new Error('SQLite client not connected')
       }
-      const stmt = this.client.prepare(sql)
+
+      // Use cache to get prepared statement
+      const stmt = this.preparedStatementCache
+        ? this.preparedStatementCache.get(sql, this.client)
+        : this.client.prepare(sql)
+
       const rows = stmt.all(...params) as T[]
 
       let lastInsertId: any
@@ -183,13 +298,31 @@ export class SQLiteDriver implements DriverContract {
       await this.connect()
     }
 
+    // Initialize prepared statement cache on first use
+    if (!this.preparedStatementCache && this.client) {
+      const cacheConfig = (this.config as any).preparedStatementCache ?? {}
+      this.preparedStatementCache = new SQLitePreparedStatementCache(
+        cacheConfig.maxStatements ?? 100,
+        cacheConfig.idleTimeout ?? 60000
+      )
+      // Start periodic cleanup every 30 seconds
+      this.cleanupTimer = setInterval(() => {
+        this.preparedStatementCache?.cleanup()
+      }, 30000)
+    }
+
     const params = this.normalizeBindings(bindings)
 
     try {
-      const stmt = this.client?.prepare(sql)
-      if (!stmt) {
-        throw new Error('Failed to prepare SQL statement')
+      if (!this.client) {
+        throw new Error('SQLite client not connected')
       }
+
+      // Use cache to get prepared statement
+      const stmt = this.preparedStatementCache
+        ? this.preparedStatementCache.get(sql, this.client)
+        : this.client.prepare(sql)
+
       const result = stmt.run(...params)
       return {
         affectedRows: result.changes,
@@ -242,6 +375,23 @@ export class SQLiteDriver implements DriverContract {
 
   inTransaction(): boolean {
     return this.inTransactionState || (this.client?.inTransaction ?? false)
+  }
+
+  /**
+   * Clear prepared statement cache
+   * Useful for releasing memory or resetting cache state
+   */
+  clearPreparedStatementCache(): void {
+    if (this.preparedStatementCache) {
+      this.preparedStatementCache.clear()
+    }
+  }
+
+  /**
+   * Get prepared statement cache statistics
+   */
+  getPreparedStatementCacheSize(): number {
+    return this.preparedStatementCache?.getSize() ?? 0
   }
 
   /**
