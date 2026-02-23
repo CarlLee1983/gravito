@@ -452,6 +452,110 @@ const GalaxyComparisonSection = ({ t }: { t: Translation }) => {
   )
 }
 
+const AdapterComparisonSection = ({ t }: { t: Translation }) => {
+  const adapters = [
+    {
+      icon: Zap,
+      title: t.features_page.adapter_bun_native_title,
+      desc: t.features_page.adapter_bun_native_desc,
+      details: t.features_page.adapter_bun_native_details,
+      color: 'from-singularity to-yellow-500',
+      badge: '91% Efficiency',
+    },
+    {
+      icon: Layers,
+      title: t.features_page.adapter_photon_title,
+      desc: t.features_page.adapter_photon_desc,
+      details: t.features_page.adapter_photon_details,
+      color: 'from-cyan-500 to-blue-500',
+      badge: 'Feature-Rich',
+    },
+    {
+      icon: GitBranch,
+      title: t.features_page.adapter_express_title,
+      desc: t.features_page.adapter_express_desc,
+      details: t.features_page.adapter_express_details,
+      color: 'from-gray-500 to-gray-600',
+      badge: 'Legacy Support',
+    },
+  ]
+
+  return (
+    <section className="relative py-32 px-6 bg-void border-t border-white/5">
+      <div className="max-w-6xl mx-auto relative z-10">
+        <div className="text-center mb-20">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <span className="px-4 py-2 rounded-full bg-singularity/10 border border-singularity/30 text-singularity text-xs font-black uppercase tracking-widest">
+              Performance-Driven Design
+            </span>
+          </motion.div>
+
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-4xl md:text-5xl font-black italic tracking-tighter text-white mt-8 mb-4 uppercase"
+          >
+            {t.features_page.adapter_comparison_title}
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="text-gray-400 text-lg max-w-2xl mx-auto"
+          >
+            {t.features_page.adapter_comparison_subtitle}
+          </motion.p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {adapters.map((adapter, index) => (
+            <motion.div
+              key={adapter.title}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.1, duration: 0.6 }}
+              className="group relative p-8 rounded-[28px] bg-white/[0.02] border border-white/10 hover:border-white/20 transition-all hover:bg-white/[0.04] overflow-hidden"
+            >
+              <div
+                className={`absolute inset-0 bg-gradient-to-br ${adapter.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}
+              />
+
+              <div className="relative z-10">
+                <div className="flex items-start justify-between mb-6">
+                  <div
+                    className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${adapter.color} flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg`}
+                  >
+                    <adapter.icon size={28} className="text-white" />
+                  </div>
+                  <span className="text-[9px] font-black px-3 py-1 rounded-full bg-white/10 text-white uppercase tracking-widest">
+                    {adapter.badge}
+                  </span>
+                </div>
+
+                <h3 className="text-xl font-bold text-white mb-3">{adapter.title}</h3>
+                <p className="text-gray-400 text-sm leading-relaxed mb-4">{adapter.desc}</p>
+
+                <div className="p-4 rounded-lg bg-white/5 border border-white/5">
+                  <p className="text-xs text-gray-500 leading-relaxed font-mono">{adapter.details}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export default function Features({ t }: { t: Translation }) {
   return (
     <Layout>
@@ -462,6 +566,7 @@ export default function Features({ t }: { t: Translation }) {
       <CoreDetailSection t={t} />
       <TechChoicesSection t={t} />
       <GalaxyComparisonSection t={t} />
+      <AdapterComparisonSection t={t} />
 
       {/* 底部導引 */}
       <section className="py-32 px-6 text-center bg-void border-t border-white/5">

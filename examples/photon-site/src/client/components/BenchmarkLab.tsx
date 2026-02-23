@@ -11,13 +11,14 @@ export const BenchmarkLab = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
 
   const t = getTranslation(labTranslations, lang)
 
-  // Simulation Algorithm: Photon is less affected by complexity than generic frameworks
+  // Simulation Algorithm: BunNativeAdapter (optimized) > Photon > Generic frameworks
   const calculateRPS = (base: number, r: number, m: number, factor: number) => {
     const routePenalty = (r / 1000) * factor
     const middlewarePenalty = m * 0.02 * factor
     return Math.floor(base * (1 - routePenalty - middlewarePenalty))
   }
 
+  const bunNativeRPS = active ? calculateRPS(145000, routes, middleware, 0.25) : 145000
   const photonRPS = active ? calculateRPS(91428, routes, middleware, 0.4) : 91428
   const honoRPS = active ? calculateRPS(80485, routes, middleware, 1.0) : 80485
 
@@ -84,12 +85,25 @@ export const BenchmarkLab = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
 
           <div className="space-y-4">
             <div className="flex justify-between text-[9px] font-technical uppercase">
+              <span className="text-singularity font-bold">{t.bun_native_adapter}</span>
+              <span className="text-white">{bunNativeRPS.toLocaleString()} RPS</span>
+            </div>
+            <div className="h-1.5 bg-white/5 w-full">
+              <motion.div
+                animate={{ width: `${(bunNativeRPS / 145000) * 100}%` }}
+                className="h-full bg-singularity shadow-[0_0_15px_#6366f1]"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex justify-between text-[9px] font-technical uppercase">
               <span className="text-photon-gold font-bold">{t.photon_core}</span>
               <span className="text-white">{photonRPS.toLocaleString()} RPS</span>
             </div>
             <div className="h-1.5 bg-white/5 w-full">
               <motion.div
-                animate={{ width: `${(photonRPS / 91428) * 100}%` }}
+                animate={{ width: `${(photonRPS / 145000) * 100}%` }}
                 className="h-full bg-photon-gold shadow-[0_0_15px_#FFB800]"
               />
             </div>
@@ -102,16 +116,16 @@ export const BenchmarkLab = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
             </div>
             <div className="h-1.5 bg-white/5 w-full">
               <motion.div
-                animate={{ width: `${(honoRPS / 91428) * 100}%` }}
+                animate={{ width: `${(honoRPS / 145000) * 100}%` }}
                 className="h-full bg-white/20"
               />
             </div>
           </div>
 
           <div className="pt-8 border-t border-white/5">
-            <p className="text-[10px] font-technical text-photon-gold leading-relaxed uppercase">
-              {photonRPS > honoRPS
-                ? `${t.efficiency_prefix}${((photonRPS / honoRPS - 1) * 100).toFixed(1)}${t.efficiency_suffix}`
+            <p className="text-[10px] font-technical text-singularity leading-relaxed uppercase">
+              {bunNativeRPS > photonRPS
+                ? `${t.efficiency_prefix}${((bunNativeRPS / photonRPS - 1) * 100).toFixed(1)}${t.efficiency_suffix}`
                 : t.init}
             </p>
           </div>

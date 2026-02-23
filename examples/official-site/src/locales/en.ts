@@ -135,7 +135,25 @@ export default {
       'Enterprise-grade dependency injection with singleton management, request scopes, and a full register/boot/shutdown lifecycle—missing from Hono entirely.',
     vs_native_title: 'Bun Native Adapter',
     vs_native_desc:
-      'When running on Bun, Gravito automatically uses our custom RadixRouter for O(log n) route matching with zero abstraction overhead.',
+      'When running on Bun, Gravito automatically uses our optimized RadixRouter for O(log n) route matching with LRU caching. 48% latency improvement over unoptimized paths.',
+    adapter_comparison_title: 'Adapter Performance Optimization',
+    adapter_comparison_subtitle:
+      'Three high-performance HTTP adapters designed for different workloads',
+    adapter_bun_native_title: 'BunNativeAdapter (Optimized)',
+    adapter_bun_native_desc:
+      'Purpose-built for Bun runtime with LRU route caching, middleware precompilation, and context pooling. Achieves 91% efficiency of raw Bun.serve().',
+    adapter_bun_native_details:
+      'Static routing: 0.0045ms (-48%), Parameters: 0.0040ms (-43%), Middleware: 0.0067ms (-26%), Throughput: 145k req/sec',
+    adapter_photon_title: 'PhotonAdapter (Feature-Rich)',
+    adapter_photon_desc:
+      'Universal HTTP engine based on Hono with full feature set. Ideal for complex routing, enterprise middleware, and cross-platform compatibility.',
+    adapter_photon_details:
+      'Throughput: 100k req/sec, Rich middleware ecosystem, Works on Node.js, Deno, and Workers',
+    adapter_express_title: 'ExpressAdapter (Legacy Support)',
+    adapter_express_desc:
+      'Maximum ecosystem compatibility with the Node.js express framework. For projects requiring express plugins and middleware.',
+    adapter_express_details:
+      'Throughput: 64k req/sec, Complete express ecosystem, Largest community',
   },
   benchmarks: {
     sectionBadge: 'Bio-Lab Benchmarks',
