@@ -84,6 +84,88 @@ const activeUsers = await User.where('status', 'active')
 
 ---
 
+## 🛡️ Safe Queries - SQL Injection Protection
+
+The **SafeQueryBuilder** provides SQL injection-proof queries through tagged template literals. Parameters are automatically bound, never concatenated into SQL.
+
+### Basic Safe Query
+
+```typescript
+const userId = 123
+const users = await db.sql`SELECT * FROM users WHERE id = ${userId}`.all()
+// Generated SQL: SELECT * FROM users WHERE id = $1
+// Bindings: [123]
+// ✅ SAFE - Parameters never in SQL string
+```
+
+### Safe Identifiers (Table/Column Names)
+
+For dynamic table or column names, use `identifier()` for whitelist-validated names:
+
+```typescript
+import { identifier } from '@gravito/atlas'
+
+const tableName = identifier('users')
+const columnName = identifier('email')
+
+const data = await db.sql`
+  SELECT ${columnName} FROM ${tableName} WHERE active = ${true}
+`.all()
+
+// Rejects invalid names:
+identifier("users'; DROP TABLE--")  // ❌ Throws error
+```
+
+### Complex Queries
+
+```typescript
+const authorId = 123
+const status = 'published'
+const createdAfter = new Date('2024-01-01')
+
+const posts = await db.sql`
+  SELECT p.*, u.name as author_name
+  FROM posts p
+  JOIN users u ON p.author_id = u.id
+  WHERE p.author_id = ${authorId}
+    AND p.status = ${status}
+    AND p.created_at > ${createdAfter}
+  ORDER BY p.created_at DESC
+  LIMIT 10
+`.all()
+```
+
+### Type Safety with Generics
+
+```typescript
+interface User {
+  id: number
+  email: string
+  name: string
+}
+
+const user = await db.sql<User>`
+  SELECT * FROM users WHERE id = ${userId}
+`.first()
+// ✅ user is typed as User | null
+```
+
+### Result Methods
+
+```typescript
+// Get all rows
+const users = await db.sql`SELECT * FROM users`.all()
+
+// Get first row (or null)
+const user = await db.sql`SELECT * FROM users WHERE id = ${id}`.first()
+
+// Get full result object
+const result = await db.sql`SELECT * FROM users`.execute()
+console.log(result.rowCount, result.rows)
+```
+
+---
+
 ## 🛠️ Command Line Interface (Orbit)
 
 Accelerate development with built-in scaffolding.
