@@ -16,7 +16,7 @@ Gravito is a modular, high-performance framework built on the principles of **Do
 ## 📚 Documentation Index
 
 ### 🚀 Getting Started
-- [Quick Start Guide](./guides/quick-start.md) - Get up and running in minutes.
+- [Quick Start Guide](./en/guide/getting-started/getting-started.md) - Get up and running in minutes.
 - [Development Examples](./guides/development-examples.md) - Common patterns and recipes.
 - [AI Assistant Guide](./guides/ai/gravito-ai-guide.md) - How to work with the Gravito AI agent.
 

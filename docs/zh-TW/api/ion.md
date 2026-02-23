@@ -25,7 +25,7 @@ export default defineConfig({
     config: {
         inertia: {
             rootView: 'app.html',
-            version: '1.0'
+            version: '4.0'
         }
     }
 });

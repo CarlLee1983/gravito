@@ -455,3 +455,7 @@ Luminosity 不僅僅是一個 Sitemap 生成器，它是 Gravito 為了極致開
 4.  **SSG 完美結合**：與 `@gravito/freeze` 深度整合，讓靜態站點也能擁有動態站點的強大 SEO。
 
 > **最後一站**：準備好上線了嗎？前往 [部署指南](/zh/docs/guide/deployment) 學習如何完成最後一哩路。
+
+---
+
+**最後更新**: 2026-02-23

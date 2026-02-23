@@ -42,6 +42,13 @@ Gravito 選擇 Knex 的原因：
 
 ## 2. 連接管理 (Connection Management)
 
+### 2.0 驅動程式管理 (v1.1.0+)
+
+自 Atlas v1.1.0 起，為了優化套件體積，資料庫驅動程式（如 `pg`, `mysql2`, `sqlite3`）已從直接依賴改為 **Peer Dependencies**。
+
+- **優點**：開發者可以僅安裝所需的驅動，減少 Docker 鏡像大小與 node_modules 膨脹。
+- **實踐**：在使用特定數據庫前，需手動執行 `bun add mysql2` 或 `bun add pg`。
+
 ### 2.1 連接池配置
 
 ```typescript
@@ -717,5 +724,5 @@ const poolConfig = process.env.NODE_ENV === 'production' ? prodPool : devPool
 
 ---
 
-**撰寫日期**：2026-02-08
-**版本**：1.0
+**撰寫日期**：2026-02-23
+**版本**：1.1 (Updated driver management)

@@ -53,9 +53,10 @@ Cosmos 利用 Gravito Core 的適配器機制，將 `I18nManager` 實例注入�
 ```typescript
 // 內部實作
 core.adapter.use('*', async (c, next) => {
-> [!WARNING]
-> 每個請求共享同一個 Manager 實例，但可能有不同的 Locale 狀態 (需注意)。目前實作中 Locale 是 Manager 的屬性，這在單例模式下會有併發問題。未來版本將改為 Per-Request State。
-  c.set('i18n', i18n); 
+  // 透過 clone() 建立請求專用的實例 (Request-scoped)
+  // 這解決了早期版本中單例模式導致的語系併發衝突問題
+  const instance = i18n.clone();
+  c.set('i18n', instance); 
   await next();
 });
 ```
@@ -80,8 +81,6 @@ Cosmos 包含一個基於 Node.js `fs/promises` 的輕量級加載器。
 
 ---
 
-## 5. 待優化項目 (Future Improvements)
-
-基於目前的代碼分析，我們識別出以下改進空間：
-1.  **Scope Isolation**: 目前 `I18nManager` 是一個單例，`setLocale` 會修改全域狀態。在併發請求下，Request A 的 Locale 可能會被 Request B 覆蓋。需改為 **Clone-per-request** 模式。
-2.  **Performance**: 對於超大型語言檔，可以引入 Lazy Loading 機制。
+基於目前的架構演進，我們已實作以下優化：
+1.  **Scope Isolation (已完成)**: 透過 `I18nInstance` 與 `clone()` 機制，確保每個請求擁有獨立的 Locale 狀態，同時共享底層的翻譯資源 (Manager)。
+2.  **Performance**: 對於超大型語言檔，已引入高效的 LRU 快取機制。未來可進一步評估區域載入 (Regional Loading)。

@@ -1,6 +1,6 @@
 # docs/benchmarks - 性能基準與測試報告
 
-**最後整理日期**: 2026-02-08
+**最後整理日期**: 2026-02-23
 **檔案夾狀態**: ✅ 已清理優化
 
 ---
@@ -192,13 +192,13 @@ docs/benchmarks/
 ## 📚 相關文檔
 
 **架構文檔**:
-- `docs/WHITEPAPER_ZH_TW.md` - Galaxy Architecture 白皮書
-- `docs/claude/design.md` - 框架設計文檔
-- `docs/claude/packages.md` - 包功能速查表
+- [Galaxy Architecture 白皮書](../whitepaper/gravito-whitepaper-zh-tw.md)
+- [框架設計文檔](../claude/design.md)
+- [包功能速查表](../claude/packages.md)
 
 **實施指南**:
-- `docs/BULL_QUEUE_INTEGRATION_GUIDE.md` - Bull Queue 集成指南
-- `docs/MIGRATION_GUIDE_ASYNC_EVENTS.md` - 異步事件系統遷移指南
+- [Bull Queue 集成指南](../guides/core/bull-queue-integration.md)
+- [異步事件系統遷移指南](../operations/migration/async-events.md)
 
 **API 文檔**:
 - Atlas ORM API 文檔（待建立）
@@ -256,5 +256,5 @@ docs/benchmarks/
 ---
 
 **此份 README 由 Claude Code 自動生成及維護**
-**最後整理日期**: 2026-02-08
+**最後整理日期**: 2026-02-23
 **檔案夾狀態**: ✅ 已清理優化，組織清晰

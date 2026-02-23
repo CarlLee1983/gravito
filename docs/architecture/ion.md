@@ -14,6 +14,9 @@ related_orbits:
   - photon
 ---
 
+> [!WARNING]
+> 本文件描述的是 Ion v3.0.1 版本。如果您正在使用 **Ion v4.0.0 (Inertia v2)**，請參考最新版本的 [套件架構規格書 (Architecture Spec)](../../packages/ion/docs/ARCHITECTURE.md)。
+
 # Ion (Orbit Inertia) 架構技術規格書 (v3.0.1)
 
 ## 📖 目錄
@@ -1036,5 +1039,5 @@ Inertia 支援 Partial Reloads，允許前端僅請求部分數據。
 
 ---
 
-*最後更新：2026-01-28*
-*版本：v3.0.1*
+*最後更新：2026-02-23*
+*版本：v3.0.1 (Legacy)*

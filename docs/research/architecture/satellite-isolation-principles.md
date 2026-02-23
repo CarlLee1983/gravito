@@ -284,6 +284,29 @@ async checkout() {
 }
 ```
 
+### 4.4 UI 渲染與 Ion (Inertia) 集成
+
+在現代 Gravito 應用中，衛星常需要渲染 UI。透過 `@gravito/ion`，衛星可以在保持隔離的同時，直接傳遞 Props 給前端組件。
+
+```typescript
+// File: satellites/catalog/src/Interface/Http/ProductController.ts
+export class ProductController {
+  async show(ctx: GravitoContext) {
+    const inertia = ctx.get('inertia')
+    const product = await this.service.getById(ctx.param('id'))
+
+    // 衛星定義組件路徑與資料，不需關心前端如何實作
+    return inertia.render('Catalog/Product/Show', {
+      product
+    })
+  }
+}
+```
+
+**關鍵點**：
+- 衛星僅依賴 `Context` 中注入的 `inertia` 服務。
+- 組件路徑（如 `Catalog/Product/Show`）由衛星定義，並預期前端專案中存在對應的頁面組件。
+
 ---
 
 ## 5. ServiceProvider 模式 (ServiceProvider Pattern)
@@ -641,5 +664,5 @@ await core.hooks.applyFilters('catalog:query:products', [])
 
 ---
 
-**撰寫日期**：2026-02-08
-**版本**：1.0
+**撰寫日期**：2026-02-23
+**版本**：1.1 (Added Ion integration)

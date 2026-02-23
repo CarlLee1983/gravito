@@ -1178,3 +1178,7 @@ Atlas 提供了完整的 ORM 功能：
 -  **PostgreSQL 優化** - 針對 PostgreSQL 的效能優化
 
 透過 `db.raw` 可以存取 Drizzle ORM 的完整功能，確保靈活性和擴展性。
+
+---
+
+**最後更新**: 2026-02-23

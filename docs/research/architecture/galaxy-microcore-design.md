@@ -12,8 +12,8 @@
 
 Gravito 的解決方案：**微核心架構**
 ```
-傳統框架：Core (1000+ 行) → 所有包 (64+)
-Gravito：Core (271 行) → 所有包 (64+) + Satellites (15+)
+傳統框架：Core (1000+ 行) → 所有包 (66+)
+Gravito：Core (~800 行) → 所有包 (66+) + Satellites (15+)
 ```
 
 ### 1.2 銀河架構的比喻
@@ -36,20 +36,21 @@ Gravito：Core (271 行) → 所有包 (64+) + Satellites (15+)
 
 ## 2. 微核心核心元件 (Core Components)
 
-### 2.1 PlanetCore 的四大責任
+### 2.1 PlanetCore 的核心責任
 
-| 責任 | 目的 | 行數 |
+| 責任 | 目的 | 狀態 |
 |---|---|---|
-| **Hooks 系統** | 生命週期鉤子，應用各階段擴展點 | ~80 |
-| **IoC 容器** | 依賴注入，解耦對象構造與使用 | ~100 |
-| **應用生命週期** | 初始化、啟動、關閉流程管理 | ~50 |
-| **事件發射機制** | 基礎事件系統，signal 構建基礎 | ~40 |
+| **Hooks 系統** | 生命週期鉤子，支援 OTel 觀測 | 已優化 |
+| **IoC 容器** | 依賴注入，解耦對象構造與使用 | 穩定 |
+| **HttpAdapter** | 解耦 HTTP 引擎（v2.0+ 新增） | 核心特性 |
+| **應用生命週期** | 初始化、啟動、關閉流程管理 | 穩定 |
+| **事件發射機制** | 基礎事件系統，signal 構建基礎 | 穩定 |
 
-**總計**：約 271 行代碼
+**現狀**：`PlanetCore.ts` 核心實作約 808 行，保持了高度的內聚性與擴展性。
 
-### 2.2 Hooks 系統設計
+### 2.2 Hooks 系統與可觀測性
 
-Hooks 提供應用各個生命週期階段的擴展點：
+Hooks 提供應用各個生命週期階段的擴展點，並在 v2.0 中引入了 `ObservableHookManager` 以支援 OpenTelemetry (OTel) 監控。
 
 ```typescript
 // 生命週期流程
@@ -155,11 +156,11 @@ await app.destroy()
 
 #### @gravito/core（PlanetCore）
 - 零外部依賴
-- 所有其他包的必依賴
+- 支援 HttpAdapter 模式（解耦 Hono/Photon）
 - 版本穩定（很少重大更新）
 
 #### @gravito/photon（HTTP 引擎）
-- 基於 Hono 框架
+- 作為 `PhotonAdapter` 的官方實作
 - 路由、中介軟體系統
 - 支援 WebSocket、SSE 等協議
 
@@ -250,14 +251,14 @@ satellite-catalog/
 
 ## 4. 設計決策與權衡 (Design Decisions)
 
-### 4.1 為什麼 PlanetCore 要最小化？
+### 4.1 為什麼 PlanetCore 要保持精簡？
 
-| 考慮 | 最小化核心 | 龐大核心 |
+| 考慮 | 核心精簡 (Gravito) | 龐大核心 |
 |---|---|---|
-| **維護成本** | 低（271 行易理解） | 高（1000+ 行複雜） |
-| **版本變化** | 穩定（少有重大更新） | 頻繁（新功能常改動） |
-| **升級風險** | 低（影響面小） | 高（64+ 包需驗證） |
-| **學習曲線** | 陡（專注核心概念） | 平緩（但內容龐雜） |
+| **維護成本** | 低（~800 行易理解） | 高（數千行複雜） |
+| **版本變化** | 穩定（核心協議少改動） | 頻繁（功能堆疊） |
+| **適配能力** | 高（支援多種 Adapter） | 低（綁定特定引擎） |
+| **學習曲線** | 專注核心概念 | 平緩但內容龐雜 |
 
 **決策**：優化長期可維護性，而非初期簡單性。
 
@@ -475,7 +476,7 @@ Container 實例大小：~50KB（含 10 個服務）
 
 | 特性 | Gravito | Next.js |
 |---|---|---|
-| 核心大小 | 271 行 | 100K+ 行 |
+| 核心大小 | ~800 行 | 100K+ 行 |
 | 依賴注入 | ✅ 原生 | ❌ 手動 |
 | 生命週期 | ✅ Hooks | ❌ API Routes |
 | 模組隔離 | ✅ 衛星 | ❌ 頁面隔離 |
@@ -520,7 +521,7 @@ Container 實例大小：~50KB（含 10 個服務）
 - **[docs/claude/design.md](../../claude/design.md)** - Galaxy Architecture 完整設計指南
 - **[docs/claude/patterns.md](../../claude/patterns.md)** - 架構模式與最佳實踐
 - **[docs/claude/constraints.md](../../claude/constraints.md)** - Monorepo 約束與規範
-- **[packages/core/src/](../../packages/core/src/)** - PlanetCore 源代碼（271 行）
+- **[packages/core/src/PlanetCore.ts](../../packages/core/src/PlanetCore.ts)** - PlanetCore 核心源代碼 (~808 行)
 - **[satellite-catalog/](../../satellites/catalog/)** - 衛星實現參考
 
 ---
@@ -528,7 +529,7 @@ Container 實例大小：~50KB（含 10 個服務）
 ## 10. 常見 Q&A
 
 **Q: PlanetCore 何時需要版本更新？**
-A: 改變 Hooks、IoC、生命週期等核心 API 時。目標是最小化版本更新頻率。
+A: 改變 Hooks、IoC、生命週期、或 Adapter 接口等核心 API 時。目標是最小化版本更新頻率。
 
 **Q: 衛星間如何共享數據？**
 A: 透過事件系統（Signal）。Commerce 衛星發佈「需要商品列表」事件，Catalog 衛星訂閱並回應。
@@ -541,5 +542,5 @@ A: 使用 mock EventBus。見 5.4 節。
 
 ---
 
-**撰寫日期**：2026-02-08
-**版本**：1.0
+**撰寫日期**：2026-02-23
+**版本**：2.0 (Reflecting v2.0 Architecture)

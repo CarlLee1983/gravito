@@ -1,8 +1,8 @@
 # Freeze SSG Architecture: Static Site Generation
 
-**Version**: 1.0.0
+**Version**: 1.0.0-beta.6
 **Module**: `@gravito/freeze`
-**Focus**: SSG, i18n Routing, Hybrid Navigation
+**Focus**: SSG, i18n Routing, Hybrid Navigation, Universal Detector
 
 ---
 
@@ -36,7 +36,8 @@ flowchart TD
 ```
 
 ### 實現細節
-*   **Detector**: 檢查 `window.location.hostname` 是否在 `staticDomains` 白名單或符合靜態託管特徵 (e.g., `.github.io`)。
+*   **Universal Detector**: 1.0-beta 引入了整合式的檢測機制，能在 Node.js (SSR), Bun, 及 Browser 環境下一致地判斷「當前是否為靜態環境」。
+    *   檢查 `window.location.hostname` 或 `process.env` 特定變數。
 *   **Link Component**: 前端適配器 (`freeze-vue`, `freeze-react`) 封裝了基礎 Link 組件。
     *   動態環境渲染為 `<Link>` (Inertia)。
     *   靜態環境渲染為 `<a>` (Native)。

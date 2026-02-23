@@ -1,7 +1,7 @@
 # docs/archive - 文檔歸檔與進度追蹤
 
-**最後整理日期**: 2026-02-08（清理版本）
-**檔案庫狀態**: ✅ 已整理歸納 & 清理冗餘
+**最後整理日期**: 2026-02-23（實施計畫整合與冗餘清理）
+**檔案庫狀態**: ✅ 已整合核心資訊 & 移除過渡期文件
 
 ---
 
@@ -24,23 +24,19 @@
 
 ```
 docs/archive/
-├── logs/           # 進度日誌與里程碑報告（當前）
-│   ├── PROGRESS_2026-02-07.md              # 📊 最新進度報告⭐
-│   ├── PHASE2-SPLIT-GUIDE.md               # 📖 Phase 2 分割指南
-│   ├── PHASE3D_IMPLEMENTATION.md           # 🛠️ Phase 3D 實施報告
-│   ├── ci-optimization-progress.md         # 🔧 CI 優化進度追蹤
-│   └── archived/   # 舊報告歸檔（歷史參考）
-│       ├── DOCS_AUDIT_REPORT_2026-01-28.md
-│       ├── ISSUE_1.2_PHASE1_CHECKPOINT.md
-│       └── ISSUE_1.2_PHASE_1_COMPLETION.md
-│
-├── tasks/          # 任務追蹤與拆解
-│   ├── TASK_PROGRESS.md                    # 📈 詳細進度追蹤⭐
-│   └── TASK_BREAKDOWN_INDEX.md             # 🗂️ 任務總索引⭐
-│
-├── README.md       # 本檔案（完整導引）
-├── ARCHIVE_SUMMARY.md                      # 快速摘要
-└── ORGANIZATION_REPORT.md                  # 整理統計報告
+├── logs/                 # 進度日誌與里程碑報告
+│   ├── MILESTONE_REPORT_2026-02-07.md       # 🏁 生產就緒里程碑報告⭐
+│   ├── CI_OPTIMIZATION_HISTORY.md           # ⚡ CI 與測試優化歷程紀錄⭐
+│   └── archived/         # 舊報告歸檔（歷史參考）
+├── optimizations/        # ⚡ 效能與建置優化相關文檔
+├── implementation-plans/  # 🛠️ 實作歷史與技術指南
+│   ├── PROJECT_HISTORY.md      # 📜 專案實施全紀錄（精簡版）⭐
+│   ├── TECHNICAL_REFERENCE.md  # 🧠 技術規範與最佳實踐手冊⭐
+│   ├── Issue1.1-Event-System-Case-Study.md  # 📊 核心異步派發技術案例
+│   └── Issue1.2-Event-Reliability-Case-Study.md # 🛡️ 可靠性與延展性案例
+├── tasks/                # 任務追蹤與拆解歷程
+│   └── TASK_IMPLEMENTATION_RECORDS.md # 📋 任務實施詳情與路線圖⭐
+└── README.md             # 本檔案（完整導引）
 ```
 
 ---
@@ -51,18 +47,20 @@ docs/archive/
 
 | 文件 | 用途 | 重要性 | 最後更新 |
 |------|------|--------|--------|
-| **PROGRESS_2026-02-07.md** | 最新總進度報告，包含代碼統計、性能指標、系統就緒狀態 | ⭐⭐⭐⭐⭐ | 2026-02-07 |
-| **PHASE2-SPLIT-GUIDE.md** | Phase 2 工作分割指南 | ⭐⭐⭐ | 待確認 |
-| **PHASE3D_IMPLEMENTATION.md** | Phase 3D 的詳細實施報告 | ⭐⭐⭐ | 待確認 |
-| **ci-optimization-progress.md** | CI/CD 流程優化追蹤 | ⭐⭐⭐ | 待確認 |
-| **archived/** | 舊報告歸檔（歷史參考，超過 3 個月或已整合） | ⭐ | 各檔案 |
+| **MILESTONE_REPORT_2026-02-07.md** | 2026-02-07 最終進度報告，系統宣佈生產級別就緒 | ⭐⭐⭐⭐⭐ | 2026-02-07 |
+| **CI_OPTIMIZATION_HISTORY.md** | 紀錄測試分類、並發優化、快速失敗與大型測試拆分的歷程 | ⭐⭐⭐⭐ | 2026-02-07 |
+| **archived/** | 舊報告歸檔（歷史參考，如 Audit Report 或過渡期 Checkpoints） | ⭐ | 各檔案 |
+
+### ⚡ 效能優化 (optimizations/)
+
+| 文件 | 用途 | 重要性 | 最後更新 |
+|------|------|--------|--------|
 
 ### 🗂️ 任務追蹤 (tasks/)
 
 | 文件 | 用途 | 重要性 | 最後更新 |
 |------|------|--------|--------|
-| **TASK_PROGRESS.md** | 詳細的任務進度追蹤（46 個任務的逐個狀態） | ⭐⭐⭐⭐⭐ | 2026-02-07 |
-| **TASK_BREAKDOWN_INDEX.md** | 所有任務的總索引，包含 Issue 分類、優先級、預期工作量 | ⭐⭐⭐⭐⭐ | 2026-02-02 |
+| **TASK_IMPLEMENTATION_RECORDS.md** | 詳細記錄 46 個任務的拆解、優先級、工作量估算與實施結果 | ⭐⭐⭐⭐⭐ | 2026-02-07 |
 
 ---
 
@@ -70,26 +68,29 @@ docs/archive/
 
 ### 📌 我想了解...
 
-**「整體進度」**
-→ 讀 `logs/PROGRESS_2026-02-07.md` 的「工作項完成狀態」與「代碼統計」章節
+**「整體進度與里程碑」**
+→ 讀 `logs/MILESTONE_REPORT_2026-02-07.md` 的「工作項完成狀態」與「代碼統計」章節
+
+**「實施詳情與技術規範」**
+→ 讀 `implementation-plans/PROJECT_HISTORY.md` (歷程) 或 `TECHNICAL_REFERENCE.md` (技術細節)
 
 **「具體任務清單」**
-→ 讀 `tasks/TASK_PROGRESS.md` 的「整體進度」表格，或 `tasks/TASK_BREAKDOWN_INDEX.md` 的索引
+→ 讀 `tasks/TASK_IMPLEMENTATION_RECORDS.md` 的「整體進度」表格，或「任務索引」章節
 
 **「Issue 1.1 的實施情況」**
-→ 讀 `tasks/TASK_PROGRESS.md` 的「Issue 1.1: Event System - Core Async Dispatch」章節
+→ 讀 `tasks/TASK_IMPLEMENTATION_RECORDS.md` 的「Issue 1.1: Event System - Core Async Dispatch」章節
 
 **「Issue 1.2 的實施情況」**
-→ 讀 `tasks/TASK_PROGRESS.md` 的「Issue 1.2: Event System - Reliability & Scalability」章節
+→ 讀 `tasks/TASK_IMPLEMENTATION_RECORDS.md` 的「Issue 1.2」相關章節
 
 **「性能測試結果」**
-→ 讀 `logs/PROGRESS_2026-02-07.md` 的「性能指標驗證」章節
+→ 讀 `logs/MILESTONE_REPORT_2026-02-07.md` 的「性能指標驗證」章節
 
 **「技術亮點」**
-→ 讀 `logs/PROGRESS_2026-02-07.md` 的「技術亮點」章節
+→ 讀 `logs/MILESTONE_REPORT_2026-02-07.md` 的「技術亮點」章節
 
 **「系統部署準備度」**
-→ 讀 `logs/PROGRESS_2026-02-07.md` 的「部署準備度」與「系統就緒狀態」章節
+→ 讀 `logs/MILESTONE_REPORT_2026-02-07.md` 的「部署準備度」與「系統就緒狀態」章節
 
 ---
 
@@ -184,6 +185,11 @@ Issue 1.2 (Event System - Reliability & Scalability)
 
 ## 🗑️ 清理與維護
 
+### 實施計畫整合（2026-02-23）
+- 📦 **整合成果**: 將 13 個過渡期計畫與摘要文件整合為 `PROJECT_HISTORY.md` 與 `TECHNICAL_REFERENCE.md`。
+- ❌ **刪除冗餘**: 移除所有 Phase-specific 的進度追蹤與中間報告文件。
+- ✅ **保留關鍵**: 保留具備長期參考價值的 Case Studies。
+
 ### 清理歷史（2026-02-08）
 - ❌ 刪除：`tasks/root_task.md`（舊任務清單，內容已過時）
 - ❌ 刪除：`tasks/TASK_1_2_2_4_COMPLETION.md`（單一任務報告，內容已整合）
@@ -191,8 +197,8 @@ Issue 1.2 (Event System - Reliability & Scalability)
 - 📦 歸檔：3 個舊報告至 `logs/archived/`
 
 ### 推薦保留
+- `implementation-plans/PROJECT_HISTORY.md` - 專案全景參考
 - `tasks/TASK_PROGRESS.md` - 詳細進度追蹤，未來參考價值高
-- `tasks/TASK_BREAKDOWN_INDEX.md` - 任務總索引，組織結構清晰
 - `logs/PROGRESS_2026-02-07.md` - 最終成果報告，里程碑記錄
 
 ### ⚠️ 定期更新
@@ -208,7 +214,7 @@ Issue 1.2 (Event System - Reliability & Scalability)
 | 開發團隊 | 更新 `TASK_PROGRESS.md`，記錄實施進度 | 每日/周 |
 | 架構師 | 審核任務分解，更新優先級與依賴 | 每周 |
 | QA/DevOps | 記錄測試結果與性能指標 | 每完成 Phase |
-| 項目經理 | 生成進度報告，驗證完成度 | 每周/月 |
+| 項目經理 | 生成進度報告，驗證完成度 | 每週/月 |
 
 ---
 
@@ -216,10 +222,10 @@ Issue 1.2 (Event System - Reliability & Scalability)
 
 本檔案庫的計劃文檔存放在：
 - **原始分析**: `examples/flash-sale-fullstack/FRAMEWORK_IMPROVEMENTS.md`
-- **遷移指南**: `docs/MIGRATION_GUIDE_ASYNC_EVENTS.md` 等
-- **可觀測性指南**: `docs/OBSERVABILITY_GUIDE.md`
-- **熔斷器指南**: `docs/CIRCUIT_BREAKER_GUIDE.md`
-- **隊列集成指南**: `docs/BULL_QUEUE_INTEGRATION_GUIDE.md`
+- **遷移指南**: `docs/operations/migration/async-events.md`
+- **可觀測性指南**: `docs/guides/core/observability.md`
+- **斷路器指南**: `docs/guides/core/circuit-breaker.md`
+- **隊列集成指南**: `docs/guides/core/bull-queue-integration.md`
 
 ---
 
@@ -227,11 +233,12 @@ Issue 1.2 (Event System - Reliability & Scalability)
 
 | 版本 | 日期 | 重點 |
 |------|------|------|
+| 1.2 | 2026-02-23 | 計畫整合：合併 13 個文件，精簡歸檔結構 |
 | 1.1 | 2026-02-08 | 清理版本：移除冗餘、歸檔舊報告 |
 | 1.0 | 2026-02-08 | 初始整理：完整分類與導引 |
 
 ---
 
-**此份 README 由 Claude Code 自動生成及維護**
-**最後整理日期**: 2026-02-08
-**檔案夾狀態**: ✅ 已整理歸納，清理冗餘，組織清晰
+**此份 README 由 Antigravity 自動生成及維護**
+**最後整理日期**: 2026-02-23
+**檔案夾狀態**: ✅ 已整合核心資訊，移除冗餘

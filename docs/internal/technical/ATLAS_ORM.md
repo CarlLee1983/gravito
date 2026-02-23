@@ -1,8 +1,8 @@
 # Atlas ORM Architecture: The Database Orbit
 
-**Version**: 1.0.0
+**Version**: 1.6.0
 **Module**: `@gravito/atlas`
-**Focus**: Query Builder, Grammar Compilation, Connection Management
+**Focus**: Query Builder, Grammar Compilation, Distributed Sharding, Observability
 
 ---
 
@@ -11,10 +11,12 @@
 Atlas 是 Gravito 的標準資料庫層，它採用了 **Query Builder (查詢建構器)** 模式，旨在提供流暢 (Fluent) 且安全的資料庫操作介面。
 
 核心組件：
-1.  **DB Facade**: 靜態入口，管理連接工廠。
-2.  **Connection Manager**: 處理驅動 (Drivers) 與連接池 (Pooling)。
-3.  **Query Builder**: 狀態機，負責收集查詢條件。
-4.  **Grammar**: 編譯器，將 Builder 狀態轉換為 SQL 字串。
+1.  **DB Facade**: 靜態入口，提供類 Laravel 的操作介面。
+2.  **Connection Manager**: 處理多重驅動 (Drivers)、連接池與 **讀寫分離 (Read/Write Replicas)**。
+3.  **Sharding Manager**: 處理跨資料庫分片、一致性雜湊 (Consistent Hashing) 與 MapReduce 查詢。
+4.  **Query Builder**: 狀態機，支援鏈式調用、Cursor 分頁與預選查詢。
+5.  **Grammar**: 編譯器，將 Builder 狀態編譯為安全、參數化的 SQL 字串。
+6.  **Observability**: 內置 OpenTelemetry (Tracing) 與 Prometheus (Metrics) 支援。
 
 ---
 
@@ -107,16 +109,19 @@ DB.addConnection('write_master', { ... });
 *   `sqlite` -> `SqliteConnection` (使用 `better-sqlite3`)
 
 ### Transaction Scope
-事務是通過 Closure (閉包) 管理的，這確保了連接的正確釋放與 Commit/Rollback。
+事務是通過 Closure (閉包) 管理的，這確保了連接的正確釋放與 Commit/Rollback。Atlas 1.6+ 引入了具備自動重試功能的事務機制。
 
 ```typescript
+// 標準事務
 await DB.transaction(async (trx) => {
-    // trx 是一個綁定了特定連線的 QueryBuilder 實例
     await trx.table('users').update(...);
-    
-    // 如果這裡拋出錯誤，自動 Rollback
-    // 如果執行完畢，自動 Commit
 });
+
+// 自動重試事務 (處理 Deadlocks 或 Stale Data)
+await DB.transactionWithRetry(async (trx, attempt) => {
+    // 當遭遇 SQLITE_BUSY 或 Deadlock 時自動重試，最多 5 次
+    await trx.table('orders').where('id', 1).update({ status: 'completed' });
+}, 'main', 5);
 ```
 
 ---
@@ -144,9 +149,57 @@ await DB.transaction(async (trx) => {
     ```
     `sql` 標籤會自動提取模板字串中的變數，將其轉換為綁定參數，確保即使在 Raw 模式下也是 100% 安全的。
 
+### 分片與大規模擴展 (Sharding)
+Atlas 1.6 支援 **水平分片 (Horizontal Sharding)**，允許將數據分佈在多個獨立的資料庫實例上。
+
+*   **演算法**: 支援 `consistent-hashing` (預設)、`modulo` 與 `range` 分片。
+*   **查詢路由**: 根據 `Distribution Key` 自動選擇正確的分片連接。
+*   **MapReduce**: 內置 `mapReduce()` 方法，支援並行在所有分片執行查詢並匯總結果。
+
+```typescript
+const sharding = new ShardingManager(config);
+DB.addShardingManager('users_cluster', sharding);
+
+// 自動路由到對應分片
+const userConn = DB.getShardingManager('users_cluster').getShard(userId);
+await userConn.table('profiles').where('user_id', userId).first();
+```
+
 ---
 
-## 6. Atlas vs Drizzle & Prisma
+## 7. 可觀測性 (Observability)
+
+Atlas 深度整合了現代可觀測性標準，無需額外配置即可產出高價值的監控數據。
+
+*   **Distributed Tracing**: 使用 OpenTelemetry 生成 SQL Span，自動包含 `db.statement` (已脫敏) 與執行耗時。
+*   **Metrics**: 透過 Prometheus Exporter 輸出連接池狀態 (Active/Idle/Waiting) 與查詢吞吐量。
+*   **SQL Simulation**: `DB.pretend()` 允許在不實際執行的情況下獲取生成的 SQL 圖譜，用於效能分析。
+
+---
+
+## 8. 結構定義與遷移 (Schema & Migrations)
+
+Atlas 1.6+ 提供了強大的 Schema Builder，支援內容感知的自動遷移 (Auto-Migrations)。
+
+*   **Blueprint**: 使用流暢的 API 定義資料表結構。
+*   **Schema Diff**: 自動比對目前的資料庫狀態與程式碼中的定義，生成精確的 ALTER 語句。
+*   **Type Generation**: `orbit type:generate` 能根據資料庫結構自動產出 TypeScript 介面定義。
+
+```typescript
+import { Schema, Blueprint } from '@gravito/atlas';
+
+await Schema.create('products', (table: Blueprint) => {
+    table.id();
+    table.string('name').index();
+    table.decimal('price', 10, 2);
+    table.json('metadata').nullable();
+    table.timestamps();
+});
+```
+
+---
+
+## 9. Atlas vs Drizzle & Prisma
 
 為什麼在 Drizzle ORM 如此流行的當下，我們仍選擇自研 Atlas？
 

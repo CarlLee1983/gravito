@@ -85,4 +85,4 @@ Yes. Templates include a standard `Dockerfile` for easy container deployment.
 ---
 
 ## Next Steps
-You are ready to build. Learn the [Project Structure](./project-structure.md) or jump to [Quick Start](./quick-start.md).
+You are ready to build. Learn the [Project Structure](./project-structure.md) or jump to [Quick Start](./getting-started.md).

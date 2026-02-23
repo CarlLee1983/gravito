@@ -1,8 +1,8 @@
 # Gravito Core Architecture: The Micro-kernel
 
-**Version**: 1.0.0
+**Version**: 1.6.1
 **Module**: `@gravito/core`
-**Focus**: Runtime Adapter, IoC Container, Lifecycle, Routing
+**Focus**: Runtime Adapter, IoC Container, Event System, Reliability, Observability
 
 ---
 
@@ -11,10 +11,12 @@
 Gravito Core 是專為 **Bun Runtime** 設計的微內核架構。它不直接綁定特定的 HTTP Server 實現，而是透過 **Adapter Pattern (適配器模式)** 來驅動底層引擎。
 
 其核心職責為：
-1.  **抽象化**: 抹平不同 Runtime (Bun, Node) 的差異。
-2.  **生命週期管理**: 管理 Service Providers 的註冊與啟動。
-3.  **依賴注入**: 提供輕量級的 IoC 容器。
-4.  **請求分發**: 將 HTTP 請求路由至對應的控制器。
+1.  **抽象化**: 抹平不同 Runtime (Bun, Node, Edge) 的差異。
+2.  **生命週期管理**: 管理 Service Providers 的註冊、啟動與關閉。
+3.  **依賴注入**: 提供高效能的 IoC 容器與 Proxy 上下文。
+4.  **事件驅動**: 支援優先級隊列、分區排序與異步解耦。
+5.  **可靠性守護**: 內置熔斷 (Circuit Breaker)、背壓 (Backpressure) 與死信隊列 (DLQ)。
+6.  **可觀測性**: 原生整合 OpenTelemetry 追蹤與指標。
 
 ---
 
@@ -176,7 +178,22 @@ const contextProxy = new Proxy(contextInstance, {
 
 ---
 
-## 6. 效能與併發評估 (Performance & Scalability)
+## 6. 事件系統與異步可靠性 (Events & Reliability)
+
+Gravito Core 1.6+ 引入了工業級的事件總線，專為處理高併發設計。
+
+### 6.1 事件調度策略
+*   **分區排序 (Partitioned Sorting)**: 確保同一對象 (e.g., 使用者 ID) 的事件按順序執行，不同對象並行執行。
+*   **智能聚合 (Aggregation)**: 在高載時自動合併微小事件以減少 I/O。
+
+### 6.2 彈性守護者 (Reliability Guards)
+*   **Circuit Breaker (熔斷器)**: 當底層服務 (如 Redis/DB) 失敗率過高時自動截斷請求，保護系統。
+*   **DLQ (Dead Letter Queue)**: 處理失敗且重試次數耗盡的事件將自動進入 DLQ 進行人工審查或延遲重試。
+*   **Backpressure (背壓)**: 監控系統負載，當壓力過大時主動降級非核心事件的處理優先級。
+
+---
+
+## 7. 效能與併發評估 (Performance & Scalability)
 
 基於 **Bun Native Architecture** 與 **Radix Tree** 演算法，Gravito Core 的性能定位於 **High-Performance Tier**。
 

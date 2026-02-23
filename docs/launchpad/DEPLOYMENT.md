@@ -109,7 +109,7 @@ api.your-domain.com {
 ## 常見問題 (FAQ)
 
 ### Q: 容器啟動失敗？
-A: 檢查 Docker 服務是否正常：`docker ps`。確保 Image 已下載：`docker pull oven/bun:1.0-slim`。
+A: 檢查 Docker 服務是否正常：`docker ps`。確保 Image 已下載：`docker pull oven/bun:latest` (或指定版本)。
 
 ### Q: 依賴安裝太慢？
 A: 確保已掛載宿主機的 Bun Cache (Launchpad 預設已啟用)。

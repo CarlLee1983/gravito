@@ -15,7 +15,22 @@
 
 ## 快速開始
 
-### 基本配置
+### 1. 安裝驅動程式 (Atlas v1.1.0+)
+
+自 Atlas v1.1.0 起，資料庫驅動程式已改為 Peer Dependencies。在使用前請先安裝對應驅動：
+
+```bash
+# 如果使用 PostgreSQL
+bun add pg
+
+# 如果使用 MySQL
+bun add mysql2
+
+# 如果使用 SQLite
+bun add sqlite3
+```
+
+### 2. 基本配置
 
 ```typescript
 import { ConnectionManager } from '@gravito/atlas'

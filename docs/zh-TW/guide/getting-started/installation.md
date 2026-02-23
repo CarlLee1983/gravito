@@ -90,4 +90,4 @@ Bun 原生支援 TypeScript、內建超快的測試包裝器、以及遠勝於 n
 ---
 
 ## 接下來
-恭喜您完成安裝！現在可以閱讀 [專案結構](./project-structure.md) 了解專案的組織方式，或直接開始 [快速上手](./quick-start.md)。
+恭喜您完成安裝！現在可以閱讀 [專案結構](./project-structure.md) 了解專案的組織方式，或直接開始 [快速上手](./getting-started.md)。

@@ -1,27 +1,8 @@
 # Pending Improvements & Future Tasks
 
-This document tracks deferred tasks, pending refactorings, and future optimization goals extracted from various roadmap and cleanup plans.
+This document tracks deferred tasks, pending refactorings, and future optimization goals. Items previously listed and completed in Issue 1.1/1.2 have been removed.
 
 ## 🔴 High Priority
-
-### QueryBuilder Clauses Integration (Phase 19.2)
-- **Task**: Integrate newly created clauses (Select, Where, Join, Limit) into the main `QueryBuilder.ts`.
-- **Sub-tasks**:
-    - Fix `JoinClause` type conflicts with `types/index.ts`.
-    - Rewrite `QueryBuilder` methods to delegate to clause classes.
-    - Ensure 100% backward compatibility and pass all existing tests.
-- **Source**: `optimization-roadmap.md` (Phase 19.2)
-
-### Fortify Email Integration (Phase 7)
-- **Task**: Implement email sending for verification and password resets.
-- **Implementation Details**:
-    - **VerifyEmailMail**: 實作 `Mailable` 類別，包含 `to()`, `subject()`, `html()` 等方法，發送驗證連結。
-    - **ResetPasswordMail**: 實作密碼重設郵件模板，包含重設連結與過期說明。
-    - **Controller Integration**: 在 `VerifyEmailController` 與 `ForgotPasswordController` 中注入 `mailService` 並呼叫 `mail.send()`。
-- **Sub-tasks**:
-    - Integrate `VerifyEmailMail` and `ResetPasswordMail` into their respective controllers.
-    - Ensure `@gravito/signal` is properly utilized for mail delivery.
-- **Source**: `technical-debt-cleanup-plan.md` (Phase 7)
 
 ### Core `any` Type Reduction (Phase 8)
 - **Task**: Systematically replace `any` with `unknown` or specific generics in core packages.
@@ -45,19 +26,31 @@ This document tracks deferred tasks, pending refactorings, and future optimizati
 - **Source**: `optimization-roadmap.md` (Phase 20)
 
 ### Future Architectural Refactors
-- **Model Refactoring (Phase 2 & 3 - Deferred)**: 
-    - **Integration of Concerns**: While deferred for 1.x stability, future versions should evaluate full integration of `HasAttributes`, `HasRelationships`, etc., into the `Model` class using a more robust mixin or composition pattern.
-    - **Static Query Extraction**: Extract static methods into specialized concerns like `StaticQueries` or `QueryHelpers`.
-    - **Migration Details (Phase 3)**:
-        | Method | Suggested Module |
-        |--------|------------------|
-        | query(), first(), find(), findOrFail(), all(), createAndSave() | StaticQueries concern |
-        | lazyAll() | LazyQueries concern |
-        | cursor() | Cursor concern |
-        | count(), exists() | Aggregations concern |
-        | where(), whereIn(), whereNull(), whereNotNull(), orderBy(), limit(), offset(), select(), latest(), oldest() | QueryHelpers concern |
-        | with() | EagerLoading concern |
 - **Source**: `model-refactoring-plan.md` (Phases 2 & 3)
+
+### Satellite Standardization (The Great Refactoring)
+- **Task**: Ensure all official satellites (Catalog, Payment, Order) conform to Clean Architecture.
+- **Goals**:
+    - Implement `Domain`, `Application`, `Infrastructure`, `Interface` layering.
+    - Extract business logic into `UseCase` classes.
+    - Standardize Dependency Injection patterns to reduce `c.get()` usage.
+- **Source**: `FUTURE_ROADMAP_SATELLITE_DX.md`
+
+### Cross-Satellite Decoupling
+- **Task**: Eliminate hard-coded dependencies between satellite domains.
+- **Goals**:
+    - **Hook Governance**: Standardize namespacing for all `Action` and `Filter` hooks.
+    - **Event Schema Validation**: Implement payload validation in `OrbitSignal`.
+    - **Distributed Resilience**: Integrate circuit breakers and retries for cross-satellite async calls.
+- **Source**: `FUTURE_ROADMAP_SATELLITE_DX.md`
+
+### Diagnostic & DX Tools
+- **Task**: Build the `gravito doctor` CLI suite.
+- **Sub-tasks**:
+    - **`gravito doctor`**: Environment, Orbit config, and Bun runtime compatibility check.
+    - **`gravito check:schema`**: Atlas model vs. DB schema drift detection.
+    - **N+1 Static Analyzer**: Linter/Tool to detect repository calls within loops in `UseCase`.
+- **Source**: `FUTURE_ROADMAP_SATELLITE_DX.md`
 
 ## 🟢 Low Priority
 
@@ -78,4 +71,5 @@ This document tracks deferred tasks, pending refactorings, and future optimizati
 - **Source**: `optimization-roadmap.md` (Phase 16)
 
 ---
-*Last Updated: 2026-02-03*
+*Last Updated: 2026-02-23*
+*Maintained by Antigravity*

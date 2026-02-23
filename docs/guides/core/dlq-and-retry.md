@@ -1,7 +1,7 @@
 # 死信隊列 (DLQ) 與重試機制指南
 
 **版本**: 1.0
-**最後更新**: 2026-02-03
+**最後更新**: 2026-02-23
 **狀態**: ✅ 完成
 
 ## 目錄
@@ -586,9 +586,9 @@ class HookManager {
 
 ## 相關文檔
 
-- [異步事件系統遷移指南](./MIGRATION_GUIDE_ASYNC_EVENTS.md)
-- [可觀測性指南](./OBSERVABILITY_GUIDE.md)
-- [Issue 1.2 Phase 1](./priority-1-critical/Issue1.2-Event-System-Reliability/README.md)
+- [異步事件系統遷移指南](../../operations/migration/async-events.md)
+- [可觀測性指南](./observability.md)
+- [任務實施詳情紀錄](../../archive/tasks/TASK_IMPLEMENTATION_RECORDS.md)
 
 ---
 

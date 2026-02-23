@@ -1,8 +1,8 @@
 # Luminosity Engine Architecture: The SEO Core
 
-**Version**: 1.0.0
+**Version**: 2.0.0
 **Module**: `@gravito/luminosity`
-**Focus**: LSM-Tree, Streaming XML, Sitemap Generation
+**Focus**: LSM-Tree, SEO Metadata, Programmable Robots, Analytics
 
 ---
 
@@ -122,3 +122,32 @@ Luminosity 支援三種運行模式以適應不同環境：
 
 *   **Sitemap Index**: 當 URL 數量 > 50k 時，Luminosity 自動生成 `<sitemapindex>`。
 *   **Query-based Pagination**: 實際的 URL 列表透過 `/sitemap.xml?page=N` 獲取。LSM 引擎在 Read Merge 階段會自動執行 `skip(page * limit)` 與 `take(limit)` 操作。
+
+---
+
+## 7. SEO 面板與元數據 (Metadata & MetaInspector)
+
+Luminosity 2.0 擴展為完整的 SEO 解決方案。
+
+### 7.1 動態元數據建構
+支援流暢的 Builder API 來生成符合 SEO 與社群媒體標準的 HTML：
+*   **OpenGraph & Twitter Cards**: 自動處理圖片與內容描述。
+*   **JSON-LD**: 內置結構化數據模板。
+
+### 7.2 MetaInspector (診斷工具)
+這是 2.0 的亮點功能，允許從伺服器端「抓取並分析」任何公開 URL 的 SEO 標籤，用於比較分析或自動填充內容。
+
+---
+
+## 8. 自動化路由掃描 (RouteScanner)
+
+為了減少手動維護 Sitemap 的負擔，Luminosity 內置了 **RouteScanner**。
+*   **多框架適配**: 支援 Gravito, Hono, Express, Next.js 等 9 種主流框架。
+*   **自動發現**: 掃描路由定義並自動填充 Sitemap 條目。
+
+---
+
+## 9. 雲原生儲存與可觀測性
+
+*   **Unified Storage**: 支援本地檔案系統與 **AWS S3**，適合 Serverless 環境。
+*   **SEO Analytics**: 內置 Google Analytics 與 Meta Pixel 的一鍵整合。
