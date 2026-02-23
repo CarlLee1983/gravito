@@ -30,7 +30,13 @@ This website demonstrates the full power of the Gravito ecosystem, specifically 
 - **Smart Link Resolution**: Automated transformation of relative `.md` links into clean, routable web URLs.
 - **Syntax Highlighting**: Powered by **Shiki** for beautiful code snippets.
 
-### 4. **SEO & Performance**
+### 4. **Bun Runtime Integration**
+- **High-Performance Execution**: Utilizes Bun's fast TypeScript transpilation and native API support
+- **File System Router**: Leverages `@gravito/astral` for Next.js-style routing patterns with automatic parameter extraction
+- **Custom Plugins**: Extends Bun's loader system for YAML/TOML configuration and markdown documentation processing
+- **Development Experience**: Hot Module Replacement (HMR) via Bun's native watch mode during development
+
+### 5. **SEO & Performance**
 - **Gravito SEO Engine**:
     - Dynamic **Robots.txt** & **Sitemap.xml** generation via `@gravito/luminosity-adapter-photon`.
     - No static files to maintain; routing rules are defined in code (`src/config/seo.ts`).
@@ -63,6 +69,54 @@ examples/official-site/
 
 ---
 
+## 🔧 Bun Runtime Features
+
+This project showcases several advanced Bun runtime capabilities:
+
+### Plugin System
+The website uses custom Bun plugins to handle:
+- **Configuration Files**: TOML/YAML loading with automatic parsing
+- **Documentation Processing**: Markdown transformation with syntax highlighting
+- **Module Resolution**: Custom namespace resolution for internal modules
+
+See `src/plugins/` for implementation details.
+
+### File System Router
+Route discovery and generation use the Astral File System Router:
+
+```typescript
+import { createAstralRouter } from '@gravito/astral/routing';
+
+const router = createAstralRouter({
+  dir: './src/pages',
+  origin: 'https://gravito.dev',
+});
+
+// Automatic parameter extraction
+const match = router.match('/docs/core/hooks');
+console.log(match.params); // { section: 'docs', module: 'core', page: 'hooks' }
+```
+
+Learn more: [Astral Router Integration Guide](../../docs/bun/ASTRAL_ROUTER_INTEGRATION.md)
+
+### Auto-Install Feature
+Direct package imports work without explicit package.json entries:
+
+```typescript
+import { parse } from 'yaml@4.0.0'; // Auto-installed at runtime
+const config = parse(yamlString);
+```
+
+### JSX Framework Selection
+Specify JSX rendering per-file without global configuration:
+
+```typescript
+// @jsxImportSource preact
+export const FastComponent = () => <div>Preact version</div>;
+```
+
+---
+
 ## ⚡ Quick Start
 
 ### Prerequisites
@@ -77,10 +131,16 @@ bun install
 
 # 2. Start the development environment
 # This launches both the Backend Server (Port 3000) and Vite HMR Server
+# Bun's native watch mode enables automatic reloading on file changes
 bun run dev
 ```
 
 Visit `http://localhost:3000` to see the site.
+
+**Development Tips**:
+- Bun's auto-install feature allows importing any npm package without manual installation
+- Custom loaders handle `.toml`, `.yaml`, and `.md` files transparently
+- File System Router automatically discovers and matches routes based on file structure
 
 ### Building for Production
 

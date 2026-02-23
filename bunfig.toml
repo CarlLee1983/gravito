@@ -1,6 +1,70 @@
+# Bun Runtime Configuration for Gravito Core
+# Reference: https://bun.sh/docs/runtime/file-system-router
+
+# ============================================================================
+# TEST CONFIGURATION
+# ============================================================================
 [test]
+# Maximum time for each test before timeout (milliseconds)
 timeout = "10000ms"
+# Root directory for test discovery
 root = "."
 
+# ============================================================================
+# INSTALL CONFIGURATION
+# ============================================================================
 [install]
+# production = false: Install devDependencies (for monorepo development)
+# production = true: Skip devDependencies (for CI/deployment optimization)
 production = false
+
+# ============================================================================
+# BUILD CONFIGURATION
+# ============================================================================
+# Uncomment to configure build behavior for bun build
+# [build]
+# # Asset naming pattern: [name], [hash], [ext], [dir]
+# naming = { asset = "[name]-[hash].[ext]" }
+# # Public path for static assets (e.g., for CDN deployments)
+# publicPath = "/"
+# # Target runtime environment
+# target = "bun"  # or "browser", "node"
+
+# ============================================================================
+# DEVELOPMENT SERVER CONFIGURATION
+# ============================================================================
+# Uncomment to enable development server features
+# [dev]
+# # Enable Hot Module Replacement for faster development
+# hmr = true
+# # Enable automatic reload on file changes
+# reload = true
+
+# ============================================================================
+# FILE TYPE SUPPORT
+# ============================================================================
+# Bun automatically handles these file types:
+#
+# TypeScript/JavaScript:
+#   .ts, .tsx, .js, .jsx -> Transpiled with tree-shaking
+#
+# Data Formats (parsed as JavaScript objects):
+#   .json, .jsonc, .json5
+#   .toml, .yaml, .yml
+#
+# Assets:
+#   .html -> Static asset or text
+#   .css -> Stylesheet (bundled)
+#   .svg, .png, .jpg -> Static assets
+#
+# Native Code:
+#   .wasm -> WebAssembly module
+#   .node -> Native addon (NAPI bindings)
+#   .sqlite -> Database file
+#
+# USAGE: Import attributes for explicit type specification
+#   import config from "./config.toml" with { type: "toml" };
+#   import wasm from "./module.wasm" with { type: "wasm" };
+#   import db from "./data.sqlite" with { type: "sqlite" };
+#
+# Reference: https://bun.sh/docs/runtime/file-types
