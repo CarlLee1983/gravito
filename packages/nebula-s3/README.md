@@ -136,15 +136,30 @@ await s3Store.put('image.jpg', imageData, {
   cacheControl: 'public, max-age=31536000',
 })
 
-// 讀取 metadata
+// 讀取 metadata（標準字段）
 const meta = await s3Store.getMetadata('image.jpg')
-console.log(meta.customMetadata?.author) // "John Doe"
+console.log(meta.size)        // 檔案大小
+console.log(meta.mimeType)    // image/jpeg
+console.log(meta.lastModified) // 最後修改時間
+
+// 注意：customMetadata 會返回 undefined（見下方限制）
 
 // 更新 metadata
 await s3Store.setMetadata('image.jpg', {
   tags: 'nature,sunset,photography',
 })
 ```
+
+#### ⚠️ 已知限制
+
+**Custom Metadata 讀取限制**：由於 Bun 原生 S3 API 的限制，`getMetadata()` 的 `customMetadata` 欄位會返回 `undefined`。
+
+- ✅ **寫入自定義 metadata**：通過 `put()` 的 `metadata` 選項完全支援
+- ❌ **讀取自定義 metadata**：不支援。`getMetadata()` 只返回標準字段（size、mimeType、lastModified、etag）
+
+**解決方案**：
+1. 若需要儲存檔案相關的自定義資訊，考慮使用應用層資料庫（Redis、PostgreSQL 等）
+2. 可將 metadata 編碼到物件的 key 名稱中（例如：`uploads/{userId}/{timestamp}-{filename}`）
 
 ### 分頁列舉
 
@@ -258,6 +273,14 @@ const result = await s3Store.listPaginated('uploads/', {
 })
 ```
 
+## 實作備註
+
+本套件使用 **Bun 原生 S3 API**（Bun v1.2.3+），無需外部依賴。
+
+- 🚀 **效能優化** - 直接使用 Bun 原生 API，無序列化開銷
+- 📦 **輕量級** - 無額外依賴（移除 AWS SDK）
+- 🔄 **自動 Multipart** - 大檔案自動分段上傳
+
 ## 相容性
 
 - **AWS S3** - ✅ 完整支援
@@ -272,4 +295,4 @@ MIT
 ## 相關連結
 
 - [@gravito/nebula](https://github.com/gravito/core/tree/main/packages/nebula) - 核心儲存抽象層
-- [AWS SDK for JavaScript v3](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/)
+- [Bun S3 Client 文檔](https://bun.sh/docs/api/s3)
