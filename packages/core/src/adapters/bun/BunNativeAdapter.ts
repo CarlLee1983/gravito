@@ -33,6 +33,9 @@ export class BunNativeAdapter implements HttpAdapter {
   private contextPool: BunContext[] = []
   private readonly maxPoolSize = 100
 
+  // P2 optimization: Pre-compiled middleware chains
+  private middlewareChainCache = new Map<string, GravitoMiddleware[]>()
+
   route(
     method: HttpMethod,
     path: string,
@@ -53,6 +56,8 @@ export class BunNativeAdapter implements HttpAdapter {
 
   use(path: string, ...middleware: GravitoMiddleware[]): void {
     this.middlewares.push({ path, handlers: middleware })
+    // P2 optimization: Clear middleware cache when new middleware added
+    this.middlewareChainCache.clear()
   }
 
   useGlobal(...middleware: GravitoMiddleware[]): void {
@@ -106,6 +111,30 @@ export class BunNativeAdapter implements HttpAdapter {
     }
 
     return false
+  }
+
+  /**
+   * P2 optimization: Pre-compile middleware chain for a path
+   */
+  private getCompiledMiddlewareChain(path: string): GravitoMiddleware[] {
+    // Check cache first
+    if (this.middlewareChainCache.has(path)) {
+      return this.middlewareChainCache.get(path)!
+    }
+
+    // Build chain
+    const chain: GravitoMiddleware[] = []
+
+    for (const mw of this.middlewares) {
+      if (this.matchesPath(mw.path, path)) {
+        chain.push(...mw.handlers)
+      }
+    }
+
+    // Cache it
+    this.middlewareChainCache.set(path, chain)
+
+    return chain
   }
 
   /**
@@ -198,12 +227,9 @@ export class BunNativeAdapter implements HttpAdapter {
 
       const handlers: Function[] = []
 
-      // P1 Fix: Use accurate path matching instead of simple startsWith
-      for (const mw of this.middlewares) {
-        if (this.matchesPath(mw.path, path)) {
-          handlers.push(...mw.handlers)
-        }
-      }
+      // P2 optimization: Use pre-compiled middleware chain
+      const middlewareChain = this.getCompiledMiddlewareChain(path)
+      handlers.push(...middlewareChain)
 
       if (match) {
         if (match.params) {

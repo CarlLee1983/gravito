@@ -3,6 +3,38 @@ import { RadixNode } from './RadixNode'
 import { NodeType, type RouteHandler, type RouteMatch } from './types'
 
 /**
+ * Simple LRU Cache for route matching
+ * @internal
+ */
+class RouteCache {
+  private cache = new Map<string, RouteMatch | null>()
+  private readonly maxSize = 10000
+
+  get(key: string): RouteMatch | null | undefined {
+    return this.cache.get(key)
+  }
+
+  set(key: string, value: RouteMatch | null): void {
+    if (this.cache.size >= this.maxSize) {
+      // Remove first (oldest) entry
+      const firstKey = this.cache.keys().next().value
+      if (firstKey) {
+        this.cache.delete(firstKey)
+      }
+    }
+    this.cache.set(key, value)
+  }
+
+  clear(): void {
+    this.cache.clear()
+  }
+
+  has(key: string): boolean {
+    return this.cache.has(key)
+  }
+}
+
+/**
  * High-performance Radix Tree Router for Bun
  */
 export class RadixRouter {
@@ -10,6 +42,9 @@ export class RadixRouter {
 
   // Global parameter constraints (e.g., id => /^\d+$/)
   private globalConstraints: Map<string, RegExp> = new Map()
+
+  // Route cache (P2 optimization)
+  private routeCache = new RouteCache()
 
   /**
    * Add a generic parameter constraint
@@ -61,6 +96,9 @@ export class RadixRouter {
 
     // Ensure we store handlers for lowercase method
     node.handlers.set(method.toLowerCase() as HttpMethod, handlers)
+
+    // P2 optimization: Clear cache when new route added
+    this.routeCache.clear()
   }
 
   /**
@@ -78,11 +116,22 @@ export class RadixRouter {
       return null
     }
 
+    // P2 optimization: Check route cache first
+    const cacheKey = `${normalizedMethod}:${path}`
+    if (this.routeCache.has(cacheKey)) {
+      return this.routeCache.get(cacheKey) ?? null
+    }
+
     // Removing leading slash for faster segmenting
     const searchPath = path.startsWith('/') ? path.slice(1) : path
     const segments = searchPath.split('/')
 
-    return this.matchRecursive(this.root, segments, 0, {}, normalizedMethod)
+    const result = this.matchRecursive(this.root, segments, 0, {}, normalizedMethod)
+
+    // P2 optimization: Cache the result
+    this.routeCache.set(cacheKey, result)
+
+    return result
   }
 
   private matchRecursive(
