@@ -129,7 +129,22 @@ export default {
       '企業級依賴注入，支援單例管理、請求作用域 (Request Scopes) 與完整的 register/boot/shutdown 生命週期——Hono 完全缺乏這些功能。',
     vs_native_title: 'Bun Native Adapter',
     vs_native_desc:
-      '在 Bun 環境運行時，Gravito 自動使用自研 RadixRouter，實現 O(log n) 路由匹配，零抽象開銷。',
+      '在 Bun 環境運行時，Gravito 自動使用優化後的 RadixRouter 與 LRU 快取，實現 O(log n) 路由匹配。相比未優化版本延遲降低 48%。',
+    adapter_comparison_title: 'Adapter 性能對標',
+    adapter_comparison_subtitle: '三款高效能 HTTP 適配器，針對不同工作負載最佳化',
+    adapter_bun_native_title: 'BunNativeAdapter (優化版)',
+    adapter_bun_native_desc:
+      '專為 Bun 運行時設計，整合 LRU 路由快取、中間件預編譯與上下文對象池。達到原生 Bun.serve() 的 91% 效率。',
+    adapter_bun_native_details:
+      '靜態路由: 0.0045ms (-48%), 參數路由: 0.0040ms (-43%), 中間件: 0.0067ms (-26%), 吞吐量: 145k req/sec',
+    adapter_photon_title: 'PhotonAdapter (功能豐富)',
+    adapter_photon_desc:
+      '基於 Hono 的通用 HTTP 引擎，具備完整功能集。適合複雜路由、企業級中間件與跨平台兼容。',
+    adapter_photon_details: '吞吐量: 100k req/sec, 豐富的中間件生態, 支援 Node.js、Deno 與 Workers',
+    adapter_express_title: 'ExpressAdapter (向後相容)',
+    adapter_express_desc:
+      '與 Node.js Express 框架達到最大生態兼容性。適合需要 Express 插件與中間件的專案。',
+    adapter_express_details: '吞吐量: 64k req/sec, 完整的 Express 生態, 最大的社群支持',
   },
   benchmarks: {
     sectionBadge: '性能實驗室',
