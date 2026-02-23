@@ -136,6 +136,13 @@ export class SQLiteDriver implements DriverContract {
 
   private cleanupTimer?: Timer
 
+  /**
+   * Transaction/Savepoint stack for nested transaction support
+   * Level 0: No transaction
+   * Level 1+: Savepoint depth (uses SAVEPOINT sp_N)
+   */
+  private transactionDepth = 0
+
   constructor(config: ConnectionConfig) {
     if (config.driver !== 'sqlite') {
       throw new Error(`Invalid driver type '${config.driver}' for SQLiteDriver`)
@@ -337,44 +344,139 @@ export class SQLiteDriver implements DriverContract {
     }
   }
 
+  /**
+   * Begin a transaction or create a savepoint for nested transactions
+   *
+   * Supports arbitrary nesting depth:
+   * - Level 0→1: BEGIN transaction
+   * - Level 1→2+: CREATE SAVEPOINT sp_N (nested)
+   *
+   * @example
+   * ```typescript
+   * await driver.beginTransaction()  // Level 1: BEGIN
+   *   await driver.beginTransaction()  // Level 2: SAVEPOINT sp_1
+   *     // nested operations
+   *   await driver.commit()  // Level 2: RELEASE SAVEPOINT sp_1
+   * await driver.commit()  // Level 1: COMMIT
+   * ```
+   */
   async beginTransaction(): Promise<void> {
     if (!this.client) {
       await this.connect()
     }
-    if (process.env.DEBUG_ATLAS) {
-      // biome-ignore lint: Internal debug logging
-      console.log('[SQLiteDriver] BEGIN')
+
+    const isRootTransaction = this.transactionDepth === 0
+
+    if (isRootTransaction) {
+      if (process.env.DEBUG_ATLAS) {
+        // biome-ignore lint: Internal debug logging
+        console.log('[SQLiteDriver] BEGIN')
+      }
+      this.client?.prepare('BEGIN').run()
+      this.inTransactionState = true
+    } else {
+      // Nested transaction - use SAVEPOINT
+      const savepointName = `sp_${this.transactionDepth}`
+      if (process.env.DEBUG_ATLAS) {
+        // biome-ignore lint: Internal debug logging
+        console.log(`[SQLiteDriver] SAVEPOINT ${savepointName}`)
+      }
+      this.client?.prepare(`SAVEPOINT ${savepointName}`).run()
     }
-    this.client?.prepare('BEGIN').run()
-    this.inTransactionState = true
+
+    this.transactionDepth++
   }
 
+  /**
+   * Commit a transaction or release a savepoint
+   *
+   * - Level 1→0: COMMIT transaction
+   * - Level 2+→Level-1: RELEASE SAVEPOINT sp_N
+   */
   async commit(): Promise<void> {
     if (!this.client) {
       return
     }
-    if (process.env.DEBUG_ATLAS) {
-      // biome-ignore lint: Internal debug logging
-      console.log('[SQLiteDriver] COMMIT')
+
+    if (this.transactionDepth === 0) {
+      // No active transaction
+      return
     }
-    this.client?.prepare('COMMIT').run()
-    this.inTransactionState = false
+
+    this.transactionDepth--
+
+    if (this.transactionDepth === 0) {
+      // Committing root transaction
+      if (process.env.DEBUG_ATLAS) {
+        // biome-ignore lint: Internal debug logging
+        console.log('[SQLiteDriver] COMMIT')
+      }
+      this.client?.prepare('COMMIT').run()
+      this.inTransactionState = false
+    } else {
+      // Releasing savepoint (nested)
+      const savepointName = `sp_${this.transactionDepth}`
+      if (process.env.DEBUG_ATLAS) {
+        // biome-ignore lint: Internal debug logging
+        console.log(`[SQLiteDriver] RELEASE SAVEPOINT ${savepointName}`)
+      }
+      this.client?.prepare(`RELEASE SAVEPOINT ${savepointName}`).run()
+    }
   }
 
+  /**
+   * Rollback a transaction or rollback to a savepoint
+   *
+   * - Level 1→0: ROLLBACK transaction
+   * - Level 2+→Level-1: ROLLBACK TO SAVEPOINT sp_N
+   */
   async rollback(): Promise<void> {
     if (!this.client) {
       return
     }
-    if (process.env.DEBUG_ATLAS) {
-      // biome-ignore lint: Internal debug logging
-      console.log('[SQLiteDriver] ROLLBACK')
+
+    if (this.transactionDepth === 0) {
+      // No active transaction
+      return
     }
-    this.client?.prepare('ROLLBACK').run()
-    this.inTransactionState = false
+
+    this.transactionDepth--
+
+    if (this.transactionDepth === 0) {
+      // Rolling back root transaction
+      if (process.env.DEBUG_ATLAS) {
+        // biome-ignore lint: Internal debug logging
+        console.log('[SQLiteDriver] ROLLBACK')
+      }
+      this.client?.prepare('ROLLBACK').run()
+      this.inTransactionState = false
+    } else {
+      // Rolling back to savepoint (nested)
+      const savepointName = `sp_${this.transactionDepth}`
+      if (process.env.DEBUG_ATLAS) {
+        // biome-ignore lint: Internal debug logging
+        console.log(`[SQLiteDriver] ROLLBACK TO SAVEPOINT ${savepointName}`)
+      }
+      this.client?.prepare(`ROLLBACK TO SAVEPOINT ${savepointName}`).run()
+    }
   }
 
+  /**
+   * Check if currently in a transaction (including nested)
+   * @returns true if transactionDepth > 0 or inTransactionState is true
+   */
   inTransaction(): boolean {
-    return this.inTransactionState || (this.client?.inTransaction ?? false)
+    return (
+      this.transactionDepth > 0 || this.inTransactionState || (this.client?.inTransaction ?? false)
+    )
+  }
+
+  /**
+   * Get current transaction nesting depth
+   * @returns 0 if no transaction, 1+ if in transaction/savepoint
+   */
+  getTransactionDepth(): number {
+    return this.transactionDepth
   }
 
   /**
