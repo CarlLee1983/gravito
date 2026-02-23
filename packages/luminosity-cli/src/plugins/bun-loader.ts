@@ -9,7 +9,7 @@
  * Reference: https://bun.sh/docs/runtime/plugins
  */
 
-import type { OnLoadArgs, OnResolveArgs, Plugin, PluginBuilder } from 'bun'
+import type { OnLoadArgs, OnResolveArgs } from 'bun'
 
 /**
  * Configuration options for Gravito plugins
@@ -51,10 +51,10 @@ export interface GravitoPluginConfig {
  * });
  * ```
  */
-export function createGravitoConfigPlugin(config: GravitoPluginConfig = {}): Plugin {
+export function createGravitoConfigPlugin(config: GravitoPluginConfig = {}): any {
   return {
     name: 'gravito-config-loader',
-    setup(build: PluginBuilder) {
+    setup(build: any) {
       // Load .gravito.config.ts files
       build.onLoad({ filter: /\.gravito\.config\.ts$/ }, async (args: OnLoadArgs) => {
         if (config.debug) {
@@ -95,10 +95,10 @@ export function createGravitoConfigPlugin(config: GravitoPluginConfig = {}): Plu
  * });
  * ```
  */
-export function createSchemaValidationPlugin(config: GravitoPluginConfig = {}): Plugin {
+export function createSchemaValidationPlugin(config: GravitoPluginConfig = {}): any {
   return {
     name: 'gravito-schema-validator',
-    setup(build: PluginBuilder) {
+    setup(build: any) {
       build.onLoad({ filter: /\.schema\.ts$/ }, async (args: OnLoadArgs) => {
         if (config.debug) {
           console.log(`[gravito-schema-validator] Validating schema: ${args.path}`)
@@ -133,12 +133,12 @@ export function createSchemaValidationPlugin(config: GravitoPluginConfig = {}): 
 export function createCustomLoaderPlugin(
   extension: string,
   transformer: (content: string, path: string) => Promise<string>
-): Plugin {
+): any {
   const filter = new RegExp(`\\${extension}$`)
 
   return {
     name: `custom-loader-${extension}`,
-    setup(build: PluginBuilder) {
+    setup(build: any) {
       build.onLoad({ filter }, async (args: OnLoadArgs) => {
         try {
           const file = Bun.file(args.path)
@@ -179,12 +179,12 @@ export function createCustomLoaderPlugin(
 export function createNamespaceResolverPlugin(
   namespace: string,
   resolver: (specifier: string) => string | Promise<string>
-): Plugin {
+): any {
   const filter = new RegExp(`^${namespace}`)
 
   return {
     name: `namespace-resolver-${namespace}`,
-    setup(build: PluginBuilder) {
+    setup(build: any) {
       build.onResolve({ filter, namespace: 'file' }, async (args: OnResolveArgs) => {
         const specifier = args.path.replace(namespace, '')
         const resolved = await resolver(specifier)
@@ -221,10 +221,10 @@ export function createNamespaceResolverPlugin(
 export function createSourceTransformerPlugin(
   filter: RegExp,
   transformer: (source: string, path: string) => Promise<string>
-): Plugin {
+): any {
   return {
     name: 'source-transformer',
-    setup(build: PluginBuilder) {
+    setup(build: any) {
       build.onLoad({ filter }, async (args: OnLoadArgs) => {
         try {
           const file = Bun.file(args.path)
@@ -260,7 +260,7 @@ export function createSourceTransformerPlugin(
  * });
  * ```
  */
-export function createDefaultGravitoPlugins(config?: GravitoPluginConfig): Plugin[] {
+export function createDefaultGravitoPlugins(config?: GravitoPluginConfig): any[] {
   return [createGravitoConfigPlugin(config), createSchemaValidationPlugin(config)]
 }
 

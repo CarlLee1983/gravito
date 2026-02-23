@@ -8,6 +8,7 @@
  */
 
 import type { FileSystemRouter } from 'bun'
+import { readdir } from 'fs/promises'
 
 /**
  * Route match result from FileSystemRouter
@@ -251,12 +252,12 @@ export class AstralFileSystemRouter {
    * });
    * ```
    */
-  getStaticRoutes(): string[] {
+  async getStaticRoutes(): Promise<string[]> {
     const routes: string[] = []
 
     // Scan directory for .tsx/.ts/.md files
     try {
-      const files = this.scanDirectory(this.config.dir)
+      const files = await this.scanDirectory(this.config.dir)
 
       files.forEach((file) => {
         // Convert file path to route pathname
@@ -285,11 +286,11 @@ export class AstralFileSystemRouter {
    * // ["/blog/[slug]", "/docs/[...path]"]
    * ```
    */
-  getDynamicRoutes(): string[] {
+  async getDynamicRoutes(): Promise<string[]> {
     const routes: string[] = []
 
     try {
-      const files = this.scanDirectory(this.config.dir)
+      const files = await this.scanDirectory(this.config.dir)
 
       files.forEach((file) => {
         const route = this.filePathToRoute(file)
@@ -364,23 +365,27 @@ export class AstralFileSystemRouter {
   /**
    * Helper: Scan directory for route files
    */
-  private scanDirectory(dir: string): string[] {
+  private async scanDirectory(dir: string): Promise<string[]> {
     const files: string[] = []
 
     try {
-      const scan = Bun.scandir(dir)
+      const entries = await readdir(dir)
 
-      for (const entry of scan) {
+      for (const entry of entries) {
         const fullPath = `${dir}/${entry}`
 
         // Check if it's a route file
-        if (this.isRouteFile(entry)) {
+        if (this.isRouteFile(entry) && !entry.startsWith('.')) {
           files.push(fullPath)
         }
 
         // Recursively scan subdirectories
-        if (Bun.file(fullPath).isDirectory?.()) {
-          files.push(...this.scanDirectory(fullPath))
+        // Check if path is a directory by trying to read it
+        try {
+          await readdir(fullPath)
+          files.push(...(await this.scanDirectory(fullPath)))
+        } catch {
+          // Not a directory, skip
         }
       }
     } catch (error) {
@@ -489,8 +494,3 @@ export function createProdRouter(
     assetPrefix: assetPrefix || '/static',
   })
 }
-
-/**
- * Export types and utilities for consumers
- */
-export type { RouteMatch, AstralRouterConfig, StaticRouteMetadata }

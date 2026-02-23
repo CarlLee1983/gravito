@@ -7,7 +7,6 @@
  * These examples can be adapted for your specific needs.
  */
 
-import type { Plugin } from 'bun'
 import { createCustomLoaderPlugin } from './bun-loader'
 
 // ============================================================================
@@ -26,11 +25,11 @@ import { createCustomLoaderPlugin } from './bun-loader'
  * const plugin = createYamlLoaderPlugin();
  * ```
  */
-export function createYamlLoaderPlugin(): Plugin {
+export function createYamlLoaderPlugin(): any {
   return {
     name: 'yaml-loader',
-    setup(build) {
-      build.onLoad({ filter: /\.(yml|yaml)$/ }, async (args) => {
+    setup(build: any) {
+      build.onLoad({ filter: /\.(yml|yaml)$/ }, async (args: any) => {
         try {
           // Dynamic import to avoid hard dependency
           const { parse } = await import('yaml')
@@ -67,11 +66,11 @@ export function createYamlLoaderPlugin(): Plugin {
  * const plugin = createJson5LoaderPlugin();
  * ```
  */
-export function createJson5LoaderPlugin(): Plugin {
+export function createJson5LoaderPlugin(): any {
   return {
     name: 'json5-loader',
-    setup(build) {
-      build.onLoad({ filter: /\.json5$/ }, async (args) => {
+    setup(build: any) {
+      build.onLoad({ filter: /\.json5$/ }, async (args: any) => {
         try {
           // Dynamic import to avoid hard dependency
           const JSON5 = await import('json5')
@@ -106,11 +105,11 @@ export function createJson5LoaderPlugin(): Plugin {
  * const plugin = createEnvConfigLoaderPlugin();
  * ```
  */
-export function createEnvConfigLoaderPlugin(): Plugin {
+export function createEnvConfigLoaderPlugin(): any {
   return {
     name: 'env-config-loader',
-    setup(build) {
-      build.onLoad({ filter: /\.env\.json$/ }, async (args) => {
+    setup(build: any) {
+      build.onLoad({ filter: /\.env\.json$/ }, async (args: any) => {
         try {
           const file = Bun.file(args.path)
           const content = await file.text()
@@ -150,11 +149,11 @@ export function createEnvConfigLoaderPlugin(): Plugin {
  * const plugin = createMarkdownLoaderPlugin();
  * ```
  */
-export function createMarkdownLoaderPlugin(): Plugin {
+export function createMarkdownLoaderPlugin(): any {
   return {
     name: 'markdown-loader',
-    setup(build) {
-      build.onLoad({ filter: /\.md$/ }, async (args) => {
+    setup(build: any) {
+      build.onLoad({ filter: /\.md$/ }, async (args: any) => {
         try {
           // Dynamic import to avoid hard dependency
           const { marked } = await import('marked')
@@ -189,11 +188,11 @@ export function createMarkdownLoaderPlugin(): Plugin {
  * const plugin = createCsvLoaderPlugin();
  * ```
  */
-export function createCsvLoaderPlugin(): Plugin {
+export function createCsvLoaderPlugin(): any {
   return {
     name: 'csv-loader',
-    setup(build) {
-      build.onLoad({ filter: /\.csv$/ }, async (args) => {
+    setup(build: any) {
+      build.onLoad({ filter: /\.csv$/ }, async (args: any) => {
         try {
           const file = Bun.file(args.path)
           const content = await file.text()
@@ -239,11 +238,11 @@ export function createCsvLoaderPlugin(): Plugin {
  * const plugin = createSqlLoaderPlugin();
  * ```
  */
-export function createSqlLoaderPlugin(): Plugin {
+export function createSqlLoaderPlugin(): any {
   return {
     name: 'sql-loader',
-    setup(build) {
-      build.onLoad({ filter: /\.sql$/ }, async (args) => {
+    setup(build: any) {
+      build.onLoad({ filter: /\.sql$/ }, async (args: any) => {
         try {
           const file = Bun.file(args.path)
           const content = await file.text()
@@ -287,13 +286,13 @@ export function createSqlLoaderPlugin(): Plugin {
  * );
  * ```
  */
-export function createGlobalImportPlugin(filter: RegExp, imports: string[]): Plugin {
+export function createGlobalImportPlugin(filter: RegExp, imports: string[]): any {
   const importBlock = imports.join('\n')
 
   return {
     name: 'global-import-injector',
-    setup(build) {
-      build.onLoad({ filter }, async (args) => {
+    setup(build: any) {
+      build.onLoad({ filter }, async (args: any) => {
         try {
           const file = Bun.file(args.path)
           const content = await file.text()
@@ -337,11 +336,11 @@ export function createGlobalImportPlugin(filter: RegExp, imports: string[]): Plu
 export function createInstrumentationPlugin(
   filter: RegExp,
   instrumenter: (source: string, path: string) => Promise<string>
-): Plugin {
+): any {
   return {
     name: 'source-instrumentor',
-    setup(build) {
-      build.onLoad({ filter }, async (args) => {
+    setup(build: any) {
+      build.onLoad({ filter }, async (args: any) => {
         try {
           const file = Bun.file(args.path)
           const source = await file.text()
@@ -383,14 +382,14 @@ export function createInstrumentationPlugin(
  * // Usage: import config from 'gravito:config.ts';
  * ```
  */
-export function createVirtualNamespacePlugin(namespace: string, basePath: string): Plugin {
+export function createVirtualNamespacePlugin(namespace: string, basePath: string): any {
   const namespaceName = namespace.replace(/:/g, '')
   const filter = new RegExp(`^${namespace.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`)
 
   return {
     name: `virtual-namespace-${namespaceName}`,
-    setup(build) {
-      build.onResolve({ filter }, (args) => {
+    setup(build: any) {
+      build.onResolve({ filter }, (args: any) => {
         const specifier = args.path.replace(namespace, '')
         return {
           path: `${basePath}/${specifier}`,
@@ -424,7 +423,7 @@ export function createVirtualNamespacePlugin(namespace: string, basePath: string
  * const plugins = getCommonDataLoaders();
  * ```
  */
-export function getCommonDataLoaders(): Plugin[] {
+export function getCommonDataLoaders(): any[] {
   return [
     createYamlLoaderPlugin(),
     createJson5LoaderPlugin(),
@@ -451,7 +450,7 @@ export function getCommonDataLoaders(): Plugin[] {
  * const plugins = getDevelopmentPlugins();
  * ```
  */
-export function getDevelopmentPlugins(): Plugin[] {
+export function getDevelopmentPlugins(): any[] {
   const logImports = [
     "import { debug } from '@gravito/logging';",
     "const __module = '${filename}';",
@@ -481,6 +480,6 @@ export function getDevelopmentPlugins(): Plugin[] {
  * const plugins = getProductionPlugins();
  * ```
  */
-export function getProductionPlugins(): Plugin[] {
+export function getProductionPlugins(): any[] {
   return [...getCommonDataLoaders(), createEnvConfigLoaderPlugin()]
 }
