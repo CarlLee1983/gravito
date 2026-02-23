@@ -253,9 +253,8 @@ jobs:
           fi
 
       - name: Build DTS (Full)
-        if: matrix.shard == 1
         env:
-          NODE_OPTIONS: "--max-old-space-size=4096"
+          NODE_OPTIONS: "--max-old-space-size=6144"
         run: bunx turbo run build:dts --concurrency=2
 
       - name: Calculate Shard Filter
