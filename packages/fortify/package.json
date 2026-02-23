@@ -55,10 +55,10 @@
     }
   },
   "devDependencies": {
-    "@gravito/core": "^1.6.1",
-    "@gravito/photon": "^1.0.1",
-    "@gravito/sentinel": "^4.0.1",
-    "@gravito/signal": "^3.0.4",
+    "@gravito/core": "workspace:*",
+    "@gravito/photon": "workspace:*",
+    "@gravito/sentinel": "workspace:*",
+    "@gravito/signal": "workspace:*",
     "@types/qrcode": "^1.5.6",
     "bun-types": "latest",
     "tsup": "^8.5.1",

@@ -27,7 +27,7 @@
     "test:integration": "test $(find tests -name '*.integration.test.ts' 2>/dev/null | wc -l) -gt 0 && find tests -name '*.integration.test.ts' -print0 | xargs -0 bun test --timeout=10000 || echo 'No integration tests found'"
   },
   "dependencies": {
-    "@gravito/luminosity": "^2.0.0"
+    "@gravito/luminosity": "workspace:*"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",

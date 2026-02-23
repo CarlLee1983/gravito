@@ -34,13 +34,13 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.956.0",
     "@google-cloud/storage": "^7.18.0",
-    "@gravito/stream": "^2.0.2",
-    "@gravito/photon": "^1.0.1"
+    "@gravito/stream": "workspace:*",
+    "@gravito/photon": "workspace:*"
   },
   "devDependencies": {
     "bun-plugin-dts": "^0.3.0",
     "bun-types": "latest",
-    "@gravito/core": "^1.6.1",
+    "@gravito/core": "workspace:*",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },

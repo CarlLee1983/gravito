@@ -30,7 +30,7 @@
     "@gravito/core": "^1.6.1"
   },
   "devDependencies": {
-    "@gravito/core": "^1.6.1",
+    "@gravito/core": "workspace:*",
     "@cloudflare/workers-types": "^4.20250109.0",
     "tsup": "^8.3.5",
     "typescript": "^5.9.3"

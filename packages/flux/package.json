@@ -61,7 +61,7 @@
     }
   },
   "devDependencies": {
-    "@gravito/core": "^1.6.1",
+    "@gravito/core": "workspace:*",
     "@types/pg": "^8.16.0",
     "bun-types": "latest",
     "pg": "^8.18.0",

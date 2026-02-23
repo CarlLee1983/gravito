@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",
-    "@gravito/scaffold": "^4.0.0",
+    "@gravito/scaffold": "workspace:*",
     "cac": "^6.7.14",
     "giget": "^1.2.5",
     "node-fetch-native": "^1.6.7",

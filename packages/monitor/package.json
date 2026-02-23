@@ -43,7 +43,7 @@
     "@opentelemetry/exporter-trace-otlp-http": "^0.57.0",
     "@opentelemetry/resources": "^1.29.0",
     "@opentelemetry/semantic-conventions": "^1.28.0",
-    "@gravito/core": "^1.6.1",
+    "@gravito/core": "workspace:*",
     "tsup": "^8.2.4",
     "typescript": "^5.9.3"
   },
