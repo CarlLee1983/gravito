@@ -284,7 +284,14 @@ export {
   type RuntimeSpawnOptions,
   type RuntimeSqliteDatabase,
   type RuntimeSqliteStatement,
+  toUint8Array,
 } from './runtime'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Binary Utilities
+// ─────────────────────────────────────────────────────────────────────────────
+
+export { BinaryUtils } from './binary'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Standalone Engine (High-Performance Bun-Only Engine)
