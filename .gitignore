@@ -67,6 +67,7 @@ packages/*/tests/.tmp-*
 test-dist-incremental/
 
 # Claude CLI
+.claude/
 .claude/examples/benchmarks/results/*.json
 
 # Benchmark results (auto-generated)
