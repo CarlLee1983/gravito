@@ -1,6 +1,16 @@
 import { createHash, randomUUID } from 'node:crypto'
-import { mkdir, open, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { open, rmdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
+import {
+  getRuntimeAdapter,
+  type RuntimeAdapter,
+  runtimeMkdir,
+  runtimeReadDir,
+  runtimeReadText,
+  runtimeRemoveRecursive,
+  runtimeRename,
+  runtimeStatFull,
+} from '@gravito/core'
 import { type CacheLock, LockTimeoutError, sleep } from '../locks'
 import type { CacheStore } from '../store'
 import {
@@ -112,6 +122,7 @@ export type FileStoreOptions = {
  */
 export class FileStore implements CacheStore {
   private cleanupTimer: ReturnType<typeof setInterval> | null = null
+  private runtime: RuntimeAdapter = getRuntimeAdapter()
 
   /**
    * Initializes a new instance of the FileStore.
@@ -161,31 +172,32 @@ export class FileStore implements CacheStore {
     let cleaned = 0
     const validFiles: Array<{ path: string; mtime: number }> = []
 
-    // Helper to recursively scan directories
+    // 遞迴掃描目錄，收集過期檔案並進行 LRU 統計
     const scanDir = async (dir: string) => {
-      const entries = await readdir(dir, { withFileTypes: true })
+      const entries = await runtimeReadDir(this.runtime, dir)
       for (const entry of entries) {
         const fullPath = join(dir, entry.name)
-        if (entry.isDirectory()) {
+        if (entry.isDirectory) {
           await scanDir(fullPath)
-          // Try to remove empty directories after scanning
+          // 掃描後嘗試移除空目錄（僅限空目錄，非遞迴）
+          // rmdir 在目錄非空時會拋出錯誤，自然忽略
           try {
-            await rm(fullPath, { recursive: false })
-          } catch {} // Ignore if not empty
-        } else if (entry.isFile()) {
+            await rmdir(fullPath)
+          } catch {} // 非空目錄會忽略
+        } else if (entry.isFile) {
           if (!entry.name.endsWith('.json') || entry.name.startsWith('.lock-')) {
             continue
           }
 
           try {
-            const raw = await readFile(fullPath, 'utf8')
+            const raw = await runtimeReadText(this.runtime, fullPath)
             const data = JSON.parse(raw) as FileEntry
 
             if (isExpired(data.expiresAt)) {
-              await rm(fullPath, { force: true })
+              await runtimeRemoveRecursive(this.runtime, fullPath)
               cleaned++
             } else if (this.options.maxFiles) {
-              const stats = await stat(fullPath)
+              const stats = await runtimeStatFull(this.runtime, fullPath)
               validFiles.push({ path: fullPath, mtime: stats.mtimeMs })
             }
           } catch {}
@@ -196,14 +208,14 @@ export class FileStore implements CacheStore {
     await scanDir(this.options.directory)
 
     if (this.options.maxFiles && validFiles.length > this.options.maxFiles) {
-      // Sort by oldest first
+      // 依最舊優先排序，超出上限的檔案進行 LRU 驅逐
       validFiles.sort((a, b) => a.mtime - b.mtime)
       const toRemove = validFiles.slice(0, validFiles.length - this.options.maxFiles)
 
       await Promise.all(
         toRemove.map(async (f) => {
           try {
-            await rm(f.path, { force: true })
+            await runtimeRemoveRecursive(this.runtime, f.path)
             cleaned++
           } catch {}
         })
@@ -238,7 +250,7 @@ export class FileStore implements CacheStore {
    * @internal
    */
   private async ensureDir(): Promise<void> {
-    await mkdir(this.options.directory, { recursive: true })
+    await runtimeMkdir(this.runtime, this.options.directory, { recursive: true })
   }
 
   /**
@@ -251,7 +263,7 @@ export class FileStore implements CacheStore {
   private filePathForKey(key: string): string {
     const hashed = hashKey(key)
     if (this.options.useSubdirectories) {
-      // 2-level nesting: ab/cd/hashedKey.json
+      // 2 層巢狀結構：ab/cd/hashedKey.json
       const d1 = hashed.substring(0, 2)
       const d2 = hashed.substring(2, 4)
       return join(this.options.directory, d1, d2, `${hashed}.json`)
@@ -275,15 +287,12 @@ export class FileStore implements CacheStore {
    */
   async get<T = unknown>(key: CacheKey): Promise<CacheValue<T>> {
     const normalized = normalizeCacheKey(key)
-    // For reads, we don't ensure dir existence recursively if it doesn't exist.
-    // However, if we use hashed dirs, we might need to know if the file path is valid.
-    // The previous implementation called ensureDir() on get, which ensures root exists.
-    // We can keep that.
+    // 讀取前先確保根目錄存在
     await this.ensureDir()
     const file = this.filePathForKey(normalized)
 
     try {
-      const raw = await readFile(file, 'utf8')
+      const raw = await runtimeReadText(this.runtime, file)
       const data = JSON.parse(raw) as FileEntry
       if (isExpired(data.expiresAt)) {
         await this.forget(normalized)
@@ -323,17 +332,18 @@ export class FileStore implements CacheStore {
     const file = this.filePathForKey(normalized)
 
     if (this.options.useSubdirectories) {
-      await mkdir(dirname(file), { recursive: true })
+      await runtimeMkdir(this.runtime, dirname(file), { recursive: true })
     }
 
     const tempFile = `${file}.tmp.${Date.now()}.${randomUUID()}`
     const payload: FileEntry = { expiresAt: expiresAt ?? null, value }
 
     try {
-      await writeFile(tempFile, JSON.stringify(payload), 'utf8')
-      await rename(tempFile, file)
+      // 原子寫入：先寫入暫存檔，再重新命名至目標路徑
+      await this.runtime.writeFile(tempFile, JSON.stringify(payload))
+      await runtimeRename(this.runtime, tempFile, file)
     } catch (error) {
-      await rm(tempFile, { force: true }).catch(() => {})
+      await runtimeRemoveRecursive(this.runtime, tempFile).catch(() => {})
       throw error
     }
   }
@@ -377,7 +387,7 @@ export class FileStore implements CacheStore {
     await this.ensureDir()
     const file = this.filePathForKey(normalized)
     try {
-      await rm(file, { force: true })
+      await runtimeRemoveRecursive(this.runtime, file)
       return true
     } catch {
       return false
@@ -399,9 +409,8 @@ export class FileStore implements CacheStore {
    */
   async flush(): Promise<void> {
     await this.ensureDir()
-    // For flush, we just remove everything in the directory and recreate it
-    // This handles both flat and recursive structures
-    await rm(this.options.directory, { recursive: true, force: true })
+    // 移除整個快取目錄並重新建立
+    await runtimeRemoveRecursive(this.runtime, this.options.directory)
     await this.ensureDir()
   }
 
@@ -463,7 +472,7 @@ export class FileStore implements CacheStore {
     const file = this.filePathForKey(normalized)
 
     try {
-      const raw = await readFile(file, 'utf8')
+      const raw = await runtimeReadText(this.runtime, file)
       const data = JSON.parse(raw) as FileEntry
 
       if (data.expiresAt === null) {
@@ -504,6 +513,8 @@ export class FileStore implements CacheStore {
     const lockFile = join(this.options.directory, `.lock-${hashKey(normalizedName)}`)
     const ttlMillis = Math.max(1, seconds) * 1000
     const owner = randomUUID()
+    // 保留 RuntimeAdapter 參照以供 lock 內部使用
+    const runtime = this.runtime
 
     const isProcessAlive = (pid: number): boolean => {
       try {
@@ -517,6 +528,8 @@ export class FileStore implements CacheStore {
     const tryAcquire = async (): Promise<boolean> => {
       await this.ensureDir()
       try {
+        // 使用 node:fs/promises open(flag='wx') 實現原子性建鎖（POSIX 語義）
+        // RuntimeAdapter 尚未提供 exclusive create 語義，因此保留此用法
         const handle = await open(lockFile, 'wx')
         const lockData: LockFileEntry = {
           owner,
@@ -528,14 +541,14 @@ export class FileStore implements CacheStore {
         return true
       } catch {
         try {
-          const raw = await readFile(lockFile, 'utf8')
+          const raw = await runtimeReadText(runtime, lockFile)
           const data = JSON.parse(raw) as LockFileEntry
 
-          const isExpired = !data.expiresAt || Date.now() > data.expiresAt
+          const isExpiredLock = !data.expiresAt || Date.now() > data.expiresAt
           const isProcessDead = data.pid && !isProcessAlive(data.pid)
 
-          if (isExpired || isProcessDead) {
-            await rm(lockFile, { force: true })
+          if (isExpiredLock || isProcessDead) {
+            await runtimeRemoveRecursive(runtime, lockFile)
           }
         } catch {}
         return false
@@ -557,10 +570,10 @@ export class FileStore implements CacheStore {
        */
       async release(): Promise<void> {
         try {
-          const raw = await readFile(lockFile, 'utf8')
+          const raw = await runtimeReadText(runtime, lockFile)
           const data = JSON.parse(raw) as LockFileEntry
           if (data.owner === owner) {
-            await rm(lockFile, { force: true })
+            await runtimeRemoveRecursive(runtime, lockFile)
           }
         } catch {}
       },

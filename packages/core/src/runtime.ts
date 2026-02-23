@@ -35,6 +35,20 @@ export interface RuntimeProcess {
  */
 export interface RuntimeFileStat {
   size: number
+  mtimeMs?: number
+}
+
+/**
+ * Incremental file writing interface (FileSink abstraction)
+ * @public
+ */
+export interface RuntimeFileSink {
+  /** Write data to the file sink */
+  write(data: string | Uint8Array | ArrayBuffer): void
+  /** Flush buffered data to disk */
+  flush(): Promise<void>
+  /** Close the sink and flush remaining data */
+  end(): Promise<void>
 }
 
 /**
@@ -69,6 +83,29 @@ export interface RuntimeAdapter {
   stat(path: string): Promise<RuntimeFileStat>
   deleteFile(path: string): Promise<void>
   serve(config: RuntimeServeConfig): RuntimeServer
+
+  /** Append data to a file (optional) */
+  appendFile?(path: string, data: string | Uint8Array): Promise<void>
+  /** Read file as UTF-8 text (optional) */
+  readFileAsText?(path: string): Promise<string>
+  /** Read and parse JSON file (optional) */
+  readFileAsJSON?<T = unknown>(path: string): Promise<T>
+  /** Create directory (optional) */
+  mkdir?(path: string, options?: { recursive?: boolean }): Promise<void>
+  /** Read directory contents (optional) */
+  readDir?(path: string): Promise<Array<{ name: string; isFile: boolean; isDirectory: boolean }>>
+  /** Get full file statistics including modification time (optional) */
+  statFull?(
+    path: string
+  ): Promise<{ size: number; mtimeMs: number; isFile: boolean; isDirectory: boolean }>
+  /** Rename/move a file (optional) */
+  rename?(oldPath: string, newPath: string): Promise<void>
+  /** Create an incremental file writer (FileSink) (optional) */
+  createFileSink?(path: string): RuntimeFileSink
+  /** Recursively remove a directory (optional) */
+  removeRecursive?(path: string): Promise<void>
+  /** Create/write a file exclusively (atomic) (optional) */
+  writeFileExclusive?(path: string, data: string | Uint8Array): Promise<void>
 }
 
 /**
@@ -208,7 +245,7 @@ const createBunAdapter = (): RuntimeAdapter => ({
   },
   async stat(path) {
     const stats = await Bun.file(path).stat()
-    return { size: stats.size }
+    return { size: stats.size, mtimeMs: (stats as any).mtimeMs ?? stats.mtime?.getTime() }
   },
   async deleteFile(path) {
     const fs = await import('node:fs/promises')
@@ -217,6 +254,85 @@ const createBunAdapter = (): RuntimeAdapter => ({
     } catch {
       // Ignore if not found
     }
+  },
+  async appendFile(path, data) {
+    const file = Bun.file(path)
+    const writer = file.writer()
+    const buffer = typeof data === 'string' ? new TextEncoder().encode(data) : data
+    writer.write(buffer)
+    await writer.end()
+  },
+  async readFileAsText(path) {
+    return await Bun.file(path).text()
+  },
+  async readFileAsJSON<T = unknown>(path: string): Promise<T> {
+    return (await Bun.file(path).json()) as T
+  },
+  async mkdir(path, options = {}) {
+    const fs = await import('node:fs/promises')
+    await fs.mkdir(path, { recursive: options.recursive ?? true })
+  },
+  async readDir(path) {
+    const fs = await import('node:fs/promises')
+    const entries = await fs.readdir(path, { withFileTypes: true })
+    return entries.map((e) => ({
+      name: e.name,
+      isFile: e.isFile(),
+      isDirectory: e.isDirectory(),
+    }))
+  },
+  async statFull(path) {
+    const file = Bun.file(path)
+    const stats = await file.stat()
+    const statsAny = stats as any
+    return {
+      size: stats.size,
+      mtimeMs: statsAny.mtimeMs ?? stats.mtime?.getTime() ?? 0,
+      isFile:
+        typeof statsAny.isFile === 'function' ? statsAny.isFile() : (statsAny.isFile ?? false),
+      isDirectory:
+        typeof statsAny.isDirectory === 'function'
+          ? statsAny.isDirectory()
+          : (statsAny.isDirectory ?? false),
+    }
+  },
+  async rename(oldPath, newPath) {
+    const fs = await import('node:fs/promises')
+    await fs.rename(oldPath, newPath)
+  },
+  createFileSink(path) {
+    const file = Bun.file(path)
+    const writer = file.writer()
+    return {
+      write(data) {
+        const buffer =
+          typeof data === 'string'
+            ? new TextEncoder().encode(data)
+            : data instanceof ArrayBuffer
+              ? new Uint8Array(data)
+              : data
+        writer.write(buffer)
+      },
+      async flush() {
+        await writer.flush()
+      },
+      async end() {
+        await writer.end()
+      },
+    }
+  },
+  async removeRecursive(path) {
+    const fs = await import('node:fs/promises')
+    try {
+      await fs.rm(path, { recursive: true, force: true })
+    } catch {
+      // Ignore if not found
+    }
+  },
+  async writeFileExclusive(path, data) {
+    const fs = await import('node:fs/promises')
+    const payload = typeof data === 'string' ? data : new TextDecoder().decode(data)
+    await fs.writeFile(path, payload, { flag: 'wx' })
   },
   serve(config) {
     return Bun.serve({
@@ -312,7 +428,7 @@ const createNodeAdapter = (): RuntimeAdapter => ({
   async stat(path) {
     const fs = await import('node:fs/promises')
     const stats = await fs.stat(path)
-    return { size: stats.size }
+    return { size: stats.size, mtimeMs: stats.mtimeMs }
   },
   async deleteFile(path) {
     const fs = await import('node:fs/promises')
@@ -321,6 +437,96 @@ const createNodeAdapter = (): RuntimeAdapter => ({
     } catch {
       // Ignore if not found
     }
+  },
+  async appendFile(path, data) {
+    const fs = await import('node:fs/promises')
+    const buffer = typeof data === 'string' ? data : new TextDecoder().decode(data)
+    await fs.appendFile(path, buffer, 'utf8')
+  },
+  async readFileAsText(path) {
+    const fs = await import('node:fs/promises')
+    return await fs.readFile(path, 'utf8')
+  },
+  async readFileAsJSON<T = unknown>(path: string): Promise<T> {
+    const fs = await import('node:fs/promises')
+    const text = await fs.readFile(path, 'utf8')
+    return JSON.parse(text || '{}') as T
+  },
+  async mkdir(path, options = {}) {
+    const fs = await import('node:fs/promises')
+    await fs.mkdir(path, { recursive: options.recursive ?? true })
+  },
+  async readDir(path) {
+    const fs = await import('node:fs/promises')
+    const entries = await fs.readdir(path, { withFileTypes: true })
+    return entries.map((e) => ({
+      name: e.name,
+      isFile: e.isFile(),
+      isDirectory: e.isDirectory(),
+    }))
+  },
+  async statFull(path) {
+    const fs = await import('node:fs/promises')
+    const stats = await fs.stat(path)
+    return {
+      size: stats.size,
+      mtimeMs: stats.mtimeMs,
+      isFile: stats.isFile(),
+      isDirectory: stats.isDirectory(),
+    }
+  },
+  async rename(oldPath, newPath) {
+    const fs = await import('node:fs/promises')
+    await fs.rename(oldPath, newPath)
+  },
+  createFileSink(path) {
+    let writer: NodeJS.WritableStream | null = null
+    const fsPromise = import('node:fs/promises').then(() => {
+      const nodeFs = require('node:fs') as typeof import('node:fs')
+      writer = nodeFs.createWriteStream(path)
+      return writer
+    })
+
+    return {
+      write(data) {
+        if (!writer) return
+        const buffer =
+          typeof data === 'string'
+            ? new TextEncoder().encode(data)
+            : data instanceof ArrayBuffer
+              ? new Uint8Array(data)
+              : data
+        writer.write(buffer)
+      },
+      async flush() {
+        if (!writer) await fsPromise
+        // Node.js streams don't have explicit flush, but the buffer is managed internally
+      },
+      async end() {
+        if (!writer) await fsPromise
+        return new Promise<void>((resolve, reject) => {
+          if (!writer) {
+            resolve()
+            return
+          }
+          writer.end(() => resolve())
+          writer.on('error', reject)
+        })
+      },
+    }
+  },
+  async removeRecursive(path) {
+    const fs = await import('node:fs/promises')
+    try {
+      await fs.rm(path, { recursive: true, force: true })
+    } catch {
+      // Ignore if not found
+    }
+  },
+  async writeFileExclusive(path, data) {
+    const fs = await import('node:fs/promises')
+    const payload = typeof data === 'string' ? data : new TextDecoder().decode(data)
+    await fs.writeFile(path, payload, { flag: 'wx' })
   },
   serve(_config) {
     throw new Error('[RuntimeAdapter] Bun runtime is required for Bun.serve()')
@@ -404,7 +610,7 @@ const createDenoAdapter = (): RuntimeAdapter => ({
       throw new Error('[RuntimeAdapter] Deno runtime is required for stat()')
     }
     const stats = await deno.stat(path)
-    return { size: stats.size }
+    return { size: stats.size, mtimeMs: stats.mtime?.getTime() }
   },
   async deleteFile(path) {
     const deno = (globalThis as any).Deno
@@ -416,6 +622,127 @@ const createDenoAdapter = (): RuntimeAdapter => ({
     } catch {
       // Ignore if not found
     }
+  },
+  async appendFile(path, data) {
+    const deno = (globalThis as any).Deno
+    if (!deno?.open) {
+      throw new Error('[RuntimeAdapter] Deno runtime is required for appendFile()')
+    }
+    const buffer = typeof data === 'string' ? new TextEncoder().encode(data) : data
+    const file = await deno.open(path, { write: true, create: true, append: true })
+    await file.writeSync(buffer)
+    file.close()
+  },
+  async readFileAsText(path) {
+    const deno = (globalThis as any).Deno
+    if (!deno?.readTextFile) {
+      throw new Error('[RuntimeAdapter] Deno runtime is required for readFileAsText()')
+    }
+    return await deno.readTextFile(path)
+  },
+  async readFileAsJSON<T = unknown>(path: string): Promise<T> {
+    const deno = (globalThis as any).Deno
+    if (!deno?.readTextFile) {
+      throw new Error('[RuntimeAdapter] Deno runtime is required for readFileAsJSON()')
+    }
+    const text = await deno.readTextFile(path)
+    return JSON.parse(text || '{}') as T
+  },
+  async mkdir(path, options = {}) {
+    const deno = (globalThis as any).Deno
+    if (!deno?.mkdir) {
+      throw new Error('[RuntimeAdapter] Deno runtime is required for mkdir()')
+    }
+    await deno.mkdir(path, { recursive: options.recursive ?? true })
+  },
+  async readDir(path) {
+    const deno = (globalThis as any).Deno
+    if (!deno?.readDir) {
+      throw new Error('[RuntimeAdapter] Deno runtime is required for readDir()')
+    }
+    const entries: Array<{ name: string; isFile: boolean; isDirectory: boolean }> = []
+    for await (const entry of await deno.readDir(path)) {
+      entries.push({
+        name: entry.name,
+        isFile: entry.isFile,
+        isDirectory: entry.isDirectory,
+      })
+    }
+    return entries
+  },
+  async statFull(path) {
+    const deno = (globalThis as any).Deno
+    if (!deno?.stat) {
+      throw new Error('[RuntimeAdapter] Deno runtime is required for statFull()')
+    }
+    const stats = await deno.stat(path)
+    return {
+      size: stats.size,
+      mtimeMs: stats.mtime?.getTime() ?? 0,
+      isFile: stats.isFile,
+      isDirectory: stats.isDirectory,
+    }
+  },
+  async rename(oldPath, newPath) {
+    const deno = (globalThis as any).Deno
+    if (!deno?.rename) {
+      throw new Error('[RuntimeAdapter] Deno runtime is required for rename()')
+    }
+    await deno.rename(oldPath, newPath)
+  },
+  createFileSink(path) {
+    const deno = (globalThis as any).Deno
+    let file: any = null
+
+    return {
+      async write(data) {
+        if (!file) {
+          if (!deno?.open) {
+            throw new Error('[RuntimeAdapter] Deno runtime is required for createFileSink()')
+          }
+          file = await deno.open(path, { write: true, create: true })
+        }
+        const buffer =
+          typeof data === 'string'
+            ? new TextEncoder().encode(data)
+            : data instanceof ArrayBuffer
+              ? new Uint8Array(data)
+              : data
+        await file.write(buffer)
+      },
+      async flush() {
+        if (file?.syncSync) {
+          file.syncSync()
+        }
+      },
+      async end() {
+        if (file) {
+          file.close()
+          file = null
+        }
+      },
+    }
+  },
+  async removeRecursive(path) {
+    const deno = (globalThis as any).Deno
+    if (!deno?.remove) {
+      throw new Error('[RuntimeAdapter] Deno runtime is required for removeRecursive()')
+    }
+    try {
+      await deno.remove(path, { recursive: true })
+    } catch {
+      // Ignore if not found
+    }
+  },
+  async writeFileExclusive(path, data) {
+    const deno = (globalThis as any).Deno
+    if (!deno?.open) {
+      throw new Error('[RuntimeAdapter] Deno runtime is required for writeFileExclusive()')
+    }
+    const buffer = typeof data === 'string' ? new TextEncoder().encode(data) : data
+    const file = await deno.open(path, { write: true, create: true, createNew: true })
+    await file.write(buffer)
+    file.close()
   },
   serve(_config) {
     throw new Error('[RuntimeAdapter] Bun runtime is required for Bun.serve()')
@@ -444,6 +771,36 @@ const createUnknownAdapter = (): RuntimeAdapter => ({
   },
   async deleteFile() {
     throw new Error('[RuntimeAdapter] Unsupported runtime for deleteFile()')
+  },
+  async appendFile() {
+    throw new Error('[RuntimeAdapter] Unsupported runtime for appendFile()')
+  },
+  async readFileAsText() {
+    throw new Error('[RuntimeAdapter] Unsupported runtime for readFileAsText()')
+  },
+  async readFileAsJSON() {
+    throw new Error('[RuntimeAdapter] Unsupported runtime for readFileAsJSON()')
+  },
+  async mkdir() {
+    throw new Error('[RuntimeAdapter] Unsupported runtime for mkdir()')
+  },
+  async readDir() {
+    throw new Error('[RuntimeAdapter] Unsupported runtime for readDir()')
+  },
+  async statFull() {
+    throw new Error('[RuntimeAdapter] Unsupported runtime for statFull()')
+  },
+  async rename() {
+    throw new Error('[RuntimeAdapter] Unsupported runtime for rename()')
+  },
+  createFileSink() {
+    throw new Error('[RuntimeAdapter] Unsupported runtime for createFileSink()')
+  },
+  async removeRecursive() {
+    throw new Error('[RuntimeAdapter] Unsupported runtime for removeRecursive()')
+  },
+  async writeFileExclusive() {
+    throw new Error('[RuntimeAdapter] Unsupported runtime for writeFileExclusive()')
   },
   serve() {
     throw new Error('[RuntimeAdapter] Unsupported runtime for serve()')

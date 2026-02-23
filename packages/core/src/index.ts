@@ -275,6 +275,7 @@ export {
   getRuntimeAdapter,
   getRuntimeEnv,
   type RuntimeAdapter,
+  type RuntimeFileSink,
   type RuntimeFileStat,
   type RuntimeKind,
   type RuntimePasswordAdapter,
@@ -285,6 +286,19 @@ export {
   type RuntimeSqliteDatabase,
   type RuntimeSqliteStatement,
 } from './runtime'
+export {
+  getDefaultRuntimeAdapter,
+  runtimeAppendFile,
+  runtimeCreateFileSink,
+  runtimeMkdir,
+  runtimeReadDir,
+  runtimeReadJSON,
+  runtimeReadText,
+  runtimeRemoveRecursive,
+  runtimeRename,
+  runtimeStatFull,
+  runtimeWriteFileExclusive,
+} from './runtime-helpers'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Standalone Engine (High-Performance Bun-Only Engine)
