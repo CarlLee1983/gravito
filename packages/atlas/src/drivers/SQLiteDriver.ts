@@ -117,16 +117,8 @@ export class SQLiteDriver implements DriverContract {
     return true
   }
 
-  async query<T = Record<string, unknown>>(
-    sql: string,
-
-    bindings: unknown[] = []
-  ): Promise<QueryResult<T>> {
-    if (!this.client) {
-      await this.connect()
-    }
-
-    const params = bindings.map((b) => {
+  private normalizeBindings(bindings: unknown[]): unknown[] {
+    return bindings.map((b) => {
       if (b === undefined) {
         return null
       }
@@ -145,6 +137,18 @@ export class SQLiteDriver implements DriverContract {
 
       return b
     })
+  }
+
+  async query<T = Record<string, unknown>>(
+    sql: string,
+
+    bindings: unknown[] = []
+  ): Promise<QueryResult<T>> {
+    if (!this.client) {
+      await this.connect()
+    }
+
+    const params = this.normalizeBindings(bindings)
 
     try {
       if (!this.client) {
@@ -179,21 +183,7 @@ export class SQLiteDriver implements DriverContract {
       await this.connect()
     }
 
-    const params = bindings.map((b) => {
-      if (b instanceof Date) {
-        return b.toISOString()
-      }
-
-      if (typeof b === 'boolean') {
-        return b ? 1 : 0
-      }
-
-      if (typeof b === 'object' && b !== null && !Array.isArray(b) && !ArrayBuffer.isView(b)) {
-        return JSON.stringify(b)
-      }
-
-      return b
-    })
+    const params = this.normalizeBindings(bindings)
 
     try {
       const stmt = this.client?.prepare(sql)
