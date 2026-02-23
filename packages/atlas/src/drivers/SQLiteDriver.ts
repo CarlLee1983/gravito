@@ -243,16 +243,11 @@ export class SQLiteDriver implements DriverContract {
     })
   }
 
-  async query<T = Record<string, unknown>>(
-    sql: string,
-
-    bindings: unknown[] = []
-  ): Promise<QueryResult<T>> {
-    if (!this.client) {
-      await this.connect()
-    }
-
-    // Initialize prepared statement cache on first use
+  /**
+   * Ensure prepared statement cache is initialized
+   * @private
+   */
+  private ensurePreparedStatementCache(): void {
     if (!this.preparedStatementCache && this.client) {
       const cacheConfig = (this.config as any).preparedStatementCache ?? {}
       this.preparedStatementCache = new SQLitePreparedStatementCache(
@@ -264,6 +259,19 @@ export class SQLiteDriver implements DriverContract {
         this.preparedStatementCache?.cleanup()
       }, 30000)
     }
+  }
+
+  async query<T = Record<string, unknown>>(
+    sql: string,
+
+    bindings: unknown[] = []
+  ): Promise<QueryResult<T>> {
+    if (!this.client) {
+      await this.connect()
+    }
+
+    // Initialize prepared statement cache on first use
+    this.ensurePreparedStatementCache()
 
     const params = this.normalizeBindings(bindings)
 
@@ -306,17 +314,7 @@ export class SQLiteDriver implements DriverContract {
     }
 
     // Initialize prepared statement cache on first use
-    if (!this.preparedStatementCache && this.client) {
-      const cacheConfig = (this.config as any).preparedStatementCache ?? {}
-      this.preparedStatementCache = new SQLitePreparedStatementCache(
-        cacheConfig.maxStatements ?? 100,
-        cacheConfig.idleTimeout ?? 60000
-      )
-      // Start periodic cleanup every 30 seconds
-      this.cleanupTimer = setInterval(() => {
-        this.preparedStatementCache?.cleanup()
-      }, 30000)
-    }
+    this.ensurePreparedStatementCache()
 
     const params = this.normalizeBindings(bindings)
 
@@ -551,6 +549,183 @@ export class SQLiteDriver implements DriverContract {
 
     // Execute as parameterized statement
     return this.execute(sql, values)
+  }
+
+  /**
+   * Batch insert with multi-value INSERT and automatic chunking
+   *
+   * @param table Table name
+   * @param rows Array of rows to insert
+   * @param options Batch options (chunkSize override, etc.)
+   * @returns BatchInsertResult with per-chunk statistics
+   *
+   * @example
+   * ```typescript
+   * const result = await driver.batchInsert(
+   *   'users',
+   *   [
+   *     { name: 'Alice', email: 'alice@example.com' },
+   *     { name: 'Bob', email: 'bob@example.com' }
+   *   ]
+   * )
+   * console.log(`Inserted ${result.totalAffectedRows} rows in ${result.chunkCount} chunks`)
+   * ```
+   */
+  async batchInsert<T extends Record<string, unknown>>(
+    table: string,
+    rows: T[],
+    options?: { chunkSize?: number }
+  ): Promise<any> {
+    if (rows.length === 0) {
+      return {
+        totalAffectedRows: 0,
+        firstInsertId: undefined,
+        lastInsertId: undefined,
+        chunkCount: 0,
+        chunks: [],
+      }
+    }
+
+    if (!this.client) {
+      await this.connect()
+    }
+
+    // Ensure cache is ready
+    this.ensurePreparedStatementCache()
+
+    const columns = Object.keys(rows[0])
+    // Conservative chunk size: SQLite supports up to 999 parameters per statement
+    // With multi-value INSERT (?,?),(?,?), we need colCount * rowCount <= 999
+    const maxColumnsPerChunk = Math.floor(999 / columns.length)
+    const chunkSize = Math.min(options?.chunkSize ?? maxColumnsPerChunk, maxColumnsPerChunk)
+
+    const result: any = {
+      totalAffectedRows: 0,
+      firstInsertId: undefined,
+      lastInsertId: undefined,
+      chunkCount: 0,
+      chunks: [],
+    }
+
+    // Open transaction if not already in one
+    const wasInTransaction = this.inTransaction()
+    if (!wasInTransaction) {
+      await this.beginTransaction()
+    }
+
+    try {
+      for (let i = 0; i < rows.length; i += chunkSize) {
+        const chunk = rows.slice(i, i + chunkSize)
+
+        // Build multi-value INSERT: INSERT INTO table (col1,col2) VALUES (?,?),(?,?)
+        const quotedColumns = columns.map((c) => `"${c}"`).join(',')
+        const placeholders = chunk.map(() => `(${columns.map(() => '?').join(',')})`).join(',')
+        const sql = `INSERT INTO "${table}" (${quotedColumns}) VALUES ${placeholders}`
+
+        // Flatten bindings: [row1.col1, row1.col2, row2.col1, row2.col2, ...]
+        const flatBindings = chunk.flatMap((row) => columns.map((col) => row[col]))
+
+        try {
+          const chunkResult = await this.execute(sql, flatBindings)
+          result.totalAffectedRows += chunkResult.affectedRows
+
+          if (result.chunkCount === 0) {
+            // First chunk - capture first insert ID
+            result.firstInsertId = chunkResult.insertId
+          }
+          // Always update lastInsertId to track progression
+          result.lastInsertId = chunkResult.insertId
+
+          result.chunks.push({
+            affectedRows: chunkResult.affectedRows,
+            insertId: chunkResult.insertId,
+          })
+          result.chunkCount++
+        } catch (error) {
+          if (!wasInTransaction) {
+            await this.rollback()
+          }
+          throw error
+        }
+      }
+
+      if (!wasInTransaction) {
+        await this.commit()
+      }
+      return result
+    } catch (error) {
+      if (!wasInTransaction) {
+        await this.rollback()
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Batch execute multiple statements transactionally
+   *
+   * @param statements Array of {sql, bindings} to execute
+   * @returns BatchExecuteResult with total affected rows and per-statement results
+   *
+   * @example
+   * ```typescript
+   * const result = await driver.batchExecute([
+   *   { sql: 'UPDATE users SET status = ? WHERE id = ?', bindings: ['active', 1] },
+   *   { sql: 'DELETE FROM logs WHERE user_id = ?', bindings: [1] }
+   * ])
+   * console.log(`Total affected: ${result.totalAffectedRows}`)
+   * ```
+   */
+  async batchExecute(statements: Array<{ sql: string; bindings?: unknown[] }>): Promise<any> {
+    if (statements.length === 0) {
+      return {
+        totalAffectedRows: 0,
+        results: [],
+      }
+    }
+
+    if (!this.client) {
+      await this.connect()
+    }
+
+    // Ensure cache is ready
+    this.ensurePreparedStatementCache()
+
+    const result: any = {
+      totalAffectedRows: 0,
+      results: [],
+    }
+
+    // Open transaction if not already in one
+    const wasInTransaction = this.inTransaction()
+    if (!wasInTransaction) {
+      await this.beginTransaction()
+    }
+
+    try {
+      for (const statement of statements) {
+        try {
+          const execResult = await this.execute(statement.sql, statement.bindings ?? [])
+          result.totalAffectedRows += execResult.affectedRows
+          result.results.push(execResult)
+        } catch (error) {
+          if (!wasInTransaction) {
+            await this.rollback()
+          }
+          throw error
+        }
+      }
+
+      if (!wasInTransaction) {
+        await this.commit()
+      }
+      return result
+    } catch (error) {
+      if (!wasInTransaction) {
+        await this.rollback()
+      }
+      throw error
+    }
   }
 
   /**
