@@ -395,6 +395,63 @@ export class SQLiteDriver implements DriverContract {
   }
 
   /**
+   * Tagged template literal for safe parameterized SELECT queries
+   *
+   * @example
+   * ```typescript
+   * const user = await driver.sql`SELECT * FROM users WHERE id = ${userId}`
+   * const users = await driver.sql`SELECT * FROM users WHERE name LIKE ${pattern}`
+   * ```
+   *
+   * This is the recommended way to execute queries in SQLiteDriver as it:
+   * - Prevents SQL injection by automatically parameterizing values
+   * - Improves performance through prepared statement caching
+   * - Provides type safety with proper TypeScript support
+   */
+  async sql<T = Record<string, unknown>>(
+    strings: TemplateStringsArray,
+    ...values: unknown[]
+  ): Promise<QueryResult<T>> {
+    // Build SQL string with placeholders
+    let sql = ''
+    for (let i = 0; i < strings.length; i++) {
+      sql += strings[i]
+      if (i < values.length) {
+        sql += '?'
+      }
+    }
+
+    // Execute as parameterized query
+    return this.query(sql, values)
+  }
+
+  /**
+   * Tagged template literal for safe parameterized INSERT/UPDATE/DELETE queries
+   *
+   * @example
+   * ```typescript
+   * const result = await driver.sqlExecute`INSERT INTO users (name, email) VALUES (${name}, ${email})`
+   * const affected = await driver.sqlExecute`UPDATE users SET name = ${name} WHERE id = ${id}`
+   * const deleted = await driver.sqlExecute`DELETE FROM users WHERE id = ${id}`
+   * ```
+   *
+   * Provides the same safety and performance benefits as sql() but for write operations.
+   */
+  async sqlExecute(strings: TemplateStringsArray, ...values: unknown[]): Promise<ExecuteResult> {
+    // Build SQL string with placeholders
+    let sql = ''
+    for (let i = 0; i < strings.length; i++) {
+      sql += strings[i]
+      if (i < values.length) {
+        sql += '?'
+      }
+    }
+
+    // Execute as parameterized statement
+    return this.execute(sql, values)
+  }
+
+  /**
 
 
 
