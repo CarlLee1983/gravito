@@ -211,6 +211,19 @@ export class BunContext<V extends GravitoVariables = GravitoVariables>
     return undefined
   }
 
+  /**
+   * Reset context state for reuse in pooling scenarios
+   * @internal
+   */
+  reset(request: Request): void {
+    this.req = new BunRequest(request)
+    this._status = 200
+    this._headers = new Headers()
+    this._variables.clear()
+    this.res = undefined
+    this._requestScope = new RequestScopeManager()
+  }
+
   status(code: StatusCode): void {
     this._status = code
   }
