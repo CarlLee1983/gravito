@@ -16,7 +16,7 @@ export class BunContext<V extends GravitoVariables = GravitoVariables>
   implements GravitoContext<V>
 {
   // Request wrapper
-  public readonly req: BunRequest
+  public req: BunRequest
 
   // Context variables
   private _variables: Map<string, unknown> = new Map()
