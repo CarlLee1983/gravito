@@ -431,6 +431,56 @@ bun run typecheck
 - **Security**: Report to security@gravito.dev
 - **Documentation**: Contribute to docs/
 
+## Migrating from db.raw() to db.sql
+
+The Atlas library has moved from `db.raw()` to `db.sql` for better SQL injection protection. If you're maintaining older code, migration is straightforward.
+
+### Quick Start
+
+```bash
+# Run the automated migration tool
+jscodeshift -t packages/atlas/scripts/codemods/raw-to-sql.codemod.ts \
+  --parser=typescript \
+  'src/**/*.ts'
+
+# Review the changes
+git diff
+
+# Run tests to verify
+bun test
+```
+
+### Common Migrations
+
+**Before (Unsafe)**:
+```typescript
+// ❌ SQL Injection risk
+const user = await db.raw(`SELECT * FROM users WHERE id = ${userId}`)
+```
+
+**After (Safe)**:
+```typescript
+// ✅ Parameter binding prevents injection
+const user = await db.sql`SELECT * FROM users WHERE id = ${userId}`
+```
+
+**For dynamic table names**:
+```typescript
+// ✅ Use identifier() for SQL structure
+import { identifier } from '@gravito/atlas'
+const data = await db.sql`SELECT * FROM ${identifier(tableName)}`
+```
+
+### Codemod Details
+
+The automated codemod handles:
+- ✅ String literals → template literals
+- ✅ Simple template conversions
+- ⚠️ Parameterized queries (marks for review)
+- ⚠️ String concatenation (marks for review)
+
+For detailed migration guide, see [docs/migration-guide.md](docs/migration-guide.md).
+
 ## Code Review Process
 
 All pull requests require:
