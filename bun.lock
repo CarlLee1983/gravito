@@ -1585,19 +1585,12 @@
     },
     "packages/plasma": {
       "name": "@gravito/plasma",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "devDependencies": {
-        "@types/ioredis": "^5.0.0",
         "bun-types": "latest",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
       },
-      "peerDependencies": {
-        "ioredis": "^5.0.0",
-      },
-      "optionalPeers": [
-        "ioredis",
-      ],
     },
     "packages/prism": {
       "name": "@gravito/prism",
@@ -1630,14 +1623,14 @@
       "devDependencies": {
         "@gravito/core": "^1.6.1",
         "@gravito/photon": "^1.0.1",
-        "@gravito/plasma": "^1.0.0",
+        "@gravito/plasma": "^2.0.0",
         "bun-types": "latest",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
         "@gravito/core": "^1.6.1",
-        "@gravito/plasma": "^1.0.0",
+        "@gravito/plasma": "^2.0.0",
       },
     },
     "packages/quasar": {
@@ -1832,14 +1825,14 @@
       "devDependencies": {
         "@gravito/core": "^1.6.1",
         "@gravito/photon": "^1.0.1",
-        "@gravito/plasma": "^1.0.0",
+        "@gravito/plasma": "^2.0.0",
         "bun-types": "latest",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
         "@gravito/core": "^1.6.1",
-        "@gravito/plasma": "^1.0.0",
+        "@gravito/plasma": "^2.0.0",
       },
     },
     "packages/stream": {
