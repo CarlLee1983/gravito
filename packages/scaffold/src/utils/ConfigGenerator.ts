@@ -308,4 +308,121 @@ export default {
 }
 `
   }
+
+  /**
+   * Generate workers configuration for job queue system
+   */
+  static generateWorkersConfig(level: 'basic' | 'advanced' | 'production' = 'basic'): string {
+    switch (level) {
+      case 'advanced':
+        return this.generateAdvancedWorkersConfig()
+      case 'production':
+        return this.generateProductionWorkersConfig()
+      case 'basic':
+      default:
+        return this.generateBasicWorkersConfig()
+    }
+  }
+
+  /**
+   * Generate basic workers configuration
+   */
+  private static generateBasicWorkersConfig(): string {
+    return `  /**
+   * Workers Configuration
+   *
+   * Manages job execution in isolated worker threads.
+   * Automatically selects best available runtime (Bun or Node.js).
+   */
+  workers: {
+    // Runtime environment: 'auto' | 'bun' | 'node'
+    runtime: process.env.WORKERS_RUNTIME as 'auto' | 'bun' | 'node' ?? 'auto',
+
+    pool: {
+      poolSize: Number.parseInt(process.env.WORKERS_POOL_SIZE ?? '4', 10),
+      minWorkers: Number.parseInt(process.env.WORKERS_MIN_WORKERS ?? '0', 10),
+      healthCheckInterval: 30000,
+    },
+
+    execution: {
+      maxExecutionTime: Number.parseInt(process.env.WORKERS_MAX_EXECUTION_TIME ?? '30000', 10),
+      maxMemory: Number.parseInt(process.env.WORKERS_MAX_MEMORY ?? '0', 10),
+      idleTimeout: Number.parseInt(process.env.WORKERS_IDLE_TIMEOUT ?? '60000', 10),
+      isolateContexts: process.env.WORKERS_ISOLATE_CONTEXTS === 'true',
+    },
+  },`
+  }
+
+  /**
+   * Generate advanced workers configuration with Bun optimizations
+   */
+  private static generateAdvancedWorkersConfig(): string {
+    return `  /**
+   * Workers Configuration (Advanced)
+   *
+   * Manages job execution in isolated worker threads.
+   * Includes Bun-specific optimizations for enhanced performance.
+   *
+   * Performance characteristics:
+   * - Bun: 2-241x faster message passing, 20-30% less memory (smol mode)
+   * - Node.js: Stable, widely tested, compatible
+   */
+  workers: {
+    runtime: process.env.WORKERS_RUNTIME as 'auto' | 'bun' | 'node' ?? 'auto',
+
+    pool: {
+      poolSize: Number.parseInt(process.env.WORKERS_POOL_SIZE ?? '4', 10),
+      minWorkers: Number.parseInt(process.env.WORKERS_MIN_WORKERS ?? '1', 10),
+      healthCheckInterval: 30000,
+    },
+
+    execution: {
+      maxExecutionTime: Number.parseInt(process.env.WORKERS_MAX_EXECUTION_TIME ?? '30000', 10),
+      maxMemory: Number.parseInt(process.env.WORKERS_MAX_MEMORY ?? '0', 10),
+      idleTimeout: Number.parseInt(process.env.WORKERS_IDLE_TIMEOUT ?? '60000', 10),
+      isolateContexts: process.env.WORKERS_ISOLATE_CONTEXTS === 'true',
+    },
+
+    // Bun-specific optimizations
+    bun: {
+      smol: process.env.WORKERS_BUN_SMOL === 'true',
+      preload: process.env.WORKERS_BUN_PRELOAD
+        ? process.env.WORKERS_BUN_PRELOAD.split(',').map((p) => p.trim())
+        : undefined,
+      inspectPort: process.env.WORKERS_BUN_INSPECT_PORT
+        ? Number.parseInt(process.env.WORKERS_BUN_INSPECT_PORT, 10)
+        : undefined,
+    },
+  },`
+  }
+
+  /**
+   * Generate production-optimized workers configuration
+   */
+  private static generateProductionWorkersConfig(): string {
+    return `  /**
+   * Workers Configuration (Production Optimized)
+   */
+  workers: {
+    runtime: 'auto' as const,
+
+    pool: {
+      poolSize: Number.parseInt(process.env.WORKERS_POOL_SIZE ?? '8', 10),
+      minWorkers: 2,
+      healthCheckInterval: 30000,
+    },
+
+    execution: {
+      maxExecutionTime: 30000,
+      maxMemory: Number.parseInt(process.env.WORKERS_MAX_MEMORY ?? '512', 10),
+      idleTimeout: 60000,
+      isolateContexts: false,
+    },
+
+    bun: {
+      smol: true,
+      preload: process.env.WORKERS_BUN_PRELOAD?.split(',').map((p) => p.trim()),
+    },
+  },`
+  }
 }

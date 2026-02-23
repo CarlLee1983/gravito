@@ -23,6 +23,8 @@ export interface ProfileConfig {
   }
   /** List of enabled features and orbits. */
   features: string[]
+  /** Workers configuration level for job queue system */
+  workers?: 'basic' | 'advanced' | 'production'
 }
 
 /**
@@ -46,6 +48,7 @@ export class ProfileResolver {
         session: 'file',
       },
       features: [],
+      workers: 'basic', // Basic workers configuration for core profile
     },
     scale: {
       drivers: {
@@ -56,6 +59,7 @@ export class ProfileResolver {
         session: 'redis',
       },
       features: ['stream', 'nebula'],
+      workers: 'advanced', // Advanced workers with Bun optimizations
     },
     enterprise: {
       drivers: {
@@ -66,6 +70,7 @@ export class ProfileResolver {
         session: 'redis',
       },
       features: ['stream', 'nebula', 'monitor', 'sentinel', 'fortify'],
+      workers: 'production', // Production-optimized workers
     },
   }
 
@@ -76,6 +81,7 @@ export class ProfileResolver {
     const config: ProfileConfig = {
       drivers: { ...base.drivers },
       features: [...base.features],
+      workers: base.workers,
     }
 
     // Apply feature add-ons
