@@ -56,7 +56,11 @@ export class JsonSerializer implements JobSerializer {
       throw new Error('Invalid serialization type: expected "json"')
     }
 
-    const properties = JSON.parse(serialized.data)
+    const dataStr =
+      typeof serialized.data === 'string'
+        ? serialized.data
+        : Buffer.from(serialized.data).toString('utf8')
+    const properties = JSON.parse(dataStr)
     // Only restores properties, not class instances.
     const job = Object.create({}) as Record<string, any>
     Object.assign(job, properties)

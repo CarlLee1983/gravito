@@ -81,7 +81,7 @@ function _registerJobClass(name: string, JobClass: any): void {
  */
 function deserializeJob(serialized: SerializedJob): any {
   if (serialized.type === 'json') {
-    return JSON.parse(serialized.data)
+    return JSON.parse(serialized.data as string)
   }
 
   if (serialized.type === 'class') {
@@ -94,15 +94,26 @@ function deserializeJob(serialized: SerializedJob): any {
       throw new Error(`Job class "${serialized.className}" not registered in worker thread`)
     }
 
-    const data = JSON.parse(serialized.data)
+    const data = JSON.parse(serialized.data as string)
     const instance = Object.create(JobClass.prototype)
     Object.assign(instance, data)
 
     return instance
   }
 
+  if (serialized.type === 'binary') {
+    const { BinarySerializer } = require('../serializers/BinarySerializer')
+    const serializer = new BinarySerializer()
+    return serializer.deserialize(serialized)
+  }
+
   if (serialized.type === 'msgpack') {
-    throw new Error('MessagePack deserialization not yet implemented in worker')
+    const msgpack = require('@msgpack/msgpack')
+    const bytes =
+      typeof serialized.data === 'string'
+        ? Buffer.from(serialized.data, 'base64')
+        : Buffer.from(serialized.data as Uint8Array)
+    return msgpack.decode(bytes)
   }
 
   throw new Error(`Unknown serialization type: ${serialized.type}`)

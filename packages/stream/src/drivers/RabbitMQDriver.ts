@@ -1,4 +1,5 @@
 import type { SerializedJob } from '../types'
+import { prepareJobForTransport } from './prepareJobForTransport'
 import type { QueueDriver } from './QueueDriver'
 
 /**
@@ -92,7 +93,8 @@ export class RabbitMQDriver implements QueueDriver {
    */
   async push(queue: string, job: SerializedJob): Promise<void> {
     const channel = await this.ensureChannel()
-    const payload = Buffer.from(JSON.stringify(job))
+    const jobForTransport = prepareJobForTransport(job)
+    const payload = Buffer.from(JSON.stringify(jobForTransport))
 
     if (this.exchange) {
       await channel.assertQueue(queue, { durable: true })
