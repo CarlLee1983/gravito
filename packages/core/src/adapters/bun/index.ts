@@ -1,6 +1,7 @@
 export * from './BunContext'
 export * from './BunNativeAdapter'
 export * from './BunRequest'
+export * from './BunWebSocketHandler'
 export * from './RadixNode'
 export * from './RadixRouter'
 export * from './types'

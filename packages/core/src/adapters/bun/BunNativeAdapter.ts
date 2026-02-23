@@ -9,6 +9,8 @@ import type {
 import type { HttpAdapter, RouteDefinition } from '../types'
 import { BunContext } from './BunContext'
 import type { BunRequest } from './BunRequest'
+import type { WebSocketRouteHandlers } from './BunWebSocketHandler'
+import { BunWebSocketHandler } from './BunWebSocketHandler'
 import { RadixRouter } from './RadixRouter'
 
 /**
@@ -35,6 +37,9 @@ export class BunNativeAdapter implements HttpAdapter {
 
   // P2 optimization: Pre-compiled middleware chains
   private middlewareChainCache = new Map<string, GravitoMiddleware[]>()
+
+  // WebSocket support
+  private wsHandler = new BunWebSocketHandler()
 
   route(
     method: HttpMethod,
@@ -203,6 +208,20 @@ export class BunNativeAdapter implements HttpAdapter {
   }
 
   /**
+   * 註冊 WebSocket 路由
+   */
+  registerWebSocketRoute(path: string, handlers: WebSocketRouteHandlers): void {
+    this.wsHandler.register(path, handlers)
+  }
+
+  /**
+   * 取得 WebSocket handler（供 Bun.serve 使用）
+   */
+  get websocket() {
+    return this.wsHandler.hasAnyRoute() ? this.wsHandler.toHandler() : undefined
+  }
+
+  /**
    * Predictive Route Warming (JIT Optimization)
    */
   async warmup(paths: string[]): Promise<void> {
@@ -215,11 +234,24 @@ export class BunNativeAdapter implements HttpAdapter {
   }
 
   async fetch(request: Request, _server?: unknown): Promise<Response> {
+    // WebSocket upgrade check (before context acquisition)
+    const url = new URL(request.url)
+    if (
+      _server != null &&
+      typeof (_server as any).upgrade === 'function' &&
+      request.headers.get('upgrade')?.toLowerCase() === 'websocket' &&
+      this.wsHandler.hasRoute(url.pathname)
+    ) {
+      const upgraded = (_server as any).upgrade(request, {
+        data: { path: url.pathname },
+      })
+      if (upgraded) return new Response(null, { status: 101 })
+    }
+
     // P0 Fix: Use context pool to prevent state pollution
     const ctx = this.acquireContext(request)
 
     try {
-      const url = new URL(request.url)
       const path = url.pathname
       const method = request.method
 
