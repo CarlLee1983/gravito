@@ -243,7 +243,11 @@ export class BunNativeAdapter implements HttpAdapter {
       this.wsHandler.hasRoute(url.pathname)
     ) {
       const upgraded = (_server as any).upgrade(request, {
-        data: { path: url.pathname },
+        data: {
+          path: url.pathname,
+          id: crypto.randomUUID(),
+          channels: new Set<string>(),
+        },
       })
       if (upgraded) return new Response(null, { status: 101 })
     }

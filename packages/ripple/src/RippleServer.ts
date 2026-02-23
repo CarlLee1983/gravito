@@ -721,27 +721,23 @@ export class RippleServer {
   }
 
   /**
-   * Initialize and start the RippleServer.
+   * Initialize driver and serializer without starting the engine.
    *
    * This method:
    * 1. Initializes the driver (Redis/NATS/Local)
    * 2. Initializes the serializer (JSON/Protobuf)
-   * 3. Starts the WebSocket engine (Bun/uWS/ws)
-   * 4. Starts the ping interval
+   * 3. Starts the ping interval
+   *
+   * Used by OrbitRipple for same-port integration with BunNativeAdapter.
    *
    * @since 5.0.0
    */
-  async start(): Promise<void> {
-    const port = this.config.port ?? 3000
-
-    this.logger.info('Starting RippleServer', {
+  async initDriver(): Promise<void> {
+    this.logger.info('Initializing RippleServer driver and serializer', {
       driver: this.driver.name,
       serializer: this.serializer.contentType,
-      runtime: this.config.runtime ?? 'auto-detected',
-      port,
     })
 
-    // Initialize driver
     await this.driver.init?.()
 
     // Initialize serializer if needed (e.g. loading proto files)
@@ -749,10 +745,13 @@ export class RippleServer {
       await (this.serializer as any).init()
     }
 
-    // Start the WebSocket engine
-    await this.engine.listen(port)
+    this.startPingInterval()
+  }
 
-    // Start ping interval
+  /**
+   * Start ping interval (internal helper)
+   */
+  private startPingInterval(): void {
     if (this.config.pingInterval > 0) {
       const pong = this.serializer.getPongMessage()
       this.pingInterval = setInterval(() => {
@@ -763,8 +762,51 @@ export class RippleServer {
         }
       }, this.config.pingInterval)
     }
+  }
 
-    this.logger.info('RippleServer started successfully', { port })
+  /**
+   * Get WebSocket handler configuration (Bun only).
+   *
+   * Returns handler object for use with BunNativeAdapter.registerWebSocketRoute().
+   *
+   * @throws Error if engine is not BunEngine
+   */
+  getWebSocketConfig() {
+    if (!(this.engine instanceof BunEngine)) {
+      throw new Error('getWebSocketConfig() requires BunEngine. Use start() for other engines.')
+    }
+    return (this.engine as BunEngine).getWebSocketConfig()
+  }
+
+  /**
+   * Initialize and start the RippleServer.
+   *
+   * This method:
+   * 1. Initializes the driver (Redis/NATS/Local)
+   * 2. Initializes the serializer (JSON/Protobuf)
+   * 3. Starts the WebSocket engine (Bun/uWS/ws)
+   * 4. Starts the ping interval
+   *
+   * @param port - Optional port override (defaults to config.port or 3000)
+   * @since 5.0.0
+   */
+  async start(port?: number): Promise<void> {
+    const resolvedPort = port ?? this.config.port ?? 3000
+
+    this.logger.info('Starting RippleServer', {
+      driver: this.driver.name,
+      serializer: this.serializer.contentType,
+      runtime: this.config.runtime ?? 'auto-detected',
+      port: resolvedPort,
+    })
+
+    // Initialize driver and serializer
+    await this.initDriver()
+
+    // Start the WebSocket engine
+    await this.engine.listen(resolvedPort)
+
+    this.logger.info('RippleServer started successfully', { port: resolvedPort })
   }
 
   /**
@@ -774,28 +816,7 @@ export class RippleServer {
    * @since 3.0.0
    */
   async init(): Promise<void> {
-    this.logger.info('Initializing RippleServer', {
-      driver: this.driver.name,
-      serializer: this.serializer.contentType,
-    })
-
-    await this.driver.init?.()
-
-    // Initialize serializer if needed (e.g. loading proto files)
-    if ('init' in this.serializer) {
-      await (this.serializer as any).init()
-    }
-
-    if (this.config.pingInterval > 0) {
-      const pong = this.serializer.getPongMessage()
-      this.pingInterval = setInterval(() => {
-        for (const ws of this.channels.getAllClients()) {
-          try {
-            ws.send(pong)
-          } catch {}
-        }
-      }, this.config.pingInterval)
-    }
+    await this.initDriver()
   }
 
   async shutdown(): Promise<void> {

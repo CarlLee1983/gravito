@@ -235,4 +235,46 @@ export class BunEngine implements IRippleEngine {
   getServer(): Server<ClientData> | undefined {
     return this.server
   }
+
+  /**
+   * 獲取 WebSocket 路由 handlers（供 BunNativeAdapter.registerWebSocketRoute 使用）
+   *
+   * @returns WebSocket handler 物件（包含 open、message、close、drain）
+   */
+  getWebSocketConfig() {
+    return {
+      open: (ws: any) => {
+        const socket = new BunRippleSocket(ws)
+        this.sockets.set(socket.id, socket)
+        this.connectionHandler?.(socket)
+      },
+      message: (ws: any, data: any) => {
+        const socket = this.sockets.get(ws.data?.id)
+        if (!socket) {
+          return
+        }
+
+        const message =
+          typeof data === 'string'
+            ? data
+            : data instanceof Buffer
+              ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
+              : new Uint8Array(data as unknown as ArrayBuffer)
+
+        this.messageHandler?.(socket, message)
+      },
+      close: (ws: any, code: number, reason: string) => {
+        const socket = this.sockets.get(ws.data?.id)
+        if (!socket) {
+          return
+        }
+
+        this.disconnectionHandler?.(socket, code, reason)
+        this.sockets.delete(ws.data?.id)
+      },
+      drain: (_ws: any) => {
+        // Backpressure drained - no-op for now
+      },
+    }
+  }
 }

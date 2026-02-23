@@ -43,6 +43,7 @@ export class OrbitRipple implements GravitoOrbit {
    *
    * - Registers 'ripple' (RippleServer) and 'broadcast' (BroadcastManager) in the container.
    * - Adds middleware to inject 'ripple' and 'broadcast' into GravitoContext.
+   * - Integrates with BunNativeAdapter for same-port WebSocket support.
    * - Initializes the server and registers shutdown hooks.
    *
    * @param core - The PlanetCore instance
@@ -66,9 +67,24 @@ export class OrbitRipple implements GravitoOrbit {
       return await next()
     })
 
-    // Async initialization
-    this.server.init().then(() => {
-      core.logger.info(`🌊 Ripple WebSocket ready at ${this.config.path || '/ws'}`)
+    // Initialize driver and integrate with adapter
+    this.server.initDriver().then(async () => {
+      const path = this.config.path || '/ws'
+
+      // Check if adapter supports WebSocket routes (BunNativeAdapter)
+      if (
+        'registerWebSocketRoute' in core.adapter &&
+        typeof (core.adapter as any).registerWebSocketRoute === 'function'
+      ) {
+        const wsConfig = this.server.getWebSocketConfig()
+        ;(core.adapter as any).registerWebSocketRoute(path, wsConfig)
+        core.logger.info(`🌊 Ripple ready at ws://[host]${path} (shared port with HTTP)`)
+      } else {
+        // Fallback: Start WebSocket on separate port for non-BunNativeAdapter
+        const wsPort = (this.config as any).port || 6001
+        await this.server.start(wsPort)
+        core.logger.info(`🌊 Ripple ready at ws://localhost:${wsPort}${path} (separate port)`)
+      }
     })
 
     // Lifecycle: Graceful shutdown
