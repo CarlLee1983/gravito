@@ -51,7 +51,7 @@ grep "Turbo Cache (local fallback)" .github/workflows/ci.yml
 3. **建立新的 Access Token**
    - 點擊 **Create Token** 按鈕
    - **Token Name**：`gravito-turbo-remote-cache`（或任意名稱）
-   - **Scopes**：選擇 `cache` scope（允許讀寫 Remote Cache）
+   - **Permissions**：使用預設或 **Full Access**（Turbo Remote Cache 需要完整存取權限）
    - 點擊 **Create**
    - **複製 Token 值**（只會顯示一次）
 
