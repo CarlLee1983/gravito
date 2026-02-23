@@ -33,7 +33,7 @@
     },
     "examples/astral-site": {
       "name": "@examples/astral-site",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "dependencies": {
         "@gravito/astral": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -46,7 +46,7 @@
     },
     "examples/astral-verification": {
       "name": "astral-verification",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "dependencies": {
         "@gravito/astral": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -70,7 +70,7 @@
     },
     "examples/atlas-site": {
       "name": "atlas-site",
-      "version": "1.0.2",
+      "version": "1.0.3",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/photon": "workspace:*",
@@ -92,7 +92,7 @@
     },
     "examples/auth-verification": {
       "name": "example-auth-verification",
-      "version": "1.0.6",
+      "version": "1.0.7",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/fortify": "workspace:*",
@@ -107,7 +107,7 @@
     },
     "examples/banking-cqrs": {
       "name": "example-banking-cqrs",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -123,7 +123,7 @@
     },
     "examples/banking-event-driven": {
       "name": "@gravito/example-banking-event-driven",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/enterprise": "workspace:*",
@@ -138,7 +138,7 @@
     },
     "examples/blog-mvc": {
       "name": "@examples/blog-mvc",
-      "version": "0.2.4",
+      "version": "0.2.5",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -168,7 +168,7 @@
     },
     "examples/commerce-fullstack": {
       "name": "@gravito/example-commerce-fullstack",
-      "version": "1.0.9",
+      "version": "1.0.10",
       "dependencies": {
         "@gravito/admin-shell-react": "workspace:*",
         "@gravito/admin-ui-analytics": "workspace:*",
@@ -203,7 +203,7 @@
     },
     "examples/ecommerce-mvc": {
       "name": "example-ecommerce-mvc",
-      "version": "1.1.4",
+      "version": "1.1.5",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/constellation": "workspace:*",
@@ -236,7 +236,7 @@
     },
     "examples/engine-atlas-microservice": {
       "name": "example-engine-atlas-microservice",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -248,7 +248,7 @@
     },
     "examples/event-registration-mvc": {
       "name": "@gravito/example-event-registration-mvc",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -282,7 +282,7 @@
     },
     "examples/flash-sale-fullstack": {
       "name": "@gravito-examples/flash-sale-fullstack",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -313,7 +313,7 @@
     },
     "examples/flux-enterprise": {
       "name": "flux-enterprise",
-      "version": "0.1.6",
+      "version": "0.1.7",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/flux": "workspace:*",
@@ -332,7 +332,7 @@
     },
     "examples/i18n-verification": {
       "name": "example-i18n-verification",
-      "version": "1.0.4",
+      "version": "1.0.5",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/cosmos": "workspace:*",
@@ -344,7 +344,7 @@
     },
     "examples/image-verification": {
       "name": "image-verification-example",
-      "version": "0.5.4",
+      "version": "0.5.5",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/forge": "workspace:*",
@@ -363,7 +363,7 @@
     },
     "examples/luminosity-benchmark": {
       "name": "luminosity-benchmark",
-      "version": "1.0.6",
+      "version": "1.0.7",
       "dependencies": {
         "@faker-js/faker": "^9.8.0",
         "@gravito/constellation": "workspace:*",
@@ -388,7 +388,7 @@
     },
     "examples/luminosity-site": {
       "name": "luminosity-marketing-site",
-      "version": "1.0.6",
+      "version": "1.0.7",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/freeze-vue": "workspace:*",
@@ -417,7 +417,7 @@
     },
     "examples/mesh-verification": {
       "name": "example-mesh-verification",
-      "version": "1.0.7",
+      "version": "1.0.8",
       "dependencies": {
         "@gravito/beam": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -454,7 +454,7 @@
     },
     "examples/official-site": {
       "name": "gravito-official-site",
-      "version": "0.1.7",
+      "version": "0.1.8",
       "dependencies": {
         "@gravito/constellation": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -495,7 +495,7 @@
     },
     "examples/photon-site": {
       "name": "photon-site",
-      "version": "1.2.2",
+      "version": "1.2.3",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/freeze": "workspace:*",
@@ -531,7 +531,7 @@
     },
     "examples/realtime-verification": {
       "name": "example-realtime-verification",
-      "version": "1.0.5",
+      "version": "1.0.6",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/echo": "workspace:*",
@@ -545,7 +545,7 @@
     },
     "examples/rest-api-demo": {
       "name": "@gravito/example-rest-api",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "dependencies": {
         "@gravito/astral": "workspace:*",
         "@gravito/atlas": "workspace:*",
@@ -585,7 +585,7 @@
     },
     "examples/scheduler-verification": {
       "name": "example-scheduler-verification",
-      "version": "1.0.4",
+      "version": "1.0.5",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/horizon": "workspace:*",
@@ -595,7 +595,7 @@
     },
     "examples/spectrum-verification": {
       "name": "example-spectrum-verification",
-      "version": "1.0.5",
+      "version": "1.0.6",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -607,7 +607,7 @@
     },
     "examples/workflow-demo": {
       "name": "workflow-demo",
-      "version": "0.1.6",
+      "version": "0.1.9",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -620,7 +620,7 @@
     },
     "examples/workflow-verification": {
       "name": "example-workflow-verification",
-      "version": "1.0.5",
+      "version": "1.0.6",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/flux": "workspace:*",
@@ -635,7 +635,7 @@
     },
     "examples/zenith-site": {
       "name": "@examples/zenith-site",
-      "version": "0.1.7",
+      "version": "0.1.8",
       "dependencies": {
         "@gravito/constellation": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -672,7 +672,7 @@
     },
     "packages/admin-shell-react": {
       "name": "@gravito/admin-shell-react",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/admin-sdk": "workspace:*",
         "clsx": "^2.1.1",
@@ -692,7 +692,7 @@
     },
     "packages/admin-ui-access": {
       "name": "@gravito/admin-ui-access",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/admin-sdk": "workspace:*",
         "@gravito/admin-shell-react": "workspace:*",
@@ -708,7 +708,7 @@
     },
     "packages/admin-ui-ad": {
       "name": "@gravito/admin-ui-ad",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/admin-sdk": "workspace:*",
         "@gravito/admin-shell-react": "workspace:*",
@@ -726,7 +726,7 @@
     },
     "packages/admin-ui-analytics": {
       "name": "@gravito/admin-ui-analytics",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/admin-sdk": "workspace:*",
         "@gravito/admin-shell-react": "workspace:*",
@@ -744,7 +744,7 @@
     },
     "packages/admin-ui-announcement": {
       "name": "@gravito/admin-ui-announcement",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/admin-sdk": "workspace:*",
         "@gravito/admin-shell-react": "workspace:*",
@@ -762,7 +762,7 @@
     },
     "packages/admin-ui-catalog": {
       "name": "@gravito/admin-ui-catalog",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/admin-sdk": "workspace:*",
         "@gravito/admin-shell-react": "workspace:*",
@@ -778,7 +778,7 @@
     },
     "packages/admin-ui-dashboard": {
       "name": "@gravito/admin-ui-dashboard",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/admin-sdk": "workspace:*",
         "@gravito/admin-shell-react": "workspace:*",
@@ -794,7 +794,7 @@
     },
     "packages/admin-ui-invoice": {
       "name": "@gravito/admin-ui-invoice",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/admin-sdk": "workspace:*",
         "@gravito/admin-shell-react": "workspace:*",
@@ -810,7 +810,7 @@
     },
     "packages/admin-ui-marketing": {
       "name": "@gravito/admin-ui-marketing",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/admin-sdk": "workspace:*",
         "@gravito/admin-shell-react": "workspace:*",
@@ -826,7 +826,7 @@
     },
     "packages/admin-ui-news": {
       "name": "@gravito/admin-ui-news",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/admin-sdk": "workspace:*",
         "@gravito/admin-shell-react": "workspace:*",
@@ -844,7 +844,7 @@
     },
     "packages/admin-ui-order": {
       "name": "@gravito/admin-ui-order",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/admin-sdk": "workspace:*",
         "@gravito/admin-shell-react": "workspace:*",
@@ -860,7 +860,7 @@
     },
     "packages/admin-ui-support": {
       "name": "@gravito/admin-ui-support",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/admin-sdk": "workspace:*",
         "@gravito/admin-shell-react": "workspace:*",
@@ -879,7 +879,7 @@
     },
     "packages/astral": {
       "name": "@gravito/astral",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/impulse": "workspace:*",
@@ -938,22 +938,22 @@
     },
     "packages/beam": {
       "name": "@gravito/beam",
-      "version": "1.0.0-beta.1",
+      "version": "1.0.0",
       "dependencies": {
-        "@gravito/photon": "workspace:*",
+        "@gravito/photon": "^1.0.1",
       },
       "devDependencies": {
-        "@gravito/photon": "workspace:*",
+        "@gravito/photon": "^1.0.1",
         "bun-types": "latest",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/photon": "workspace:*",
+        "@gravito/photon": "^1.0.1",
       },
     },
     "packages/cli": {
       "name": "@gravito/pulse",
-      "version": "3.2.0",
+      "version": "3.3.1",
       "bin": {
         "gravito": "bin/gravito.mjs",
       },
@@ -974,29 +974,29 @@
     },
     "packages/constellation": {
       "name": "@gravito/constellation",
-      "version": "3.1.0",
+      "version": "3.1.1",
       "dependencies": {
         "@aws-sdk/client-s3": "^3.956.0",
         "@google-cloud/storage": "^7.18.0",
-        "@gravito/photon": "workspace:*",
-        "@gravito/stream": "workspace:*",
+        "@gravito/photon": "^1.0.1",
+        "@gravito/stream": "^2.0.2",
       },
       "devDependencies": {
-        "@gravito/core": "workspace:*",
+        "@gravito/core": "^1.6.1",
         "bun-plugin-dts": "^0.3.0",
         "bun-types": "latest",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "workspace:*",
+        "@gravito/core": "^1.6.1",
       },
     },
     "packages/core": {
       "name": "@gravito/core",
-      "version": "1.6.0",
+      "version": "1.6.1",
       "dependencies": {
-        "@gravito/photon": "workspace:*",
+        "@gravito/photon": "^1.0.1",
         "zod": "^4.3.6",
       },
       "devDependencies": {
@@ -1039,7 +1039,7 @@
     },
     "packages/cosmos": {
       "name": "@gravito/cosmos",
-      "version": "3.2.0",
+      "version": "3.2.1",
       "dependencies": {
         "lru-cache": "^11.2.5",
       },
@@ -1056,7 +1056,7 @@
     },
     "packages/create-gravito-app": {
       "name": "create-gravito-app",
-      "version": "1.0.5",
+      "version": "1.1.3",
       "bin": {
         "create-gravito-app": "index.js",
       },
@@ -1084,7 +1084,7 @@
     },
     "packages/echo": {
       "name": "@gravito/echo",
-      "version": "3.1.0",
+      "version": "3.1.1",
       "devDependencies": {
         "bun-types": "latest",
         "typescript": "^5.9.3",
@@ -1095,7 +1095,7 @@
     },
     "packages/enterprise": {
       "name": "@gravito/enterprise",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "dependencies": {
         "@gravito/core": "workspace:*",
       },
@@ -1107,7 +1107,7 @@
     },
     "packages/flare": {
       "name": "@gravito/flare",
-      "version": "4.0.0",
+      "version": "4.0.1",
       "dependencies": {
         "@aws-sdk/client-sns": "^3.734.0",
         "@gravito/core": "workspace:*",
@@ -1125,7 +1125,7 @@
     },
     "packages/flux": {
       "name": "@gravito/flux",
-      "version": "3.0.1",
+      "version": "3.0.2",
       "bin": {
         "flux": "bin/flux.js",
       },
@@ -1133,7 +1133,7 @@
         "cron-parser": "^5.5.0",
       },
       "devDependencies": {
-        "@gravito/core": "workspace:*",
+        "@gravito/core": "^1.6.1",
         "@types/pg": "^8.16.0",
         "bun-types": "latest",
         "pg": "^8.18.0",
@@ -1141,7 +1141,7 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "workspace:*",
+        "@gravito/core": "^1.6.1",
         "pg": "^8.18.0",
       },
       "optionalPeers": [
@@ -1151,16 +1151,16 @@
     },
     "packages/forge": {
       "name": "@gravito/forge",
-      "version": "3.0.2",
+      "version": "3.0.3",
       "dependencies": {
         "@ffmpeg/ffmpeg": "^0.12.15",
         "@ffmpeg/util": "^0.12.2",
       },
       "devDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/nebula": "workspace:*",
-        "@gravito/photon": "workspace:*",
-        "@gravito/stream": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/nebula": "^4.1.1",
+        "@gravito/photon": "^1.0.1",
+        "@gravito/stream": "^2.0.2",
         "@types/react": "^18.0.0",
         "bun-types": "latest",
         "react": "^18.0.0",
@@ -1170,9 +1170,9 @@
         "vue": "^3.5.26",
       },
       "peerDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/nebula": "workspace:*",
-        "@gravito/stream": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/nebula": "^4.1.1",
+        "@gravito/stream": "^2.0.2",
       },
       "optionalPeers": [
         "@gravito/nebula",
@@ -1181,26 +1181,26 @@
     },
     "packages/fortify": {
       "name": "@gravito/fortify",
-      "version": "3.1.0",
+      "version": "3.1.1",
       "dependencies": {
         "otplib": "^13.1.1",
         "qrcode": "^1.5.4",
       },
       "devDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/photon": "workspace:*",
-        "@gravito/sentinel": "workspace:*",
-        "@gravito/signal": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/photon": "^1.0.1",
+        "@gravito/sentinel": "^4.0.1",
+        "@gravito/signal": "^3.0.4",
         "@types/qrcode": "^1.5.6",
         "bun-types": "latest",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/photon": "workspace:*",
-        "@gravito/sentinel": "workspace:*",
-        "@gravito/signal": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/photon": "^1.0.1",
+        "@gravito/sentinel": "^4.0.1",
+        "@gravito/signal": "^3.0.4",
       },
       "optionalPeers": [
         "@gravito/signal",
@@ -1217,7 +1217,7 @@
     },
     "packages/freeze-react": {
       "name": "@gravito/freeze-react",
-      "version": "1.0.0-beta.6",
+      "version": "1.0.0",
       "dependencies": {
         "@gravito/freeze": "workspace:*",
       },
@@ -1237,7 +1237,7 @@
     },
     "packages/freeze-vue": {
       "name": "@gravito/freeze-vue",
-      "version": "1.0.0-beta.6",
+      "version": "1.0.0",
       "dependencies": {
         "@gravito/freeze": "workspace:*",
       },
@@ -1256,7 +1256,7 @@
     },
     "packages/graphql": {
       "name": "@gravito/graphql",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "dependencies": {
         "@envelop/depth-limit": "^7.1.0",
         "@envelop/response-cache": "^9.1.0",
@@ -1282,7 +1282,7 @@
     },
     "packages/gravito": {
       "name": "gravito",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "bin": {
         "gravito": "bin/gravito.js",
       },
@@ -1292,10 +1292,10 @@
     },
     "packages/horizon": {
       "name": "@gravito/horizon",
-      "version": "3.2.0",
+      "version": "3.2.1",
       "devDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/stasis": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/stasis": "^3.1.1",
         "bun-types": "latest",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
@@ -1304,15 +1304,15 @@
         "cron-parser": "^4.9.0",
       },
       "peerDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/stasis": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/stasis": "^3.1.1",
       },
     },
     "packages/impulse": {
       "name": "@gravito/impulse",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "dependencies": {
-        "@gravito/core": "workspace:*",
+        "@gravito/core": "^1.6.1",
         "zod": "^3.23.0",
       },
       "devDependencies": {
@@ -1323,41 +1323,41 @@
         "valibot": "^1.2.0",
       },
       "peerDependencies": {
-        "@gravito/photon": "workspace:*",
+        "@gravito/photon": "^1.0.1",
       },
     },
     "packages/impulse-bridge": {
       "name": "@gravito/impulse-bridge",
-      "version": "2.0.0",
+      "version": "2.0.1",
       "devDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/impulse": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/impulse": "^1.1.1",
         "tsup": "^8.3.5",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/impulse": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/impulse": "^1.1.1",
       },
     },
     "packages/ion": {
       "name": "@gravito/ion",
-      "version": "4.0.0",
+      "version": "4.0.1",
       "devDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/photon": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/photon": "^1.0.1",
         "bun-types": "latest",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/photon": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/photon": "^1.0.1",
       },
     },
     "packages/launchpad": {
       "name": "@gravito/launchpad",
-      "version": "1.3.1",
+      "version": "1.3.2",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/enterprise": "workspace:*",
@@ -1373,7 +1373,7 @@
     },
     "packages/launchpad-dashboard": {
       "name": "@gravito/launchpad-dashboard",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/ripple-client": "workspace:*",
         "clsx": "^2.1.0",
@@ -1413,7 +1413,7 @@
     },
     "packages/luminosity-adapter-express": {
       "name": "@gravito/luminosity-adapter-express",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "dependencies": {
         "@gravito/luminosity": "workspace:*",
       },
@@ -1426,7 +1426,7 @@
     },
     "packages/luminosity-adapter-photon": {
       "name": "@gravito/luminosity-adapter-photon",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "dependencies": {
         "@gravito/luminosity": "workspace:*",
       },
@@ -1440,7 +1440,7 @@
     },
     "packages/luminosity-cli": {
       "name": "@gravito/luminosity-cli",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "bin": {
         "gravito-seo": "dist/bin/gravito-seo.js",
       },
@@ -1457,25 +1457,25 @@
     },
     "packages/mass": {
       "name": "@gravito/mass",
-      "version": "3.0.1",
+      "version": "3.0.2",
       "dependencies": {
         "@hono/typebox-validator": "^1.1.0",
         "@sinclair/typebox": "^0.34.0",
       },
       "devDependencies": {
-        "@gravito/photon": "workspace:*",
+        "@gravito/photon": "^1.0.1",
         "bun-types": "^1.1.0",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "workspace:*",
+        "@gravito/core": "^1.6.1",
       },
     },
     "packages/monitor": {
       "name": "@gravito/monitor",
-      "version": "3.1.0",
+      "version": "3.1.1",
       "devDependencies": {
-        "@gravito/core": "workspace:*",
+        "@gravito/core": "^1.6.1",
         "@opentelemetry/api": "^1.9.0",
         "@opentelemetry/exporter-trace-otlp-http": "^0.57.0",
         "@opentelemetry/resources": "^1.29.0",
@@ -1493,47 +1493,47 @@
         "@opentelemetry/semantic-conventions": "^1.28.0",
       },
       "peerDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/photon": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/photon": "^1.0.1",
       },
     },
     "packages/monolith": {
       "name": "@gravito/monolith",
-      "version": "3.2.0",
+      "version": "3.2.1",
       "dependencies": {
-        "@gravito/mass": "workspace:*",
+        "@gravito/mass": "^3.0.2",
         "@octokit/rest": "^22.0.1",
         "gray-matter": "^4.0.3",
         "marked": "^11.1.1",
       },
       "devDependencies": {
-        "@gravito/core": "workspace:*",
+        "@gravito/core": "^1.6.1",
         "@types/marked": "^5.0.0",
         "bun-types": "^1.3.5",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "workspace:*",
+        "@gravito/core": "^1.6.1",
       },
     },
     "packages/nebula": {
       "name": "@gravito/nebula",
-      "version": "4.1.0",
+      "version": "4.1.1",
       "devDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/photon": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/photon": "^1.0.1",
         "bun-types": "latest",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "workspace:*",
+        "@gravito/core": "^1.6.1",
       },
     },
     "packages/nebula-s3": {
       "name": "@gravito/nebula-s3",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "dependencies": {
         "@aws-sdk/client-s3": "^3.993.0",
         "@aws-sdk/s3-request-presigner": "^3.993.0",
@@ -1550,20 +1550,20 @@
     },
     "packages/orbit-cloudflare": {
       "name": "@gravito/orbit-cloudflare",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "devDependencies": {
         "@cloudflare/workers-types": "^4.20250109.0",
-        "@gravito/core": "workspace:*",
+        "@gravito/core": "^1.6.1",
         "tsup": "^8.3.5",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "workspace:*",
+        "@gravito/core": "^1.6.1",
       },
     },
     "packages/photon": {
       "name": "@gravito/photon",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "dependencies": {
         "@hono/zod-openapi": "^1.2.0",
         "cborg": "^4.3.2",
@@ -1599,10 +1599,10 @@
     },
     "packages/prism": {
       "name": "@gravito/prism",
-      "version": "3.1.0",
+      "version": "3.1.1",
       "devDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/photon": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/photon": "^1.0.1",
         "@types/react": "^19.0.0",
         "bun-types": "^1.3.5",
         "tsup": "^8.5.1",
@@ -1610,8 +1610,8 @@
         "vue": "^3.5.26",
       },
       "peerDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/photon": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/photon": "^1.0.1",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "vue": "^3.0.0",
@@ -1624,18 +1624,18 @@
     },
     "packages/pulsar": {
       "name": "@gravito/pulsar",
-      "version": "3.0.1",
+      "version": "3.0.2",
       "devDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/photon": "workspace:*",
-        "@gravito/plasma": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/photon": "^1.0.1",
+        "@gravito/plasma": "^1.0.0",
         "bun-types": "latest",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/plasma": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/plasma": "^1.0.0",
       },
     },
     "packages/quasar": {
@@ -1670,7 +1670,7 @@
     },
     "packages/radiance": {
       "name": "@gravito/radiance",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "dependencies": {
         "@gravito/core": "workspace:*",
       },
@@ -1681,7 +1681,7 @@
     },
     "packages/ripple": {
       "name": "@gravito/ripple",
-      "version": "4.0.0",
+      "version": "4.0.1",
       "devDependencies": {
         "@types/ws": "^8.18.1",
         "bun-types": "latest",
@@ -1724,7 +1724,7 @@
     },
     "packages/scaffold": {
       "name": "@gravito/scaffold",
-      "version": "3.1.0",
+      "version": "4.0.0",
       "dependencies": {
         "handlebars": "^4.7.8",
       },
@@ -1739,30 +1739,30 @@
     },
     "packages/sentinel": {
       "name": "@gravito/sentinel",
-      "version": "4.0.0",
+      "version": "4.0.1",
       "devDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/photon": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/photon": "^1.0.1",
         "bun-types": "latest",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/photon": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/photon": "^1.0.1",
       },
     },
     "packages/signal": {
       "name": "@gravito/signal",
-      "version": "3.0.3",
+      "version": "3.0.4",
       "dependencies": {
         "@aws-sdk/client-ses": "^3.953.0",
         "nodemailer": "^7.0.11",
       },
       "devDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/prism": "workspace:*",
-        "@gravito/stream": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/prism": "^3.1.1",
+        "@gravito/stream": "^2.0.2",
         "@types/nodemailer": "^6.4.14",
         "@types/react": "^19.0.0",
         "@types/react-dom": "^19.0.0",
@@ -1773,9 +1773,9 @@
         "vue": "^3.0.0",
       },
       "peerDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/prism": "workspace:*",
-        "@gravito/stream": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/prism": "^3.1.1",
+        "@gravito/stream": "^2.0.2",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "vue": "^3.0.0",
@@ -1800,9 +1800,9 @@
     },
     "packages/spectrum": {
       "name": "@gravito/spectrum",
-      "version": "3.0.1",
+      "version": "3.0.2",
       "devDependencies": {
-        "@gravito/core": "workspace:*",
+        "@gravito/core": "^1.6.1",
         "@opentelemetry/api": "^1.9.0",
         "@opentelemetry/exporter-trace-otlp-http": "^0.57.0",
         "@opentelemetry/resources": "^1.29.0",
@@ -1820,33 +1820,33 @@
         "@opentelemetry/semantic-conventions": "^1.28.0",
       },
       "peerDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/photon": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/photon": "^1.0.1",
       },
     },
     "packages/stasis": {
       "name": "@gravito/stasis",
-      "version": "3.1.0",
+      "version": "3.1.1",
       "devDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/photon": "workspace:*",
-        "@gravito/plasma": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/photon": "^1.0.1",
+        "@gravito/plasma": "^1.0.0",
         "bun-types": "latest",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/plasma": "workspace:*",
+        "@gravito/core": "^1.6.1",
+        "@gravito/plasma": "^1.0.0",
       },
     },
     "packages/stream": {
       "name": "@gravito/stream",
-      "version": "2.0.1",
+      "version": "2.0.2",
       "dependencies": {
         "@aws-sdk/client-sqs": "^3.955.0",
-        "@gravito/atlas": "workspace:*",
-        "@gravito/core": "workspace:*",
+        "@gravito/atlas": "^1.6.0",
+        "@gravito/core": "^1.6.1",
         "@grpc/grpc-js": "^1.14.3",
         "@grpc/proto-loader": "^0.8.0",
         "cron-parser": "^5.4.0",
@@ -1863,7 +1863,7 @@
     },
     "packages/support-chat-widget": {
       "name": "@gravito/support-chat-widget",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "dependencies": {
         "@gravito/ripple-client": "workspace:*",
         "clsx": "^2.1.1",
@@ -1890,7 +1890,7 @@
     },
     "packages/zenith": {
       "name": "@gravito/zenith",
-      "version": "1.1.2",
+      "version": "1.1.3",
       "bin": {
         "zenith": "dist/bin.js",
         "flux-console": "dist/bin.js",
@@ -1927,7 +1927,7 @@
     },
     "satellites/ad": {
       "name": "@gravito/satellite-ad",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -1940,7 +1940,7 @@
     },
     "satellites/analytics": {
       "name": "@gravito/satellite-analytics",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "dependencies": {
         "@gravito/core": "workspace:*",
       },
@@ -1951,7 +1951,7 @@
     },
     "satellites/announcement": {
       "name": "@gravito/satellite-announcement",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -1964,7 +1964,7 @@
     },
     "satellites/cart": {
       "name": "@gravito/satellite-cart",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -1979,7 +1979,7 @@
     },
     "satellites/catalog": {
       "name": "@gravito/satellite-catalog",
-      "version": "0.1.7",
+      "version": "0.1.8",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -1994,7 +1994,7 @@
     },
     "satellites/commerce": {
       "name": "@gravito/satellite-commerce",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2008,7 +2008,7 @@
     },
     "satellites/flash-sale": {
       "name": "@gravito/satellite-flash-sale",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2022,7 +2022,7 @@
     },
     "satellites/inventory-lock": {
       "name": "@gravito/satellite-inventory-lock",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2037,7 +2037,7 @@
     },
     "satellites/invoice": {
       "name": "@gravito/satellite-invoice",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2050,7 +2050,7 @@
     },
     "satellites/logistics": {
       "name": "@gravito/satellite-logistics",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2064,7 +2064,7 @@
     },
     "satellites/marketing": {
       "name": "@gravito/satellite-marketing",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2079,7 +2079,7 @@
     },
     "satellites/membership": {
       "name": "@gravito/satellite-membership",
-      "version": "0.1.7",
+      "version": "0.1.8",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2097,7 +2097,7 @@
     },
     "satellites/news": {
       "name": "@gravito/satellite-news",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2110,7 +2110,7 @@
     },
     "satellites/payment": {
       "name": "@gravito/satellite-payment",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2125,7 +2125,7 @@
     },
     "satellites/support": {
       "name": "@gravito/satellite-support",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2140,7 +2140,7 @@
     },
     "templates/basic": {
       "name": "my-gravito-app",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@gravito/beam": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2155,9 +2155,44 @@
         "typescript": "^5.9.3",
       },
     },
+    "templates/cqrs-starter": {
+      "name": "my-cqrs-app",
+      "version": "1.0.0",
+      "dependencies": {
+        "@gravito/atlas": "workspace:*",
+        "@gravito/core": "workspace:*",
+        "@gravito/photon": "workspace:*",
+        "@gravito/prism": "workspace:*",
+        "@gravito/signal": "workspace:*",
+        "zod": "^3.x",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "1.9.4",
+        "bun-types": "latest",
+        "typescript": "^5.9.3",
+      },
+    },
+    "templates/ddd-starter": {
+      "name": "my-ddd-app",
+      "version": "1.0.0",
+      "dependencies": {
+        "@gravito/atlas": "workspace:*",
+        "@gravito/core": "workspace:*",
+        "@gravito/photon": "workspace:*",
+        "@gravito/prism": "workspace:*",
+        "@gravito/sentinel": "workspace:*",
+        "@gravito/signal": "workspace:*",
+        "zod": "^3.x",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "1.9.4",
+        "bun-types": "latest",
+        "typescript": "^5.9.3",
+      },
+    },
     "templates/inertia-react": {
       "name": "my-gravito-inertia-app",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@gravito/beam": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2183,7 +2218,7 @@
     },
     "templates/inertia-vue": {
       "name": "my-gravito-inertia-vue-app",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "dependencies": {
         "@gravito/beam": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2205,9 +2240,28 @@
         "vue-tsc": "^2.0.0",
       },
     },
+    "templates/mvc-starter": {
+      "name": "my-mvc-app",
+      "version": "1.0.0",
+      "dependencies": {
+        "@gravito/atlas": "workspace:*",
+        "@gravito/core": "workspace:*",
+        "@gravito/photon": "workspace:*",
+        "@gravito/prism": "workspace:*",
+        "@gravito/pulsar": "workspace:*",
+        "@gravito/sentinel": "workspace:*",
+        "@gravito/stasis": "workspace:*",
+        "zod": "^3.x",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "1.9.4",
+        "bun-types": "latest",
+        "typescript": "^5.9.3",
+      },
+    },
     "templates/static-site": {
       "name": "my-gravito-static-site",
-      "version": "0.1.6",
+      "version": "0.1.7",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/constellation": "workspace:*",
@@ -4642,6 +4696,10 @@
 
     "muggle-string": ["muggle-string@0.4.1", "", {}, "sha512-VNTrAak/KhO2i8dqqnqnAHOa3cYBwXEZe9h+D5h/1ZqFSTEFHdM65lR7RoIqq3tBBYavsOXV84NoHXZ0AkPyqQ=="],
 
+    "my-cqrs-app": ["my-cqrs-app@workspace:templates/cqrs-starter"],
+
+    "my-ddd-app": ["my-ddd-app@workspace:templates/ddd-starter"],
+
     "my-gravito-app": ["my-gravito-app@workspace:templates/basic"],
 
     "my-gravito-inertia-app": ["my-gravito-inertia-app@workspace:templates/inertia-react"],
@@ -4649,6 +4707,8 @@
     "my-gravito-inertia-vue-app": ["my-gravito-inertia-vue-app@workspace:templates/inertia-vue"],
 
     "my-gravito-static-site": ["my-gravito-static-site@workspace:templates/static-site"],
+
+    "my-mvc-app": ["my-mvc-app@workspace:templates/mvc-starter"],
 
     "mysql2": ["mysql2@3.17.4", "", { "dependencies": { "aws-ssl-profiles": "^1.1.2", "denque": "^2.1.0", "generate-function": "^2.3.1", "iconv-lite": "^0.7.2", "long": "^5.3.2", "lru.min": "^1.1.4", "named-placeholders": "^1.1.6", "sql-escaper": "^1.3.3" } }, "sha512-RnfuK5tyIuaiPMWOCTTl4vQX/mQXqSA8eoIbwvWccadvPGvh+BYWWVecInMS5s7wcLUkze8LqJzwB/+A4uwuAA=="],
 
@@ -6070,6 +6130,10 @@
 
     "mlly/pathe": ["pathe@2.0.3", "", {}, "sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w=="],
 
+    "my-cqrs-app/@biomejs/biome": ["@biomejs/biome@1.9.4", "", { "optionalDependencies": { "@biomejs/cli-darwin-arm64": "1.9.4", "@biomejs/cli-darwin-x64": "1.9.4", "@biomejs/cli-linux-arm64": "1.9.4", "@biomejs/cli-linux-arm64-musl": "1.9.4", "@biomejs/cli-linux-x64": "1.9.4", "@biomejs/cli-linux-x64-musl": "1.9.4", "@biomejs/cli-win32-arm64": "1.9.4", "@biomejs/cli-win32-x64": "1.9.4" }, "bin": { "biome": "bin/biome" } }, "sha512-1rkd7G70+o9KkTn5KLmDYXihGoTaIGO9PIIN2ZB7UJxFrWw04CZHPYiMRjYsaDvVV7hP1dYNRLxSANLaBFGpog=="],
+
+    "my-ddd-app/@biomejs/biome": ["@biomejs/biome@1.9.4", "", { "optionalDependencies": { "@biomejs/cli-darwin-arm64": "1.9.4", "@biomejs/cli-darwin-x64": "1.9.4", "@biomejs/cli-linux-arm64": "1.9.4", "@biomejs/cli-linux-arm64-musl": "1.9.4", "@biomejs/cli-linux-x64": "1.9.4", "@biomejs/cli-linux-x64-musl": "1.9.4", "@biomejs/cli-win32-arm64": "1.9.4", "@biomejs/cli-win32-x64": "1.9.4" }, "bin": { "biome": "bin/biome" } }, "sha512-1rkd7G70+o9KkTn5KLmDYXihGoTaIGO9PIIN2ZB7UJxFrWw04CZHPYiMRjYsaDvVV7hP1dYNRLxSANLaBFGpog=="],
+
     "my-gravito-app/@biomejs/biome": ["@biomejs/biome@1.9.4", "", { "optionalDependencies": { "@biomejs/cli-darwin-arm64": "1.9.4", "@biomejs/cli-darwin-x64": "1.9.4", "@biomejs/cli-linux-arm64": "1.9.4", "@biomejs/cli-linux-arm64-musl": "1.9.4", "@biomejs/cli-linux-x64": "1.9.4", "@biomejs/cli-linux-x64-musl": "1.9.4", "@biomejs/cli-win32-arm64": "1.9.4", "@biomejs/cli-win32-x64": "1.9.4" }, "bin": { "biome": "bin/biome" } }, "sha512-1rkd7G70+o9KkTn5KLmDYXihGoTaIGO9PIIN2ZB7UJxFrWw04CZHPYiMRjYsaDvVV7hP1dYNRLxSANLaBFGpog=="],
 
     "my-gravito-inertia-app/@biomejs/biome": ["@biomejs/biome@1.9.4", "", { "optionalDependencies": { "@biomejs/cli-darwin-arm64": "1.9.4", "@biomejs/cli-darwin-x64": "1.9.4", "@biomejs/cli-linux-arm64": "1.9.4", "@biomejs/cli-linux-arm64-musl": "1.9.4", "@biomejs/cli-linux-x64": "1.9.4", "@biomejs/cli-linux-x64-musl": "1.9.4", "@biomejs/cli-win32-arm64": "1.9.4", "@biomejs/cli-win32-x64": "1.9.4" }, "bin": { "biome": "bin/biome" } }, "sha512-1rkd7G70+o9KkTn5KLmDYXihGoTaIGO9PIIN2ZB7UJxFrWw04CZHPYiMRjYsaDvVV7hP1dYNRLxSANLaBFGpog=="],
@@ -6099,6 +6163,8 @@
     "my-gravito-static-site/react-dom": ["react-dom@19.2.4", "", { "dependencies": { "scheduler": "^0.27.0" }, "peerDependencies": { "react": "^19.2.4" } }, "sha512-AXJdLo8kgMbimY95O2aKQqsz2iWi9jMgKJhRBAxECE4IFxfcazB2LmzloIoibJI3C12IlY20+KFaLv+71bUJeQ=="],
 
     "my-gravito-static-site/vitest": ["vitest@3.2.4", "", { "dependencies": { "@types/chai": "^5.2.2", "@vitest/expect": "3.2.4", "@vitest/mocker": "3.2.4", "@vitest/pretty-format": "^3.2.4", "@vitest/runner": "3.2.4", "@vitest/snapshot": "3.2.4", "@vitest/spy": "3.2.4", "@vitest/utils": "3.2.4", "chai": "^5.2.0", "debug": "^4.4.1", "expect-type": "^1.2.1", "magic-string": "^0.30.17", "pathe": "^2.0.3", "picomatch": "^4.0.2", "std-env": "^3.9.0", "tinybench": "^2.9.0", "tinyexec": "^0.3.2", "tinyglobby": "^0.2.14", "tinypool": "^1.1.1", "tinyrainbow": "^2.0.0", "vite": "^5.0.0 || ^6.0.0 || ^7.0.0-0", "vite-node": "3.2.4", "why-is-node-running": "^2.3.0" }, "peerDependencies": { "@edge-runtime/vm": "*", "@types/debug": "^4.1.12", "@types/node": "^18.0.0 || ^20.0.0 || >=22.0.0", "@vitest/browser": "3.2.4", "@vitest/ui": "3.2.4", "happy-dom": "*", "jsdom": "*" }, "optionalPeers": ["@edge-runtime/vm", "@types/debug", "@types/node", "@vitest/browser", "@vitest/ui", "happy-dom", "jsdom"], "bin": { "vitest": "vitest.mjs" } }, "sha512-LUCP5ev3GURDysTWiP47wRRUpLKMOfPh+yKTx3kVIEiu5KOMeqzpnYNsKyOoVrULivR8tLcks4+lga33Whn90A=="],
+
+    "my-mvc-app/@biomejs/biome": ["@biomejs/biome@1.9.4", "", { "optionalDependencies": { "@biomejs/cli-darwin-arm64": "1.9.4", "@biomejs/cli-darwin-x64": "1.9.4", "@biomejs/cli-linux-arm64": "1.9.4", "@biomejs/cli-linux-arm64-musl": "1.9.4", "@biomejs/cli-linux-x64": "1.9.4", "@biomejs/cli-linux-x64-musl": "1.9.4", "@biomejs/cli-win32-arm64": "1.9.4", "@biomejs/cli-win32-x64": "1.9.4" }, "bin": { "biome": "bin/biome" } }, "sha512-1rkd7G70+o9KkTn5KLmDYXihGoTaIGO9PIIN2ZB7UJxFrWw04CZHPYiMRjYsaDvVV7hP1dYNRLxSANLaBFGpog=="],
 
     "node-fetch/whatwg-url": ["whatwg-url@5.0.0", "", { "dependencies": { "tr46": "~0.0.3", "webidl-conversions": "^3.0.0" } }, "sha512-saE57nupxk6v3HY35+jzBwYa0rKSy0XR8JSxZPwgLr7ys0IBzhGviA1/TUGJLmSVqs8pb9AnvICXEuOHLprYTw=="],
 
@@ -6614,6 +6680,38 @@
 
     "mjml-migrate/yargs/yargs-parser": ["yargs-parser@21.1.1", "", {}, "sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw=="],
 
+    "my-cqrs-app/@biomejs/biome/@biomejs/cli-darwin-arm64": ["@biomejs/cli-darwin-arm64@1.9.4", "", { "os": "darwin", "cpu": "arm64" }, "sha512-bFBsPWrNvkdKrNCYeAp+xo2HecOGPAy9WyNyB/jKnnedgzl4W4Hb9ZMzYNbf8dMCGmUdSavlYHiR01QaYR58cw=="],
+
+    "my-cqrs-app/@biomejs/biome/@biomejs/cli-darwin-x64": ["@biomejs/cli-darwin-x64@1.9.4", "", { "os": "darwin", "cpu": "x64" }, "sha512-ngYBh/+bEedqkSevPVhLP4QfVPCpb+4BBe2p7Xs32dBgs7rh9nY2AIYUL6BgLw1JVXV8GlpKmb/hNiuIxfPfZg=="],
+
+    "my-cqrs-app/@biomejs/biome/@biomejs/cli-linux-arm64": ["@biomejs/cli-linux-arm64@1.9.4", "", { "os": "linux", "cpu": "arm64" }, "sha512-fJIW0+LYujdjUgJJuwesP4EjIBl/N/TcOX3IvIHJQNsAqvV2CHIogsmA94BPG6jZATS4Hi+xv4SkBBQSt1N4/g=="],
+
+    "my-cqrs-app/@biomejs/biome/@biomejs/cli-linux-arm64-musl": ["@biomejs/cli-linux-arm64-musl@1.9.4", "", { "os": "linux", "cpu": "arm64" }, "sha512-v665Ct9WCRjGa8+kTr0CzApU0+XXtRgwmzIf1SeKSGAv+2scAlW6JR5PMFo6FzqqZ64Po79cKODKf3/AAmECqA=="],
+
+    "my-cqrs-app/@biomejs/biome/@biomejs/cli-linux-x64": ["@biomejs/cli-linux-x64@1.9.4", "", { "os": "linux", "cpu": "x64" }, "sha512-lRCJv/Vi3Vlwmbd6K+oQ0KhLHMAysN8lXoCI7XeHlxaajk06u7G+UsFSO01NAs5iYuWKmVZjmiOzJ0OJmGsMwg=="],
+
+    "my-cqrs-app/@biomejs/biome/@biomejs/cli-linux-x64-musl": ["@biomejs/cli-linux-x64-musl@1.9.4", "", { "os": "linux", "cpu": "x64" }, "sha512-gEhi/jSBhZ2m6wjV530Yy8+fNqG8PAinM3oV7CyO+6c3CEh16Eizm21uHVsyVBEB6RIM8JHIl6AGYCv6Q6Q9Tg=="],
+
+    "my-cqrs-app/@biomejs/biome/@biomejs/cli-win32-arm64": ["@biomejs/cli-win32-arm64@1.9.4", "", { "os": "win32", "cpu": "arm64" }, "sha512-tlbhLk+WXZmgwoIKwHIHEBZUwxml7bRJgk0X2sPyNR3S93cdRq6XulAZRQJ17FYGGzWne0fgrXBKpl7l4M87Hg=="],
+
+    "my-cqrs-app/@biomejs/biome/@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@1.9.4", "", { "os": "win32", "cpu": "x64" }, "sha512-8Y5wMhVIPaWe6jw2H+KlEm4wP/f7EW3810ZLmDlrEEy5KvBsb9ECEfu/kMWD484ijfQ8+nIi0giMgu9g1UAuuA=="],
+
+    "my-ddd-app/@biomejs/biome/@biomejs/cli-darwin-arm64": ["@biomejs/cli-darwin-arm64@1.9.4", "", { "os": "darwin", "cpu": "arm64" }, "sha512-bFBsPWrNvkdKrNCYeAp+xo2HecOGPAy9WyNyB/jKnnedgzl4W4Hb9ZMzYNbf8dMCGmUdSavlYHiR01QaYR58cw=="],
+
+    "my-ddd-app/@biomejs/biome/@biomejs/cli-darwin-x64": ["@biomejs/cli-darwin-x64@1.9.4", "", { "os": "darwin", "cpu": "x64" }, "sha512-ngYBh/+bEedqkSevPVhLP4QfVPCpb+4BBe2p7Xs32dBgs7rh9nY2AIYUL6BgLw1JVXV8GlpKmb/hNiuIxfPfZg=="],
+
+    "my-ddd-app/@biomejs/biome/@biomejs/cli-linux-arm64": ["@biomejs/cli-linux-arm64@1.9.4", "", { "os": "linux", "cpu": "arm64" }, "sha512-fJIW0+LYujdjUgJJuwesP4EjIBl/N/TcOX3IvIHJQNsAqvV2CHIogsmA94BPG6jZATS4Hi+xv4SkBBQSt1N4/g=="],
+
+    "my-ddd-app/@biomejs/biome/@biomejs/cli-linux-arm64-musl": ["@biomejs/cli-linux-arm64-musl@1.9.4", "", { "os": "linux", "cpu": "arm64" }, "sha512-v665Ct9WCRjGa8+kTr0CzApU0+XXtRgwmzIf1SeKSGAv+2scAlW6JR5PMFo6FzqqZ64Po79cKODKf3/AAmECqA=="],
+
+    "my-ddd-app/@biomejs/biome/@biomejs/cli-linux-x64": ["@biomejs/cli-linux-x64@1.9.4", "", { "os": "linux", "cpu": "x64" }, "sha512-lRCJv/Vi3Vlwmbd6K+oQ0KhLHMAysN8lXoCI7XeHlxaajk06u7G+UsFSO01NAs5iYuWKmVZjmiOzJ0OJmGsMwg=="],
+
+    "my-ddd-app/@biomejs/biome/@biomejs/cli-linux-x64-musl": ["@biomejs/cli-linux-x64-musl@1.9.4", "", { "os": "linux", "cpu": "x64" }, "sha512-gEhi/jSBhZ2m6wjV530Yy8+fNqG8PAinM3oV7CyO+6c3CEh16Eizm21uHVsyVBEB6RIM8JHIl6AGYCv6Q6Q9Tg=="],
+
+    "my-ddd-app/@biomejs/biome/@biomejs/cli-win32-arm64": ["@biomejs/cli-win32-arm64@1.9.4", "", { "os": "win32", "cpu": "arm64" }, "sha512-tlbhLk+WXZmgwoIKwHIHEBZUwxml7bRJgk0X2sPyNR3S93cdRq6XulAZRQJ17FYGGzWne0fgrXBKpl7l4M87Hg=="],
+
+    "my-ddd-app/@biomejs/biome/@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@1.9.4", "", { "os": "win32", "cpu": "x64" }, "sha512-8Y5wMhVIPaWe6jw2H+KlEm4wP/f7EW3810ZLmDlrEEy5KvBsb9ECEfu/kMWD484ijfQ8+nIi0giMgu9g1UAuuA=="],
+
     "my-gravito-app/@biomejs/biome/@biomejs/cli-darwin-arm64": ["@biomejs/cli-darwin-arm64@1.9.4", "", { "os": "darwin", "cpu": "arm64" }, "sha512-bFBsPWrNvkdKrNCYeAp+xo2HecOGPAy9WyNyB/jKnnedgzl4W4Hb9ZMzYNbf8dMCGmUdSavlYHiR01QaYR58cw=="],
 
     "my-gravito-app/@biomejs/biome/@biomejs/cli-darwin-x64": ["@biomejs/cli-darwin-x64@1.9.4", "", { "os": "darwin", "cpu": "x64" }, "sha512-ngYBh/+bEedqkSevPVhLP4QfVPCpb+4BBe2p7Xs32dBgs7rh9nY2AIYUL6BgLw1JVXV8GlpKmb/hNiuIxfPfZg=="],
@@ -6709,6 +6807,22 @@
     "my-gravito-static-site/vitest/vite": ["vite@7.3.1", "", { "dependencies": { "esbuild": "^0.27.0", "fdir": "^6.5.0", "picomatch": "^4.0.3", "postcss": "^8.5.6", "rollup": "^4.43.0", "tinyglobby": "^0.2.15" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "peerDependencies": { "@types/node": "^20.19.0 || >=22.12.0", "jiti": ">=1.21.0", "less": "^4.0.0", "lightningcss": "^1.21.0", "sass": "^1.70.0", "sass-embedded": "^1.70.0", "stylus": ">=0.54.8", "sugarss": "^5.0.0", "terser": "^5.16.0", "tsx": "^4.8.1", "yaml": "^2.4.2" }, "optionalPeers": ["@types/node", "jiti", "less", "lightningcss", "sass", "sass-embedded", "stylus", "sugarss", "terser", "tsx", "yaml"], "bin": { "vite": "bin/vite.js" } }, "sha512-w+N7Hifpc3gRjZ63vYBXA56dvvRlNWRczTdmCBBa+CotUzAPf5b7YMdMR/8CQoeYE5LX3W4wj6RYTgonm1b9DA=="],
 
     "my-gravito-static-site/vitest/vite-node": ["vite-node@3.2.4", "", { "dependencies": { "cac": "^6.7.14", "debug": "^4.4.1", "es-module-lexer": "^1.7.0", "pathe": "^2.0.3", "vite": "^5.0.0 || ^6.0.0 || ^7.0.0-0" }, "bin": { "vite-node": "vite-node.mjs" } }, "sha512-EbKSKh+bh1E1IFxeO0pg1n4dvoOTt0UDiXMd/qn++r98+jPO1xtJilvXldeuQ8giIB5IkpjCgMleHMNEsGH6pg=="],
+
+    "my-mvc-app/@biomejs/biome/@biomejs/cli-darwin-arm64": ["@biomejs/cli-darwin-arm64@1.9.4", "", { "os": "darwin", "cpu": "arm64" }, "sha512-bFBsPWrNvkdKrNCYeAp+xo2HecOGPAy9WyNyB/jKnnedgzl4W4Hb9ZMzYNbf8dMCGmUdSavlYHiR01QaYR58cw=="],
+
+    "my-mvc-app/@biomejs/biome/@biomejs/cli-darwin-x64": ["@biomejs/cli-darwin-x64@1.9.4", "", { "os": "darwin", "cpu": "x64" }, "sha512-ngYBh/+bEedqkSevPVhLP4QfVPCpb+4BBe2p7Xs32dBgs7rh9nY2AIYUL6BgLw1JVXV8GlpKmb/hNiuIxfPfZg=="],
+
+    "my-mvc-app/@biomejs/biome/@biomejs/cli-linux-arm64": ["@biomejs/cli-linux-arm64@1.9.4", "", { "os": "linux", "cpu": "arm64" }, "sha512-fJIW0+LYujdjUgJJuwesP4EjIBl/N/TcOX3IvIHJQNsAqvV2CHIogsmA94BPG6jZATS4Hi+xv4SkBBQSt1N4/g=="],
+
+    "my-mvc-app/@biomejs/biome/@biomejs/cli-linux-arm64-musl": ["@biomejs/cli-linux-arm64-musl@1.9.4", "", { "os": "linux", "cpu": "arm64" }, "sha512-v665Ct9WCRjGa8+kTr0CzApU0+XXtRgwmzIf1SeKSGAv+2scAlW6JR5PMFo6FzqqZ64Po79cKODKf3/AAmECqA=="],
+
+    "my-mvc-app/@biomejs/biome/@biomejs/cli-linux-x64": ["@biomejs/cli-linux-x64@1.9.4", "", { "os": "linux", "cpu": "x64" }, "sha512-lRCJv/Vi3Vlwmbd6K+oQ0KhLHMAysN8lXoCI7XeHlxaajk06u7G+UsFSO01NAs5iYuWKmVZjmiOzJ0OJmGsMwg=="],
+
+    "my-mvc-app/@biomejs/biome/@biomejs/cli-linux-x64-musl": ["@biomejs/cli-linux-x64-musl@1.9.4", "", { "os": "linux", "cpu": "x64" }, "sha512-gEhi/jSBhZ2m6wjV530Yy8+fNqG8PAinM3oV7CyO+6c3CEh16Eizm21uHVsyVBEB6RIM8JHIl6AGYCv6Q6Q9Tg=="],
+
+    "my-mvc-app/@biomejs/biome/@biomejs/cli-win32-arm64": ["@biomejs/cli-win32-arm64@1.9.4", "", { "os": "win32", "cpu": "arm64" }, "sha512-tlbhLk+WXZmgwoIKwHIHEBZUwxml7bRJgk0X2sPyNR3S93cdRq6XulAZRQJ17FYGGzWne0fgrXBKpl7l4M87Hg=="],
+
+    "my-mvc-app/@biomejs/biome/@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@1.9.4", "", { "os": "win32", "cpu": "x64" }, "sha512-8Y5wMhVIPaWe6jw2H+KlEm4wP/f7EW3810ZLmDlrEEy5KvBsb9ECEfu/kMWD484ijfQ8+nIi0giMgu9g1UAuuA=="],
 
     "node-fetch/whatwg-url/tr46": ["tr46@0.0.3", "", {}, "sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw=="],
 
