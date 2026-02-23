@@ -72,14 +72,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bun-
 
-      - name: Turbo Cache
+      - name: Turbo Cache (local fallback)
         uses: actions/cache@v4
         with:
           path: |
             .turbo
             node_modules/.cache/turbo
-            **/tsconfig.tsbuildinfo
-            **/dist
           key: turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}-${{ github.sha }}
           restore-keys: |
             turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}-
@@ -111,6 +109,9 @@ jobs:
           fi
 
       - name: Build
+        env:
+          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+          TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             # Filter: Changed packages and their dependents (consumers)
@@ -179,6 +180,8 @@ jobs:
           --health-retries 5
     env:
       NODE_OPTIONS: "--max-old-space-size=6144"
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
       MONGODB_URI: mongodb://localhost:27017
       REDIS_HOST: localhost
       REDIS_PORT: 6379
@@ -223,14 +226,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-bun-
 
-      - name: Turbo Cache
+      - name: Turbo Cache (local fallback)
         uses: actions/cache@v4
         with:
           path: |
             .turbo
             node_modules/.cache/turbo
-            **/tsconfig.tsbuildinfo
-            **/dist
           key: turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}-${{ github.sha }}
           restore-keys: |
             turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock', '**/package.json') }}-
