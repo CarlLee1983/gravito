@@ -15,6 +15,8 @@ async function buildInParallel() {
 
     if (isDtsOnly) {
       args.push('--dts', '--dts-only')
+    } else {
+      args.push('--dts')
     }
 
     args.push(
@@ -45,6 +47,8 @@ async function buildInParallel() {
 
     if (isDtsOnly) {
       engineArgs.push('--dts', '--dts-only')
+    } else {
+      engineArgs.push('--dts')
     }
 
     engineArgs.push(
