@@ -251,4 +251,40 @@ describe('WorkerPool', () => {
       expect((pool as any).queue.length).toBe(1)
     })
   })
+
+  describe('runtime-aware worker creation', () => {
+    it('should accept runtime configuration', () => {
+      pool = new WorkerPool({ runtime: 'node', poolSize: 2 })
+      const config = (pool as any).config
+      expect(config.runtime).toBe('node')
+    })
+
+    it('should accept custom factory', () => {
+      const { RuntimeAwareWorkerFactory } = require('../src/workers/WorkerFactory')
+      const customFactory = new RuntimeAwareWorkerFactory('bun')
+
+      pool = new WorkerPool({ factory: customFactory, poolSize: 2 })
+      const config = (pool as any).config
+      expect(config.factory).toBe(customFactory)
+    })
+
+    it('should support auto runtime detection', () => {
+      pool = new WorkerPool({ runtime: 'auto', poolSize: 2 })
+      const config = (pool as any).config
+      expect(config.runtime).toBe('auto')
+    })
+
+    it('should create workers via factory', () => {
+      pool = new WorkerPool({ minWorkers: 1, runtime: 'node' })
+      const stats = pool.getStats()
+      expect(stats.total).toBe(1)
+    })
+
+    it('should preserve poolSize with factory-created workers', () => {
+      pool = new WorkerPool({ poolSize: 5, minWorkers: 2, runtime: 'node' })
+      const stats = pool.getStats()
+      expect(stats.total).toBe(2)
+      expect((pool as any).config.poolSize).toBe(5)
+    })
+  })
 })

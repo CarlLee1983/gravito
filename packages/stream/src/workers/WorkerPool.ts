@@ -8,7 +8,13 @@
  */
 
 import type { SerializedJob } from '../types'
-import { SandboxedWorker, type SandboxedWorkerConfig } from './SandboxedWorker'
+import type { SandboxedWorker, SandboxedWorkerConfig } from './SandboxedWorker'
+import {
+  type IWorkerFactory,
+  RuntimeAwareWorkerFactory,
+  type RuntimeEnvironment,
+  type WorkerConfig,
+} from './WorkerFactory'
 
 /**
  * Configuration options for the Worker Pool.
@@ -36,6 +42,26 @@ export interface WorkerPoolConfig extends SandboxedWorkerConfig {
    * @default 30000 (30 seconds)
    */
   healthCheckInterval?: number
+
+  /**
+   * Custom worker factory for creating workers.
+   *
+   * If not provided, RuntimeAwareWorkerFactory will be used with the runtime option.
+   * @default undefined
+   */
+  factory?: IWorkerFactory
+
+  /**
+   * Runtime environment to use for worker creation.
+   *
+   * - `'auto'` or undefined: Automatically detect (Bun or Node.js)
+   * - `'bun'`: Force Bun runtime
+   * - `'node'`: Force Node.js runtime
+   * - `'bun'`/`'node'`: Only used if factory is not provided
+   *
+   * @default 'auto'
+   */
+  runtime?: RuntimeEnvironment
 }
 
 /**
@@ -61,20 +87,29 @@ export interface WorkerPoolStats {
 /**
  * Worker Pool.
  *
- * Orchestrates multiple `SandboxedWorker` instances to execute jobs concurrently.
+ * Orchestrates multiple `SandboxedWorker` or `BunWorker` instances to execute jobs concurrently.
+ * Automatically selects the best worker implementation based on the runtime environment.
  *
  * Key features:
  * - **Concurrency Control**: Limits the number of simultaneous job executions (`poolSize`).
  * - **Queueing**: Queues jobs when all workers are busy.
  * - **Lifecycle Management**: Automatically creates, reuses, and terminates workers.
  * - **Health Monitoring**: Periodically cleans up dead workers and maintains `minWorkers`.
+ * - **Runtime-Aware**: Automatically uses BunWorker on Bun, SandboxedWorker on Node.js.
  *
  * @example
  * ```typescript
+ * // Auto-detection (uses best available runtime)
  * const pool = new WorkerPool({
  *   poolSize: 8,
  *   minWorkers: 2,
  *   maxExecutionTime: 30000
+ * });
+ *
+ * // Force specific runtime
+ * const bunPool = new WorkerPool({
+ *   runtime: 'bun',
+ *   poolSize: 8
  * });
  *
  * await pool.execute(job);
@@ -82,8 +117,12 @@ export interface WorkerPoolStats {
  * ```
  */
 export class WorkerPool {
-  private workers: SandboxedWorker[] = []
-  private config: Required<WorkerPoolConfig>
+  private workers: Array<SandboxedWorker | any> = []
+  private factory: IWorkerFactory
+  private config: Required<Omit<WorkerPoolConfig, 'factory' | 'runtime'>> & {
+    factory: IWorkerFactory
+    runtime: RuntimeEnvironment
+  }
   private queue: Array<{
     job: SerializedJob
     resolve: () => void
@@ -101,6 +140,9 @@ export class WorkerPool {
    * @param config - Configuration options for the pool.
    */
   constructor(config: WorkerPoolConfig = {}) {
+    // Initialize factory
+    this.factory = config.factory ?? new RuntimeAwareWorkerFactory(config.runtime ?? 'auto')
+
     this.config = {
       poolSize: config.poolSize ?? 4,
       minWorkers: config.minWorkers ?? 0,
@@ -109,6 +151,8 @@ export class WorkerPool {
       maxMemory: config.maxMemory ?? 0,
       isolateContexts: config.isolateContexts ?? false,
       idleTimeout: config.idleTimeout ?? 60000,
+      factory: this.factory,
+      runtime: config.runtime ?? 'auto',
     }
 
     this.warmUp()
@@ -126,17 +170,22 @@ export class WorkerPool {
   }
 
   /**
-   * Creates a new SandboxedWorker and adds it to the pool.
+   * Creates a new Worker (BunWorker or SandboxedWorker) and adds it to the pool.
+   *
+   * Uses the configured factory to create the appropriate worker type
+   * based on the runtime environment.
    *
    * @returns The newly created worker.
    */
-  private createWorker(): SandboxedWorker {
-    const worker = new SandboxedWorker({
+  private createWorker(): SandboxedWorker | any {
+    const config: WorkerConfig = {
       maxExecutionTime: this.config.maxExecutionTime,
       maxMemory: this.config.maxMemory,
       isolateContexts: this.config.isolateContexts,
       idleTimeout: this.config.idleTimeout,
-    })
+    }
+
+    const worker = this.factory.create(config)
 
     this.workers.push(worker)
     return worker
