@@ -1,34 +1,27 @@
 /**
- * Lightweight LRU-like cache for compiled SQL strings.
+ * Lightweight LRU cache for compiled SQL strings.
  *
  * Prevents re-compiling the same query structures over and over.
+ * Uses lru-cache for O(1) eviction performance and proper LRU semantics.
  */
+
+import { LRUCache } from 'lru-cache'
+
 export class SQLCache {
-  private cache = new Map<string, string>()
-  private maxSize: number
+  private cache: LRUCache<string, string>
 
   constructor(maxSize = 1000) {
-    this.maxSize = maxSize
+    this.cache = new LRUCache<string, string>({
+      max: maxSize,
+      updateAgeOnGet: true,
+    })
   }
 
   get(key: string): string | undefined {
-    const value = this.cache.get(key)
-    if (value) {
-      // Refresh order
-      this.cache.delete(key)
-      this.cache.set(key, value)
-    }
-    return value
+    return this.cache.get(key)
   }
 
   set(key: string, value: string): void {
-    if (this.cache.size >= this.maxSize) {
-      // Simple eviction: remove the first (oldest) entry
-      const firstKey = this.cache.keys().next().value
-      if (firstKey !== undefined) {
-        this.cache.delete(firstKey)
-      }
-    }
     this.cache.set(key, value)
   }
 
