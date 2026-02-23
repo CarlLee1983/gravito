@@ -45,9 +45,9 @@
     "@gravito/plasma": "^1.0.0"
   },
   "devDependencies": {
-    "@gravito/plasma": "^1.0.0",
-    "@gravito/core": "^1.6.1",
-    "@gravito/photon": "^1.0.1",
+    "@gravito/plasma": "workspace:*",
+    "@gravito/core": "workspace:*",
+    "@gravito/photon": "workspace:*",
     "bun-types": "latest",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"

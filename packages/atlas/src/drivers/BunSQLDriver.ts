@@ -315,6 +315,20 @@ export class BunSQLDriver implements DriverContract {
       : null
   }
 
+  /**
+   * Adjust pool size for AdaptivePoolManager compatibility.
+   * Note: Bun.sql does not support runtime connection pool resize.
+   * Pool size is fixed at connect() time via the connection URL.
+   */
+  async adjustPoolSize(targetSize: number): Promise<void> {
+    if (process.env.DEBUG_ATLAS) {
+      // biome-ignore lint: Internal debug logging
+      console.log(
+        `[BunSQLDriver] adjustPoolSize(${targetSize}) — Bun.sql does not support runtime resize`
+      )
+    }
+  }
+
   private normalizeError(error: any, sql: string, bindings: unknown[]): DatabaseError {
     const m = error.message?.toLowerCase() ?? ''
     if (m.includes('unique')) {

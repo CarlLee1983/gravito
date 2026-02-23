@@ -46,8 +46,8 @@
   "license": "MIT",
   "dependencies": {
     "@aws-sdk/client-sqs": "^3.955.0",
-    "@gravito/atlas": "^1.6.0",
-    "@gravito/core": "^1.6.1",
+    "@gravito/atlas": "workspace:*",
+    "@gravito/core": "workspace:*",
     "@grpc/grpc-js": "^1.14.3",
     "@grpc/proto-loader": "^0.8.0",
     "cron-parser": "^5.4.0",

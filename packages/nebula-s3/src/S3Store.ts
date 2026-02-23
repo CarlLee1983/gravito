@@ -1,16 +1,3 @@
-import {
-  DeleteObjectCommand,
-  GetObjectCommand,
-  type GetObjectCommandOutput,
-  HeadObjectCommand,
-  type HeadObjectCommandOutput,
-  ListObjectsV2Command,
-  type ListObjectsV2CommandOutput,
-  PutObjectCommand,
-  S3Client,
-  type S3ClientConfig,
-} from '@aws-sdk/client-s3'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import type {
   ListOptions,
   ListResult,
@@ -63,23 +50,23 @@ export interface S3StoreOptions {
  * @public
  */
 export class S3Store implements StorageStore {
-  private client: S3Client
+  // biome-ignore lint/suspicious/noExplicitAny: Bun S3Client type not exposed in types
+  private s3: any
 
   constructor(private options: S3StoreOptions) {
-    const config: S3ClientConfig = {
+    const config: Record<string, any> = {
+      accessKeyId: options.credentials?.accessKeyId,
+      secretAccessKey: options.credentials?.secretAccessKey,
       region: options.region ?? 'auto',
-      forcePathStyle: options.forcePathStyle ?? false,
+      bucket: options.bucket,
     }
 
     if (options.endpoint) {
       config.endpoint = options.endpoint
     }
 
-    if (options.credentials) {
-      config.credentials = options.credentials
-    }
-
-    this.client = new S3Client(config)
+    // biome-ignore lint/suspicious/noExplicitAny: Bun S3Client type
+    this.s3 = new (Bun as any).S3Client(config)
   }
 
   /**
@@ -90,39 +77,39 @@ export class S3Store implements StorageStore {
    * @param options - 上傳選項 (metadata, content-type, etc.)
    */
   async put(key: string, data: Blob | Buffer | string, options?: PutOptions): Promise<void> {
-    let body: Buffer | Uint8Array
+    let body: Blob | Buffer | string
 
     if (data instanceof Blob) {
-      body = Buffer.from(await data.arrayBuffer())
-    } else if (typeof data === 'string') {
-      body = Buffer.from(data)
-    } else {
       body = data
+    } else if (typeof data === 'string') {
+      body = new Blob([data])
+    } else {
+      body = new Blob([data])
     }
 
     // Sanitize metadata to ensure only ASCII characters (S3 requirement)
-    const sanitizedMetadata = options?.metadata
-      ? Object.fromEntries(
-          Object.entries(options.metadata).map(([k, v]: [string, string]) => [
-            k,
-            // Replace non-ASCII characters with URL encoding
-            // biome-ignore lint/suspicious/noControlCharactersInRegex: Need to detect non-ASCII for S3 compatibility
-            v.replace(/[^\x00-\x7F]/g, (char: string) => encodeURIComponent(char)),
-          ])
-        )
-      : undefined
+    const headers: Record<string, string> = {
+      'Content-Type': options?.contentType ?? 'application/octet-stream',
+    }
 
-    const command = new PutObjectCommand({
-      Bucket: this.options.bucket,
-      Key: key,
-      Body: body,
-      ContentType: options?.contentType,
-      Metadata: sanitizedMetadata,
-      CacheControl: options?.cacheControl,
-      ContentDisposition: options?.contentDisposition,
-    })
+    if (options?.cacheControl) {
+      headers['Cache-Control'] = options.cacheControl
+    }
 
-    await this.client.send(command)
+    if (options?.contentDisposition) {
+      headers['Content-Disposition'] = options.contentDisposition
+    }
+
+    if (options?.metadata) {
+      Object.entries(options.metadata).forEach(([k, v]) => {
+        // biome-ignore lint/suspicious/noControlCharactersInRegex: Need to detect non-ASCII for S3 compatibility
+        const sanitized = v.replace(/[^\x00-\x7F]/g, (char: string) => encodeURIComponent(char))
+        headers[`x-amz-meta-${k}`] = sanitized
+      })
+    }
+
+    // biome-ignore lint/suspicious/noExplicitAny: Bun S3 API
+    await (this.s3 as any).file(key).write(body, { headers })
   }
 
   /**
@@ -133,27 +120,16 @@ export class S3Store implements StorageStore {
    */
   async get(key: string): Promise<Blob | null> {
     try {
-      const command = new GetObjectCommand({
-        Bucket: this.options.bucket,
-        Key: key,
-      })
-
-      const response = (await this.client.send(command)) as any
-
-      if (!response.Body) {
+      // biome-ignore lint/suspicious/noExplicitAny: Bun S3 API
+      const exists = await (this.s3 as any).file(key).exists()
+      if (!exists) {
         return null
       }
 
-      // Convert stream to buffer
-      const chunks: Uint8Array[] = []
-      for await (const chunk of response.Body as AsyncIterable<Uint8Array>) {
-        chunks.push(chunk)
-      }
-
-      const buffer = Buffer.concat(chunks)
-      return new Blob([buffer], { type: response.ContentType })
+      const buffer = await (this.s3 as any).file(key).arrayBuffer()
+      return new Blob([buffer])
     } catch (error: any) {
-      if (error.name === 'NoSuchKey') {
+      if (error?.name === 'NoSuchKey' || error?.code === 'NoSuchKey') {
         return null
       }
       throw error
@@ -167,19 +143,13 @@ export class S3Store implements StorageStore {
    * @returns true 如果刪除成功，false 如果檔案不存在
    */
   async delete(key: string): Promise<boolean> {
-    // S3 Delete is idempotent - it always succeeds even if key doesn't exist
-    // We need to check existence first to match StorageStore semantics
-    const exists = await this.exists(key)
+    // biome-ignore lint/suspicious/noExplicitAny: Bun S3 API
+    const exists = await (this.s3 as any).file(key).exists()
     if (!exists) {
       return false
     }
 
-    const command = new DeleteObjectCommand({
-      Bucket: this.options.bucket,
-      Key: key,
-    })
-
-    await this.client.send(command)
+    await (this.s3 as any).file(key).delete()
     return true
   }
 
@@ -191,15 +161,10 @@ export class S3Store implements StorageStore {
    */
   async exists(key: string): Promise<boolean> {
     try {
-      const command = new HeadObjectCommand({
-        Bucket: this.options.bucket,
-        Key: key,
-      })
-
-      await this.client.send(command)
-      return true
+      // biome-ignore lint/suspicious/noExplicitAny: Bun S3 API
+      return await (this.s3 as any).file(key).exists()
     } catch (error: any) {
-      if (error.name === 'NotFound' || error.name === 'NoSuchKey') {
+      if (error?.name === 'NotFound' || error?.code === 'NoSuchKey') {
         return false
       }
       throw error
@@ -240,37 +205,23 @@ export class S3Store implements StorageStore {
    */
   async getMetadata(key: string): Promise<StorageMetadata | null> {
     try {
-      const command = new HeadObjectCommand({
-        Bucket: this.options.bucket,
-        Key: key,
-      })
-
-      const response = (await this.client.send(command)) as any
-
-      // Decode URL-encoded metadata values
-      const decodedMetadata = response.Metadata
-        ? Object.fromEntries(
-            Object.entries(response.Metadata).map(([k, v]: [string, any]) => {
-              try {
-                return [k, decodeURIComponent(v as string)]
-              } catch {
-                // If decode fails, return original value
-                return [k, v as string]
-              }
-            })
-          )
-        : undefined
+      // biome-ignore lint/suspicious/noExplicitAny: Bun S3 API
+      const stat = await (this.s3 as any).file(key).stat()
+      if (!stat) {
+        return null
+      }
 
       return {
         key,
-        size: response.ContentLength ?? 0,
-        mimeType: response.ContentType,
-        lastModified: response.LastModified,
-        etag: response.ETag?.replace(/"/g, ''),
-        customMetadata: decodedMetadata as Record<string, string> | undefined,
+        size: stat.size ?? 0,
+        mimeType: stat.type,
+        lastModified: new Date(stat.lastModified ?? 0),
+        etag: stat.etag,
+        // Note: Bun S3 API doesn't expose custom metadata from stat()
+        customMetadata: undefined,
       }
     } catch (error: any) {
-      if (error.name === 'NotFound' || error.name === 'NoSuchKey') {
+      if (error?.name === 'NotFound' || error?.code === 'NoSuchKey') {
         return null
       }
       throw error
@@ -336,14 +287,9 @@ export class S3Store implements StorageStore {
    * @returns 簽名 URL
    */
   async getSignedUrl(key: string, expiresIn: number): Promise<string> {
-    const command = new GetObjectCommand({
-      Bucket: this.options.bucket,
-      Key: key,
-    })
-
-    // Type assertion needed due to AWS SDK type mismatch
-    // biome-ignore lint/suspicious/noExplicitAny: AWS SDK type compatibility
-    return getSignedUrl(this.client as any, command, { expiresIn })
+    // biome-ignore lint/suspicious/noExplicitAny: Bun S3 API
+    const url = (this.s3 as any).file(key).presign({ expiresIn })
+    return Promise.resolve(url)
   }
 
   /**
@@ -353,24 +299,10 @@ export class S3Store implements StorageStore {
    * @param stream - 資料串流
    */
   async putStream(key: string, stream: ReadableStream<Uint8Array>): Promise<void> {
-    // Read entire stream into buffer
-    // Note: For very large files, consider using multipart upload
-    const reader = stream.getReader()
-    const chunks: Uint8Array[] = []
-
     try {
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) {
-          break
-        }
-        chunks.push(value)
-      }
-
-      const buffer = Buffer.concat(chunks)
-      await this.put(key, buffer)
+      // biome-ignore lint/suspicious/noExplicitAny: Bun S3 API
+      await (this.s3 as any).file(key).write(stream)
     } catch (error) {
-      reader.releaseLock()
       throw new Error(`[S3Store] Failed to write stream: ${error}`)
     }
   }
@@ -383,32 +315,16 @@ export class S3Store implements StorageStore {
    */
   async getStream(key: string): Promise<ReadableStream<Uint8Array> | null> {
     try {
-      const command = new GetObjectCommand({
-        Bucket: this.options.bucket,
-        Key: key,
-      })
-
-      const response = (await this.client.send(command)) as any
-
-      if (!response.Body) {
+      // biome-ignore lint/suspicious/noExplicitAny: Bun S3 API
+      const exists = await (this.s3 as any).file(key).exists()
+      if (!exists) {
         return null
       }
 
-      // Convert AWS SDK stream to Web ReadableStream
-      return new ReadableStream({
-        async start(controller) {
-          try {
-            for await (const chunk of response.Body as AsyncIterable<Uint8Array>) {
-              controller.enqueue(chunk)
-            }
-            controller.close()
-          } catch (error) {
-            controller.error(error)
-          }
-        },
-      })
+      const stream = await (this.s3 as any).file(key).stream()
+      return stream as ReadableStream<Uint8Array>
     } catch (error: any) {
-      if (error.name === 'NoSuchKey') {
+      if (error?.name === 'NoSuchKey' || error?.code === 'NoSuchKey') {
         return null
       }
       throw error
@@ -425,27 +341,29 @@ export class S3Store implements StorageStore {
   async listPaginated(prefix = '', options?: ListOptions): Promise<ListResult> {
     const maxResults = options?.maxResults ?? 1000
 
-    const command = new ListObjectsV2Command({
-      Bucket: this.options.bucket,
-      Prefix: prefix,
-      MaxKeys: maxResults,
-      ContinuationToken: options?.cursor,
-    })
+    try {
+      // biome-ignore lint/suspicious/noExplicitAny: Bun S3 API
+      const response = await (this.s3 as any).list({
+        prefix,
+        maxKeys: maxResults,
+        cursor: options?.cursor,
+      })
 
-    const response = (await this.client.send(command)) as any
+      const items: StorageItem[] = (response.files ?? []).map((obj: any) => ({
+        key: obj.key ?? obj.name,
+        isDirectory: obj.key?.endsWith('/') === true || obj.name?.endsWith('/') === true,
+        size: obj.size,
+        lastModified: obj.lastModified,
+      }))
 
-    const items: StorageItem[] = (response.Contents ?? []).map((obj: any) => ({
-      key: obj.Key!,
-      isDirectory: obj.Key?.endsWith('/') === true,
-      size: obj.Size,
-      lastModified: obj.LastModified,
-    }))
-
-    return {
-      items,
-      nextCursor: response.NextContinuationToken ?? null,
-      hasMore: response.IsTruncated ?? false,
-      count: items.length,
+      return {
+        items,
+        nextCursor: response.nextCursor ?? null,
+        hasMore: !!response.nextCursor,
+        count: items.length,
+      }
+    } catch (error) {
+      throw new Error(`[S3Store] Failed to list objects: ${error}`)
     }
   }
 }

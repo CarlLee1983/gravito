@@ -576,6 +576,51 @@ export interface ExecuteResult {
 }
 
 /**
+ * Batch insert result (multi-value INSERT)
+ */
+export interface BatchInsertResult {
+  /**
+   * Total number of affected rows across all chunks
+   */
+  totalAffectedRows: number
+
+  /**
+   * ID of first inserted row
+   */
+  firstInsertId?: number | bigint | undefined
+
+  /**
+   * ID of last inserted row
+   */
+  lastInsertId?: number | bigint | undefined
+
+  /**
+   * Number of chunks processed
+   */
+  chunkCount: number
+
+  /**
+   * Per-chunk results
+   */
+  chunks: Array<{ affectedRows: number; insertId?: number | bigint | undefined }>
+}
+
+/**
+ * Batch execute result (multiple statements)
+ */
+export interface BatchExecuteResult {
+  /**
+   * Total number of affected rows across all statements
+   */
+  totalAffectedRows: number
+
+  /**
+   * Results for each statement
+   */
+  results: ExecuteResult[]
+}
+
+/**
  * Pagination result
  */
 export interface PaginateResult<T> {
