@@ -85,9 +85,7 @@ jobs:
             turbo-${{ runner.os }}-
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
-        env:
-          SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
+        run: bun install --frozen-lockfile --ignore-scripts
 
       - name: Fetch base branch (for PR)
         if: github.event_name == 'pull_request'
@@ -239,9 +237,7 @@ jobs:
             turbo-${{ runner.os }}-
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
-        env:
-          SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
+        run: bun install --frozen-lockfile --ignore-scripts
 
       - name: Fetch base branch (for PR)
         if: github.event_name == 'pull_request'
