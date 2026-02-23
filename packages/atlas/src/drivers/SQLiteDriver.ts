@@ -3,6 +3,8 @@
  * @description Database driver implementation for SQLite using better-sqlite3
  */
 
+import { LRUCache } from 'lru-cache'
+
 import {
   ConnectionError,
   DatabaseError,
@@ -26,79 +28,34 @@ import type { SQLiteClient, SQLiteStatement } from './types'
 declare const Bun: { sql: (path: string) => SQLiteClient } | undefined
 
 /**
- * SQLite Prepared Statement Cache Entry
- */
-interface PreparedStatementEntry {
-  stmt: SQLiteStatement
-  lastUsed: number
-  useCount: number
-}
-
-/**
- * Simple LRU cache for SQLite prepared statements
+ * LRU cache for SQLite prepared statements using lru-cache package
  */
 class SQLitePreparedStatementCache {
-  private cache = new Map<string, PreparedStatementEntry>()
-  private readonly maxSize: number
-  private readonly idleTimeout: number
+  private cache: LRUCache<string, SQLiteStatement>
 
   constructor(maxSize = 100, idleTimeout = 60000) {
-    this.maxSize = maxSize
-    this.idleTimeout = idleTimeout
+    this.cache = new LRUCache<string, SQLiteStatement>({
+      max: maxSize,
+      ttl: idleTimeout,
+      ttlAutopurge: false,
+      allowStale: false,
+    })
   }
 
   get(sql: string, client: SQLiteClient): SQLiteStatement {
-    const entry = this.cache.get(sql)
-    if (entry) {
-      entry.lastUsed = Date.now()
-      entry.useCount++
-      return entry.stmt
+    const stmt = this.cache.get(sql)
+    if (stmt) {
+      return stmt
     }
 
     // Cache miss - prepare new statement
-    const stmt = client.prepare(sql)
-    if (this.cache.size >= this.maxSize) {
-      this.evictLeastRecentlyUsed()
-    }
-
-    this.cache.set(sql, {
-      stmt,
-      lastUsed: Date.now(),
-      useCount: 0,
-    })
-
-    return stmt
-  }
-
-  private evictLeastRecentlyUsed(): void {
-    let oldestKey: string | null = null
-    let oldestTime = Number.POSITIVE_INFINITY
-
-    for (const [key, entry] of this.cache) {
-      if (entry.lastUsed < oldestTime) {
-        oldestTime = entry.lastUsed
-        oldestKey = key
-      }
-    }
-
-    if (oldestKey) {
-      this.cache.delete(oldestKey)
-    }
+    const newStmt = client.prepare(sql)
+    this.cache.set(sql, newStmt)
+    return newStmt
   }
 
   cleanup(): void {
-    const now = Date.now()
-    const toRemove: string[] = []
-
-    for (const [key, entry] of this.cache) {
-      if (now - entry.lastUsed > this.idleTimeout) {
-        toRemove.push(key)
-      }
-    }
-
-    for (const key of toRemove) {
-      this.cache.delete(key)
-    }
+    this.cache.purgeStale()
   }
 
   clear(): void {

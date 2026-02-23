@@ -3,6 +3,8 @@
  * @description Manages prepared statement caching, lifecycle, and optimization
  */
 
+import { LRUCache } from 'lru-cache'
+
 import type { BunSQLClient, BunSQLPreparedStatement } from './types'
 
 /**
@@ -72,7 +74,7 @@ interface PreparedStatementMetadata {
  * ```
  */
 export class BunSQLPreparedStatementManager {
-  private statements = new Map<string, PreparedStatementMetadata>()
+  private statements: LRUCache<string, PreparedStatementMetadata>
   private sqlToName = new Map<string, string>()
   private readonly config: Required<PreparedStatementManagerConfig>
   private cleanupTimer?: Timer
@@ -85,6 +87,22 @@ export class BunSQLPreparedStatementManager {
       maxStatements: config.maxStatements ?? 100,
       idleTimeout: config.idleTimeout ?? 60000, // 1 minute
     }
+
+    this.statements = new LRUCache<string, PreparedStatementMetadata>({
+      max: this.config.maxStatements,
+      ttl: this.config.idleTimeout,
+      ttlAutopurge: false,
+      allowStale: false,
+      dispose: (metadata) => {
+        // LRU 驅逐時自動清理 sqlToName 並 finalize
+        this.sqlToName.delete(metadata.sql)
+        try {
+          metadata.stmt.finalize()
+        } catch {
+          // ignore finalization errors
+        }
+      },
+    })
 
     // Start periodic cleanup
     this.startCleanupTimer()
@@ -101,11 +119,6 @@ export class BunSQLPreparedStatementManager {
     const existing = this.sqlToName.get(sql)
     if (existing && this.statements.has(existing)) {
       return existing
-    }
-
-    // Check if we need to evict old statements
-    if (this.statements.size >= this.config.maxStatements) {
-      this.evictLeastRecentlyUsed()
     }
 
     // Prepare the statement
@@ -141,8 +154,7 @@ export class BunSQLPreparedStatementManager {
       throw new Error(`Prepared statement not found: ${name}`)
     }
 
-    // Update usage statistics
-    metadata.lastUsed = Date.now()
+    // Update usage count (LRU handles lastUsed tracking automatically)
     metadata.useCount++
 
     // Execute the prepared statement
@@ -154,16 +166,6 @@ export class BunSQLPreparedStatementManager {
    * Clear all prepared statements
    */
   async clear(): Promise<void> {
-    // Finalize all statements
-    for (const [name, metadata] of this.statements) {
-      try {
-        metadata.stmt.finalize()
-      } catch (error) {
-        // Ignore finalization errors
-        console.warn(`Failed to finalize statement ${name}:`, error)
-      }
-    }
-
     this.statements.clear()
     this.sqlToName.clear()
   }
@@ -172,29 +174,7 @@ export class BunSQLPreparedStatementManager {
    * Clean up idle statements
    */
   async cleanup(): Promise<void> {
-    const now = Date.now()
-    const toRemove: string[] = []
-
-    for (const [name, metadata] of this.statements) {
-      const idleTime = now - metadata.lastUsed
-      if (idleTime > this.config.idleTimeout) {
-        toRemove.push(name)
-      }
-    }
-
-    // Remove idle statements
-    for (const name of toRemove) {
-      const metadata = this.statements.get(name)
-      if (metadata) {
-        try {
-          metadata.stmt.finalize()
-        } catch (error) {
-          console.warn(`Failed to finalize idle statement ${name}:`, error)
-        }
-        this.statements.delete(name)
-        this.sqlToName.delete(metadata.sql)
-      }
-    }
+    this.statements.purgeStale()
   }
 
   /**
@@ -228,37 +208,6 @@ export class BunSQLPreparedStatementManager {
   async destroy(): Promise<void> {
     this.stopCleanupTimer()
     await this.clear()
-  }
-
-  /**
-   * Evict the least recently used statement
-   * @private
-   */
-  private evictLeastRecentlyUsed(): void {
-    let oldestName: string | null = null
-    let oldestTime = Number.POSITIVE_INFINITY
-
-    // Find the least recently used statement
-    for (const [name, metadata] of this.statements) {
-      if (metadata.lastUsed < oldestTime) {
-        oldestTime = metadata.lastUsed
-        oldestName = name
-      }
-    }
-
-    // Remove it
-    if (oldestName) {
-      const metadata = this.statements.get(oldestName)
-      if (metadata) {
-        try {
-          metadata.stmt.finalize()
-        } catch (error) {
-          console.warn(`Failed to finalize evicted statement ${oldestName}:`, error)
-        }
-        this.statements.delete(oldestName)
-        this.sqlToName.delete(metadata.sql)
-      }
-    }
   }
 
   /**
