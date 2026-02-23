@@ -545,7 +545,9 @@ const AdapterComparisonSection = ({ t }: { t: Translation }) => {
                 <p className="text-gray-400 text-sm leading-relaxed mb-4">{adapter.desc}</p>
 
                 <div className="p-4 rounded-lg bg-white/5 border border-white/5">
-                  <p className="text-xs text-gray-500 leading-relaxed font-mono">{adapter.details}</p>
+                  <p className="text-xs text-gray-500 leading-relaxed font-mono">
+                    {adapter.details}
+                  </p>
                 </div>
               </div>
             </motion.div>

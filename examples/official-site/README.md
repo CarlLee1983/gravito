@@ -35,6 +35,11 @@ This website demonstrates the full power of the Gravito ecosystem, specifically 
 - **File System Router**: Leverages `@gravito/astral` for Next.js-style routing patterns with automatic parameter extraction
 - **Custom Plugins**: Extends Bun's loader system for YAML/TOML configuration and markdown documentation processing
 - **Development Experience**: Hot Module Replacement (HMR) via Bun's native watch mode during development
+- **Native Bun Workers**: Utilizes `@gravito/stream`'s Bun Workers support for high-performance background tasks
+  - 2-241x faster than Node.js Worker Threads
+  - Native TypeScript support
+  - Zero-copy message passing
+  - Memory-optimized smol mode
 
 ### 5. **SEO & Performance**
 - **Gravito SEO Engine**:
@@ -44,6 +49,38 @@ This website demonstrates the full power of the Gravito ecosystem, specifically 
     - Responsive WebP handling (`GravitoImage` component).
     - Pure SVG Tech Stack icons for zero-latency loading.
 - **I18n**: Native support for English (`/en`) and Chinese (`/zh`) locales.
+
+---
+
+## ⚡ Bun Workers Integration
+
+This project leverages **Bun Workers** for high-performance background tasks:
+
+- **2-241x faster** than Node.js Worker Threads
+- **Native TypeScript** support without compilation
+- **Automatic runtime detection** (Bun or Node.js)
+- **Zero-copy message passing** for efficient communication
+- **Memory optimization** with Bun's smol mode
+
+### Example: Document Processing
+
+```typescript
+import { WorkerPool } from '@gravito/stream'
+
+const pool = new WorkerPool({
+  runtime: 'auto',      // Auto-select Bun or Node.js
+  poolSize: 4,
+  minWorkers: 1,
+})
+
+// Process Markdown documents in parallel
+const result = await pool.execute({
+  type: 'markdown-process',
+  data: JSON.stringify({ content: markdownString }),
+})
+```
+
+For complete integration guide, see [BUN_WORKERS_GUIDE.md](./BUN_WORKERS_GUIDE.md).
 
 ---
 

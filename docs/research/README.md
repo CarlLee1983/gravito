@@ -15,6 +15,7 @@
 
 ### ⚡ [性能 (Performance)](./performance/)
 性能優化、基準測試、瓶頸分析相關研究。
+- `bun-workers-optimization.md` - Bun Workers 原生支持與性能優化（NEW）
 - `orm-query-optimization.md` - ORM 查詢優化與常見性能陷阱
 - `turbo-build-optimization.md` - Turbo 構建優化與 Monorepo 效率
 - `stream-backpressure.md` - 流處理與背壓機制
