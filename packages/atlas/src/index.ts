@@ -160,6 +160,8 @@ export { type ShardingConfig, ShardingManager } from './sharding/ShardingManager
 // Types
 export type {
   AtlasConnectionEntry,
+  BatchExecuteResult,
+  BatchInsertResult,
   BooleanOperator,
   CompiledQuery,
   // Configuration
