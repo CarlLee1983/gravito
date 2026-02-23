@@ -894,6 +894,63 @@ export interface ConnectionContract {
    * Get the grammar instance for this connection
    */
   getGrammar(): GrammarContract
+
+  /**
+   * Safe query builder using tagged template literals
+   * Automatically prevents SQL injection through parameter binding
+   *
+   * @example
+   * ```typescript
+   * const users = await db.sql`SELECT * FROM users WHERE id = ${userId}`.all()
+   * const tableName = identifier('posts')
+   * const posts = await db.sql`SELECT * FROM ${tableName} WHERE author = ${authorId}`.all()
+   * ```
+   */
+  sql<T = Record<string, unknown>>(
+    strings: TemplateStringsArray,
+    ...values: unknown[]
+  ): SafeQueryBuilderContract<T>
+}
+
+/**
+ * Safe Query Builder Contract - Tagged Template API
+ * Provides SQL injection protection through parameter binding
+ */
+export interface SafeQueryBuilderContract<T = Record<string, unknown>> {
+  /**
+   * Bind connection for query execution
+   */
+  using(conn: ConnectionContract): SafeQueryBuilderContract<T>
+
+  /**
+   * Execute query and return full result object
+   */
+  execute(): Promise<QueryResult<T>>
+
+  /**
+   * Execute query and return all rows
+   */
+  all(): Promise<T[]>
+
+  /**
+   * Execute query and return first row
+   */
+  first(): Promise<T | null>
+
+  /**
+   * Convert to Expression for use in QueryBuilder
+   */
+  toExpression(): Expression
+}
+
+/**
+ * Expression - Used in QueryBuilder for dynamic SQL composition
+ */
+export interface Expression {
+  /**
+   * Get the SQL string
+   */
+  toString(): string
 }
 
 /**

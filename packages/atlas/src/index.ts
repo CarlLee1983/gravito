@@ -4,7 +4,7 @@
  *
  * @example
  * ```typescript
- * import { DB } from '@gravito/atlas'
+ * import { DB, identifier } from '@gravito/atlas'
  *
  * // Configure
  * DB.addConnection('default', {
@@ -16,23 +16,26 @@
  *   password: 'secret'
  * })
  *
- * // Query
+ * // Query with QueryBuilder
  * const users = await DB.table('users')
  *   .where('status', 'active')
  *   .orderBy('created_at', 'desc')
  *   .limit(10)
  *   .get()
  *
+ * // Safe Query with Tagged Template Literal (SQL Injection Protected)
+ * const userId = 123
+ * const user = await DB.sql`SELECT * FROM users WHERE id = ${userId}`.first()
+ *
+ * // Safe Query with Dynamic Table Names
+ * const tableName = identifier('users')
+ * const allUsers = await DB.sql`SELECT * FROM ${tableName}`.all()
+ *
  * // Insert
  * const newUser = await DB.table('users').insert({
  *   name: 'John Doe',
  *   email: 'john@example.com'
  * })
- *
- * // Update
- * await DB.table('users')
- *   .where('id', 1)
- *   .update({ name: 'Jane Doe' })
  *
  * // Transaction
  * await DB.transaction(async (db) => {
@@ -124,6 +127,12 @@ export {
 export { Expression, raw } from './query/Expression'
 // Query Builder
 export { QueryBuilder, QueryBuilderError, RecordNotFoundError } from './query/QueryBuilder'
+// Safe Query Builder (SQL Injection Protection via Tagged Templates)
+export {
+  identifier,
+  SafeIdentifier,
+  SafeQueryBuilder,
+} from './query/SafeQueryBuilder'
 export type { ColumnType, ForeignKeyAction, ForeignKeyDefinition, IndexDefinition } from './schema'
 // Schema
 export { Blueprint, ColumnDefinition, Schema } from './schema'
@@ -179,6 +188,7 @@ export type {
   // Results
   QueryResult,
   ReadWriteConnectionConfig,
+  SafeQueryBuilderContract,
   SQLiteConfig,
   SSLConfig,
   WhereClause,
