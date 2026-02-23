@@ -66,7 +66,7 @@ Nebula 現已支援 `ReadableStream` 介面，解決大檔案記憶體溢出問�
 - **支援狀況**：
   - ✅ **LocalStore**: 完整支援，使用 Bun 原生 file writer/reader
   - ✅ **MemoryStore**: 完整支援，適用於測試場景
-  - ⏳ **S3Store**: 規劃中 (將在 v1.2 實作)
+  - ✅ **S3Store**: 完整支援 (v2.0.0，Bun 原生 S3 API)
 
 - **效能優勢**：
   - 記憶體使用量與檔案大小解耦，處理 10MB 檔案的記憶體增量 < 5MB
@@ -118,7 +118,7 @@ Nebula 現已支援 `ReadableStream` 介面，解決大檔案記憶體溢出問�
 - **支援狀況**：
   - ✅ **MemoryStore**: 完整支援
   - ⏳ **LocalStore**: 待 RuntimeAdapter 支援 readDir
-  - ⏳ **S3Store**: 規劃中 (將在 v1.2 實作)
+  - ✅ **S3Store**: 完整支援 (v2.0.0，Bun 原生 S3 API)
 
 - **使用範例**：
   ```typescript
@@ -184,7 +184,9 @@ Nebula 現已支援 `ReadableStream` 介面，解決大檔案記憶體溢出問�
 - **支援狀況**：
   - ✅ **MemoryStore**: 完整支援 (包含 setMetadata)
   - ⚠️ **LocalStore**: 接受 options 參數但不持久化 customMetadata
-  - ⏳ **S3Store**: 規劃中 (S3 原生支援 metadata)
+  - ✅ **S3Store**: 完整支援 (v2.0.0)，但 `customMetadata` 讀取受限
+    - **注意**：Bun 原生 S3 API 不支援讀取 `x-amz-meta-*` headers，因此 `getMetadata()` 的 `customMetadata` 字段返回 `undefined`
+    - **解決方案**：使用應用層資料庫（Redis、PostgreSQL）存儲文件 metadata，詳見 [MIGRATION.md](../../packages/nebula-s3/MIGRATION.md)
 
 - **使用範例**：
   ```typescript

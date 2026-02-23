@@ -73,7 +73,7 @@ Satellites (業務領域)
 | **@gravito/plasma** | Redis 客戶端，Laravel 風格 API | core | 需要 Redis 時 |
 | **@gravito/dark-matter** | MongoDB 客戶端，Laravel 風格 API | core | 需要 MongoDB 時 |
 | **@gravito/nebula** | 標準存儲模組 | core, atlas | 文件和 blob 存儲時 |
-| **@gravito/nebula-s3** | S3 存儲適配器 | nebula | 使用 AWS S3 時 |
+| **@gravito/nebula-s3** | S3 存儲適配器（v2.0.0，Bun 原生 API） | nebula | 使用 AWS S3、Cloudflare R2、MinIO 時 |
 | **@gravito/stasis** | 快取層（支持 Redis、in-memory） | core | 需要快取策略時 |
 
 ---
