@@ -6,6 +6,7 @@ Comprehensive documentation for using Bun with Gravito Core.
 
 - **[QUICK_START.md](./QUICK_START.md)** - Start here! Common tasks and examples
 - **[RUNTIME_FEATURES.md](./RUNTIME_FEATURES.md)** - Detailed feature reference
+- **[PLUGIN_USAGE.md](./PLUGIN_USAGE.md)** - Creating and using Bun plugins
 
 ## Configuration
 
