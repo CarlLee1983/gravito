@@ -1,4 +1,4 @@
-import { GravitoContext } from '@gravito/core'
+import type { GravitoContext } from '@gravito/core'
 
 export class HomeController {
   async index(ctx: GravitoContext) {

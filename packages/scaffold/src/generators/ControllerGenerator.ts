@@ -79,11 +79,14 @@ export class ${className}Controller {
   private toPascalCase(str: string): string {
     return str
       .split(/[-_]/)
-      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join('')
   }
 
   private toKebabCase(str: string): string {
-    return str.replace(/([A-Z])/g, '-$1').toLowerCase().replace(/^-/, '')
+    return str
+      .replace(/([A-Z])/g, '-$1')
+      .toLowerCase()
+      .replace(/^-/, '')
   }
 }

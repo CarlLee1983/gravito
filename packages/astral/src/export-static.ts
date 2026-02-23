@@ -51,10 +51,10 @@ export async function generateStaticSite(config: StaticExportConfig): Promise<vo
     }
 
     try {
-      [cssUrl, bundleJsUrl, standaloneJsUrl] = await Promise.all([
+      ;[cssUrl, bundleJsUrl, standaloneJsUrl] = await Promise.all([
         downloadFile(cssUrl, 'swagger-ui.css'),
         downloadFile(bundleJsUrl, 'swagger-ui-bundle.js'),
-        downloadFile(standaloneJsUrl, 'swagger-ui-standalone-preset.js')
+        downloadFile(standaloneJsUrl, 'swagger-ui-standalone-preset.js'),
       ])
       console.log('Asset download complete.')
     } catch (e) {

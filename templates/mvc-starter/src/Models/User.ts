@@ -2,7 +2,7 @@ import { Model } from '@gravito/atlas'
 
 /**
  * User Model - 用戶數據模型
- * 
+ *
  * @example
  * ```ts
  * const user = await User.find(1)

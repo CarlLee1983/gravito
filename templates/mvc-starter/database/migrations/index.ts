@@ -1,4 +1,4 @@
-import { Migration } from '@gravito/atlas'
+import type { Migration } from '@gravito/atlas'
 
 export const migrations = [
   {

@@ -320,12 +320,12 @@ export type InferInput<T extends AstralOperation> = T['input'] extends ZodSchema
  */
 export type InferOutput<T extends AstralOperation> =
   T['output'] extends ZodSchema<infer U>
-  ? U
-  : T['output'] extends Array<infer Item>
-  ? Item extends ZodSchema<infer V>
-  ? V[]
-  : any
-  : any
+    ? U
+    : T['output'] extends Array<infer Item>
+      ? Item extends ZodSchema<infer V>
+        ? V[]
+        : any
+      : any
 
 /**
  * Type utility to infer the path parameters type from an `AstralOperation`.
@@ -335,8 +335,8 @@ export type InferOutput<T extends AstralOperation> =
  */
 export type InferParams<T extends AstralOperation> =
   T['params'] extends Record<string, ZodSchema>
-  ? { [K in keyof T['params']]: T['params'][K] extends ZodSchema<infer U> ? U : any }
-  : Record<string, any>
+    ? { [K in keyof T['params']]: T['params'][K] extends ZodSchema<infer U> ? U : any }
+    : Record<string, any>
 
 /**
  * Type utility to infer the error response types from an `AstralOperation`.
@@ -346,5 +346,5 @@ export type InferParams<T extends AstralOperation> =
  */
 export type InferErrors<T extends AstralOperation> =
   T['errors'] extends Record<number, any>
-  ? { [K in keyof T['errors']]: T['errors'][K] extends ZodSchema<infer U> ? U : T['errors'][K] }
-  : Record<number, any>
+    ? { [K in keyof T['errors']]: T['errors'][K] extends ZodSchema<infer U> ? U : T['errors'][K] }
+    : Record<number, any>

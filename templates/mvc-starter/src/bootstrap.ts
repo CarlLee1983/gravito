@@ -1,10 +1,10 @@
+import { OrbitAtlas } from '@gravito/atlas'
 import { bodySizeLimit, defineConfig, PlanetCore, securityHeaders } from '@gravito/core'
 import { serveStatic } from '@gravito/photon/bun'
 import { OrbitPrism } from '@gravito/prism'
-import { OrbitCache } from '@gravito/stasis'
-import { OrbitAtlas } from '@gravito/atlas'
-import { OrbitSentinel } from '@gravito/sentinel'
 import { OrbitPulsar } from '@gravito/pulsar'
+import { OrbitSentinel } from '@gravito/sentinel'
+import { OrbitCache } from '@gravito/stasis'
 import { registerRoutes } from './routes'
 
 export interface AppConfig {
@@ -29,13 +29,7 @@ export async function bootstrap(options: AppConfig = {}) {
       APP_VERSION: version,
       VIEW_DIR: 'src/views',
     },
-    orbits: [
-      OrbitCache,
-      OrbitPrism,
-      OrbitAtlas,
-      OrbitSentinel,
-      OrbitPulsar,
-    ],
+    orbits: [OrbitCache, OrbitPrism, OrbitAtlas, OrbitSentinel, OrbitPulsar],
   })
 
   // 2. Boot

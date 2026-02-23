@@ -7,7 +7,7 @@ export interface GeneratorOptions {
 
 /**
  * GeneratorBase - 代碼生成器基類
- * 
+ *
  * 感知項目架構並根據架構生成對應的代碼文件
  */
 export abstract class GeneratorBase {
@@ -82,10 +82,10 @@ export abstract class GeneratorBase {
   ): Promise<string> {
     const targetDir = path.join(this.projectDir, relativeDir)
     await fs.mkdir(targetDir, { recursive: true })
-    
+
     const filePath = path.join(targetDir, filename)
     await fs.writeFile(filePath, content)
-    
+
     return filePath
   }
 

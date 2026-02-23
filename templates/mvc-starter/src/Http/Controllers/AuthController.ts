@@ -1,4 +1,4 @@
-import { GravitoContext } from '@gravito/core'
+import type { GravitoContext } from '@gravito/core'
 import { LoginRequest } from '../Requests/LoginRequest'
 import { RegisterRequest } from '../Requests/RegisterRequest'
 
@@ -10,7 +10,7 @@ export class AuthController {
   async login(ctx: GravitoContext) {
     try {
       const body = await ctx.request.json()
-      const data = LoginRequest.parse(body)
+      const _data = LoginRequest.parse(body)
 
       // TODO: 驗證用戶認證信息
       // const user = await User.where('email', data.email).first()
@@ -22,7 +22,7 @@ export class AuthController {
       // return ctx.redirect('/dashboard')
 
       return ctx.json({ error: 'Not implemented' }, 501)
-    } catch (error) {
+    } catch (_error) {
       return ctx.json({ error: 'Invalid request' }, 400)
     }
   }
@@ -34,7 +34,7 @@ export class AuthController {
   async register(ctx: GravitoContext) {
     try {
       const body = await ctx.request.json()
-      const data = RegisterRequest.parse(body)
+      const _data = RegisterRequest.parse(body)
 
       // TODO: 創建新用戶
       // const user = await User.create({
@@ -47,7 +47,7 @@ export class AuthController {
       // return ctx.redirect('/dashboard')
 
       return ctx.json({ error: 'Not implemented' }, 501)
-    } catch (error) {
+    } catch (_error) {
       return ctx.json({ error: 'Invalid request' }, 400)
     }
   }

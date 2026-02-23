@@ -1,13 +1,13 @@
-import { PlanetCore } from '@gravito/core'
-import { HomeController } from './Http/Controllers/HomeController'
+import type { PlanetCore } from '@gravito/core'
 import { AuthController } from './Http/Controllers/AuthController'
+import { HomeController } from './Http/Controllers/HomeController'
 import { AuthMiddleware } from './Http/Middleware/AuthMiddleware'
 import { GuestMiddleware } from './Http/Middleware/GuestMiddleware'
 
 export async function registerRoutes(core: PlanetCore) {
   // Guest routes
   core.get('/', (ctx) => new HomeController().index(ctx))
-  
+
   // Auth routes
   core.get('/login', (ctx) => new AuthController().showLogin(ctx), [GuestMiddleware])
   core.post('/login', (ctx) => new AuthController().login(ctx), [GuestMiddleware])

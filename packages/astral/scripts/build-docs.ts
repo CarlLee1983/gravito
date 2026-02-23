@@ -7,8 +7,8 @@
 
 import { join } from 'node:path'
 import { defineConfig, PlanetCore } from '@gravito/core'
-import { astral, OrbitAstral } from '../src'
 import { z } from 'zod'
+import { astral, OrbitAstral } from '../src'
 
 // 1. Define typical API contracts
 const exampleContract = astral.resource('/api/hello', {
@@ -17,7 +17,7 @@ const exampleContract = astral.resource('/api/hello', {
       summary: 'Hello world endpoint',
       status: 200,
       output: z.object({
-        message: z.string()
+        message: z.string(),
       }),
     },
   },

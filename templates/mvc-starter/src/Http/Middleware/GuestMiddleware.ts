@@ -1,4 +1,4 @@
-import { GravitoContext, Middleware } from '@gravito/core'
+import type { GravitoContext, Middleware } from '@gravito/core'
 
 /**
  * GuestMiddleware - 確保用戶未登入的路由
