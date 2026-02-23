@@ -16,6 +16,7 @@ import { PostgresGrammar } from '../grammar/PostgresGrammar'
 import { SQLiteGrammar } from '../grammar/SQLiteGrammar'
 import type { AtlasMetrics, AtlasTracer } from '../observability'
 import { QueryBuilder } from '../query/QueryBuilder'
+import { SafeQueryBuilder } from '../query/SafeQueryBuilder'
 import type {
   BaseConnectionConfig,
   ConnectionConfig,
@@ -27,6 +28,7 @@ import type {
   PostgresConfig,
   QueryBuilderContract,
   QueryResult,
+  SafeQueryBuilderContract,
 } from '../types'
 
 /**
@@ -147,6 +149,24 @@ export class Connection implements ConnectionContract {
    */
   collection<T = Record<string, unknown>>(name: string): QueryBuilderContract<T> {
     return this.table<T>(name)
+  }
+
+  /**
+   * Safe query builder using tagged template literals
+   * Automatically prevents SQL injection through parameter binding
+   *
+   * @example
+   * ```typescript
+   * const userId = 123
+   * const users = await this.sql`SELECT * FROM users WHERE id = ${userId}`.all()
+   * ```
+   */
+  sql<T = Record<string, unknown>>(
+    strings: TemplateStringsArray,
+    ...values: unknown[]
+  ): SafeQueryBuilderContract<T> {
+    const builder = new SafeQueryBuilder<T>(strings, values)
+    return builder.using(this.proxy || this)
   }
 
   /**
