@@ -37,32 +37,17 @@ export function setCookie(
     return
   }
 
-  // Fallback: Set cookie header directly
-  const parts = [`${name}=${encodeURIComponent(value)}`]
-
-  if (options.maxAge !== undefined) {
-    parts.push(`Max-Age=${options.maxAge}`)
-  }
-  if (options.expires) {
-    parts.push(`Expires=${options.expires.toUTCString()}`)
-  }
-  if (options.path) {
-    parts.push(`Path=${options.path}`)
-  }
-  if (options.domain) {
-    parts.push(`Domain=${options.domain}`)
-  }
-  if (options.secure) {
-    parts.push('Secure')
-  }
-  if (options.httpOnly) {
-    parts.push('HttpOnly')
-  }
-  if (options.sameSite) {
-    parts.push(`SameSite=${options.sameSite}`)
-  }
-
-  c.header('Set-Cookie', parts.join('; '), { append: true })
+  // Fallback: 直接設置 Set-Cookie header（使用 Bun 原生 Cookie API）
+  const cookie = new Bun.Cookie(name, value, {
+    path: options.path,
+    domain: options.domain,
+    expires: options.expires,
+    maxAge: options.maxAge,
+    secure: options.secure,
+    httpOnly: options.httpOnly,
+    sameSite: options.sameSite?.toLowerCase() as 'strict' | 'lax' | 'none' | undefined,
+  })
+  c.header('Set-Cookie', cookie.toString(), { append: true })
 }
 
 /**

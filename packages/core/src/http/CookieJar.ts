@@ -26,23 +26,16 @@ export class CookieJar {
   constructor(private encrypter?: Encrypter) {}
 
   /**
-   * Parse cookies from a Cookie header string
+   * Parse cookies from a Cookie header string using Bun's native CookieMap
    * @param header - The Cookie header value
    * @returns Parsed cookies as key-value pairs
    */
   static parseCookies(header: string): Record<string, string> {
+    if (!header) return {}
+    const cookieMap = new Bun.CookieMap(header)
     const out: Record<string, string> = {}
-    if (!header) {
-      return out
-    }
-    for (const part of header.split(';')) {
-      const [rawKey, ...rest] = part.trim().split('=')
-      if (!rawKey) {
-        continue
-      }
-      const key = rawKey.trim()
-      const value = rest.join('=')
-      out[key] = decodeURIComponent(value)
+    for (const [key, value] of cookieMap.entries()) {
+      out[key] = value
     }
     return out
   }
@@ -90,32 +83,18 @@ export class CookieJar {
   }
 
   /**
-   * Serialize a cookie to a Set-Cookie header value
+   * Serialize a cookie to a Set-Cookie header value using Bun's native Cookie API
    */
   private serializeCookie(name: string, value: string, opts: CookieOptions): string {
-    const parts = [`${name}=${encodeURIComponent(value)}`]
-    if (opts.maxAge !== undefined) {
-      parts.push(`Max-Age=${opts.maxAge}`)
-    }
-    if (opts.expires) {
-      parts.push(`Expires=${opts.expires.toUTCString()}`)
-    }
-    if (opts.path) {
-      parts.push(`Path=${opts.path}`)
-    }
-    if (opts.domain) {
-      parts.push(`Domain=${opts.domain}`)
-    }
-    if (opts.secure) {
-      parts.push('Secure')
-    }
-    if (opts.httpOnly) {
-      parts.push('HttpOnly')
-    }
-    if (opts.sameSite) {
-      parts.push(`SameSite=${opts.sameSite}`)
-    }
-    return parts.join('; ')
+    return new Bun.Cookie(name, value, {
+      path: opts.path,
+      domain: opts.domain,
+      expires: opts.expires,
+      maxAge: opts.maxAge,
+      secure: opts.secure,
+      httpOnly: opts.httpOnly,
+      sameSite: opts.sameSite?.toLowerCase() as 'strict' | 'lax' | 'none' | undefined,
+    }).toString()
   }
 
   /**
