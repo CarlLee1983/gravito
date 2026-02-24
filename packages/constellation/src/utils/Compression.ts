@@ -4,8 +4,11 @@
  * @since 3.1.0
  */
 
-import { Readable, type Transform } from 'node:stream'
-import { createGzip } from 'node:zlib'
+import type { Transform } from 'node:stream'
+import { promisify } from 'node:util'
+import { createGzip, gzip as gzipCallback } from 'node:zlib'
+
+const gzipAsync = promisify(gzipCallback)
 
 /**
  * Compression configuration.
@@ -43,24 +46,14 @@ export async function compressToBuffer(
     throw new Error(`Invalid compression level: ${level}. Must be between 1 and 9.`)
   }
 
-  const chunks: Buffer[] = []
-  const gzip = createGzip({ level })
-  const readable = Readable.from(source, { encoding: 'utf-8' })
-
-  try {
-    readable.pipe(gzip)
-
-    for await (const chunk of gzip) {
-      chunks.push(chunk as Buffer)
-    }
-
-    return Buffer.concat(chunks)
-  } catch (error) {
-    // 確保串流被銷毀
-    readable.destroy()
-    gzip.destroy()
-    throw error
+  // 收集所有 chunk，再一次性壓縮（消除串流回調複雜度）
+  const parts: string[] = []
+  for await (const chunk of source) {
+    parts.push(chunk)
   }
+
+  const input = Buffer.from(parts.join(''), 'utf-8')
+  return gzipAsync(input, { level }) as Promise<Buffer>
 }
 
 /**

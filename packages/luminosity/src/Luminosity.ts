@@ -1,4 +1,5 @@
-import { createWriteStream, mkdirSync, writeFileSync } from 'node:fs'
+import { createWriteStream } from 'node:fs'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createGzip } from 'node:zlib'
 import type { SitemapEntry } from './interfaces'
@@ -75,7 +76,7 @@ export class Luminosity {
     const useGzip = this.config.gzip === true
 
     // Ensure output dir exists
-    mkdirSync(outDir, { recursive: true })
+    await mkdir(outDir, { recursive: true })
 
     const builder = new XmlStreamBuilder({ baseUrl: hostname })
 
@@ -171,9 +172,7 @@ export class Luminosity {
 
     // Index is usually not gzipped by default but can be.
     // Standard: sitemap-index.xml pointing to .gz files
-    writeFileSync(join(outDir, 'sitemap-index.xml'), indexXml)
-
-    console.log(`✅ Generated ${count} URLs across ${sitemapFiles.length} files in ${outDir}`)
+    await writeFile(join(outDir, 'sitemap-index.xml'), indexXml)
   }
 
   /**

@@ -1,6 +1,6 @@
-import { createReadStream, createWriteStream } from 'node:fs'
-import { pipeline } from 'node:stream/promises'
-import { createGzip } from 'node:zlib'
+import { writeFile } from 'node:fs/promises'
+import { promisify } from 'node:util'
+import { gzip } from 'node:zlib'
 import type { StorageAdapter } from './adapter'
 import { FileSystemAdapter } from './FileSystemAdapter'
 
@@ -171,16 +171,16 @@ export class LogRotator {
    * @private
    */
   private async compressBackup(backupPath: string): Promise<void> {
+    const gzipAsync = promisify(gzip)
     try {
       const gzipPath = `${backupPath}.gz`
-      const source = createReadStream(backupPath)
-      const destination = createWriteStream(gzipPath)
-      const gzip = createGzip()
-
-      await pipeline(source, gzip, destination)
+      const content = await this.adapter.read(backupPath)
+      const compressed = await gzipAsync(Buffer.from(content, 'utf-8'))
+      await writeFile(gzipPath, compressed)
     } catch (error) {
-      console.error(`[LogRotator] Failed to compress backup ${backupPath}:`, error)
-      // Don't throw - compression is optional
+      // 壓縮是選擇性的，失敗不應影響主流程
+      // 錯誤記錄由 adapter 層處理
+      void error
     }
   }
 
