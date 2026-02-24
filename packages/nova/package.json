@@ -37,14 +37,19 @@
   "author": "Gravito Team",
   "license": "MIT",
   "peerDependencies": {
-    "@gravito/core": "*"
+    "@gravito/core": "*",
+    "@gravito/chromatic": "*"
   },
   "peerDependenciesMeta": {
     "@gravito/core": {
       "optional": true
+    },
+    "@gravito/chromatic": {
+      "optional": true
     }
   },
   "devDependencies": {
+    "@gravito/chromatic": "workspace:*",
     "@gravito/core": "workspace:*",
     "bun-types": "latest",
     "tsup": "^8.5.1",
