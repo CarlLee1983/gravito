@@ -301,6 +301,13 @@ export interface AstralConfig {
   specFilePath?: string
   /** Whether to bundle Swagger UI assets for offline usage during static export. */
   bundleOfflineAssets?: boolean
+  /**
+   * 是否將 OpenAPI description 欄位從 Markdown 渲染為 HTML。
+   * 啟用後會遞迴掃描 spec 中所有 description 欄位，
+   * 使用 RuntimeMarkdownAdapter 渲染為 HTML。
+   * @default false
+   */
+  renderDescriptions?: boolean
 }
 
 /**
