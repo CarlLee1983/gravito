@@ -1004,3 +1004,323 @@ export const createSqliteDatabase = async (path: string): Promise<RuntimeSqliteD
 
   throw new Error('[RuntimeAdapter] SQLite storage requires Bun runtime or a Node/Deno adapter')
 }
+
+// ============ Archive Support Types ============
+
+/**
+ * 歸檔項目 -- 支援多種資料來源
+ * @public
+ */
+export interface ArchiveEntry {
+  /** 歸檔中的路徑（自動正規化為正斜線） */
+  readonly path: string
+  /** 資料內容 */
+  readonly data: string | Blob | ArrayBuffer | Uint8Array
+}
+
+/**
+ * 歸檔建立選項
+ * @public
+ */
+export interface ArchiveCreateOptions {
+  /** 壓縮演算法（目前僅支援 gzip） */
+  compress?: 'gzip'
+  /** 壓縮等級（1-12，預設 6） */
+  level?: number
+}
+
+/**
+ * 歸檔提取選項
+ * @public
+ */
+export interface ArchiveExtractOptions {
+  /** Glob 模式過濾（僅提取匹配的檔案） */
+  glob?: string | readonly string[]
+}
+
+/**
+ * 歸檔中的檔案資訊
+ * @public
+ */
+export interface ArchiveFileInfo {
+  /** 檔案路徑 */
+  readonly path: string
+  /** 檔案大小（bytes） */
+  readonly size: number
+  /** 最後修改時間 */
+  readonly lastModified: number
+  /** 讀取文字內容 */
+  text(): Promise<string>
+  /** 讀取為 ArrayBuffer */
+  arrayBuffer(): Promise<ArrayBuffer>
+}
+
+/**
+ * 歸檔操作的運行時抽象
+ * @public
+ */
+export interface RuntimeArchiveAdapter {
+  /**
+   * 從檔案/目錄映射建立歸檔
+   * @param entries - 路徑到內容的映射
+   * @param options - 壓縮選項
+   * @returns 歸檔的二進位資料
+   */
+  create(
+    entries: Record<string, string | Blob | ArrayBuffer | Uint8Array>,
+    options?: ArchiveCreateOptions
+  ): Promise<Uint8Array>
+
+  /**
+   * 提取歸檔到指定目錄
+   * @param data - 歸檔二進位資料
+   * @param targetDir - 目標目錄（自動建立）
+   * @param options - 提取選項（glob 過濾）
+   * @returns 提取的檔案數量
+   */
+  extract(
+    data: Blob | ArrayBuffer | Uint8Array,
+    targetDir: string,
+    options?: ArchiveExtractOptions
+  ): Promise<number>
+
+  /**
+   * 讀取歸檔中的檔案列表（不提取）
+   * @param data - 歸檔二進位資料
+   * @param glob - 可選的 glob 過濾
+   * @returns 路徑到檔案資訊的映射
+   */
+  list(
+    data: Blob | ArrayBuffer | Uint8Array,
+    glob?: string | readonly string[]
+  ): Promise<Map<string, ArchiveFileInfo>>
+
+  /**
+   * 從歸檔中讀取單一檔案
+   * @param data - 歸檔二進位資料
+   * @param filePath - 檔案路徑
+   * @returns 檔案內容，若不存在則回傳 null
+   */
+  readFile(data: Blob | ArrayBuffer | Uint8Array, filePath: string): Promise<Uint8Array | null>
+}
+
+// ============ Archive Adapter Implementations ============
+
+/**
+ * 將 Blob/ArrayBuffer/Uint8Array 統一轉換為 Uint8Array（歸檔專用）
+ * @internal
+ */
+const toArchiveUint8Array = async (data: Blob | ArrayBuffer | Uint8Array): Promise<Uint8Array> => {
+  if (data instanceof Uint8Array) {
+    return data
+  }
+  if (data instanceof ArrayBuffer) {
+    return new Uint8Array(data)
+  }
+  // Blob
+  return new Uint8Array(await data.arrayBuffer())
+}
+
+/**
+ * 建立 Bun 原生歸檔 adapter（使用 Bun.Tarball API）
+ * @internal
+ */
+const createBunArchiveAdapter = (): RuntimeArchiveAdapter => ({
+  async create(entries, options = {}) {
+    if (typeof Bun === 'undefined' || typeof (Bun as any).Tarball === 'undefined') {
+      throw new Error('[RuntimeArchiveAdapter] Bun.Tarball is not available in this Bun version')
+    }
+
+    // 正規化所有路徑為正斜線
+    const normalizedEntries: Record<string, string | Blob | ArrayBuffer | Uint8Array> = {}
+    for (const [entryPath, data] of Object.entries(entries)) {
+      const normalized = entryPath.replace(/\\/g, '/')
+      normalizedEntries[normalized] = data
+    }
+
+    const tarball = new (Bun as any).Tarball(normalizedEntries, {
+      ...(options.compress !== undefined ? { compress: options.compress } : {}),
+      ...(options.level !== undefined ? { level: options.level } : {}),
+    })
+
+    return new Uint8Array(await tarball.bytes())
+  },
+
+  async extract(data, targetDir, options = {}) {
+    if (typeof Bun === 'undefined' || typeof (Bun as any).Tarball === 'undefined') {
+      throw new Error('[RuntimeArchiveAdapter] Bun.Tarball is not available in this Bun version')
+    }
+
+    const buffer = await toArchiveUint8Array(data)
+    const tarball = new (Bun as any).Tarball(buffer.buffer)
+
+    const count = await tarball.extract(targetDir, {
+      ...(options.glob !== undefined ? { glob: options.glob } : {}),
+    })
+
+    return count as number
+  },
+
+  async list(data, glob) {
+    if (typeof Bun === 'undefined' || typeof (Bun as any).Tarball === 'undefined') {
+      throw new Error('[RuntimeArchiveAdapter] Bun.Tarball is not available in this Bun version')
+    }
+
+    const buffer = await toArchiveUint8Array(data)
+    const tarball = new (Bun as any).Tarball(buffer.buffer)
+    const files = await tarball.files(glob)
+
+    const result = new Map<string, ArchiveFileInfo>()
+    const entries: [string, unknown][] =
+      files instanceof Map ? Array.from(files.entries()) : Object.entries(files as object)
+
+    for (const [entryPath, file] of entries) {
+      const f = file as {
+        size: number
+        lastModified?: number
+        text: () => Promise<string>
+        arrayBuffer: () => Promise<ArrayBuffer>
+      }
+      result.set(entryPath, {
+        path: entryPath,
+        size: f.size,
+        lastModified: f.lastModified ?? 0,
+        text: () => f.text(),
+        arrayBuffer: () => f.arrayBuffer(),
+      })
+    }
+
+    return result
+  },
+
+  async readFile(data, filePath) {
+    if (typeof Bun === 'undefined' || typeof (Bun as any).Tarball === 'undefined') {
+      throw new Error('[RuntimeArchiveAdapter] Bun.Tarball is not available in this Bun version')
+    }
+
+    const buffer = await toArchiveUint8Array(data)
+    const tarball = new (Bun as any).Tarball(buffer.buffer)
+    const files = await tarball.files(filePath)
+
+    // 支援 Map 或 object 格式的返回值
+    const file: unknown = files instanceof Map ? files.get(filePath) : (files as any)[filePath]
+    if (!file) {
+      return null
+    }
+
+    const f = file as { arrayBuffer: () => Promise<ArrayBuffer> }
+    return new Uint8Array(await f.arrayBuffer())
+  },
+})
+
+/**
+ * 建立 Node.js 歸檔 adapter（提示安裝 tar 可選依賴）
+ * @internal
+ */
+const createNodeArchiveAdapter = (): RuntimeArchiveAdapter => ({
+  async create(_entries, _options = {}) {
+    throw new Error(
+      '[RuntimeArchiveAdapter] Node.js archive support requires "tar" optional dependency. Install: npm install --save-optional tar'
+    )
+  },
+
+  async extract(_data, _targetDir, _options = {}) {
+    throw new Error(
+      '[RuntimeArchiveAdapter] Node.js archive support requires "tar" optional dependency. Install: npm install --save-optional tar'
+    )
+  },
+
+  async list(_data, _glob) {
+    throw new Error(
+      '[RuntimeArchiveAdapter] Node.js archive support requires "tar" optional dependency. Install: npm install --save-optional tar'
+    )
+  },
+
+  async readFile(_data, _filePath) {
+    throw new Error(
+      '[RuntimeArchiveAdapter] Node.js archive support requires "tar" optional dependency. Install: npm install --save-optional tar'
+    )
+  },
+})
+
+/**
+ * 建立 Deno 歸檔 adapter（尚未實作）
+ * @internal
+ */
+const createDenoArchiveAdapter = (): RuntimeArchiveAdapter => ({
+  async create(_entries, _options = {}) {
+    throw new Error(
+      '[RuntimeArchiveAdapter] Deno archive support not yet implemented. Use Bun or Node.js runtime.'
+    )
+  },
+
+  async extract(_data, _targetDir, _options = {}) {
+    throw new Error(
+      '[RuntimeArchiveAdapter] Deno archive support not yet implemented. Use Bun or Node.js runtime.'
+    )
+  },
+
+  async list(_data, _glob) {
+    throw new Error(
+      '[RuntimeArchiveAdapter] Deno archive support not yet implemented. Use Bun or Node.js runtime.'
+    )
+  },
+
+  async readFile(_data, _filePath) {
+    throw new Error(
+      '[RuntimeArchiveAdapter] Deno archive support not yet implemented. Use Bun or Node.js runtime.'
+    )
+  },
+})
+
+/**
+ * 建立 Unknown runtime 歸檔 adapter（不支援）
+ * @internal
+ */
+const createUnknownArchiveAdapter = (): RuntimeArchiveAdapter => ({
+  async create(_entries, _options = {}) {
+    throw new Error(
+      `[RuntimeArchiveAdapter] Archive support unavailable in unknown runtime. Detected runtime: ${getRuntimeKind()}`
+    )
+  },
+
+  async extract(_data, _targetDir, _options = {}) {
+    throw new Error(
+      `[RuntimeArchiveAdapter] Archive support unavailable in unknown runtime. Detected runtime: ${getRuntimeKind()}`
+    )
+  },
+
+  async list(_data, _glob) {
+    throw new Error(
+      `[RuntimeArchiveAdapter] Archive support unavailable in unknown runtime. Detected runtime: ${getRuntimeKind()}`
+    )
+  },
+
+  async readFile(_data, _filePath) {
+    throw new Error(
+      `[RuntimeArchiveAdapter] Archive support unavailable in unknown runtime. Detected runtime: ${getRuntimeKind()}`
+    )
+  },
+})
+
+let archiveAdapter: RuntimeArchiveAdapter | null = null
+
+/**
+ * 取得歸檔操作 adapter（依運行時自動選擇最佳實作）
+ * @public
+ */
+export const getArchiveAdapter = (): RuntimeArchiveAdapter => {
+  if (archiveAdapter) {
+    return archiveAdapter
+  }
+  const kind = getRuntimeKind()
+  archiveAdapter =
+    kind === 'bun'
+      ? createBunArchiveAdapter()
+      : kind === 'node'
+        ? createNodeArchiveAdapter()
+        : kind === 'deno'
+          ? createDenoArchiveAdapter()
+          : createUnknownArchiveAdapter()
+  return archiveAdapter
+}

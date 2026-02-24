@@ -270,11 +270,17 @@ export * from './testing'
 // ─────────────────────────────────────────────────────────────────────────────
 
 export {
+  type ArchiveCreateOptions,
+  type ArchiveEntry,
+  type ArchiveExtractOptions,
+  type ArchiveFileInfo,
   createSqliteDatabase,
+  getArchiveAdapter,
   getPasswordAdapter,
   getRuntimeAdapter,
   getRuntimeEnv,
   type RuntimeAdapter,
+  type RuntimeArchiveAdapter,
   type RuntimeFileStat,
   type RuntimeKind,
   type RuntimePasswordAdapter,
