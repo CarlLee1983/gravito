@@ -90,7 +90,27 @@ export class FileStorage implements SpectrumStorage {
   }
 
   /**
+   * 偵測當前執行環境是否支援 Bun 原生 JSONL 批量解析（SIMD 加速）。
+   *
+   * Bun v1.2+ 提供 `Bun.JSONL` 全域物件，可利用 SIMD 指令集加速 JSONL 批量解析，
+   * 效能比逐行 JSON.parse() 高出數倍。
+   *
+   * @returns 是否具備 Bun 原生 JSONL 能力
+   */
+  private hasBunJsonl(): boolean {
+    return (
+      typeof globalThis.Bun !== 'undefined' &&
+      typeof (globalThis.Bun as Record<string, unknown>).JSONL === 'object'
+    )
+  }
+
+  /**
    * Loads newline-delimited JSON data from a file into a target array.
+   *
+   * 若執行環境支援 `Bun.JSONL.parse()`，則使用 SIMD 加速批量解析取代逐行處理；
+   * 否則回退至逐行 `JSON.parse()` 的原有邏輯。
+   *
+   * 最終結果為 newest-first 排列（與 append() 中 unshift 行為一致）。
    *
    * @param path - The absolute path to the JSONL file
    * @param target - The array to populate with parsed objects
@@ -103,12 +123,26 @@ export class FileStorage implements SpectrumStorage {
 
     try {
       const content = await runtimeReadText(this.runtime, path)
-      const lines = content.split('\n').filter(Boolean)
-      // Reverse to get newest first
-      for (const line of lines) {
-        try {
-          target.unshift(JSON.parse(line))
-        } catch {} // Ignore malformed lines
+
+      if (this.hasBunJsonl()) {
+        // Bun 原生 JSONL 批量解析（SIMD 加速），解析結果為 oldest-first
+        const bunJsonl = (globalThis.Bun as Record<string, unknown>).JSONL as {
+          parse: (text: string | Uint8Array) => unknown[]
+        }
+        const parsed = bunJsonl.parse(content)
+        // 反向迴圈以 push 取代 unshift，達成 newest-first 排列
+        for (let i = parsed.length - 1; i >= 0; i--) {
+          target.push(parsed[i])
+        }
+      } else {
+        // Fallback：逐行解析，忽略格式錯誤的行
+        const lines = content.split('\n').filter(Boolean)
+        // Reverse to get newest first
+        for (const line of lines) {
+          try {
+            target.unshift(JSON.parse(line))
+          } catch {} // Ignore malformed lines
+        }
       }
     } catch (e) {
       console.error(`[Spectrum] Failed to load cache from ${path}`, e)

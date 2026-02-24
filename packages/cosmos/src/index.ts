@@ -84,6 +84,7 @@ export * from './loaders/ChainedLoader'
 export * from './loaders/CloudflareKVLoader'
 export * from './loaders/EdgeKVLoader'
 export * from './loaders/FileSystemLoader'
+export * from './loaders/Json5Loader'
 export * from './loaders/MemoryLoader'
 export * from './loaders/RemoteLoader'
 // Loaders

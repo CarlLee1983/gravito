@@ -10,6 +10,7 @@ import { DoctorCommand } from './commands/DoctorCommand'
 import { MakeMigrationCommand } from './commands/MakeMigrationCommand'
 import { MakeModelCommand } from './commands/MakeModelCommand'
 import { TinkerCommand } from './commands/TinkerCommand'
+import { DataExporter } from './data/DataExporter'
 import { Migrator } from './migration/Migrator'
 import { MigrationGenerator } from './schema/MigrationGenerator'
 import { SchemaDiff } from './schema/SchemaDiff'
@@ -221,6 +222,87 @@ async function main() {
         break
       }
 
+      case 'db:export': {
+        // 取得並驗證必要參數
+        const exportTable = String(flags.table ?? '')
+        if (!exportTable) {
+          console.error(
+            'Usage: bun orbit db:export --table <name> [--output <file>] [--batch-size <n>] [--where <condition>]'
+          )
+          process.exit(1)
+        }
+
+        // 設定輸出檔案路徑，預設為 {table}.jsonl
+        const exportOutput = flags.output
+          ? resolve(process.cwd(), String(flags.output))
+          : resolve(process.cwd(), `${exportTable}.jsonl`)
+
+        // 解析可選參數
+        const exportBatchSize = flags['batch-size']
+          ? parseInt(String(flags['batch-size']), 10)
+          : undefined
+        const exportWhere = flags.where ? String(flags.where) : undefined
+
+        // 載入 DB 連線
+        const { DB: ExportDB } = await import('./DB')
+        const exportConnection = ExportDB.connection()
+
+        const exporter = new DataExporter(exportConnection)
+        const exportResult = await exporter.exportToJsonl({
+          table: exportTable,
+          output: exportOutput,
+          batchSize: exportBatchSize,
+          where: exportWhere,
+        })
+
+        console.log(`✓ Exported ${exportResult.rows} rows to ${exportOutput}`)
+        break
+      }
+
+      case 'db:import': {
+        // 取得並驗證必要參數
+        const importTable = String(flags.table ?? '')
+        if (!importTable) {
+          console.error(
+            'Usage: bun orbit db:import --table <name> --input <file.jsonl> [--batch-size <n>] [--on-conflict skip|update|error]'
+          )
+          process.exit(1)
+        }
+
+        const importInput = flags.input ? String(flags.input) : ''
+        if (!importInput) {
+          console.error('Error: --input <file.jsonl> is required')
+          process.exit(1)
+        }
+
+        // 解析可選參數
+        const importBatchSize = flags['batch-size']
+          ? parseInt(String(flags['batch-size']), 10)
+          : undefined
+        const rawOnConflict = flags['on-conflict'] ? String(flags['on-conflict']) : 'error'
+        const onConflict = (
+          ['skip', 'update', 'error'].includes(rawOnConflict) ? rawOnConflict : 'error'
+        ) as 'skip' | 'update' | 'error'
+
+        // 解析輸入檔案路徑（相對於 cwd）
+        const resolvedInput = resolve(process.cwd(), importInput)
+
+        // 載入 DB 連線
+        const { DB: ImportDB } = await import('./DB')
+        const importConnection = ImportDB.connection()
+
+        const importer = new DataExporter(importConnection)
+        const importResult = await importer.importFromJsonl({
+          input: resolvedInput,
+          table: importTable,
+          batchSize: importBatchSize,
+          onConflict,
+        })
+
+        console.log(`✓ Imported ${importResult.rows} rows into ${importTable}`)
+        break
+      }
+
       case 'migrate:generate': {
         const { DB } = await import('./DB')
         const connection = DB.connection()
@@ -280,6 +362,16 @@ Commands:
                         --models <dir>   (default: src/models)
                         --out    <file>  (default: .orbit/generated.d.ts)
   db:push             Apply schema diff to live database --tables <table1,table2>
+  db:export           Export table data to JSONL format
+                        --table <name>       (required) table to export
+                        --output <file>      (default: {table}.jsonl)
+                        --batch-size <n>     (default: 1000)
+                        --where <condition>  (optional) SQL WHERE clause
+  db:import           Import JSONL data into a table
+                        --table <name>       (required) target table
+                        --input <file.jsonl> (required) input file path
+                        --batch-size <n>     (default: 500)
+                        --on-conflict        skip|update|error (default: error)
   doctor              Diagnose database connection and config
 `)
     }

@@ -1,7 +1,7 @@
 /**
  * @file packages/cosmos/src/loaders/FileSystemLoader.ts
  * @module @gravito/cosmos/loaders
- * @description 從檔案系統載入翻譯資源的實現
+ * @description 從檔案系統載入翻譯資源的實現，支援 JSON 與 JSON5 格式
  *
  * ⚠️ **Node.js Only**
  *
@@ -23,6 +23,20 @@ import { detectRuntime } from '../runtime/detector'
 import type { LoaderConfig, TranslationLoader, TranslationLoaderChain } from './TranslationLoader'
 
 /**
+ * 偵測 Bun 運行時是否原生支援 JSON5 解析
+ *
+ * Bun v1.2+ 提供 `Bun.JSON5` 全域物件
+ *
+ * @returns 是否具備 Bun 原生 JSON5 能力
+ */
+function hasBunJson5(): boolean {
+  return (
+    typeof globalThis.Bun !== 'undefined' &&
+    typeof (globalThis.Bun as Record<string, unknown>).JSON5 === 'object'
+  )
+}
+
+/**
  * 檔案系統載入器配置
  *
  * @public
@@ -38,6 +52,8 @@ export interface FileSystemLoaderConfig extends LoaderConfig {
 
   /**
    * 檔案副檔名
+   *
+   * 支援 `.json` 與 `.json5` 兩種格式
    *
    * @default '.json'
    */
@@ -94,6 +110,8 @@ export class FileSystemLoader implements TranslationLoaderChain {
   /**
    * 載入指定語言的翻譯資源
    *
+   * 根據 extension 自動判斷使用 JSON 或 JSON5 解析器
+   *
    * @param locale - 語言代碼
    * @returns 翻譯資源,載入失敗則返回 null
    */
@@ -101,7 +119,10 @@ export class FileSystemLoader implements TranslationLoaderChain {
     try {
       const filePath = join(this.baseDir, `${locale}${this.extension}`)
       const content = await readFile(filePath, 'utf-8')
-      const translations = JSON.parse(content) as TranslationMap
+      const translations =
+        this.extension === '.json5'
+          ? await this.parseJson5(content)
+          : (JSON.parse(content) as TranslationMap)
       return translations
     } catch (_error) {
       // 如果有備用載入器,嘗試使用備用載入器
@@ -109,6 +130,41 @@ export class FileSystemLoader implements TranslationLoaderChain {
         return this.fallbackLoader.load(locale)
       }
       return null
+    }
+  }
+
+  /**
+   * 解析 JSON5 內容
+   *
+   * 優先使用 Bun 原生 JSON5 解析器（Bun v1.2+），
+   * 若不可用則嘗試動態載入 `json5` npm 套件作為降級方案
+   *
+   * @param content - 要解析的 JSON5 字串
+   * @returns 解析後的翻譯資源
+   * @throws {Error} 若 Bun 原生與 json5 套件均不可用時
+   */
+  private async parseJson5(content: string): Promise<TranslationMap> {
+    // 優先使用 Bun 原生 JSON5 解析器
+    if (hasBunJson5()) {
+      const bunJson5 = (globalThis.Bun as Record<string, unknown>).JSON5 as {
+        parse: (text: string) => unknown
+      }
+      return bunJson5.parse(content) as TranslationMap
+    }
+
+    // 降級方案：動態載入 json5 npm 套件
+    // 使用變數作為路徑以避免靜態型別解析（json5 為可選 peer dependency）
+    try {
+      const pkgName = 'json5'
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const json5Module = await (import(pkgName) as Promise<any>)
+      const json5 = json5Module.default ?? json5Module
+      return (json5 as { parse: (text: string) => unknown }).parse(content) as TranslationMap
+    } catch {
+      throw new Error(
+        '[FileSystemLoader] JSON5 parsing requires either Bun v1.2+ (native support) ' +
+          'or the `json5` npm package. Please install it: bun add json5'
+      )
     }
   }
 

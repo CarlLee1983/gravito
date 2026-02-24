@@ -68,6 +68,7 @@ export { CborNativeSerializer } from './serializers/CborNativeSerializer'
 export { ClassNameSerializer } from './serializers/ClassNameSerializer'
 // Serializers
 export type { JobSerializer } from './serializers/JobSerializer'
+export { JsonlSerializer } from './serializers/JsonlSerializer'
 export { JsonSerializer } from './serializers/JsonSerializer'
 export type {
   PersistenceAdapter,
