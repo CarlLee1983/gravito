@@ -10,7 +10,7 @@ Enterprise-grade distributed task scheduler for the Gravito framework.
 - **Distributed Locking**: Prevents duplicate task execution across multiple servers (supports Memory, Cache, and Redis).
 - **Node Role Awareness**: Restrict tasks to specific nodes (e.g., only run on `worker` nodes) or broadcast maintenance tasks to all matching nodes.
 - **Reliability Features**: Built-in support for task timeouts and automatic retries with configurable delays.
-- **Shell Command Support**: Schedule raw shell commands alongside TypeScript callbacks.
+- **Shell Command Support**: Schedule raw shell commands alongside TypeScript callbacks (powered by [@gravito/nova](../nova) for type-safe execution).
 - **Lazy Cron Parsing**: Lightweight `SimpleCronParser` for standard expressions, with `cron-parser` only loaded when complex logic is required.
 - **Comprehensive Hooks**: Lifecycle events for monitoring task success, failure, retries, and scheduler activity.
 
@@ -65,11 +65,12 @@ scheduler.task('daily-cleanup', async () => {
 .dailyAt('02:00')
 .onOneServer() // Distributed lock
 
-// Shell command execution
+// Shell command execution (type-safe via @gravito/nova)
 scheduler.exec('sync-storage', 'aws s3 sync ./local s3://bucket')
   .everyFiveMinutes()
   .onNode('worker')
   .retry(3, 5000) // Retry 3 times with 5s delay
+  .timeout(300000) // 5 minute timeout
 ```
 
 ## Scheduling API
@@ -134,6 +135,39 @@ Poll every minute in a long-running process (ideal for Docker):
 ```bash
 bun run gravito schedule:work
 ```
+
+## Shell Execution with Nova
+
+Horizon uses [@gravito/nova](../nova) for shell command execution, which provides:
+
+- **Type-Safe Execution**: Template literal-based API prevents shell injection
+- **Automatic Escaping**: All command arguments are automatically escaped
+- **Consistent API**: Same Shell API used across Gravito framework
+- **Error Handling**: Comprehensive error capture with stdout/stderr
+
+Example with advanced shell operations:
+
+```typescript
+import { Shell } from '@gravito/nova'
+
+scheduler.task('backup-database', async () => {
+  // Use nova Shell API for custom commands
+  const result = await Shell.run`mysqldump -u ${dbUser} -p${dbPassword} ${dbName}`
+    .nothrow()
+    .run()
+
+  if (result.success) {
+    // Upload backup to S3
+    await Shell.run`aws s3 cp - s3://backups/${Date.now()}.sql`
+      .nothrow()
+      .run()
+  }
+})
+.dailyAt('03:00')
+.onOneServer()
+```
+
+---
 
 ## Monitoring Hooks
 
