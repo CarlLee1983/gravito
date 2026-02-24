@@ -1883,6 +1883,15 @@
         "vitest": "^2.1.8",
       },
     },
+    "packages/xenon": {
+      "name": "@gravito/xenon",
+      "version": "1.0.0",
+      "devDependencies": {
+        "bun-types": "latest",
+        "tsup": "^8.5.1",
+        "typescript": "^5.9.3",
+      },
+    },
     "packages/zenith": {
       "name": "@gravito/zenith",
       "version": "1.1.3",
@@ -2816,6 +2825,8 @@
     "@gravito/stream": ["@gravito/stream@workspace:packages/stream"],
 
     "@gravito/support-chat-widget": ["@gravito/support-chat-widget@workspace:packages/support-chat-widget"],
+
+    "@gravito/xenon": ["@gravito/xenon@workspace:packages/xenon"],
 
     "@gravito/zenith": ["@gravito/zenith@workspace:packages/zenith"],
 
