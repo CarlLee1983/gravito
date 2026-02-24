@@ -1,6 +1,8 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
+import { readdir, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { PlanetCore } from '@gravito/core'
+import { getArchiveAdapter, getRuntimeAdapter } from '@gravito/core'
 import { OpenApiGenerator } from './OpenApiGenerator'
 import type { AstralConfig, OpenApiDocument } from './types'
 
@@ -12,6 +14,10 @@ export interface StaticExportConfig {
   core: PlanetCore
   outputDir: string
   astralConfig: AstralConfig
+  /** 是否生成歸檔（.tar.gz） */
+  archive?: boolean
+  /** 歸檔輸出路徑（預設為 outputDir + '.tar.gz'） */
+  archivePath?: string
 }
 
 /**
@@ -109,4 +115,36 @@ export async function generateStaticSite(config: StaticExportConfig): Promise<vo
 
   writeFileSync(htmlPath, html)
   console.log(`Astral static site generated successfully at: ${outputDir}`)
+
+  // 5. 生成歸檔（選用）
+  if (config.archive) {
+    const archiveAdapter = getArchiveAdapter()
+    const runtime = getRuntimeAdapter()
+    const archivePath = config.archivePath || `${outputDir}.tar.gz`
+
+    // 遞迴掃描目錄，收集所有檔案
+    const entries: Record<string, Uint8Array> = {}
+
+    const scanDir = async (dir: string, prefix = ''): Promise<void> => {
+      const items = await readdir(dir)
+      for (const item of items) {
+        const itemPath = join(dir, item)
+        const itemStat = await stat(itemPath)
+
+        if (itemStat.isDirectory()) {
+          await scanDir(itemPath, `${prefix}${item}/`)
+        } else {
+          const relativePath = `${prefix}${item}`.replace(/\\/g, '/')
+          entries[relativePath] = await runtime.readFile(itemPath)
+        }
+      }
+    }
+
+    await scanDir(outputDir)
+
+    const archiveData = await archiveAdapter.create(entries, { compress: 'gzip' })
+    await runtime.writeFile(archivePath, archiveData)
+
+    core.logger.info(`[Astral] Archive generated: ${archivePath}`)
+  }
 }

@@ -1,7 +1,18 @@
-import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from 'bun:test'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import * as coreModule from '@gravito/core'
 import { LocalStore } from '../../src/stores/LocalStore'
 
 let tempDir = ''
@@ -128,6 +139,148 @@ describe('LocalStore - list (not implemented)', () => {
 
   it('should throw "not yet implemented" error when calling list() with prefix', () => {
     expect(() => store.list('some/prefix')).toThrow('[LocalStore] list() is not yet implemented.')
+  })
+})
+
+describe('LocalStore - backup/restore', () => {
+  let backupDir: string
+  let backupStore: LocalStore
+
+  beforeEach(async () => {
+    backupDir = await mkdtemp(join(tmpdir(), 'nebula-backup-'))
+    backupStore = new LocalStore(backupDir, '/backup')
+  })
+
+  afterEach(async () => {
+    if (backupDir) {
+      await rm(backupDir, { recursive: true, force: true })
+    }
+  })
+
+  it('backup creates tar.gz with all files', async () => {
+    // 放入一些測試檔案
+    await backupStore.put('a.txt', 'content-a')
+    await backupStore.put('b.txt', 'content-b')
+
+    const archivePath = join(tmpdir(), `nebula-backup-test-${Date.now()}.tar.gz`)
+
+    // Mock getArchiveAdapter，記錄傳入的 entries
+    let capturedEntries: Record<string, unknown> = {}
+    const mockAdapter = {
+      create: mock(async (entries: Record<string, unknown>) => {
+        capturedEntries = entries
+        return new Uint8Array([0x1f, 0x8b, 0x08, 0x00])
+      }),
+      extract: mock(async () => 0),
+      list: mock(async () => new Map()),
+      readFile: mock(async () => null),
+    }
+    const spy = spyOn(coreModule, 'getArchiveAdapter').mockReturnValue(mockAdapter as any)
+
+    await backupStore.backup(archivePath)
+
+    // 確認 create 被呼叫，且包含兩個檔案
+    expect(mockAdapter.create).toHaveBeenCalled()
+    expect(Object.keys(capturedEntries).some((k) => k.includes('a.txt'))).toBe(true)
+    expect(Object.keys(capturedEntries).some((k) => k.includes('b.txt'))).toBe(true)
+
+    spy.mockRestore()
+    await rm(archivePath, { force: true })
+  })
+
+  it('restore extracts backup and restores data', async () => {
+    const archivePath = join(tmpdir(), `nebula-restore-test-${Date.now()}.tar.gz`)
+
+    // 模擬一個含有 restored.txt 的歸檔，提取後寫入 backupDir
+    const mockAdapter = {
+      create: mock(async () => new Uint8Array([0x1f, 0x8b])),
+      extract: mock(async (_data: unknown, targetDir: string) => {
+        // 模擬提取：直接在 targetDir 建立一個檔案
+        await writeFile(join(targetDir, 'restored.txt'), 'restored-content')
+        return 1
+      }),
+      list: mock(async () => new Map()),
+      readFile: mock(async () => null),
+    }
+
+    // 建立假的 archive 檔案（實際不需要真實 gzip）
+    await writeFile(archivePath, 'fake-archive')
+
+    const spy = spyOn(coreModule, 'getArchiveAdapter').mockReturnValue(mockAdapter as any)
+
+    await backupStore.restore(archivePath)
+
+    // 確認 extract 被呼叫
+    expect(mockAdapter.extract).toHaveBeenCalled()
+
+    // 確認還原的檔案存在
+    const restoredContent = await backupStore.get('restored.txt')
+    expect(restoredContent).not.toBeNull()
+    expect(await restoredContent?.text()).toBe('restored-content')
+
+    spy.mockRestore()
+    await rm(archivePath, { force: true })
+  })
+
+  it('restore overwrites existing files', async () => {
+    // 先放入舊版檔案
+    await backupStore.put('file.txt', 'old-content')
+
+    const archivePath = join(tmpdir(), `nebula-overwrite-test-${Date.now()}.tar.gz`)
+
+    const mockAdapter = {
+      create: mock(async () => new Uint8Array()),
+      extract: mock(async (_data: unknown, targetDir: string) => {
+        // 提取新版本
+        await writeFile(join(targetDir, 'file.txt'), 'new-content')
+        return 1
+      }),
+      list: mock(async () => new Map()),
+      readFile: mock(async () => null),
+    }
+
+    await writeFile(archivePath, 'fake-archive')
+
+    const spy = spyOn(coreModule, 'getArchiveAdapter').mockReturnValue(mockAdapter as any)
+
+    await backupStore.restore(archivePath)
+
+    // 確認舊內容已被覆蓋
+    const result = await backupStore.get('file.txt')
+    expect(await result?.text()).toBe('new-content')
+
+    spy.mockRestore()
+    await rm(archivePath, { force: true })
+  })
+
+  it('restore cleans up temporary directory', async () => {
+    const archivePath = join(tmpdir(), `nebula-cleanup-test-${Date.now()}.tar.gz`)
+
+    let extractTargetDir = ''
+    const mockAdapter = {
+      create: mock(async () => new Uint8Array()),
+      extract: mock(async (_data: unknown, targetDir: string) => {
+        extractTargetDir = targetDir
+        return 0
+      }),
+      list: mock(async () => new Map()),
+      readFile: mock(async () => null),
+    }
+
+    await writeFile(archivePath, 'fake-archive')
+
+    const spy = spyOn(coreModule, 'getArchiveAdapter').mockReturnValue(mockAdapter as any)
+
+    await backupStore.restore(archivePath)
+
+    // 確認臨時目錄已被清理
+    if (extractTargetDir) {
+      const { existsSync } = await import('node:fs')
+      expect(existsSync(extractTargetDir)).toBe(false)
+    }
+
+    spy.mockRestore()
+    await rm(archivePath, { force: true })
   })
 })
 
