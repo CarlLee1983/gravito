@@ -2118,6 +2118,21 @@
         "typescript": "^5.9.3",
       },
     },
+    "satellites/sqlite": {
+      "name": "@gravito/satellite-sqlite",
+      "version": "1.0.0",
+      "devDependencies": {
+        "bun-types": "latest",
+        "tsup": "^8.5.1",
+        "typescript": "^5.9.3",
+      },
+      "peerDependencies": {
+        "@gravito/xenon": "^1.0.0",
+      },
+      "optionalPeers": [
+        "@gravito/xenon",
+      ],
+    },
     "satellites/support": {
       "name": "@gravito/satellite-support",
       "version": "0.1.6",
@@ -2798,6 +2813,8 @@
     "@gravito/satellite-news": ["@gravito/satellite-news@workspace:satellites/news"],
 
     "@gravito/satellite-payment": ["@gravito/satellite-payment@workspace:satellites/payment"],
+
+    "@gravito/satellite-sqlite": ["@gravito/satellite-sqlite@workspace:satellites/sqlite"],
 
     "@gravito/satellite-support": ["@gravito/satellite-support@workspace:satellites/support"],
 

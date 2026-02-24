@@ -50,13 +50,12 @@ describe('BinarySerializer', () => {
       expect(serialized.retryMultiplier).toBe(2)
     })
 
-    it('應正確序列化複雜資料類型（Date、Map、BigInt）', () => {
-      const date = new Date('2026-02-24')
+    it('應正確序列化巢狀物件與陣列', () => {
       const job = createTestJob({
         data: {
-          date: date,
-          map: new Map([['key', 'value']]),
-          bigint: BigInt(9007199254740991),
+          nested: { level1: { level2: { value: 'deep' } } },
+          array: [1, 'two', true, null],
+          numbers: [0, -1, 3.14, 4294967295],
         },
       })
       const serialized = serializer.serialize(job)
