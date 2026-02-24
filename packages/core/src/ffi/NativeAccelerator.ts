@@ -37,7 +37,8 @@ export class NativeAccelerator {
    * 檢測原生 FFI 是否可用
    * 偵測邏輯：
    * 1. 檢查 GRAVITO_FFI_DISABLE 環境變數
-   * 2. 檢查 Bun 和 bun:ffi 的 cc() 是否可用
+   * 2. 檢查 Bun 運行時可用性
+   * 3. 檢查 bun:ffi 的 cc() 是否可用
    */
   static isAvailable(): boolean {
     if (this.available !== null) {
@@ -52,15 +53,16 @@ export class NativeAccelerator {
       }
     }
 
-    // 檢查 Bun 和 bun:ffi
+    // 檢查 Bun 運行時
     try {
       if (typeof Bun === 'undefined') {
         this.available = false
         return false
       }
 
-      const bunModuleConfig = (Bun as any).cc
-      if (typeof bunModuleConfig !== 'function') {
+      // 嘗試載入 bun:ffi 的 cc 函數
+      const bunFfi = require('bun:ffi')
+      if (typeof bunFfi.cc !== 'function') {
         this.available = false
         return false
       }
@@ -139,90 +141,81 @@ export class NativeAccelerator {
   }
 
   /**
+   * 解析 C 原始碼路徑
+   * 支援從原始碼目錄或 npm 套件的 src/ffi/native 目錄載入
+   */
+  private static resolveCSourcePath(): string {
+    const path = require('path')
+    const fs = require('fs')
+
+    // 取得當前模組目錄（ESM 優先，CJS 回退）
+    const currentDir =
+      typeof import.meta?.dir === 'string' && import.meta.dir !== ''
+        ? import.meta.dir
+        : typeof __dirname === 'string'
+          ? __dirname
+          : process.cwd()
+
+    // 嘗試多個可能的路徑（開發時 vs 發佈後）
+    const candidates = [
+      path.resolve(currentDir, 'native', 'cbor.c'),
+      path.resolve(currentDir, '..', 'ffi', 'native', 'cbor.c'),
+      path.resolve(currentDir, '..', '..', 'src', 'ffi', 'native', 'cbor.c'),
+    ]
+
+    for (const candidate of candidates) {
+      try {
+        if (fs.existsSync(candidate)) {
+          return candidate
+        }
+      } catch {}
+    }
+
+    throw new Error(`C 原始碼檔案未找到，嘗試路徑: ${candidates.join(', ')}`)
+  }
+
+  /**
    * 載入原生 C 實現
    * 使用 bun:ffi 的 cc() 動態編譯 C 代碼
+   * 優先從檔案載入完整實現，避免內聯限制
    */
   private static loadNativeImplementation(): CborAccelerator | null {
     try {
-      // 檢查 Bun 全域物件
-      if (typeof (globalThis as any).Bun === 'undefined') {
+      // 檢查 Bun 運行時
+      if (typeof Bun === 'undefined') {
         return null
       }
 
-      const BunModule = (globalThis as any).Bun
-      if (typeof BunModule.cc !== 'function') {
+      const bunFfi = require('bun:ffi')
+      if (typeof bunFfi.cc !== 'function') {
         return null
       }
 
-      // 使用 Bun.cc 編譯 C 代碼
-      // 注意：C 源代碼通過字串內聯傳遞，避免檔案 I/O
-      const cCodeSource = `
-#include <stdint.h>
-#include <string.h>
-#include <math.h>
+      // 解析 C 原始碼路徑
+      const cSourcePath = this.resolveCSourcePath()
 
-#define CBOR_UINT    0
-#define CBOR_NEGINT  1
-#define CBOR_BYTES   2
-#define CBOR_TEXT    3
-#define CBOR_ARRAY   4
-#define CBOR_MAP     5
-#define CBOR_TAG     6
-#define CBOR_SIMPLE  7
+      if (this.isDebugEnabled()) {
+        console.log(`[GRAVITO_FFI] 載入 C 原始碼: ${cSourcePath}`)
+      }
 
-#define CBOR_FALSE   20
-#define CBOR_TRUE    21
-#define CBOR_NULL    22
-
-#define CBOR_UINT8   24
-#define CBOR_UINT16  25
-#define CBOR_UINT32  26
-#define CBOR_UINT64  27
-#define CBOR_FLOAT64 27
-
-typedef struct {
-  uint8_t  *buffer;
-  size_t    capacity;
-  size_t    offset;
-  int       error;
-} CborEncoder;
-
-/* 最簡化的實現：只支援基本類型 */
-int gravito_cbor_encode(const char *json_input, size_t json_len,
-                        uint8_t *output_buf, size_t output_cap) {
-  if (!json_input || !output_buf || output_cap < 1) {
-    return -1;
-  }
-  output_buf[0] = (5 << 5) | 0; /* empty map */
-  return 1;
-}
-
-int gravito_cbor_decode(const uint8_t *cbor_input, size_t cbor_len,
-                        char *json_output, size_t json_cap) {
-  if (!cbor_input || !json_output || json_cap < 2) {
-    return -1;
-  }
-  json_output[0] = '{';
-  json_output[1] = '}';
-  return 2;
-}
-      `
-
-      const symbols = BunModule.cc({
-        source: cCodeSource,
+      // 使用 bun:ffi 的 cc() 編譯 C 代碼
+      // cc() 的 source 參數接受檔案路徑（不是源碼字串）
+      const lib = bunFfi.cc({
+        source: cSourcePath,
         symbols: {
           gravito_cbor_encode: {
             args: ['ptr', 'usize', 'ptr', 'usize'],
-            returns: 'isize',
+            returns: 'i32',
           },
           gravito_cbor_decode: {
             args: ['ptr', 'usize', 'ptr', 'usize'],
-            returns: 'isize',
+            returns: 'i32',
           },
         },
       })
 
-      return new NativeCborAccelerator(symbols)
+      // cc() 返回 { close, symbols: { ... } }
+      return new NativeCborAccelerator(lib.symbols)
     } catch (error) {
       if (this.isDebugEnabled()) {
         console.error('[GRAVITO_FFI] 編譯失敗:', error)

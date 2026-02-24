@@ -1,5 +1,5 @@
-import type { CborAccelerator, NativeAcceleratorStatus } from '@gravito/core'
-import { NativeAccelerator } from '@gravito/core'
+import type { CborAccelerator, NativeAcceleratorStatus } from '@gravito/core/ffi'
+import { NativeAccelerator } from '@gravito/core/ffi'
 import type { Job } from '../Job'
 import type { SerializedJob } from '../types'
 import type { JobSerializer } from './JobSerializer'

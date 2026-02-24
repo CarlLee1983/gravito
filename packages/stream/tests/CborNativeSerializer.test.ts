@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
-import type { CborAccelerator } from '@gravito/core'
-import { NativeAccelerator } from '@gravito/core'
+import type { CborAccelerator } from '@gravito/core/ffi'
+import { NativeAccelerator } from '@gravito/core/ffi'
 import type { Job } from '../src/Job'
 import { BinarySerializer } from '../src/serializers/BinarySerializer'
 import { CborNativeSerializer } from '../src/serializers/CborNativeSerializer'

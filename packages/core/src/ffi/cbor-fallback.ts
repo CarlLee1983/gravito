@@ -140,17 +140,22 @@ export class CborFallbackEncoder implements CborAccelerator {
 
   /**
    * 編碼整數或浮點數
+   * 對於超過 uint32 範圍的整數，使用 float64 編碼（JavaScript 精度限制）
    */
   private encodeNumber(num: number): void {
-    // 檢查是否為整數
+    // 檢查是否為整數且在 uint32/negint32 範圍內
     if (Number.isInteger(num) && !Object.is(num, -0)) {
-      if (num >= 0) {
+      if (num >= 0 && num <= 0xffffffff) {
         this.writeLength(CBOR_MAJOR_TYPES.UINT, num)
-      } else {
-        // 負整數：-1-n
-        this.writeLength(CBOR_MAJOR_TYPES.NEGINT, -1 - num)
+        return
       }
-    } else {
+      if (num < 0 && -1 - num <= 0xffffffff) {
+        this.writeLength(CBOR_MAJOR_TYPES.NEGINT, -1 - num)
+        return
+      }
+      // 超過 32-bit 範圍的整數，降級為 float64
+    }
+    {
       // 浮點數（float64）
       const bytes = new Uint8Array(9)
       bytes[0] = (CBOR_MAJOR_TYPES.SIMPLE << 5) | CBOR_LENGTH_ENCODING.FLOAT64
