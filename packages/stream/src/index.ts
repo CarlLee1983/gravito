@@ -23,7 +23,14 @@
 export { BatchConsumer, type BatchConsumerOptions } from './BatchConsumer'
 export type { ConsumerOptions } from './Consumer'
 export { Consumer } from './Consumer'
-
+export {
+  decodeBinaryJobFrame,
+  encodeBinaryJobFrame,
+  Flags as BinaryJobFrameFlags,
+  isGravitoJobFrame,
+  MAGIC as BINARY_JOB_FRAME_MAGIC,
+  VERSION as BINARY_JOB_FRAME_VERSION,
+} from './drivers/BinaryJobFrame'
 // Driver config types
 export type { BullMQDriverConfig } from './drivers/BullMQDriver'
 export { BullMQDriver } from './drivers/BullMQDriver'
@@ -38,7 +45,7 @@ export { MemoryDriver } from './drivers/MemoryDriver'
 export type { QueueDriver } from './drivers/QueueDriver'
 export type { RabbitMQDriverConfig } from './drivers/RabbitMQDriver'
 export { RabbitMQDriver } from './drivers/RabbitMQDriver'
-export type { RedisDriverConfig } from './drivers/RedisDriver'
+export type { RedisClient, RedisDriverConfig } from './drivers/RedisDriver'
 export { RedisDriver } from './drivers/RedisDriver'
 export type { SQSDriverConfig } from './drivers/SQSDriver'
 export { SQSDriver } from './drivers/SQSDriver'
