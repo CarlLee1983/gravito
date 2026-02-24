@@ -1549,6 +1549,22 @@
         "@gravito/core": "^1.6.1",
       },
     },
+    "packages/nova": {
+      "name": "@gravito/nova",
+      "version": "1.0.0",
+      "devDependencies": {
+        "@gravito/core": "workspace:*",
+        "bun-types": "latest",
+        "tsup": "^8.5.1",
+        "typescript": "^5.9.3",
+      },
+      "peerDependencies": {
+        "@gravito/core": "*",
+      },
+      "optionalPeers": [
+        "@gravito/core",
+      ],
+    },
     "packages/orbit-cloudflare": {
       "name": "@gravito/orbit-cloudflare",
       "version": "1.0.2",
@@ -2765,6 +2781,8 @@
     "@gravito/nebula": ["@gravito/nebula@workspace:packages/nebula"],
 
     "@gravito/nebula-s3": ["@gravito/nebula-s3@workspace:packages/nebula-s3"],
+
+    "@gravito/nova": ["@gravito/nova@workspace:packages/nova"],
 
     "@gravito/orbit-cloudflare": ["@gravito/orbit-cloudflare@workspace:packages/orbit-cloudflare"],
 

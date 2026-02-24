@@ -27,6 +27,9 @@ async function buildInParallel() {
       'bun:test',
       '--external',
       'bun:sqlite',
+      '--external',
+      'bun:ffi',
+      '--minify',
       '--outDir',
       'dist'
     )
