@@ -1,5 +1,5 @@
-import type { ShellResult } from './types'
 import { NovaShellError } from './errors'
+import type { ShellResult } from './types'
 
 /**
  * Represents a shell command built from template literals.
@@ -16,7 +16,7 @@ export class ShellCommand implements PromiseLike<ShellResult> {
 
   constructor(
     readonly strings: TemplateStringsArray,
-    readonly values: unknown[],
+    readonly values: unknown[]
   ) {}
 
   /**
@@ -121,9 +121,10 @@ export class ShellCommand implements PromiseLike<ShellResult> {
   /**
    * PromiseLike implementation for direct await support.
    */
+  // biome-ignore lint/suspicious/noThenProperty: Required for PromiseLike interface
   then<TResult1 = ShellResult, TResult2 = never>(
     onfulfilled?: ((value: ShellResult) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     if (!this._promise) {
       this._promise = this._executeCommand()
@@ -135,7 +136,7 @@ export class ShellCommand implements PromiseLike<ShellResult> {
    * PromiseLike catch implementation.
    */
   catch<TResult = never>(
-    onrejected?: ((reason: unknown) => TResult | PromiseLike<TResult>) | null,
+    onrejected?: ((reason: unknown) => TResult | PromiseLike<TResult>) | null
   ): Promise<ShellResult | TResult> {
     if (!this._promise) {
       this._promise = this._executeCommand()
@@ -175,12 +176,7 @@ export class ShellCommand implements PromiseLike<ShellResult> {
 
       // Handle error cases
       if (exitCode !== 0 && !this._nothrow) {
-        throw new NovaShellError(
-          exitCode,
-          result.stdout,
-          result.stderr,
-          cmdStr,
-        )
+        throw new NovaShellError(exitCode, result.stdout, result.stderr, cmdStr)
       }
 
       return result

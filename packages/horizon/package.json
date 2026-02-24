@@ -38,7 +38,9 @@
   ],
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "@gravito/nova": "workspace:*"
+  },
   "optionalDependencies": {
     "cron-parser": "^4.9.0"
   },

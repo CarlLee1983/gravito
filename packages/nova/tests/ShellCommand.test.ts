@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
-import { ShellCommand } from '../src/ShellCommand'
-import { NovaShellError } from '../src/errors'
-import { createTestDir, createTestFile, cleanupTestDir } from './helpers'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { tmpdir } from 'os'
+import { NovaShellError } from '../src/errors'
+import { ShellCommand } from '../src/ShellCommand'
+import { cleanupTestDir, createTestDir, createTestFile } from './helpers'
 
 describe('ShellCommand', () => {
   let testDir: string
@@ -27,10 +27,7 @@ describe('ShellCommand', () => {
   })
 
   it('should execute command with multiple interpolations', async () => {
-    const cmd = new ShellCommand(
-      ['echo ', ' ', ''],
-      ['hello', 'world'],
-    )
+    const cmd = new ShellCommand(['echo ', ' ', ''], ['hello', 'world'])
     const result = await cmd.run()
 
     expect(result.success).toBe(true)
@@ -89,7 +86,7 @@ describe('ShellCommand', () => {
 
   // .cwd() method tests
   it('should change working directory with .cwd()', async () => {
-    const filepath = createTestFile(testDir, 'test.txt', 'test-content')
+    createTestFile(testDir, 'test.txt', 'test-content')
     const cmd = new ShellCommand(['ls -la'], [])
     const result = await cmd.cwd(testDir).run()
 
@@ -119,10 +116,7 @@ describe('ShellCommand', () => {
   })
 
   it('should merge environment variables', async () => {
-    const cmd = new ShellCommand(
-      ['echo $PATH | grep -o .'],
-      [],
-    )
+    const cmd = new ShellCommand(['echo $PATH | grep -o .'], [])
     const result = await cmd.env({ CUSTOM_VAR: 'custom' }).run()
 
     expect(result.success).toBe(true)
@@ -253,10 +247,7 @@ describe('ShellCommand', () => {
   it('should support chaining multiple configurations', async () => {
     const envVar = 'chained-test'
     const cmd = new ShellCommand(['echo $CHAINED_VAR'], [])
-    const result = await cmd
-      .env({ CHAINED_VAR: envVar })
-      .quiet()
-      .run()
+    const result = await cmd.env({ CHAINED_VAR: envVar }).quiet().run()
 
     expect(result.success).toBe(true)
     expect(result.stdout).toBe(envVar)
@@ -277,10 +268,7 @@ describe('ShellCommand', () => {
 
   // Complex command tests
   it('should execute complex shell commands', async () => {
-    const cmd = new ShellCommand(
-      ['ls -la ', ' | wc -l'],
-      [testDir],
-    )
+    const cmd = new ShellCommand(['ls -la ', ' | wc -l'], [testDir])
     const result = await cmd.run()
 
     expect(result.success).toBe(true)
@@ -289,10 +277,7 @@ describe('ShellCommand', () => {
   })
 
   it('should handle commands with multiple pipes', async () => {
-    const cmd = new ShellCommand(
-      ['echo -e "apple\\nbanana\\ncherry" | grep ', ''],
-      ['a'],
-    )
+    const cmd = new ShellCommand(['echo -e "apple\\nbanana\\ncherry" | grep ', ''], ['a'])
     const result = await cmd.run()
 
     expect(result.success).toBe(true)

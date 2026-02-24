@@ -1,4 +1,5 @@
 import { getRuntimeAdapter } from '@gravito/core'
+import { Shell } from '@gravito/nova'
 import type { IDockerAdapter } from '../../Domain/Interfaces'
 
 /**
@@ -102,12 +103,10 @@ export class DockerAdapter implements IDockerAdapter {
    */
   private async ensureCacheDirectory(): Promise<void> {
     const cachePath = this.cacheConfig.hostCachePath
-    const proc = this.runtime.spawn(['mkdir', '-p', cachePath])
-    await proc.exited
 
-    // 設定適當的權限
-    const chmodProc = this.runtime.spawn(['chmod', '777', cachePath])
-    await chmodProc.exited
+    // 使用 nova Shell API 進行目錄操作（類型安全、shell 注射防護）
+    await Shell.run`mkdir -p ${cachePath}`.nothrow().run()
+    await Shell.run`chmod 777 ${cachePath}`.nothrow().run()
   }
 
   /**
