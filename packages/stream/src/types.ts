@@ -28,15 +28,17 @@ export interface SerializedJob {
    * - 'json': Simple JSON objects.
    * - 'class': Serialized class instances (requires class registration).
    * - 'msgpack': Binary MessagePack format.
+   * - 'binary': CBOR binary format for optimal performance and size.
    */
-  type: 'json' | 'class' | 'msgpack'
+  type: 'json' | 'class' | 'msgpack' | 'binary'
 
   /**
    * The actual serialized job payload.
    *
    * Contains the business data needed to execute the job.
+   * For 'binary' and 'msgpack' types, can be Uint8Array or Base64 string for transport.
    */
-  data: string
+  data: string | Uint8Array
 
   /**
    * The fully qualified class name of the job.

@@ -1,4 +1,5 @@
 import type { JobPushOptions, QueueStats, SerializedJob } from '../types'
+import { prepareJobForTransport } from './prepareJobForTransport'
 import type { QueueDriver } from './QueueDriver'
 
 /**
@@ -240,10 +241,11 @@ export class RedisDriver implements QueueDriver {
       // Complicated. Let's assume standard usage for now.
     }
 
+    const jobForTransport = prepareJobForTransport(job)
     const payloadObj = {
-      id: job.id,
-      type: job.type,
-      data: job.data,
+      id: jobForTransport.id,
+      type: jobForTransport.type,
+      data: jobForTransport.data,
       className: job.className,
       createdAt: job.createdAt,
       delaySeconds: job.delaySeconds,
@@ -595,11 +597,12 @@ export class RedisDriver implements QueueDriver {
           const priority = (job as any).priority
           const key = this.getKey(queue, priority)
           const groupId = job.groupId
+          const jobForTransport = prepareJobForTransport(job)
 
           const payload = JSON.stringify({
-            id: job.id,
-            type: job.type,
-            data: job.data,
+            id: jobForTransport.id,
+            type: jobForTransport.type,
+            data: jobForTransport.data,
             className: job.className,
             createdAt: job.createdAt,
             delaySeconds: job.delaySeconds,
@@ -640,11 +643,12 @@ export class RedisDriver implements QueueDriver {
     }
 
     const key = this.getKey(queue)
-    const payloads = jobs.map((job) =>
-      JSON.stringify({
-        id: job.id,
-        type: job.type,
-        data: job.data,
+    const payloads = jobs.map((job) => {
+      const jobForTransport = prepareJobForTransport(job)
+      return JSON.stringify({
+        id: jobForTransport.id,
+        type: jobForTransport.type,
+        data: jobForTransport.data,
         className: job.className,
         createdAt: job.createdAt,
         delaySeconds: job.delaySeconds,
@@ -653,7 +657,7 @@ export class RedisDriver implements QueueDriver {
         groupId: job.groupId,
         priority: (job as any).priority,
       })
-    )
+    })
 
     await this.client.lpush(key, ...payloads)
   }

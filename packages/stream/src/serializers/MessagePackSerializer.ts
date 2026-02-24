@@ -70,7 +70,10 @@ export class MessagePackSerializer implements JobSerializer {
       throw new Error('Invalid serialization type: expected "msgpack"')
     }
 
-    const buffer = Buffer.from(serialized.data, 'base64')
+    const buffer =
+      typeof serialized.data === 'string'
+        ? Buffer.from(serialized.data, 'base64')
+        : Buffer.from(serialized.data)
     const properties = this.msgpack.decode(buffer) as Record<string, any>
 
     const job = Object.create({}) as Record<string, any>

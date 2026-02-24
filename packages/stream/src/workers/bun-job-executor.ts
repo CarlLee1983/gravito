@@ -83,9 +83,9 @@ function _registerJobClass(name: string, JobClass: any): void {
  * @returns The instantiated job object.
  * @throws {Error} If deserialization fails or class is unknown.
  */
-function deserializeJob(serialized: SerializedJob): any {
+async function deserializeJob(serialized: SerializedJob): Promise<any> {
   if (serialized.type === 'json') {
-    return JSON.parse(serialized.data)
+    return JSON.parse(serialized.data as string)
   }
 
   if (serialized.type === 'class') {
@@ -98,15 +98,26 @@ function deserializeJob(serialized: SerializedJob): any {
       throw new Error(`Job class "${serialized.className}" not registered in worker thread`)
     }
 
-    const data = JSON.parse(serialized.data)
+    const data = JSON.parse(serialized.data as string)
     const instance = Object.create(JobClass.prototype)
     Object.assign(instance, data)
 
     return instance
   }
 
+  if (serialized.type === 'binary') {
+    const { BinarySerializer } = await import('../serializers/BinarySerializer')
+    const serializer = new BinarySerializer()
+    return serializer.deserialize(serialized)
+  }
+
   if (serialized.type === 'msgpack') {
-    throw new Error('MessagePack deserialization not yet implemented in worker')
+    const msgpack = await import('@msgpack/msgpack')
+    const bytes =
+      typeof serialized.data === 'string'
+        ? Buffer.from(serialized.data, 'base64')
+        : Buffer.from(serialized.data as Uint8Array)
+    return msgpack.decode(bytes)
   }
 
   throw new Error(`Unknown serialization type: ${serialized.type}`)
@@ -119,7 +130,7 @@ function deserializeJob(serialized: SerializedJob): any {
  * @throws {Error} If execution fails or `handle()` is missing.
  */
 async function executeJob(serialized: SerializedJob): Promise<void> {
-  const job = deserializeJob(serialized)
+  const job = await deserializeJob(serialized)
 
   if (typeof job.handle !== 'function') {
     throw new Error('Job must have a handle() method')
