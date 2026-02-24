@@ -1,3 +1,4 @@
+import { getEscapeHtml } from '@gravito/core'
 import type { SitemapEntry, SitemapStreamOptions } from '../types'
 
 /**
@@ -29,6 +30,7 @@ export class SitemapStream {
     hasNews: false,
     hasAlternates: false,
   }
+  private escapeHtml = getEscapeHtml()
 
   constructor(options: SitemapStreamOptions) {
     this.options = { ...options }
@@ -188,7 +190,7 @@ export class SitemapStream {
     }
 
     parts.push(`${indent}<url>${nl}`)
-    parts.push(`${subIndent}<loc>${this.escape(loc)}</loc>${nl}`)
+    parts.push(`${subIndent}<loc>${this.escapeHtml(loc)}</loc>${nl}`)
 
     if (entry.lastmod) {
       const date = entry.lastmod instanceof Date ? entry.lastmod : new Date(entry.lastmod)
@@ -213,7 +215,7 @@ export class SitemapStream {
           altLoc = baseUrl + altLoc
         }
         parts.push(
-          `${subIndent}<xhtml:link rel="alternate" hreflang="${alt.lang}" href="${this.escape(altLoc)}"/>${nl}`
+          `${subIndent}<xhtml:link rel="alternate" hreflang="${alt.lang}" href="${this.escapeHtml(altLoc)}"/>${nl}`
         )
       }
     }
@@ -227,7 +229,7 @@ export class SitemapStream {
         canonicalUrl = baseUrl + canonicalUrl
       }
       parts.push(
-        `${subIndent}<xhtml:link rel="canonical" href="${this.escape(canonicalUrl)}"/>${nl}`
+        `${subIndent}<xhtml:link rel="canonical" href="${this.escapeHtml(canonicalUrl)}"/>${nl}`
       )
     }
 
@@ -247,23 +249,23 @@ export class SitemapStream {
           loc = baseUrl + loc
         }
         parts.push(`${subIndent}<image:image>${nl}`)
-        parts.push(`${subIndent}  <image:loc>${this.escape(loc)}</image:loc>${nl}`)
+        parts.push(`${subIndent}  <image:loc>${this.escapeHtml(loc)}</image:loc>${nl}`)
         if (img.title) {
-          parts.push(`${subIndent}  <image:title>${this.escape(img.title)}</image:title>${nl}`)
+          parts.push(`${subIndent}  <image:title>${this.escapeHtml(img.title)}</image:title>${nl}`)
         }
         if (img.caption) {
           parts.push(
-            `${subIndent}  <image:caption>${this.escape(img.caption)}</image:caption>${nl}`
+            `${subIndent}  <image:caption>${this.escapeHtml(img.caption)}</image:caption>${nl}`
           )
         }
         if (img.geo_location) {
           parts.push(
-            `${subIndent}  <image:geo_location>${this.escape(img.geo_location)}</image:geo_location>${nl}`
+            `${subIndent}  <image:geo_location>${this.escapeHtml(img.geo_location)}</image:geo_location>${nl}`
           )
         }
         if (img.license) {
           parts.push(
-            `${subIndent}  <image:license>${this.escape(img.license)}</image:license>${nl}`
+            `${subIndent}  <image:license>${this.escapeHtml(img.license)}</image:license>${nl}`
           )
         }
         parts.push(`${subIndent}</image:image>${nl}`)
@@ -274,20 +276,20 @@ export class SitemapStream {
       for (const video of entry.videos) {
         parts.push(`${subIndent}<video:video>${nl}`)
         parts.push(
-          `${subIndent}  <video:thumbnail_loc>${this.escape(video.thumbnail_loc)}</video:thumbnail_loc>${nl}`
+          `${subIndent}  <video:thumbnail_loc>${this.escapeHtml(video.thumbnail_loc)}</video:thumbnail_loc>${nl}`
         )
-        parts.push(`${subIndent}  <video:title>${this.escape(video.title)}</video:title>${nl}`)
+        parts.push(`${subIndent}  <video:title>${this.escapeHtml(video.title)}</video:title>${nl}`)
         parts.push(
-          `${subIndent}  <video:description>${this.escape(video.description)}</video:description>${nl}`
+          `${subIndent}  <video:description>${this.escapeHtml(video.description)}</video:description>${nl}`
         )
         if (video.content_loc) {
           parts.push(
-            `${subIndent}  <video:content_loc>${this.escape(video.content_loc)}</video:content_loc>${nl}`
+            `${subIndent}  <video:content_loc>${this.escapeHtml(video.content_loc)}</video:content_loc>${nl}`
           )
         }
         if (video.player_loc) {
           parts.push(
-            `${subIndent}  <video:player_loc>${this.escape(video.player_loc)}</video:player_loc>${nl}`
+            `${subIndent}  <video:player_loc>${this.escapeHtml(video.player_loc)}</video:player_loc>${nl}`
           )
         }
         if (video.duration) {
@@ -312,7 +314,7 @@ export class SitemapStream {
         }
         if (video.tag) {
           for (const tag of video.tag) {
-            parts.push(`${subIndent}  <video:tag>${this.escape(tag)}</video:tag>${nl}`)
+            parts.push(`${subIndent}  <video:tag>${this.escapeHtml(tag)}</video:tag>${nl}`)
           }
         }
         parts.push(`${subIndent}</video:video>${nl}`)
@@ -323,10 +325,10 @@ export class SitemapStream {
       parts.push(`${subIndent}<news:news>${nl}`)
       parts.push(`${subIndent}  <news:publication>${nl}`)
       parts.push(
-        `${subIndent}    <news:name>${this.escape(entry.news.publication.name)}</news:name>${nl}`
+        `${subIndent}    <news:name>${this.escapeHtml(entry.news.publication.name)}</news:name>${nl}`
       )
       parts.push(
-        `${subIndent}    <news:language>${this.escape(entry.news.publication.language)}</news:language>${nl}`
+        `${subIndent}    <news:language>${this.escapeHtml(entry.news.publication.language)}</news:language>${nl}`
       )
       parts.push(`${subIndent}  </news:publication>${nl}`)
 
@@ -337,16 +339,16 @@ export class SitemapStream {
       parts.push(
         `${subIndent}  <news:publication_date>${pubDate.toISOString()}</news:publication_date>${nl}`
       )
-      parts.push(`${subIndent}  <news:title>${this.escape(entry.news.title)}</news:title>${nl}`)
+      parts.push(`${subIndent}  <news:title>${this.escapeHtml(entry.news.title)}</news:title>${nl}`)
 
       if (entry.news.genres) {
         parts.push(
-          `${subIndent}  <news:genres>${this.escape(entry.news.genres)}</news:genres>${nl}`
+          `${subIndent}  <news:genres>${this.escapeHtml(entry.news.genres)}</news:genres>${nl}`
         )
       }
       if (entry.news.keywords) {
         parts.push(
-          `${subIndent}  <news:keywords>${entry.news.keywords.map((k) => this.escape(k)).join(', ')}</news:keywords>${nl}`
+          `${subIndent}  <news:keywords>${entry.news.keywords.map((k) => this.escapeHtml(k)).join(', ')}</news:keywords>${nl}`
         )
       }
       parts.push(`${subIndent}</news:news>${nl}`)
@@ -359,15 +361,6 @@ export class SitemapStream {
   /**
    * Escapes special XML characters in a string.
    */
-  private escape(str: string): string {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;')
-  }
-
   /**
    * Returns all entries currently in the stream.
    *

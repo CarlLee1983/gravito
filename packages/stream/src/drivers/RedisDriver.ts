@@ -19,11 +19,16 @@ export interface RedisClient {
   ltrim?(key: string, start: number, stop: number): Promise<'OK'>
   lrange?(key: string, start: number, stop: number): Promise<string[]>
   publish?(channel: string, message: string): Promise<number>
+  subscribe?(channel: string | string[]): Promise<void>
+  unsubscribe?(channel?: string | string[]): Promise<void>
+  on?(event: string, handler: (...args: any[]) => void): void
   pipeline?(): any
   defineCommand?(name: string, options: { numberOfKeys: number; lua: string }): void
   incr?(key: string): Promise<number>
   expire?(key: string, seconds: number): Promise<number>
   eval(script: string, numKeys: number, ...args: (string | number)[]): Promise<any>
+  smembers?(key: string): Promise<string[]>
+  sadd?(key: string, ...members: string[]): Promise<number>
   [key: string]: any
 }
 
@@ -85,6 +90,9 @@ export interface RedisDriverConfig {
 export class RedisDriver implements QueueDriver {
   private prefix: string
   private client: CustomRedisClient
+  private pubsubClient: RedisClient | null = null
+  private notificationCallbacks = new Map<string, (queue: string) => Promise<void>>()
+  private notificationsEnabled = false
 
   // Lua Logic:
   // IF (IS_MEMBER(activeSet, groupId)) -> PUSH(pendingList, job)
@@ -132,25 +140,25 @@ export class RedisDriver implements QueueDriver {
     local prefix = ARGV[1]
     local count = tonumber(ARGV[2])
     local now = tonumber(ARGV[3])
-    
+
     local priorities = {'critical', 'high', 'default', 'low'}
     local result = {}
-    
+
     for _, priority in ipairs(priorities) do
       if #result >= count then break end
-      
+
       local key = prefix .. queue
       if priority ~= 'default' then
         key = key .. ':' .. priority
       end
-      
+
       -- Check Delayed (Move to Ready if due)
       local delayKey = key .. ":delayed"
       -- Optimization: Only check delayed if we need more items
       -- Fetch up to (count - #result) delayed items
       local needed = count - #result
       local delayed = redis.call("ZRANGEBYSCORE", delayKey, 0, now, "LIMIT", 0, needed)
-      
+
       for _, job in ipairs(delayed) do
         redis.call("ZREM", delayKey, job)
         -- We return it directly, assuming we want to process it now.
@@ -158,7 +166,7 @@ export class RedisDriver implements QueueDriver {
         table.insert(result, job)
         needed = needed - 1
       end
-      
+
       if #result >= count then break end
 
       -- Check Paused
@@ -176,8 +184,21 @@ export class RedisDriver implements QueueDriver {
         end
       end
     end
-    
+
     return result
+  `
+
+  // Lua Logic for merged LPUSH + PUBLISH:
+  // Push job to queue, then publish notification in single atomic operation
+  private static PUSH_AND_NOTIFY_SCRIPT = `
+    local key = KEYS[1]
+    local notifyChannel = KEYS[2]
+    local payload = ARGV[1]
+    local queueName = ARGV[2]
+
+    redis.call('LPUSH', key, payload)
+    redis.call('PUBLISH', notifyChannel, queueName)
+    return 1
   `
 
   constructor(config: RedisDriverConfig) {
@@ -203,6 +224,10 @@ export class RedisDriver implements QueueDriver {
       this.client.defineCommand('popMany', {
         numberOfKeys: 1,
         lua: RedisDriver.POP_MANY_SCRIPT,
+      })
+      this.client.defineCommand('pushAndNotify', {
+        numberOfKeys: 2,
+        lua: RedisDriver.PUSH_AND_NOTIFY_SCRIPT,
       })
     }
   }
@@ -919,5 +944,104 @@ export class RedisDriver implements QueueDriver {
       return Array.isArray(queues) ? queues.sort() : []
     }
     return ['default']
+  }
+
+  /**
+   * Enables real-time notifications for reactive consumption.
+   *
+   * Sets up a pub/sub subscription for queue notifications.
+   */
+  async enableNotifications(): Promise<void> {
+    if (this.notificationsEnabled) {
+      return
+    }
+
+    // Try to use the same client if it supports pub/sub
+    // Otherwise create a separate pub/sub client
+    const pubsubClient = (this.client as any)
+    if (
+      typeof pubsubClient.subscribe === 'function' &&
+      typeof pubsubClient.on === 'function'
+    ) {
+      this.pubsubClient = pubsubClient
+    } else {
+      // Cannot enable notifications if client doesn't support pub/sub
+      throw new Error(
+        '[RedisDriver] Pub/Sub not available. Use ioredis or node-redis with subscription support.'
+      )
+    }
+
+    this.notificationsEnabled = true
+  }
+
+  /**
+   * Disables real-time notifications.
+   *
+   * Unsubscribes from all notification channels.
+   */
+  async disableNotifications(): Promise<void> {
+    if (!this.notificationsEnabled) {
+      return
+    }
+
+    if (this.pubsubClient && typeof this.pubsubClient.unsubscribe === 'function') {
+      try {
+        await this.pubsubClient.unsubscribe()
+      } catch (error) {
+        console.error('[RedisDriver] Error unsubscribing from notifications:', error)
+      }
+    }
+
+    this.notificationCallbacks.clear()
+    this.notificationsEnabled = false
+  }
+
+  /**
+   * Registers notification listener for queue arrivals.
+   *
+   * @param queues - Queue names to listen for.
+   * @param callback - Called when job arrives in queue.
+   */
+  async onNotify(
+    queues: string | string[],
+    callback: (queue: string) => Promise<void>
+  ): Promise<void> {
+    if (!this.notificationsEnabled || !this.pubsubClient) {
+      throw new Error(
+        '[RedisDriver] Notifications not enabled. Call enableNotifications() first.'
+      )
+    }
+
+    const queueList = Array.isArray(queues) ? queues : [queues]
+    const notifyChannel = `${this.prefix}notifications`
+
+    // Store callback
+    const callbackId = `${Date.now()}-${Math.random()}`
+    this.notificationCallbacks.set(callbackId, callback)
+
+    // Subscribe to notification channel
+    if (this.notificationCallbacks.size === 1) {
+      // First subscription, setup message handler
+      try {
+        await (this.pubsubClient as any).subscribe(notifyChannel)
+
+        ;(this.pubsubClient as any).on('message', async (channel: string, message: string) => {
+          if (channel === notifyChannel) {
+            const queue = message
+            // Invoke all registered callbacks for this queue
+            for (const cb of this.notificationCallbacks.values()) {
+              try {
+                await cb(queue)
+              } catch (error) {
+                console.error('[RedisDriver] Error in notification callback:', error)
+              }
+            }
+          }
+        })
+      } catch (error) {
+        this.notificationCallbacks.delete(callbackId)
+        throw error
+      }
+    }
   }
 }
