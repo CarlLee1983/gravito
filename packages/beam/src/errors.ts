@@ -77,3 +77,26 @@ export class BeamHttpError extends BeamError {
     Object.setPrototypeOf(this, new.target.prototype)
   }
 }
+
+/**
+ * Connection Pool Exhausted Error
+ *
+ * Thrown when the connection pool cannot acquire a connection within the
+ * specified timeout period because all connections are in use and the
+ * maximum number of connections has been reached.
+ */
+export class BeamPoolExhaustedError extends BeamError {
+  /**
+   * @param hostname - Hostname for which the pool was exhausted
+   * @param timeoutMs - How long we waited before giving up (milliseconds)
+   */
+  constructor(hostname: string, timeoutMs: number) {
+    super(
+      `Connection pool exhausted for ${hostname} (waited ${timeoutMs}ms)`,
+      undefined,
+      'POOL_EXHAUSTED'
+    )
+    this.name = 'BeamPoolExhaustedError'
+    Object.setPrototypeOf(this, new.target.prototype)
+  }
+}
