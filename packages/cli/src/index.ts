@@ -15,6 +15,7 @@ import { existsSync } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { cancel, intro, isCancel, note, outro, select, spinner, text } from '@clack/prompts'
+import { Painter as pc } from '@gravito/chromatic'
 import {
   DependencyValidator,
   EnvironmentDetector,
@@ -24,7 +25,6 @@ import {
 } from '@gravito/scaffold'
 import cac from 'cac'
 import { downloadTemplate } from 'giget'
-import pc from 'picocolors'
 import { VersionChecker } from './utils/VersionChecker'
 import { VersionRegistry } from './utils/VersionRegistry'
 

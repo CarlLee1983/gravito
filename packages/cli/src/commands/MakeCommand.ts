@@ -2,8 +2,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { cancel, isCancel, text } from '@clack/prompts'
+import { Painter as pc } from '@gravito/chromatic'
 import { Scaffold } from '@gravito/scaffold'
-import pc from 'picocolors'
 
 /**
  * Command for generating code artifacts from stubs.

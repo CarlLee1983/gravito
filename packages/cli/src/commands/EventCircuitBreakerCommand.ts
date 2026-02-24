@@ -1,4 +1,4 @@
-import pc from 'picocolors'
+import { Painter as pc } from '@gravito/chromatic'
 
 export interface CircuitBreakerStatus {
   listenerName: string

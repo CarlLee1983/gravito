@@ -7,9 +7,9 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { cancel, intro, isCancel, note, outro, select, spinner, text } from '@clack/prompts'
+import { Painter as pc } from '@gravito/chromatic'
 import { getRuntimeAdapter } from '@gravito/core'
 import { type ArchitectureType, Scaffold } from '@gravito/scaffold'
-import pc from 'picocolors'
 
 /**
  * Options for initializing a new Gravito Enterprise project.

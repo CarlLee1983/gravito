@@ -3,7 +3,7 @@ import { constants } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
-import pc from 'picocolors'
+import { Painter as pc } from '@gravito/chromatic'
 
 /**
  * Options for the Gravito Doctor diagnostic command.

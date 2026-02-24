@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { note, outro, spinner } from '@clack/prompts'
+import { Painter as pc } from '@gravito/chromatic'
 import { LockGenerator, ProfileResolver } from '@gravito/scaffold'
-import pc from 'picocolors'
 
 /**
  * Command for project maintenance and health checks.
