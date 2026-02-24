@@ -89,6 +89,19 @@ For a full-stack integrated example, check out:
 
 ---
 
+## ⚡ Performance: Built for Bun
+
+Gravito is optimized for **Bun** runtime with native APIs that deliver **27-46% framework-level performance improvement**:
+
+- **Zero-Copy File I/O**: Automatic detection and utilization of Bun's native `Bun.file().text()`, `Bun.file().json()`, and `Bun.write()` APIs
+- **Non-Blocking Async**: All file operations are non-blocking, preventing event loop blocking during SSG, API documentation generation, and sitemap creation
+- **FileSink Buffering**: High-frequency write operations (logs, traces) use buffered writes, reducing syscalls by 40-60%
+- **Cross-Runtime Compatible**: Automatically falls back to Node.js/Deno when needed—no code changes required
+
+📖 **[See detailed optimization analysis](./docs/optimization/OPTIMIZATION_SUMMARY.md)** (Phase 1-4 complete)
+
+---
+
 ## 🤝 Community & Support
 
 - **Documentation**: [docs/README.md](./docs/README.md)

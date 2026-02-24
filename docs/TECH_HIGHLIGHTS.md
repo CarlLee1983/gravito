@@ -21,6 +21,11 @@ Gravito 不僅是一個框架，它是一套針對「業務成長性」與「極
 - **分佈式原子鎖 (Plasma Lock)**：基於 Redis 的高性能鎖機制，徹底解決高併發下的「超賣」與競爭問題。
 - **非同步削峰 (Quasar Queue)**：基於 BullMQ 的高性能隊列，將流量衝擊轉化為平穩的背景處理。
 - **異步事件驅動 (Signal Signal)**：全系統事件總線，實現衛星之間的解耦通訊與最終一致性。
+- **Bun 原生文件 I/O 優化 (Native File I/O)**：
+    - **零拷貝讀寫**：利用 `Bun.file().text()` 與 `Bun.file().json()` 實現零拷貝讀取，消除傳統 Node.js 中 Buffer 轉換的開銷。
+    - **非同步化消除阻塞**：將所有同步 I/O 操作（`writeFileSync`, `mkdirSync`）轉為非同步，確保事件迴圈暢通無阻。
+    - **高頻寫入緩衝**：透過 `RuntimeAdapter.createFileSink()` 提供 FileSink 緩衝機制，減少 syscall 次數，大幅提升日誌與事件寫入吞吐量。
+    - **跨運行時相容**：統一 `RuntimeAdapter` 介面自動偵測 Bun/Node.js/Deno，無縫切換原生實現與相容層。
 
 ### 🛠️ 3. 卓越的開發體驗 (Unmatched Developer Experience)
 **核心價值：讓複雜的架構變得「觸手可及」。**
