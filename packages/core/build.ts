@@ -27,6 +27,9 @@ async function buildInParallel() {
       'bun:test',
       '--external',
       'bun:sqlite',
+      '--external',
+      'bun:ffi',
+      '--minify',
       '--outDir',
       'dist'
     )
@@ -70,10 +73,36 @@ async function buildInParallel() {
     }
   })()
 
-  // Wait for both builds
-  const [mainResult, engineResult] = await Promise.all([mainBuildPromise, engineBuildPromise])
+  // Task 3: Build FFI entry point (src/ffi/index.ts)
+  const ffiBuildPromise = (async () => {
+    const ffiFormat = isDtsOnly ? 'esm' : 'esm,cjs'
+    const ffiArgs = ['bunx', 'tsup', 'src/ffi/index.ts', '--format', ffiFormat]
 
-  if (mainResult !== 0 || engineResult !== 0) {
+    if (isDtsOnly) {
+      ffiArgs.push('--dts', '--dts-only')
+    } else {
+      ffiArgs.push('--dts')
+    }
+
+    ffiArgs.push('--shims', '--external', 'bun:ffi', '--minify', '--outDir', 'dist/ffi')
+
+    try {
+      await Bun.$`${ffiArgs}`
+      return 0
+    } catch (_error) {
+      console.error('❌ tsup ffi build failed')
+      return 1
+    }
+  })()
+
+  // Wait for all builds
+  const [mainResult, engineResult, ffiResult] = await Promise.all([
+    mainBuildPromise,
+    engineBuildPromise,
+    ffiBuildPromise,
+  ])
+
+  if (mainResult !== 0 || engineResult !== 0 || ffiResult !== 0) {
     process.exit(1)
   }
 }

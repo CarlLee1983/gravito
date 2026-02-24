@@ -28,10 +28,6 @@ const DRY_RUN = process.argv.includes('--dry-run')
 const SKIP_BUILD = process.argv.includes('--skip-build')
 const SKIP_TEST = process.argv.includes('--skip-test')
 
-// 改造說明：
-// 原版需要手動封裝 spawnAsync（20 行 Promise 樣板），
-// Bun Shell 完全不需要此函式，直接使用 $`...` 即可。
-
 interface PackageInfo {
   name: string
   path: string
@@ -81,8 +77,9 @@ async function checkNpmAuth(): Promise<boolean> {
   // 原版：const { stdout } = await execAsync('npm whoami')
   // Bun Shell：$`npm whoami`.text() 直接取得輸出字串，更簡潔
   try {
-    const username = (await $`npm whoami`.quiet().text()).trim()
-    console.log(`已登入 NPM 為: ${username}`)
+    // 使用 Bun Shell 自動轉義，防止 Shell 注入
+    const username = await $`npm whoami`.quiet().text()
+    console.log(`✅ 已登入 NPM 為: ${username.trim()}`)
     return true
   } catch {
     console.error('未登入 NPM，請先執行: npm login')
@@ -96,9 +93,10 @@ async function checkNpmRegistry(): Promise<boolean> {
   // Bun Shell 版本使用 .text() 取得純文字輸出，等同 stdout，
   // 且 $`...` 對於空白命令不會產生 shell injection 問題。
   try {
-    const registry = (await $`npm config get registry`.quiet().text()).trim()
-    if (registry !== 'https://registry.npmjs.org/') {
-      console.warn(`當前 registry 為: ${registry}`)
+    // 使用 Bun Shell，直接取得結果文字
+    const registry = await $`npm config get registry`.quiet().text()
+    if (registry.trim() !== 'https://registry.npmjs.org/') {
+      console.warn(`⚠️  當前 registry 為: ${registry.trim()}`)
       console.warn('   建議使用: npm config set registry https://registry.npmjs.org/')
       return false
     }
@@ -131,8 +129,9 @@ async function buildPackage(pkg: PackageInfo): Promise<boolean> {
   // 不需要傳遞 options 物件。
   // 另：pkg.path 為檔案系統路徑，Bun Shell 自動轉義，不存在注入風險。
   try {
+    // 使用 Bun Shell 並以鏈式方法設定工作目錄
     await $`bun run build`.cwd(pkg.path).quiet()
-    console.log(`  ${pkg.name} 構建成功`)
+    console.log(`  ✅ ${pkg.name} 構建成功`)
     return true
   } catch (e: any) {
     console.error(`  ${pkg.name} 構建失敗:`, e.message)
@@ -161,8 +160,9 @@ async function testPackage(pkg: PackageInfo): Promise<boolean> {
   // 原版：execAsync('bun run test', { cwd: pkg.path })
   // Bun Shell：$.cwd() 鏈式設定，搭配 .quiet() 抑制冗餘輸出
   try {
+    // 使用 Bun Shell 並以鏈式方法設定工作目錄
     await $`bun run test`.cwd(pkg.path).quiet()
-    console.log(`  ${pkg.name} 測試通過`)
+    console.log(`  ✅ ${pkg.name} 測試通過`)
     return true
   } catch (e: any) {
     console.error(`  ${pkg.name} 測試失敗:`, e.message)
@@ -182,11 +182,14 @@ async function checkPackageExists(pkg: PackageInfo): Promise<boolean> {
   // 另：Bun Shell 不支援 2>/dev/null 重定向語法，
   // 改以 .nothrow() 讓非零退出碼不拋出例外，再檢查 exitCode。
   try {
-    const result = await $`npm view ${pkg.name}@${pkg.version} version`.quiet().nothrow()
-
-    const publishedVersion = result.stdout.toString().trim()
-    if (publishedVersion === pkg.version) {
-      console.log(`  ${pkg.name}@${pkg.version} 已存在於 NPM，跳過發布`)
+    // 使用 Bun Shell 的自動轉義，插值變數自動防止 Shell 注入
+    // .nothrow() 取代 2>/dev/null || echo ""，行為更明確且跨平台相容
+    const publishedVersion = await $`npm view ${pkg.name}@${pkg.version} version`
+      .quiet()
+      .nothrow()
+      .text()
+    if (publishedVersion.trim() === pkg.version) {
+      console.log(`  ⏭️  ${pkg.name}@${pkg.version} 已存在於 NPM，跳過發布`)
       return true
     }
     return false
@@ -203,8 +206,9 @@ async function verifyNpmAuth(): Promise<boolean> {
   // 原版：execAsync('npm whoami')
   // Bun Shell：$`npm whoami`.text() 直接取得字串，不需解構 { stdout }
   try {
-    const username = (await $`npm whoami`.quiet().text()).trim()
-    console.log(`已登入為: ${username}`)
+    // 使用 Bun Shell 直接取得使用者名稱
+    const username = await $`npm whoami`.quiet().text()
+    console.log(`✅ 已登入為: ${username.trim()}`)
 
     console.log('\n準備進行瀏覽器驗證...')
     console.log('   注意：發布第一個套件時，NPM 會自動打開瀏覽器進行驗證')
@@ -253,17 +257,18 @@ async function publishPackage(pkg: PackageInfo): Promise<boolean> {
   console.log(`  提示: 如果 NPM 要求驗證，請依照終端器指示操作（若有提示則會開啟瀏覽器驗證）`)
 
   try {
-    let result: { exitCode: number }
+    // 增加支援瀏覽器驗證的提示
+    console.log(`  💡 提示: 如果 NPM 要求驗證，請依照終端器指示操作（若有提示則會開啟瀏覽器驗證）`)
 
-    if (isBeta || isAlpha) {
-      // 有版本 tag 的發布：--tag 參數值由 versionTag 插值自動轉義
-      result = await $`npm publish --access public --tag ${versionTag}`.cwd(pkg.path).nothrow()
-    } else {
-      result = await $`npm publish --access public`.cwd(pkg.path).nothrow()
-    }
+    // 使用 Bun Shell 組合 npm publish 命令並支援互動模式
+    // 對於 alpha/beta 版本，使用對應的 tag
+    const result =
+      isBeta || isAlpha
+        ? await $`npm publish --access public --tag ${versionTag}`.cwd(pkg.path).nothrow()
+        : await $`npm publish --access public`.cwd(pkg.path).nothrow()
 
     if (result.exitCode === 0) {
-      console.log(`  ${pkg.name}@${pkg.version} 發布成功`)
+      console.log(`  ✅ ${pkg.name}@${pkg.version} 發布成功`)
       return true
     } else {
       // 如果發布失敗，做最後一次確認是否是因為版本已存在（處理 npm view 的延遲或快取問題）
@@ -273,7 +278,7 @@ async function publishPackage(pkg: PackageInfo): Promise<boolean> {
         return true
       }
 
-      console.error(`  ${pkg.name}@${pkg.version} 發布失敗 (碼: ${result.exitCode})`)
+      console.error(`  ❌ ${pkg.name}@${pkg.version} 發布失敗 (碼: ${result.exitCode})`)
       return false
     }
   } catch (e: any) {

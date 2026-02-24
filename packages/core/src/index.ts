@@ -308,6 +308,13 @@ export {
 export * as engine from './engine'
 
 // ─────────────────────────────────────────────────────────────────────────────
+// FFI (Foreign Function Interface) - Native Acceleration Layer
+// Re-export via @gravito/core/ffi to avoid compile-time FFI initialization
+// ─────────────────────────────────────────────────────────────────────────────
+// Note: Import via `import { NativeAccelerator } from '@gravito/core/ffi'`
+// Do NOT import directly from main entry to avoid compile-time FFI loading
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Configuration Helper
 // ─────────────────────────────────────────────────────────────────────────────
 

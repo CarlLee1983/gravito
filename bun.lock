@@ -1098,7 +1098,7 @@
       "name": "@gravito/enterprise",
       "version": "1.0.4",
       "dependencies": {
-        "@gravito/core": "^1.6.1",
+        "@gravito/core": "workspace:*",
       },
       "devDependencies": {
         "bun-types": "latest",
@@ -1294,6 +1294,9 @@
     "packages/horizon": {
       "name": "@gravito/horizon",
       "version": "3.2.1",
+      "dependencies": {
+        "@gravito/nova": "workspace:*",
+      },
       "devDependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/stasis": "workspace:*",
@@ -1360,10 +1363,11 @@
       "name": "@gravito/launchpad",
       "version": "1.3.2",
       "dependencies": {
-        "@gravito/core": "^1.6.1",
-        "@gravito/enterprise": "^1.0.4",
-        "@gravito/ripple": "^4.0.1",
-        "@gravito/stasis": "^3.1.1",
+        "@gravito/core": "workspace:*",
+        "@gravito/enterprise": "workspace:*",
+        "@gravito/nova": "workspace:*",
+        "@gravito/ripple": "workspace:*",
+        "@gravito/stasis": "workspace:*",
         "@octokit/rest": "^22.0.1",
       },
       "devDependencies": {
@@ -1549,6 +1553,22 @@
         "@gravito/core": "^1.6.1",
       },
     },
+    "packages/nova": {
+      "name": "@gravito/nova",
+      "version": "1.0.0",
+      "devDependencies": {
+        "@gravito/core": "workspace:*",
+        "bun-types": "latest",
+        "tsup": "^8.5.1",
+        "typescript": "^5.9.3",
+      },
+      "peerDependencies": {
+        "@gravito/core": "*",
+      },
+      "optionalPeers": [
+        "@gravito/core",
+      ],
+    },
     "packages/orbit-cloudflare": {
       "name": "@gravito/orbit-cloudflare",
       "version": "1.0.2",
@@ -1630,6 +1650,17 @@
       "peerDependencies": {
         "@gravito/core": "^1.6.1",
         "@gravito/plasma": "^2.0.0",
+      },
+    },
+    "packages/quark": {
+      "name": "@gravito/quark",
+      "version": "1.0.0",
+      "devDependencies": {
+        "bun-types": "latest",
+        "typescript": "^5.9.3",
+      },
+      "peerDependencies": {
+        "@gravito/core": "^1.6.1",
       },
     },
     "packages/quasar": {
@@ -2126,6 +2157,21 @@
         "tsup": "^8.0.0",
         "typescript": "^5.9.3",
       },
+    },
+    "satellites/sqlite": {
+      "name": "@gravito/satellite-sqlite",
+      "version": "1.0.0",
+      "devDependencies": {
+        "bun-types": "latest",
+        "tsup": "^8.5.1",
+        "typescript": "^5.9.3",
+      },
+      "peerDependencies": {
+        "@gravito/xenon": "^1.0.0",
+      },
+      "optionalPeers": [
+        "@gravito/xenon",
+      ],
     },
     "satellites/support": {
       "name": "@gravito/satellite-support",
@@ -2760,6 +2806,8 @@
 
     "@gravito/nebula-s3": ["@gravito/nebula-s3@workspace:packages/nebula-s3"],
 
+    "@gravito/nova": ["@gravito/nova@workspace:packages/nova"],
+
     "@gravito/orbit-cloudflare": ["@gravito/orbit-cloudflare@workspace:packages/orbit-cloudflare"],
 
     "@gravito/photon": ["@gravito/photon@workspace:packages/photon"],
@@ -2771,6 +2819,8 @@
     "@gravito/pulsar": ["@gravito/pulsar@workspace:packages/pulsar"],
 
     "@gravito/pulse": ["@gravito/pulse@workspace:packages/cli"],
+
+    "@gravito/quark": ["@gravito/quark@workspace:packages/quark"],
 
     "@gravito/quasar": ["@gravito/quasar@workspace:packages/quasar"],
 
@@ -2807,6 +2857,8 @@
     "@gravito/satellite-news": ["@gravito/satellite-news@workspace:satellites/news"],
 
     "@gravito/satellite-payment": ["@gravito/satellite-payment@workspace:satellites/payment"],
+
+    "@gravito/satellite-sqlite": ["@gravito/satellite-sqlite@workspace:satellites/sqlite"],
 
     "@gravito/satellite-support": ["@gravito/satellite-support@workspace:satellites/support"],
 

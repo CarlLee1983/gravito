@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from 'node:crypto'
+import { randomUUID } from 'node:crypto'
 import { open, rmdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import {
@@ -11,6 +11,7 @@ import {
   runtimeRename,
   runtimeStatFull,
 } from '@gravito/core'
+import { NativeHasher } from '@gravito/core/ffi'
 import { type CacheLock, LockTimeoutError, sleep } from '../locks'
 import type { CacheStore } from '../store'
 import {
@@ -629,5 +630,5 @@ export class FileStore implements CacheStore {
  * ```
  */
 function hashKey(key: string): string {
-  return createHash('sha256').update(key).digest('hex')
+  return NativeHasher.sha256(key)
 }

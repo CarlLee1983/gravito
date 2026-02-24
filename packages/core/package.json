@@ -22,10 +22,16 @@
       "types": "./dist/engine/index.d.ts",
       "import": "./dist/engine/index.js",
       "require": "./dist/engine/index.cjs"
+    },
+    "./ffi": {
+      "types": "./dist/ffi/index.d.ts",
+      "import": "./dist/ffi/index.js",
+      "require": "./dist/ffi/index.cjs"
     }
   },
   "files": [
     "dist",
+    "src/ffi/native",
     "README.md",
     "LICENSE"
   ],

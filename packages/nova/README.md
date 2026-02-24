@@ -262,11 +262,26 @@ bun run typecheck
 
 MIT
 
+## Framework Integration
+
+Nova is integrated into several Gravito packages:
+
+- **@gravito/horizon** - Task scheduler and cron jobs now use Nova for shell execution
+  - Cleaner Process.ts implementation with automatic escaping
+  - Full backward compatibility with existing ProcessResult interface
+
+- **@gravito/launchpad** - Docker container orchestration now uses Nova
+  - Enhanced cache directory operations with shell injection protection
+  - Docker CLI commands preserved with native spawning
+
 ## Related Packages
 
 - [@gravito/core](../core) - PlanetCore framework
 - [@gravito/photon](../photon) - HTTP engine
 - [@gravito/atlas](../atlas) - ORM
+- [@gravito/horizon](../horizon) - Task scheduler (integrated)
+- [@gravito/launchpad](../launchpad) - Docker orchestration (integrated)
+- [@gravito/xenon](../xenon) - FFI wrapper (complementary)
 
 ## Support
 
