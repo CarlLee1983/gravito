@@ -110,3 +110,41 @@ export const CBOR_LENGTH_ENCODING = {
   FLOAT64: 27, // 27: IEEE 754 雙精度浮點數
   INDEFINITE: 31, // 31: 無限長度編碼
 } as const
+
+/**
+ * 雜湊加速器介面
+ * 可由 Bun 原生實現或 Node.js 回退實現
+ */
+export interface HashAccelerator {
+  /**
+   * SHA-256 雜湊計算
+   * @param input - 輸入（字串或二進制）
+   * @returns 十六進制編碼的 SHA-256 雜湊值（64 字元）
+   */
+  sha256(input: string | Uint8Array): string
+
+  /**
+   * HMAC-SHA256 計算
+   * @param key - 密鑰
+   * @param data - 要雜湊的數據
+   * @returns 十六進制編碼的 HMAC-SHA256 值（64 字元）
+   */
+  hmacSha256(key: string, data: string): string
+}
+
+/**
+ * 雜湊加速器狀態報告
+ */
+export interface NativeHasherStatus {
+  /**
+   * 雜湊加速層是否可用
+   */
+  readonly available: boolean
+
+  /**
+   * 當前使用的運行時實現
+   * - 'bun-crypto-hasher': Bun 原生 CryptoHasher（C 實現，推薦）
+   * - 'node-crypto': node:crypto 回退實現
+   */
+  readonly runtime: 'bun-crypto-hasher' | 'node-crypto'
+}
