@@ -1,33 +1,51 @@
-import { execSync } from 'node:child_process'
+#!/usr/bin/env bun
 
-const isDtsOnly = process.argv.includes('--dts-only')
+/**
+ * @gravito/ripple-client 構建腳本
+ *
+ * 使用統一的 buildPackage() 函式，替代舊版 Bun.build + execSync tsc 組合。
+ *
+ * 特殊配置：
+ * - 目標平台：browser（前端 WebSocket client）
+ * - 多入口點：index.ts + react.tsx + vue.ts
+ * - ESM 命名：[name].mjs（ripple-client 使用 .mjs 後綴）
+ * - CJS stub：僅主入口需要 require() 相容
+ */
 
-// Build main entry (skip if dts-only)
-if (!isDtsOnly) {
-  await Bun.build({
-    entrypoints: ['./src/index.ts', './src/react.tsx', './src/vue.ts'],
-    outdir: './dist',
-    format: 'esm',
-    target: 'browser',
-    splitting: false,
-    sourcemap: 'external',
-    minify: false,
-    naming: '[name].mjs',
-  })
+import {
+  buildCJSStub,
+  buildPackage,
+  isDtsOnlyMode,
+  printBuildSummary,
+} from '../../scripts/build-utils.ts'
 
-  // Generate .cjs version
-  const cjsCode = `"use strict";
-module.exports = require("./index.mjs");
-`
-  await Bun.write('./dist/index.cjs', cjsCode)
+const dtsOnly = isDtsOnlyMode()
+
+console.log(dtsOnly ? '生成 @gravito/ripple-client 型別宣告...' : '構建 @gravito/ripple-client...')
+
+const result = await buildPackage({
+  entrypoints: ['src/index.ts', 'src/react.tsx', 'src/vue.ts'],
+  outdir: 'dist',
+  // ripple-client 使用 .mjs 後綴，不生成 .cjs（靠 stub）
+  format: ['esm'],
+  target: 'browser',
+  splitting: false,
+  minify: false,
+  sourcemap: 'external',
+  esmNaming: '[name].mjs',
+  dts: true,
+  dtsOnly,
+  tscArgs: ['--skipLibCheck', '--types', 'node'],
+  silent: false,
+})
+
+// 為主入口生成 CJS stub（package.json exports.require 指向 index.cjs）
+if (!dtsOnly && result.success) {
+  await buildCJSStub('dist', ['src/index.ts'])
 }
 
-// Generate type declarations
-execSync(
-  'bunx tsc --emitDeclarationOnly --declaration --outDir ./dist --skipLibCheck --types "node"',
-  {
-    stdio: 'inherit',
-  }
-)
+printBuildSummary(result, '@gravito/ripple-client')
 
-console.log('✅ @gravito/ripple-client built successfully')
+if (!result.success) {
+  process.exit(1)
+}

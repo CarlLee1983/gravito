@@ -1,51 +1,45 @@
-import { spawn } from 'bun'
+#!/usr/bin/env bun
 
-const isDtsOnly = process.argv.includes('--dts-only')
+/**
+ * @gravito/spectrum 構建腳本
+ *
+ * 使用統一的 buildPackage() 函式，替代舊版 spawn('npx', 'tsup') 方式。
+ * 格式：ESM + CJS
+ *
+ * 外部依賴包含 OpenTelemetry 套件，確保不打包進輸出。
+ */
 
-console.log('Building @gravito/spectrum...')
+import { buildPackage, isDtsOnlyMode, printBuildSummary } from '../../scripts/build-utils.ts'
 
-// Clean dist
-await Bun.$`rm -rf dist`
+const dtsOnly = isDtsOnlyMode()
 
-// Use tsup for multi-format build
-const tsup = spawn(
-  [
-    'npx',
-    'tsup',
-    'src/index.ts',
-    '--format',
-    isDtsOnly ? 'esm' : 'esm,cjs',
-    ...(isDtsOnly ? ['--dts', '--dts-only'] : []),
-    '--external',
+console.log(dtsOnly ? '生成 @gravito/spectrum 型別宣告...' : '構建 @gravito/spectrum...')
+
+const result = await buildPackage({
+  entrypoints: ['src/index.ts'],
+  outdir: 'dist',
+  format: ['esm', 'cjs'],
+  target: 'bun',
+  splitting: false,
+  minify: false,
+  sourcemap: 'external',
+  external: [
     '@gravito/core',
-    '--external',
     '@gravito/atlas',
-    '--external',
     '@gravito/photon',
-    '--external',
     '@opentelemetry/api',
-    '--external',
     '@opentelemetry/sdk-node',
-    '--external',
     '@opentelemetry/exporter-trace-otlp-http',
-    '--external',
     '@opentelemetry/resources',
-    '--external',
     '@opentelemetry/semantic-conventions',
-    '--outDir',
-    'dist',
   ],
-  {
-    stdout: 'inherit',
-    stderr: 'inherit',
-  }
-)
+  dts: true,
+  dtsOnly,
+  silent: false,
+})
 
-const code = await tsup.exited
-if (code !== 0) {
-  console.error('❌ tsup build failed')
+printBuildSummary(result, '@gravito/spectrum')
+
+if (!result.success) {
   process.exit(1)
 }
-
-console.log('✅ Build complete!')
-process.exit(0)

@@ -1,30 +1,34 @@
-import { execSync } from 'node:child_process'
+#!/usr/bin/env bun
 
-const isDtsOnly = process.argv.includes('--dts-only')
+/**
+ * @gravito/echo 構建腳本
+ *
+ * 使用統一的 buildPackage() 函式，替代舊版 Bun.build + execSync tsc 組合。
+ * 格式：ESM + CJS（echo 的 package.json exports 同時有 import 和 require）
+ */
 
-// Build with Bun (skip if dts-only)
-if (!isDtsOnly) {
-  await Bun.build({
-    entrypoints: ['./src/index.ts'],
-    outdir: './dist',
-    format: 'esm',
-    target: 'bun',
-    splitting: false,
-    sourcemap: 'external',
-    minify: false,
-    external: ['@gravito/core'],
-  })
+import { buildPackage, isDtsOnlyMode, printBuildSummary } from '../../scripts/build-utils.ts'
 
-  // Generate .cjs version
-  const cjsCode = `"use strict";
-module.exports = require("./index.js");
-`
-  await Bun.write('./dist/index.cjs', cjsCode)
-}
+const dtsOnly = isDtsOnlyMode()
 
-// Generate type declarations
-execSync('bunx tsc --emitDeclarationOnly --declaration --outDir ./dist', {
-  stdio: 'inherit',
+console.log(dtsOnly ? '生成 @gravito/echo 型別宣告...' : '構建 @gravito/echo...')
+
+const result = await buildPackage({
+  entrypoints: ['src/index.ts'],
+  outdir: 'dist',
+  format: ['esm', 'cjs'],
+  target: 'bun',
+  splitting: false,
+  minify: false,
+  sourcemap: 'external',
+  external: ['@gravito/core'],
+  dts: true,
+  dtsOnly,
+  silent: false,
 })
 
-console.log('✅ @gravito/echo built successfully')
+printBuildSummary(result, '@gravito/echo')
+
+if (!result.success) {
+  process.exit(1)
+}
