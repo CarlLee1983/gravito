@@ -141,7 +141,7 @@ export class HMRWatcher {
         enabled: false, // 強制停用
         watchDirs: [],
         debounce: 300,
-        extensions: ['.json'],
+        extensions: ['.json', '.json5'],
         verbose: false,
       }
       return
@@ -151,7 +151,7 @@ export class HMRWatcher {
       enabled: config.enabled,
       watchDirs: config.watchDirs,
       debounce: config.debounce ?? 300,
-      extensions: config.extensions ?? ['.json'],
+      extensions: config.extensions ?? ['.json', '.json5'],
       verbose: config.verbose ?? true,
     }
   }
