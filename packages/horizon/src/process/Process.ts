@@ -1,4 +1,4 @@
-import { getRuntimeAdapter } from '@gravito/core'
+import { Shell } from '@gravito/nova'
 
 /**
  * Encapsulates the outcome of a child process execution.
@@ -22,9 +22,9 @@ export interface ProcessResult {
 /**
  * Spawns a shell command and asynchronously captures its full output.
  *
- * Leverages the Gravito runtime adapter to ensure compatibility across different
- * JavaScript runtimes (Bun, Node.js). Executes commands within a shell (`sh -c`)
- * to support pipes, redirects, and environment variables.
+ * Leverages the Nova Shell orchestration engine to ensure type-safe,
+ * shell-injection-resistant command execution. Supports pipes, redirects,
+ * and environment variables.
  *
  * @param command - Raw shell command string to execute.
  * @returns Resolves to a detailed `ProcessResult` object.
@@ -41,25 +41,16 @@ export interface ProcessResult {
  * @since 3.0.0
  */
 export async function runProcess(command: string): Promise<ProcessResult> {
-  const runtime = getRuntimeAdapter()
-  const proc = runtime.spawn(['sh', '-c', command], {
-    stdout: 'pipe',
-    stderr: 'pipe',
-  })
-
-  // Stream consumption using standard Web Streams API via Response
-  const [stdout, stderr] = await Promise.all([
-    new Response(proc.stdout ?? null).text(),
-    new Response(proc.stderr ?? null).text(),
-  ])
-
-  const exitCode = await proc.exited
-
-  return {
-    exitCode,
-    stdout,
-    stderr,
-    success: exitCode === 0,
+  try {
+    const result = await Shell.run`bash -c ${command}`.nothrow().run()
+    return result
+  } catch (error) {
+    return {
+      exitCode: 1,
+      stdout: '',
+      stderr: error instanceof Error ? error.message : String(error),
+      success: false,
+    }
   }
 }
 

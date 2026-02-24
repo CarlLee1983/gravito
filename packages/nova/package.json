@@ -1,10 +1,10 @@
 {
-  "name": "@gravito/horizon",
-  "version": "3.2.1",
-  "description": "Distributed task scheduler for Gravito framework",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
+  "name": "@gravito/nova",
+  "version": "1.0.0",
+  "description": "Bun Shell orchestration engine for Gravito - type-safe shell command execution",
   "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -13,55 +13,49 @@
       "require": "./dist/index.cjs"
     }
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
   "scripts": {
     "build": "bun run build.ts",
     "build:dts": "bun run build.ts --dts-only",
     "test": "bun test --timeout=10000",
-    "lint": "biome lint ./src",
-    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test:coverage": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
     "test:ci": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
-    "test:unit": "bun test tests/ --timeout=10000",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test:unit": "bun test $(find tests -name '*.test.ts' ! -name '*.integration.test.ts' 2>/dev/null | tr '\\n' ' ') --timeout=10000",
     "test:integration": "test $(find tests -name '*.integration.test.ts' 2>/dev/null | wc -l) -gt 0 && find tests -name '*.integration.test.ts' -print0 | xargs -0 bun test --timeout=10000 || echo 'No integration tests found'"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "keywords": [
     "gravito",
-    "orbit",
-    "scheduler",
-    "cron",
-    "task"
+    "shell",
+    "process",
+    "bun",
+    "orchestration"
   ],
-  "author": "Carl Lee <carllee0520@gmail.com>",
+  "author": "Gravito Team",
   "license": "MIT",
-  "dependencies": {
-    "@gravito/nova": "workspace:*"
-  },
-  "optionalDependencies": {
-    "cron-parser": "^4.9.0"
-  },
   "peerDependencies": {
-    "@gravito/core": "^1.6.1",
-    "@gravito/stasis": "^3.1.1"
+    "@gravito/core": "*"
+  },
+  "peerDependenciesMeta": {
+    "@gravito/core": {
+      "optional": true
+    }
   },
   "devDependencies": {
-    "@gravito/stasis": "workspace:*",
-    "bun-types": "latest",
     "@gravito/core": "workspace:*",
+    "bun-types": "latest",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },
   "publishConfig": {
     "access": "public"
   },
-  "homepage": "https://github.com/gravito-framework/gravito#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/gravito-framework/gravito.git",
-    "directory": "packages/horizon"
+    "directory": "packages/nova"
   }
 }

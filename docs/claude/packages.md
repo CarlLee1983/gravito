@@ -21,7 +21,9 @@ Advanced Layer (進階層)
 ├── @gravito/enterprise    ← 企業架構
 └── @gravito/monolith      ← 整合層
 
-Infrastructure & Data (基礎設施與資料)
+Infrastructure & System (基礎設施與系統)
+├── @gravito/nova          ← Shell 編排引擎（Bun Shell）
+├── @gravito/xenon         ← FFI 安全封裝（外部庫綁定）
 ├── @gravito/plasma        ← Redis 客戶端
 ├── @gravito/dark-matter   ← MongoDB 客戶端
 ├── @gravito/nebula        ← 存儲
@@ -74,7 +76,7 @@ Satellites (業務領域)
 | **@gravito/dark-matter** | MongoDB 客戶端，Laravel 風格 API | core | 需要 MongoDB 時 |
 | **@gravito/nebula** | 標準存儲模組 | core, atlas | 文件和 blob 存儲時 |
 | **@gravito/nebula-s3** | S3 存儲適配器（v2.0.0，Bun 原生 API） | nebula | 使用 AWS S3、Cloudflare R2、MinIO 時 |
-| **@gravito/stasis** | 快取層（支持 Redis、in-memory） | core | 需要快取策略時 |
+| **@gravito/stasis** | 快取層（支持 Redis、in-memory） | core, nova | 需要快取策略時 |
 
 ---
 
@@ -89,6 +91,15 @@ Satellites (業務領域)
 
 ---
 
+## Shell & Process（Shell 與進程）
+
+| 包名 | 用途 | 版本 | 何時使用 |
+|---|---|---|---|
+| **@gravito/nova** | Bun Shell 編排引擎，類型安全的 shell 命令執行 | 1.0.0 | 執行 shell 命令、構建流程、CI/CD 操作時 |
+| **@gravito/xenon** | FFI 安全封裝，用於綁定外部 C/Rust 庫 | 1.0.0 | 需要原生 FFI 整合時 |
+
+---
+
 ## Processing & Workflows（處理和工作流）
 
 | 包名 | 用途 | 關鍵依賴 | 何時使用 |
@@ -96,7 +107,7 @@ Satellites (業務領域)
 | **@gravito/flux** | 平台無關的工作流引擎 | core, signal | 需要工作流編排時 |
 | **@gravito/forge** | 文件處理（視頻和圖像處理，實時狀態追蹤） | core | 需要多媒體處理時 |
 | **@gravito/mass** | TypeBox 驗證（高性能 schema 驗證） | core | 需要數據驗證時 |
-| **@gravito/horizon** | 任務排程和定時器 | core, stream | 需要定時執行任務時 |
+| **@gravito/horizon** | 任務排程和定時器 | core, stream, nova | 需要定時執行任務時 |
 
 ---
 
@@ -220,6 +231,10 @@ Satellites (業務領域)
 | 後台管理系統 | core + photon + atlas + fortify + admin-ui-* |
 | 完整電商系統 | core + photon + atlas + fortify + satellites/* |
 | 高負載應用 | core + photon + atlas + stream + stasis |
+| Shell 腳本和工具 | core + nova |
+| DevOps 和部署 | core + nova + launchpad |
+| 任務排程和自動化 | core + horizon + nova + stream |
+| 原生庫整合 | core + xenon + nova |
 
 ---
 
