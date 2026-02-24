@@ -24,12 +24,15 @@ export type {
   ArchiveFileInfo,
   ArchiveFromDirectoryOptions,
   CompressionOptions,
+  MarkdownRenderCallbacks,
+  MarkdownRenderOptions,
   OptionalRuntimeResourceUsage,
   RuntimeAdapter,
   RuntimeArchiveAdapter,
   RuntimeCompressionAdapter,
   RuntimeFileStat,
   RuntimeKind,
+  RuntimeMarkdownAdapter,
   RuntimePasswordAdapter,
   RuntimeProcess,
   RuntimeProcessOutput,
@@ -56,6 +59,10 @@ export {
 // ============ Compression Exports ============
 
 export { getCompressionAdapter } from './compression'
+
+// ============ Markdown Exports ============
+
+export { createHtmlRenderCallbacks, getMarkdownAdapter } from './markdown'
 
 // ============ Runtime Adapter Singleton ============
 

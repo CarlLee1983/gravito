@@ -17,6 +17,9 @@ export type {
   ArchiveFromDirectoryOptions,
   // Compression types
   CompressionOptions,
+  // Markdown types
+  MarkdownRenderCallbacks,
+  MarkdownRenderOptions,
   OptionalRuntimeResourceUsage,
   // Runtime adapter types
   RuntimeAdapter,
@@ -24,6 +27,7 @@ export type {
   RuntimeCompressionAdapter,
   RuntimeFileStat,
   RuntimeKind,
+  RuntimeMarkdownAdapter,
   RuntimePasswordAdapter,
   RuntimeProcess,
   RuntimeProcessOutput,
@@ -38,12 +42,15 @@ export type {
 export {
   // Archive
   archiveFromDirectory,
+  // Markdown adapter
+  createHtmlRenderCallbacks,
   // SQLite
   createSqliteDatabase,
   // Archive adapter
   getArchiveAdapter,
   // Compression adapter
   getCompressionAdapter,
+  getMarkdownAdapter,
   // Password adapter
   getPasswordAdapter,
   // Runtime adapter
