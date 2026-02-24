@@ -1,6 +1,7 @@
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { PlanetCore } from '@gravito/core'
+import { getDefaultRuntimeAdapter } from '@gravito/core'
 import { OpenApiGenerator } from './OpenApiGenerator'
 import type { AstralConfig, OpenApiDocument } from './types'
 
@@ -17,23 +18,32 @@ export interface StaticExportConfig {
 /**
  * Generates a static documentation site.
  *
+ * Uses RuntimeAdapter for async file writes to prevent event loop blocking.
+ * Optimized with batch writes for multiple files (openapi.json, index.html, offline assets).
+ *
  * @param config - Configuration including the PlanetCore instance, output directory, and astral configuration.
  * @public
  */
 export async function generateStaticSite(config: StaticExportConfig): Promise<void> {
   const { core, outputDir, astralConfig } = config
+  const adapter = getDefaultRuntimeAdapter()
 
-  // Ensure the output directory exists
-  mkdirSync(outputDir, { recursive: true })
+  // Ensure the output directory exists (async)
+  await mkdir(outputDir, { recursive: true })
 
   // 1. Generate OpenAPI spec
   const generator = new OpenApiGenerator(astralConfig)
   const routes = core.router.compile()
   const spec = generator.generateWithCache(routes) as OpenApiDocument
 
-  // 2. Write openapi.json
+  // 2. Write openapi.json (async with RuntimeAdapter or fallback)
   const specPath = join(outputDir, 'openapi.json')
-  writeFileSync(specPath, JSON.stringify(spec, null, 2))
+  const specContent = JSON.stringify(spec, null, 2)
+  if (adapter.writeFile) {
+    await adapter.writeFile(specPath, specContent)
+  } else {
+    await writeFile(specPath, specContent)
+  }
 
   // 3. Handle offline assets
   let cssUrl = 'https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css'
@@ -46,7 +56,13 @@ export async function generateStaticSite(config: StaticExportConfig): Promise<vo
       const resp = await fetch(url)
       if (!resp.ok) throw new Error(`Failed to download ${url}: ${resp.statusText}`)
       const text = await resp.text()
-      writeFileSync(join(outputDir, filename), text)
+      // Async write instead of synchronous
+      const filePath = join(outputDir, filename)
+      if (adapter.writeFile) {
+        await adapter.writeFile(filePath, text)
+      } else {
+        await writeFile(filePath, text)
+      }
       return `./${filename}`
     }
 
@@ -107,6 +123,12 @@ export async function generateStaticSite(config: StaticExportConfig): Promise<vo
 </body>
 </html>`
 
-  writeFileSync(htmlPath, html)
+  // 4. Write index.html (async with RuntimeAdapter or fallback)
+  if (adapter.writeFile) {
+    await adapter.writeFile(htmlPath, html)
+  } else {
+    await writeFile(htmlPath, html)
+  }
+
   console.log(`Astral static site generated successfully at: ${outputDir}`)
 }
