@@ -8,5 +8,5 @@ export default defineConfig({
   sourcemap: true,
   minify: false,
   target: 'node18',
-  external: ['react', '@inertiajs/react', '@gravito/freeze'],
+  external: ['react', '@inertiajs/react', '@gravito/core', '@gravito/freeze'],
 })

@@ -50,6 +50,7 @@
     }
   },
   "dependencies": {
+    "@gravito/core": "workspace:*",
     "@gravito/freeze": "workspace:*"
   },
   "devDependencies": {
