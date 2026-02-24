@@ -77,7 +77,7 @@ export class Luminosity {
     const useGzip = this.config.gzip === true
     const adapter = getDefaultRuntimeAdapter()
 
-    // Ensure output dir exists (async)
+    // Ensure output dir exists
     await mkdir(outDir, { recursive: true })
 
     const builder = new XmlStreamBuilder({ baseUrl: hostname })
@@ -181,8 +181,6 @@ export class Luminosity {
     } else {
       await writeFile(indexPath, indexXml)
     }
-
-    console.log(`✅ Generated ${count} URLs across ${sitemapFiles.length} files in ${outDir}`)
   }
 
   /**

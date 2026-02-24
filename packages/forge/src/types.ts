@@ -83,6 +83,30 @@ export interface WatermarkOptions {
 }
 
 /**
+ * 批量打包多個處理作業結果的選項
+ * @public
+ */
+export interface PackageResultsOptions {
+  /** 壓縮演算法（目前僅支援 gzip） */
+  readonly compress?: 'gzip'
+  /** Glob 模式過濾（僅打包匹配的檔案，例如 '*.mp4'） */
+  readonly pattern?: string
+}
+
+/**
+ * 批量打包結果的輸出摘要
+ * @public
+ */
+export interface PackageResultsOutput {
+  /** 輸出的歸檔路徑 */
+  readonly archivePath: string
+  /** 成功打包的檔案數量 */
+  readonly fileCount: number
+  /** 失敗的作業清單 */
+  readonly errors: ReadonlyArray<{ jobId: string; error: string }>
+}
+
+/**
  * Real-time feedback for a long-running media processing task.
  * @public
  */

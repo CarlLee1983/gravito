@@ -4,8 +4,9 @@
  * @since 3.1.0
  */
 
-import { Readable, type Transform } from 'node:stream'
+import type { Transform } from 'node:stream'
 import { createGzip } from 'node:zlib'
+import { getCompressionAdapter } from '@gravito/core'
 
 /**
  * Compression configuration.
@@ -20,6 +21,10 @@ export interface CompressionConfig {
 /**
  * 將 AsyncIterable<string> 壓縮為 Buffer。
  * 適用於需要完整壓縮結果的場景（如 S3 Upload）。
+ *
+ * 使用 RuntimeCompressionAdapter 自動選擇最佳壓縮實作：
+ * - Bun: 原生 C++ 壓縮（2-5x 更快）
+ * - Node.js: node:zlib fallback
  *
  * @param source - 輸入的字串串流
  * @param config - 壓縮設定
@@ -43,24 +48,16 @@ export async function compressToBuffer(
     throw new Error(`Invalid compression level: ${level}. Must be between 1 and 9.`)
   }
 
-  const chunks: Buffer[] = []
-  const gzip = createGzip({ level })
-  const readable = Readable.from(source, { encoding: 'utf-8' })
-
-  try {
-    readable.pipe(gzip)
-
-    for await (const chunk of gzip) {
-      chunks.push(chunk as Buffer)
-    }
-
-    return Buffer.concat(chunks)
-  } catch (error) {
-    // 確保串流被銷毀
-    readable.destroy()
-    gzip.destroy()
-    throw error
+  // 收集所有 chunk，再一次性壓縮（消除串流回調複雜度）
+  const parts: string[] = []
+  for await (const chunk of source) {
+    parts.push(chunk)
   }
+
+  const input = new TextEncoder().encode(parts.join(''))
+  const adapter = getCompressionAdapter()
+  const compressed = await adapter.gzip(input, { level })
+  return Buffer.from(compressed)
 }
 
 /**

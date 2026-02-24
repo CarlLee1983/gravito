@@ -133,6 +133,8 @@ export { MemoryStatusStore } from './status/StatusStore'
 export type {
   FileInput,
   FileOutput,
+  PackageResultsOptions,
+  PackageResultsOutput,
   ProcessingProgress,
   ProcessingStatus,
   ProcessOptions,

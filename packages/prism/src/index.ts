@@ -8,6 +8,7 @@ import type {
 } from '@gravito/core'
 import { type CacheOptions, TemplateEngine } from './engine/TemplateEngine'
 import { createImageHelper } from './helpers/image'
+import { createMarkdownHelper } from './helpers/markdown'
 import { createSanitizeHelper } from './helpers/sanitize'
 import { StaticSiteGenerator } from './ssg/StaticSiteGenerator'
 
@@ -88,6 +89,7 @@ export class OrbitPrism implements GravitoOrbit {
     const engine = new TemplateEngine(viewsDir, this.options?.cache)
 
     engine.registerHelper('image', createImageHelper())
+    engine.registerHelper('markdown', createMarkdownHelper())
     engine.registerHelper('sanitize', createSanitizeHelper())
 
     core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
@@ -132,6 +134,7 @@ export type { CompiledMetadata, CompilerOptions } from './core/TemplateCompiler'
 export { TemplateCompiler } from './core/TemplateCompiler'
 export type { HelperFunction, RenderContext } from './engine/TemplateEngine'
 export { createImageHelper } from './helpers/image'
+export { createMarkdownHelper } from './helpers/markdown'
 export { createSanitizeHelper } from './helpers/sanitize'
 export { defaultLoader, type ImageCDNLoader, type TransformOptions } from './image/ImageCDNLoader'
 export {

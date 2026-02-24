@@ -89,6 +89,83 @@ describe('runtime', () => {
         // 被 kill 的程序可能回傳非零 exit code
         expect(typeof exitCode).toBe('number')
       })
+
+      it('should support unref', async () => {
+        const adapter = getRuntimeAdapter()
+        const proc = adapter.spawn(['echo', 'test'])
+
+        expect(proc.unref).toBeDefined()
+        // unref 應該不會拋出錯誤
+        proc.unref?.()
+
+        const exitCode = await proc.exited
+        expect(exitCode).toBe(0)
+      })
+    })
+
+    describe('Bun adapter spawnAndCollect', () => {
+      it('should collect stdout', async () => {
+        const adapter = getRuntimeAdapter()
+        const { stdout, exitCode, success } = await adapter.spawnAndCollect(['echo', 'hello world'])
+
+        expect(stdout.trim()).toBe('hello world')
+        expect(exitCode).toBe(0)
+        expect(success).toBe(true)
+      })
+
+      it('should collect stderr', async () => {
+        const adapter = getRuntimeAdapter()
+        const { stderr, exitCode } = await adapter.spawnAndCollect([
+          'sh',
+          '-c',
+          'echo "error message" >&2',
+        ])
+
+        expect(stderr.trim()).toBe('error message')
+        expect(exitCode).toBe(0)
+      })
+
+      it('should handle command failure', async () => {
+        const adapter = getRuntimeAdapter()
+        const { exitCode, success } = await adapter.spawnAndCollect(['sh', '-c', 'exit 1'])
+
+        expect(exitCode).toBe(1)
+        expect(success).toBe(false)
+      })
+
+      it('should handle timeout', async () => {
+        const adapter = getRuntimeAdapter()
+        const { timedOut } = await adapter.spawnAndCollect(['sleep', '10'], { timeout: 100 })
+
+        expect(timedOut).toBe(true)
+      })
+    })
+
+    describe('Bun adapter spawnSync', () => {
+      it('should execute command synchronously', () => {
+        const adapter = getRuntimeAdapter()
+        const { stdout, exitCode, success } = adapter.spawnSync(['echo', 'sync test'])
+
+        expect(stdout.trim()).toBe('sync test')
+        expect(exitCode).toBe(0)
+        expect(success).toBe(true)
+      })
+
+      it('should collect stderr synchronously', () => {
+        const adapter = getRuntimeAdapter()
+        const { stderr, exitCode } = adapter.spawnSync(['sh', '-c', 'echo "sync error" >&2'])
+
+        expect(stderr.trim()).toBe('sync error')
+        expect(exitCode).toBe(0)
+      })
+
+      it('should handle synchronous command failure', () => {
+        const adapter = getRuntimeAdapter()
+        const { exitCode, success } = adapter.spawnSync(['sh', '-c', 'exit 42'])
+
+        expect(exitCode).toBe(42)
+        expect(success).toBe(false)
+      })
     })
 
     describe('Bun adapter file operations', () => {

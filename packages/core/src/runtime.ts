@@ -1,10 +1,13 @@
-import { createRequire } from 'node:module'
-
 /**
- * Detected Javascript Runtime Environment
- * @public
+ * Runtime abstraction module (barrel re-export).
+ *
+ * This file re-exports all runtime types and functions from the
+ * modular runtime/ directory for backward compatibility.
+ *
+ * @module runtime
+ * @since 3.2.0
  */
-export type RuntimeKind = 'bun' | 'node' | 'deno' | 'unknown'
+import { createRequire } from 'node:module'
 
 /**
  * Options for spawning subprocesses

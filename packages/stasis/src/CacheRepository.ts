@@ -907,12 +907,14 @@ export class CacheRepository {
       return value
     }
 
-    const { gzipSync } = await import('node:zlib')
-    const compressed = gzipSync(Buffer.from(json), { level: opts.level ?? 6 })
+    const { getCompressionAdapter } = await import('@gravito/core')
+    const adapter = getCompressionAdapter()
+    const input = new TextEncoder().encode(json)
+    const compressed = adapter.gzipSync(input, { level: opts.level ?? 6 })
 
     return {
       __gravito_compressed: true,
-      data: compressed.toString('base64'),
+      data: Buffer.from(compressed).toString('base64'),
     }
   }
 
@@ -926,9 +928,11 @@ export class CacheRepository {
       '__gravito_compressed' in value &&
       value.__gravito_compressed === true
     ) {
-      const { gunzipSync } = await import('node:zlib')
-      const buffer = Buffer.from(value.data, 'base64')
-      const decompressed = gunzipSync(buffer).toString()
+      const { getCompressionAdapter } = await import('@gravito/core')
+      const adapter = getCompressionAdapter()
+      const buffer = new Uint8Array(Buffer.from(value.data, 'base64'))
+      const decompressedBytes = adapter.gunzipSync(buffer)
+      const decompressed = new TextDecoder().decode(decompressedBytes)
       try {
         return JSON.parse(decompressed)
       } catch {

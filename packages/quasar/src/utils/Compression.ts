@@ -1,4 +1,5 @@
-import { brotliCompressSync, brotliDecompressSync, gunzipSync, gzipSync } from 'node:zlib'
+import { brotliCompressSync, brotliDecompressSync } from 'node:zlib'
+import { getCompressionAdapter } from '@gravito/core'
 
 export interface CompressionOptions {
   threshold?: number
@@ -25,7 +26,8 @@ export class SmartCompressor {
     if (this.algorithm === 'brotli') {
       compressed = brotliCompressSync(buffer)
     } else {
-      compressed = gzipSync(buffer)
+      const adapter = getCompressionAdapter()
+      compressed = Buffer.from(adapter.gzipSync(new Uint8Array(buffer)))
     }
 
     if (compressed.length < buffer.length) {
@@ -38,8 +40,10 @@ export class SmartCompressor {
   decompress(data: Buffer, algorithm: string): Buffer {
     if (algorithm === 'brotli') {
       return brotliDecompressSync(data)
-    } else if (algorithm === 'gzip') {
-      return gunzipSync(data)
+    }
+    if (algorithm === 'gzip') {
+      const adapter = getCompressionAdapter()
+      return Buffer.from(adapter.gunzipSync(new Uint8Array(data)))
     }
     return data
   }

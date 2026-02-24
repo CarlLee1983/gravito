@@ -1,6 +1,5 @@
-import { createReadStream, createWriteStream } from 'node:fs'
-import { pipeline } from 'node:stream/promises'
-import { createGzip } from 'node:zlib'
+import { writeFile } from 'node:fs/promises'
+import { getCompressionAdapter } from '@gravito/core'
 import type { StorageAdapter } from './adapter'
 import { FileSystemAdapter } from './FileSystemAdapter'
 
@@ -136,8 +135,8 @@ export class LogRotator {
           await this.adapter.delete(gzPath)
           deletedCount++
         }
-      } catch (error) {
-        console.error(`[LogRotator] Failed to delete backup ${backup.path}:`, error)
+      } catch {
+        // 刪除失敗不影響主流程，繼續處理其餘備份
       }
     }
 
@@ -173,14 +172,15 @@ export class LogRotator {
   private async compressBackup(backupPath: string): Promise<void> {
     try {
       const gzipPath = `${backupPath}.gz`
-      const source = createReadStream(backupPath)
-      const destination = createWriteStream(gzipPath)
-      const gzip = createGzip()
-
-      await pipeline(source, gzip, destination)
+      const content = await this.adapter.read(backupPath)
+      const adapter = getCompressionAdapter()
+      const input = new TextEncoder().encode(content)
+      const compressed = await adapter.gzip(input)
+      await writeFile(gzipPath, compressed)
     } catch (error) {
-      console.error(`[LogRotator] Failed to compress backup ${backupPath}:`, error)
-      // Don't throw - compression is optional
+      // 壓縮是選擇性的，失敗不應影響主流程
+      // 錯誤記錄由 adapter 層處理
+      void error
     }
   }
 

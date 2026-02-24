@@ -1,6 +1,7 @@
 import { type Container, type GravitoOrbit, PlanetCore, ServiceProvider } from '@gravito/core'
 import { OrbitRipple } from '@gravito/ripple'
 import { OrbitCache } from '@gravito/stasis'
+import { DeploymentArchiver } from './Application/DeploymentArchiver'
 import { MissionControl } from './Application/MissionControl'
 import { PayloadInjector } from './Application/PayloadInjector'
 import { PoolManager } from './Application/PoolManager'
@@ -12,6 +13,7 @@ import { OctokitGitHubAdapter } from './Infrastructure/GitHub/OctokitGitHubAdapt
 import { CachedRocketRepository } from './Infrastructure/Persistence/CachedRocketRepository'
 import { BunProxyAdapter } from './Infrastructure/Router/BunProxyAdapter'
 
+export * from './Application/DeploymentArchiver'
 export * from './Application/MissionControl'
 export * from './Application/MissionQueue'
 export * from './Application/PayloadInjector'
@@ -63,6 +65,13 @@ class LaunchpadServiceProvider extends ServiceProvider {
       return new PayloadInjector(
         container.make('launchpad.docker'),
         container.make('launchpad.git')
+      )
+    })
+
+    container.singleton('launchpad.archiver', () => {
+      return new DeploymentArchiver(
+        container.make('launchpad.docker'),
+        container.make('launchpad.repo')
       )
     })
 

@@ -58,6 +58,13 @@ export { DB } from './DB'
 // Standalone autoConfigure (proxies to DB.autoConfigure)
 import { DB } from './DB'
 export const autoConfigure = DB.autoConfigure.bind(DB)
+export type {
+  BackupOptions,
+  BackupResult,
+  RestoreOptions,
+} from './backup/DatabaseBackupService'
+// Backup & Restore (Archive API Integration)
+export { DatabaseBackupService } from './backup/DatabaseBackupService'
 export { BunSQLDriver } from './drivers/BunSQLDriver'
 // Drivers
 export { PostgresDriver } from './drivers/PostgresDriver'

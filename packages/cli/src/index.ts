@@ -15,6 +15,7 @@ import { existsSync } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { cancel, intro, isCancel, note, outro, select, spinner, text } from '@clack/prompts'
+import { getRuntimeAdapter } from '@gravito/core'
 import {
   DependencyValidator,
   EnvironmentDetector,
@@ -1367,16 +1368,14 @@ cli.command('dev', 'Start development server with health checks').action(async (
   await maintenance.doctor()
 
   // 2. Start Vite
-  const { spawn } = await import('node:child_process')
-  const devProcess = spawn('bun', ['run', 'vite'], {
-    stdio: 'inherit',
-    shell: true,
-    env: { ...process.env, FORCE_COLOR: '1' }, // Ensure colors
+  const runtime = getRuntimeAdapter()
+  const devProcess = runtime.spawn(['bun', 'run', 'vite'], {
+    stdout: 'inherit',
+    stderr: 'inherit',
+    env: { ...process.env, FORCE_COLOR: '1' },
   })
 
-  devProcess.on('error', (err) => {
-    console.error(pc.red('Failed to start dev server:'), err)
-  })
+  devProcess.unref?.()
 })
 
 cli.help()

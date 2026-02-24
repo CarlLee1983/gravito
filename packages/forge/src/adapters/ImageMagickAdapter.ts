@@ -43,48 +43,41 @@ export class ImageMagickAdapter implements ProcessorAdapter {
         stderr: 'pipe',
         env: options.env,
         cwd: options.cwd,
+        timeout,
       })
 
       // ImageMagick doesn't provide detailed progress, so we simulate it
+      let progressInterval: Timer | undefined
       if (onProgress) {
         onProgress({ progress: 0, message: 'Starting image processing' })
         // Simulate progress (ImageMagick is usually fast)
-        const progressInterval = setInterval(() => {
+        progressInterval = setInterval(() => {
           onProgress({ progress: 50, message: 'Processing image' })
         }, 100)
-        process.exited.then(() => {
-          clearInterval(progressInterval)
-          onProgress({ progress: 100, message: 'Image processing complete' })
-        })
       }
 
-      // Set timeout
-      const timeoutId = timeout
-        ? setTimeout(() => {
-            process.kill?.()
-            reject(new Error(`ImageMagick timeout after ${timeout}ms`))
-          }, timeout)
-        : null
-
       // Handle process completion
-      process.exited.then((code) => {
-        if (timeoutId) {
-          clearTimeout(timeoutId)
-        }
+      process.exited
+        .then((code) => {
+          if (progressInterval) {
+            clearInterval(progressInterval)
+          }
+          if (onProgress) {
+            onProgress({ progress: 100, message: 'Image processing complete' })
+          }
 
-        if (code === 0) {
-          resolve(output)
-        } else {
-          reject(new Error(`ImageMagick failed with code ${code}`))
-        }
-      })
-
-      process.exited.catch((error) => {
-        if (timeoutId) {
-          clearTimeout(timeoutId)
-        }
-        reject(error)
-      })
+          if (code === 0) {
+            resolve(output)
+          } else {
+            reject(new Error(`ImageMagick failed with code ${code}`))
+          }
+        })
+        .catch((error) => {
+          if (progressInterval) {
+            clearInterval(progressInterval)
+          }
+          reject(error)
+        })
     })
   }
 
