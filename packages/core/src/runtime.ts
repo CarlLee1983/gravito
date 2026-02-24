@@ -186,7 +186,7 @@ const getRuntimeKind = (): RuntimeKind => {
   return 'unknown'
 }
 
-const toUint8Array = async (
+export const toUint8Array = async (
   data: Blob | Buffer | string | ArrayBuffer | Uint8Array
 ): Promise<Uint8Array> => {
   if (data instanceof Uint8Array) {
@@ -199,7 +199,7 @@ const toUint8Array = async (
     return new Uint8Array(data)
   }
   if (typeof Buffer !== 'undefined' && data instanceof Buffer) {
-    return new Uint8Array(data)
+    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
   }
   if (data instanceof Blob) {
     return new Uint8Array(await data.arrayBuffer())

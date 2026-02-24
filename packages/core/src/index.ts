@@ -305,6 +305,7 @@ export {
   type RuntimeSpawnSyncResult,
   type RuntimeSqliteDatabase,
   type RuntimeSqliteStatement,
+  toUint8Array,
 } from './runtime'
 export {
   getDefaultRuntimeAdapter,
@@ -319,6 +320,12 @@ export {
   runtimeStatFull,
   runtimeWriteFileExclusive,
 } from './runtime-helpers'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Binary Utilities
+// ─────────────────────────────────────────────────────────────────────────────
+
+export { BinaryUtils } from './binary'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Standalone Engine (High-Performance Bun-Only Engine)
