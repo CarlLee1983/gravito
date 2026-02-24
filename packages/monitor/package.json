@@ -1,5 +1,6 @@
 {
   "name": "@gravito/monitor",
+  "sideEffects": false,
   "version": "3.1.1",
   "description": "Observability module for Gravito - Health checks, Metrics, and Tracing",
   "type": "module",

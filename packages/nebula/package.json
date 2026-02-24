@@ -1,5 +1,6 @@
 {
   "name": "@gravito/nebula",
+  "sideEffects": false,
   "version": "4.1.1",
   "publishConfig": {
     "access": "public"

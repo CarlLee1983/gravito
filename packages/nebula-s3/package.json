@@ -1,5 +1,6 @@
 {
   "name": "@gravito/nebula-s3",
+  "sideEffects": false,
   "version": "2.0.0",
   "description": "S3 storage driver for @gravito/nebula",
   "type": "module",

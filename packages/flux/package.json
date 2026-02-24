@@ -1,5 +1,6 @@
 {
   "name": "@gravito/flux",
+  "sideEffects": false,
   "version": "3.0.2",
   "description": "Platform-agnostic workflow engine for Gravito",
   "type": "module",

@@ -1,5 +1,6 @@
 {
   "name": "@gravito/xenon",
+  "sideEffects": false,
   "version": "1.0.0",
   "description": "Safe FFI wrapper for Bun - Secure native library bindings with memory management",
   "type": "module",

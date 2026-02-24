@@ -1,5 +1,6 @@
 {
   "name": "@gravito/forge",
+  "sideEffects": false,
   "version": "3.0.3",
   "publishConfig": {
     "access": "public"

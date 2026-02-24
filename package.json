@@ -37,7 +37,11 @@
     "ci:affected:lint": "bun run scripts/get-affected-packages.ts --mode lint --output-paths",
     "ci:test:optimize": "bun run scripts/test-ci-optimization.ts",
     "ci:test:optimize:verbose": "bun run scripts/test-ci-optimization.ts --verbose",
-    "create": "bun run packages/create-gravito-app/index.js"
+    "create": "bun run packages/create-gravito-app/index.js",
+    "quality:file-size": "bun run scripts/check-file-size.ts",
+    "quality:sideeffects": "bun run scripts/check-sideeffects.ts",
+    "quality:error-classes": "bun run scripts/check-error-classes.ts",
+    "quality:check": "bun run scripts/check-file-size.ts && bun run scripts/check-sideeffects.ts && bun run scripts/check-error-classes.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.10",

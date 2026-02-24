@@ -1,5 +1,6 @@
 {
   "name": "@gravito/luminosity-cli",
+  "sideEffects": false,
   "version": "1.0.2",
   "description": "CLI tool for Gravito SmartMap Engine",
   "bin": {

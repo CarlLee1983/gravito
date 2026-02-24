@@ -1,5 +1,6 @@
 {
   "name": "@gravito/satellite-marketing",
+  "sideEffects": false,
   "version": "0.1.5",
   "type": "module",
   "main": "dist/index.js",

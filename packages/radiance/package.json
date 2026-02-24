@@ -1,5 +1,6 @@
 {
   "name": "@gravito/radiance",
+  "sideEffects": false,
   "version": "1.0.4",
   "publishConfig": {
     "access": "public"

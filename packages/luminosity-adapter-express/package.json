@@ -1,5 +1,6 @@
 {
   "name": "@gravito/luminosity-adapter-express",
+  "sideEffects": false,
   "version": "1.0.2",
   "description": "Express/Koa adapter for Gravito SmartMap Engine",
   "main": "./dist/index.js",

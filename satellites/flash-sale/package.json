@@ -1,5 +1,6 @@
 {
   "name": "@gravito/satellite-flash-sale",
+  "sideEffects": false,
   "version": "0.1.1",
   "type": "module",
   "main": "dist/index.js",

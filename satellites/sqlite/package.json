@@ -1,5 +1,6 @@
 {
   "name": "@gravito/satellite-sqlite",
+  "sideEffects": false,
   "version": "1.0.0",
   "description": "SQLite FFI binding via Xenon - Safe native database access",
   "type": "module",
