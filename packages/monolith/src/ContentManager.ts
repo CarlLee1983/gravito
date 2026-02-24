@@ -1,6 +1,11 @@
 import { join, parse } from 'node:path'
+import {
+  createHtmlRenderCallbacks,
+  getMarkdownAdapter,
+  type MarkdownRenderCallbacks,
+  type RuntimeMarkdownAdapter,
+} from '@gravito/core'
 import matter from 'gray-matter'
-import { marked } from 'marked'
 import type { ContentDriver } from './driver/ContentDriver'
 
 /**
@@ -26,6 +31,11 @@ export interface CollectionConfig {
 
 /**
  * Manages fetching, parsing, and caching of filesystem-based content.
+ *
+ * 使用 RuntimeMarkdownAdapter 進行 Markdown 渲染，在 Bun 環境下
+ * 自動使用原生 C++ 解析器（10-100x 更快），並保留 XSS 防護的
+ * 自訂渲染回調。
+ *
  * @public
  */
 export class ContentManager {
@@ -34,19 +44,20 @@ export class ContentManager {
   private cache = new Map<string, ContentItem>()
   // In-memory search index: term -> Set<cacheKey>
   private searchIndex = new Map<string, Set<string>>()
-  private renderer = (() => {
-    const renderer = new marked.Renderer()
-    renderer.html = (html: string) => this.escapeHtml(html)
-    renderer.link = (href: string | null, title: string | null, text: string) => {
-      if (!href || !this.isSafeUrl(href)) {
-        return text
+  // RuntimeMarkdownAdapter（自動選擇 Bun 原生或 marked fallback）
+  private readonly mdAdapter: RuntimeMarkdownAdapter = getMarkdownAdapter()
+  // 完整的 HTML 渲染回調（含 XSS 防護覆寫）
+  private readonly renderCallbacks: MarkdownRenderCallbacks = createHtmlRenderCallbacks({
+    html: (rawHtml: string) => this.escapeHtml(rawHtml),
+    link: (content: string, opts: { href: string; title?: string }) => {
+      if (!opts.href || !this.isSafeUrl(opts.href)) {
+        return content
       }
-      const safeHref = this.escapeHtml(href)
-      const titleAttr = title ? ` title="${this.escapeHtml(title)}"` : ''
-      return `<a href="${safeHref}"${titleAttr}>${text}</a>`
-    }
-    return renderer
-  })()
+      const safeHref = this.escapeHtml(opts.href)
+      const titleAttr = opts.title ? ` title="${this.escapeHtml(opts.title)}"` : ''
+      return `<a href="${safeHref}"${titleAttr}>${content}</a>`
+    },
+  })
 
   /**
    * Clear all cached content.
@@ -134,7 +145,8 @@ export class ContentManager {
       const fileContent = await this.driver.read(filePath)
       const { data, content, excerpt } = matter(fileContent)
 
-      const html = await marked.parse(content, { renderer: this.renderer })
+      // 使用 RuntimeMarkdownAdapter.render() 搭配完整 HTML 回調（含 XSS 防護）
+      const html = this.mdAdapter.render(content, this.renderCallbacks)
 
       const item: ContentItem = {
         slug,
