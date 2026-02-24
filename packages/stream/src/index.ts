@@ -50,6 +50,11 @@ export { DistributedLock } from './locks/DistributedLock'
 export type { OrbitStreamOptions } from './OrbitStream'
 export { OrbitStream } from './OrbitStream'
 export { BufferedPersistence } from './persistence/BufferedPersistence'
+export {
+  BunBufferedPersistence,
+  type BunBufferedPersistenceOptions,
+  createBufferedPersistence,
+} from './persistence/BunBufferedPersistence'
 export { MySQLPersistence } from './persistence/MySQLPersistence'
 export { SQLitePersistence } from './persistence/SQLitePersistence'
 // Core interfaces & types
