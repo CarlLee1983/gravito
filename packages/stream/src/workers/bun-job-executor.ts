@@ -13,20 +13,32 @@
  */
 
 import type { SerializedJob } from '../types'
+import { decodeJobFromTransfer } from './BinaryWorkerProtocol'
 
 /**
  * Message sent from Main Thread to Worker.
+ *
+ * 支援兩種協定：
+ * - `execute-binary`：Binary Protocol（ArrayBuffer Transfer，零拷貝，推薦）
+ * - `execute`：舊協定（JSON object，向後相容，不在生產環境期望使用）
+ * - `shutdown`：優雅關閉 Worker
  */
 interface WorkerMessage {
   /**
    * Action type.
-   * - `execute`: Run a job.
+   * - `execute-binary`：使用 Binary Protocol 傳遞的 Job（推薦）
+   * - `execute`: Run a job（舊協定，保持向後相容）
    * - `shutdown`: Gracefully stop the worker.
    */
-  type: 'execute' | 'shutdown'
+  type: 'execute-binary' | 'execute' | 'shutdown'
 
   /**
-   * Serialized job data (required for `execute`).
+   * Binary Protocol：ArrayBuffer 格式的 Job 資料（僅 execute-binary 使用）
+   */
+  buffer?: ArrayBuffer
+
+  /**
+   * 舊協定：Serialized job data（僅 execute 使用）
    */
   job?: SerializedJob
 
@@ -142,6 +154,10 @@ self.postMessage({ type: 'ready' } as WorkerResponse)
 
 /**
  * Handle incoming messages from main thread.
+ *
+ * 支援兩種協定：
+ * - execute-binary：Binary Protocol，從 ArrayBuffer 解碼 Job（推薦）
+ * - execute：舊協定，直接使用 job 物件（向後相容）
  */
 self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
   const message = event.data
@@ -150,6 +166,29 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
     process.exit(0)
   }
 
+  // Binary Protocol：從 ArrayBuffer transfer 解碼 Job（推薦路徑）
+  if (message.type === 'execute-binary' && message.buffer) {
+    try {
+      // 從 ArrayBuffer 解碼 SerializedJob
+      const job = decodeJobFromTransfer(message.buffer)
+
+      // Execute the job
+      await executeJob(job)
+
+      // Send success response（回應格式保持不變）
+      self.postMessage({ type: 'success' } as WorkerResponse)
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error))
+      self.postMessage({
+        type: 'error',
+        error: err.message,
+        stack: err.stack,
+      } as WorkerResponse)
+    }
+    return
+  }
+
+  // 舊協定：直接使用 job 物件（向後相容，不在生產環境期望使用）
   if (message.type === 'execute' && message.job) {
     try {
       // Dynamically register job classes if provided
