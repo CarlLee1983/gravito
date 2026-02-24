@@ -1,7 +1,7 @@
-import { mkdir, readdir, stat, writeFile } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import type { PlanetCore } from '@gravito/core'
-import { getArchiveAdapter, getRuntimeAdapter } from '@gravito/core'
+import { archiveFromDirectory } from '@gravito/core'
 import { type DynamicRoute, DynamicRouteResolver } from './DynamicRouteResolver'
 import { IncrementalBuilder } from './IncrementalBuilder'
 
@@ -409,38 +409,10 @@ export class StaticSiteGenerator {
     const archivePath = options.archivePath || `${outputDir}.tar.gz`
 
     try {
-      const archiveAdapter = getArchiveAdapter()
-      const runtime = getRuntimeAdapter()
-
-      const entries: Record<string, Uint8Array> = {}
-
-      const scanDir = async (dir: string, prefix = ''): Promise<void> => {
-        try {
-          const items = await readdir(dir)
-          for (const item of items) {
-            const itemPath = join(dir, item)
-            const itemStat = await stat(itemPath)
-
-            if (itemStat.isDirectory()) {
-              await scanDir(itemPath, `${prefix}${item}/`)
-            } else {
-              const relativePath = `${prefix}${item}`.replace(/\\/g, '/')
-              entries[relativePath] = await runtime.readFile(itemPath)
-            }
-          }
-        } catch (err) {
-          this.core.logger.warn(`[SSG] Failed to scan ${dir}: ${err}`)
-        }
-      }
-
-      await scanDir(outputDir)
-
-      const archiveData = await archiveAdapter.create(entries, {
+      const archiveData = await archiveFromDirectory(outputDir, archivePath, {
         compress: 'gzip',
         ...(options.compressLevel !== undefined ? { level: options.compressLevel } : {}),
       })
-
-      await runtime.writeFile(archivePath, archiveData)
 
       this.core.logger.info(`[SSG] Archive generated: ${archivePath} (${archiveData.length} bytes)`)
     } catch (err) {

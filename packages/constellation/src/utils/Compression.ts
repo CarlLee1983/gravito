@@ -5,10 +5,8 @@
  */
 
 import type { Transform } from 'node:stream'
-import { promisify } from 'node:util'
-import { createGzip, gzip as gzipCallback } from 'node:zlib'
-
-const gzipAsync = promisify(gzipCallback)
+import { createGzip } from 'node:zlib'
+import { getCompressionAdapter } from '@gravito/core'
 
 /**
  * Compression configuration.
@@ -23,6 +21,10 @@ export interface CompressionConfig {
 /**
  * 將 AsyncIterable<string> 壓縮為 Buffer。
  * 適用於需要完整壓縮結果的場景（如 S3 Upload）。
+ *
+ * 使用 RuntimeCompressionAdapter 自動選擇最佳壓縮實作：
+ * - Bun: 原生 C++ 壓縮（2-5x 更快）
+ * - Node.js: node:zlib fallback
  *
  * @param source - 輸入的字串串流
  * @param config - 壓縮設定
@@ -52,8 +54,10 @@ export async function compressToBuffer(
     parts.push(chunk)
   }
 
-  const input = Buffer.from(parts.join(''), 'utf-8')
-  return gzipAsync(input, { level }) as Promise<Buffer>
+  const input = new TextEncoder().encode(parts.join(''))
+  const adapter = getCompressionAdapter()
+  const compressed = await adapter.gzip(input, { level })
+  return Buffer.from(compressed)
 }
 
 /**

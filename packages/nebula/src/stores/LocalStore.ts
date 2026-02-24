@@ -1,6 +1,6 @@
 import { mkdir, readdir, rm, stat } from 'node:fs/promises'
 import { isAbsolute, join, normalize, resolve, sep } from 'node:path'
-import { getArchiveAdapter, getRuntimeAdapter } from '@gravito/core'
+import { archiveFromDirectory, getArchiveAdapter, getRuntimeAdapter } from '@gravito/core'
 import type { PutOptions, StorageItem, StorageMetadata, StorageStore } from '../store'
 
 /**
@@ -223,33 +223,7 @@ export class LocalStore implements StorageStore {
    * @throws {Error} 如果掃描目錄或建立歸檔失敗
    */
   async backup(outputPath: string): Promise<void> {
-    const archiveAdapter = getArchiveAdapter()
-    const runtime = getRuntimeAdapter()
-    const entries: Record<string, Uint8Array> = {}
-
-    const scanDir = async (dir: string, prefix = ''): Promise<void> => {
-      try {
-        const items = await readdir(dir)
-        for (const item of items) {
-          const itemPath = join(dir, item)
-          const itemStat = await stat(itemPath)
-
-          if (itemStat.isDirectory()) {
-            await scanDir(itemPath, `${prefix}${item}/`)
-          } else {
-            const relativePath = `${prefix}${item}`.replace(/\\/g, '/')
-            entries[relativePath] = await runtime.readFile(itemPath)
-          }
-        }
-      } catch (err) {
-        throw new Error(`[LocalStore] Backup scan failed at ${dir}: ${err}`)
-      }
-    }
-
-    await scanDir(resolve(this.rootDir))
-
-    const archiveData = await archiveAdapter.create(entries, { compress: 'gzip' })
-    await runtime.writeFile(outputPath, archiveData)
+    await archiveFromDirectory(resolve(this.rootDir), outputPath, { compress: 'gzip' })
   }
 
   /**

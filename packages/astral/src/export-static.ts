@@ -1,8 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { readdir, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { PlanetCore } from '@gravito/core'
-import { getArchiveAdapter, getRuntimeAdapter } from '@gravito/core'
+import { archiveFromDirectory } from '@gravito/core'
 import { OpenApiGenerator } from './OpenApiGenerator'
 import type { AstralConfig, OpenApiDocument } from './types'
 
@@ -47,10 +46,12 @@ export async function generateStaticSite(config: StaticExportConfig): Promise<vo
   let standaloneJsUrl = 'https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js'
 
   if (astralConfig.bundleOfflineAssets) {
-    console.log('Downloading Swagger UI assets for offline use...')
-    const downloadFile = async (url: string, filename: string) => {
+    core.logger.info('[Astral] Downloading Swagger UI assets for offline use...')
+    async function downloadFile(url: string, filename: string): Promise<string> {
       const resp = await fetch(url)
-      if (!resp.ok) throw new Error(`Failed to download ${url}: ${resp.statusText}`)
+      if (!resp.ok) {
+        throw new Error(`Failed to download ${url}: ${resp.statusText}`)
+      }
       const text = await resp.text()
       writeFileSync(join(outputDir, filename), text)
       return `./${filename}`
@@ -62,9 +63,9 @@ export async function generateStaticSite(config: StaticExportConfig): Promise<vo
         downloadFile(bundleJsUrl, 'swagger-ui-bundle.js'),
         downloadFile(standaloneJsUrl, 'swagger-ui-standalone-preset.js'),
       ])
-      console.log('Asset download complete.')
+      core.logger.info('[Astral] Asset download complete.')
     } catch (e) {
-      console.error('Failed to bundle offline assets. Falling back to CDNUrls.', e)
+      core.logger.warn(`[Astral] Failed to bundle offline assets. Falling back to CDN URLs. ${e}`)
       cssUrl = 'https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css'
       bundleJsUrl = 'https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js'
       standaloneJsUrl = 'https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js'
@@ -114,37 +115,12 @@ export async function generateStaticSite(config: StaticExportConfig): Promise<vo
 </html>`
 
   writeFileSync(htmlPath, html)
-  console.log(`Astral static site generated successfully at: ${outputDir}`)
+  core.logger.info(`[Astral] Static site generated at: ${outputDir}`)
 
   // 5. 生成歸檔（選用）
   if (config.archive) {
-    const archiveAdapter = getArchiveAdapter()
-    const runtime = getRuntimeAdapter()
     const archivePath = config.archivePath || `${outputDir}.tar.gz`
-
-    // 遞迴掃描目錄，收集所有檔案
-    const entries: Record<string, Uint8Array> = {}
-
-    const scanDir = async (dir: string, prefix = ''): Promise<void> => {
-      const items = await readdir(dir)
-      for (const item of items) {
-        const itemPath = join(dir, item)
-        const itemStat = await stat(itemPath)
-
-        if (itemStat.isDirectory()) {
-          await scanDir(itemPath, `${prefix}${item}/`)
-        } else {
-          const relativePath = `${prefix}${item}`.replace(/\\/g, '/')
-          entries[relativePath] = await runtime.readFile(itemPath)
-        }
-      }
-    }
-
-    await scanDir(outputDir)
-
-    const archiveData = await archiveAdapter.create(entries, { compress: 'gzip' })
-    await runtime.writeFile(archivePath, archiveData)
-
+    await archiveFromDirectory(outputDir, archivePath, { compress: 'gzip' })
     core.logger.info(`[Astral] Archive generated: ${archivePath}`)
   }
 }
