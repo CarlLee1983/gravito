@@ -16,6 +16,47 @@ export interface RuntimeSpawnOptions {
   stdin?: 'pipe' | 'inherit' | 'ignore'
   stdout?: 'pipe' | 'inherit' | 'ignore'
   stderr?: 'pipe' | 'inherit' | 'ignore'
+  timeout?: number
+  signal?: AbortSignal
+}
+
+/**
+ * Resource usage statistics from subprocess
+ * @public
+ */
+export interface RuntimeResourceUsage {
+  cpuTime?: { user: number; system: number }
+  maxRSS?: number
+}
+
+/**
+ * Optional resource usage statistics
+ * @internal
+ */
+export type OptionalRuntimeResourceUsage = RuntimeResourceUsage | undefined
+
+/**
+ * Output from spawned subprocess
+ * @public
+ */
+export interface RuntimeProcessOutput {
+  exitCode: number
+  stdout: string
+  stderr: string
+  success: boolean
+  timedOut: boolean
+}
+
+/**
+ * Synchronous subprocess result
+ * @public
+ */
+export interface RuntimeSpawnSyncResult {
+  exitCode: number
+  stdout: string
+  stderr: string
+  success: boolean
+  timedOut: boolean
 }
 
 /**
@@ -27,6 +68,8 @@ export interface RuntimeProcess {
   stdout?: ReadableStream<Uint8Array> | null
   stderr?: ReadableStream<Uint8Array> | null
   kill?: (signal?: string | number) => void
+  unref?: () => void
+  resourceUsage?: () => Promise<OptionalRuntimeResourceUsage>
 }
 
 /**
@@ -62,6 +105,11 @@ export interface RuntimeServer {
 export interface RuntimeAdapter {
   kind: RuntimeKind
   spawn(command: string[], options?: RuntimeSpawnOptions): RuntimeProcess
+  spawnAndCollect(command: string[], options?: RuntimeSpawnOptions): Promise<RuntimeProcessOutput>
+  spawnSync(
+    command: string[],
+    options?: Omit<RuntimeSpawnOptions, 'signal'>
+  ): RuntimeSpawnSyncResult
   writeFile(path: string, data: Blob | Buffer | string | ArrayBuffer | Uint8Array): Promise<void>
   readFile(path: string): Promise<Uint8Array>
   readFileAsBlob(path: string): Promise<Blob>
@@ -181,8 +229,41 @@ const createBunAdapter = (): RuntimeAdapter => ({
       stdout: options.stdout ?? 'pipe',
       stderr: options.stderr ?? 'pipe',
     })
+
+    let timeoutHandle: Timer | undefined
+    let abortListener: (() => void) | undefined
+
+    const exitedWithTimeout = new Promise<number>((resolve, reject) => {
+      if (options.timeout) {
+        timeoutHandle = setTimeout(() => {
+          proc.kill('SIGTERM')
+          reject(new Error('[RuntimeAdapter] Process timeout'))
+        }, options.timeout)
+      }
+
+      if (options.signal) {
+        abortListener = () => {
+          proc.kill('SIGTERM')
+          reject(new DOMException('Aborted', 'AbortError'))
+        }
+        options.signal.addEventListener('abort', abortListener)
+      }
+
+      proc.exited
+        .then(resolve)
+        .catch(reject)
+        .finally(() => {
+          if (timeoutHandle) {
+            clearTimeout(timeoutHandle)
+          }
+          if (abortListener && options.signal) {
+            options.signal.removeEventListener('abort', abortListener)
+          }
+        })
+    })
+
     return {
-      exited: proc.exited,
+      exited: exitedWithTimeout,
       stdout: proc.stdout ?? null,
       stderr: proc.stderr ?? null,
       kill: (signal?: string | number) => {
@@ -190,6 +271,121 @@ const createBunAdapter = (): RuntimeAdapter => ({
           typeof signal === 'number' ? signal : (signal as NodeJS.Signals | undefined)
         proc.kill(bunSignal)
       },
+      unref: () => {
+        // Bun.spawn doesn't have unref, but we can return undefined
+      },
+      resourceUsage: async () => {
+        // Bun doesn't expose resource usage through spawn API
+        return undefined
+      },
+    }
+  },
+  async spawnAndCollect(command, options = {}) {
+    const [cmd, ...args] = command
+    if (!cmd) {
+      throw new Error('[RuntimeAdapter] spawn() requires a command')
+    }
+
+    const proc = Bun.spawn([cmd, ...args], {
+      cwd: options.cwd,
+      env: options.env,
+      stdin: options.stdin,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    })
+
+    let timedOut = false
+    let timeoutHandle: Timer | undefined
+    let abortListener: (() => void) | undefined
+
+    const exitPromise = proc.exited
+      .then((code) => ({ code, timedOut }))
+      .catch(() => ({
+        code: -1,
+        timedOut: true,
+      }))
+
+    if (options.timeout) {
+      const timeoutPromise = new Promise<{ code: number; timedOut: boolean }>((resolve) => {
+        timeoutHandle = setTimeout(() => {
+          timedOut = true
+          proc.kill('SIGTERM')
+          resolve({ code: -1, timedOut: true })
+        }, options.timeout)
+      })
+
+      const race = Promise.race([exitPromise, timeoutPromise])
+      const result = await race
+
+      if (timeoutHandle) {
+        clearTimeout(timeoutHandle)
+      }
+
+      const [stdoutText, stderrText] = await Promise.all([
+        new Response(proc.stdout ?? null).text(),
+        new Response(proc.stderr ?? null).text(),
+      ])
+
+      return {
+        exitCode: result.code,
+        stdout: stdoutText,
+        stderr: stderrText,
+        success: result.code === 0 && !result.timedOut,
+        timedOut: result.timedOut,
+      }
+    }
+
+    if (options.signal) {
+      abortListener = () => {
+        proc.kill('SIGTERM')
+      }
+      options.signal.addEventListener('abort', abortListener)
+    }
+
+    const { code, timedOut: timeout } = await exitPromise
+
+    if (abortListener && options.signal) {
+      options.signal.removeEventListener('abort', abortListener)
+    }
+
+    const [stdoutText, stderrText] = await Promise.all([
+      new Response(proc.stdout ?? null).text(),
+      new Response(proc.stderr ?? null).text(),
+    ])
+
+    return {
+      exitCode: code,
+      stdout: stdoutText,
+      stderr: stderrText,
+      success: code === 0 && !timeout,
+      timedOut: timeout,
+    }
+  },
+  spawnSync(command, options = {}) {
+    const [cmd, ...args] = command
+    if (!cmd) {
+      throw new Error('[RuntimeAdapter] spawn() requires a command')
+    }
+
+    const timedOut = false
+    const proc = Bun.spawnSync([cmd, ...args], {
+      cwd: options.cwd,
+      env: options.env,
+      stdin: options.stdin,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    })
+
+    const decoder = new TextDecoder('utf-8', { fatal: false })
+    const stdoutText = decoder.decode(proc.stdout ?? new Uint8Array())
+    const stderrText = decoder.decode(proc.stderr ?? new Uint8Array())
+
+    return {
+      exitCode: proc.exitCode ?? 0,
+      stdout: stdoutText,
+      stderr: stderrText,
+      success: (proc.exitCode ?? 0) === 0 && !timedOut,
+      timedOut,
     }
   },
   async writeFile(path, data) {
@@ -274,16 +470,143 @@ const createNodeAdapter = (): RuntimeAdapter => ({
       return stream.Readable.toWeb(streamReadable as any) as unknown as ReadableStream<Uint8Array>
     }
 
-    const exited = new Promise<number>((resolve, reject) => {
+    let timeoutHandle: NodeJS.Timeout | undefined
+    let abortListener: (() => void) | undefined
+
+    const exitedWithTimeout = new Promise<number>((resolve, reject) => {
+      if (options.timeout) {
+        timeoutHandle = setTimeout(() => {
+          child.kill('SIGTERM')
+          reject(new Error('[RuntimeAdapter] Process timeout'))
+        }, options.timeout)
+      }
+
+      if (options.signal) {
+        abortListener = () => {
+          child.kill('SIGTERM')
+          reject(new DOMException('Aborted', 'AbortError'))
+        }
+        options.signal.addEventListener('abort', abortListener)
+      }
+
       child.on('error', reject)
-      child.on('exit', (code) => resolve(code ?? 0))
+      child.on('exit', (code) => {
+        if (timeoutHandle) {
+          clearTimeout(timeoutHandle)
+        }
+        if (abortListener && options.signal) {
+          options.signal.removeEventListener('abort', abortListener)
+        }
+        resolve(code ?? 0)
+      })
     })
 
     return {
-      exited,
+      exited: exitedWithTimeout,
       stdout: toWeb(child.stdout),
       stderr: toWeb(child.stderr),
       kill: (signal?: string | number) => child.kill(signal as NodeJS.Signals | number),
+      unref: () => {
+        child.unref()
+      },
+      resourceUsage: async () => {
+        try {
+          const usage = (child as any).resourceUsage?.()
+          if (!usage) {
+            return undefined
+          }
+          return {
+            cpuTime:
+              usage.user && usage.system ? { user: usage.user, system: usage.system } : undefined,
+            maxRSS: usage.maxRss,
+          }
+        } catch {
+          return undefined
+        }
+      },
+    }
+  },
+  async spawnAndCollect(command, options = {}) {
+    const [cmd, ...args] = command
+    if (!cmd) {
+      throw new Error('[RuntimeAdapter] spawn() requires a command')
+    }
+    const require = createRequire(import.meta.url)
+    const childProcess = require('node:child_process') as typeof import('node:child_process')
+
+    return new Promise((resolve, reject) => {
+      let timedOut = false
+      let timeoutHandle: NodeJS.Timeout | undefined
+      let abortListener: (() => void) | undefined
+
+      const child = childProcess.spawn(cmd, args, {
+        cwd: options.cwd,
+        env: options.env as Record<string, string>,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      }) as import('node:child_process').ChildProcess
+
+      const stdoutChunks: Buffer[] = []
+      const stderrChunks: Buffer[] = []
+
+      child.stdout?.on('data', (chunk) => stdoutChunks.push(chunk))
+      child.stderr?.on('data', (chunk) => stderrChunks.push(chunk))
+
+      if (options.timeout) {
+        timeoutHandle = setTimeout(() => {
+          timedOut = true
+          child.kill('SIGTERM')
+        }, options.timeout)
+      }
+
+      if (options.signal) {
+        abortListener = () => {
+          child.kill('SIGTERM')
+        }
+        options.signal.addEventListener('abort', abortListener)
+      }
+
+      child.on('error', reject)
+      child.on('exit', (code) => {
+        if (timeoutHandle) {
+          clearTimeout(timeoutHandle)
+        }
+        if (abortListener && options.signal) {
+          options.signal.removeEventListener('abort', abortListener)
+        }
+
+        const stdout = Buffer.concat(stdoutChunks).toString('utf-8')
+        const stderr = Buffer.concat(stderrChunks).toString('utf-8')
+
+        resolve({
+          exitCode: code ?? 0,
+          stdout,
+          stderr,
+          success: (code ?? 0) === 0 && !timedOut,
+          timedOut,
+        })
+      })
+    })
+  },
+  spawnSync(command, options = {}) {
+    const [cmd, ...args] = command
+    if (!cmd) {
+      throw new Error('[RuntimeAdapter] spawn() requires a command')
+    }
+    const require = createRequire(import.meta.url)
+    const childProcess = require('node:child_process') as typeof import('node:child_process')
+
+    const result = childProcess.spawnSync(cmd, args, {
+      cwd: options.cwd,
+      env: options.env as Record<string, string>,
+      encoding: 'utf-8',
+    })
+
+    return {
+      exitCode: result.status ?? 0,
+      stdout: (result.stdout ?? '') as string,
+      stderr: (result.stderr ?? '') as string,
+      success: (result.status ?? 0) === 0,
+      timedOut: (result.error as any)?.code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER' ? true : false,
     }
   },
   async writeFile(path, data) {
@@ -355,16 +678,158 @@ const createDenoAdapter = (): RuntimeAdapter => ({
       stderr,
     }).spawn()
 
-    const exited = proc.status.then((status: { code: number }) => status.code ?? 0)
+    let timeoutHandle: number | undefined
+    let abortListener: (() => void) | undefined
+
+    const exitedWithTimeout = new Promise<number>((resolve, reject) => {
+      if (options.timeout) {
+        timeoutHandle = setTimeout(() => {
+          proc.kill('SIGTERM')
+          reject(new Error('[RuntimeAdapter] Process timeout'))
+        }, options.timeout) as unknown as number
+      }
+
+      if (options.signal) {
+        abortListener = () => {
+          proc.kill('SIGTERM')
+          reject(new DOMException('Aborted', 'AbortError'))
+        }
+        options.signal.addEventListener('abort', abortListener)
+      }
+
+      proc.status
+        .then((status: { code: number }) => {
+          if (timeoutHandle) {
+            clearTimeout(timeoutHandle)
+          }
+          if (abortListener && options.signal) {
+            options.signal.removeEventListener('abort', abortListener)
+          }
+          resolve(status.code ?? 0)
+        })
+        .catch(reject)
+    })
 
     return {
-      exited,
+      exited: exitedWithTimeout,
       stdout: (proc.stdout as unknown as ReadableStream<Uint8Array>) ?? null,
       stderr: (proc.stderr as unknown as ReadableStream<Uint8Array>) ?? null,
       kill: (signal?: string | number) => {
         const killSignal = typeof signal === 'string' ? signal : 'SIGTERM'
         proc.kill(killSignal)
       },
+    }
+  },
+  async spawnAndCollect(command, options = {}) {
+    const [cmd, ...args] = command
+    if (!cmd) {
+      throw new Error('[RuntimeAdapter] spawn() requires a command')
+    }
+    const deno = (globalThis as any).Deno
+    if (!deno?.Command) {
+      throw new Error('[RuntimeAdapter] Deno runtime is required for spawn()')
+    }
+
+    const proc = new deno.Command(cmd, {
+      args,
+      cwd: options.cwd,
+      env: options.env,
+      stdout: 'piped',
+      stderr: 'piped',
+      stdin: options.stdin === 'inherit' ? 'inherit' : 'null',
+    }).spawn()
+
+    let timedOut = false
+    let timeoutHandle: number | undefined
+    let abortListener: (() => void) | undefined
+
+    const statusPromise = proc.status.then((status: { code: number; success: boolean }) => ({
+      code: status.code ?? 0,
+      timedOut,
+    }))
+
+    if (options.timeout) {
+      const timeoutPromise = new Promise<{ code: number; timedOut: boolean }>((resolve) => {
+        timeoutHandle = setTimeout(() => {
+          timedOut = true
+          proc.kill('SIGTERM')
+          resolve({ code: -1, timedOut: true })
+        }, options.timeout) as unknown as number
+      })
+
+      const raceResult = await Promise.race([statusPromise, timeoutPromise])
+
+      if (timeoutHandle) {
+        clearTimeout(timeoutHandle)
+      }
+
+      const [stdoutText, stderrText] = await Promise.all([
+        new Response(proc.stdout ?? null).text(),
+        new Response(proc.stderr ?? null).text(),
+      ])
+
+      return {
+        exitCode: raceResult.code,
+        stdout: stdoutText,
+        stderr: stderrText,
+        success: raceResult.code === 0 && !raceResult.timedOut,
+        timedOut: raceResult.timedOut,
+      }
+    }
+
+    if (options.signal) {
+      abortListener = () => {
+        proc.kill('SIGTERM')
+      }
+      options.signal.addEventListener('abort', abortListener)
+    }
+
+    const { code, timedOut: timeout } = await statusPromise
+
+    if (abortListener && options.signal) {
+      options.signal.removeEventListener('abort', abortListener)
+    }
+
+    const [stdoutText, stderrText] = await Promise.all([
+      new Response(proc.stdout ?? null).text(),
+      new Response(proc.stderr ?? null).text(),
+    ])
+
+    return {
+      exitCode: code,
+      stdout: stdoutText,
+      stderr: stderrText,
+      success: code === 0 && !timeout,
+      timedOut: timeout,
+    }
+  },
+  spawnSync(command, options = {}) {
+    const [cmd, ...args] = command
+    if (!cmd) {
+      throw new Error('[RuntimeAdapter] spawn() requires a command')
+    }
+    const deno = (globalThis as any).Deno
+    if (!deno?.Command) {
+      throw new Error('[RuntimeAdapter] Deno runtime is required for spawnSync()')
+    }
+
+    const result = new deno.Command(cmd, {
+      args,
+      cwd: options.cwd,
+      env: options.env,
+      stdin: options.stdin === 'inherit' ? 'inherit' : 'null',
+    }).outputSync()
+
+    const decoder = new TextDecoder('utf-8', { fatal: false })
+    const stdoutText = decoder.decode(result.stdout ?? new Uint8Array())
+    const stderrText = decoder.decode(result.stderr ?? new Uint8Array())
+
+    return {
+      exitCode: result.code ?? 0,
+      stdout: stdoutText,
+      stderr: stderrText,
+      success: (result.code ?? 0) === 0,
+      timedOut: false,
     }
   },
   async writeFile(path, data) {
@@ -426,6 +891,12 @@ const createUnknownAdapter = (): RuntimeAdapter => ({
   kind: 'unknown',
   spawn() {
     throw new Error('[RuntimeAdapter] Unsupported runtime for spawn()')
+  },
+  async spawnAndCollect() {
+    throw new Error('[RuntimeAdapter] Unsupported runtime for spawnAndCollect()')
+  },
+  spawnSync() {
+    throw new Error('[RuntimeAdapter] Unsupported runtime for spawnSync()')
   },
   async writeFile() {
     throw new Error('[RuntimeAdapter] Unsupported runtime for writeFile()')

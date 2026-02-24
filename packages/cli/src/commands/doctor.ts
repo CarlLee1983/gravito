@@ -1,8 +1,8 @@
-import { spawnSync } from 'node:child_process'
 import { constants } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
+import { getRuntimeAdapter } from '@gravito/core'
 import pc from 'picocolors'
 
 /**
@@ -504,8 +504,9 @@ async function checkNodeVersion(): Promise<DoctorResult> {
 
 function detectBunVersion(): string | null {
   try {
-    const result = spawnSync('bun', ['--version'], { encoding: 'utf-8' })
-    if (result.status === 0 && result.stdout) {
+    const runtime = getRuntimeAdapter()
+    const result = runtime.spawnSync(['bun', '--version'])
+    if (result.exitCode === 0 && result.stdout) {
       return result.stdout.trim()
     }
   } catch {

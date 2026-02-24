@@ -279,9 +279,12 @@ export {
   type RuntimeKind,
   type RuntimePasswordAdapter,
   type RuntimeProcess,
+  type RuntimeProcessOutput,
+  type RuntimeResourceUsage,
   type RuntimeServeConfig,
   type RuntimeServer,
   type RuntimeSpawnOptions,
+  type RuntimeSpawnSyncResult,
   type RuntimeSqliteDatabase,
   type RuntimeSqliteStatement,
 } from './runtime'

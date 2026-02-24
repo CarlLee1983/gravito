@@ -27,7 +27,7 @@ export class DockerAdapter implements IDockerAdapter {
     // 確保宿主機快取目錄存在
     await this.ensureCacheDirectory()
 
-    const proc = this.runtime.spawn([
+    const { stdout, stderr, exitCode } = await this.runtime.spawnAndCollect([
       'docker',
       'run',
       '-d',
@@ -76,9 +76,7 @@ export class DockerAdapter implements IDockerAdapter {
       '/dev/null',
     ])
 
-    const stdout = await new Response(proc.stdout ?? null).text()
     const containerId = stdout.trim()
-    const exitCode = await proc.exited
 
     if (containerId.length === 64 && /^[0-9a-f]+$/.test(containerId)) {
       // 驗證快取是否正確掛載
@@ -87,7 +85,6 @@ export class DockerAdapter implements IDockerAdapter {
     }
 
     if (exitCode !== 0) {
-      const stderr = await new Response(proc.stderr ?? null).text()
       throw new Error(`Docker 容器建立失敗: ${stderr || stdout}`)
     }
 
@@ -131,8 +128,12 @@ export class DockerAdapter implements IDockerAdapter {
   }
 
   async getExposedPort(containerId: string, containerPort = 3000): Promise<number> {
-    const proc = this.runtime.spawn(['docker', 'port', containerId, containerPort.toString()])
-    const stdout = await new Response(proc.stdout ?? null).text()
+    const { stdout } = await this.runtime.spawnAndCollect([
+      'docker',
+      'port',
+      containerId,
+      containerPort.toString(),
+    ])
     // 輸出格式可能包含多行，如 0.0.0.0:32768 和 [::]:32768
     // 我們取第一行並提取端口
     const firstLine = stdout.split('\n')[0] ?? ''
@@ -159,10 +160,14 @@ export class DockerAdapter implements IDockerAdapter {
     containerId: string,
     command: string[]
   ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-    const proc = this.runtime.spawn(['docker', 'exec', '-u', '0', containerId, ...command])
-    const stdout = await new Response(proc.stdout ?? null).text()
-    const stderr = await new Response(proc.stderr ?? null).text()
-    const exitCode = await proc.exited
+    const { stdout, stderr, exitCode } = await this.runtime.spawnAndCollect([
+      'docker',
+      'exec',
+      '-u',
+      '0',
+      containerId,
+      ...command,
+    ])
     return { stdout, stderr, exitCode }
   }
 
@@ -204,7 +209,7 @@ export class DockerAdapter implements IDockerAdapter {
   }
 
   async getStats(containerId: string): Promise<{ cpu: string; memory: string }> {
-    const proc = this.runtime.spawn([
+    const { stdout } = await this.runtime.spawnAndCollect([
       'docker',
       'stats',
       containerId,
@@ -212,7 +217,6 @@ export class DockerAdapter implements IDockerAdapter {
       '--format',
       '{{.CPUPerc}},{{.MemUsage}}',
     ])
-    const stdout = await new Response(proc.stdout ?? null).text()
     const [cpu, memory] = stdout.trim().split(',')
     return { cpu: cpu || '0%', memory: memory || '0B / 0B' }
   }

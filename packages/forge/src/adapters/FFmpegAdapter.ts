@@ -39,6 +39,7 @@ export class FFmpegAdapter implements ProcessorAdapter {
         stderr: 'pipe',
         env: options.env,
         cwd: options.cwd,
+        timeout,
       })
 
       let stderrBuffer = ''
@@ -74,33 +75,18 @@ export class FFmpegAdapter implements ProcessorAdapter {
         })()
       }
 
-      // Set timeout
-      const timeoutId = timeout
-        ? setTimeout(() => {
-            process.kill?.()
-            reject(new Error(`FFmpeg timeout after ${timeout}ms`))
-          }, timeout)
-        : null
-
       // Handle process completion
-      process.exited.then((code) => {
-        if (timeoutId) {
-          clearTimeout(timeoutId)
-        }
-
-        if (code === 0) {
-          resolve(output)
-        } else {
-          reject(new Error(`FFmpeg failed with code ${code}: ${stderrBuffer.slice(-500)}`))
-        }
-      })
-
-      process.exited.catch((error) => {
-        if (timeoutId) {
-          clearTimeout(timeoutId)
-        }
-        reject(error)
-      })
+      process.exited
+        .then((code) => {
+          if (code === 0) {
+            resolve(output)
+          } else {
+            reject(new Error(`FFmpeg failed with code ${code}: ${stderrBuffer.slice(-500)}`))
+          }
+        })
+        .catch((error) => {
+          reject(error)
+        })
     })
   }
 
