@@ -173,6 +173,8 @@ export {
   BeamTimeoutError,
 } from './errors'
 export {
+  collectJsonLines,
+  consumeJsonLines,
   createAuthenticatedBeam,
   createCachedHeaderResolver,
   safeResponse,

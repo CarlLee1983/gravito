@@ -227,3 +227,147 @@ export async function validateResponse<T>(
     throw new BeamError('Validation failed', response.status, 'VALIDATION_ERROR', e)
   }
 }
+
+/**
+ * 偵測當前執行環境是否支援 Bun 原生 JSONL 批量解析（SIMD 加速）
+ *
+ * Bun v1.2+ 提供 `Bun.JSONL` 全域物件，可利用 SIMD 指令集加速 JSONL 批量解析，
+ * 效能比逐行 JSON.parse() 高出數倍。
+ *
+ * @returns 是否具備 Bun 原生 JSONL 能力
+ */
+function hasBunJsonl(): boolean {
+  return (
+    typeof globalThis.Bun !== 'undefined' &&
+    typeof (globalThis.Bun as Record<string, unknown>).JSONL === 'object'
+  )
+}
+
+/**
+ * 流式消費 NDJSON 回應（Content-Type: application/x-ndjson）
+ *
+ * 使用 ReadableStream reader 逐次讀取回應 body，透過 TextDecoder 解碼 UTF-8，
+ * 並逐行解析 JSON，以 AsyncGenerator 方式產出每筆記錄。
+ * 適合處理大型串流或 SSE-like 的 NDJSON 端點，避免一次性將所有資料載入記憶體。
+ *
+ * @template T - 每筆 NDJSON 記錄的型別
+ * @param response - Fetch Response 物件（應為 NDJSON 格式的流式回應）
+ * @yields 每次產出一筆已解析的 JSON 記錄
+ * @throws {BeamError} 當回應狀態碼非 2xx 時拋出
+ *
+ * @example
+ * ```typescript
+ * const res = await client.events.$get()
+ * for await (const event of consumeJsonLines<Event>(res)) {
+ *   console.log('Received:', event)
+ * }
+ * ```
+ *
+ * @public
+ */
+export async function* consumeJsonLines<T>(response: Response): AsyncGenerator<T> {
+  if (!response.ok) {
+    throw new BeamError(`Request failed with status ${response.status}`, response.status)
+  }
+
+  if (!response.body) {
+    return
+  }
+
+  const reader = response.body.getReader()
+  // stream:true 允許 TextDecoder 跨 chunk 正確處理多位元組字元
+  const decoder = new TextDecoder('utf-8', { fatal: false })
+  let buffer = ''
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+
+      if (done) {
+        // 處理最後殘餘 buffer（可能為未含換行符的最後一行）
+        const remaining = buffer.trim()
+        if (remaining.length > 0) {
+          try {
+            yield JSON.parse(remaining) as T
+          } catch (e) {
+            throw new BeamError('Failed to parse NDJSON line', undefined, 'PARSE_ERROR', e)
+          }
+        }
+        break
+      }
+
+      // stream:true 確保 TextDecoder 保留跨 chunk 的多位元組字元狀態
+      buffer += decoder.decode(value, { stream: true })
+
+      // 逐行切割並解析（保留最後不完整的行至下一個 chunk）
+      const lines = buffer.split('\n')
+      buffer = lines.pop() ?? ''
+
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (trimmed.length === 0) continue
+        try {
+          yield JSON.parse(trimmed) as T
+        } catch (e) {
+          throw new BeamError('Failed to parse NDJSON line', undefined, 'PARSE_ERROR', e)
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock()
+  }
+}
+
+/**
+ * 收集所有 NDJSON 記錄為陣列
+ *
+ * 一次性讀取完整回應文本，若執行環境支援 `Bun.JSONL.parse()`（SIMD 加速），
+ * 則使用原生解析器；否則降級為逐行 `JSON.parse()`。
+ * 空回應返回空陣列。
+ *
+ * @template T - 每筆 NDJSON 記錄的型別
+ * @param response - Fetch Response 物件（應為 NDJSON 格式的回應）
+ * @returns 所有已解析記錄的陣列
+ * @throws {BeamError} 當回應狀態碼非 2xx 或 JSON 解析失敗時拋出
+ *
+ * @example
+ * ```typescript
+ * const res = await client.products.$get()
+ * const products = await collectJsonLines<Product>(res)
+ * console.log('Total products:', products.length)
+ * ```
+ *
+ * @public
+ */
+export async function collectJsonLines<T>(response: Response): Promise<T[]> {
+  if (!response.ok) {
+    throw new BeamError(`Request failed with status ${response.status}`, response.status)
+  }
+
+  const text = await response.text()
+  if (!text.trim()) {
+    return []
+  }
+
+  if (hasBunJsonl()) {
+    // Bun 原生 JSONL 批量解析（SIMD 加速）
+    const bunJsonl = (globalThis.Bun as Record<string, unknown>).JSONL as {
+      parse: (text: string | Uint8Array) => unknown[]
+    }
+    return bunJsonl.parse(text) as T[]
+  }
+
+  // 降級：逐行解析，忽略空行
+  const results: T[] = []
+  const lines = text.split('\n')
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (trimmed.length === 0) continue
+    try {
+      results.push(JSON.parse(trimmed) as T)
+    } catch (e) {
+      throw new BeamError('Failed to parse NDJSON line', undefined, 'PARSE_ERROR', e)
+    }
+  }
+  return results
+}
