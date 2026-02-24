@@ -1,0 +1,54 @@
+{
+  "name": "@gravito/quark",
+  "version": "1.0.0",
+  "description": "Bun-native TCP server and client for Gravito. High-performance networking with frame protocols and backpressure management.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "bun run build.ts",
+    "build:dts": "bun run build.ts --dts-only",
+    "test": "bun test --timeout=10000",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test:coverage": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage",
+    "test:ci": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage"
+  },
+  "keywords": [
+    "gravito",
+    "tcp",
+    "bun",
+    "networking",
+    "backpressure",
+    "frame-protocol"
+  ],
+  "author": "Carl Lee <carllee0520@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gravito-framework/gravito.git",
+    "directory": "packages/quark"
+  },
+  "homepage": "https://github.com/gravito-framework/gravito#readme",
+  "peerDependencies": {
+    "@gravito/core": "^1.6.1"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
