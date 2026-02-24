@@ -1,61 +1,36 @@
-import { build } from 'bun'
+#!/usr/bin/env bun
 
-const isDtsOnly = process.argv.includes('--dts-only')
+/**
+ * @gravito/beam 構建腳本
+ *
+ * 使用統一的 buildPackage() 函式，替代舊版 Bun.build + tsc 分離呼叫。
+ * 格式：ESM only（beam 是輕量 RPC client，不需要 CJS）
+ */
 
-console.log('🔨 Building @gravito/beam in parallel...')
+import { buildPackage, isDtsOnlyMode, printBuildSummary } from '../../scripts/build-utils.ts'
 
-// Build JS/TS and type declarations in parallel
-async function buildInParallel() {
-  const tasks: Promise<number>[] = []
+const dtsOnly = isDtsOnlyMode()
 
-  // Task 1: JS/TS build
-  if (!isDtsOnly) {
-    const buildPromise = (async () => {
-      try {
-        await build({
-          entrypoints: ['src/index.ts'],
-          outdir: 'dist',
-          format: 'esm',
-          target: 'bun',
-          splitting: false,
-          minify: false,
-          sourcemap: 'external',
-          external: ['@gravito/photon'],
-        })
-        return 0
-      } catch (error) {
-        console.error('❌ JS/TS build failed:', error)
-        return 1
-      }
-    })()
-    tasks.push(buildPromise)
-  }
+console.log(dtsOnly ? '生成 @gravito/beam 型別宣告...' : '構建 @gravito/beam...')
 
-  // Task 2: Type declarations
-  console.log('📝 Generating type declarations...')
-  const tscPromise = (async () => {
-    const tsc = Bun.spawn(['bunx', 'tsc', '-p', 'tsconfig.build.json'], {
-      stdout: 'inherit',
-      stderr: 'inherit',
-      cwd: import.meta.dirname,
-    })
-    const exitCode = await tsc.exited
-    return exitCode
-  })()
-  tasks.push(tscPromise)
+const result = await buildPackage({
+  entrypoints: ['src/index.ts'],
+  outdir: 'dist',
+  format: ['esm'],
+  target: 'bun',
+  splitting: false,
+  minify: false,
+  sourcemap: 'external',
+  external: ['@gravito/photon'],
+  dts: true,
+  dtsOnly,
+  // beam 有 tsconfig.build.json，優先使用
+  tsconfig: 'tsconfig.build.json',
+  silent: false,
+})
 
-  // Wait for all tasks
-  const results = await Promise.all(tasks)
+printBuildSummary(result, '@gravito/beam')
 
-  // Check for failures
-  for (const result of results) {
-    if (result !== 0) {
-      process.exit(1)
-    }
-  }
+if (!result.success) {
+  process.exit(1)
 }
-
-// Execute parallel build
-await buildInParallel()
-
-console.log('✅ Build completed')
