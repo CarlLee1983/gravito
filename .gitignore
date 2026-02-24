@@ -64,7 +64,8 @@ examples/*/dist/
 **/.tmp-*/
 **/tests/**/*.bin
 packages/*/tests/.tmp-*
-test-dist-incremental/
+test-dist-*/
+packages/*/test-dist-*/
 
 # Claude CLI
 .claude/
