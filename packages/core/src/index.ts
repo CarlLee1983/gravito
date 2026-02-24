@@ -308,6 +308,17 @@ export {
 export * as engine from './engine'
 
 // ─────────────────────────────────────────────────────────────────────────────
+// FFI (Foreign Function Interface) - Native Acceleration Layer
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type {
+  CborAccelerator,
+  FfiConfig,
+  NativeAcceleratorStatus,
+} from './ffi'
+export { NativeAccelerator } from './ffi'
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Configuration Helper
 // ─────────────────────────────────────────────────────────────────────────────
 
