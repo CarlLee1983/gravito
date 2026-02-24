@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { PlanetCore } from '@gravito/core'
-import { archiveFromDirectory } from '@gravito/core'
+import type { PlanetCore, RuntimeMarkdownAdapter } from '@gravito/core'
+import { archiveFromDirectory, getMarkdownAdapter } from '@gravito/core'
 import { OpenApiGenerator } from './OpenApiGenerator'
 import type { AstralConfig, OpenApiDocument } from './types'
 
@@ -20,6 +20,73 @@ export interface StaticExportConfig {
 }
 
 /**
+ * 遞迴渲染物件中所有 description 欄位的 Markdown 為 HTML。
+ *
+ * 僅處理值為 string 的 description 欄位，空字串不渲染。
+ * 會深入遍歷所有巢狀物件和陣列。
+ *
+ * @param obj - 要處理的物件（spec 或子物件）
+ * @param md - Markdown adapter 實例
+ * @returns 新的物件（不修改原始物件）
+ * @internal
+ */
+function renderDescriptionsInObject(obj: unknown, md: RuntimeMarkdownAdapter): unknown {
+  if (obj === null || obj === undefined) {
+    return obj
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => renderDescriptionsInObject(item, md))
+  }
+
+  if (typeof obj !== 'object') {
+    return obj
+  }
+
+  const source = obj as Record<string, unknown>
+  const result: Record<string, unknown> = {}
+
+  for (const key of Object.keys(source)) {
+    const value = source[key]
+
+    if (key === 'description' && typeof value === 'string' && value.length > 0) {
+      // 渲染 Markdown 為 HTML
+      result[key] = md.html(value)
+    } else if (Array.isArray(value)) {
+      result[key] = value.map((item) => renderDescriptionsInObject(item, md))
+    } else if (value !== null && typeof value === 'object') {
+      result[key] = renderDescriptionsInObject(value, md)
+    } else {
+      result[key] = value
+    }
+  }
+
+  return result
+}
+
+/**
+ * 對 OpenAPI spec 的 description 欄位進行 Markdown 渲染。
+ *
+ * 遞迴處理以下路徑：
+ * - spec.info.description
+ * - spec.servers[].description
+ * - spec.tags[].description
+ * - spec.paths[][].description, parameters[].description, responses[].description
+ * - spec.components.schemas[].description 及其屬性
+ * - spec.components.parameters[].description
+ * - spec.components.responses[].description
+ * - spec.components.requestBodies[].description
+ *
+ * @param spec - 原始 OpenAPI spec
+ * @returns 渲染後的新 spec（不修改原始物件）
+ * @internal
+ */
+function renderSpecDescriptions(spec: OpenApiDocument): OpenApiDocument {
+  const md = getMarkdownAdapter()
+  return renderDescriptionsInObject(spec, md) as OpenApiDocument
+}
+
+/**
  * Generates a static documentation site.
  *
  * @param config - Configuration including the PlanetCore instance, output directory, and astral configuration.
@@ -34,13 +101,16 @@ export async function generateStaticSite(config: StaticExportConfig): Promise<vo
   // 1. Generate OpenAPI spec
   const generator = new OpenApiGenerator(astralConfig)
   const routes = core.router.compile()
-  const spec = generator.generateWithCache(routes) as OpenApiDocument
+  const rawSpec = generator.generateWithCache(routes) as OpenApiDocument
 
-  // 2. Write openapi.json
+  // 2. 若啟用 renderDescriptions，渲染所有 description 欄位
+  const spec = astralConfig.renderDescriptions ? renderSpecDescriptions(rawSpec) : rawSpec
+
+  // 3. Write openapi.json
   const specPath = join(outputDir, 'openapi.json')
   writeFileSync(specPath, JSON.stringify(spec, null, 2))
 
-  // 3. Handle offline assets
+  // 4. Handle offline assets
   let cssUrl = 'https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css'
   let bundleJsUrl = 'https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js'
   let standaloneJsUrl = 'https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js'
@@ -72,7 +142,7 @@ export async function generateStaticSite(config: StaticExportConfig): Promise<vo
     }
   }
 
-  // 4. Write index.html
+  // 5. Write index.html
   const htmlPath = join(outputDir, 'index.html')
   const title = astralConfig.title || 'API Documentation'
 
@@ -117,7 +187,7 @@ export async function generateStaticSite(config: StaticExportConfig): Promise<vo
   writeFileSync(htmlPath, html)
   core.logger.info(`[Astral] Static site generated at: ${outputDir}`)
 
-  // 5. 生成歸檔（選用）
+  // 6. 生成歸檔（選用）
   if (config.archive) {
     const archivePath = config.archivePath || `${outputDir}.tar.gz`
     await archiveFromDirectory(outputDir, archivePath, { compress: 'gzip' })
