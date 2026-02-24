@@ -14,10 +14,11 @@
  */
 
 import { createHash } from 'node:crypto'
-import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, statSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import type { PlanetCore } from '@gravito/core'
+import { getDefaultRuntimeAdapter } from '@gravito/core'
 
 /**
  * Structure of the build manifest file.
@@ -117,13 +118,31 @@ export class IncrementalBuilder {
     return this.manifest
   }
 
-  private saveManifest(): void {
+  /**
+   * Asynchronously saves the build manifest to disk.
+   *
+   * Uses RuntimeAdapter for async writes to prevent event loop blocking.
+   * Replaces the previous synchronous writeFileSync implementation.
+   *
+   * @throws {Error} If manifest writing fails
+   */
+  private async saveManifest(): Promise<void> {
     if (!this.manifest) {
       return
     }
 
     this.manifest.buildTime = Date.now()
-    writeFileSync(this.manifestPath, JSON.stringify(this.manifest, null, 2), 'utf-8')
+    const content = JSON.stringify(this.manifest, null, 2)
+
+    // Use RuntimeAdapter for async write to prevent event loop blocking
+    const adapter = getDefaultRuntimeAdapter()
+    if (adapter.writeFile) {
+      await adapter.writeFile(this.manifestPath, content)
+    } else {
+      // Fallback for runtimes without writeFile support
+      await writeFile(this.manifestPath, content, 'utf-8')
+    }
+
     this.core.logger.info(`[IncrementalBuilder] Manifest saved: ${this.manifestPath}`)
   }
 
@@ -321,7 +340,7 @@ export class IncrementalBuilder {
     const workers = Array.from({ length: Math.min(concurrency, total) }, () => worker())
     await Promise.all(workers)
 
-    this.saveManifest()
+    await this.saveManifest()
 
     this.core.logger.info(
       `[IncrementalBuilder] Build complete! Built: ${built}, Skipped: ${skipped}, Failed: ${failed}`
