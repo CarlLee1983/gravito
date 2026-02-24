@@ -339,3 +339,96 @@ export interface ArchiveFromDirectoryOptions {
   /** Glob 模式過濾 */
   glob?: string
 }
+
+// ============ Markdown Support Types ============
+
+/**
+ * Markdown 渲染選項
+ * @public
+ */
+export interface MarkdownRenderOptions {
+  /** 是否啟用 GFM 擴展（表格、刪除線、任務列表）。預設 true */
+  gfm?: boolean
+}
+
+/**
+ * Markdown render() 自訂渲染回調集合。
+ *
+ * 每個回調攔截對應的 Markdown 元素，回傳自訂 HTML 字串。
+ * 僅在 Bun 原生環境（Bun.markdown.render）下完全支援；
+ * Fallback 環境下透過 marked Renderer 模擬。
+ *
+ * @public
+ */
+export interface MarkdownRenderCallbacks {
+  /** 標題回調：(content, { level }) => html */
+  heading?: (content: string, opts: { level: number }) => string
+  /** 連結回調：(content, { href, title? }) => html */
+  link?: (content: string, opts: { href: string; title?: string }) => string
+  /** 程式碼區塊回調：(code, { language? }) => html */
+  code?: (code: string, opts: { language?: string }) => string
+  /** 行內程式碼回調：(code) => html */
+  codespan?: (code: string) => string
+  /** 圖片回調：(alt, { src, title? }) => html */
+  image?: (alt: string, opts: { src: string; title?: string }) => string
+  /** 原始 HTML 回調：(rawHtml) => html（用於 XSS 過濾） */
+  html?: (rawHtml: string) => string
+  /** 段落回調：(content) => html */
+  paragraph?: (content: string) => string
+  /** 粗體回調：(content) => html */
+  strong?: (content: string) => string
+  /** 斜體回調：(content) => html */
+  em?: (content: string) => string
+  /** 刪除線回調：(content) => html */
+  del?: (content: string) => string
+  /** 列表回調：(content, { ordered, start? }) => html */
+  list?: (content: string, opts: { ordered: boolean; start?: number }) => string
+  /** 列表項回調：(content) => html */
+  listItem?: (content: string) => string
+  /** 引用區塊回調：(content) => html */
+  blockquote?: (content: string) => string
+  /** 表格回調：(content) => html */
+  table?: (content: string) => string
+  /** 水平線回調：() => html */
+  hr?: () => string
+}
+
+/**
+ * Markdown 操作的運行時抽象
+ * @public
+ */
+export interface RuntimeMarkdownAdapter {
+  /**
+   * 將 Markdown 轉換為 HTML 字串。
+   * 在 Bun 環境下使用原生 C++ 解析器（10-100x 更快）。
+   *
+   * @param markdown - Markdown 原始文字
+   * @param options - 渲染選項
+   * @returns HTML 字串
+   */
+  html(markdown: string, options?: MarkdownRenderOptions): string
+
+  /**
+   * 使用自訂回調渲染 Markdown。
+   * 允許攔截個別元素的渲染過程。
+   *
+   * @param markdown - Markdown 原始文字
+   * @param callbacks - 自訂渲染回調
+   * @returns 渲染後的字串
+   */
+  render(markdown: string, callbacks?: MarkdownRenderCallbacks): string
+
+  /**
+   * 將 Markdown 轉換為 React 元素結構。
+   * 僅在 Bun 原生環境下可用，其餘回傳 null。
+   *
+   * @param markdown - Markdown 原始文字
+   * @returns React 元素物件或 null
+   */
+  react(markdown: string): unknown | null
+
+  /**
+   * 是否使用原生實作（Bun.markdown）
+   */
+  readonly isNative: boolean
+}
