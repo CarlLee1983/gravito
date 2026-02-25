@@ -29,6 +29,14 @@ export type { ConsumerStrategy } from './consumer/ConsumerStrategy'
 export { PollingStrategy } from './consumer/PollingStrategy'
 export { ReactiveStrategy } from './consumer/ReactiveStrategy'
 
+export {
+  decodeBinaryJobFrame,
+  encodeBinaryJobFrame,
+  Flags as BinaryJobFrameFlags,
+  isGravitoJobFrame,
+  MAGIC as BINARY_JOB_FRAME_MAGIC,
+  VERSION as BINARY_JOB_FRAME_VERSION,
+} from './drivers/BinaryJobFrame'
 // Driver config types
 export type { BullMQDriverConfig } from './drivers/BullMQDriver'
 export { BullMQDriver } from './drivers/BullMQDriver'
@@ -43,7 +51,7 @@ export { MemoryDriver } from './drivers/MemoryDriver'
 export type { QueueDriver } from './drivers/QueueDriver'
 export type { RabbitMQDriverConfig } from './drivers/RabbitMQDriver'
 export { RabbitMQDriver } from './drivers/RabbitMQDriver'
-export type { RedisDriverConfig } from './drivers/RedisDriver'
+export type { RedisClient, RedisDriverConfig } from './drivers/RedisDriver'
 export { RedisDriver } from './drivers/RedisDriver'
 export type { SQSDriverConfig } from './drivers/SQSDriver'
 export { SQSDriver } from './drivers/SQSDriver'
@@ -55,6 +63,11 @@ export { DistributedLock } from './locks/DistributedLock'
 export type { OrbitStreamOptions } from './OrbitStream'
 export { OrbitStream } from './OrbitStream'
 export { BufferedPersistence } from './persistence/BufferedPersistence'
+export {
+  BunBufferedPersistence,
+  type BunBufferedPersistenceOptions,
+  createBufferedPersistence,
+} from './persistence/BunBufferedPersistence'
 export { MySQLPersistence } from './persistence/MySQLPersistence'
 export { SQLitePersistence } from './persistence/SQLitePersistence'
 // Core interfaces & types

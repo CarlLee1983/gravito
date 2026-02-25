@@ -1,12 +1,8 @@
 import { EventEmitter } from 'node:events'
-import pLimit from 'p-limit'
-import type { ConsumerStrategy } from './consumer/ConsumerStrategy'
-import { PollingStrategy } from './consumer/PollingStrategy'
-import { ReactiveStrategy } from './consumer/ReactiveStrategy'
-import type { Job } from './Job'
+import { StreamingConsumer } from './consumer/StreamingConsumer'
+import type { ConsumerStats } from './consumer/types'
 import type { QueueManager } from './QueueManager'
 import type { WorkerOptions } from './Worker'
-import { Worker } from './Worker'
 
 /**
  * Configuration options for the Consumer.
@@ -177,7 +173,7 @@ export interface ConsumerOptions {
    *
    * Called whenever a job lifecycle event occurs (started, processed, failed, etc.).
    */
-  onEvent?: (event: string, payload: any) => void
+  onEvent?: (event: string, payload: unknown) => void
 
   /**
    * Enable reactive (push-based) consumption mode.
@@ -202,685 +198,79 @@ export interface ConsumerOptions {
 }
 
 /**
- * The Consumer responsible for processing jobs from the queue.
+ * Consumer 門面類別（Facade），提供向後相容的公開 API。
  *
- * It polls the configured queues, retrieves jobs, and delegates execution to a `Worker`.
- * It handles concurrency, rate limiting, adaptive polling, and emits lifecycle events
- * (job:started, job:processed, job:failed, etc.).
+ * 內部委派給 StreamingConsumer 實作，所有事件都通過 passthrough。
+ * 公開 API 與原始 Consumer 完全一致，不破壞現有使用者程式碼。
  *
  * @public
- * @example
- * ```typescript
- * const consumer = new Consumer(queueManager, {
- *   queues: ['default'],
- *   concurrency: 10
- * });
- *
- * await consumer.start();
- * ```
- *
- * @emits job:started - When a job begins processing. Payload: { job: Job, queue: string }
- * @emits job:processed - When a job completes successfully. Payload: { job: Job, duration: number, queue: string }
- * @emits job:failed - When a job fails an attempt. Payload: { job: Job, error: Error, duration: number, queue: string }
- * @emits job:retried - When a job is scheduled for a retry. Payload: { job: Job, attempt: number, delay: number }
- * @emits job:failed_permanently - When a job fails all attempts. Payload: { job: Job, error: Error }
  */
 export class Consumer extends EventEmitter {
-  /**
-   * Group limiter 的存活時間（毫秒）。
-   * 超過此時間未使用的 group limiter 會被清理，避免記憶體洩漏。
-   */
-  private static readonly GROUP_LIMITER_TTL = 60000
-
-  private running = false
-  private stopRequested = false
-  private workerId = `worker-${crypto.randomUUID()}`
-  private heartbeatTimer: ReturnType<typeof setTimeout> | null = null
-  private cleanupTimer: ReturnType<typeof setTimeout> | null = null
-  private groupLimiters = new Map<string, ReturnType<typeof pLimit>>()
-  private groupLimiterLastUsed = new Map<string, number>()
-  private stats = {
-    processed: 0,
-    failed: 0,
-    retried: 0,
-    active: 0,
-  }
-  private strategy: ConsumerStrategy | null = null
+  /** 內部 StreamingConsumer 實例 */
+  private streaming: StreamingConsumer
 
   constructor(
-    private queueManager: QueueManager,
-    private options: ConsumerOptions
+    private readonly queueManager: QueueManager,
+    private readonly options: ConsumerOptions
   ) {
     super()
-  }
-
-  private get connectionName(): string {
-    return this.options.connection ?? this.queueManager.getDefaultConnection()
+    this.streaming = new StreamingConsumer(queueManager, options)
+    this.forwardEvents()
   }
 
   /**
-   * Logs a debug message if debug mode is enabled.
+   * 將 StreamingConsumer 的所有事件轉發給 Consumer。
    */
-  private log(message: string, data?: unknown): void {
-    if (this.options.debug) {
-      const timestamp = new Date().toISOString()
-      const prefix = `[Consumer:${this.workerId}] [${timestamp}]`
-      if (data) {
-        console.log(prefix, message, data)
-      } else {
-        console.log(prefix, message)
-      }
+  private forwardEvents(): void {
+    const events = [
+      'job:started',
+      'job:processed',
+      'job:failed',
+      'job:retried',
+      'job:failed_permanently',
+      'max_requests_reached',
+      'error',
+    ]
+
+    for (const event of events) {
+      this.streaming.on(event, (payload: unknown) => {
+        this.emit(event, payload)
+      })
     }
   }
 
   /**
    * Starts the consumer loop.
-   *
-   * Begins polling the queues and processing jobs. This method returns a promise that resolves
-   * only when the consumer stops (if `keepAlive` is false) or throws if already running.
-   *
-   * @throws {Error} If the consumer is already running.
    */
   async start(): Promise<void> {
-    if (this.running) {
-      throw new Error('Consumer is already running')
-    }
-
-    this.running = true
-    this.stopRequested = false
-
-    const worker = new Worker(this.options.workerOptions)
-    const keepAlive = this.options.keepAlive ?? true
-    const concurrency = this.options.concurrency ?? 1
-    const batchSize = this.options.batchSize ?? 1
-
-    this.log('Started', {
-      queues: this.options.queues,
-      connection: this.options.connection,
-      workerId: this.workerId,
-      concurrency,
-      batchSize,
-      reactive: this.options.reactive ?? false,
-    })
-
-    if (this.options.monitor) {
-      this.startHeartbeat()
-      await this.publishLog(
-        'info',
-        `Consumer started on [${this.options.queues.join(', ')}] with concurrency ${concurrency}${this.options.reactive ? ' (reactive)' : ''}`
-      )
-    }
-
-    // 啟動 group limiter 清理計時器
-    this.startCleanupTimer()
-
-    // Choose consumption strategy (reactive or polling)
-    if (this.options.reactive) {
-      await this.runWithReactiveStrategy(worker, keepAlive, concurrency)
-    } else {
-      await this.runWithPollingStrategy(worker, keepAlive, concurrency, batchSize)
-    }
-
-    this.running = false
-    this.stopHeartbeat()
-    this.stopCleanupTimer()
-    if (this.options.monitor) {
-      await this.publishLog('info', 'Consumer stopped')
-    }
-    this.log('Stopped')
-  }
-
-  /**
-   * Runs the consumer using the reactive strategy.
-   *
-   * Listens for notifications and pulls jobs reactively.
-   * Falls back to polling if no notifications arrive.
-   *
-   * @private
-   */
-  private async runWithReactiveStrategy(
-    worker: Worker,
-    keepAlive: boolean,
-    concurrency: number
-  ): Promise<void> {
-    const reactivePollingFallback = this.options.reactivePollingFallback ?? 30000
-
-    this.strategy = new ReactiveStrategy(
-      this.queueManager,
-      this.options.queues,
-      this.connectionName,
-      {
-        concurrency,
-        batchSize: this.options.batchSize ?? 1,
-        stats: this.stats,
-        reactivePollingFallback,
-        debug: this.options.debug ?? false,
-        log: (message: string, data?: unknown) => this.log(message, data),
-      }
-    )
-
-    try {
-      await this.strategy.start()
-
-      // Main reactive loop
-      while (this.running && !this.stopRequested) {
-        const capacity = concurrency - this.stats.active
-        if (capacity <= 0) {
-          await new Promise((resolve) => setTimeout(resolve, 50))
-          continue
-        }
-
-        const jobs = await this.strategy.fetchJobs()
-
-        if (jobs.length > 0) {
-          this.stats.active += jobs.length
-
-          // Process jobs asynchronously
-          for (const job of jobs) {
-            this.runJob(job, worker).finally(() => {
-              this.stats.active--
-            })
-          }
-
-          // Brief yield to allow next loop iteration
-          await new Promise((resolve) => setTimeout(resolve, 0))
-          continue
-        }
-
-        // If nothing was processed and keepAlive is disabled, and no workers are running, exit
-        if (this.stats.active === 0 && !keepAlive) {
-          break
-        }
-
-        // Wait a bit before next fetch
-        if (!this.stopRequested) {
-          await new Promise((resolve) => setTimeout(resolve, 100))
-        } else {
-          // Just yield
-          await new Promise((resolve) => setTimeout(resolve, 50))
-        }
-      }
-    } finally {
-      if (this.strategy) {
-        await this.strategy.stop()
-        this.strategy = null
-      }
-    }
-  }
-
-  /**
-   * Runs the consumer using the polling strategy.
-   *
-   * Continuously polls queues with adaptive backoff.
-   * This is the default consumption mode.
-   *
-   * @private
-   */
-  private async runWithPollingStrategy(
-    worker: Worker,
-    keepAlive: boolean,
-    concurrency: number,
-    batchSize: number
-  ): Promise<void> {
-    let currentPollInterval = this.options.pollInterval ?? 1000
-    const minPollInterval = this.options.minPollInterval ?? 100
-    const maxPollInterval = this.options.maxPollInterval ?? 5000
-    const backoffMultiplier = this.options.backoffMultiplier ?? 1.5
-    const useBlocking = this.options.useBlocking ?? true
-    const blockingTimeout = this.options.blockingTimeout ?? 5
-
-    this.strategy = new PollingStrategy(
-      this.queueManager,
-      this.options.queues,
-      this.connectionName,
-      {
-        minPollInterval,
-        maxPollInterval,
-        backoffMultiplier,
-        batchSize,
-        useBlocking,
-        blockingTimeout,
-        concurrency,
-        stats: this.stats,
-        debug: this.options.debug ?? false,
-        log: (message: string, data?: unknown) => this.log(message, data),
-      }
-    )
-
-    try {
-      await this.strategy.start()
-
-      // Main polling loop
-      while (this.running && !this.stopRequested) {
-        // If we are at capacity, wait for a bit
-        const capacity = concurrency - this.stats.active
-        if (capacity <= 0) {
-          await new Promise((resolve) => setTimeout(resolve, 50))
-          continue
-        }
-
-        // Filter queues based on rate limits
-        const eligibleQueues: string[] = []
-        for (const queue of this.options.queues) {
-          if (this.options.rateLimits?.[queue]) {
-            const limit = this.options.rateLimits[queue]
-            try {
-              const driver = this.queueManager.getDriver(this.connectionName)
-              if (driver.checkRateLimit) {
-                const allowed = await driver.checkRateLimit(queue, limit!)
-                if (!allowed) {
-                  continue
-                }
-              }
-            } catch (err) {
-              console.error(`[Consumer] Error checking rate limit for "${queue}":`, err)
-            }
-          }
-          eligibleQueues.push(queue)
-        }
-
-        if (eligibleQueues.length === 0) {
-          await new Promise((resolve) => setTimeout(resolve, currentPollInterval))
-          continue
-        }
-
-        let jobs: Job[] = []
-        let didBlock = false
-
-        try {
-          const currentBatchSize = Math.min(batchSize, capacity)
-          const driver = this.queueManager.getDriver(this.connectionName)
-
-          if (currentBatchSize > 1) {
-            // Batch fetch (non-blocking)
-            for (const queue of eligibleQueues) {
-              const fetched = await this.queueManager.popMany(
-                queue,
-                currentBatchSize,
-                this.connectionName
-              )
-              if (fetched.length > 0) {
-                jobs = fetched
-                break
-              }
-            }
-          } else {
-            // Single fetch
-            if (useBlocking && driver.popBlocking) {
-              didBlock = true
-              const job = await this.queueManager.popBlocking(
-                eligibleQueues,
-                blockingTimeout,
-                this.connectionName
-              )
-              if (job) {
-                jobs.push(job)
-              }
-            } else {
-              // Sequential non-blocking pop
-              for (const queue of eligibleQueues) {
-                const job = await this.queueManager.pop(queue, this.connectionName)
-                if (job) {
-                  jobs.push(job)
-                  break
-                }
-              }
-            }
-          }
-
-          if (jobs.length > 0) {
-            this.stats.active += jobs.length
-            // Reset adaptive poll interval
-            currentPollInterval = minPollInterval
-
-            // Process jobs asynchronously
-            for (const job of jobs) {
-              this.runJob(job, worker).finally(() => {
-                this.stats.active--
-              })
-            }
-
-            // Brief yield to allow next loop iteration
-            await new Promise((resolve) => setTimeout(resolve, 0))
-            continue
-          }
-        } catch (error) {
-          console.error('[Consumer] Loop error:', error)
-        }
-
-        // If nothing was processed and keepAlive is disabled, and no workers are running, exit
-        if (this.stats.active === 0 && !keepAlive) {
-          break
-        }
-
-        // Wait if needed
-        if (!this.stopRequested) {
-          if (!didBlock) {
-            // Adaptive backoff
-            await new Promise((resolve) => setTimeout(resolve, currentPollInterval))
-            currentPollInterval = Math.min(currentPollInterval * backoffMultiplier, maxPollInterval)
-          }
-          // If didBlock, we effectively waited blockingTimeout, so we loop immediately
-        } else {
-          // Just yield
-          await new Promise((resolve) => setTimeout(resolve, 50))
-        }
-      }
-    } finally {
-      if (this.strategy) {
-        await this.strategy.stop()
-        this.strategy = null
-      }
-    }
-  }
-
-  /**
-   * Run a job with concurrency controls and group locking.
-   */
-  private async runJob(job: Job, worker: Worker): Promise<void> {
-    // If group sequentiality is disabled or no groupId, run immediately
-    if (!job.groupId || this.options.groupJobsSequential === false) {
-      return this.handleJob(job, worker)
-    }
-
-    // Otherwise, ensure sequential execution for the group
-    let limiter = this.groupLimiters.get(job.groupId)
-    if (!limiter) {
-      limiter = pLimit(1)
-      this.groupLimiters.set(job.groupId, limiter)
-    }
-
-    // 更新 group limiter 的最後使用時間
-    this.groupLimiterLastUsed.set(job.groupId, Date.now())
-
-    if (limiter.pendingCount > 0) {
-      this.log(`Job ${job.id} queued behind group ${job.groupId}`)
-    }
-
-    // Schedule the job
-    await limiter(async () => {
-      await this.handleJob(job, worker)
-    })
-
-    // Cleanup limiter if empty
-    if (limiter.activeCount === 0 && limiter.pendingCount === 0) {
-      this.groupLimiters.delete(job.groupId)
-      this.groupLimiterLastUsed.delete(job.groupId)
-    }
-  }
-
-  /**
-   * Delegates the actual processing to the worker and handles stats/logging.
-   */
-  private async handleJob(job: Job, worker: Worker): Promise<void> {
-    const currentQueue = job.queueName || 'default'
-    const startTime = Date.now()
-
-    this.log(`Processing job ${job.id} from ${currentQueue}`)
-
-    this.emit('job:started', { job, queue: currentQueue })
-    this.options.onEvent?.('job:started', { jobId: job.id, queue: currentQueue })
-
-    if (this.options.monitor) {
-      await this.publishLog('info', `Processing job: ${job.id}`, job.id)
-    }
-
-    try {
-      await worker.process(job)
-      const duration = Date.now() - startTime
-      this.stats.processed++
-      this.emit('job:processed', { job, duration, queue: currentQueue })
-      this.options.onEvent?.('job:processed', { jobId: job.id, duration, queue: currentQueue })
-
-      this.log(`Completed job ${job.id} in ${duration}ms`)
-
-      if (this.options.monitor) {
-        await this.publishLog('success', `Completed job: ${job.id}`, job.id)
-      }
-
-      // 檢查是否達到最大請求數量
-      if (this.options.maxRequests && this.stats.processed >= this.options.maxRequests) {
-        this.log(`Max requests reached: ${this.stats.processed}/${this.options.maxRequests}`)
-        this.stopRequested = true
-        this.emit('max_requests_reached', {
-          processed: this.stats.processed,
-          maxRequests: this.options.maxRequests,
-        })
-        if (this.options.monitor) {
-          await this.publishLog('info', `Max requests reached: ${this.stats.processed}`, job.id)
-        }
-      }
-    } catch (err: unknown) {
-      const error = err as Error
-      const duration = Date.now() - startTime
-      this.emit('job:failed', { job, error, duration, queue: currentQueue })
-      this.options.onEvent?.('job:failed', {
-        jobId: job.id,
-        error: error.message,
-        duration,
-        queue: currentQueue,
-      })
-
-      this.log(`Failed job ${job.id} in ${duration}ms`, { error: error.message })
-      this.stats.failed++
-
-      if (this.options.monitor) {
-        await this.publishLog('error', `Job failed: ${job.id} - ${error.message}`, job.id)
-      }
-
-      // Retry Logic with Exponential Backoff
-      const attempts = job.attempts ?? 1
-      const maxAttempts = job.maxAttempts ?? this.options.workerOptions?.maxAttempts ?? 3
-
-      if (attempts < maxAttempts) {
-        job.attempts = attempts + 1
-        const delayMs = job.getRetryDelay(job.attempts)
-        const delaySec = Math.ceil(delayMs / 1000)
-        job.delay(delaySec)
-        await this.queueManager.push(job)
-
-        this.log(`Retrying job ${job.id} in ${delaySec}s (Attempt ${job.attempts}/${maxAttempts})`)
-
-        this.stats.retried++
-        this.emit('job:retried', { job, attempt: job.attempts, delay: delaySec })
-
-        if (this.options.monitor) {
-          await this.publishLog(
-            'warning',
-            `Job retrying in ${delaySec}s (Attempt ${job.attempts}/${maxAttempts})`,
-            job.id
-          )
-        }
-      } else {
-        this.emit('job:failed_permanently', { job, error })
-        this.options.onEvent?.('job:failed_permanently', { jobId: job.id, error: error.message })
-        this.log(`Job ${job.id} failed permanently`)
-        await this.queueManager.fail(job, error).catch((dlqErr) => {
-          console.error('[Consumer] Error moving job to DLQ:', dlqErr)
-        })
-      }
-    } finally {
-      await this.queueManager.complete(job).catch((err) => {
-        console.error(`[Consumer] Error completing job in queue "${currentQueue}":`, err)
-      })
-    }
-  }
-
-  private startHeartbeat() {
-    const interval =
-      typeof this.options.monitor === 'object' ? (this.options.monitor.interval ?? 5000) : 5000
-    const monitorOptions = typeof this.options.monitor === 'object' ? this.options.monitor : {}
-
-    this.heartbeatTimer = setInterval(async () => {
-      try {
-        const driver = this.queueManager.getDriver(this.connectionName)
-        if (driver.reportHeartbeat) {
-          const monitorPrefix =
-            typeof this.options.monitor === 'object' ? this.options.monitor.prefix : undefined
-          const os = require('node:os')
-          const mem = process.memoryUsage()
-          const metrics = {
-            cpu: os.loadavg()[0], // 1m load avg
-            cores: os.cpus().length,
-            ram: {
-              rss: Math.floor(mem.rss / 1024 / 1024),
-              heapUsed: Math.floor(mem.heapUsed / 1024 / 1024),
-              total: Math.floor(os.totalmem() / 1024 / 1024),
-            },
-            stats: this.stats,
-          }
-
-          await driver.reportHeartbeat(
-            {
-              id: this.workerId,
-              status: 'online',
-              hostname: os.hostname(),
-              pid: process.pid,
-              uptime: Math.floor(process.uptime()),
-              last_ping: new Date().toISOString(),
-              queues: this.options.queues,
-              metrics,
-              ...(monitorOptions.extraInfo || {}),
-            },
-            monitorPrefix
-          )
-        }
-      } catch (_e) {
-        // Ignore heartbeat errors
-      }
-    }, interval)
-  }
-
-  private stopHeartbeat() {
-    if (this.heartbeatTimer) {
-      clearInterval(this.heartbeatTimer)
-      this.heartbeatTimer = null
-    }
-  }
-
-  /**
-   * 清理閒置的 group limiters。
-   *
-   * 定期檢查並移除超過 TTL 且沒有 active/pending jobs 的 group limiters，
-   * 避免記憶體洩漏。
-   */
-  private cleanupGroupLimiters(): void {
-    const now = Date.now()
-    const groupsToDelete: string[] = []
-
-    for (const [groupId, lastUsed] of this.groupLimiterLastUsed.entries()) {
-      const limiter = this.groupLimiters.get(groupId)
-      if (!limiter) {
-        // Limiter 已被刪除，清理追蹤記錄
-        groupsToDelete.push(groupId)
-        continue
-      }
-
-      // 檢查是否超過 TTL 且沒有 active/pending jobs
-      if (
-        now - lastUsed > Consumer.GROUP_LIMITER_TTL &&
-        limiter.activeCount === 0 &&
-        limiter.pendingCount === 0
-      ) {
-        this.groupLimiters.delete(groupId)
-        groupsToDelete.push(groupId)
-        this.log(`Cleaned up inactive group limiter: ${groupId}`)
-      }
-    }
-
-    // 批次刪除追蹤記錄
-    for (const groupId of groupsToDelete) {
-      this.groupLimiterLastUsed.delete(groupId)
-    }
-  }
-
-  /**
-   * 啟動 group limiter 清理計時器。
-   */
-  private startCleanupTimer(): void {
-    // 每 30 秒清理一次閒置的 group limiters
-    this.cleanupTimer = setInterval(() => {
-      this.cleanupGroupLimiters()
-    }, 30000)
-  }
-
-  /**
-   * 停止 group limiter 清理計時器。
-   */
-  private stopCleanupTimer(): void {
-    if (this.cleanupTimer) {
-      clearInterval(this.cleanupTimer)
-      this.cleanupTimer = null
-    }
-  }
-
-  private async publishLog(level: string, message: string, jobId?: string) {
-    try {
-      const driver = this.queueManager.getDriver(this.connectionName)
-      if (driver.publishLog) {
-        const monitorPrefix =
-          typeof this.options.monitor === 'object' ? this.options.monitor.prefix : undefined
-        await driver.publishLog(
-          {
-            level,
-            message,
-            workerId: this.workerId,
-            jobId,
-            timestamp: new Date().toISOString(),
-          },
-          monitorPrefix
-        )
-      }
-    } catch (_e) {
-      // Ignore log errors
-    }
+    return this.streaming.start()
   }
 
   /**
    * Gracefully stops the consumer.
-   *
-   * Signals the consumer to stop accepting new jobs and waits for currently running jobs
-   * to complete.
-   *
-   * @returns A promise that resolves when the consumer has fully stopped.
    */
   async stop(): Promise<void> {
-    this.log('Stopping...')
-    this.stopRequested = true
-
-    // 立即停止清理計時器
-    this.stopCleanupTimer()
-
-    // Wait for current processing to finish
-    while (this.running) {
-      await new Promise((resolve) => setTimeout(resolve, 100))
-    }
+    return this.streaming.requestStop()
   }
 
   /**
    * Checks if the consumer is currently active.
-   *
-   * @returns True if the consumer loop is running.
    */
   isRunning(): boolean {
-    return this.running
+    return this.streaming.isRunning()
   }
 
   /**
    * Retrieves current operational statistics.
-   *
-   * @returns An object containing processed, failed, retried, and active job counts.
    */
-  getStats() {
-    return { ...this.stats }
+  getStats(): ConsumerStats {
+    return this.streaming.getStats()
   }
 
   /**
    * Resets the internal statistics counters.
    */
   resetStats(): void {
-    this.stats.processed = 0
-    this.stats.failed = 0
-    this.stats.retried = 0
+    this.streaming.resetStats()
   }
 }

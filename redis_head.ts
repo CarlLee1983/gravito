@@ -1,6 +1,4 @@
 import type { JobPushOptions, QueueStats, SerializedJob } from '../types'
-import { decodeBinaryJobFrame, encodeBinaryJobFrame, isGravitoJobFrame } from './BinaryJobFrame'
-import { prepareJobForTransport } from './prepareJobForTransport'
 import type { QueueDriver } from './QueueDriver'
 
 /**
@@ -26,31 +24,6 @@ export interface RedisClient {
   incr?(key: string): Promise<number>
   expire?(key: string, seconds: number): Promise<number>
   eval(script: string, numKeys: number, ...args: (string | number)[]): Promise<any>
-
-  /**
-   * Binary-capable RPOP（ioredis Buffer mode）
-   * 回傳 Buffer 而非 string，支援 binary frame 的零拷貝讀取
-   */
-  rpopBuffer?(key: string, count?: number): Promise<Buffer | Buffer[] | null>
-
-  /**
-   * Binary-capable BRPOP（ioredis Buffer mode）
-   * 支援 blocking pop 的 binary frame 讀取
-   */
-  brpopBuffer?(...args: any[]): Promise<[Buffer, Buffer] | null>
-
-  /**
-   * Binary-capable LRANGE（ioredis Buffer mode）
-   * 用於從 DLQ 讀取 binary frame
-   */
-  lrangeBuffer?(key: string, start: number, stop: number): Promise<Buffer[]>
-
-  /**
-   * Binary-capable LPUSH（接受 Buffer）
-   * 用於將 binary frame 寫入 Redis list
-   */
-  lpushBuffer?(key: string, ...values: Buffer[]): Promise<number>
-
   [key: string]: any
 }
 
@@ -101,10 +74,6 @@ export interface RedisDriverConfig {
  * and rate limiting. Uses Lua scripts for atomic operations and advanced features like
  * group-based sequential processing.
  *
- * 支援 binary frame 格式：
- * - push/pushMany：type === 'binary' 且 data instanceof Uint8Array 時，使用 BinaryJobFrame 格式
- * - pop/popMany：透過 magic byte 嗅探自動偵測格式（binary frame 或 JSON）
- *
  * @public
  * @example
  * ```typescript
@@ -126,7 +95,7 @@ export class RedisDriver implements QueueDriver {
     local pendingList = KEYS[3]
     local groupId = ARGV[1]
     local payload = ARGV[2]
-
+    
     if redis.call('SISMEMBER', activeSet, groupId) == 1 then
       return redis.call('RPUSH', pendingList, payload)
     else
@@ -144,7 +113,7 @@ export class RedisDriver implements QueueDriver {
     local activeSet = KEYS[2]
     local pendingList = KEYS[3]
     local groupId = ARGV[1]
-
+    
     local nextJob = redis.call('LPOP', pendingList)
     if nextJob then
       return redis.call('LPUSH', waitList, nextJob)
@@ -163,25 +132,25 @@ export class RedisDriver implements QueueDriver {
     local prefix = ARGV[1]
     local count = tonumber(ARGV[2])
     local now = tonumber(ARGV[3])
-
+    
     local priorities = {'critical', 'high', 'default', 'low'}
     local result = {}
-
+    
     for _, priority in ipairs(priorities) do
       if #result >= count then break end
-
+      
       local key = prefix .. queue
       if priority ~= 'default' then
         key = key .. ':' .. priority
       end
-
+      
       -- Check Delayed (Move to Ready if due)
       local delayKey = key .. ":delayed"
       -- Optimization: Only check delayed if we need more items
       -- Fetch up to (count - #result) delayed items
       local needed = count - #result
       local delayed = redis.call("ZRANGEBYSCORE", delayKey, 0, now, "LIMIT", 0, needed)
-
+      
       for _, job in ipairs(delayed) do
         redis.call("ZREM", delayKey, job)
         -- We return it directly, assuming we want to process it now.
@@ -189,7 +158,7 @@ export class RedisDriver implements QueueDriver {
         table.insert(result, job)
         needed = needed - 1
       end
-
+      
       if #result >= count then break end
 
       -- Check Paused
@@ -207,7 +176,7 @@ export class RedisDriver implements QueueDriver {
         end
       end
     end
-
+    
     return result
   `
 
@@ -249,102 +218,9 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * 判斷 job 是否應使用 binary frame 格式傳輸
-   *
-   * 當 type === 'binary' 且 data 為 Uint8Array 時啟用 binary path
-   */
-  private isBinaryJob(job: SerializedJob): boolean {
-    return job.type === 'binary' && job.data instanceof Uint8Array
-  }
-
-  /**
-   * 序列化 Job 為適合 Redis 儲存的格式
-   *
-   * Binary path：使用 BinaryJobFrame 格式（Uint8Array → Buffer）
-   * Legacy path：使用 JSON.stringify（string）
-   *
-   * @returns Buffer（binary path）或 string（legacy path）
-   */
-  private serializeJobForTransport(
-    job: SerializedJob,
-    groupId?: string
-  ): { isBinary: true; buffer: Buffer } | { isBinary: false; payload: string } {
-    // Binary path：job.type === 'binary' 且 data 是 Uint8Array
-    if (this.isBinaryJob(job)) {
-      // 若 groupId 來自 options，加入 job 中
-      const jobWithGroup = groupId ? { ...job, groupId } : job
-      const frame = encodeBinaryJobFrame(jobWithGroup)
-      return { isBinary: true, buffer: Buffer.from(frame) }
-    }
-
-    // Legacy path：JSON 序列化
-    const jobForTransport = prepareJobForTransport(job)
-    const payloadObj = {
-      id: jobForTransport.id,
-      type: jobForTransport.type,
-      data: jobForTransport.data,
-      className: job.className,
-      createdAt: job.createdAt,
-      delaySeconds: job.delaySeconds,
-      attempts: job.attempts,
-      maxAttempts: job.maxAttempts,
-      groupId: groupId ?? job.groupId,
-      error: job.error,
-      failedAt: job.failedAt,
-    }
-    return { isBinary: false, payload: JSON.stringify(payloadObj) }
-  }
-
-  /**
-   * 自動偵測並解析 Redis payload 格式
-   *
-   * 1. 若輸入為 Buffer/Uint8Array 且以 Magic bytes 開頭 → 使用 BinaryJobFrame 解碼
-   * 2. 否則 → 使用 JSON.parse（legacy path）
-   *
-   * @param payload - Redis 回傳的資料（string 或 Buffer）
-   * @returns 解析後的 SerializedJob
-   */
-  private parsePayloadAuto(payload: string | Buffer): SerializedJob {
-    // Binary frame 偵測：Buffer 類型且以 Magic bytes 開頭
-    if (Buffer.isBuffer(payload)) {
-      if (isGravitoJobFrame(payload)) {
-        return decodeBinaryJobFrame(payload)
-      }
-      // 非 binary frame 的 Buffer：嘗試轉為字串後 JSON 解析
-      return this.parseJsonPayload(payload.toString('utf8'))
-    }
-
-    // 字串類型：直接 JSON 解析
-    return this.parseJsonPayload(payload)
-  }
-
-  /**
-   * 解析 JSON 格式的 payload（legacy path）
-   */
-  private parseJsonPayload(payload: string): SerializedJob {
-    const parsed = JSON.parse(payload)
-    return {
-      id: parsed.id,
-      type: parsed.type,
-      data: parsed.data,
-      className: parsed.className,
-      createdAt: parsed.createdAt,
-      delaySeconds: parsed.delaySeconds,
-      attempts: parsed.attempts,
-      maxAttempts: parsed.maxAttempts,
-      groupId: parsed.groupId,
-      error: parsed.error,
-      failedAt: parsed.failedAt,
-      priority: parsed.priority,
-    }
-  }
-
-  /**
    * Pushes a job to Redis.
    *
-   * 支援 binary path 和 legacy path：
-   * - Binary path：job.type === 'binary' 且 data instanceof Uint8Array → 使用 BinaryJobFrame
-   * - Legacy path：其他格式 → 使用 JSON.stringify
+   * Handles regular jobs (LPUSH), delayed jobs (ZADD), and grouped jobs (custom Lua logic).
    *
    * @param queue - The queue name.
    * @param job - The serialized job.
@@ -352,92 +228,57 @@ export class RedisDriver implements QueueDriver {
    */
   async push(queue: string, job: SerializedJob, options?: JobPushOptions): Promise<void> {
     const key = this.getKey(queue, options?.priority)
+    // Add groupId to payload if provided in options
     const groupId = options?.groupId
+
+    // Warning: Group FIFO logic doesn't currently support Priority Queues combined.
+    // If priority is used, we assume it's just a different list.
+    if (groupId && options?.priority) {
+      // For now, prioritize Priority over Group if both present?
+      // Actually, if we use separate lists for priority, the Group SISMEMBER logic fails
+      // because it checks a global active set but the job goes to a priority-specific pending list?
+      // Complicated. Let's assume standard usage for now.
+    }
+
+    const payloadObj = {
+      id: job.id,
+      type: job.type,
+      data: job.data,
+      className: job.className,
+      createdAt: job.createdAt,
+      delaySeconds: job.delaySeconds,
+      attempts: job.attempts,
+      maxAttempts: job.maxAttempts,
+      groupId: groupId,
+      error: job.error,
+      failedAt: job.failedAt,
+    }
+    const payload = JSON.stringify(payloadObj)
 
     if (typeof this.client.sadd === 'function') {
       await this.client.sadd(`${this.prefix}queues`, queue)
     }
 
-    // Handle Group FIFO logic（只支援 legacy path，因為 Lua script 接受 string）
+    // Handle Group FIFO logic
     if (groupId && typeof this.client.pushGroupJob === 'function') {
+      // We use a global active set per queue? No, maybe structure per group?
+      // Let's use:
+      // activeSet: prefix:active (Set of groupIds)
+      // pendingList: prefix:pending:{groupId}
+
       const activeSetKey = `${this.prefix}active`
       const pendingListKey = `${this.prefix}pending:${groupId}`
 
-      // Group FIFO 目前只支援 JSON（Lua script 接受 string payload）
-      // Binary job 若有 groupId，改走一般 binary push（不使用 Lua）
-      if (this.isBinaryJob(job)) {
-        const { buffer } = this.serializeJobForTransport(job, groupId) as {
-          isBinary: true
-          buffer: Buffer
-        }
-        // 使用 lpushBuffer 若可用，否則用一般 lpush（string）
-        if (typeof this.client.lpushBuffer === 'function') {
-          await this.client.lpushBuffer(key, buffer)
-        } else {
-          // 降級：binary frame 轉為 base64 string 存入 JSON
-          const base64 = buffer.toString('base64')
-          const legacyPayload = JSON.stringify({
-            __binaryFrame: true,
-            data: base64,
-          })
-          await this.client.lpush(key, legacyPayload)
-        }
-        return
-      }
-
-      // Legacy path 走 Lua
-      const { payload } = this.serializeJobForTransport(job, groupId) as {
-        isBinary: false
-        payload: string
-      }
+      // Using ioredis custom command
       await this.client.pushGroupJob(key, activeSetKey, pendingListKey, groupId, payload)
       return
     }
-
-    // Binary path：直接 push Buffer
-    if (this.isBinaryJob(job)) {
-      const serialized = this.serializeJobForTransport(job, groupId)
-      if (serialized.isBinary) {
-        // For delayed binary jobs
-        if (job.delaySeconds && job.delaySeconds > 0) {
-          const delayKey = `${key}:delayed`
-          const score = Date.now() + job.delaySeconds * 1000
-          if (typeof this.client.zadd === 'function') {
-            // ZADD 不支援 Buffer，將 binary frame 轉為 base64 存入 ZSET member
-            await this.client.zadd(delayKey, score, serialized.buffer.toString('base64'))
-          } else {
-            if (typeof this.client.lpushBuffer === 'function') {
-              await this.client.lpushBuffer(key, serialized.buffer)
-            } else {
-              await this.client.lpush(key, serialized.buffer.toString('base64'))
-            }
-          }
-        } else {
-          if (typeof this.client.lpushBuffer === 'function') {
-            await this.client.lpushBuffer(key, serialized.buffer)
-          } else {
-            // 降級：以 base64 存入（decode 時需要特別處理）
-            await this.client.lpush(key, serialized.buffer.toString('base64'))
-          }
-        }
-        return
-      }
-    }
-
-    // Legacy path
-    const serialized = this.serializeJobForTransport(job, groupId)
-    if (serialized.isBinary) {
-      // 不應到達這裡，但作保護
-      await this.client.lpush(key, serialized.buffer.toString('base64'))
-      return
-    }
-
-    const payload = serialized.payload
 
     // For delayed jobs, prefer Sorted Sets (ZADD) when supported
     if (job.delaySeconds && job.delaySeconds > 0) {
       const delayKey = `${key}:delayed`
       const score = Date.now() + job.delaySeconds * 1000
+      // Store delayed job in ZSET
       if (typeof this.client.zadd === 'function') {
         await this.client.zadd(delayKey, score, payload)
       } else {
@@ -462,6 +303,9 @@ export class RedisDriver implements QueueDriver {
       return // Not a grouped job
     }
 
+    // Determine key based on job data? Or just use base queue?
+    // Theoretically if job was in priority queue, its key was different.
+    // However, complete() relies on internal knowledge.
     const key = this.getKey(queue)
     const activeSetKey = `${this.prefix}active`
     const pendingListKey = `${this.prefix}pending:${job.groupId}`
@@ -474,9 +318,8 @@ export class RedisDriver implements QueueDriver {
   /**
    * Pops a job from the queue.
    *
-   * 支援 binary frame 自動偵測：
-   * - 若 client 支援 rpopBuffer → 嘗試讀取 Buffer 並用 magic byte 判斷格式
-   * - 否則降級為 string rpop，使用 parsePayloadAuto 解析
+   * Checks priorities in order (critical -> high -> default -> low).
+   * Also checks for due delayed jobs and moves them to the active list.
    *
    * @param queue - The queue name.
    * @returns The job or `null`.
@@ -514,12 +357,14 @@ export class RedisDriver implements QueueDriver {
     `
 
     try {
+      // Use eval or registered script if available
       const result = await this.client.eval(script, keys.length, ...keys, Date.now().toString())
 
       if (result?.[1]) {
-        return this.parsePayloadAuto(result[1])
+        return this.parsePayload(result[1])
       }
-    } catch (_err) {
+    } catch (err) {
+      console.error('[RedisDriver] Lua pop error:', err)
       // Fallback to manual loop if script fails
       return this.popManualFallback(queue)
     }
@@ -529,8 +374,6 @@ export class RedisDriver implements QueueDriver {
 
   /**
    * Manual fallback for pop if Lua fails.
-   *
-   * 優先使用 rpopBuffer 取得 binary frame，否則降級為 string
    */
   private async popManualFallback(queue: string): Promise<SerializedJob | null> {
     const priorities = ['critical', 'high', undefined, 'low']
@@ -545,7 +388,7 @@ export class RedisDriver implements QueueDriver {
         if (score <= now) {
           const payload = delayedJobs[0]!
           await this.client.zrem?.(delayKey, payload)
-          return this.parsePayloadAuto(payload)
+          return this.parsePayload(payload)
         }
       }
 
@@ -554,17 +397,9 @@ export class RedisDriver implements QueueDriver {
         continue
       }
 
-      // 優先使用 rpopBuffer（支援 binary frame）
-      if (typeof this.client.rpopBuffer === 'function') {
-        const bufPayload = await this.client.rpopBuffer(key)
-        if (bufPayload) {
-          return this.parsePayloadAuto(bufPayload as Buffer)
-        }
-      } else {
-        const payload = await this.client.rpop(key)
-        if (payload) {
-          return this.parsePayloadAuto(payload as string)
-        }
+      const payload = await this.client.rpop(key)
+      if (payload) {
+        return this.parsePayload(payload as string)
       }
     }
     return null
@@ -573,7 +408,7 @@ export class RedisDriver implements QueueDriver {
   /**
    * Pops a job using blocking Redis commands (BRPOP).
    *
-   * 支援 brpopBuffer 取得 binary frame，否則降級為 string
+   * Efficiently waits for a job to arrive without polling.
    *
    * @param queues - The queues to listen to.
    * @param timeout - Timeout in seconds.
@@ -589,33 +424,43 @@ export class RedisDriver implements QueueDriver {
       }
     }
 
-    // 優先使用 brpopBuffer（支援 binary frame）
-    if (typeof this.client.brpopBuffer === 'function') {
-      try {
-        const result = await this.client.brpopBuffer(...keys, timeout)
-        if (result && Array.isArray(result) && result.length >= 2) {
-          return this.parsePayloadAuto(result[1])
-        }
-      } catch (_e) {
-        // Timeout or error
-      }
-      return null
-    }
-
     if (typeof this.client.brpop !== 'function') {
+      // Fallback: pop from first queue if multiple
       return this.pop(queueList[0]!)
     }
 
     try {
+      // ioredis/node-redis brpop returns [key, value]
       const result = await this.client.brpop(...keys, timeout)
       if (result && Array.isArray(result) && result.length >= 2) {
-        return this.parsePayloadAuto(result[1])
+        return this.parsePayload(result[1])
       }
     } catch (_e) {
       // Timeout or error
     }
 
     return null
+  }
+
+  /**
+   * Parse Redis payload.
+   */
+  private parsePayload(payload: string): SerializedJob {
+    const parsed = JSON.parse(payload)
+    return {
+      id: parsed.id,
+      type: parsed.type,
+      data: parsed.data,
+      className: parsed.className,
+      createdAt: parsed.createdAt,
+      delaySeconds: parsed.delaySeconds,
+      attempts: parsed.attempts,
+      maxAttempts: parsed.maxAttempts,
+      groupId: parsed.groupId,
+      error: parsed.error,
+      failedAt: parsed.failedAt,
+      priority: parsed.priority,
+    }
   }
 
   /**
@@ -631,37 +476,16 @@ export class RedisDriver implements QueueDriver {
   /**
    * Marks a job as permanently failed by moving it to a DLQ list.
    *
-   * 支援 binary path：binary job 使用 BinaryJobFrame 格式存入 DLQ
-   *
    * @param queue - The queue name.
    * @param job - The failed job.
    */
   async fail(queue: string, job: SerializedJob): Promise<void> {
     const key = `${this.getKey(queue)}:failed`
-    const failedJob: SerializedJob = { ...job, failedAt: Date.now() }
-
-    if (this.isBinaryJob(failedJob) && failedJob.data instanceof Uint8Array) {
-      // Binary path：使用 BinaryJobFrame 格式存入 DLQ
-      const frame = encodeBinaryJobFrame(failedJob)
-      const buffer = Buffer.from(frame)
-
-      if (typeof this.client.lpushBuffer === 'function') {
-        await this.client.lpushBuffer(key, buffer)
-      } else {
-        // 降級：以 base64 存入 legacy JSON 包裝
-        await this.client.lpush(
-          key,
-          JSON.stringify({
-            ...failedJob,
-            data: Buffer.from(failedJob.data).toString('base64'),
-          })
-        )
-      }
-    } else {
-      // Legacy path
-      const payload = JSON.stringify(failedJob)
-      await this.client.lpush(key, payload)
-    }
+    const payload = JSON.stringify({
+      ...job,
+      failedAt: Date.now(),
+    })
+    await this.client.lpush(key, payload)
 
     // Optional: Keep DLQ capped at 1000 items to avoid bloat
     if (typeof this.client.ltrim === 'function') {
@@ -682,12 +506,17 @@ export class RedisDriver implements QueueDriver {
     await this.client.del(key)
     if (this.client.del) {
       await this.client.del(delayKey)
+      // Also clear active set?
+      // Ideally we should scan and clear all pending lists too but that's expensive.
+      // For now just clear the active Set.
       await this.client.del(activeSetKey)
     }
   }
 
   /**
    * Retrieves full stats for the queue using Redis Pipelining.
+   *
+   * Aggregates counts from all priority lists and the DLQ.
    *
    * @param queue - The queue name.
    */
@@ -706,6 +535,7 @@ export class RedisDriver implements QueueDriver {
     }
 
     try {
+      // Use pipeline if available (ioredis)
       if (typeof this.client.pipeline === 'function') {
         const pipe = this.client.pipeline()
         for (const key of keys) {
@@ -725,14 +555,15 @@ export class RedisDriver implements QueueDriver {
           stats.failed = (results[i][1] as number) || 0
         }
       } else {
+        // Fallback for node-redis or others
         for (const key of keys) {
           stats.size += (await this.client.llen?.(key)) || 0
           stats.delayed! += (await this.client.zcard?.(`${key}:delayed`)) || 0
         }
         stats.failed = (await this.client.llen?.(`${this.getKey(queue)}:failed`)) || 0
       }
-    } catch (_err) {
-      // Stats 失敗不影響主流程
+    } catch (err) {
+      console.error('[RedisDriver] Failed to get stats:', err)
     }
 
     return stats
@@ -741,8 +572,7 @@ export class RedisDriver implements QueueDriver {
   /**
    * Pushes multiple jobs to the queue.
    *
-   * 批次 push 支援 binary path 和 legacy path 混合使用。
-   * 對於含有 binary job 的批次，透過 pipeline 分批處理。
+   * Uses pipeline for batch efficiency. Falls back to individual pushes if complex logic (groups/priority) is involved.
    *
    * @param queue - The queue name.
    * @param jobs - Array of jobs.
@@ -752,10 +582,13 @@ export class RedisDriver implements QueueDriver {
       return
     }
 
+    // If any job has groupId, we must fall back to one-by-one to respect Lua logic
+    // If any job has priority, we must fall back to one-by-one to respect strict separate-list routing
     const hasGroup = jobs.some((j) => j.groupId)
-    const hasPriority = jobs.some((j) => (j as any).priority)
+    const hasPriority = jobs.some((j) => (j as any).priority) // SerializedJob needs priority type update too
 
     if (hasGroup || hasPriority) {
+      // Use pipeline if available (ioredis)
       if (typeof this.client.pipeline === 'function') {
         const pipe = this.client.pipeline()
         for (const job of jobs) {
@@ -763,54 +596,27 @@ export class RedisDriver implements QueueDriver {
           const key = this.getKey(queue, priority)
           const groupId = job.groupId
 
-          if (this.isBinaryJob(job)) {
-            // Binary path：使用 BinaryJobFrame
-            const jobWithGroup = groupId ? { ...job, groupId } : job
-            const frame = encodeBinaryJobFrame(jobWithGroup)
-            const buffer = Buffer.from(frame)
+          const payload = JSON.stringify({
+            id: job.id,
+            type: job.type,
+            data: job.data,
+            className: job.className,
+            createdAt: job.createdAt,
+            delaySeconds: job.delaySeconds,
+            attempts: job.attempts,
+            maxAttempts: job.maxAttempts,
+            groupId: groupId,
+            priority: priority,
+            error: job.error,
+            failedAt: job.failedAt,
+          })
 
-            if (groupId) {
-              // Binary group job 不走 Lua，直接 lpush
-              // 注意：這會破壞嚴格 FIFO，但這是 binary group job 的限制
-              if (typeof pipe.lpushBuffer === 'function') {
-                pipe.lpushBuffer(key, buffer)
-              } else {
-                pipe.lpush(key, buffer.toString('base64'))
-              }
-            } else {
-              if (job.delaySeconds && job.delaySeconds > 0) {
-                const delayKey = `${key}:delayed`
-                const score = Date.now() + job.delaySeconds * 1000
-                pipe.zadd(delayKey, score, buffer.toString('base64'))
-              } else if (typeof pipe.lpushBuffer === 'function') {
-                pipe.lpushBuffer(key, buffer)
-              } else {
-                pipe.lpush(key, buffer.toString('base64'))
-              }
-            }
+          if (groupId) {
+            const activeSetKey = `${this.prefix}active`
+            const pendingListKey = `${this.prefix}pending:${groupId}`
+            pipe.pushGroupJob(key, activeSetKey, pendingListKey, groupId, payload)
           } else {
-            // Legacy path
-            const jobForTransport = prepareJobForTransport(job)
-            const payload = JSON.stringify({
-              id: jobForTransport.id,
-              type: jobForTransport.type,
-              data: jobForTransport.data,
-              className: job.className,
-              createdAt: job.createdAt,
-              delaySeconds: job.delaySeconds,
-              attempts: job.attempts,
-              maxAttempts: job.maxAttempts,
-              groupId: groupId,
-              priority: priority,
-              error: job.error,
-              failedAt: job.failedAt,
-            })
-
-            if (groupId && typeof pipe.pushGroupJob === 'function') {
-              const activeSetKey = `${this.prefix}active`
-              const pendingListKey = `${this.prefix}pending:${groupId}`
-              pipe.pushGroupJob(key, activeSetKey, pendingListKey, groupId, payload)
-            } else if (job.delaySeconds && job.delaySeconds > 0) {
+            if (job.delaySeconds && job.delaySeconds > 0) {
               const delayKey = `${key}:delayed`
               const score = Date.now() + job.delaySeconds * 1000
               pipe.zadd(delayKey, score, payload)
@@ -833,53 +639,29 @@ export class RedisDriver implements QueueDriver {
       return
     }
 
-    // 簡單批次（無 group 和 priority）
     const key = this.getKey(queue)
-
-    // 分離 binary 和 legacy jobs
-    const binaryJobs = jobs.filter((j) => this.isBinaryJob(j))
-    const legacyJobs = jobs.filter((j) => !this.isBinaryJob(j))
-
-    // Binary jobs：逐一 push（因為需要 Buffer API）
-    if (binaryJobs.length > 0) {
-      if (typeof this.client.lpushBuffer === 'function') {
-        const buffers = binaryJobs.map((j) => Buffer.from(encodeBinaryJobFrame(j)))
-        await this.client.lpushBuffer(key, ...buffers)
-      } else {
-        // 降級：sequential push
-        for (const job of binaryJobs) {
-          const frame = encodeBinaryJobFrame(job)
-          await this.client.lpush(key, Buffer.from(frame).toString('base64'))
-        }
-      }
-    }
-
-    // Legacy jobs：batch push
-    if (legacyJobs.length > 0) {
-      const payloads = legacyJobs.map((job) => {
-        const jobForTransport = prepareJobForTransport(job)
-        return JSON.stringify({
-          id: jobForTransport.id,
-          type: jobForTransport.type,
-          data: jobForTransport.data,
-          className: job.className,
-          createdAt: job.createdAt,
-          delaySeconds: job.delaySeconds,
-          attempts: job.attempts,
-          maxAttempts: job.maxAttempts,
-          groupId: job.groupId,
-          priority: (job as any).priority,
-        })
+    const payloads = jobs.map((job) =>
+      JSON.stringify({
+        id: job.id,
+        type: job.type,
+        data: job.data,
+        className: job.className,
+        createdAt: job.createdAt,
+        delaySeconds: job.delaySeconds,
+        attempts: job.attempts,
+        maxAttempts: job.maxAttempts,
+        groupId: job.groupId,
+        priority: (job as any).priority,
       })
+    )
 
-      await this.client.lpush(key, ...payloads)
-    }
+    await this.client.lpush(key, ...payloads)
   }
 
   /**
    * Pops multiple jobs from the queue.
    *
-   * 支援 binary frame 自動偵測格式。
+   * Uses a Lua script for atomic retrieval across priorities.
    *
    * @param queue - The queue name.
    * @param count - Max jobs to pop.
@@ -889,6 +671,7 @@ export class RedisDriver implements QueueDriver {
       return []
     }
 
+    // If we only need 1, use the optimized pop() which handles priorities and scripts correctly
     if (count === 1) {
       const job = await this.pop(queue)
       return job ? [job] : []
@@ -899,12 +682,19 @@ export class RedisDriver implements QueueDriver {
       try {
         const result = await this.client.popMany(queue, this.prefix, count, Date.now().toString())
         if (Array.isArray(result) && result.length > 0) {
-          return result.map((p: string) => this.parsePayloadAuto(p))
+          return result.map((p: string) => this.parsePayload(p))
+        } else if (Array.isArray(result) && result.length === 0) {
+          // Script returned empty array
+        } else {
+          // Fallback if result is weird
         }
+        // If we got results (even partial), return them.
+        // If we got empty array, it means nothing found.
         if (Array.isArray(result)) {
-          return result.map((p: string) => this.parsePayloadAuto(p))
+          return result.map((p: string) => this.parsePayload(p))
         }
-      } catch (_err) {
+      } catch (err) {
+        console.error('[RedisDriver] Lua popMany error:', err)
         // Fallback to manual loop
       }
     }
@@ -920,48 +710,46 @@ export class RedisDriver implements QueueDriver {
 
       const key = this.getKey(queue, priority === 'default' ? undefined : priority)
 
+      // Note: popMany strictly pulls from ready lists (RPOP).
+      // It DOES NOT check ZSET delayed jobs or Paused state for performance.
+      // Use standard pop() if those features are critical for every job.
+      // However, usually delayed jobs move to ready list via scheduler/worker.
+      // If the queue is paused, popMany() might still return jobs from the list unless we check.
+
+      // Check pause state once per priority key?
       const isPaused = await this.client.get?.(`${key}:paused`)
       if (isPaused === '1') {
         continue
       }
 
-      let fetched: Array<string | Buffer> = []
+      let fetched: string[] = []
 
-      // 優先使用 rpopBuffer（支援 binary frame）
-      if (typeof this.client.rpopBuffer === 'function') {
-        try {
-          const reply = await this.client.rpopBuffer(key, remaining)
-          if (reply) {
-            fetched = Array.isArray(reply) ? reply : [reply]
-          }
-        } catch (_e) {
-          // Fallback
+      // Try RPOP with count (Redis 6.2+)
+      try {
+        const reply = await this.client.rpop(key, remaining)
+        if (reply) {
+          fetched = Array.isArray(reply) ? reply : [reply]
         }
-      } else {
-        // 一般 string rpop
-        try {
-          const reply = await this.client.rpop(key, remaining)
-          if (reply) {
-            fetched = Array.isArray(reply) ? reply : [reply]
+      } catch (_e) {
+        // Fallback: Pipeline RPOP
+        if (typeof this.client.pipeline === 'function') {
+          const pipeline = this.client.pipeline()
+          for (let i = 0; i < remaining; i++) {
+            pipeline.rpop(key)
           }
-        } catch (_e) {
-          if (typeof this.client.pipeline === 'function') {
-            const pipeline = this.client.pipeline()
-            for (let i = 0; i < remaining; i++) {
-              pipeline.rpop(key)
-            }
-            const replies = await pipeline.exec()
-            if (replies) {
-              fetched = replies.map((r: any) => r[1]).filter((r: any) => r !== null)
-            }
-          } else {
-            for (let i = 0; i < remaining; i++) {
-              const res = await this.client.rpop(key)
-              if (res) {
-                fetched.push(res as string)
-              } else {
-                break
-              }
+          const replies = await pipeline.exec()
+          // replies is [[err, result], [err, result]...]
+          if (replies) {
+            fetched = replies.map((r: any) => r[1]).filter((r: any) => r !== null) as string[]
+          }
+        } else {
+          // Fallback: Serial loop (worst case)
+          for (let i = 0; i < remaining; i++) {
+            const res = await this.client.rpop(key)
+            if (res) {
+              fetched.push(res as string)
+            } else {
+              break
             }
           }
         }
@@ -970,9 +758,9 @@ export class RedisDriver implements QueueDriver {
       if (fetched.length > 0) {
         for (const payload of fetched) {
           try {
-            results.push(this.parsePayloadAuto(payload as string | Buffer))
-          } catch (_e) {
-            // 解析失敗的 payload 略過
+            results.push(this.parsePayload(payload))
+          } catch (e) {
+            console.error('[RedisDriver] Failed to parse job payload:', e)
           }
         }
         remaining -= fetched.length
@@ -984,9 +772,12 @@ export class RedisDriver implements QueueDriver {
 
   /**
    * Reports a worker heartbeat.
+   *
+   * Stores worker metadata in a key with an expiration (TTL).
    */
   async reportHeartbeat(workerInfo: any, prefix?: string): Promise<void> {
     const key = `${prefix ?? this.prefix}worker:${workerInfo.id}`
+    // Support ioredis/node-redis style SET with EX
     if (typeof this.client.set === 'function') {
       await this.client.set(key, JSON.stringify(workerInfo), 'EX', 10)
     }
@@ -994,15 +785,19 @@ export class RedisDriver implements QueueDriver {
 
   /**
    * Publishes monitoring logs.
+   *
+   * Uses Redis Pub/Sub for real-time logs and a capped List for history.
    */
   async publishLog(logPayload: any, prefix?: string): Promise<void> {
     const payload = JSON.stringify(logPayload)
     const monitorPrefix = prefix ?? this.prefix
 
+    // 1. PubSub
     if (typeof this.client.publish === 'function') {
       await this.client.publish(`${monitorPrefix}logs`, payload)
     }
 
+    // 2. History (Capped List)
     const historyKey = `${monitorPrefix}logs:history`
     if (typeof this.client.pipeline === 'function') {
       const pipe = this.client.pipeline()
@@ -1016,29 +811,36 @@ export class RedisDriver implements QueueDriver {
 
   /**
    * Checks the rate limit for a queue.
+   *
+   * Uses a simple Fixed Window counter (INCR + EXPIRE).
+   *
+   * @param queue - The queue name.
+   * @param config - Rate limit rules.
    */
   async checkRateLimit(queue: string, config: { max: number; duration: number }): Promise<boolean> {
     const key = `${this.prefix}${queue}:ratelimit`
     const now = Date.now()
     const windowStart = Math.floor(now / config.duration)
+
+    // Using a Lua script for atomicity would be better, but simple INCR+EXPIRE is okay for soft limits
+    // Key format: queue:ratelimit:{windowStart}
     const windowKey = `${key}:${windowStart}`
 
     const client = this.client
     if (typeof client.incr === 'function') {
       const current = await client.incr(windowKey)
       if (current === 1 && client.expire) {
+        // Set expiry for slightly more than duration to handle clock drift
         await client.expire(windowKey, Math.ceil(config.duration / 1000) + 1)
       }
       return current <= config.max
     }
 
-    return true
+    return true // Fallback if INCR not supported
   }
 
   /**
    * Retrieves failed jobs from the DLQ.
-   *
-   * 支援 lrangeBuffer 讀取 binary frame，否則降級為 string lrange
    *
    * @param queue - The queue name.
    * @param start - Start index.
@@ -1046,22 +848,17 @@ export class RedisDriver implements QueueDriver {
    */
   async getFailed(queue: string, start = 0, end = -1): Promise<SerializedJob[]> {
     const key = `${this.getKey(queue)}:failed`
-
-    // 優先使用 lrangeBuffer（支援 binary frame）
-    if (typeof this.client.lrangeBuffer === 'function') {
-      const payloads = await this.client.lrangeBuffer(key, start, end)
-      return payloads.map((p: Buffer) => this.parsePayloadAuto(p))
-    }
-
     if (typeof this.client.lrange !== 'function') {
       return []
     }
     const payloads = await this.client.lrange(key, start, end)
-    return payloads.map((p: string) => this.parsePayloadAuto(p))
+    return payloads.map((p: string) => this.parsePayload(p))
   }
 
   /**
    * Retries failed jobs.
+   *
+   * Pops from DLQ and pushes back to the active queue (RPOPLPUSH equivalent logic).
    *
    * @param queue - The queue name.
    * @param count - Jobs to retry.
@@ -1071,35 +868,32 @@ export class RedisDriver implements QueueDriver {
     let retried = 0
 
     for (let i = 0; i < count; i++) {
+      // RPOPLPUSH source destination
+      // We pop from the RIGHT (assuming failures are pushed to LEFT, so oldest are on RIGHT)
       if (typeof this.client.rpop !== 'function') {
         break
       }
-
-      let job: SerializedJob | null = null
-
-      // 優先使用 rpopBuffer（支援 binary frame）
-      if (typeof this.client.rpopBuffer === 'function') {
-        const bufPayload = await this.client.rpopBuffer(failedKey)
-        if (!bufPayload) break
-        job = this.parsePayloadAuto(bufPayload as Buffer)
-      } else {
-        const payload = await this.client.rpop(failedKey)
-        if (!payload) break
-        job = this.parsePayloadAuto(payload as string)
+      const payload = await this.client.rpop(failedKey)
+      if (!payload) {
+        break
       }
+
+      // We should ideally update attempts/error fields before pushing back.
+      // But standard RPOPLPUSH doesn't allow modification.
+      // So we RPOP, Modify, LPUSH.
+      // Limitation: Not atomic if process crashes in between.
+      // But acceptable for this "Manual Retry" operation.
+
+      const job: SerializedJob = this.parsePayload(payload as string)
 
       // Reset attempts and error
-      const resetJob: SerializedJob = {
-        ...job,
-        attempts: 0,
-      }
-      delete resetJob.error
-      delete resetJob.failedAt
+      job.attempts = 0
+      delete job.error
+      delete job.failedAt
+      delete (job as any).priority // Clean priority if sticking to default? Or keep it?
 
-      await this.push(queue, resetJob, {
-        priority: (resetJob as any).priority,
-        groupId: resetJob.groupId,
-      })
+      // Note: Original code kept priority. Re-using existing push logic.
+      await this.push(queue, job, { priority: (job as any).priority, groupId: job.groupId })
       retried++
     }
 
