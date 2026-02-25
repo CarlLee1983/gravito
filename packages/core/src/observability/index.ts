@@ -35,6 +35,15 @@ export {
   type TracingConfig as OtelTracingConfig,
   type TracingExporter,
 } from '../instrumentation'
+// Abstract observability contracts (Phase 2.2)
+export {
+  createNoOpObservabilityProvider,
+  type EventMetricsRecorder,
+  type EventTracingProvider,
+  type ObservabilityProvider,
+  type TracingSpan,
+  type WorkerMetricsProvider,
+} from './contracts'
 export {
   type EventMetricsDefinition,
   getEventMetricsDefinition,

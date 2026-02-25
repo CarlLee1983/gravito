@@ -59,8 +59,13 @@ export { getCompressionAdapter } from './compression'
 
 // ============ Deep Equals Exports ============
 
-export { getDeepEquals } from './deep-equals'
 export type { DeepEqualsFn, DeepEqualsOptions } from './deep-equals'
+export { getDeepEquals } from './deep-equals'
+
+// ============ Escape Exports ============
+
+export type { EscapeHtmlFn } from './escape'
+export { getEscapeHtml } from './escape'
 
 // ============ Runtime Adapter Singleton ============
 
