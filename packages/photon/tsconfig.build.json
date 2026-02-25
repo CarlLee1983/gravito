@@ -5,17 +5,29 @@
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "outDir": "./dist",
-    "rootDir": "./src",
     "declaration": true,
     "emitDeclarationOnly": true,
     "skipLibCheck": true,
-    "types": ["bun-types"],
+    "types": [
+      "bun-types"
+    ],
     "paths": {
-      "@gravito/photon": ["./src/index.ts"],
-      "@gravito/photon/*": ["./src/*"],
-      "hono/*": ["../../node_modules/hono/dist/types/*"]
+      "@gravito/photon": [
+        "./src/index.ts"
+      ],
+      "@gravito/photon/*": [
+        "./src/*"
+      ],
+      "hono/*": [
+        "../../node_modules/hono/dist/types/*"
+      ]
     }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }
