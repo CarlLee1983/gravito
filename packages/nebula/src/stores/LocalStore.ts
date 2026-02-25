@@ -1,6 +1,5 @@
-import { mkdir } from 'node:fs/promises'
 import { isAbsolute, normalize, resolve, sep } from 'node:path'
-import { getRuntimeAdapter } from '@gravito/core'
+import { getRuntimeAdapter, runtimeMkdir } from '@gravito/core'
 import type { PutOptions, StorageItem, StorageMetadata, StorageStore } from '../store'
 
 /**
@@ -252,7 +251,7 @@ export class LocalStore implements StorageStore {
   private async ensureDirectory(filePath: string): Promise<void> {
     const dir = filePath.substring(0, filePath.lastIndexOf(sep))
     if (dir && dir !== this.rootDir) {
-      await mkdir(dir, { recursive: true })
+      await runtimeMkdir(this.runtime, dir, { recursive: true })
     }
   }
 

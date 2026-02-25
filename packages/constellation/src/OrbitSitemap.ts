@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto'
 import type { GravitoContext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { IncrementalGenerator } from './core/IncrementalGenerator'
 import { ProgressTracker } from './core/ProgressTracker'
@@ -379,7 +378,7 @@ export class OrbitSitemap implements GravitoOrbit {
     }
 
     const opts = this.options as StaticSitemapOptions
-    const jobId = randomUUID()
+    const jobId = crypto.randomUUID()
 
     let storage = opts.storage
     if (!storage) {

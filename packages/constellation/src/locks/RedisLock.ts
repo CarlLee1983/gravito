@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto'
 import type { SitemapLock } from '../types'
 
 /**
@@ -193,7 +192,7 @@ export class RedisLock implements SitemapLock {
    * UUIDs are sufficiently random to prevent lock hijacking across instances.
    * However, they are stored in plain text in Redis (not encrypted).
    */
-  private lockId = randomUUID()
+  private lockId = crypto.randomUUID()
 
   /**
    * Redis key prefix for all locks acquired through this instance.

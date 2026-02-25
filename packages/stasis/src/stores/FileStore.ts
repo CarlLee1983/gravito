@@ -1,5 +1,3 @@
-import { createHash, randomUUID } from 'node:crypto'
-import { open, rmdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import {
   getRuntimeAdapter,
@@ -10,6 +8,7 @@ import {
   runtimeRemoveRecursive,
   runtimeRename,
   runtimeStatFull,
+  runtimeWriteFileExclusive,
 } from '@gravito/core'
 import { type CacheLock, LockTimeoutError, sleep } from '../locks'
 import type { CacheStore } from '../store'
@@ -179,11 +178,11 @@ export class FileStore implements CacheStore {
         const fullPath = join(dir, entry.name)
         if (entry.isDirectory) {
           await scanDir(fullPath)
-          // 掃描後嘗試移除空目錄（僅限空目錄，非遞迴）
-          // rmdir 在目錄非空時會拋出錯誤，自然忽略
+          // 掃描後嘗試移除空目錄（只刪空目錄，非空則忽略）
           try {
+            const { rmdir } = await import('node:fs/promises')
             await rmdir(fullPath)
-          } catch {} // 非空目錄會忽略
+          } catch {} // 目錄非空時忽略
         } else if (entry.isFile) {
           if (!entry.name.endsWith('.json') || entry.name.startsWith('.lock-')) {
             continue
@@ -260,8 +259,8 @@ export class FileStore implements CacheStore {
    * @returns Absolute path to the JSON file representing the key.
    * @internal
    */
-  private filePathForKey(key: string): string {
-    const hashed = hashKey(key)
+  private async filePathForKey(key: string): Promise<string> {
+    const hashed = await hashKey(key)
     if (this.options.useSubdirectories) {
       // 2 層巢狀結構：ab/cd/hashedKey.json
       const d1 = hashed.substring(0, 2)
@@ -289,7 +288,7 @@ export class FileStore implements CacheStore {
     const normalized = normalizeCacheKey(key)
     // 讀取前先確保根目錄存在
     await this.ensureDir()
-    const file = this.filePathForKey(normalized)
+    const file = await this.filePathForKey(normalized)
 
     try {
       const raw = await runtimeReadText(this.runtime, file)
@@ -329,13 +328,13 @@ export class FileStore implements CacheStore {
       return
     }
 
-    const file = this.filePathForKey(normalized)
+    const file = await this.filePathForKey(normalized)
 
     if (this.options.useSubdirectories) {
       await runtimeMkdir(this.runtime, dirname(file), { recursive: true })
     }
 
-    const tempFile = `${file}.tmp.${Date.now()}.${randomUUID()}`
+    const tempFile = `${file}.tmp.${Date.now()}.${crypto.randomUUID()}`
     const payload: FileEntry = { expiresAt: expiresAt ?? null, value }
 
     try {
@@ -385,7 +384,7 @@ export class FileStore implements CacheStore {
   async forget(key: CacheKey): Promise<boolean> {
     const normalized = normalizeCacheKey(key)
     await this.ensureDir()
-    const file = this.filePathForKey(normalized)
+    const file = await this.filePathForKey(normalized)
     try {
       await runtimeRemoveRecursive(this.runtime, file)
       return true
@@ -469,7 +468,7 @@ export class FileStore implements CacheStore {
    */
   async ttl(key: CacheKey): Promise<number | null> {
     const normalized = normalizeCacheKey(key)
-    const file = this.filePathForKey(normalized)
+    const file = await this.filePathForKey(normalized)
 
     try {
       const raw = await runtimeReadText(this.runtime, file)
@@ -510,9 +509,9 @@ export class FileStore implements CacheStore {
    */
   lock(name: string, seconds = 10): CacheLock {
     const normalizedName = normalizeCacheKey(name)
-    const lockFile = join(this.options.directory, `.lock-${hashKey(normalizedName)}`)
+    const lockFile = join(this.options.directory, `.lock-${syncHashKey(normalizedName)}`)
     const ttlMillis = Math.max(1, seconds) * 1000
-    const owner = randomUUID()
+    const owner = crypto.randomUUID()
     // 保留 RuntimeAdapter 參照以供 lock 內部使用
     const runtime = this.runtime
 
@@ -528,16 +527,13 @@ export class FileStore implements CacheStore {
     const tryAcquire = async (): Promise<boolean> => {
       await this.ensureDir()
       try {
-        // 使用 node:fs/promises open(flag='wx') 實現原子性建鎖（POSIX 語義）
-        // RuntimeAdapter 尚未提供 exclusive create 語義，因此保留此用法
-        const handle = await open(lockFile, 'wx')
+        // 使用 runtimeWriteFileExclusive（wx flag 語義）實現原子性建鎖
         const lockData: LockFileEntry = {
           owner,
           expiresAt: Date.now() + ttlMillis,
           pid: process.pid,
         }
-        await handle.writeFile(JSON.stringify(lockData), 'utf8')
-        await handle.close()
+        await runtimeWriteFileExclusive(runtime, lockFile, JSON.stringify(lockData))
         return true
       } catch {
         try {
@@ -615,19 +611,35 @@ export class FileStore implements CacheStore {
 }
 
 /**
- * Generates a SHA-256 hash of a string key.
+ * Generates a SHA-256 hash of a string key using Web Crypto API.
  *
  * Used to create safe filenames and subdirectory structures.
  *
  * @param key - String to hash.
  * @returns Hex-encoded SHA-256 hash.
  * @internal
- *
- * @example
- * ```typescript
- * const hash = hashKey('my-secret-key');
- * ```
  */
-function hashKey(key: string): string {
-  return createHash('sha256').update(key).digest('hex')
+async function hashKey(key: string): Promise<string> {
+  const data = new TextEncoder().encode(key)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+/**
+ * Generates a simple hash for use in synchronous contexts (e.g., lock file names).
+ *
+ * Uses djb2 algorithm. Not cryptographically secure.
+ *
+ * @param key - String to hash.
+ * @returns Hex-encoded hash string.
+ * @internal
+ */
+function syncHashKey(key: string): string {
+  let hash = 5381
+  for (let i = 0; i < key.length; i++) {
+    hash = ((hash << 5) + hash) ^ key.charCodeAt(i)
+    hash = hash >>> 0
+  }
+  return hash.toString(16).padStart(8, '0')
 }

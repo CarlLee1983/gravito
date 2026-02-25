@@ -1,8 +1,8 @@
 import { createReadStream, createWriteStream } from 'node:fs'
-import fs from 'node:fs/promises'
 import path from 'node:path'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
+import { getRuntimeAdapter, runtimeMkdir, runtimeReadText } from '@gravito/core'
 import type { SitemapStorage, WriteStreamOptions } from '../types'
 import { createCompressionStream, toGzipFilename } from '../utils/Compression'
 
@@ -39,6 +39,8 @@ function sanitizeFilename(filename: string): string {
  * @since 3.0.0
  */
 export class DiskSitemapStorage implements SitemapStorage {
+  private runtime = getRuntimeAdapter()
+
   constructor(
     private outDir: string,
     private baseUrl: string
@@ -52,8 +54,8 @@ export class DiskSitemapStorage implements SitemapStorage {
    */
   async write(filename: string, content: string): Promise<void> {
     const safeName = sanitizeFilename(filename)
-    await fs.mkdir(this.outDir, { recursive: true })
-    await fs.writeFile(path.join(this.outDir, safeName), content)
+    await runtimeMkdir(this.runtime, this.outDir, { recursive: true })
+    await this.runtime.writeFile(path.join(this.outDir, safeName), content)
   }
 
   /**
@@ -72,7 +74,7 @@ export class DiskSitemapStorage implements SitemapStorage {
     options?: WriteStreamOptions
   ): Promise<void> {
     const safeName = sanitizeFilename(options?.compress ? toGzipFilename(filename) : filename)
-    await fs.mkdir(this.outDir, { recursive: true })
+    await runtimeMkdir(this.runtime, this.outDir, { recursive: true })
 
     const filePath = path.join(this.outDir, safeName)
     const writeStream = createWriteStream(filePath)
@@ -96,7 +98,7 @@ export class DiskSitemapStorage implements SitemapStorage {
   async read(filename: string): Promise<string | null> {
     try {
       const safeName = sanitizeFilename(filename)
-      return await fs.readFile(path.join(this.outDir, safeName), 'utf-8')
+      return await runtimeReadText(this.runtime, path.join(this.outDir, safeName))
     } catch {
       return null
     }
@@ -112,7 +114,9 @@ export class DiskSitemapStorage implements SitemapStorage {
     try {
       const safeName = sanitizeFilename(filename)
       const fullPath = path.join(this.outDir, safeName)
-      await fs.access(fullPath)
+      if (!(await this.runtime.exists(fullPath))) {
+        return null
+      }
 
       const stream = createReadStream(fullPath, { encoding: 'utf-8' })
       return stream as any as AsyncIterable<string>
@@ -128,13 +132,8 @@ export class DiskSitemapStorage implements SitemapStorage {
    * @returns A promise resolving to true if the file exists, false otherwise.
    */
   async exists(filename: string): Promise<boolean> {
-    try {
-      const safeName = sanitizeFilename(filename)
-      await fs.access(path.join(this.outDir, safeName))
-      return true
-    } catch {
-      return false
-    }
+    const safeName = sanitizeFilename(filename)
+    return this.runtime.exists(path.join(this.outDir, safeName))
   }
 
   /**

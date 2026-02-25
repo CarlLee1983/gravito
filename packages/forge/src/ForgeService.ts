@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto'
 import { getRuntimeAdapter } from '@gravito/core'
 import type { StorageProvider } from '@gravito/nebula'
 import { ImagePipeline } from './pipelines/ImagePipeline'
@@ -209,7 +208,7 @@ export class ForgeService {
       await DiskSpaceGuard.check(tempDir, this.minAvailableSpace)
     }
 
-    const jobId = randomUUID()
+    const jobId = crypto.randomUUID()
     const status = ProcessingStatusManager.create(jobId)
 
     await this.statusStore.set(status)
@@ -304,7 +303,7 @@ export class ForgeService {
    */
   private generateStorageKey(filename: string): string {
     const timestamp = Date.now()
-    const uuid = randomUUID().slice(0, 8)
+    const uuid = crypto.randomUUID().slice(0, 8)
     const ext = filename.split('.').pop() || 'bin'
     return `forge/${timestamp}-${uuid}.${ext}`
   }
