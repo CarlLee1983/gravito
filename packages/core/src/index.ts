@@ -87,11 +87,51 @@ export {
 } from './error-handling/RequestScopeErrorContext'
 // Event System
 export type {
+  BackpressureConfig,
+  BackpressureDecision,
+  BackpressureMetricsSnapshot,
+  BackpressureStrategy,
+  CircuitBreakerMetrics,
+  CircuitBreakerMetricsRecorder,
+  CircuitBreakerOptions,
+  DeadLetterDecision,
+  DLQEntry,
+  DLQEntryCallback,
+  DLQEntrySource,
+  DLQFilter,
   EventBackend,
   EventOptions,
+  EventQueueConfig,
   EventTask,
+  FlowControlContext,
+  FlowControlStrategy,
+  MultiPriorityQueueDepth,
+  PriorityStatistics,
+  RetrySchedulerConfig,
+  WindowAdjustment,
+  WorkerPoolConfig,
+  WorkerPoolStats,
+  WorkerStats,
 } from './events'
-export { DEFAULT_EVENT_OPTIONS } from './events'
+export {
+  BackpressureManager,
+  BackpressureState,
+  CircuitBreaker,
+  CircuitBreakerState,
+  CompositeStrategy,
+  DEFAULT_EVENT_OPTIONS,
+  DeadLetterQueue,
+  EventPriorityQueue,
+  IdempotencyCache,
+  PriorityEscalationManager,
+  PriorityRebalanceStrategy,
+  QueueDepthStrategy,
+  RateLimitStrategy,
+  RetryScheduler,
+  StarvationProtectionStrategy,
+  WorkerPool,
+  WorkerPoolMetrics,
+} from './events'
 // Event System Observability
 export type {
   EventTracingConfig,

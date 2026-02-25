@@ -5,7 +5,7 @@
  * 支持分佈式事件流：HookManager → Bull Queue → Worker → 完成/DLQ
  */
 
-import type { EventBackend, EventTask, HookManager } from '@gravito/core'
+import type { DeadLetterQueueManager, EventBackend, EventTask, HookManager } from '@gravito/core'
 import type { DeadLetterQueue } from '../dead-letter-queue/DeadLetterQueue'
 import type { WorkerPool } from '../worker/WorkerPool'
 

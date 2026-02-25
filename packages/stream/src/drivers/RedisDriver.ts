@@ -1004,7 +1004,7 @@ export class RedisDriver implements QueueDriver {
    * @param callback - Called when job arrives in queue.
    */
   async onNotify(
-    queues: string | string[],
+    _queues: string | string[],
     callback: (queue: string) => Promise<void>
   ): Promise<void> {
     if (!this.notificationsEnabled || !this.pubsubClient) {
