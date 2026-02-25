@@ -233,4 +233,48 @@ export interface QueueDriver {
    * @returns A list of queue names.
    */
   getQueues?(): Promise<string[]>
+
+  /**
+   * Registers a notification listener for when jobs arrive in a queue.
+   *
+   * Only sends the queue name as notification, not the job data itself.
+   * The consumer is responsible for pulling jobs from the queue.
+   * This enables reactive pull-based consumption with low latency.
+   *
+   * @param queues - One or more queue names to listen for notifications.
+   * @param callback - Called when a job arrives in any of the queues, with the queue name.
+   * @returns A promise that resolves when the listener is registered.
+   *
+   * @example
+   * ```typescript
+   * driver.onNotify(['emails', 'sms'], (queue) => {
+   *   console.log(`Job arrived in ${queue}`);
+   *   // Consumer will pull from this queue reactively
+   * });
+   * ```
+   */
+  onNotify?(
+    queues: string | string[],
+    callback: (queue: string) => Promise<void>
+  ): Promise<void>
+
+  /**
+   * Enables real-time notifications for job arrivals.
+   *
+   * Activates the notification mechanism so that `onNotify` callbacks are invoked.
+   * Called once during consumer startup.
+   *
+   * @returns A promise that resolves when notifications are enabled.
+   */
+  enableNotifications?(): Promise<void>
+
+  /**
+   * Disables real-time notifications for job arrivals.
+   *
+   * Stops the notification mechanism to prevent further `onNotify` callbacks.
+   * Called during consumer shutdown.
+   *
+   * @returns A promise that resolves when notifications are disabled.
+   */
+  disableNotifications?(): Promise<void>
 }

@@ -187,4 +187,25 @@ export class MemoryDriver implements QueueDriver {
       .filter((q) => !q.startsWith('failed:'))
       .sort()
   }
+
+  /**
+   * Stub: MemoryDriver doesn't support reactive notifications.
+   */
+  async enableNotifications(): Promise<void> {
+    // No-op for in-memory driver
+  }
+
+  /**
+   * Stub: MemoryDriver doesn't support reactive notifications.
+   */
+  async disableNotifications(): Promise<void> {
+    // No-op for in-memory driver
+  }
+
+  /**
+   * Stub: MemoryDriver doesn't support reactive notifications.
+   */
+  async onNotify(): Promise<void> {
+    // No-op for in-memory driver
+  }
 }

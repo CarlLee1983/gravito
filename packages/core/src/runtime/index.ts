@@ -57,6 +57,11 @@ export {
 
 export { getCompressionAdapter } from './compression'
 
+// ============ Deep Equals Exports ============
+
+export { getDeepEquals } from './deep-equals'
+export type { DeepEqualsFn, DeepEqualsOptions } from './deep-equals'
+
 // ============ Runtime Adapter Singleton ============
 
 let runtimeAdapter: RuntimeAdapter | null = null

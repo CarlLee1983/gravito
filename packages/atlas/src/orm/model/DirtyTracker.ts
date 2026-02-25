@@ -7,6 +7,9 @@
  *
  * @template T - The shape of the model attributes.
  */
+
+import { getDeepEquals } from '@gravito/core'
+
 export class DirtyTracker<T extends Record<string, unknown>> {
   /**
    * Stores the initial values as retrieved from the database.
@@ -144,8 +147,8 @@ export class DirtyTracker<T extends Record<string, unknown>> {
   /**
    * Compares two values for equality using optimized structural comparison.
    *
-   * Performs shallow comparison by default. Avoids JSON.stringify overhead
-   * by using recursive structural comparison for arrays, maps, and sets.
+   * Performs shallow comparison by default. When deep comparison is enabled,
+   * uses the optimized deep equality adapter from the runtime abstraction layer.
    *
    * @param a - First value.
    * @param b - Second value.
@@ -187,7 +190,8 @@ export class DirtyTracker<T extends Record<string, unknown>> {
         return false
       }
       if (this.useDeepComparison) {
-        return a.every((val, idx) => this.deepEqual(val, b[idx]))
+        const deepEquals = getDeepEquals()
+        return a.every((val, idx) => deepEquals(val, b[idx]))
       }
       return a.every((val, idx) => val === b[idx])
     }
@@ -197,8 +201,9 @@ export class DirtyTracker<T extends Record<string, unknown>> {
         return false
       }
       if (this.useDeepComparison) {
+        const deepEquals = getDeepEquals()
         for (const [key, val] of a) {
-          if (!b.has(key) || !this.deepEqual(val, b.get(key))) {
+          if (!b.has(key) || !deepEquals(val, b.get(key))) {
             return false
           }
         }
@@ -217,9 +222,10 @@ export class DirtyTracker<T extends Record<string, unknown>> {
         return false
       }
       if (this.useDeepComparison) {
+        const deepEquals = getDeepEquals()
         const arrA = Array.from(a)
         const arrB = Array.from(b)
-        return arrA.every((val) => arrB.some((bVal) => this.deepEqual(val, bVal)))
+        return arrA.every((val) => arrB.some((bVal) => deepEquals(val, bVal)))
       }
       for (const val of a) {
         if (!b.has(val)) {
@@ -237,10 +243,11 @@ export class DirtyTracker<T extends Record<string, unknown>> {
     }
 
     if (this.useDeepComparison) {
+      const deepEquals = getDeepEquals()
       return keysA.every((key) => {
         const valA = (a as Record<string, unknown>)[key]
         const valB = (b as Record<string, unknown>)[key]
-        return this.deepEqual(valA, valB)
+        return deepEquals(valA, valB)
       })
     }
 
@@ -248,91 +255,6 @@ export class DirtyTracker<T extends Record<string, unknown>> {
       const valA = (a as Record<string, unknown>)[key]
       const valB = (b as Record<string, unknown>)[key]
       return valA === valB
-    })
-  }
-
-  /**
-   * Performs deep equality comparison with cycle detection.
-   *
-   * @param a - First value.
-   * @param b - Second value.
-   * @param visited - Set tracking visited objects.
-   * @returns True if deeply equal.
-   * @internal
-   */
-  private deepEqual(a: unknown, b: unknown, visited: WeakSet<object> = new WeakSet()): boolean {
-    if (a === b) {
-      return true
-    }
-    if (a == null || b == null) {
-      return a === b
-    }
-
-    const typeA = typeof a
-    const typeB = typeof b
-    if (typeA !== typeB) {
-      return false
-    }
-
-    if (typeA !== 'object') {
-      return false
-    }
-
-    if (typeof a === 'object' && typeof b === 'object') {
-      if (visited.has(a as object) || visited.has(b as object)) {
-        return a === b
-      }
-      visited.add(a as object)
-      visited.add(b as object)
-    }
-
-    if (a instanceof Date && b instanceof Date) {
-      return a.getTime() === b.getTime()
-    }
-
-    if (a instanceof RegExp && b instanceof RegExp) {
-      return a.source === b.source && a.flags === b.flags
-    }
-
-    if (Array.isArray(a) && Array.isArray(b)) {
-      if (a.length !== b.length) {
-        return false
-      }
-      return a.every((val, idx) => this.deepEqual(val, b[idx], visited))
-    }
-
-    if (a instanceof Map && b instanceof Map) {
-      if (a.size !== b.size) {
-        return false
-      }
-      for (const [key, val] of a) {
-        if (!b.has(key) || !this.deepEqual(val, b.get(key), visited)) {
-          return false
-        }
-      }
-      return true
-    }
-
-    if (a instanceof Set && b instanceof Set) {
-      if (a.size !== b.size) {
-        return false
-      }
-      const arrA = Array.from(a)
-      const arrB = Array.from(b)
-      return arrA.every((val) => arrB.some((bVal) => this.deepEqual(val, bVal, visited)))
-    }
-
-    const keysA = Object.keys(a as object)
-    const keysB = Object.keys(b as object)
-
-    if (keysA.length !== keysB.length) {
-      return false
-    }
-
-    return keysA.every((key) => {
-      const valA = (a as Record<string, unknown>)[key]
-      const valB = (b as Record<string, unknown>)[key]
-      return this.deepEqual(valA, valB, visited)
     })
   }
 
