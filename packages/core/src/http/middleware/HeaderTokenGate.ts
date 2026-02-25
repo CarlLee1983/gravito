@@ -21,6 +21,8 @@ export type RequireHeaderTokenOptions = HeaderTokenGateOptions & {
 /**
  * Create a simple gate function to check a header token.
  * @public
+ * @deprecated Since v2.0.0. Use `@gravito/photon` middleware instead.
+ * Migration: `import { createHeaderGate } from '@gravito/photon/middleware/security'`
  */
 export function createHeaderGate(options: HeaderTokenGateOptions = {}) {
   const headerName = options.headerName ?? 'x-admin-token'
@@ -41,6 +43,8 @@ export function createHeaderGate(options: HeaderTokenGateOptions = {}) {
  * Middleware that enforces a specific token in request headers.
  * Useful for internal API authentication.
  * @public
+ * @deprecated Since v2.0.0. Use `@gravito/photon` middleware instead.
+ * Migration: `import { requireHeaderToken } from '@gravito/photon/middleware/security'`
  */
 export function requireHeaderToken(options: RequireHeaderTokenOptions = {}): GravitoMiddleware {
   const gate = createHeaderGate(options)

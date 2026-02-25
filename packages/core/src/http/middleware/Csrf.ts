@@ -71,6 +71,8 @@ function setCookieHeader(c: GravitoContext, name: string, value: string, options
 /**
  * Generate (or retrieve existing) CSRF token for the session.
  * @public
+ * @deprecated Since v2.0.0. Use `@gravito/photon` middleware instead.
+ * Migration: `import { getCsrfToken } from '@gravito/photon/middleware/security'`
  */
 export function getCsrfToken(c: GravitoContext, options: CsrfOptions = {}): string {
   const cookieName = options.cookieName ?? 'gravito_csrf'
@@ -95,6 +97,8 @@ export function getCsrfToken(c: GravitoContext, options: CsrfOptions = {}): stri
 /**
  * Middleware that validates CSRF tokens on unsafe requests.
  * @public
+ * @deprecated Since v2.0.0. Use `@gravito/photon` middleware instead.
+ * Migration: `import { csrfProtection } from '@gravito/photon/middleware/security'`
  */
 export function csrfProtection(options: CsrfOptions = {}): GravitoMiddleware {
   const cookieName = options.cookieName ?? 'gravito_csrf'

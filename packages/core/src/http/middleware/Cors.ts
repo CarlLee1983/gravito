@@ -39,6 +39,8 @@ function resolveOrigin(
 /**
  * Middleware handling Cross-Origin Resource Sharing (CORS).
  * @public
+ * @deprecated Since v2.0.0. Use `@gravito/photon` middleware instead.
+ * Migration: `import { cors } from '@gravito/photon/middleware/security'`
  */
 export function cors(options: CorsOptions = {}): GravitoMiddleware {
   const methods = (
