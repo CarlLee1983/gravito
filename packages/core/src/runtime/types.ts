@@ -104,6 +104,19 @@ export interface RuntimeServer {
 }
 
 /**
+ * Incremental file writing interface (FileSink abstraction)
+ * @public
+ */
+export interface RuntimeFileSink {
+  /** Write data to the file sink */
+  write(data: string | Uint8Array | ArrayBuffer): void
+  /** Flush buffered data to disk */
+  flush(): Promise<void>
+  /** Close the sink and flush remaining data */
+  end(): Promise<void>
+}
+
+/**
  * Abstraction layer for filesystem and process operations across runtimes.
  * @public
  */
@@ -122,6 +135,29 @@ export interface RuntimeAdapter {
   stat(path: string): Promise<RuntimeFileStat>
   deleteFile(path: string): Promise<void>
   serve(config: RuntimeServeConfig): RuntimeServer
+
+  /** Append data to a file (optional) */
+  appendFile?(path: string, data: string | Uint8Array): Promise<void>
+  /** Read file as UTF-8 text (optional) */
+  readFileAsText?(path: string): Promise<string>
+  /** Read and parse JSON file (optional) */
+  readFileAsJSON?<T = unknown>(path: string): Promise<T>
+  /** Create directory (optional) */
+  mkdir?(path: string, options?: { recursive?: boolean }): Promise<void>
+  /** Read directory contents (optional) */
+  readDir?(path: string): Promise<Array<{ name: string; isFile: boolean; isDirectory: boolean }>>
+  /** Get full file statistics including modification time (optional) */
+  statFull?(
+    path: string
+  ): Promise<{ size: number; mtimeMs: number; isFile: boolean; isDirectory: boolean }>
+  /** Rename/move a file (optional) */
+  rename?(oldPath: string, newPath: string): Promise<void>
+  /** Create an incremental file writer (FileSink) (optional) */
+  createFileSink?(path: string): RuntimeFileSink
+  /** Recursively remove a directory (optional) */
+  removeRecursive?(path: string): Promise<void>
+  /** Create/write a file exclusively (atomic) (optional) */
+  writeFileExclusive?(path: string, data: string | Uint8Array): Promise<void>
 }
 
 /**

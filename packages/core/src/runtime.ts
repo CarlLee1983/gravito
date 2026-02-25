@@ -27,6 +27,7 @@ export type {
   RuntimeAdapter,
   RuntimeArchiveAdapter,
   RuntimeCompressionAdapter,
+  RuntimeFileSink,
   RuntimeFileStat,
   RuntimeKind,
   RuntimeMarkdownAdapter,
@@ -62,4 +63,5 @@ export {
   // Detection
   getRuntimeEnv,
   getRuntimeKind,
+  toUint8Array,
 } from './runtime/index'

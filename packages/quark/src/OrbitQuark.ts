@@ -3,8 +3,8 @@
  * @module @gravito/quark/OrbitQuark
  */
 
-import type { Container } from '@gravito/core'
-import { OrbitModule } from '@gravito/core'
+import type { Container, PlanetCore } from '@gravito/core'
+import { ServiceProvider } from '@gravito/core'
 import { TcpClient } from './TcpClient'
 import { TcpServer } from './TcpServer'
 import type { TcpClientOptions, TcpServerConfig } from './types'
@@ -14,15 +14,15 @@ import type { TcpClientOptions, TcpServerConfig } from './types'
  *
  * Provides TCP Server and Client factories registered in the IoC container
  */
-export class OrbitQuark extends OrbitModule {
+export class OrbitQuark extends ServiceProvider {
   name = 'quark'
 
   /**
-   * Boot the Quark module
+   * Register the Quark module services
    *
    * Registers TCP Server and Client factories in the container
    */
-  async boot(container: Container): Promise<void> {
+  register(container: Container): void {
     // Register TCP Server factory
     container.singleton('tcp.server', () => {
       return (config: TcpServerConfig) => new TcpServer(config)
@@ -32,9 +32,13 @@ export class OrbitQuark extends OrbitModule {
     container.singleton('tcp.client', () => {
       return (config: TcpClientOptions) => new TcpClient(config)
     })
+  }
 
-    // Access logger from parent module if available
-    const logger = (this as any).logger
+  /**
+   * Boot the Quark module
+   */
+  async boot(core: PlanetCore): Promise<void> {
+    const logger = (core as any).logger
     if (logger) {
       logger.info('Quark TCP module booted', {
         services: ['tcp.server', 'tcp.client'],

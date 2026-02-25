@@ -4,7 +4,7 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ESNext"],
+    "lib": ["ESNext", "dom", "dom.iterable"],
     "types": ["bun-types"],
     "strict": true,
     "experimentalDecorators": true,

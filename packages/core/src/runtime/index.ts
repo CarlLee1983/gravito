@@ -30,6 +30,7 @@ export type {
   RuntimeAdapter,
   RuntimeArchiveAdapter,
   RuntimeCompressionAdapter,
+  RuntimeFileSink,
   RuntimeFileStat,
   RuntimeKind,
   RuntimeMarkdownAdapter,
@@ -161,4 +162,29 @@ export async function createSqliteDatabase(path: string): Promise<RuntimeSqliteD
   }
 
   throw new Error('[RuntimeAdapter] SQLite storage requires Bun runtime or a Node/Deno adapter')
+}
+
+/**
+ * Convert various data types to Uint8Array.
+ * @internal
+ */
+export async function toUint8Array(
+  data: Blob | Buffer | string | ArrayBuffer | Uint8Array
+): Promise<Uint8Array> {
+  if (data instanceof Uint8Array) {
+    return data
+  }
+  if (typeof data === 'string') {
+    return new TextEncoder().encode(data)
+  }
+  if (data instanceof ArrayBuffer) {
+    return new Uint8Array(data)
+  }
+  if (typeof Buffer !== 'undefined' && data instanceof Buffer) {
+    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
+  }
+  if (data instanceof Blob) {
+    return new Uint8Array(await data.arrayBuffer())
+  }
+  return new Uint8Array()
 }

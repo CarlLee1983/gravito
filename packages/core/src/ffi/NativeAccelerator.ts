@@ -5,7 +5,7 @@
  */
 
 import { CborFallbackEncoder } from './cbor-fallback'
-import type { CborAccelerator, FfiConfig, NativeAcceleratorStatus } from './types'
+import type { CborAccelerator, NativeAcceleratorStatus } from './types'
 
 /**
  * 原生加速器類別
