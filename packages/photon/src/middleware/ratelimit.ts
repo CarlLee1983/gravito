@@ -306,7 +306,8 @@ export function rateLimit(config: RateLimitConfig): MiddlewareHandler {
 
   return async (c: Context, next: Next): Promise<Response | undefined> => {
     if (skip && (await skip(c))) {
-      return await next()
+      await next()
+      return undefined
     }
 
     const key = await keyGenerator(c)
@@ -332,7 +333,8 @@ export function rateLimit(config: RateLimitConfig): MiddlewareHandler {
       return await onRateLimitExceeded(c, retryAfter)
     }
 
-    return await next()
+    await next()
+    return undefined
   }
 }
 

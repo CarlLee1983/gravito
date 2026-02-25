@@ -22,6 +22,7 @@ export type {
 export { KafkaNotifier } from './KafkaNotifier'
 export { MessageBuffer } from './MessageBuffer'
 export { OffsetTracker } from './OffsetTracker'
+export { PerformanceMonitor } from './PerformanceMonitor'
 export type {
   BufferedMessage,
   ConsumerLifecycleState,
