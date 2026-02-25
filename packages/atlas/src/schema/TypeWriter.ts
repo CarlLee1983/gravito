@@ -75,7 +75,7 @@ export class TypeWriter {
       for (const [col, tsType] of Object.entries(map.columns)) {
         const isNullable = tsType.includes('| null')
         const optionalMark = isNullable ? '?' : ''
-        const cleanType = isNullable ? tsType.replace(' | null', '') + ' | null' : tsType
+        const cleanType = isNullable ? `${tsType.replace(' | null', '')} | null` : tsType
         lines.push(`  ${col}${optionalMark}: ${cleanType}`)
       }
 

@@ -176,7 +176,7 @@ describe('OffsetTracker', () => {
     })
 
     it('should handle large offset numbers', () => {
-      tracker.track('test', 0, '9223372036854775807')
+      tracker.track('test', 0, '9223372036854775807') // Max Int64
       tracker.resolve('test', 0, '9223372036854775807')
 
       const committable = tracker.getCommittableOffsets()

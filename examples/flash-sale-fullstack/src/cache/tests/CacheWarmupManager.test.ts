@@ -4,7 +4,6 @@
 
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import { CacheWarmupManager } from '../CacheWarmupManager'
-import { HotProductTracker } from '../HotProductTracker'
 
 describe('CacheWarmupManager', () => {
   let manager: CacheWarmupManager

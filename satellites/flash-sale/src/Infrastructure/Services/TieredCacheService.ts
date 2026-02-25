@@ -96,7 +96,7 @@ class L2CacheStore {
     return this.increment(key, -value)
   }
 
-  async ttl(key: string): Promise<number | null> {
+  async ttl(_key: string): Promise<number | null> {
     return null
   }
 }

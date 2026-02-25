@@ -1,9 +1,10 @@
 import type { SerializedJob } from '../../types'
 
 /**
- * Kafka client factory interface (compatible with KafkaJS).
+ * Kafka 用戶端介面（與 KafkaJS 相容）。
  *
- * Defines the minimal API surface to allow any compatible Kafka client implementation.
+ * 定義驅動程式所需的最小 API 表面，
+ * 允許使用任何相容的 Kafka 用戶端實作。
  *
  * @public
  */
@@ -14,7 +15,7 @@ export interface KafkaClientFactory {
 }
 
 /**
- * Kafka Producer client interface.
+ * Kafka Producer 用戶端介面。
  *
  * @public
  */
@@ -33,7 +34,7 @@ export interface KafkaProducerClient {
 }
 
 /**
- * Kafka Admin client interface.
+ * Kafka Admin 用戶端介面。
  *
  * @public
  */
@@ -67,7 +68,7 @@ export interface KafkaAdminClient {
 }
 
 /**
- * Kafka Consumer client interface.
+ * Kafka Consumer 用戶端介面。
  *
  * @public
  */
@@ -107,7 +108,7 @@ export interface KafkaConsumerClient {
 }
 
 /**
- * Kafka message interface.
+ * Kafka 訊息介面。
  *
  * @public
  */
@@ -120,44 +121,44 @@ export interface KafkaMessage {
 }
 
 /**
- * Full Kafka driver configuration.
+ * 完整的 Kafka 驅動程式配置。
  *
  * @public
  */
 export interface KafkaDriverFullConfig {
-  /** Kafka client factory (KafkaJS compatible) */
+  /** Kafka 用戶端工廠（KafkaJS 相容） */
   client: KafkaClientFactory
 
   /** Consumer Group ID */
   consumerGroupId?: string
 
-  /** Message buffer size limit (per queue) */
+  /** 訊息緩衝區大小上限（每個 queue） */
   bufferSize?: number
 
-  /** pop() wait timeout (milliseconds) */
+  /** pop() 等待超時（毫秒） */
   popTimeout?: number
 
-  /** Auto-create topics */
+  /** 是否自動建立 topic */
   autoCreateTopics?: boolean
 
-  /** DLQ topic suffix */
+  /** DLQ topic 後綴 */
   dlqSuffix?: string
 
-  /** Auto-commit offsets */
+  /** 是否啟用自動 offset commit */
   autoCommit?: boolean
 
-  /** Auto-commit interval (milliseconds) */
+  /** 自動 commit 間隔（毫秒） */
   autoCommitInterval?: number
 
-  /** Max batch size per fetch */
+  /** 每次 fetch 的最大訊息數 */
   maxBatchSize?: number
 
-  /** Message serializer (default: json) */
+  /** 訊息序列化器（預設 JSON） */
   serializer?: 'json' | 'binary'
 }
 
 /**
- * Buffered Kafka message.
+ * 內部緩衝的 Kafka 訊息。
  *
  * @public
  */
@@ -168,350 +169,4 @@ export interface BufferedMessage {
   offset: string
   timestamp: number
   acknowledged: boolean
-}
-
-/**
- * Consumer lifecycle states for Phase 6C.
- *
- * State transitions:
- * - idle → starting → running → stopping → stopped
- * - running → restarting → running
- * - any → error
- *
- * @public
- */
-export type ConsumerLifecycleState =
-  | 'idle'
-  | 'starting'
-  | 'running'
-  | 'restarting'
-  | 'stopping'
-  | 'stopped'
-  | 'error'
-
-/**
- * Configuration for subscribe() push-based consumption.
- *
- * @public
- */
-export interface SubscribeOptions {
-  /** Parallel callback concurrency (default: 1) */
-  concurrency?: number
-  /** Whether to auto-acknowledge after callback completes (default: true) */
-  autoAcknowledge?: boolean
-  /** Callback timeout in milliseconds (default: 30000) */
-  callbackTimeout?: number
-  /** Whether to start from beginning (default: false) */
-  fromBeginning?: boolean
-}
-
-/**
- * Backpressure controller configuration.
- *
- * @public
- */
-export interface BackpressureConfig {
-  /** High watermark percentage (0-1). Pause consumer when buffer exceeds this. Default: 0.8 */
-  highWatermark?: number
-  /** Low watermark percentage (0-1). Resume consumer when buffer drops below this. Default: 0.5 */
-  lowWatermark?: number
-  /** Check interval in milliseconds. Default: 100 */
-  checkInterval?: number
-  /** Maximum number of in-flight (processing) callbacks. Default: concurrency * 2 */
-  maxInFlight?: number
-}
-
-/**
- * Lifecycle event payload.
- *
- * @public
- */
-export interface LifecycleEvent {
-  state: ConsumerLifecycleState
-  previousState: ConsumerLifecycleState
-  timestamp: number
-  error?: Error
-}
-
-/**
- * Heartbeat configuration.
- * @public
- */
-export interface HeartbeatConfig {
-  /** Heartbeat interval in milliseconds. Default: 3000 */
-  interval?: number
-  /** Session timeout in milliseconds. Default: 30000 */
-  sessionTimeout?: number
-  /** Maximum consecutive missed heartbeats before declaring dead. Default: 3 */
-  maxMissed?: number
-}
-
-/**
- * Heartbeat status snapshot.
- * @public
- */
-export interface HeartbeatStatus {
-  consumerId: string
-  lastHeartbeat: number
-  missedCount: number
-  isAlive: boolean
-  uptime: number
-  queues: string[]
-}
-
-/**
- * Kafka driver metrics snapshot.
- * @public
- */
-export interface KafkaDriverMetrics {
-  /** Timestamp of this snapshot */
-  timestamp: number
-
-  /** Per-queue throughput (messages/second) */
-  throughput: Record<string, number>
-
-  /** Consumer lag per topic-partition */
-  lag: Record<string, number>
-
-  /** Error counts by type */
-  errors: {
-    total: number
-    serialization: number
-    callback: number
-    connection: number
-    timeout: number
-  }
-
-  /** Processing latency stats (milliseconds) */
-  latency: {
-    p50: number
-    p95: number
-    p99: number
-    avg: number
-    min: number
-    max: number
-  }
-
-  /** Buffer utilization */
-  buffer: {
-    totalSize: number
-    perQueue: Record<string, number>
-    utilization: number // 0-1
-  }
-
-  /** Rate limit stats */
-  rateLimits: {
-    totalAllowed: number
-    totalDenied: number
-    perQueue: Record<string, { allowed: number; denied: number }>
-  }
-
-  /** In-flight processing stats */
-  inFlight: number
-  /** Total messages processed since start */
-  totalProcessed: number
-  /** Total messages failed since start */
-  totalFailed: number
-}
-
-/**
- * Metrics configuration.
- * @public
- */
-export interface MetricsConfig {
-  /** Enable metrics collection. Default: true */
-  enabled?: boolean
-  /** Collection interval in milliseconds. Default: 5000 */
-  collectionInterval?: number
-  /** Histogram bucket count for latency tracking. Default: 100 */
-  histogramSize?: number
-  /** Whether to track per-partition lag. Default: false */
-  perPartitionLag?: boolean
-}
-
-/**
- * Circuit breaker states for Kafka operations.
- * @public
- */
-export type KafkaCircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN'
-
-/**
- * Error recovery configuration.
- * @public
- */
-export interface ErrorRecoveryConfig {
-  /** Circuit breaker failure threshold. Default: 5 */
-  failureThreshold?: number
-  /** Circuit breaker reset timeout in ms. Default: 30000 */
-  resetTimeoutMs?: number
-  /** Half-open max probe requests. Default: 1 */
-  halfOpenMaxRequests?: number
-  /** Initial backoff delay in ms. Default: 1000 */
-  initialBackoffMs?: number
-  /** Maximum backoff delay in ms. Default: 60000 */
-  maxBackoffMs?: number
-  /** Backoff multiplier. Default: 2 */
-  backoffMultiplier?: number
-  /** Whether to add jitter to backoff. Default: true */
-  jitter?: boolean
-  /** Max consecutive retries before giving up. Default: 10 */
-  maxRetries?: number
-}
-
-/**
- * Error recovery state snapshot.
- * @public
- */
-export interface ErrorRecoveryState {
-  circuitState: KafkaCircuitState
-  consecutiveFailures: number
-  lastFailureTime: number
-  currentBackoffMs: number
-  totalRecoveries: number
-  isRecovering: boolean
-}
-
-/**
- * Partition assignment descriptor.
- * @public
- */
-export interface PartitionAssignment {
-  topic: string
-  partition: number
-}
-
-/**
- * Rebalance lifecycle states.
- *
- * State transitions:
- * - stable → revoking → assigning → stable
- * - any → error
- *
- * @public
- */
-export type RebalanceState = 'stable' | 'revoking' | 'assigning' | 'error'
-
-/**
- * Rebalance event payload emitted during rebalance lifecycle.
- * @public
- */
-export interface RebalanceEvent {
-  state: RebalanceState
-  previousState: RebalanceState
-  timestamp: number
-  /** Partitions being revoked (available during 'revoking' state) */
-  revokedPartitions?: PartitionAssignment[]
-  /** Partitions being assigned (available during 'assigning' state) */
-  assignedPartitions?: PartitionAssignment[]
-  error?: Error
-}
-
-/**
- * Rebalance handler configuration.
- * @public
- */
-export interface RebalanceConfig {
-  /** Timeout for revocation processing in milliseconds. Default: 10000 */
-  revocationTimeoutMs?: number
-  /** Whether to commit offsets before revocation. Default: true */
-  commitOnRevoke?: boolean
-  /** Whether to clear buffer for revoked partitions. Default: true */
-  clearBufferOnRevoke?: boolean
-  /** Maximum concurrent rebalance operations. Default: 1 */
-  maxConcurrentRebalances?: number
-}
-
-/**
- * Rebalance handler status snapshot.
- * @public
- */
-export interface RebalanceStatus {
-  state: RebalanceState
-  assignedPartitions: PartitionAssignment[]
-  totalRebalances: number
-  lastRebalanceTimestamp: number
-  isRebalancing: boolean
-}
-
-/**
- * 批次處理配置。
- * @public
- */
-export interface BatchConfig {
-  /** 最大批次大小。Default: 100 */
-  maxBatchSize?: number
-  /** 批次收集逾時（ms）。Default: 50 */
-  batchLingerMs?: number
-  /** 批次並行度。Default: 3 */
-  concurrency?: number
-  /** 是否啟用 producer batch 管線。Default: true */
-  enablePipeline?: boolean
-}
-
-/**
- * 批次處理結果。
- * @public
- */
-export interface BatchResult {
-  /** 成功處理的訊息 ID */
-  succeeded: string[]
-  /** 失敗的訊息 */
-  failed: Array<{ id: string; error: Error }>
-}
-
-/**
- * 效能監控配置。
- * @public
- */
-export interface PerformanceConfig {
-  /** 快照收集間隔（毫秒）。Default: 5000 */
-  snapshotIntervalMs?: number
-  /** 歷史快照保留數量。Default: 60 */
-  historySize?: number
-  /** 是否啟用效能監控。Default: true */
-  enabled?: boolean
-}
-
-/**
- * 效能快照，聚合所有元件的狀態。
- * @public
- */
-export interface PerformanceSnapshot {
-  /** 快照時間戳 */
-  timestamp: number
-  /** 吞吐量指標（來自 KafkaMetrics） */
-  throughput: Record<string, number>
-  /** 延遲指標（來自 KafkaMetrics） */
-  latency: {
-    p50: number
-    p95: number
-    p99: number
-    avg: number
-  }
-  /** 錯誤統計（來自 KafkaMetrics） */
-  errors: {
-    total: number
-    serialization: number
-    callback: number
-    connection: number
-    timeout: number
-  }
-  /** 電路斷路器狀態（來自 ErrorRecoveryManager） */
-  circuitState: KafkaCircuitState
-  /** 心跳狀態（來自 HeartbeatManager） */
-  heartbeatAlive: boolean
-  /** 背壓狀態（來自 BackpressureController） */
-  backpressurePaused: boolean
-  /** 消費者生命週期狀態（來自 ConsumerLifecycleManager） */
-  consumerState: ConsumerLifecycleState
-  /** 緩衝區利用率 */
-  bufferUtilization: number
-  /** 處理中的訊息數 */
-  inFlight: number
-  /** 總處理量 */
-  totalProcessed: number
-  /** 總失敗量 */
-  totalFailed: number
-  /** 整體健康狀態 */
-  health: 'healthy' | 'degraded' | 'unhealthy'
 }

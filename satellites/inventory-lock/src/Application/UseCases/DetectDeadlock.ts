@@ -13,7 +13,7 @@ import { LockStatus } from '../../Domain/Models'
 import type { IInventoryLockRepository } from '../Contracts/IInventoryLockRepository'
 
 export class DetectDeadlock {
-  constructor(private core: PlanetCore) {}
+  constructor(_core: PlanetCore) {}
 
   async execute(beforeDate?: Date): Promise<{ cleaned: number; message: string }> {
     const { core } = this

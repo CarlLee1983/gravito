@@ -256,7 +256,7 @@ export class QueryAggregator {
       if (!grouped.has(key)) {
         grouped.set(key, [])
       }
-      grouped.get(key)!.push(record)
+      grouped.get(key)?.push(record)
     }
 
     return grouped
@@ -279,8 +279,12 @@ export class QueryAggregator {
       const aVal = a[sortKey] as any
       const bVal = b[sortKey] as any
 
-      if (aVal < bVal) return descending ? 1 : -1
-      if (aVal > bVal) return descending ? -1 : 1
+      if (aVal < bVal) {
+        return descending ? 1 : -1
+      }
+      if (aVal > bVal) {
+        return descending ? -1 : 1
+      }
       return 0
     })
 

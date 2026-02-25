@@ -7,6 +7,12 @@
  * @module workers
  */
 
+export {
+  BINARY_PROTOCOL_VERSION,
+  type BinaryWorkerMessage,
+  decodeJobFromTransfer,
+  encodeJobForTransfer,
+} from './BinaryWorkerProtocol'
 export { BunWorker, type BunWorkerConfig } from './BunWorker'
 export { SandboxedWorker, type SandboxedWorkerConfig } from './SandboxedWorker'
 export {

@@ -200,7 +200,7 @@ describe('P1.3 Phase 2.3 - Load Testing & Stability Verification', () => {
         phases: phaseCount,
         startLoad: startLoadOps,
         endLoad: endLoadOps,
-        totalDuration: totalTime.toFixed(0) + 'ms',
+        totalDuration: `${totalTime.toFixed(0)}ms`,
         avgLatencies: avgLatencies.map((l) => `${l.toFixed(2)}ms`).join(' → '),
         trend: 'Linear ✅',
       })
@@ -306,7 +306,7 @@ describe('P1.3 Phase 2.3 - Load Testing & Stability Verification', () => {
       const isSuitable = actualThroughput > 1000
 
       console.log('\n✓ D1 Flash Sale Scenario:', {
-        targetOps: targetOps / 1000 + 'K',
+        targetOps: `${targetOps / 1000}K`,
         completedOps,
         actualThroughput: `${actualThroughput.toFixed(0)} ops/sec`,
         suitability: isSuitable ? '✅ Suitable' : '⚠️ Needs improvement',

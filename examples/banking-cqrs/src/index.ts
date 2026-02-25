@@ -73,7 +73,7 @@ const core = new PlanetCore(
  * Resolve port from environment (default: 3000)
  * Allows deployment flexibility via PORT env var
  */
-const port = parseInt(process.env.PORT || '3000')
+const port = parseInt(process.env.PORT || '3000', 10)
 
 /**
  * Async bootstrap sequence

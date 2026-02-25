@@ -60,7 +60,9 @@ export class BunWebSocketHandler {
     return {
       open: async (ws: unknown) => {
         const path = (ws as any)?.data?.path
-        if (!path) return
+        if (!path) {
+          return
+        }
 
         const handler = this.findHandler(path)
         if (handler?.open) {
@@ -70,7 +72,9 @@ export class BunWebSocketHandler {
 
       message: async (ws: unknown, data: string | Buffer | Uint8Array) => {
         const path = (ws as any)?.data?.path
-        if (!path) return
+        if (!path) {
+          return
+        }
 
         const handler = this.findHandler(path)
         if (handler?.message) {
@@ -80,7 +84,9 @@ export class BunWebSocketHandler {
 
       close: async (ws: unknown, code: number, reason: string) => {
         const path = (ws as any)?.data?.path
-        if (!path) return
+        if (!path) {
+          return
+        }
 
         const handler = this.findHandler(path)
         if (handler?.close) {
@@ -90,7 +96,9 @@ export class BunWebSocketHandler {
 
       drain: async (ws: unknown) => {
         const path = (ws as any)?.data?.path
-        if (!path) return
+        if (!path) {
+          return
+        }
 
         const handler = this.findHandler(path)
         if (handler?.drain) {

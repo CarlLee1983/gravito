@@ -99,7 +99,9 @@ export class CartService {
    */
   async getCartAsDTO(cartId: number): Promise<CartResponseDTO | null> {
     const cart = await this.cartRepository.getWithItems(cartId)
-    if (!cart) return null
+    if (!cart) {
+      return null
+    }
 
     // Batch-load products for all items in one query
     const products = await this.batchLoadProducts(cart.items ?? [])

@@ -229,9 +229,15 @@ export class SafeQueryBuilder<T = Record<string, unknown>> {
    */
   private detectDialect(driver: DriverContract): 'postgres' | 'mysql' | 'sqlite' {
     const name = driver.getDriverName()
-    if (name === 'postgres') return 'postgres'
-    if (name === 'sqlite') return 'sqlite'
-    if (name === 'mysql' || name === 'mariadb') return 'mysql'
+    if (name === 'postgres') {
+      return 'postgres'
+    }
+    if (name === 'sqlite') {
+      return 'sqlite'
+    }
+    if (name === 'mysql' || name === 'mariadb') {
+      return 'mysql'
+    }
     return 'mysql' // 預設值
   }
 }

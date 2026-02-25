@@ -40,7 +40,7 @@ class MockCacheService implements CacheService {
     return (this.data.get(key) as T) || null
   }
 
-  async set(key: string, value: unknown, ttl?: number): Promise<void> {
+  async set(key: string, value: unknown, _ttl?: number): Promise<void> {
     this.data.set(key, value)
   }
 
@@ -54,7 +54,9 @@ class MockCacheService implements CacheService {
 
   async remember<T>(key: string, ttl: number, callback: () => Promise<T>): Promise<T> {
     const cached = await this.get<T>(key)
-    if (cached !== null) return cached
+    if (cached !== null) {
+      return cached
+    }
 
     const result = await callback()
     await this.set(key, result, ttl)
@@ -91,7 +93,7 @@ class MockCacheService implements CacheService {
 class MockPlanetCore implements Partial<PlanetCore> {
   logger = new MockLogger()
   hooks = {
-    doActionAsync: async (action: string, payload: any, options: any) => {
+    doActionAsync: async (_action: string, _payload: any, _options: any) => {
       // Mock DLQ
     },
   }

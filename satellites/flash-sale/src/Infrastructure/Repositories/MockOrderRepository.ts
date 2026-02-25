@@ -19,7 +19,7 @@ export class MockOrderRepository implements IOrderRepository {
   private ordersByUserId: Map<string, string[]> = new Map() // userId -> orderId[] 索引
   private orderCounter = 0
 
-  constructor(private core?: PlanetCore) {}
+  constructor(_core?: PlanetCore) {}
 
   /**
    * 根據 ID 查詢訂單

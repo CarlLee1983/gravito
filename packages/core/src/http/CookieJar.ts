@@ -31,7 +31,9 @@ export class CookieJar {
    * @returns Parsed cookies as key-value pairs
    */
   static parseCookies(header: string): Record<string, string> {
-    if (!header) return {}
+    if (!header) {
+      return {}
+    }
     const cookieMap = new Bun.CookieMap(header)
     const out: Record<string, string> = {}
     for (const [key, value] of cookieMap.entries()) {

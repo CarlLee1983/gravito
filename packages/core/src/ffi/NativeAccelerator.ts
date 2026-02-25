@@ -145,8 +145,8 @@ export class NativeAccelerator {
    * 支援從原始碼目錄或 npm 套件的 src/ffi/native 目錄載入
    */
   private static resolveCSourcePath(): string {
-    const path = require('path')
-    const fs = require('fs')
+    const path = require('node:path')
+    const fs = require('node:fs')
 
     // 取得當前模組目錄（ESM 優先，CJS 回退）
     const currentDir =

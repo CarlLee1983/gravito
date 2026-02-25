@@ -27,7 +27,9 @@ export async function executeConcurrently<T>(
   async function processTask() {
     while (queue.length > 0) {
       const task = queue.shift()
-      if (!task) break
+      if (!task) {
+        break
+      }
 
       try {
         const result = await task()

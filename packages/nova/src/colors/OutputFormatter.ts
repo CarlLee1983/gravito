@@ -11,7 +11,6 @@ export class OutputFormatter {
   private _colorEnabled: boolean
   private _scheme: ShellColorScheme
   private _painter: any = null
-  private _semanticColors: any = null
 
   constructor(config?: ColorConfig) {
     this._colorConfig = config || { enabled: !process.env.NO_COLOR }
@@ -134,25 +133,6 @@ export class OutputFormatter {
       formatted,
       plain,
       hasColor: this._colorEnabled,
-    }
-  }
-
-  /**
-   * Dynamically load and use chromatic Painter if available.
-   */
-  private async _loadPainter(): Promise<void> {
-    if (this._painter) {
-      return
-    }
-
-    try {
-      const chromatic = await import('@gravito/chromatic')
-      this._painter = chromatic.Painter
-      this._semanticColors = chromatic.SemanticColors
-    } catch {
-      // chromatic not available - will use fallback
-      this._painter = null
-      this._semanticColors = null
     }
   }
 

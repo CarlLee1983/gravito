@@ -5,8 +5,6 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import {
-  getShardContext,
-  hasShardContext,
   QueryAggregator,
   ShardDatabaseConfig,
   ShardDatabaseManager,
@@ -19,7 +17,6 @@ import {
 class MockContext {
   private headers: Map<string, string> = new Map()
   private queryParams: Map<string, string> = new Map()
-  private body: any = {}
 
   method = 'GET'
 

@@ -259,7 +259,7 @@ describe('Phase 3：性能調優', () => {
 
       console.log(`
 ✓ Phase 3.2.3 GC 暫停分析
-  周期耗時: ${gcEvents.map((t) => t + 'ms').join(', ')}
+  周期耗時: ${gcEvents.map((t) => `${t}ms`).join(', ')}
   平均: ${(gcEvents.reduce((a, b) => a + b, 0) / gcEvents.length).toFixed(0)}ms`)
 
       expect(gcEvents.length).toBe(5)
@@ -471,7 +471,7 @@ describe('Phase 3：性能調優', () => {
         async () => {
           const id = products[Math.floor(Math.random() * products.length)].id
           const cached = await l1Cache.get(id)
-          return cached ? true : false
+          return !!cached
         },
         10000, // 10 秒
         100 // 100 個並發
@@ -529,7 +529,7 @@ describe('Phase 3：性能調優', () => {
           async () => {
             const id = products[Math.floor(Math.random() * products.length)].id
             const cached = await l1Cache.get(id)
-            return cached ? true : false
+            return !!cached
           },
           10000, // 10 秒
           50 // 50 個並發
@@ -560,7 +560,7 @@ describe('Phase 3：性能調優', () => {
         async () => {
           l1Cache.set('stress-key', { data: 'value' }, 300)
           const cached = await l1Cache.get('stress-key')
-          return cached ? true : false
+          return !!cached
         },
         5000, // 5 秒
         1000 // 1000 個並發（極限）

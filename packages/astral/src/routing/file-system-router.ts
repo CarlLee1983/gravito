@@ -7,8 +7,8 @@
  * Reference: https://bun.sh/docs/runtime/file-system-router
  */
 
+import { readdir } from 'node:fs/promises'
 import type { FileSystemRouter } from 'bun'
-import { readdir } from 'fs/promises'
 
 /**
  * Route match result from FileSystemRouter

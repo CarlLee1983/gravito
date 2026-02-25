@@ -304,7 +304,7 @@ export function rateLimit(config: RateLimitConfig): MiddlewareHandler {
     draftHeaders = false,
   } = config
 
-  return async (c: Context, next: Next): Promise<Response | void> => {
+  return async (c: Context, next: Next): Promise<Response | undefined> => {
     if (skip && (await skip(c))) {
       return await next()
     }

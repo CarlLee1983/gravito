@@ -13,14 +13,8 @@ import { BackpressureManager, BackpressureState } from './BackpressureManager'
 import { EventDeduplicator } from './EventDeduplicator'
 import { EventQueue } from './EventQueue'
 import { CacheEventPool } from './ObjectPool.js'
-import { PriorityEscalationManager, PriorityStatistics } from './priority'
-import {
-  type CacheEvent,
-  CacheEventType,
-  EventPriority,
-  EventSource,
-  PRIORITY_CONFIG,
-} from './types'
+import { PriorityStatistics } from './priority'
+import { type CacheEvent, CacheEventType, EventPriority, EventSource } from './types'
 
 /**
  * 聚合器統計
@@ -130,7 +124,9 @@ export class EventAggregator {
    * 啟動聚合器
    */
   start(): void {
-    if (this.isRunning) return
+    if (this.isRunning) {
+      return
+    }
 
     this.isRunning = true
 
@@ -148,13 +144,19 @@ export class EventAggregator {
    * 停止聚合器
    */
   async stop(): Promise<void> {
-    if (!this.isRunning) return
+    if (!this.isRunning) {
+      return
+    }
 
     this.isRunning = false
 
     // 清除計時器
-    if (this.flushTimer) clearInterval(this.flushTimer)
-    if (this.metricsTimer) clearInterval(this.metricsTimer)
+    if (this.flushTimer) {
+      clearInterval(this.flushTimer)
+    }
+    if (this.metricsTimer) {
+      clearInterval(this.metricsTimer)
+    }
 
     // 清空剩餘事件
     await this.flush()
@@ -382,7 +384,9 @@ export class EventAggregator {
    * 內部清空方法
    */
   private async flushInternal(): Promise<void> {
-    if (!this.isRunning) return
+    if (!this.isRunning) {
+      return
+    }
 
     try {
       const events = await this.flush()

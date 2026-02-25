@@ -340,9 +340,15 @@ export class CborFallbackDecoder {
       }
 
       case CBOR_MAJOR_TYPES.SIMPLE:
-        if (additionalInfo === CBOR_SIMPLE_VALUES.FALSE) return false
-        if (additionalInfo === CBOR_SIMPLE_VALUES.TRUE) return true
-        if (additionalInfo === CBOR_SIMPLE_VALUES.NULL) return null
+        if (additionalInfo === CBOR_SIMPLE_VALUES.FALSE) {
+          return false
+        }
+        if (additionalInfo === CBOR_SIMPLE_VALUES.TRUE) {
+          return true
+        }
+        if (additionalInfo === CBOR_SIMPLE_VALUES.NULL) {
+          return null
+        }
 
         // 浮點數
         if (additionalInfo === CBOR_LENGTH_ENCODING.FLOAT32) {

@@ -8,7 +8,7 @@
  */
 
 import type { Logger } from '@gravito/core'
-import type { MultiRegionCacheService, RegionConfig } from './MultiRegionCacheService'
+import type { RegionConfig } from './MultiRegionCacheService'
 
 /**
  * 健康狀態

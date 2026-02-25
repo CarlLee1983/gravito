@@ -305,7 +305,9 @@ export async function* consumeJsonLines<T>(response: Response): AsyncGenerator<T
 
       for (const line of lines) {
         const trimmed = line.trim()
-        if (trimmed.length === 0) continue
+        if (trimmed.length === 0) {
+          continue
+        }
         try {
           yield JSON.parse(trimmed) as T
         } catch (e) {
@@ -362,7 +364,9 @@ export async function collectJsonLines<T>(response: Response): Promise<T[]> {
   const lines = text.split('\n')
   for (const line of lines) {
     const trimmed = line.trim()
-    if (trimmed.length === 0) continue
+    if (trimmed.length === 0) {
+      continue
+    }
     try {
       results.push(JSON.parse(trimmed) as T)
     } catch (e) {

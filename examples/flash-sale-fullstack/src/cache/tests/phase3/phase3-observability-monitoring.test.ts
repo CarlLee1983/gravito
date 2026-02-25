@@ -6,10 +6,9 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { AsyncEventPath, createAsyncEventPath } from '../../events/AsyncEventPath.js'
-import { BatchSubmitter, createBatchSubmitter } from '../../events/BatchSubmitter.js'
+import { createAsyncEventPath } from '../../events/AsyncEventPath.js'
+import { createBatchSubmitter } from '../../events/BatchSubmitter.js'
 import { EventQueue } from '../../events/EventQueue.js'
-import type { CacheEvent } from '../../events/types.js'
 import { CacheEventType, createCacheEvent, EventPriority } from '../../events/types.js'
 
 /**

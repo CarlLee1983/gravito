@@ -6,7 +6,6 @@
  */
 
 import type { DeadLetterQueueManager, EventBackend, EventTask, HookManager } from '@gravito/core'
-import type { DeadLetterQueue } from '../dead-letter-queue/DeadLetterQueue'
 import type { WorkerPool } from '../worker/WorkerPool'
 
 /**

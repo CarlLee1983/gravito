@@ -73,7 +73,9 @@ const rule: Rule.RuleModule = {
         // Check if this template is used in a SQL context
         const parent = node.parent as any
 
-        if (!parent) return
+        if (!parent) {
+          return
+        }
 
         // Check if parent is a tag expression with 'sql' tag
         if (parent.type === 'TaggedTemplateExpression') {
@@ -133,7 +135,9 @@ const rule: Rule.RuleModule = {
 
       BinaryExpression(node: any) {
         // Detect string concatenation that looks like SQL
-        if (node.operator !== '+') return
+        if (node.operator !== '+') {
+          return
+        }
 
         const leftText = sourceCode.getText(node.left).toUpperCase()
         const rightText = sourceCode.getText(node.right).toUpperCase()

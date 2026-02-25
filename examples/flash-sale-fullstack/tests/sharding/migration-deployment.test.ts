@@ -3,7 +3,7 @@
  * 數據遷移和灰度發佈集成測試
  */
 
-import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
+import { beforeAll, describe, expect, it } from 'bun:test'
 import type { CanaryPhase } from '../../src/sharding'
 import {
   CanaryDeployment,

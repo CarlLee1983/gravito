@@ -4,14 +4,11 @@
  */
 
 // Errors
-export { SQLiteError, SQLiteConnectionError, SQLiteExecutionError } from './errors'
-
-// Types
-export type { SQLiteConnection, SQLiteConfig, SQLiteServiceConfig } from './types'
-
-// Services
-export { SQLiteService } from './services/SQLiteService'
-
+export { SQLiteConnectionError, SQLiteError, SQLiteExecutionError } from './errors'
+export type { SatelliteSQLiteConfig } from './SatelliteSQLite'
 // Satellite
 export { SatelliteSQLite } from './SatelliteSQLite'
-export type { SatelliteSQLiteConfig } from './SatelliteSQLite'
+// Services
+export { SQLiteService } from './services/SQLiteService'
+// Types
+export type { SQLiteConfig, SQLiteConnection, SQLiteServiceConfig } from './types'

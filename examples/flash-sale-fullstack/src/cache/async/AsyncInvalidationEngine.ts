@@ -80,7 +80,7 @@ export class AsyncInvalidationEngine {
   private metricsTimer: NodeJS.Timeout | null = null
   private isRunning = false
 
-  constructor(config?: AsyncInvalidationConfig) {
+  constructor(_config?: AsyncInvalidationConfig) {
     this.scheduler = new InvalidationScheduler()
 
     // 初始化重試策略
@@ -99,7 +99,9 @@ export class AsyncInvalidationEngine {
    * 啟動引擎
    */
   start(): void {
-    if (this.isRunning) return
+    if (this.isRunning) {
+      return
+    }
 
     this.isRunning = true
 
@@ -114,7 +116,9 @@ export class AsyncInvalidationEngine {
    * 停止引擎
    */
   async stop(): Promise<void> {
-    if (!this.isRunning) return
+    if (!this.isRunning) {
+      return
+    }
 
     this.isRunning = false
 

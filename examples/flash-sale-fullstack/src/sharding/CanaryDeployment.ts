@@ -43,11 +43,9 @@ export interface CanaryConfig {
  */
 export class CanaryDeployment {
   private config: CanaryConfig
-  private currentPhase: CanaryPhase | null = null
   private metrics: Map<string, CanaryMetrics> = new Map()
   private phaseIndex = 0
   private eventListeners: Map<string, Function[]> = new Map()
-  private metricsCollector: Map<string, any> = new Map()
 
   constructor(config: CanaryConfig) {
     this.config = config
@@ -297,7 +295,7 @@ export class CanaryDeployment {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, [])
     }
-    this.eventListeners.get(event)!.push(callback)
+    this.eventListeners.get(event)?.push(callback)
   }
 
   /**

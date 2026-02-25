@@ -10,10 +10,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { AggregationWindow } from '../../../src/events/aggregation/AggregationWindow'
-import { DeduplicationManager } from '../../../src/events/aggregation/DeduplicationManager'
 import { EventAggregationManager } from '../../../src/events/aggregation/EventAggregationManager'
-import { EventBatcher } from '../../../src/events/aggregation/EventBatcher'
 import { BackpressureState } from '../../../src/events/BackpressureManager'
 import type { EventTask } from '../../../src/events/types'
 

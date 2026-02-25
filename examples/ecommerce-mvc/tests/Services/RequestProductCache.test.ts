@@ -11,7 +11,7 @@ describe('RequestProductCache', () => {
     dbRawCallCount = 0
 
     // Mock DB.raw to track call count and return only requested products
-    DB.raw = mock(async (sql: any, params: any) => {
+    DB.raw = mock(async (_sql: any, params: any) => {
       dbRawCallCount++
       const allProducts: Record<number, any> = {
         1: { id: 1, name: 'Product 1', slug: 'product-1', image_url: 'img1.jpg', stock: 100 },

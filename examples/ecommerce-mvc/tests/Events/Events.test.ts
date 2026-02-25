@@ -6,7 +6,7 @@ import {
   OrderCreated,
   OrderPaid,
 } from '../../src/Events'
-import { Cart, CartItem, Order, OrderItem, OrderStatus } from '../../src/models'
+import { CartItem, Order } from '../../src/models'
 
 describe('Domain Events', () => {
   describe('OrderCreated', () => {

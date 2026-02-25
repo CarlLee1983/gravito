@@ -44,13 +44,19 @@ describe('authenticate middleware', () => {
       },
       app: {
         make: vi.fn((key: string) => {
-          if (key === 'TokenService') return mockTokenService
-          if (key === 'TokenBlacklist') return mockTokenBlacklist
+          if (key === 'TokenService') {
+            return mockTokenService
+          }
+          if (key === 'TokenBlacklist') {
+            return mockTokenBlacklist
+          }
           return undefined
         }),
       },
       get: vi.fn((key: string) => {
-        if (key === 'auth') return mockAuth
+        if (key === 'auth') {
+          return mockAuth
+        }
         return undefined
       }),
       set: vi.fn(),

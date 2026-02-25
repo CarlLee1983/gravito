@@ -11,9 +11,11 @@ describe('MessageBuffer', () => {
     testMessage = {
       job: {
         id: 'job-1',
-        type: 'json',
-        data: '{}',
+        type: 'test',
+        data: {},
+        className: 'TestJob',
         createdAt: Date.now(),
+        attempts: 0,
       },
       topic: 'test-topic',
       partition: 0,
@@ -76,12 +78,13 @@ describe('MessageBuffer', () => {
       const elapsed = Date.now() - start
 
       expect(result).toBeNull()
-      expect(elapsed).toBeGreaterThanOrEqual(90)
+      expect(elapsed).toBeGreaterThanOrEqual(90) // Allow some variance
     })
 
     it('should resolve when message arrives after wait', async () => {
       const promise = buffer.dequeueBlocking('test', 5000)
 
+      // Simulate message arrival after 50ms
       setTimeout(() => {
         buffer.enqueue('test', testMessage)
       }, 50)
@@ -187,7 +190,6 @@ describe('MessageBuffer', () => {
 
   describe('Edge Cases', () => {
     it('should handle rapid enqueue/dequeue', () => {
-      buffer = new MessageBuffer(1000) // Use larger buffer
       for (let i = 0; i < 100; i++) {
         buffer.enqueue('test', { ...testMessage, offset: String(i) })
       }

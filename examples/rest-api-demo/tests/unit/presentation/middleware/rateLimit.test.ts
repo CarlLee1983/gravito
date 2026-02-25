@@ -65,7 +65,7 @@ describe('rateLimit middleware', () => {
       const calls = ctx.header.mock.calls
       const remainingCall = calls.find((c: any) => c[0] === 'X-RateLimit-Remaining')
       expect(remainingCall).toBeDefined()
-      expect(parseInt(remainingCall[1])).toBeLessThan(10)
+      expect(parseInt(remainingCall[1], 10)).toBeLessThan(10)
     })
 
     it('應使用自定義錯誤訊息', async () => {
@@ -143,7 +143,9 @@ describe('rateLimit middleware', () => {
       const middleware = rateLimitByIp({ windowMs: 60000, maxRequests: 5 })
 
       ctx.req.header.mockImplementation((name: string) => {
-        if (name === 'X-Real-IP') return '10.0.0.2'
+        if (name === 'X-Real-IP') {
+          return '10.0.0.2'
+        }
         return null
       })
 

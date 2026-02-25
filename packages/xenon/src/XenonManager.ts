@@ -126,7 +126,7 @@ export class XenonManager {
    * List all loaded libraries
    * @returns Array of [name, path] tuples
    */
-  listLibraries(): Array<[string, string]> {
+  listLibraries(): [string, string][] {
     return this.loader.listLibraries()
   }
 

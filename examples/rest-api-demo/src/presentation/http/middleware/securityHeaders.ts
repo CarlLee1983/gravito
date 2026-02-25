@@ -4,8 +4,8 @@
  * 設置安全相關的 HTTP 響應頭，防止常見攻擊
  */
 
+import * as crypto from 'node:crypto'
 import type { GravitoContext, GravitoNext } from '@gravito/core'
-import * as crypto from 'crypto'
 
 export interface SecurityHeadersConfig {
   enableHsts?: boolean

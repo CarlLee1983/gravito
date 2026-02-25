@@ -260,7 +260,7 @@ describe('Workers Performance Benchmarks', () => {
       for (let i = 0; i < 100; i++) {
         const job = createBenchmarkJob(`job-${i}`, 1)
         jobPromises.push(
-          pool.execute(job).catch((err) => {
+          pool.execute(job).catch((_err) => {
             // Expected - we don't have actual workers
             // This is just measuring pool mechanics
           })
@@ -294,7 +294,7 @@ describe('Workers Performance Benchmarks', () => {
       for (let i = 0; i < 100; i++) {
         const job = createBenchmarkJob(`job-${i}`, 1)
         jobPromises.push(
-          pool.execute(job).catch((err) => {
+          pool.execute(job).catch((_err) => {
             // Expected - we don't have actual workers
           })
         )

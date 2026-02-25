@@ -5,7 +5,6 @@
 
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
 import { BeamPoolExhaustedError } from '../src/errors'
-import type { ConnectionPoolConfig } from '../src/pool'
 import { ConnectionPool } from '../src/pool/ConnectionPool'
 import { PoolEntry } from '../src/pool/PoolEntry'
 import { PoolHealthChecker } from '../src/pool/PoolHealthChecker'
@@ -354,7 +353,9 @@ describe('ConnectionPool', () => {
     for (const c of conns.slice(1)) {
       pool.release(c!)
     }
-    if (pendingResult) pool.release(pendingResult)
+    if (pendingResult) {
+      pool.release(pendingResult)
+    }
   })
 
   it('should close pool and cleanup resources', async () => {
@@ -403,7 +404,7 @@ describe('ConnectionPool with Fetch Integration', () => {
     const originalFetch = globalThis.fetch
     let capturedHeaders: Record<string, string> | undefined
 
-    globalThis.fetch = mock(async (input, init) => {
+    globalThis.fetch = mock(async (_input, init) => {
       capturedHeaders = init?.headers as Record<string, string>
       return new Response('OK', { status: 200 })
     })

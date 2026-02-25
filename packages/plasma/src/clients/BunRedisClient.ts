@@ -11,7 +11,7 @@ import type {
   ZAddOptions,
   ZRangeOptions,
 } from '../types'
-import type { RedisClient, RedisClientOptions, TLSOptions } from './types'
+import type { RedisClient, RedisClientOptions } from './types'
 
 /**
  * Native Bun.redis Client Implementation

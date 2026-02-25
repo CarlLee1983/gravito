@@ -73,11 +73,11 @@ function createMockContext(): GravitoContext {
       url: 'http://localhost/test',
       method: 'GET',
       path: '/test',
-      query: (name: string) => undefined,
+      query: (_name: string) => undefined,
       queries: () => ({}),
-      param: (name: string) => undefined,
+      param: (_name: string) => undefined,
       params: () => ({}),
-      header: (name: string) => undefined,
+      header: (_name: string) => undefined,
       headers: () => ({}),
       json: async () => ({}),
       text: async () => '',
@@ -98,7 +98,7 @@ describe('Middleware Semantics - Regression Tests (compileMiddlewareChain)', () 
       let middlewareRan = false
       let handlerRan = false
 
-      const middleware: Middleware = async (c, next) => {
+      const middleware: Middleware = async (_c, next) => {
         middlewareRan = true
         await next()
         return undefined
@@ -122,7 +122,7 @@ describe('Middleware Semantics - Regression Tests (compileMiddlewareChain)', () 
       let middlewareRan = false
       let handlerRan = false
 
-      const middleware: Middleware = async (c, next) => {
+      const middleware: Middleware = async (_c, next) => {
         middlewareRan = true
         await next()
         return new Response('middleware response', { status: 201 })
@@ -145,7 +145,7 @@ describe('Middleware Semantics - Regression Tests (compileMiddlewareChain)', () 
     })
 
     it('should return 500 when middleware neither calls next() nor returns Response', async () => {
-      const middleware: Middleware = async (c, next) => {
+      const middleware: Middleware = async (_c, _next) => {
         // Not calling next(), not returning Response
       }
 
@@ -163,7 +163,7 @@ describe('Middleware Semantics - Regression Tests (compileMiddlewareChain)', () 
     })
 
     it('should return middleware Response when middleware returns Response without calling next()', async () => {
-      const middleware: Middleware = async (c, next) => {
+      const middleware: Middleware = async (_c, _next) => {
         return new Response('early exit', { status: 403 })
       }
 
@@ -186,12 +186,12 @@ describe('Middleware Semantics - Regression Tests (compileMiddlewareChain)', () 
       let mw2Ran = false
       let handlerRan = false
 
-      const mw1: Middleware = async (c, next) => {
+      const mw1: Middleware = async (_c, next) => {
         mw1Ran = true
         await next()
       }
 
-      const mw2: Middleware = async (c, next) => {
+      const mw2: Middleware = async (_c, next) => {
         mw2Ran = true
         await next()
       }
@@ -216,12 +216,12 @@ describe('Middleware Semantics - Regression Tests (compileMiddlewareChain)', () 
       let mw2Ran = false
       let handlerRan = false
 
-      const mw1: Middleware = async (c, next) => {
+      const mw1: Middleware = async (_c, _next) => {
         mw1Ran = true
         return new Response('mw1 exit', { status: 401 })
       }
 
-      const mw2: Middleware = async (c, next) => {
+      const mw2: Middleware = async (_c, next) => {
         mw2Ran = true
         await next()
       }
@@ -246,7 +246,7 @@ describe('Middleware Semantics - Regression Tests (compileMiddlewareChain)', () 
   describe('Edge cases: falsy non-Response returns', () => {
     it('should call handler when middleware returns null after next()', async () => {
       const callOrder: string[] = []
-      const middleware: Middleware = async (c, next) => {
+      const middleware: Middleware = async (_c, next) => {
         callOrder.push('mw')
         await next()
         return null // Falsy value
@@ -266,7 +266,7 @@ describe('Middleware Semantics - Regression Tests (compileMiddlewareChain)', () 
     })
 
     it('should call handler when middleware returns 0 after next()', async () => {
-      const middleware: Middleware = async (c, next) => {
+      const middleware: Middleware = async (_c, next) => {
         await next()
         return 0
       }
@@ -283,7 +283,7 @@ describe('Middleware Semantics - Regression Tests (compileMiddlewareChain)', () 
     })
 
     it('should call handler when middleware returns empty string after next()', async () => {
-      const middleware: Middleware = async (c, next) => {
+      const middleware: Middleware = async (_c, next) => {
         await next()
         return ''
       }
@@ -303,7 +303,7 @@ describe('Middleware Semantics - Regression Tests (compileMiddlewareChain)', () 
   describe('Edge cases: truthy non-Response returns', () => {
     it('should call handler when middleware returns string (non-Response) after next()', async () => {
       const callOrder: string[] = []
-      const middleware: Middleware = async (c, next) => {
+      const middleware: Middleware = async (_c, next) => {
         callOrder.push('mw')
         await next()
         return 'some string' // Truthy but not Response
@@ -323,7 +323,7 @@ describe('Middleware Semantics - Regression Tests (compileMiddlewareChain)', () 
     })
 
     it('should return 500 when middleware returns truthy non-Response without calling next()', async () => {
-      const middleware: Middleware = async (c, next) => {
+      const middleware: Middleware = async (_c, _next) => {
         return 'some string' // Truthy but not Response, and didn't call next
       }
 

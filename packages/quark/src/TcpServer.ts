@@ -3,7 +3,7 @@
  * @module @gravito/quark/TcpServer
  */
 
-import { randomUUID } from 'crypto'
+import { randomUUID } from 'node:crypto'
 import { TcpConnection } from './TcpConnection'
 import type { ITcpConnection, ITcpServer, TcpServerConfig } from './types'
 

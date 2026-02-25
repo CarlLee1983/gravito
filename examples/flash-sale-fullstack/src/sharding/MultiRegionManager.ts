@@ -387,7 +387,7 @@ export class MultiRegionManager {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, [])
     }
-    this.eventListeners.get(event)!.push(callback)
+    this.eventListeners.get(event)?.push(callback)
   }
 
   /**

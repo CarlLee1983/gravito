@@ -1,172 +1,185 @@
-import { RingBuffer } from './RingBuffer'
 import type { BufferedMessage } from './types'
 
 /**
- * FIFO message buffer per topic for bridging Kafka push to QueueDriver pull model.
+ * Kafka 訊息緩衝區。
  *
- * 內部使用 RingBuffer 實現 O(1) enqueue/dequeue，
- * 取代原本 Array.shift() 的 O(n) 操作。
+ * 橋接 Kafka 的 push 模型與 QueueDriver 的 pull（pop）模型。
+ * 每個 topic 維護獨立的 FIFO 緩衝區，支援容量限制和超時等待。
  *
  * @public
  */
 export class MessageBuffer {
-  private buffers = new Map<string, RingBuffer<BufferedMessage>>()
-  private waiters = new Map<string, Array<() => void>>()
-  private destroyed = false
+  private readonly buffers = new Map<string, BufferedMessage[]>()
+  private readonly waiters = new Map<
+    string,
+    Array<{
+      resolve: (msg: BufferedMessage | null) => void
+      timer: ReturnType<typeof setTimeout>
+    }>
+  >()
 
-  constructor(private readonly maxSize: number) {}
+  constructor(private readonly maxSize: number = 1000) {}
 
   /**
-   * Enqueue a message to a topic buffer.
-   * @returns true if successfully queued, false if buffer is full
+   * 推入一條訊息到指定 topic 的緩衝區。
+   *
+   * @param topic 主題名稱
+   * @param message 要推入的訊息
+   * @returns 是否成功推入（false 表示緩衝區已滿）
    */
   enqueue(topic: string, message: BufferedMessage): boolean {
-    if (this.destroyed) {
-      return false
-    }
-
     if (!this.buffers.has(topic)) {
-      this.buffers.set(topic, new RingBuffer<BufferedMessage>(this.maxSize))
+      this.buffers.set(topic, [])
     }
 
     const buffer = this.buffers.get(topic)!
-    const result = buffer.push(message)
-    if (result) {
-      this.notifyWaiters(topic)
+    if (buffer.length >= this.maxSize) {
+      return false
     }
-    return result
+
+    buffer.push(message)
+
+    // 如果有等待者，喚醒第一個
+    this.notifyWaiters(topic)
+
+    return true
   }
 
   /**
-   * Dequeue a message from a topic buffer (non-blocking).
-   * @returns message if available, null if empty
+   * 從指定 topic 取出一條訊息（FIFO），立即返回或 null。
+   *
+   * @param topic 主題名稱
+   * @returns 取出的訊息或 null
    */
   dequeue(topic: string): BufferedMessage | null {
     const buffer = this.buffers.get(topic)
-    if (!buffer || buffer.isEmpty) {
+    if (!buffer || buffer.length === 0) {
       return null
     }
+
     return buffer.shift() ?? null
   }
 
   /**
-   * Blocking dequeue with timeout.
-   * @param timeout milliseconds to wait
-   * @returns message if available within timeout, null if timeout
+   * 等待直到有訊息或超時。
+   *
+   * @param topic 主題名稱
+   * @param timeoutMs 超時時間（毫秒）
+   * @returns 取出的訊息或 null
    */
-  dequeueBlocking(topic: string, timeout: number): Promise<BufferedMessage | null> {
+  dequeueBlocking(topic: string, timeoutMs: number): Promise<BufferedMessage | null> {
+    // 先試著立即取出
+    const immediate = this.dequeue(topic)
+    if (immediate) {
+      return Promise.resolve(immediate)
+    }
+
+    // 如果沒有，等待
     return new Promise((resolve) => {
-      const buffer = this.buffers.get(topic)
-      if (buffer && !buffer.isEmpty) {
-        resolve(buffer.shift() ?? null)
-        return
-      }
-
-      if (this.destroyed) {
+      const timer = setTimeout(() => {
+        // 超時後移除此等待者
+        const waitersList = this.waiters.get(topic) ?? []
+        const index = waitersList.findIndex((w) => w.timer === timer)
+        if (index !== -1) {
+          waitersList.splice(index, 1)
+          if (waitersList.length === 0) {
+            this.waiters.delete(topic)
+          }
+        }
         resolve(null)
-        return
-      }
-
-      const startTime = Date.now()
-      let timerId: ReturnType<typeof setTimeout> | null = null
-      let cleaned = false
-
-      const cleanup = () => {
-        if (cleaned) {
-          return
-        }
-        cleaned = true
-        if (timerId) {
-          clearTimeout(timerId)
-        }
-        const waiters = this.waiters.get(topic) ?? []
-        const idx = waiters.indexOf(checkMessage)
-        if (idx >= 0) {
-          waiters.splice(idx, 1)
-        }
-      }
-
-      const checkMessage = () => {
-        if (cleaned || this.destroyed) {
-          cleanup()
-          resolve(null)
-          return
-        }
-
-        const buf = this.buffers.get(topic)
-        if (buf && !buf.isEmpty) {
-          cleanup()
-          resolve(buf.shift() ?? null)
-          return
-        }
-
-        const elapsed = Date.now() - startTime
-        if (elapsed >= timeout) {
-          cleanup()
-          resolve(null)
-          return
-        }
-
-        timerId = setTimeout(checkMessage, 50)
-      }
+      }, timeoutMs)
 
       if (!this.waiters.has(topic)) {
         this.waiters.set(topic, [])
       }
-      this.waiters.get(topic)?.push(checkMessage)
 
-      timerId = setTimeout(checkMessage, 0)
+      this.waiters.get(topic)?.push({ resolve, timer })
     })
   }
 
   /**
-   * Dequeue multiple messages from a topic buffer.
+   * 批次取出。
+   *
+   * @param topic 主題名稱
+   * @param count 最多取出的訊息數
+   * @returns 取出的訊息陣列（不足時回傳可用數量）
    */
   dequeueMany(topic: string, count: number): BufferedMessage[] {
     const buffer = this.buffers.get(topic)
-    if (!buffer || buffer.isEmpty) {
+    if (!buffer) {
       return []
     }
-    return buffer.shiftMany(count)
+
+    const results: BufferedMessage[] = []
+    for (let i = 0; i < count && buffer.length > 0; i++) {
+      const msg = buffer.shift()
+      if (msg) {
+        results.push(msg)
+      }
+    }
+
+    return results
   }
 
   /**
-   * Get current size of a topic buffer.
+   * 取得指定 topic 的緩衝數量。
+   *
+   * @param topic 主題名稱
+   * @returns 緩衝區中的訊息數
    */
   size(topic: string): number {
     return this.buffers.get(topic)?.length ?? 0
   }
 
   /**
-   * Clear all messages from a topic buffer.
+   * 清空指定 topic 的緩衝區。
+   *
+   * @param topic 主題名稱
    */
   clear(topic: string): void {
     this.buffers.delete(topic)
-    this.waiters.delete(topic)
   }
 
   /**
-   * Destroy all buffers and cancel all pending waiters.
+   * 清空所有緩衝區並取消所有等待者。
+   *
+   * 用於優雅關閉時調用。
    */
   destroy(): void {
-    this.destroyed = true
-
-    for (const waiters of this.waiters.values()) {
-      waiters.splice(0)
+    // 取消所有等待者
+    for (const [, waitersList] of this.waiters.entries()) {
+      for (const waiter of waitersList) {
+        clearTimeout(waiter.timer)
+        waiter.resolve(null)
+      }
     }
 
-    this.buffers.clear()
     this.waiters.clear()
+    this.buffers.clear()
   }
 
+  /**
+   * 喚醒指定 topic 的第一個等待者。
+   *
+   * @private
+   */
   private notifyWaiters(topic: string): void {
-    const waiters = this.waiters.get(topic)
-    if (!waiters) {
+    const waitersList = this.waiters.get(topic)
+    if (!waitersList || waitersList.length === 0) {
       return
     }
 
-    for (const waiter of waiters.splice(0, 1)) {
-      waiter()
+    const waiter = waitersList.shift()
+    if (!waiter) {
+      return
+    }
+
+    clearTimeout(waiter.timer)
+    const msg = this.dequeue(topic)
+    waiter.resolve(msg)
+
+    if (waitersList.length === 0) {
+      this.waiters.delete(topic)
     }
   }
 }

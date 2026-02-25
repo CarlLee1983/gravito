@@ -158,9 +158,9 @@ group('Middleware Collection Caching', () => {
   const app = new Gravito()
 
   // Setup middleware
-  const m1: Middleware = async (c, next) => next()
-  const m2: Middleware = async (c, next) => next()
-  const m3: Middleware = async (c, next) => next()
+  const m1: Middleware = async (_c, next) => next()
+  const m2: Middleware = async (_c, next) => next()
+  const m3: Middleware = async (_c, next) => next()
 
   app.use(m1)
   app.use(m2)

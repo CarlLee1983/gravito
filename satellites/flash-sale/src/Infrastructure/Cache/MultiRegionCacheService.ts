@@ -48,7 +48,6 @@ interface RegionalCache {
 export class MultiRegionCacheService implements CacheService {
   private regions: Map<string, RegionalCache> = new Map()
   private currentRegion: string
-  private failoverManager: FailoverManager
   private replicationQueue: Array<{
     key: string
     value: unknown
@@ -314,7 +313,12 @@ export class MultiRegionCacheService implements CacheService {
    * @param ttl 生存時間
    * @param regionName 目標區域（可選）
    */
-  private enqueueReplication(key: string, value: unknown, ttl?: number, regionName?: string): void {
+  private enqueueReplication(
+    key: string,
+    value: unknown,
+    ttl?: number,
+    _regionName?: string
+  ): void {
     this.replicationQueue.push({ key, value, ttl })
 
     if (!this.replicationProcessing && this.replicationQueue.length > 0) {
@@ -382,7 +386,7 @@ export class MultiRegionCacheService implements CacheService {
    *
    * @param metric 指標名稱
    */
-  private recordMetrics(metric: string): void {
+  private recordMetrics(_metric: string): void {
     // 指標記錄（與應用的 metrics.registry 集成）
     // 示例指標：local_hit, primary_hit, cache_miss, replication_latency
   }

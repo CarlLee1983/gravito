@@ -623,10 +623,10 @@ export class TemplateCompiler {
     switch (operator) {
       case 'eq':
         // eslint-disable-next-line eqeqeq
-        return left == right
+        return left === right
       case 'ne':
         // eslint-disable-next-line eqeqeq
-        return left != right
+        return left !== right
       case 'gt':
         return Number(left) > Number(right)
       case 'lt':

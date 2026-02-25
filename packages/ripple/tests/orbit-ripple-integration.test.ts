@@ -4,7 +4,7 @@
  * 驗證 Ripple WebSocket 與 BunNativeAdapter 的同一 Port 整合
  */
 
-import type { GravitoOrbit, PlanetCore } from '@gravito/core'
+import type { PlanetCore } from '@gravito/core'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BunEngine } from '../src/engines/BunEngine'
 import type { RippleSocket } from '../src/engines/IRippleEngine'
@@ -62,7 +62,7 @@ describe('OrbitRipple x BunNativeAdapter Integration', () => {
       const engine = new BunEngine()
       let receivedData: string | Uint8Array | undefined
 
-      engine.onMessage((socket, data) => {
+      engine.onMessage((_socket, data) => {
         receivedData = data
       })
 
@@ -173,7 +173,7 @@ describe('OrbitRipple x BunNativeAdapter Integration', () => {
           registerWebSocketRoute: vi.fn(),
         },
         hooks: {
-          doAction: vi.fn((hook, cb) => {
+          doAction: vi.fn((_hook, _cb) => {
             // 不呼叫 cb
           }),
         },
@@ -182,8 +182,8 @@ describe('OrbitRipple x BunNativeAdapter Integration', () => {
       const orbit = new OrbitRipple()
       orbit.install(mockCore as any)
 
-      expect(mockCore.container!.instance).toHaveBeenCalledWith('ripple', expect.any(RippleServer))
-      expect(mockCore.container!.instance).toHaveBeenCalledWith('broadcast', expect.anything())
+      expect(mockCore.container?.instance).toHaveBeenCalledWith('ripple', expect.any(RippleServer))
+      expect(mockCore.container?.instance).toHaveBeenCalledWith('broadcast', expect.anything())
     })
 
     it('應在 BunNativeAdapter 上呼叫 registerWebSocketRoute', async () => {
@@ -205,7 +205,7 @@ describe('OrbitRipple x BunNativeAdapter Integration', () => {
       // 等待非同步初始化
       await new Promise((resolve) => setTimeout(resolve, 100))
 
-      expect(mockCore.adapter!.registerWebSocketRoute).toHaveBeenCalledWith(
+      expect(mockCore.adapter?.registerWebSocketRoute).toHaveBeenCalledWith(
         '/ws',
         expect.objectContaining({
           open: expect.any(Function),
@@ -278,7 +278,7 @@ describe('OrbitRipple x BunNativeAdapter Integration', () => {
       const orbit = new OrbitRipple()
       orbit.install(mockCore as any)
 
-      expect(mockCore.adapter!.use).toHaveBeenCalledWith('*', expect.any(Function))
+      expect(mockCore.adapter?.use).toHaveBeenCalledWith('*', expect.any(Function))
     })
 
     it('應在 core:shutdown 時呼叫 server.shutdown()', async () => {
@@ -304,7 +304,7 @@ describe('OrbitRipple x BunNativeAdapter Integration', () => {
       orbit.install(mockCore as any)
 
       expect(shutdownCb).toBeDefined()
-      await shutdownCb!()
+      await shutdownCb?.()
 
       expect(shutdownSpy).toHaveBeenCalled()
     })

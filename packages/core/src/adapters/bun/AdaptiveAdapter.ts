@@ -35,12 +35,16 @@ class PerformanceMetrics {
   }
 
   getAverageTime(): number {
-    if (this.durations.length === 0) return 0
+    if (this.durations.length === 0) {
+      return 0
+    }
     return this.durations.reduce((a, b) => a + b, 0) / this.durations.length
   }
 
   getPercentile(p: number): number {
-    if (this.durations.length === 0) return 0
+    if (this.durations.length === 0) {
+      return 0
+    }
     const sorted = [...this.durations].sort((a, b) => a - b)
     const index = Math.ceil((p / 100) * sorted.length) - 1
     return sorted[Math.max(0, index)]

@@ -53,7 +53,7 @@ export function registerRoutes(
   // ============================================================================
   // SSE (Server-Sent Events) Stream
   // ============================================================================
-  router.get('/api/events/stream', (c) => {
+  router.get('/api/events/stream', (_c) => {
     let controller: ReadableStreamDefaultController<Uint8Array> | null = null
     let heartbeatInterval: NodeJS.Timeout | null = null
 

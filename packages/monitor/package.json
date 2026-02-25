@@ -36,23 +36,22 @@
     "@gravito/core": "^1.6.1",
     "@gravito/photon": "^1.0.1"
   },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/exporter-jaeger": "^1.30.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.57.0",
+    "@opentelemetry/exporter-prometheus": "^0.57.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.57.0",
+    "@opentelemetry/resources": "^1.30.0",
+    "@opentelemetry/sdk-metrics": "^1.30.0",
+    "@opentelemetry/sdk-trace-base": "^1.30.0",
+    "@opentelemetry/sdk-trace-node": "^1.30.0"
+  },
   "devDependencies": {
     "@types/bun": "latest",
-    "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/sdk-node": "^0.57.0",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.57.0",
-    "@opentelemetry/resources": "^1.29.0",
-    "@opentelemetry/semantic-conventions": "^1.28.0",
     "@gravito/core": "workspace:*",
     "tsup": "^8.2.4",
     "typescript": "^5.9.3"
-  },
-  "optionalDependencies": {
-    "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/sdk-node": "^0.57.0",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.57.0",
-    "@opentelemetry/resources": "^1.29.0",
-    "@opentelemetry/semantic-conventions": "^1.28.0"
   },
   "keywords": [
     "gravito",

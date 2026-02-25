@@ -64,7 +64,9 @@ export class RequestScopeMetrics {
    * @returns True if cleanup exceeded threshold
    */
   isSlowCleanup(thresholdMs = 2): boolean {
-    if (this.cleanupDuration === null) return false
+    if (this.cleanupDuration === null) {
+      return false
+    }
     return this.cleanupDuration > thresholdMs
   }
 

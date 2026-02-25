@@ -129,7 +129,7 @@ export class EventDeduplicator {
       }
 
       // 添加模式
-      const patterns = eventMap.get(event.id)!.patterns
+      const patterns = eventMap.get(event.id)?.patterns
       event.patterns.forEach((p) => {
         if (!patterns.includes(p)) {
           patterns.push(p)
@@ -166,7 +166,7 @@ export class EventDeduplicator {
       if (!byPrefix.has(prefix)) {
         byPrefix.set(prefix, [])
       }
-      byPrefix.get(prefix)!.push(pattern)
+      byPrefix.get(prefix)?.push(pattern)
     }
 
     // 如果某個前綴的模式數 > 50%，用通配符替代

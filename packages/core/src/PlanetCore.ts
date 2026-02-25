@@ -24,6 +24,10 @@ import { HookManager } from './HookManager'
 import type { fail } from './helpers/response'
 import type { ContentfulStatusCode, GravitoContext } from './http/types'
 import { ConsoleLogger, type Logger } from './Logger'
+import {
+  createNoOpObservabilityProvider,
+  type ObservabilityProvider,
+} from './observability/contracts'
 import type { ServiceProvider } from './ServiceProvider'
 
 /**
@@ -137,6 +141,13 @@ export type GravitoConfig = {
       endpoint?: string
     }
   }
+
+  /**
+   * Observability provider for distributed tracing and metrics.
+   * If provided, this will be used instead of the default OTel setup.
+   * @since 2.2.0
+   */
+  observabilityProvider?: ObservabilityProvider
 }
 
 import { BunNativeAdapter } from './adapters/bun/BunNativeAdapter'
@@ -187,6 +198,12 @@ export class PlanetCore {
 
   public encrypter?: Encrypter
   public hasher: BunHasher
+
+  /**
+   * Observability provider for distributed tracing and metrics.
+   * @since 2.2.0
+   */
+  public observabilityProvider: ObservabilityProvider
 
   private providers: ServiceProvider[] = []
   private deferredProviders: Map<string, ServiceProvider> = new Map()
@@ -491,10 +508,14 @@ export class PlanetCore {
       config?: Record<string, unknown>
       adapter?: HttpAdapter
       container?: Container
+      observabilityProvider?: ObservabilityProvider
     } = {}
   ) {
     this.logger = options.logger ?? new ConsoleLogger()
     this.config = new ConfigManager(options.config ?? {})
+
+    // Initialize observability provider (Phase 2.2)
+    this.observabilityProvider = options.observabilityProvider ?? createNoOpObservabilityProvider()
 
     // 可觀測性配置初始化
     const obsConfig = this.config.get<GravitoConfig['observability']>('observability', {

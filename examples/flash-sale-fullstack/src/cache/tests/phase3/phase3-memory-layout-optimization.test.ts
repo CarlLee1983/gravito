@@ -10,10 +10,10 @@
  * 3. 對齐優化 -> 減少緩存行浪費
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { EventDeduplicator } from '../../events/EventDeduplicator.js'
 import { EventQueue } from '../../events/EventQueue.js'
-import { CacheEventType, createCacheEvent, EventPriority, EventSource } from '../../events/types.js'
+import { CacheEventType, createCacheEvent, EventPriority } from '../../events/types.js'
 
 describe('Memory Layout Optimization', () => {
   describe('熱路徑訪問優化', () => {

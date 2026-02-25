@@ -15,6 +15,7 @@
 
 import { resolve } from 'node:path'
 import type { SerializedJob } from '../types'
+import { encodeJobForTransfer } from './BinaryWorkerProtocol'
 
 /**
  * Configuration options for the Bun Worker.
@@ -292,8 +293,13 @@ export class BunWorker {
   /**
    * Internal method to send execution message to the worker thread.
    *
+   * 使用 Binary Protocol（ArrayBuffer Transfer）傳遞 Job 資料：
+   * 1. 將 job 編碼為 ArrayBuffer（JSON + TextEncoder）
+   * 2. 透過 postMessage transfer list 零拷貝傳遞給 Worker
+   * 3. 注意：buffer transfer 後即失效，但 job 引用仍有效（支援重試）
+   *
    * @param worker - The worker instance.
-   * @param job - Job data.
+   * @param job - Job data（保留此引用以支援潛在重試，不依賴已 transfer 的 buffer）
    */
   private executeInWorker(worker: Worker, job: SerializedJob): Promise<void> {
     return new Promise<void>((resolve, reject) => {
@@ -326,31 +332,10 @@ export class BunWorker {
       worker.addEventListener('message', messageHandler as EventListener)
       worker.addEventListener('error', errorHandler as EventListener)
 
-      // Send job execution request using postMessage
-      // Bun optimizes string messages with a fast path
-      // For large binary payloads (>1KB), use Transferable ArrayBuffer for zero-copy transfer
-      if (job.data instanceof Uint8Array && (job.data as Uint8Array).byteLength > 1024) {
-        const buffer = (job.data as Uint8Array).buffer.slice(
-          (job.data as Uint8Array).byteOffset,
-          (job.data as Uint8Array).byteOffset + (job.data as Uint8Array).byteLength
-        )
-
-        const transferableJob = {
-          ...job,
-          data: buffer,
-          _isTransferable: true,
-        }
-
-        worker.postMessage(
-          { type: 'execute', job: transferableJob },
-          [buffer] // transfer list
-        )
-      } else {
-        worker.postMessage({
-          type: 'execute',
-          job,
-        })
-      }
+      // 將 job 編碼為 ArrayBuffer 並以零拷貝方式 transfer 給 Worker
+      // job 物件本身保留在 Main Thread 側，不受 transfer 影響
+      const buffer = encodeJobForTransfer(job)
+      worker.postMessage({ type: 'execute-binary', buffer }, [buffer])
     })
   }
 

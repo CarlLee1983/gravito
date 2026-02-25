@@ -210,7 +210,9 @@ export class JsonlSerializer implements JobSerializer {
       const lines = chunk.split('\n')
       for (const line of lines) {
         const trimmed = line.trim()
-        if (trimmed.length === 0) continue
+        if (trimmed.length === 0) {
+          continue
+        }
         let serialized: SerializedJob
         try {
           serialized = JSON.parse(trimmed) as SerializedJob

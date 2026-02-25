@@ -4,10 +4,9 @@
  * 測試 BunNativeAdapter 與 PhotonAdapter 的兼容性與一致性
  */
 
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import { BunNativeAdapter } from '../src/adapters/bun/BunNativeAdapter'
 import type { HttpAdapter } from '../src/adapters/types'
-import type { GravitoContext } from '../src/http/types'
 
 // 測試同時在兩個適配器上運行
 function testBothAdapters(name: string, testFn: (adapter: HttpAdapter) => Promise<void>) {
@@ -136,13 +135,13 @@ describe('HTTP Adapters Integration', () => {
     testBothAdapters('多個中間件應該按順序執行', async (adapter) => {
       const order: string[] = []
 
-      adapter.use('*', async (ctx, next) => {
+      adapter.use('*', async (_ctx, next) => {
         order.push('mw1-start')
         await next()
         order.push('mw1-end')
       })
 
-      adapter.use('*', async (ctx, next) => {
+      adapter.use('*', async (_ctx, next) => {
         order.push('mw2-start')
         await next()
         order.push('mw2-end')

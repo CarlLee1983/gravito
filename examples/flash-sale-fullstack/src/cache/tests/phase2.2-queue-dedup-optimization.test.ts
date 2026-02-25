@@ -411,8 +411,8 @@ describe('P1.3 Phase 2.2 - Queue & Dedup Optimization', () => {
           [EventPriority.LOW]: 3,
         }
 
-        expect(priorityValue[event!.priority]).toBeGreaterThanOrEqual(priorityValue[lastPriority])
-        lastPriority = event!.priority
+        expect(priorityValue[event?.priority]).toBeGreaterThanOrEqual(priorityValue[lastPriority])
+        lastPriority = event?.priority
       }
 
       console.log('\n✓ C2 Priority Queue Correctness:', {

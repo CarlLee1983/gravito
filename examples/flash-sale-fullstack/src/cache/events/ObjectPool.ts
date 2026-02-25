@@ -142,7 +142,9 @@ export class CacheEventPool {
    */
   getHitRate(): number {
     const total = this.stats.reused + this.stats.created
-    if (total === 0) return 0
+    if (total === 0) {
+      return 0
+    }
     return Math.round((this.stats.reused / total) * 10000) / 100
   }
 

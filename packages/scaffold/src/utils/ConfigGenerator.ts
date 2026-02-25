@@ -318,7 +318,6 @@ export default {
         return this.generateAdvancedWorkersConfig()
       case 'production':
         return this.generateProductionWorkersConfig()
-      case 'basic':
       default:
         return this.generateBasicWorkersConfig()
     }

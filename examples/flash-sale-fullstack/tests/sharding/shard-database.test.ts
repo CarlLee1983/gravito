@@ -222,7 +222,7 @@ describe('ShardDatabaseManager', () => {
   })
 
   it('should execute transactions on healthy shards', async () => {
-    const result = await manager.transaction(0, async (trx) => {
+    const result = await manager.transaction(0, async (_trx) => {
       return { success: true }
     })
 

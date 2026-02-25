@@ -3,10 +3,10 @@
  * @description 測試 tagged template literal 安全查詢建構器
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import type { ConnectionContract } from '../../src/connection/Connection'
 import { identifier, SafeIdentifier, SafeQueryBuilder } from '../../src/query/SafeQueryBuilder'
-import type { DriverContract, QueryResult } from '../../src/types'
+import type { DriverContract } from '../../src/types'
 
 describe('SafeIdentifier', () => {
   describe('建構器驗證', () => {
@@ -73,7 +73,7 @@ describe('SafeQueryBuilder', () => {
     // Mock Connection
     mockConnection = {
       getDriver: mock(() => mockDriver),
-      raw: mock(async (sql: string, bindings: unknown[]) => ({
+      raw: mock(async (_sql: string, _bindings: unknown[]) => ({
         rows: [{ id: 1, name: 'test' }],
         rowCount: 1,
         insertId: undefined,

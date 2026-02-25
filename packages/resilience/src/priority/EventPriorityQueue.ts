@@ -5,7 +5,6 @@ import type {
   EventOptions,
   EventQueueConfig,
   EventTask,
-  HookManager,
   MultiPriorityQueueDepth,
 } from '@gravito/core'
 import type { Span } from '@opentelemetry/api'

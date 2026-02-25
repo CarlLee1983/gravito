@@ -24,6 +24,11 @@ export { BatchConsumer, type BatchConsumerOptions } from './BatchConsumer'
 export type { ConsumerOptions } from './Consumer'
 export { Consumer } from './Consumer'
 
+// Consumer strategies
+export type { ConsumerStrategy } from './consumer/ConsumerStrategy'
+export { PollingStrategy } from './consumer/PollingStrategy'
+export { ReactiveStrategy } from './consumer/ReactiveStrategy'
+
 // Driver config types
 export type { BullMQDriverConfig } from './drivers/BullMQDriver'
 export { BullMQDriver } from './drivers/BullMQDriver'

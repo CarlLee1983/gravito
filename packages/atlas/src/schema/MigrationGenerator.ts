@@ -39,7 +39,9 @@ function columnTypeToSql(col: ColumnDefinition, dialect: DriverType): string {
 
 function columnSuffix(col: ColumnDefinition): string {
   const parts: string[] = []
-  if (!col.nullable) parts.push('NOT NULL')
+  if (!col.nullable) {
+    parts.push('NOT NULL')
+  }
   if (col.defaultValue !== null && col.defaultValue !== undefined) {
     parts.push(`DEFAULT ${col.defaultValue}`)
   }
@@ -82,7 +84,9 @@ export class MigrationGenerator {
    * @returns Array of SQL statements to execute
    */
   generate(diff: SchemaDiffResult): string[] {
-    if (!diff.hasChanges) return []
+    if (!diff.hasChanges) {
+      return []
+    }
 
     const statements: string[] = []
     const table = this.quoteIdentifier(diff.table)

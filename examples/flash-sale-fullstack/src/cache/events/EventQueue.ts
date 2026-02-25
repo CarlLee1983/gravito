@@ -7,7 +7,7 @@
  * - O(log n) 移除最高優先級事件
  */
 
-import { type CacheEvent, EventPriority, PriorityEscalationManager } from './index'
+import { type CacheEvent, EventPriority } from './index'
 
 /**
  * 優先級隊列實現
@@ -39,7 +39,9 @@ export class EventQueue {
    * 複雜度：O(log n)
    */
   dequeue(): CacheEvent | undefined {
-    if (this.heap.length === 0) return undefined
+    if (this.heap.length === 0) {
+      return undefined
+    }
 
     const root = this.heap[0]
 
@@ -218,7 +220,9 @@ export class EventQueue {
    */
   escalateEvent(eventId: string): boolean {
     const index = this.heap.findIndex((e) => e.id === eventId)
-    if (index === -1) return false
+    if (index === -1) {
+      return false
+    }
 
     // 由於優先級可能上升，需要向上冒泡
     this.bubbleUp(index)

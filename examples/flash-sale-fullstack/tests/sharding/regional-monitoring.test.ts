@@ -3,7 +3,7 @@
  * 多區域監控系統測試
  */
 
-import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
+import { beforeAll, describe, expect, it } from 'bun:test'
 import type { AlertRule, RegionMetrics } from '../../src/sharding'
 import { RegionalMonitoringSystem } from '../../src/sharding'
 

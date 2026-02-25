@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto'
+import { randomUUID } from 'node:crypto'
 import type { CommandBus } from '../Bus/CommandBus'
 import type { QueryBus } from '../Bus/QueryBus'
 import { CreateAccountCommand } from '../Commands/CreateAccount/CreateAccountCommand'

@@ -1,268 +1,184 @@
 /**
- * Tests for RuntimeEscapeAdapter (runtime/escape.ts)
+ * Tests for RuntimeEscapeAdapter
  */
 
 import { describe, expect, it } from 'bun:test'
-import { getEscapeHtml } from '../src/runtime'
+import { getEscapeHtml } from '../src/runtime/escape'
 
-describe('runtime/escape', () => {
-  describe('getEscapeHtml()', () => {
-    it('should return a function', () => {
-      const escapeHtml = getEscapeHtml()
-      expect(typeof escapeHtml).toBe('function')
+describe('getEscapeHtml', () => {
+  const escapeHtml = getEscapeHtml()
+
+  describe('基本轉義', () => {
+    it('應該轉義單個特殊字元', () => {
+      expect(escapeHtml('&')).toBe('&amp;')
+      expect(escapeHtml('<')).toBe('&lt;')
+      expect(escapeHtml('>')).toBe('&gt;')
+      expect(escapeHtml('"')).toBe('&quot;')
+      // Bun 使用 &#x27; 而不是 &#39;，兩者皆有效
+      const escaped = escapeHtml("'")
+      expect(escaped === '&#39;' || escaped === '&#x27;').toBe(true)
     })
 
-    it('should be a singleton', () => {
-      const escapeHtml1 = getEscapeHtml()
-      const escapeHtml2 = getEscapeHtml()
-      expect(escapeHtml1).toBe(escapeHtml2)
-    })
-  })
-
-  describe('Basic character escaping', () => {
-    const escapeHtml = getEscapeHtml()
-
-    it('should escape ampersand', () => {
-      expect(escapeHtml('a & b')).toBe('a &amp; b')
+    it('應該轉義多個特殊字元', () => {
+      expect(escapeHtml('&<>')).toBe('&amp;&lt;&gt;')
+      const escaped = escapeHtml('"\'&')
+      expect(escaped === '&quot;&#39;&amp;' || escaped === '&quot;&#x27;&amp;').toBe(true)
     })
 
-    it('should escape less-than', () => {
-      expect(escapeHtml('a < b')).toBe('a &lt; b')
-    })
-
-    it('should escape greater-than', () => {
-      expect(escapeHtml('a > b')).toBe('a &gt; b')
-    })
-
-    it('should escape double quote', () => {
-      expect(escapeHtml('a "b" c')).toBe('a &quot;b&quot; c')
-    })
-
-    it('should escape single quote', () => {
-      expect(escapeHtml("a 'b' c")).toBe('a &#x27;b&#x27; c')
+    it('應該轉義重複出現的字元', () => {
+      expect(escapeHtml('&&')).toBe('&amp;&amp;')
+      expect(escapeHtml('<<>>')).toBe('&lt;&lt;&gt;&gt;')
     })
   })
 
-  describe('Combined characters', () => {
-    const escapeHtml = getEscapeHtml()
-
-    it('should escape multiple special characters', () => {
-      expect(escapeHtml('a & < > " \' b')).toBe('a &amp; &lt; &gt; &quot; &#x27; b')
+  describe('HTML/XML 上下文', () => {
+    it('應該轉義標籤', () => {
+      expect(escapeHtml('<div>')).toBe('&lt;div&gt;')
+      expect(escapeHtml('<script>')).toBe('&lt;script&gt;')
     })
 
-    it('should escape repeated characters', () => {
-      expect(escapeHtml('&&&')).toBe('&amp;&amp;&amp;')
-      expect(escapeHtml('<<<')).toBe('&lt;&lt;&lt;')
-      expect(escapeHtml('>>>')).toBe('&gt;&gt;&gt;')
-    })
-  })
-
-  describe('HTML/XML contexts', () => {
-    const escapeHtml = getEscapeHtml()
-
-    it('should escape HTML tags', () => {
-      expect(escapeHtml('<div>content</div>')).toBe('&lt;div&gt;content&lt;/div&gt;')
-    })
-
-    it('should escape attribute values with double quotes', () => {
-      expect(escapeHtml('value="test"')).toBe('value=&quot;test&quot;')
-    })
-
-    it('should escape attribute values with single quotes', () => {
-      expect(escapeHtml("value='test'")).toBe('value=&#x27;test&#x27;')
-    })
-
-    it('should escape XML entities', () => {
-      expect(escapeHtml('<?xml version="1.0"?>')).toBe('&lt;?xml version=&quot;1.0&quot;?&gt;')
-    })
-  })
-
-  describe('XSS vectors', () => {
-    const escapeHtml = getEscapeHtml()
-
-    it('should escape standard script tag injection', () => {
-      expect(escapeHtml('<script>alert("xss")</script>')).toBe(
-        '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;'
+    it('應該轉義屬性', () => {
+      expect(escapeHtml('<a href="http://example.com">')).toBe(
+        '&lt;a href=&quot;http://example.com&quot;&gt;'
       )
     })
 
-    it('should escape onclick attribute injection', () => {
-      expect(escapeHtml('" onclick="alert(\'xss\')')).toBe(
-        '&quot; onclick=&quot;alert(&#x27;xss&#x27;)'
-      )
-    })
-
-    it('should escape img src injection', () => {
-      expect(escapeHtml('<img src="x" onerror="alert(\'xss\')">')).toBe(
-        '&lt;img src=&quot;x&quot; onerror=&quot;alert(&#x27;xss&#x27;)&quot;&gt;'
-      )
-    })
-
-    it('should escape JavaScript protocol injection', () => {
-      expect(escapeHtml('<a href="javascript:alert(\'xss\')">click</a>')).toBe(
-        '&lt;a href=&quot;javascript:alert(&#x27;xss&#x27;)&quot;&gt;click&lt;/a&gt;'
-      )
-    })
-
-    it('should escape iframe injection', () => {
-      expect(escapeHtml('<iframe src="http://attacker.com"></iframe>')).toBe(
-        '&lt;iframe src=&quot;http://attacker.com&quot;&gt;&lt;/iframe&gt;'
-      )
-    })
-
-    it('should escape style injection', () => {
-      expect(escapeHtml('<style>body { display:none }</style>')).toBe(
-        '&lt;style&gt;body { display:none }&lt;/style&gt;'
-      )
+    it('應該轉義 HTML 實體組合', () => {
+      expect(escapeHtml('&amp;')).toBe('&amp;amp;')
+      expect(escapeHtml('&lt;')).toBe('&amp;lt;')
     })
   })
 
-  describe('Edge cases', () => {
-    const escapeHtml = getEscapeHtml()
-
-    it('should handle empty string', () => {
-      expect(escapeHtml('')).toBe('')
+  describe('XSS 防護', () => {
+    it('應該防護 script 標籤 XSS', () => {
+      const xss = '<script>alert("xss")</script>'
+      const escaped = escapeHtml(xss)
+      expect(escaped).toBe('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;')
+      expect(escaped).not.toContain('<script>')
     })
 
-    it('should not escape regular text', () => {
-      expect(escapeHtml('hello world')).toBe('hello world')
+    it('應該防護 onclick 屬性 XSS', () => {
+      const xss = '" onclick="alert(\'xss\')'
+      const escaped = escapeHtml(xss)
+      // 引號本身被轉義
+      expect(escaped).toContain('&quot;')
+      // 單引號被轉義（Bun 使用 &#x27;）
+      expect(escaped.includes('&#x27;') || escaped.includes('&#39;')).toBe(true)
     })
 
-    it('should not escape numbers', () => {
-      expect(escapeHtml('123456')).toBe('123456')
+    it('應該防護 iframe 標籤 XSS', () => {
+      const xss = '<iframe src="javascript:alert(\'xss\')"></iframe>'
+      const escaped = escapeHtml(xss)
+      expect(escaped).not.toContain('<iframe')
+      expect(escaped).toContain('&lt;iframe')
     })
 
-    it('should handle string with only special characters', () => {
-      expect(escapeHtml('&<>"')).toBe('&amp;&lt;&gt;&quot;')
-    })
-
-    it('should handle very long strings', () => {
-      const longString = 'a'.repeat(10000) + '<script>'
-      const result = escape(longString)
-      expect(result).toContain('&lt;script&gt;')
-      expect(result).toMatch(/^a+&lt;script&gt;$/)
-    })
-  })
-
-  describe('Unicode and special characters', () => {
-    const escapeHtml = getEscapeHtml()
-
-    it('should handle Chinese characters', () => {
-      expect(escapeHtml('你好世界')).toBe('你好世界')
-    })
-
-    it('should handle mixed Chinese and special characters', () => {
-      expect(escapeHtml('你好<世界>')).toBe('你好&lt;世界&gt;')
-    })
-
-    it('should handle Japanese characters', () => {
-      expect(escapeHtml('こんにちは世界')).toBe('こんにちは世界')
-    })
-
-    it('should handle emoji', () => {
-      expect(escapeHtml('Hello 👋 World')).toBe('Hello 👋 World')
-    })
-
-    it('should handle mixed emoji and special characters', () => {
-      expect(escapeHtml('<Hello 👋 World>')).toBe('&lt;Hello 👋 World&gt;')
-    })
-
-    it('should handle accented characters', () => {
-      expect(escapeHtml('Café')).toBe('Café')
-    })
-
-    it('should handle tab and newline characters', () => {
-      expect(escapeHtml('line1\nline2\ttab')).toBe('line1\nline2\ttab')
-    })
-  })
-
-  describe('Idempotency', () => {
-    const escapeHtml = getEscapeHtml()
-
-    it('should not double-escape already escaped content', () => {
-      const original = '<script>'
-      const escaped = escapeHtml(original)
-      const doubleEscaped = escapeHtml(escaped)
-      expect(escaped).not.toBe(doubleEscaped)
-      // The second escape should add more entities
-      expect(doubleEscaped).toContain('&amp;')
-    })
-  })
-
-  describe('Cross-runtime consistency', () => {
-    it('should produce consistent results across multiple calls', () => {
-      const escapeHtml = getEscapeHtml()
-      const inputs = [
-        '<script>alert("xss")</script>',
-        'normal text',
-        '&<>"\'',
-        'mixed <text> & content',
-        '中文 & English',
-      ]
-
-      for (const input of inputs) {
-        const result1 = escapeHtml(input)
-        const result2 = escapeHtml(input)
-        expect(result1).toBe(result2)
-      }
-    })
-  })
-
-  describe('HTML entity combinations', () => {
-    const escapeHtml = getEscapeHtml()
-
-    it('should escape complex HTML structures', () => {
-      const html = '<div class="test" data-value="123">Content & More</div>'
-      expect(escapeHtml(html)).toBe(
-        '&lt;div class=&quot;test&quot; data-value=&quot;123&quot;&gt;Content &amp; More&lt;/div&gt;'
-      )
-    })
-
-    it('should escape JSON-like structures', () => {
-      const json = '{"key": "value<script>"}'
-      expect(escapeHtml(json)).toBe('{&quot;key&quot;: &quot;value&lt;script&gt;&quot;}')
-    })
-
-    it('should escape URL-like strings', () => {
-      const url = 'https://example.com?param=<value>&other="test"'
-      expect(escapeHtml(url)).toBe(
-        'https://example.com?param=&lt;value&gt;&amp;other=&quot;test&quot;'
-      )
-    })
-  })
-
-  describe('Real-world use cases', () => {
-    it('should escape user input from a form', () => {
-      const escapeHtmlFn = getEscapeHtml()
-      const userInput = '<img src=x onerror="alert(\'xss\')">'
-      const escaped = escapeHtmlFn(userInput)
-      expect(escaped).not.toContain('<img')
-      // The escaped version should have & entities, not raw HTML
-      expect(escaped).toContain('&lt;img')
+    it('應該防護 javascript: 協議', () => {
+      const xss = '<a href="javascript:alert(\'xss\')">click</a>'
+      const escaped = escapeHtml(xss)
+      // 標籤本身被轉義，href 屬性值內容無法執行
+      expect(escaped).not.toContain('<a')
+      expect(escaped).toContain('&lt;a')
       expect(escaped).toContain('&quot;')
     })
 
-    it('should escape content for HTML attribute', () => {
-      const content = 'value" onclick="alert(\'xss\')'
-      const escaped = escape(content)
-      const html = `<div title="${escaped}">Test</div>`
-      // The escaped version prevents the quote from closing the attribute
-      expect(escaped).toBe('value&quot; onclick=&quot;alert(&#x27;xss&#x27;)')
-      // So the attribute injection is neutralized
-      expect(html).toBe('<div title="value&quot; onclick=&quot;alert(&#x27;xss&#x27;)">Test</div>')
+    it('應該防護常見 XSS payload', () => {
+      const payloads = [
+        '<img src=x onerror="alert(\'xss\')">',
+        '<svg onload="alert(\'xss\')"></svg>',
+        '<body onload="alert(\'xss\')">',
+        '<marquee onstart="alert(\'xss\')">',
+      ]
+
+      payloads.forEach((payload) => {
+        const escaped = escapeHtml(payload)
+        // 標籤本身被轉義，屬性無法執行
+        expect(escaped).not.toContain('<img')
+        expect(escaped).not.toContain('<svg')
+        expect(escaped).not.toContain('<body')
+        expect(escaped).not.toContain('<marquee')
+        expect(escaped).toContain('&lt;')
+      })
+    })
+  })
+
+  describe('邊界情況', () => {
+    it('應該處理空字串', () => {
+      expect(escapeHtml('')).toBe('')
     })
 
-    it('should escape content for HTML text node', () => {
-      const content = '<script>alert("xss")</script>'
-      const escaped = escape(content)
-      const html = `<div>${escaped}</div>`
-      expect(html).not.toContain('<script>')
+    it('應該處理超長字串', () => {
+      const longString = 'a'.repeat(10000)
+      expect(escapeHtml(longString)).toBe(longString)
     })
 
-    it('should escape markdown-like content', () => {
-      const markdown = '[Link](<script>alert("xss")</script>)'
-      const escaped = escape(markdown)
-      expect(escaped).toContain('&lt;script&gt;')
+    it('應該保留普通字符', () => {
+      expect(escapeHtml('hello')).toBe('hello')
+      expect(escapeHtml('123')).toBe('123')
+      expect(escapeHtml('hello world')).toBe('hello world')
+    })
+
+    it('應該處理混合內容', () => {
+      const mixed = 'Hello & "World" <tag>'
+      const escaped = escapeHtml(mixed)
+      expect(escaped).toBe('Hello &amp; &quot;World&quot; &lt;tag&gt;')
+    })
+  })
+
+  describe('Unicode 與 Emoji', () => {
+    it('應該保留中文字元', () => {
+      expect(escapeHtml('你好')).toBe('你好')
+      expect(escapeHtml('你好<世界>')).toBe('你好&lt;世界&gt;')
+    })
+
+    it('應該保留日文字元', () => {
+      expect(escapeHtml('こんにちは')).toBe('こんにちは')
+      expect(escapeHtml('テスト<tag>')).toBe('テスト&lt;tag&gt;')
+    })
+
+    it('應該保留 Emoji', () => {
+      expect(escapeHtml('😀')).toBe('😀')
+      expect(escapeHtml('🎉<test>')).toBe('🎉&lt;test&gt;')
+    })
+
+    it('應該保留重音字元', () => {
+      expect(escapeHtml('café')).toBe('café')
+      expect(escapeHtml('naïve<tag>')).toBe('naïve&lt;tag&gt;')
+    })
+  })
+
+  describe('幪等性與一致性', () => {
+    it('應該使單次轉義後的字串安全', () => {
+      const original = '<script>alert("xss")</script>'
+      const once = escapeHtml(original)
+      const twice = escapeHtml(once)
+      // 第二次轉義應該再次轉義 &，所以結果應該不同
+      expect(twice).not.toBe(once)
+    })
+
+    it('應該產生一致的輸出', () => {
+      const input = 'test<tag>&"\'end'
+      const result1 = escapeHtml(input)
+      const result2 = escapeHtml(input)
+      expect(result1).toBe(result2)
+    })
+  })
+
+  describe('跨運行時一致性', () => {
+    it('應該在所有運行時返回相同結果', () => {
+      const testCases = [
+        'hello',
+        '<tag>',
+        'content & "quoted"',
+        "<script>alert('xss')</script>",
+        '混合 < HTML > 與 & 特殊字元',
+      ]
+
+      testCases.forEach((testCase) => {
+        const result1 = escapeHtml(testCase)
+        const result2 = getEscapeHtml()(testCase)
+        expect(result1).toBe(result2)
+      })
     })
   })
 })

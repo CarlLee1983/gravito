@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { tmpdir } from 'os'
+import { tmpdir } from 'node:os'
 import { NovaShellError } from '../src/errors'
 import { ShellCommand } from '../src/ShellCommand'
 import { cleanupTestDir, createTestDir, createTestFile } from './helpers'

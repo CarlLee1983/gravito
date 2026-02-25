@@ -51,7 +51,9 @@ class IntegrationMockRedis {
 
   async zrevrange(key: string, start: number, stop: number): Promise<string[]> {
     const zset = this.data.get(key) as Map<string, number> | undefined
-    if (!zset) return []
+    if (!zset) {
+      return []
+    }
 
     const sorted = Array.from(zset.entries())
       .sort(([, a], [, b]) => b - a)
@@ -77,12 +79,14 @@ class IntegrationMockRedis {
     return existed
   }
 
-  async eval(script: string, numKeys: number, ...args: any[]): Promise<any> {
+  async eval(_script: string, _numKeys: number, ...args: any[]): Promise<any> {
     const key = args[0]
     const factor = parseFloat(args[1])
     const zset = this.data.get(key) as Map<string, number> | undefined
 
-    if (!zset) return 0
+    if (!zset) {
+      return 0
+    }
 
     for (const [member] of zset) {
       const score = zset.get(member) || 0
@@ -92,7 +96,7 @@ class IntegrationMockRedis {
     return zset.size
   }
 
-  async scan(cursor: string, options: any): Promise<{ cursor: string; keys: string[] }> {
+  async scan(_cursor: string, _options: any): Promise<{ cursor: string; keys: string[] }> {
     // 簡單實現，返回所有鍵
     const keys = Array.from(this.data.keys())
     return { cursor: '0', keys }
@@ -106,7 +110,7 @@ class IntegrationMockL2Cache implements CacheService {
     return (this.data.get(key) as T) || null
   }
 
-  async set(key: string, value: unknown, ttl?: number): Promise<void> {
+  async set(key: string, value: unknown, _ttl?: number): Promise<void> {
     this.data.set(key, value)
   }
 
@@ -120,7 +124,9 @@ class IntegrationMockL2Cache implements CacheService {
 
   async remember<T>(key: string, ttl: number, callback: () => Promise<T>): Promise<T> {
     const cached = await this.get<T>(key)
-    if (cached !== null) return cached
+    if (cached !== null) {
+      return cached
+    }
 
     const result = await callback()
     await this.set(key, result, ttl)
@@ -258,7 +264,7 @@ describe('Flash Sale P1 Integration Tests', () => {
     core = {
       logger,
       hooks: {
-        doActionAsync: async (action: string, payload: any) => {
+        doActionAsync: async (_action: string, _payload: any) => {
           // Mock DLQ
         },
       },

@@ -1,5 +1,8 @@
 import { EventEmitter } from 'node:events'
 import pLimit from 'p-limit'
+import type { ConsumerStrategy } from './consumer/ConsumerStrategy'
+import { PollingStrategy } from './consumer/PollingStrategy'
+import { ReactiveStrategy } from './consumer/ReactiveStrategy'
 import type { Job } from './Job'
 import type { QueueManager } from './QueueManager'
 import type { WorkerOptions } from './Worker'
@@ -175,6 +178,27 @@ export interface ConsumerOptions {
    * Called whenever a job lifecycle event occurs (started, processed, failed, etc.).
    */
   onEvent?: (event: string, payload: any) => void
+
+  /**
+   * Enable reactive (push-based) consumption mode.
+   *
+   * When enabled, the consumer listens for notifications and pulls jobs reactively
+   * instead of polling continuously. This reduces latency and resource usage.
+   *
+   * @default false
+   */
+  reactive?: boolean
+
+  /**
+   * Fallback polling interval (ms) when no notifications are received.
+   *
+   * In reactive mode, if no notifications arrive for this duration,
+   * the consumer will fallback to polling to ensure jobs aren't missed.
+   * Prevents starvation if the notification system fails.
+   *
+   * @default 30000 (30 seconds)
+   */
+  reactivePollingFallback?: number
 }
 
 /**
@@ -221,6 +245,7 @@ export class Consumer extends EventEmitter {
     retried: 0,
     active: 0,
   }
+  private strategy: ConsumerStrategy | null = null
 
   constructor(
     private queueManager: QueueManager,
@@ -265,15 +290,9 @@ export class Consumer extends EventEmitter {
     this.stopRequested = false
 
     const worker = new Worker(this.options.workerOptions)
-    let currentPollInterval = this.options.pollInterval ?? 1000
-    const minPollInterval = this.options.minPollInterval ?? 100
-    const maxPollInterval = this.options.maxPollInterval ?? 5000
-    const backoffMultiplier = this.options.backoffMultiplier ?? 1.5
     const keepAlive = this.options.keepAlive ?? true
     const concurrency = this.options.concurrency ?? 1
     const batchSize = this.options.batchSize ?? 1
-    const useBlocking = this.options.useBlocking ?? true
-    const blockingTimeout = this.options.blockingTimeout ?? 5
 
     this.log('Started', {
       queues: this.options.queues,
@@ -281,101 +300,80 @@ export class Consumer extends EventEmitter {
       workerId: this.workerId,
       concurrency,
       batchSize,
+      reactive: this.options.reactive ?? false,
     })
 
     if (this.options.monitor) {
       this.startHeartbeat()
       await this.publishLog(
         'info',
-        `Consumer started on [${this.options.queues.join(', ')}] with concurrency ${concurrency}`
+        `Consumer started on [${this.options.queues.join(', ')}] with concurrency ${concurrency}${this.options.reactive ? ' (reactive)' : ''}`
       )
     }
 
     // 啟動 group limiter 清理計時器
     this.startCleanupTimer()
 
-    // Main loop
-    while (this.running && !this.stopRequested) {
-      // If we are at capacity, wait for a bit
-      const capacity = concurrency - this.stats.active
-      if (capacity <= 0) {
-        await new Promise((resolve) => setTimeout(resolve, 50))
-        continue
-      }
+    // Choose consumption strategy (reactive or polling)
+    if (this.options.reactive) {
+      await this.runWithReactiveStrategy(worker, keepAlive, concurrency)
+    } else {
+      await this.runWithPollingStrategy(worker, keepAlive, concurrency, batchSize)
+    }
 
-      // Filter queues based on rate limits
-      const eligibleQueues: string[] = []
-      for (const queue of this.options.queues) {
-        if (this.options.rateLimits?.[queue]) {
-          const limit = this.options.rateLimits[queue]
-          try {
-            const driver = this.queueManager.getDriver(this.connectionName)
-            if (driver.checkRateLimit) {
-              const allowed = await driver.checkRateLimit(queue, limit!)
-              if (!allowed) {
-                continue
-              }
-            }
-          } catch (err) {
-            console.error(`[Consumer] Error checking rate limit for "${queue}":`, err)
-          }
+    this.running = false
+    this.stopHeartbeat()
+    this.stopCleanupTimer()
+    if (this.options.monitor) {
+      await this.publishLog('info', 'Consumer stopped')
+    }
+    this.log('Stopped')
+  }
+
+  /**
+   * Runs the consumer using the reactive strategy.
+   *
+   * Listens for notifications and pulls jobs reactively.
+   * Falls back to polling if no notifications arrive.
+   *
+   * @private
+   */
+  private async runWithReactiveStrategy(
+    worker: Worker,
+    keepAlive: boolean,
+    concurrency: number
+  ): Promise<void> {
+    const reactivePollingFallback = this.options.reactivePollingFallback ?? 30000
+
+    this.strategy = new ReactiveStrategy(
+      this.queueManager,
+      this.options.queues,
+      this.connectionName,
+      {
+        concurrency,
+        batchSize: this.options.batchSize ?? 1,
+        stats: this.stats,
+        reactivePollingFallback,
+        debug: this.options.debug ?? false,
+        log: (message: string, data?: unknown) => this.log(message, data),
+      }
+    )
+
+    try {
+      await this.strategy.start()
+
+      // Main reactive loop
+      while (this.running && !this.stopRequested) {
+        const capacity = concurrency - this.stats.active
+        if (capacity <= 0) {
+          await new Promise((resolve) => setTimeout(resolve, 50))
+          continue
         }
-        eligibleQueues.push(queue)
-      }
 
-      if (eligibleQueues.length === 0) {
-        await new Promise((resolve) => setTimeout(resolve, currentPollInterval))
-        continue
-      }
-
-      let jobs: Job[] = []
-      let didBlock = false
-
-      try {
-        const currentBatchSize = Math.min(batchSize, capacity)
-        const driver = this.queueManager.getDriver(this.connectionName)
-
-        if (currentBatchSize > 1) {
-          // Batch fetch (non-blocking)
-          for (const queue of eligibleQueues) {
-            const fetched = await this.queueManager.popMany(
-              queue,
-              currentBatchSize,
-              this.connectionName
-            )
-            if (fetched.length > 0) {
-              jobs = fetched
-              break
-            }
-          }
-        } else {
-          // Single fetch
-          if (useBlocking && driver.popBlocking) {
-            didBlock = true
-            const job = await this.queueManager.popBlocking(
-              eligibleQueues,
-              blockingTimeout,
-              this.connectionName
-            )
-            if (job) {
-              jobs.push(job)
-            }
-          } else {
-            // Sequential non-blocking pop
-            for (const queue of eligibleQueues) {
-              const job = await this.queueManager.pop(queue, this.connectionName)
-              if (job) {
-                jobs.push(job)
-                break
-              }
-            }
-          }
-        }
+        const jobs = await this.strategy.fetchJobs()
 
         if (jobs.length > 0) {
           this.stats.active += jobs.length
-          // Reset adaptive poll interval
-          currentPollInterval = minPollInterval
 
           // Process jobs asynchronously
           for (const job of jobs) {
@@ -388,36 +386,192 @@ export class Consumer extends EventEmitter {
           await new Promise((resolve) => setTimeout(resolve, 0))
           continue
         }
-      } catch (error) {
-        console.error('[Consumer] Loop error:', error)
-      }
 
-      // If nothing was processed and keepAlive is disabled, and no workers are running, exit
-      if (this.stats.active === 0 && !keepAlive) {
-        break
-      }
-
-      // Wait if needed
-      if (!this.stopRequested) {
-        if (!didBlock) {
-          // Adaptive backoff
-          await new Promise((resolve) => setTimeout(resolve, currentPollInterval))
-          currentPollInterval = Math.min(currentPollInterval * backoffMultiplier, maxPollInterval)
+        // If nothing was processed and keepAlive is disabled, and no workers are running, exit
+        if (this.stats.active === 0 && !keepAlive) {
+          break
         }
-        // If didBlock, we effectively waited blockingTimeout, so we loop immediately
-      } else {
-        // Just yield
-        await new Promise((resolve) => setTimeout(resolve, 50))
+
+        // Wait a bit before next fetch
+        if (!this.stopRequested) {
+          await new Promise((resolve) => setTimeout(resolve, 100))
+        } else {
+          // Just yield
+          await new Promise((resolve) => setTimeout(resolve, 50))
+        }
+      }
+    } finally {
+      if (this.strategy) {
+        await this.strategy.stop()
+        this.strategy = null
       }
     }
+  }
 
-    this.running = false
-    this.stopHeartbeat()
-    this.stopCleanupTimer()
-    if (this.options.monitor) {
-      await this.publishLog('info', 'Consumer stopped')
+  /**
+   * Runs the consumer using the polling strategy.
+   *
+   * Continuously polls queues with adaptive backoff.
+   * This is the default consumption mode.
+   *
+   * @private
+   */
+  private async runWithPollingStrategy(
+    worker: Worker,
+    keepAlive: boolean,
+    concurrency: number,
+    batchSize: number
+  ): Promise<void> {
+    let currentPollInterval = this.options.pollInterval ?? 1000
+    const minPollInterval = this.options.minPollInterval ?? 100
+    const maxPollInterval = this.options.maxPollInterval ?? 5000
+    const backoffMultiplier = this.options.backoffMultiplier ?? 1.5
+    const useBlocking = this.options.useBlocking ?? true
+    const blockingTimeout = this.options.blockingTimeout ?? 5
+
+    this.strategy = new PollingStrategy(
+      this.queueManager,
+      this.options.queues,
+      this.connectionName,
+      {
+        minPollInterval,
+        maxPollInterval,
+        backoffMultiplier,
+        batchSize,
+        useBlocking,
+        blockingTimeout,
+        concurrency,
+        stats: this.stats,
+        debug: this.options.debug ?? false,
+        log: (message: string, data?: unknown) => this.log(message, data),
+      }
+    )
+
+    try {
+      await this.strategy.start()
+
+      // Main polling loop
+      while (this.running && !this.stopRequested) {
+        // If we are at capacity, wait for a bit
+        const capacity = concurrency - this.stats.active
+        if (capacity <= 0) {
+          await new Promise((resolve) => setTimeout(resolve, 50))
+          continue
+        }
+
+        // Filter queues based on rate limits
+        const eligibleQueues: string[] = []
+        for (const queue of this.options.queues) {
+          if (this.options.rateLimits?.[queue]) {
+            const limit = this.options.rateLimits[queue]
+            try {
+              const driver = this.queueManager.getDriver(this.connectionName)
+              if (driver.checkRateLimit) {
+                const allowed = await driver.checkRateLimit(queue, limit!)
+                if (!allowed) {
+                  continue
+                }
+              }
+            } catch (err) {
+              console.error(`[Consumer] Error checking rate limit for "${queue}":`, err)
+            }
+          }
+          eligibleQueues.push(queue)
+        }
+
+        if (eligibleQueues.length === 0) {
+          await new Promise((resolve) => setTimeout(resolve, currentPollInterval))
+          continue
+        }
+
+        let jobs: Job[] = []
+        let didBlock = false
+
+        try {
+          const currentBatchSize = Math.min(batchSize, capacity)
+          const driver = this.queueManager.getDriver(this.connectionName)
+
+          if (currentBatchSize > 1) {
+            // Batch fetch (non-blocking)
+            for (const queue of eligibleQueues) {
+              const fetched = await this.queueManager.popMany(
+                queue,
+                currentBatchSize,
+                this.connectionName
+              )
+              if (fetched.length > 0) {
+                jobs = fetched
+                break
+              }
+            }
+          } else {
+            // Single fetch
+            if (useBlocking && driver.popBlocking) {
+              didBlock = true
+              const job = await this.queueManager.popBlocking(
+                eligibleQueues,
+                blockingTimeout,
+                this.connectionName
+              )
+              if (job) {
+                jobs.push(job)
+              }
+            } else {
+              // Sequential non-blocking pop
+              for (const queue of eligibleQueues) {
+                const job = await this.queueManager.pop(queue, this.connectionName)
+                if (job) {
+                  jobs.push(job)
+                  break
+                }
+              }
+            }
+          }
+
+          if (jobs.length > 0) {
+            this.stats.active += jobs.length
+            // Reset adaptive poll interval
+            currentPollInterval = minPollInterval
+
+            // Process jobs asynchronously
+            for (const job of jobs) {
+              this.runJob(job, worker).finally(() => {
+                this.stats.active--
+              })
+            }
+
+            // Brief yield to allow next loop iteration
+            await new Promise((resolve) => setTimeout(resolve, 0))
+            continue
+          }
+        } catch (error) {
+          console.error('[Consumer] Loop error:', error)
+        }
+
+        // If nothing was processed and keepAlive is disabled, and no workers are running, exit
+        if (this.stats.active === 0 && !keepAlive) {
+          break
+        }
+
+        // Wait if needed
+        if (!this.stopRequested) {
+          if (!didBlock) {
+            // Adaptive backoff
+            await new Promise((resolve) => setTimeout(resolve, currentPollInterval))
+            currentPollInterval = Math.min(currentPollInterval * backoffMultiplier, maxPollInterval)
+          }
+          // If didBlock, we effectively waited blockingTimeout, so we loop immediately
+        } else {
+          // Just yield
+          await new Promise((resolve) => setTimeout(resolve, 50))
+        }
+      }
+    } finally {
+      if (this.strategy) {
+        await this.strategy.stop()
+        this.strategy = null
+      }
     }
-    this.log('Stopped')
   }
 
   /**

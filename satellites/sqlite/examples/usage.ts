@@ -33,10 +33,7 @@ export async function basicExample() {
   console.log('Users:', users)
 
   // 插入資料
-  await conn.run('INSERT INTO users (name, email) VALUES (?, ?)', [
-    'Alice',
-    'alice@example.com',
-  ])
+  await conn.run('INSERT INTO users (name, email) VALUES (?, ?)', ['Alice', 'alice@example.com'])
 
   // 取得單筆結果
   const alice = await conn.getOne('SELECT * FROM users WHERE name = ?', ['Alice'])
@@ -59,14 +56,14 @@ export async function securityExample() {
     xenonConfig: {
       // 白名單：只允許特定目錄的資料庫
       allowedPaths: [
-        '/app/data/**',          // 應用資料目錄
-        '/var/lib/gravito/**',   // Gravito 系統目錄
+        '/app/data/**', // 應用資料目錄
+        '/var/lib/gravito/**', // Gravito 系統目錄
       ],
       // 黑名單：明確禁止存取系統目錄
       blockedPaths: [
-        '/etc/**',               // 系統設定
-        '/sys/**',               // 系統檔案
-        '/root/**',              // Root 主目錄
+        '/etc/**', // 系統設定
+        '/sys/**', // 系統檔案
+        '/root/**', // Root 主目錄
       ],
     },
   })
@@ -75,9 +72,7 @@ export async function securityExample() {
   await sqliteSatellite.install(ctx)
 
   // ✅ 允許存取
-  const allowedConn = await (ctx as any).sqlite.createConnection(
-    '/app/data/allowed.db',
-  )
+  const allowedConn = await (ctx as any).sqlite.createConnection('/app/data/allowed.db')
 
   // ❌ 拒絕存取（會拋出錯誤）
   try {
@@ -129,12 +124,10 @@ export async function multiDatabaseExample() {
 
   // 在不同連接上執行操作
   const primaryData = await primaryConn.execute('SELECT * FROM products')
-  const replicaData = await replicaConn.execute('SELECT * FROM products')
+  const _replicaData = await replicaConn.execute('SELECT * FROM products')
 
   // 在快取資料庫中寫入結果
-  await cacheConn.run('INSERT INTO cache_results VALUES (?)', [
-    JSON.stringify(primaryData),
-  ])
+  await cacheConn.run('INSERT INTO cache_results VALUES (?)', [JSON.stringify(primaryData)])
 
   // 關閉所有連接
   await primaryConn.close()

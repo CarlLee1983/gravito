@@ -179,7 +179,9 @@ export class TransferSaga {
   async handleTransferDebitApplied(event: TransferDebitApplied): Promise<void> {
     const { transferId } = event.payload
     const state = this.sagaStates.get(transferId)
-    if (!state) return
+    if (!state) {
+      return
+    }
 
     try {
       const toAccount = await this.repository.findById(state.toAccountId)
@@ -221,7 +223,9 @@ export class TransferSaga {
   async handleTransferCreditApplied(event: TransferCreditApplied): Promise<void> {
     const { transferId } = event.payload
     const state = this.sagaStates.get(transferId)
-    if (!state) return
+    if (!state) {
+      return
+    }
 
     this.sagaStates.set(transferId, { ...state, status: 'completed' })
 
@@ -244,7 +248,9 @@ export class TransferSaga {
    */
   private async compensate(transferId: string, reason: string): Promise<void> {
     const state = this.sagaStates.get(transferId)
-    if (!state) return
+    if (!state) {
+      return
+    }
 
     this.sagaStates.set(transferId, { ...state, status: 'failed' })
 

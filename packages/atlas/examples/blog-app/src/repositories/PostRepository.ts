@@ -113,7 +113,9 @@ export class PostRepository {
    * ✅ 動態篩選：使用 IN 子句的安全方式
    */
   async getPostsByTags(tags: string[], limit = 20): Promise<Post[]> {
-    if (tags.length === 0) return []
+    if (tags.length === 0) {
+      return []
+    }
 
     // 建立佔位符（? 或 $1, $2 等）
     const placeholders = tags.map(() => '?').join(',')
@@ -213,7 +215,9 @@ export class PostRepository {
    * ✅ 批量操作：安全的多記錄更新
    */
   async updatePostStatus(postIds: number[], status: string, userId: number): Promise<number> {
-    if (postIds.length === 0) return 0
+    if (postIds.length === 0) {
+      return 0
+    }
 
     // 確保使用者只能更新自己的文章
     const result = await this.connection.sql`
@@ -243,7 +247,9 @@ export class PostRepository {
       SELECT * FROM posts WHERE id = ${postId}
     `.first()
 
-    if (!post) return null
+    if (!post) {
+      return null
+    }
 
     // 取得留言（分頁）
     const comments = await this.connection.sql<any>`

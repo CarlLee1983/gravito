@@ -6,7 +6,6 @@
  * - 跨分片聚合：用於報表和統計分析
  */
 
-import type { ConnectionContract } from '@gravito/atlas'
 import type { Logger } from '@gravito/core'
 import type { IOrderRepository } from '../../Application/Contracts/IOrderRepository'
 import { type Order, type OrderItem, OrderStatus } from '../../Domain/Models'

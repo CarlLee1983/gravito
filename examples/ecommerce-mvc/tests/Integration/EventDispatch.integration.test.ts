@@ -1,14 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
 import { DB } from '@gravito/atlas'
 import type { EventManager } from '@gravito/core'
-import {
-  CartCleared,
-  CartItemAdded,
-  OrderCancelled,
-  OrderCreated,
-  OrderPaid,
-} from '../../src/Events'
-import type { CreateOrderInput } from '../../src/Repositories'
 import { CartRepository, OrderRepository } from '../../src/Repositories'
 import { CartService, OrderService } from '../../src/Services'
 import {
@@ -144,7 +136,7 @@ describe('Event Dispatch Integration', () => {
 
       eventManager.dispatchedEvents = [] // Reset
 
-      const paymentIntentId = 'pi_test_' + Date.now()
+      const paymentIntentId = `pi_test_${Date.now()}`
       await orderService.markAsPaid(order.id, paymentIntentId)
 
       // Verify event was dispatched

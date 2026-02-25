@@ -147,7 +147,9 @@ export class AtlasAccountRepository implements IAccountRepository {
     const queryBuilder = trx ? trx.table('accounts') : DB.table('accounts')
     const row = (await queryBuilder.where('id', accountId).first()) as any
 
-    if (!row) return null
+    if (!row) {
+      return null
+    }
 
     return new Account(
       row.id as string,

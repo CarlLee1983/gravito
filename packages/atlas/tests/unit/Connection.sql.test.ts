@@ -12,7 +12,7 @@ describe('Connection.sql() - Tagged Template Literal API', () => {
   function createMockConnection(): ConnectionContract {
     const mockDriver = {
       getDriverName: mock(() => 'postgres'),
-      query: mock(async (sql: string, bindings: unknown[]) => ({
+      query: mock(async (_sql: string, _bindings: unknown[]) => ({
         rows: [{ id: 1, name: 'Alice' }],
         rowCount: 1,
         insertId: undefined,
@@ -27,7 +27,7 @@ describe('Connection.sql() - Tagged Template Literal API', () => {
       getGrammar: () => ({}),
       table: () => ({}),
       collection: () => ({}),
-      raw: mock(async (sql: string, bindings: unknown[]) => ({
+      raw: mock(async (_sql: string, _bindings: unknown[]) => ({
         rows: [{ id: 1, name: 'Alice' }],
         rowCount: 1,
         insertId: undefined,

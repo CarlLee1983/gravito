@@ -7,7 +7,6 @@
 import type { CacheService, Container } from '@gravito/core'
 import { ServiceProvider } from '@gravito/core'
 import { Redis } from '@gravito/plasma'
-import { FailoverManager } from './Infrastructure/Cache/FailoverManager'
 import {
   MultiRegionCacheService,
   type RegionConfig,

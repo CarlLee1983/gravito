@@ -249,7 +249,9 @@ export class BunNativeAdapter implements HttpAdapter {
           channels: new Set<string>(),
         },
       })
-      if (upgraded) return new Response(null, { status: 101 })
+      if (upgraded) {
+        return new Response(null, { status: 101 })
+      }
     }
 
     // P0 Fix: Use context pool to prevent state pollution

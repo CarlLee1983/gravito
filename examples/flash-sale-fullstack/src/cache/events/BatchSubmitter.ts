@@ -273,7 +273,7 @@ export class BatchSubmitter {
   /**
    * 調整刷新間隔
    */
-  setFlushInterval(newIntervalMs: number): void {
+  setFlushInterval(_newIntervalMs: number): void {
     // 重新啟動定時器
     this.clearTimer()
     if (this.queue.length > 0) {

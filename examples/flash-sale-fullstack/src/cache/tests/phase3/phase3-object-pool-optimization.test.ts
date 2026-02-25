@@ -8,8 +8,6 @@
 
 import { beforeEach, describe, expect, it } from 'vitest'
 import { type CacheEventPool, createCacheEventPool } from '../../events/ObjectPool.js'
-import type { CacheEvent } from '../../events/types.js'
-import { CacheEventType, EventPriority, EventSource } from '../../events/types.js'
 
 describe('CacheEventPool', () => {
   let pool: CacheEventPool
