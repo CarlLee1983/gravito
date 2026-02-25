@@ -1,5 +1,5 @@
+import { Painter as pc } from '@gravito/chromatic'
 import type { DeadLetterQueueManager, DLQManagerFilter, DLQRecord } from '@gravito/core'
-import pc from 'picocolors'
 
 /**
  * DLQ 命令顯示選項

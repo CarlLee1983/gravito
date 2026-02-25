@@ -7,7 +7,7 @@
   },
   "type": "module",
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --target bun --external giget --external cac --external @clack/prompts --external picocolors",
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun --external giget --external cac --external @clack/prompts --external @gravito/chromatic",
     "dev": "bun run ./src/index.ts",
     "test": "bun test --timeout=10000",
     "test:coverage": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
@@ -27,11 +27,11 @@
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",
+    "@gravito/chromatic": "workspace:*",
     "@gravito/scaffold": "workspace:*",
     "cac": "^6.7.14",
     "giget": "^1.2.5",
-    "node-fetch-native": "^1.6.7",
-    "picocolors": "^1.0.0"
+    "node-fetch-native": "^1.6.7"
   },
   "peerDependencies": {
     "@gravito/core": "^1.6.1"

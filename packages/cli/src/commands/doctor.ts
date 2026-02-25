@@ -1,9 +1,8 @@
 import { constants } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-
+import { Painter as pc } from '@gravito/chromatic'
 import { getRuntimeAdapter } from '@gravito/core'
-import pc from 'picocolors'
 
 /**
  * Options for the Gravito Doctor diagnostic command.

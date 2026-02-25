@@ -1,6 +1,7 @@
+import { OutputFormatter } from './colors/OutputFormatter'
 import { NovaShellError } from './errors'
 import type { ShellCommand } from './ShellCommand'
-import type { ShellResult } from './types'
+import type { ColorConfig, ShellResult } from './types'
 
 /**
  * Represents a pipeline of shell commands connected via pipes.
@@ -8,6 +9,9 @@ import type { ShellResult } from './types'
  * @public
  */
 export class Pipeline {
+  private _colorized = false
+  private _colorConfig?: ColorConfig
+
   constructor(private commands: ShellCommand[]) {
     if (commands.length === 0) {
       throw new Error('Pipeline must have at least one command')
@@ -44,6 +48,16 @@ export class Pipeline {
       .split('\n')
       .map((line) => line.trim())
       .filter((line) => line.length > 0)
+  }
+
+  /**
+   * Enable colored output formatting for the pipeline result.
+   */
+  colorized(config?: ColorConfig): Pipeline {
+    const pipeline = new Pipeline(this.commands)
+    pipeline._colorized = true
+    pipeline._colorConfig = config
+    return pipeline
   }
 
   /**
@@ -94,6 +108,13 @@ export class Pipeline {
         stdout: stdout.trim(),
         stderr: stderr.trim(),
         success: exitCode === 0,
+      }
+
+      // Format output with colors if enabled
+      if (this._colorized) {
+        const formatter = new OutputFormatter(this._colorConfig)
+        const formatted = formatter.formatResult(result, fullCommand, true)
+        console.log(formatted.formatted)
       }
 
       // Throw error on non-zero exit code (pipelines don't have nothrow option)

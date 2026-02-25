@@ -3,7 +3,7 @@
  *
  * Type-safe, shell-injection-resistant shell command execution for Gravito.
  * Provides template-literal-based API with automatic argument escaping,
- * pipeline composition, and PlanetCore integration.
+ * pipeline composition, and optional colored output formatting.
  *
  * @example
  * ```typescript
@@ -12,8 +12,11 @@
  * // Standalone usage
  * const result = await Shell.run`ls -la ${directory}`
  *
+ * // With colored output
+ * const result = await Shell.run`ls -la ${directory}`.colorized()
+ *
  * // With Gravito
- * const nova = new OrbitNova()
+ * const nova = new OrbitNova({ color: { enabled: true } })
  * core.addOrbit(nova)
  * // Now available in controllers via ctx.get('shell')
  * ```
@@ -21,6 +24,14 @@
  * @packageDocumentation
  */
 
+export {
+  ASCII_SYMBOLS,
+  DEFAULT_COLOR_CONFIG,
+  DEFAULT_SHELL_COLORS,
+  SYMBOLS,
+} from './colors/defaults'
+// Color formatting exports
+export { OutputFormatter } from './colors/OutputFormatter'
 export { NovaError, NovaShellError } from './errors'
 // Orbit integration
 export { OrbitNova } from './OrbitNova'
@@ -29,4 +40,10 @@ export { Pipeline } from './Pipeline'
 export { Shell } from './Shell'
 export { ShellCommand } from './ShellCommand'
 // Types and errors
-export type { ShellResult, ShellRunOptions } from './types'
+export type {
+  ColorConfig,
+  ColorizedResult,
+  ShellColorScheme,
+  ShellResult,
+  ShellRunOptions,
+} from './types'

@@ -1,5 +1,6 @@
+import { OutputFormatter } from './colors/OutputFormatter'
 import { NovaShellError } from './errors'
-import type { ShellResult } from './types'
+import type { ColorConfig, ShellResult } from './types'
 
 /**
  * Represents a shell command built from template literals.
@@ -12,6 +13,8 @@ export class ShellCommand implements PromiseLike<ShellResult> {
   private _quiet = false
   private _nothrow = false
   private _timeout?: number
+  private _colorized = false
+  private _colorConfig?: ColorConfig
   private _promise?: Promise<ShellResult>
 
   constructor(
@@ -23,12 +26,8 @@ export class ShellCommand implements PromiseLike<ShellResult> {
    * Set the working directory for command execution.
    */
   cwd(dir: string): ShellCommand {
-    const cmd = new ShellCommand(this.strings, this.values)
+    const cmd = this._clone()
     cmd._cwd = dir
-    cmd._env = this._env
-    cmd._quiet = this._quiet
-    cmd._nothrow = this._nothrow
-    cmd._timeout = this._timeout
     return cmd
   }
 
@@ -36,12 +35,8 @@ export class ShellCommand implements PromiseLike<ShellResult> {
    * Set environment variables for command execution.
    */
   env(vars: Record<string, string>): ShellCommand {
-    const cmd = new ShellCommand(this.strings, this.values)
-    cmd._cwd = this._cwd
+    const cmd = this._clone()
     cmd._env = vars
-    cmd._quiet = this._quiet
-    cmd._nothrow = this._nothrow
-    cmd._timeout = this._timeout
     return cmd
   }
 
@@ -49,12 +44,8 @@ export class ShellCommand implements PromiseLike<ShellResult> {
    * Suppress command output.
    */
   quiet(): ShellCommand {
-    const cmd = new ShellCommand(this.strings, this.values)
-    cmd._cwd = this._cwd
-    cmd._env = this._env
+    const cmd = this._clone()
     cmd._quiet = true
-    cmd._nothrow = this._nothrow
-    cmd._timeout = this._timeout
     return cmd
   }
 
@@ -62,12 +53,8 @@ export class ShellCommand implements PromiseLike<ShellResult> {
    * Don't throw error on non-zero exit code.
    */
   nothrow(): ShellCommand {
-    const cmd = new ShellCommand(this.strings, this.values)
-    cmd._cwd = this._cwd
-    cmd._env = this._env
-    cmd._quiet = this._quiet
+    const cmd = this._clone()
     cmd._nothrow = true
-    cmd._timeout = this._timeout
     return cmd
   }
 
@@ -75,12 +62,19 @@ export class ShellCommand implements PromiseLike<ShellResult> {
    * Set maximum execution time in milliseconds.
    */
   timeout(ms: number): ShellCommand {
-    const cmd = new ShellCommand(this.strings, this.values)
-    cmd._cwd = this._cwd
-    cmd._env = this._env
-    cmd._quiet = this._quiet
-    cmd._nothrow = this._nothrow
+    const cmd = this._clone()
     cmd._timeout = ms
+    return cmd
+  }
+
+  /**
+   * Enable colored output formatting for the command result.
+   * Uses @gravito/chromatic if available, falls back to ANSI codes.
+   */
+  colorized(config?: ColorConfig): ShellCommand {
+    const cmd = this._clone()
+    cmd._colorized = true
+    cmd._colorConfig = config
     return cmd
   }
 
@@ -116,6 +110,21 @@ export class ShellCommand implements PromiseLike<ShellResult> {
       .split('\n')
       .map((line) => line.trim())
       .filter((line) => line.length > 0)
+  }
+
+  /**
+   * Create an immutable clone of this command with current state.
+   */
+  private _clone(): ShellCommand {
+    const cmd = new ShellCommand(this.strings, this.values)
+    cmd._cwd = this._cwd
+    cmd._env = this._env
+    cmd._quiet = this._quiet
+    cmd._nothrow = this._nothrow
+    cmd._timeout = this._timeout
+    cmd._colorized = this._colorized
+    cmd._colorConfig = this._colorConfig
+    return cmd
   }
 
   /**
@@ -172,6 +181,13 @@ export class ShellCommand implements PromiseLike<ShellResult> {
         stdout: stdout.trim(),
         stderr: stderr.trim(),
         success: exitCode === 0,
+      }
+
+      // Format output with colors if enabled
+      if (this._colorized && !this._quiet) {
+        const formatter = new OutputFormatter(this._colorConfig)
+        const formatted = formatter.formatResult(result, cmdStr, !this._quiet)
+        console.log(formatted.formatted)
       }
 
       // Handle error cases

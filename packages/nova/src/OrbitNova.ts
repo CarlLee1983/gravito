@@ -1,5 +1,6 @@
 import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { Shell } from './Shell'
+import type { ColorConfig } from './types'
 
 /**
  * Configuration options for OrbitNova shell execution orbit.
@@ -11,6 +12,11 @@ export interface OrbitNovaOptions {
    * Allows accessing the service via `ctx.get('shell')`.
    */
   exposeAs?: string
+
+  /**
+   * Default color configuration for shell command output.
+   */
+  color?: ColorConfig
 }
 
 /**

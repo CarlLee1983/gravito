@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import pc from 'picocolors'
+import { Painter as pc } from '@gravito/chromatic'
 
 /**
  * Supported frontend stacks for Fortify authentication scaffolding.

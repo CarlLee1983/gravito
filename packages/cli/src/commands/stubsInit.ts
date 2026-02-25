@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { confirm, isCancel } from '@clack/prompts'
-import pc from 'picocolors'
+import { Painter as pc } from '@gravito/chromatic'
 
 /**
  * 初始化自定義 stubs 目錄
