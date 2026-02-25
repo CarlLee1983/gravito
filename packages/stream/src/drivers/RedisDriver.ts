@@ -1013,9 +1013,13 @@ export class RedisDriver implements QueueDriver {
 
     const notifyChannel = `${this.prefix}notifications`
 
-    // Store callback
+    // Store callback with queue filter
     const callbackId = `${Date.now()}-${Math.random()}`
-    this.notificationCallbacks.set(callbackId, callback)
+    this.notificationCallbacks.set(callbackId, async (queue: string) => {
+      if (queueList.includes(queue)) {
+        await callback(queue)
+      }
+    })
 
     // Subscribe to notification channel
     if (this.notificationCallbacks.size === 1) {
