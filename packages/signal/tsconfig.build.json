@@ -12,11 +12,10 @@
     "noCheck": true,
     "types": ["bun-types"],
     "paths": {
-      "@gravito/core": ["./src/index.ts"],
-      "@gravito/core/compat": ["./src/compat.ts"],
-      "@gravito/core/engine": ["./src/engine/index.ts"],
-      "@gravito/photon": ["../photon/src/index.ts"],
-      "@gravito/atlas": ["../atlas/src/index.ts"],
+      "@gravito/signal": ["./src/index.ts"],
+      "@gravito/core": ["../core/src/index.ts"],
+      "@gravito/stream": ["../stream/src/index.ts"],
+      "@gravito/prism": ["../prism/src/index.ts"],
       "@gravito/*": ["../*/src/index.ts"]
     }
   },

@@ -74,7 +74,6 @@
     "@opentelemetry/sdk-trace-node": "^1.30.0",
     "bun-types": "latest",
     "mitata": "^1.0.34",
-    "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {

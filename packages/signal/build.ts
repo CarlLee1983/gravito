@@ -3,17 +3,27 @@ import { basename } from 'node:path'
 import { build } from 'bun'
 
 const isDtsOnly = process.argv.includes('--dts-only')
-const pkgName = basename(import.meta.dirname) // "stasis"
+const pkgName = basename(import.meta.dirname) // "signal"
 
 console.log(
-  isDtsOnly ? 'Building @gravito/stasis DTS...' : 'Building @gravito/stasis in parallel...'
+  isDtsOnly ? 'Building @gravito/signal DTS...' : 'Building @gravito/signal in parallel...'
 )
 
 // Clean dist
 await rm('dist', { recursive: true, force: true })
 
-// External dependencies（workspace peer deps）
-const externalDeps = ['@gravito/core', '@gravito/photon', '@gravito/plasma']
+// External dependencies（peer deps + framework 包）
+const externalDeps = [
+  '@gravito/core',
+  '@gravito/stream',
+  '@gravito/prism',
+  'react',
+  'react-dom',
+  'vue',
+  '@vue/server-renderer',
+  'nodemailer',
+  '@aws-sdk/client-ses',
+]
 
 async function buildInParallel() {
   const tasks: Promise<number>[] = []
@@ -32,6 +42,7 @@ async function buildInParallel() {
         splitting: false,
         sourcemap: 'external',
         external: externalDeps,
+        naming: '[dir]/[name].mjs',
       })
 
       if (!buildResult.success) {
@@ -119,4 +130,4 @@ if (!isDtsOnly) {
   }
 }
 
-console.log('✅ @gravito/stasis build completed')
+console.log('✅ @gravito/signal build completed')

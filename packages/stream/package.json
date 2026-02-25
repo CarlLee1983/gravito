@@ -60,7 +60,6 @@
     "bun-types": "latest",
     "ioredis": "^5.9.2",
     "mitata": "^1.0.34",
-    "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },
   "homepage": "https://github.com/gravito-framework/gravito#readme",
