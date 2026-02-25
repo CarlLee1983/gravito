@@ -596,10 +596,10 @@ describe('Phase 6D 整合測試', () => {
       expect(recoveryState.consecutiveFailures).toBe(0)
     })
 
-    it('無效訊息觸發 errorRecovery 記錄失敗', async () => {
+    it('無效訊息（序列化錯誤）不影響電路斷路器', async () => {
       await driver.pop('test-topic')
 
-      // 傳送無效 JSON 訊息
+      // 傳送無效 JSON 訊息（序列化錯誤不影響電路）
       const invalidMessage: KafkaMessage = {
         value: Buffer.from('invalid json{{{'),
         offset: '0',
@@ -607,13 +607,15 @@ describe('Phase 6D 整合測試', () => {
       await mockClient.simulateMessage('test-topic', 0, invalidMessage)
 
       const recoveryState = driver.errorRecovery.getState()
-      expect(recoveryState.consecutiveFailures).toBe(1)
+      // Phase 6F: 序列化錯誤不再遞增電路失敗計數
+      expect(recoveryState.consecutiveFailures).toBe(0)
+      expect(recoveryState.circuitState).toBe('CLOSED')
     })
 
-    it('連續無效訊息可觸發電路打開', async () => {
+    it('連續無效訊息（序列化）不觸發電路打開', async () => {
       await driver.pop('test-topic')
 
-      // 預設 failureThreshold = 5
+      // Phase 6F: 序列化錯誤不影響電路，即使超過 failureThreshold
       for (let i = 0; i < 6; i++) {
         const invalidMessage: KafkaMessage = {
           value: Buffer.from(`invalid-${i}`),
@@ -623,14 +625,15 @@ describe('Phase 6D 整合測試', () => {
       }
 
       const recoveryState = driver.errorRecovery.getState()
-      // 預設 failureThreshold=5, 應該已觸發
-      expect(recoveryState.circuitState).toBe('OPEN')
+      // 序列化錯誤被分類後跳過電路，電路仍為 CLOSED
+      expect(recoveryState.circuitState).toBe('CLOSED')
+      expect(recoveryState.consecutiveFailures).toBe(0)
     })
 
-    it('有效訊息後電路重置', async () => {
+    it('有效訊息後電路保持健康狀態', async () => {
       await driver.pop('test-topic')
 
-      // 傳送一些無效訊息（但未達閾值）
+      // Phase 6F: 序列化錯誤不影響電路，consecutiveFailures 保持 0
       for (let i = 0; i < 3; i++) {
         const invalidMessage: KafkaMessage = {
           value: Buffer.from(`invalid-${i}`),
@@ -639,7 +642,8 @@ describe('Phase 6D 整合測試', () => {
         await mockClient.simulateMessage('test-topic', 0, invalidMessage)
       }
 
-      expect(driver.errorRecovery.getState().consecutiveFailures).toBe(3)
+      // 序列化錯誤不遞增失敗計數
+      expect(driver.errorRecovery.getState().consecutiveFailures).toBe(0)
 
       // 傳送有效訊息
       const validJob = createTestJob('valid-job')
@@ -810,7 +814,7 @@ describe('Phase 6D 整合測試', () => {
       await driver.disconnect()
     })
 
-    it('失敗流量: 無效訊息 → 錯誤記錄 → 電路保護', async () => {
+    it('失敗流量: 序列化錯誤記錄指標但不影響電路', async () => {
       const mockClient = createMockKafkaClient()
       const driver = new KafkaDriver({
         client: mockClient.client,
@@ -819,7 +823,7 @@ describe('Phase 6D 整合測試', () => {
 
       await driver.pop('error-topic')
 
-      // 傳送 6 筆無效訊息（超過預設 failureThreshold=5）
+      // 傳送 6 筆無效訊息
       for (let i = 0; i < 6; i++) {
         const invalidMessage: KafkaMessage = {
           value: Buffer.from(`bad-data-${i}`),
@@ -828,13 +832,13 @@ describe('Phase 6D 整合測試', () => {
         await mockClient.simulateMessage('error-topic', 0, invalidMessage)
       }
 
-      // 驗證電路打開
-      expect(driver.errorRecovery.getState().circuitState).toBe('OPEN')
+      // Phase 6F: 序列化錯誤不影響電路
+      expect(driver.errorRecovery.getState().circuitState).toBe('CLOSED')
+      expect(driver.errorRecovery.getState().consecutiveFailures).toBe(0)
 
-      // 驗證錯誤指標
+      // 驗證錯誤指標仍然被記錄
       const metrics = driver.getMetrics()
       expect(metrics.errors.serialization).toBe(6)
-      expect(metrics.totalFailed).toBe(6)
 
       await driver.disconnect()
     })

@@ -1,5 +1,10 @@
 import { EventEmitter } from 'node:events'
-import type { ErrorRecoveryConfig, ErrorRecoveryState, KafkaCircuitState } from './types'
+import type {
+  ErrorCategory,
+  ErrorRecoveryConfig,
+  ErrorRecoveryState,
+  KafkaCircuitState,
+} from './types'
 
 /**
  * 管理 Kafka 操作的錯誤恢復。
@@ -72,8 +77,17 @@ export class ErrorRecoveryManager extends EventEmitter {
    *
    * 增加失敗計數，在 CLOSED 狀態超過閾值時打開電路，
    * 在 HALF_OPEN 狀態失敗時重新打開電路。
+   *
+   * @param error - 失敗的錯誤物件
+   * @param category - 錯誤分類（可選）。如果提供且為非 transient 類別，
+   *                   則不影響電路斷路器狀態
    */
-  recordFailure(error: Error): void {
+  recordFailure(error: Error, category?: ErrorCategory): void {
+    // 如果提供分類且為非瞬間性錯誤，則不影響電路
+    if (category !== undefined && category !== 'transient') {
+      return
+    }
+
     this.consecutiveFailures++
     this.lastFailureTime = Date.now()
 

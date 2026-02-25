@@ -10,6 +10,7 @@
 export { BackpressureController } from './BackpressureController'
 export { BatchProcessor } from './BatchProcessor'
 export { ConsumerLifecycleManager } from './ConsumerLifecycleManager'
+export { ErrorCategorizer } from './ErrorCategorizer'
 export { ErrorRecoveryManager } from './ErrorRecoveryManager'
 export { HeartbeatManager } from './HeartbeatManager'
 export { KafkaDriver } from './KafkaDriver'
@@ -31,6 +32,8 @@ export type {
   BatchResult,
   BufferedMessage,
   ConsumerLifecycleState,
+  DlqStats,
+  ErrorCategory,
   ErrorRecoveryConfig,
   ErrorRecoveryState,
   HeartbeatConfig,
@@ -52,5 +55,6 @@ export type {
   RebalanceEvent,
   RebalanceState,
   RebalanceStatus,
+  SerializationErrorRecord,
   SubscribeOptions,
 } from './types'

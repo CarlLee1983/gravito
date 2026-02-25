@@ -1,6 +1,56 @@
 import type { SerializedJob } from '../../types'
 
 /**
+ * 錯誤分類，用於決定是否影響電路斷路器。
+ *
+ * - `transient`: 網路相關錯誤，應影響電路斷路器
+ * - `serialization`: 序列化錯誤，不影響電路
+ * - `business_logic`: 回調應用邏輯錯誤，不影響電路
+ * - `permanent`: 其他永久性錯誤，不影響電路
+ *
+ * @public
+ */
+export type ErrorCategory = 'transient' | 'permanent' | 'serialization' | 'business_logic'
+
+/**
+ * 序列化錯誤記錄，路由至 DLQ 的訊息內容。
+ *
+ * @public
+ */
+export interface SerializationErrorRecord {
+  /** 主題名稱 */
+  topic: string
+  /** 分區號 */
+  partition: number
+  /** 訊息偏移量 */
+  offset: string
+  /** 原始負載（字串化）*/
+  rawPayload: string
+  /** 錯誤訊息 */
+  error: string
+  /** 錯誤發生時的時間戳 */
+  timestamp: number
+  /** 錯誤分類 */
+  category: 'serialization'
+}
+
+/**
+ * DLQ 統計快照。
+ *
+ * @public
+ */
+export interface DlqStats {
+  /** DLQ 緩衝區中的總項目數 */
+  totalBuffered: number
+  /** 按主題的 DLQ 項目計數 */
+  perTopic: Record<string, number>
+  /** 上次嘗試刷新 DLQ 的時間戳 */
+  lastFlushAttempt: number
+  /** 由於緩衝區溢位丟棄的項目計數 */
+  overflowCount: number
+}
+
+/**
  * Kafka client factory interface (compatible with KafkaJS).
  *
  * Defines the minimal API surface to allow any compatible Kafka client implementation.
@@ -154,6 +204,18 @@ export interface KafkaDriverFullConfig {
 
   /** Message serializer (default: json) */
   serializer?: 'json' | 'binary'
+
+  /** Maximum DLQ buffer size (default: 1000) */
+  maxDlqBufferSize?: number
+
+  /** DLQ retry interval in milliseconds (default: 60000) */
+  dlqRetryIntervalMs?: number
+
+  /** Whether to enable DLQ retry loop (default: true) */
+  dlqRetryEnabled?: boolean
+
+  /** Callback failure circuit threshold (default: 5) */
+  callbackCircuitThreshold?: number
 }
 
 /**

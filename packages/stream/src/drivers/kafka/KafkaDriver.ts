@@ -4,6 +4,7 @@ import {
   BackpressureController,
   BatchProcessor,
   ConsumerLifecycleManager,
+  ErrorCategorizer,
   ErrorRecoveryManager,
   HeartbeatManager,
   KafkaMetrics,
@@ -21,6 +22,7 @@ import type {
   KafkaMessage,
   KafkaProducerClient,
   PerformanceSnapshot,
+  SerializationErrorRecord,
   SubscribeOptions,
 } from './types'
 
@@ -59,6 +61,9 @@ export class KafkaDriver implements QueueDriver {
   private readonly batchProcessor: BatchProcessor
   private readonly performanceMonitor: PerformanceMonitor
 
+  // Phase 6F components
+  private readonly errorCategorizer: ErrorCategorizer
+
   // Internal state
   private readonly subscribedTopics = new Set<string>()
   private readonly knownQueues = new Set<string>()
@@ -76,6 +81,16 @@ export class KafkaDriver implements QueueDriver {
 
   // Phase 6E: Serialization cache for push() hot path (WeakMap for automatic GC)
   private readonly serializationCache = new WeakMap<SerializedJob, string>()
+
+  // Phase 6F: Serialization error DLQ buffer and per-partition tracking
+  private readonly serializationDlq: SerializationErrorRecord[] = []
+  private readonly partitionSerializationErrors = new Map<string, number>()
+
+  // Phase 6F-4: Per-queue callback failure tracking for circuit breaker integration
+  private readonly callbackFailureCounts = new Map<string, number>()
+
+  // Phase 6F-5: DLQ retry timer
+  private dlqRetryTimer: ReturnType<typeof setInterval> | null = null
 
   private readonly config: Required<KafkaDriverFullConfig>
 
@@ -96,6 +111,10 @@ export class KafkaDriver implements QueueDriver {
       autoCommitInterval: config.autoCommitInterval ?? 5000,
       maxBatchSize: config.maxBatchSize ?? 100,
       serializer: config.serializer ?? 'json',
+      maxDlqBufferSize: config.maxDlqBufferSize ?? 1000,
+      dlqRetryIntervalMs: config.dlqRetryIntervalMs ?? 60000,
+      dlqRetryEnabled: config.dlqRetryEnabled ?? true,
+      callbackCircuitThreshold: config.callbackCircuitThreshold ?? 5,
     }
 
     this.buffer = new MessageBuffer(this.config.bufferSize)
@@ -119,6 +138,7 @@ export class KafkaDriver implements QueueDriver {
       maxBatchSize: this.config.maxBatchSize,
     })
     this.performanceMonitor = new PerformanceMonitor()
+    this.errorCategorizer = new ErrorCategorizer()
     this.performanceMonitor.bind({
       metrics: this.metrics,
       errorRecovery: this.errorRecovery,
@@ -161,22 +181,36 @@ export class KafkaDriver implements QueueDriver {
   }
 
   async push(queue: string, job: SerializedJob, options?: JobPushOptions): Promise<void> {
-    const producer = await this.ensureProducer()
+    // 電路斷路器檢查
+    if (!this.errorRecovery.canProceed()) {
+      await this.errorRecovery.waitForBackoff()
+    }
 
-    const messageKey = options?.groupId ?? job.groupId ?? job.id
-    const payload = this.serializeJob(job)
+    try {
+      const producer = await this.ensureProducer()
 
-    await producer.send({
-      topic: queue,
-      messages: [
-        {
-          key: messageKey,
-          value: payload,
-        },
-      ],
-    })
+      const messageKey = options?.groupId ?? job.groupId ?? job.id
+      const payload = this.serializeJob(job)
 
-    this.knownQueues.add(queue)
+      await producer.send({
+        topic: queue,
+        messages: [
+          {
+            key: messageKey,
+            value: payload,
+          },
+        ],
+      })
+
+      this.knownQueues.add(queue)
+      this.errorRecovery.recordSuccess()
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error))
+      const category = this.errorCategorizer.categorize(err)
+      this.errorRecovery.recordFailure(err, category)
+      this.metrics.recordError(category === 'transient' ? 'connection' : 'serialization')
+      throw error
+    }
   }
 
   /**
@@ -197,11 +231,25 @@ export class KafkaDriver implements QueueDriver {
       return
     }
 
-    const producer = await this.ensureProducer()
+    // 電路斷路器檢查
+    if (!this.errorRecovery.canProceed()) {
+      await this.errorRecovery.waitForBackoff()
+    }
 
-    await this.batchProcessor.pushBatches(producer, queue, jobs, (job) => this.serializeJob(job))
+    try {
+      const producer = await this.ensureProducer()
 
-    this.knownQueues.add(queue)
+      await this.batchProcessor.pushBatches(producer, queue, jobs, (job) => this.serializeJob(job))
+
+      this.knownQueues.add(queue)
+      this.errorRecovery.recordSuccess()
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error))
+      const category = this.errorCategorizer.categorize(err)
+      this.errorRecovery.recordFailure(err, category)
+      this.metrics.recordError(category === 'transient' ? 'connection' : 'serialization')
+      throw error
+    }
   }
 
   // 6B-3: Consumer initialization & Pop (~45 min)
@@ -256,8 +304,33 @@ export class KafkaDriver implements QueueDriver {
       // 記錄成功
       this.errorRecovery.recordSuccess()
     } catch (error) {
-      this.metrics.recordError('serialization')
-      this.errorRecovery.recordFailure(error instanceof Error ? error : new Error(String(error)))
+      const err = error instanceof Error ? error : new Error(String(error))
+      const category = this.errorCategorizer.categorize(err)
+      this.metrics.recordError(category === 'serialization' ? 'serialization' : 'callback')
+      this.errorRecovery.recordFailure(err, category)
+
+      // Phase 6F: 序列化錯誤路由至 DLQ 緩衝區
+      if (category === 'serialization') {
+        const partitionKey = `${topic}:${partition}`
+        const current = this.partitionSerializationErrors.get(partitionKey) ?? 0
+        this.partitionSerializationErrors.set(partitionKey, current + 1)
+
+        const record: SerializationErrorRecord = {
+          topic,
+          partition,
+          offset: message.offset,
+          rawPayload: message.value?.toString() ?? '',
+          error: err.message,
+          timestamp: Date.now(),
+          category: 'serialization',
+        }
+
+        const maxSize = this.config.maxDlqBufferSize
+        if (this.serializationDlq.length < maxSize) {
+          this.serializationDlq.push(record)
+        }
+      }
+
       console.error(`[KafkaDriver] Failed to handle message: ${error}`)
     }
   }
@@ -520,6 +593,10 @@ export class KafkaDriver implements QueueDriver {
           const latencyMs = Date.now() - callbackStart
           this.metrics.recordMessage(queue, latencyMs)
           this.heartbeatManager.beat()
+          this.errorRecovery.recordSuccess()
+
+          // Reset callback failure count on success
+          this.callbackFailureCounts.set(queue, 0)
 
           if (options.autoAcknowledge) {
             this.offsetTracker.resolve(buffered.topic, buffered.partition, buffered.offset)
@@ -533,6 +610,18 @@ export class KafkaDriver implements QueueDriver {
           // Failure - record error metrics and mark for DLQ
           const isTimeout = err instanceof Error && err.message === 'Callback timeout'
           this.metrics.recordError(isTimeout ? 'timeout' : 'callback')
+
+          // Track consecutive callback failures per queue
+          const currentCount = this.callbackFailureCounts.get(queue) ?? 0
+          const newCount = currentCount + 1
+          this.callbackFailureCounts.set(queue, newCount)
+
+          // If consecutive failures reach threshold, trigger circuit breaker
+          if (newCount >= this.config.callbackCircuitThreshold) {
+            const circuitErr = err instanceof Error ? err : new Error(String(err))
+            this.errorRecovery.recordFailure(circuitErr, 'transient')
+          }
+
           console.error(`[KafkaDriver] Callback error for ${queue}: ${err}`)
           this.fail(queue, job).catch((failErr) => {
             console.error(`[KafkaDriver] Failed to move job to DLQ: ${failErr}`)
@@ -591,7 +680,15 @@ export class KafkaDriver implements QueueDriver {
       if (!this.dlqBuffer.has(dlqTopic)) {
         this.dlqBuffer.set(dlqTopic, [])
       }
-      this.dlqBuffer.get(dlqTopic)?.push(failedJob)
+      const buffer = this.dlqBuffer.get(dlqTopic)!
+      buffer.push(failedJob)
+
+      // Discard oldest items when exceeding maxDlqBufferSize
+      const maxSize = this.config.maxDlqBufferSize
+      while (buffer.length > maxSize) {
+        buffer.shift()
+      }
+
       console.error(`[KafkaDriver] Failed to send to DLQ: ${error}`)
     }
 
@@ -740,6 +837,98 @@ export class KafkaDriver implements QueueDriver {
     return this.performanceMonitor.generateReport()
   }
 
+  /**
+   * 取得序列化錯誤 DLQ 緩衝區的不可變副本。
+   */
+  getSerializationDlq(): readonly SerializationErrorRecord[] {
+    return [...this.serializationDlq]
+  }
+
+  /**
+   * 取得每個分區的序列化錯誤計數。
+   */
+  getPartitionSerializationErrors(): ReadonlyMap<string, number> {
+    return new Map(this.partitionSerializationErrors)
+  }
+
+  /**
+   * 取得每個佇列的回呼連續失敗計數。
+   */
+  getCallbackFailureCounts(): ReadonlyMap<string, number> {
+    return new Map(this.callbackFailureCounts)
+  }
+
+  /**
+   * 取得 DLQ 緩衝區統計資訊。
+   */
+  getDlqStats(): {
+    totalBuffered: number
+    perTopic: Record<string, number>
+    retryEnabled: boolean
+    retryIntervalMs: number
+  } {
+    let totalBuffered = 0
+    const perTopic: Record<string, number> = {}
+    for (const [topic, jobs] of this.dlqBuffer) {
+      totalBuffered += jobs.length
+      perTopic[topic] = jobs.length
+    }
+    return {
+      totalBuffered,
+      perTopic,
+      retryEnabled: this.config.dlqRetryEnabled,
+      retryIntervalMs: this.config.dlqRetryIntervalMs,
+    }
+  }
+
+  /**
+   * 啟動 DLQ 重試迴圈，定期嘗試將緩衝區中的失敗訊息重新發送至 Kafka。
+   */
+  startDlqRetryLoop(): void {
+    if (this.dlqRetryTimer || !this.config.dlqRetryEnabled) {
+      return
+    }
+
+    this.dlqRetryTimer = setInterval(
+      () =>
+        this.flushDlqBuffer().catch((err) =>
+          console.error(`[KafkaDriver] DLQ retry flush failed: ${err}`)
+        ),
+      this.config.dlqRetryIntervalMs
+    )
+  }
+
+  /**
+   * 嘗試將所有緩衝的 DLQ 訊息重新發送至 Kafka。
+   * 成功發送的訊息會從緩衝區中移除。
+   */
+  async flushDlqBuffer(): Promise<{ flushed: number; remaining: number }> {
+    let flushed = 0
+    let remaining = 0
+
+    for (const [dlqTopic, jobs] of this.dlqBuffer) {
+      if (jobs.length === 0) {
+        continue
+      }
+
+      try {
+        const producer = await this.ensureProducer()
+        const messages = jobs.map((job) => ({
+          key: job.id,
+          value: JSON.stringify(job),
+        }))
+        await producer.send({ topic: dlqTopic, messages })
+        flushed += jobs.length
+        this.dlqBuffer.set(dlqTopic, [])
+      } catch (error) {
+        remaining += jobs.length
+        console.error(`[KafkaDriver] DLQ flush failed for ${dlqTopic}: ${error}`)
+      }
+    }
+
+    return { flushed, remaining }
+  }
+
   async clear(queue: string): Promise<void> {
     this.buffer.clear(queue)
     this.offsetTracker.clear(queue)
@@ -831,6 +1020,9 @@ export class KafkaDriver implements QueueDriver {
   // 6B-8: Graceful Shutdown (~15 min)
   async disconnect(): Promise<void> {
     try {
+      // Stop lifecycle manager to terminate runSubscription loop
+      await this.lifecycleManager.stop()
+
       // Stop performance monitor
       this.performanceMonitor.destroy()
 
@@ -840,6 +1032,12 @@ export class KafkaDriver implements QueueDriver {
       // 清理錯誤恢復管理器和重新平衡處理器
       this.errorRecovery.destroy()
       this.rebalanceHandler.destroy()
+
+      // Stop DLQ retry loop
+      if (this.dlqRetryTimer) {
+        clearInterval(this.dlqRetryTimer)
+        this.dlqRetryTimer = null
+      }
 
       // Stop offset commit loop
       if (this.offsetCommitTimer) {
