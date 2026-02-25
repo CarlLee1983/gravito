@@ -258,7 +258,7 @@ export class ShardDatabaseManager {
   /**
    * 執行數據庫查詢（單分片）
    */
-  async query(shardId: number, sql: string, params?: any[]): Promise<any[]> {
+  async query(shardId: number, sql: string, _params?: any[]): Promise<any[]> {
     const health = this.health.get(shardId)
     if (!health?.isHealthy) {
       throw new Error(`Shard ${shardId} is not healthy`)

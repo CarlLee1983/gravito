@@ -5,7 +5,7 @@
  * 此 Repository 實演了常見的查詢模式與最佳實踐。
  */
 
-import { type ConnectionContract, DB, identifier } from '@gravito/atlas'
+import { type ConnectionContract, DB } from '@gravito/atlas'
 import type { User } from '../models/User'
 
 export interface UserSearchFilters {
@@ -160,7 +160,9 @@ export class UserRepository {
    * 注意：直接的 IN 子句需要小心處理，SafeQueryBuilder 會正確綁定參數
    */
   async deactivateUsers(userIds: number[]): Promise<number> {
-    if (userIds.length === 0) return 0
+    if (userIds.length === 0) {
+      return 0
+    }
 
     // 使用 IN 子句進行批量操作
     const result = await this.connection.sql<{ count: number }>`

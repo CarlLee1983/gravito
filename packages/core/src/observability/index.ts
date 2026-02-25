@@ -6,6 +6,9 @@
  * @public
  */
 
+// OpenTelemetry SDK Integration moved to @gravito/monitor (Phase 2.2)
+// Currently still in core/instrumentation but marked for migration
+// Import from @gravito/monitor once migration is complete
 export type { EventMetrics } from '../events/observability/EventMetrics'
 export type { EventTracer } from '../events/observability/EventTracer'
 export {
@@ -17,24 +20,15 @@ export {
   type ObservabilityConfig,
   ObservableHookManager,
 } from '../events/observability/ObservableHookManager'
-// OpenTelemetry SDK Integration (新增)
+// Abstract observability contracts (Phase 2.2)
 export {
-  DEFAULT_CONFIG as OTEL_DEFAULT_CONFIG,
-  getMeter,
-  getOpenTelemetrySDK,
-  getTracer as getOtelTracer,
-  isOpenTelemetryInitialized,
-  type MetricsConfig as OtelMetricsConfig,
-  type MetricsExporter,
-  type OpenTelemetryConfig,
-  type OpenTelemetrySDK,
-  OTEL_ENV_VARS,
-  resetOpenTelemetry,
-  setupOpenTelemetry,
-  shutdownOpenTelemetry,
-  type TracingConfig as OtelTracingConfig,
-  type TracingExporter,
-} from '../instrumentation'
+  createNoOpObservabilityProvider,
+  type EventMetricsRecorder,
+  type EventTracingProvider,
+  type ObservabilityProvider,
+  type TracingSpan,
+  type WorkerMetricsProvider,
+} from './contracts'
 export {
   type EventMetricsDefinition,
   getEventMetricsDefinition,

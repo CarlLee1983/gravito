@@ -168,7 +168,9 @@ export class LoadTester {
     const latencies: number[] = []
 
     for await (const waitTimeMs of loadGenerator) {
-      if (Date.now() - startTime > maxDurationMs) break
+      if (Date.now() - startTime > maxDurationMs) {
+        break
+      }
 
       const opStart = performance.now()
       try {

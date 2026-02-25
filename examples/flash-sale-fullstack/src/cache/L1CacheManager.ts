@@ -262,11 +262,15 @@ export class L1CacheManager<T = any> {
 
     for (const key of keys) {
       const l1Entry = this.cache.get(key)
-      if (!l1Entry) continue
+      if (!l1Entry) {
+        continue
+      }
 
       try {
         const l2Data = await l2Cache.get(key)
-        if (!l2Data) continue
+        if (!l2Data) {
+          continue
+        }
 
         const l2Entry = typeof l2Data === 'string' ? JSON.parse(l2Data) : l2Data
 

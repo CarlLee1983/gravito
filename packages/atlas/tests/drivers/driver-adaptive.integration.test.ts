@@ -46,7 +46,9 @@ describe('Driver Adaptive Pool Management', () => {
     })
 
     it('should accept target pool size parameter', async () => {
-      if (!isPostgresAvailable) return
+      if (!isPostgresAvailable) {
+        return
+      }
       await driver.connect()
       expect(() => {
         driver.adjustPoolSize?.(15)
@@ -54,7 +56,9 @@ describe('Driver Adaptive Pool Management', () => {
     })
 
     it('should reject invalid pool sizes', async () => {
-      if (!isPostgresAvailable) return
+      if (!isPostgresAvailable) {
+        return
+      }
       await driver.connect()
 
       // Negative size should be clamped to min
@@ -64,7 +68,9 @@ describe('Driver Adaptive Pool Management', () => {
     })
 
     it('should respect max bound for pool size', async () => {
-      if (!isPostgresAvailable) return
+      if (!isPostgresAvailable) {
+        return
+      }
       await driver.connect()
 
       // Very large size should be clamped to max (100)
@@ -74,7 +80,9 @@ describe('Driver Adaptive Pool Management', () => {
     })
 
     it('should allow increasing pool size', async () => {
-      if (!isPostgresAvailable) return
+      if (!isPostgresAvailable) {
+        return
+      }
       await driver.connect()
       const initialStats = driver.getPoolStats()
       expect(initialStats).not.toBeNull()
@@ -90,7 +98,9 @@ describe('Driver Adaptive Pool Management', () => {
     })
 
     it('should allow decreasing pool size', async () => {
-      if (!isPostgresAvailable) return
+      if (!isPostgresAvailable) {
+        return
+      }
       await driver.connect()
       const initialStats = driver.getPoolStats()
       expect(initialStats).not.toBeNull()
@@ -105,7 +115,9 @@ describe('Driver Adaptive Pool Management', () => {
     })
 
     it('should be idempotent when size unchanged', async () => {
-      if (!isPostgresAvailable) return
+      if (!isPostgresAvailable) {
+        return
+      }
       await driver.connect()
       const stats = driver.getPoolStats()
 
@@ -117,7 +129,9 @@ describe('Driver Adaptive Pool Management', () => {
     })
 
     it('should handle adjustment during idle state', async () => {
-      if (!isPostgresAvailable) return
+      if (!isPostgresAvailable) {
+        return
+      }
       await driver.connect()
 
       // Adjust when no queries are running
@@ -167,7 +181,9 @@ describe('Driver Adaptive Pool Management', () => {
     })
 
     it('should accept target pool size parameter', async () => {
-      if (!isMySQLAvailable) return
+      if (!isMySQLAvailable) {
+        return
+      }
       await driver.connect()
       expect(() => {
         driver.adjustPoolSize?.(15)
@@ -175,7 +191,9 @@ describe('Driver Adaptive Pool Management', () => {
     })
 
     it('should reject invalid pool sizes', async () => {
-      if (!isMySQLAvailable) return
+      if (!isMySQLAvailable) {
+        return
+      }
       await driver.connect()
 
       // Negative size should be clamped to min
@@ -185,7 +203,9 @@ describe('Driver Adaptive Pool Management', () => {
     })
 
     it('should respect max bound for pool size', async () => {
-      if (!isMySQLAvailable) return
+      if (!isMySQLAvailable) {
+        return
+      }
       await driver.connect()
 
       // Very large size should be clamped to max (100)
@@ -195,7 +215,9 @@ describe('Driver Adaptive Pool Management', () => {
     })
 
     it('should allow increasing pool size', async () => {
-      if (!isMySQLAvailable) return
+      if (!isMySQLAvailable) {
+        return
+      }
       await driver.connect()
       const initialStats = driver.getPoolStats()
       expect(initialStats).not.toBeNull()
@@ -211,7 +233,9 @@ describe('Driver Adaptive Pool Management', () => {
     })
 
     it('should allow decreasing pool size', async () => {
-      if (!isMySQLAvailable) return
+      if (!isMySQLAvailable) {
+        return
+      }
       await driver.connect()
       const initialStats = driver.getPoolStats()
       expect(initialStats).not.toBeNull()
@@ -226,7 +250,9 @@ describe('Driver Adaptive Pool Management', () => {
     })
 
     it('should be idempotent when size unchanged', async () => {
-      if (!isMySQLAvailable) return
+      if (!isMySQLAvailable) {
+        return
+      }
       await driver.connect()
       const stats = driver.getPoolStats()
 
@@ -238,7 +264,9 @@ describe('Driver Adaptive Pool Management', () => {
     })
 
     it('should handle adjustment during idle state', async () => {
-      if (!isMySQLAvailable) return
+      if (!isMySQLAvailable) {
+        return
+      }
       await driver.connect()
 
       // Adjust when no queries are running

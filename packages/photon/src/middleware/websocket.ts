@@ -146,14 +146,18 @@ export function defineWSHandler<TIn = unknown, TOut = unknown>(
   return () => {
     const wsEvents: WSEvents = {
       onOpen(_event, rawWs) {
-        if (!handler.onOpen) return
+        if (!handler.onOpen) {
+          return
+        }
 
         const typedWs = createTypedWSContext<TOut>(rawWs)
         void handler.onOpen(typedWs)
       },
 
       onMessage(event, rawWs) {
-        if (!handler.onMessage) return
+        if (!handler.onMessage) {
+          return
+        }
 
         const typedWs = createTypedWSContext<TOut>(rawWs)
         const rawData = event.data
@@ -184,14 +188,18 @@ export function defineWSHandler<TIn = unknown, TOut = unknown>(
       },
 
       onClose(event, rawWs) {
-        if (!handler.onClose) return
+        if (!handler.onClose) {
+          return
+        }
 
         const typedWs = createTypedWSContext<TOut>(rawWs)
         void handler.onClose(event.code ?? 1000, event.reason ?? '', typedWs)
       },
 
       onError(event, rawWs) {
-        if (!handler.onError) return
+        if (!handler.onError) {
+          return
+        }
 
         const typedWs = createTypedWSContext<TOut>(rawWs)
         void handler.onError(event, typedWs)

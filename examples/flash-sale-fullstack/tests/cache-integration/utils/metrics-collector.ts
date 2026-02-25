@@ -65,7 +65,9 @@ export class MetricsCollector {
    * 計算百分位數
    */
   private percentile(p: number): number {
-    if (this.latencies.length === 0) return 0
+    if (this.latencies.length === 0) {
+      return 0
+    }
     const sorted = [...this.latencies].sort((a, b) => a - b)
     const index = Math.ceil((p / 100) * sorted.length) - 1
     return sorted[Math.max(0, index)]

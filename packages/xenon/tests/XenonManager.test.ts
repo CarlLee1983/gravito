@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { XenonMemoryError } from '../src/errors'
 import { XenonManager } from '../src/XenonManager'
-import { createMockFfiLoader, TEST_IMPLEMENTATIONS, TEST_SYMBOLS } from './helpers'
 
 describe('XenonManager', () => {
   describe('configuration', () => {
@@ -86,7 +85,7 @@ describe('XenonManager', () => {
     it('should free by pointer number', () => {
       const manager = new XenonManager()
       const buf = manager.allocBuffer(1024, 'test')
-      const ptr = (buf as any).ptr || 12345
+      const _ptr = (buf as any).ptr || 12345
 
       // Allocate another to have known ptr
       manager.freeBuffer(buf)

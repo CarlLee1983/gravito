@@ -7,8 +7,6 @@
  * These examples can be adapted for your specific needs.
  */
 
-import { createCustomLoaderPlugin } from './bun-loader'
-
 // ============================================================================
 // YAML Configuration Loader
 // ============================================================================

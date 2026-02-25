@@ -96,7 +96,7 @@ export class TcpConnection implements ITcpConnection {
       this.listeners.set(event, new Set())
     }
 
-    this.listeners.get(event)!.add(listener)
+    this.listeners.get(event)?.add(listener)
   }
 
   /**
@@ -111,7 +111,9 @@ export class TcpConnection implements ITcpConnection {
    */
   private emit(event: string, ...args: unknown[]): void {
     const listeners = this.listeners.get(event)
-    if (!listeners) return
+    if (!listeners) {
+      return
+    }
 
     for (const listener of listeners) {
       try {

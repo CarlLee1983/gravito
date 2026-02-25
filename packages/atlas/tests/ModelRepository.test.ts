@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { column, DB, Model, ModelRepository, SQLiteDriver } from '../src/index'
+import { column, DB, Model, ModelRepository } from '../src/index'
 
 /**
  * Test Models

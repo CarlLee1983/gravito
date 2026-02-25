@@ -11,7 +11,7 @@
  */
 
 import { type PlanetCore, ServiceProvider } from '@gravito/core'
-import { CartCleared, CartItemAdded, OrderCancelled, OrderCreated, OrderPaid } from '../Events'
+import { CartItemAdded, OrderCreated, OrderPaid } from '../Events'
 import {
   ProcessOrderPayment,
   SendOrderCreatedNotification,

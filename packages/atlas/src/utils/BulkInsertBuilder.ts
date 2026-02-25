@@ -93,11 +93,15 @@ export class BulkInsertBuilder {
    * ✅ 參數綁定：所有值都被正確綁定
    */
   private async flush(): Promise<void> {
-    if (this.records.length === 0) return
+    if (this.records.length === 0) {
+      return
+    }
 
     const recordsToInsert = this.records.splice(0, this.records.length)
 
-    if (recordsToInsert.length === 0) return
+    if (recordsToInsert.length === 0) {
+      return
+    }
 
     try {
       // 建立 VALUES 子句

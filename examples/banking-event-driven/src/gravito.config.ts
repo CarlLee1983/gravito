@@ -14,7 +14,7 @@ export const gravitoConfig = {
   /** HTTP server settings */
   http: {
     host: process.env.HTTP_HOST ?? '0.0.0.0',
-    port: parseInt(process.env.HTTP_PORT ?? '3000'),
+    port: parseInt(process.env.HTTP_PORT ?? '3000', 10),
     corsEnabled: true,
     corsOrigins: ['*'],
     corsCredentials: false,

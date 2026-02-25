@@ -9,3 +9,4 @@ The official CLI proxy for the [Gravito Framework](https://github.com/gravito-fr
 npx gr    "directory": "packages/gravito"
   }
 }
+```

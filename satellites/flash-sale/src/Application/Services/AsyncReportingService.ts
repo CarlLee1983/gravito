@@ -197,22 +197,4 @@ export class AsyncReportingService {
     this.logger.debug('[AsyncReporting] Cleaning up expired reports')
     return 0
   }
-
-  /**
-   * 獲取報表優先級
-   *
-   * @param reportType 報表類型
-   * @returns 優先級（1-10，數字越大優先級越高）
-   */
-  private getReportPriority(reportType: ReportType): number {
-    const priorityMap: Record<ReportType, number> = {
-      [ReportType.ORDER_SUMMARY]: 8, // 高優先級
-      [ReportType.SALES_ANALYSIS]: 7,
-      [ReportType.INVENTORY_STATUS]: 6,
-      [ReportType.CUSTOMER_BEHAVIOR]: 5,
-      [ReportType.REVENUE_REPORT]: 9, // 最高優先級
-    }
-
-    return priorityMap[reportType] || 5
-  }
 }

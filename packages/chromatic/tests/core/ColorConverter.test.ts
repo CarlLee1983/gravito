@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { ColorConverter } from '../../src/core/ColorConverter'
 import { ColorValue } from '../../src/core/ColorValue'
-import { ColorConversionError } from '../../src/core/errors'
 
 describe('ColorConverter', () => {
   describe('toRgb', () => {

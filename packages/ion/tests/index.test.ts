@@ -1125,9 +1125,15 @@ describe('Performance & Chaining', () => {
     const req = {
       url: '/test',
       header: (key: string) => {
-        if (key === 'X-Inertia') return 'true'
-        if (key === 'X-Inertia-Reset') return 'oldField,anotherField'
-        if (key === 'X-Inertia-Partial-Component') return 'Dashboard'
+        if (key === 'X-Inertia') {
+          return 'true'
+        }
+        if (key === 'X-Inertia-Reset') {
+          return 'oldField,anotherField'
+        }
+        if (key === 'X-Inertia-Partial-Component') {
+          return 'Dashboard'
+        }
         return undefined
       },
     }

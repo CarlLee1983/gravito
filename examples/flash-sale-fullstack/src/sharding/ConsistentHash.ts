@@ -9,7 +9,7 @@
  * - 支持權重調整
  */
 
-import { createHash } from 'crypto'
+import { createHash } from 'node:crypto'
 
 export interface ConsistentHashOptions {
   virtualNodes?: number // 每個物理節點的虛擬節點數，默認 160

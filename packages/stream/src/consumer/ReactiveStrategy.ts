@@ -1,4 +1,3 @@
-import type { QueueDriver } from '../drivers/QueueDriver'
 import type { Job } from '../Job'
 import type { QueueManager } from '../QueueManager'
 import type { ConsumerStrategy } from './ConsumerStrategy'
@@ -20,11 +19,8 @@ import type { ConsumerStrategy } from './ConsumerStrategy'
 export class ReactiveStrategy implements ConsumerStrategy {
   private running = false
   private stopRequested = false
-  private notificationArrived = false
   private lastNotificationTime = Date.now()
   private fallbackPollingTimer: ReturnType<typeof setTimeout> | null = null
-  private drainLoopPromise: Promise<void> | null = null
-  private pollLoopPromise: Promise<void> | null = null
 
   constructor(
     private queueManager: QueueManager,
@@ -61,25 +57,21 @@ export class ReactiveStrategy implements ConsumerStrategy {
 
       // Register notification listener
       if (driver.onNotify) {
-        await driver.onNotify(this.queues, async (queue: string) => {
+        await driver.onNotify(this.queues, async () => {
           this.notificationArrived = true
           this.lastNotificationTime = Date.now()
-          this.options.log(`[ReactiveStrategy] Notification for queue: ${queue}`)
         })
       }
     } catch (error) {
-      this.options.log('[ReactiveStrategy] Failed to enable notifications:', {
-        error,
-      })
+      this.options.log('[ReactiveStrategy] Failed to enable notifications:', error)
       this.running = false
       throw error
     }
 
     this.options.log('[ReactiveStrategy] Started')
 
-    // Start drain loop and fallback polling
-    this.drainLoopPromise = this.runDrainLoop()
-    this.pollLoopPromise = this.runFallbackPolling()
+    // Start fallback polling
+    this.startFallbackPolling()
   }
 
   async stop(): Promise<void> {
@@ -102,18 +94,8 @@ export class ReactiveStrategy implements ConsumerStrategy {
       try {
         await driver.disableNotifications()
       } catch (error) {
-        this.options.log('[ReactiveStrategy] Error disabling notifications:', {
-          error,
-        })
+        this.options.log('[ReactiveStrategy] Error disabling notifications:', error)
       }
-    }
-
-    // Wait for loops to finish
-    if (this.drainLoopPromise) {
-      await this.drainLoopPromise
-    }
-    if (this.pollLoopPromise) {
-      await this.pollLoopPromise
     }
 
     this.running = false
@@ -167,43 +149,17 @@ export class ReactiveStrategy implements ConsumerStrategy {
     return jobs
   }
 
-  private async runDrainLoop(): Promise<void> {
-    while (this.running && !this.stopRequested) {
-      // Wait for notification or stop
-      if (!this.notificationArrived) {
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        if (this.stopRequested) {
-          break
-        }
-        continue
+  private startFallbackPolling(): void {
+    const checkFallback = async () => {
+      if (!this.running || this.stopRequested) {
+        return
       }
 
-      this.notificationArrived = false
-
-      // Drain all available jobs after notification
-      let hasMoreJobs = true
-      while (hasMoreJobs && this.running && !this.stopRequested) {
-        const jobs = await this.fetchJobs()
-        hasMoreJobs = jobs.length > 0
-        if (!hasMoreJobs) {
-          break
-        }
-        // Yield to event loop
-        await new Promise((resolve) => setTimeout(resolve, 0))
-      }
-
-      // Yield between drain cycles
-      await new Promise((resolve) => setTimeout(resolve, 10))
-    }
-  }
-
-  private async runFallbackPolling(): Promise<void> {
-    while (this.running && !this.stopRequested) {
       const timeSinceLastNotification = Date.now() - this.lastNotificationTime
 
       // Check if we need fallback polling
       if (timeSinceLastNotification > this.options.reactivePollingFallback) {
-        this.options.log('[ReactiveStrategy] Fallback polling triggered (no notifications)')
+        this.options.log('[ReactiveStrategy] Fallback polling triggered')
 
         // Do a fallback poll check
         const jobs = await this.fetchJobs()
@@ -216,12 +172,14 @@ export class ReactiveStrategy implements ConsumerStrategy {
       }
 
       // Check again after interval
-      await new Promise((resolve) => {
+      if (this.running && !this.stopRequested) {
         this.fallbackPollingTimer = setTimeout(
-          resolve,
+          checkFallback,
           Math.min(this.options.reactivePollingFallback / 2, 5000)
         )
-      })
+      }
     }
+
+    checkFallback()
   }
 }

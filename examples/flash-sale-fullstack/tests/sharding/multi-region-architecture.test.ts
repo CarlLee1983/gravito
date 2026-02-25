@@ -3,7 +3,7 @@
  * 多區域架構設計測試
  */
 
-import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
+import { beforeAll, describe, expect, it } from 'bun:test'
 import type { FailoverPolicy, RegionConfig, ReplicationStrategy } from '../../src/sharding'
 import { MultiRegionManager } from '../../src/sharding'
 

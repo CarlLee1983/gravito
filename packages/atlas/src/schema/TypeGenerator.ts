@@ -100,7 +100,9 @@ async function collectTsFiles(dir: string): Promise<string[]> {
     const info = await stat(fullPath)
 
     if (info.isDirectory()) {
-      if (entry === 'node_modules' || entry.startsWith('.')) continue
+      if (entry === 'node_modules' || entry.startsWith('.')) {
+        continue
+      }
       const subFiles = await collectTsFiles(fullPath)
       files.push(...subFiles)
     } else if (
@@ -134,7 +136,9 @@ async function extractColumnsFromFile(filePath: string): Promise<ModelTypeMap[]>
     const mod = (await import(filePath)) as Record<string, any>
 
     for (const [exportName, exported] of Object.entries(mod)) {
-      if (typeof exported !== 'function') continue
+      if (typeof exported !== 'function') {
+        continue
+      }
 
       // Check for Atlas column metadata
       const columns: Record<string, ColumnMeta> | undefined =
@@ -142,10 +146,12 @@ async function extractColumnsFromFile(filePath: string): Promise<ModelTypeMap[]>
           ? (Reflect as any).getMetadata(COLUMN_METADATA_KEY, exported.prototype)
           : undefined
 
-      if (!columns || Object.keys(columns).length === 0) continue
+      if (!columns || Object.keys(columns).length === 0) {
+        continue
+      }
 
       const tableName: string =
-        exported.table ?? exported.getTable?.() ?? exportName.toLowerCase() + 's'
+        exported.table ?? exported.getTable?.() ?? `${exportName.toLowerCase()}s`
 
       const columnMap: Record<string, string> = {}
       for (const [colName, meta] of Object.entries(columns)) {

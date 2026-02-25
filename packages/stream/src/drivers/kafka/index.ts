@@ -1,8 +1,8 @@
 /**
- * Kafka Queue Driver
+ * @gravito/stream Kafka Driver 模組。
  *
- * Phase 6A-6B-6C implementation: Complete Kafka integration with reactive notifications,
- * consumer lifecycle management, and backpressure control
+ * 提供生產級的 Kafka Queue 驅動程式實作，
+ * 整合 ReactiveStrategy 和完整的 QueueDriver 介面。
  *
  * @public
  */
@@ -22,14 +22,7 @@ export type {
 export { KafkaNotifier } from './KafkaNotifier'
 export { MessageBuffer } from './MessageBuffer'
 export { OffsetTracker } from './OffsetTracker'
-export { PerformanceMonitor } from './PerformanceMonitor'
-export type { RebalanceCallbacks } from './RebalanceHandler'
-export { RebalanceHandler } from './RebalanceHandler'
-export { RingBuffer } from './RingBuffer'
 export type {
-  BackpressureConfig,
-  BatchConfig,
-  BatchResult,
   BufferedMessage,
   ConsumerLifecycleState,
   DlqStats,
@@ -39,11 +32,9 @@ export type {
   HeartbeatConfig,
   HeartbeatStatus,
   KafkaAdminClient,
-  KafkaCircuitState,
   KafkaClientFactory,
   KafkaConsumerClient,
   KafkaDriverFullConfig,
-  KafkaDriverMetrics,
   KafkaMessage,
   KafkaProducerClient,
   LifecycleEvent,

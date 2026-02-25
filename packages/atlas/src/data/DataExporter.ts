@@ -250,7 +250,7 @@ export class DataExporter {
 
       for (let i = 0; i < rows.length; i += batchSize) {
         const batch = rows.slice(i, i + batchSize)
-        const chunk = batch.map((row) => JSON.stringify(row)).join('\n') + '\n'
+        const chunk = `${batch.map((row) => JSON.stringify(row)).join('\n')}\n`
         writer.write(chunk)
       }
 
@@ -258,7 +258,7 @@ export class DataExporter {
     } else {
       // Node.js 降級方案：使用 fs.writeFile
       const { writeFile } = await import('node:fs/promises')
-      const content = rows.map((row) => JSON.stringify(row)).join('\n') + '\n'
+      const content = `${rows.map((row) => JSON.stringify(row)).join('\n')}\n`
       await writeFile(output, content, 'utf8')
     }
   }
@@ -383,7 +383,6 @@ export class DataExporter {
         // 使用 ON CONFLICT DO UPDATE（需要指定衝突欄位，這裡使用通用語法）
         // 注意：此為簡化版本，完整的 UPSERT 需要知道主鍵欄位
         return `${base} ON CONFLICT DO NOTHING`
-      case 'error':
       default:
         return base
     }

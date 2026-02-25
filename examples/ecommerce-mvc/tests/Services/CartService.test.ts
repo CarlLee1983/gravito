@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import type { EventManager } from '@gravito/core'
 import { Cart, CartItem } from '../../src/models'
 import { CartRepository } from '../../src/Repositories'

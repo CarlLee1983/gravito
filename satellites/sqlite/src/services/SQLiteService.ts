@@ -3,8 +3,8 @@
  * Manages SQLite database connections via Xenon FFI
  */
 
-import type { SQLiteServiceConfig, SQLiteConnection } from '../types'
 import { SQLiteConnectionError } from '../errors'
+import type { SQLiteConnection, SQLiteServiceConfig } from '../types'
 
 // 模擬 Xenon（實際環境使用 @gravito/xenon）
 const Xenon = {
@@ -39,9 +39,7 @@ export class SQLiteService {
   async createConnection(dbPath: string): Promise<SQLiteConnection> {
     // Validate path security
     if (!this.isPathAllowed(dbPath)) {
-      throw new SQLiteConnectionError(
-        `Database path not allowed: ${dbPath}`,
-      )
+      throw new SQLiteConnectionError(`Database path not allowed: ${dbPath}`)
     }
 
     // In real implementation:

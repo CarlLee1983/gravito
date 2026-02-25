@@ -65,6 +65,11 @@ export { getCompressionAdapter } from './compression'
 
 export { createHtmlRenderCallbacks, getMarkdownAdapter } from './markdown'
 
+// ============ Deep Equals Exports ============
+
+export type { DeepEqualsFn, DeepEqualsOptions } from './deep-equals'
+export { getDeepEquals } from './deep-equals'
+
 // ============ Escape Exports ============
 
 export type { EscapeHtmlFn } from './escape'

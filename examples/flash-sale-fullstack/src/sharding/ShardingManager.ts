@@ -12,13 +12,11 @@
 
 import { ConsistentHash } from './ConsistentHash'
 import type {
-  AggregateQueryResult,
   ShardInfo,
   ShardingConfig,
   ShardingEvent,
   ShardingEventType,
   ShardingMetrics,
-  ShardQueryResult,
 } from './types'
 
 export class ShardingManager {
@@ -173,7 +171,9 @@ export class ShardingManager {
    */
   recordQueryMetric(shardId: number, latency: number, success: boolean): void {
     const metric = this.metrics.get(shardId)
-    if (!metric) return
+    if (!metric) {
+      return
+    }
 
     metric.requestCount++
     if (!success) {
@@ -211,7 +211,7 @@ export class ShardingManager {
     if (!this.eventListeners.has(eventType)) {
       this.eventListeners.set(eventType, new Set())
     }
-    this.eventListeners.get(eventType)!.add(listener)
+    this.eventListeners.get(eventType)?.add(listener)
   }
 
   /**

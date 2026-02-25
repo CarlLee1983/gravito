@@ -36,7 +36,6 @@ export class CacheWarmupService {
   private readonly batchSize = 10
   private readonly batchDelay = 50 // ms
   private readonly hotnesThreshold = 50 // 訪問次數閾值
-  private readonly ttlCheckInterval = 60 // 檢查 TTL < 60 秒的快取
   private refreshTimer: NodeJS.Timeout | null = null
   private warmingUp = false
 

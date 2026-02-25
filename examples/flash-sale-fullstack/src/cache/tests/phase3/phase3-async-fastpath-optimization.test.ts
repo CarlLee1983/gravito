@@ -8,7 +8,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { type AsyncEventPath, createAsyncEventPath } from '../../events/AsyncEventPath.js'
 import type { CacheEvent } from '../../events/types.js'
-import { CacheEventType, createCacheEvent, EventPriority, EventSource } from '../../events/types.js'
+import { CacheEventType, createCacheEvent, EventPriority } from '../../events/types.js'
 
 function createTestEvent(id: number, priority: EventPriority = EventPriority.NORMAL): CacheEvent {
   return createCacheEvent(CacheEventType.PRODUCT_UPDATED, [`product:${id}`], {
@@ -23,7 +23,7 @@ describe('AsyncEventPath', () => {
   beforeEach(() => {
     syncCount = 0
 
-    const mockSyncSubmit = async (event: CacheEvent) => {
+    const mockSyncSubmit = async (_event: CacheEvent) => {
       syncCount++
     }
 

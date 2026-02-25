@@ -4,8 +4,8 @@
  * 防止跨站請求偽造（Cross-Site Request Forgery）攻擊
  */
 
+import * as crypto from 'node:crypto'
 import { type GravitoContext, type GravitoNext, HttpException } from '@gravito/core'
-import * as crypto from 'crypto'
 
 interface CsrfConfig {
   tokenLength?: number

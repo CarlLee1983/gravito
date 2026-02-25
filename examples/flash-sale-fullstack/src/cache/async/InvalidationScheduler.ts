@@ -96,7 +96,9 @@ export class InvalidationScheduler {
    */
   cancel(taskId: string): boolean {
     const task = this.tasks.get(taskId)
-    if (!task) return false
+    if (!task) {
+      return false
+    }
 
     // 清除計時器
     const timer = this.timers.get(taskId)
@@ -154,7 +156,9 @@ export class InvalidationScheduler {
    */
   private async executeTask(taskId: string): Promise<void> {
     const task = this.tasks.get(taskId)
-    if (!task) return
+    if (!task) {
+      return
+    }
 
     try {
       // 計算等待時間

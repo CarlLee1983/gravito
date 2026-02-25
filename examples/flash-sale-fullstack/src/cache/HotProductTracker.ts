@@ -134,7 +134,9 @@ export class HotProductTracker {
   }
 
   private extractCount(score: number): number {
-    if (!score) return 0
+    if (!score) {
+      return 0
+    }
     return Math.floor((score % 1) * 1000)
   }
 }

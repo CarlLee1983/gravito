@@ -11,7 +11,10 @@ export class SQLiteError extends Error {
 }
 
 export class SQLiteConnectionError extends SQLiteError {
-  constructor(message: string, public code?: number) {
+  constructor(
+    message: string,
+    public code?: number
+  ) {
     super(message)
     this.name = 'SQLiteConnectionError'
     Object.setPrototypeOf(this, SQLiteConnectionError.prototype)
@@ -19,7 +22,10 @@ export class SQLiteConnectionError extends SQLiteError {
 }
 
 export class SQLiteExecutionError extends SQLiteError {
-  constructor(message: string, public sql?: string) {
+  constructor(
+    message: string,
+    public sql?: string
+  ) {
     super(message)
     this.name = 'SQLiteExecutionError'
     Object.setPrototypeOf(this, SQLiteExecutionError.prototype)

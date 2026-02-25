@@ -237,11 +237,11 @@ describe('RuntimeArchiveAdapter - Bun 環境', () => {
       const fileInfo = files.get('test.txt')
 
       expect(fileInfo).toBeDefined()
-      expect(fileInfo!.path).toBe('test.txt')
-      expect(fileInfo!.size).toBeGreaterThan(0)
-      expect(typeof fileInfo!.lastModified).toBe('number')
-      expect(typeof fileInfo!.text).toBe('function')
-      expect(typeof fileInfo!.arrayBuffer).toBe('function')
+      expect(fileInfo?.path).toBe('test.txt')
+      expect(fileInfo?.size).toBeGreaterThan(0)
+      expect(typeof fileInfo?.lastModified).toBe('number')
+      expect(typeof fileInfo?.text).toBe('function')
+      expect(typeof fileInfo?.arrayBuffer).toBe('function')
     })
 
     it('ArchiveFileInfo.text() 應回傳正確的文字內容', async () => {
@@ -257,7 +257,7 @@ describe('RuntimeArchiveAdapter - Bun 環境', () => {
       const fileInfo = files.get('message.txt')
 
       expect(fileInfo).toBeDefined()
-      const text = await fileInfo!.text()
+      const text = await fileInfo?.text()
       expect(text).toBe(content)
     })
 
@@ -274,7 +274,7 @@ describe('RuntimeArchiveAdapter - Bun 環境', () => {
       const fileInfo = files.get('data.bin')
 
       expect(fileInfo).toBeDefined()
-      const buffer = await fileInfo!.arrayBuffer()
+      const buffer = await fileInfo?.arrayBuffer()
       expect(buffer).toBeInstanceOf(ArrayBuffer)
       const decoded = new TextDecoder().decode(new Uint8Array(buffer))
       expect(decoded).toBe(content)
@@ -357,9 +357,9 @@ describe('RuntimeArchiveAdapter - Bun 環境', () => {
 
       const result = await adapter.readFile(archiveData, 'binary.bin')
       expect(result).toBeInstanceOf(Uint8Array)
-      expect(result!.length).toBe(binaryContent.length)
+      expect(result?.length).toBe(binaryContent.length)
       for (let i = 0; i < binaryContent.length; i++) {
-        expect(result![i]).toBe(binaryContent[i])
+        expect(result?.[i]).toBe(binaryContent[i])
       }
     })
   })

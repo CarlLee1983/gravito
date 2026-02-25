@@ -39,7 +39,7 @@ export class TokenService {
       }
     } else if (!this.accessTokenSecret || !this.refreshTokenSecret) {
       // 開發環境：生成臨時密鑰並警告
-      const crypto = require('crypto')
+      const crypto = require('node:crypto')
       this.accessTokenSecret = this.accessTokenSecret || crypto.randomBytes(32).toString('hex')
       this.refreshTokenSecret = this.refreshTokenSecret || crypto.randomBytes(32).toString('hex')
       console.warn(

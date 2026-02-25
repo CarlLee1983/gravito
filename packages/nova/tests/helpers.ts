@@ -3,8 +3,8 @@
  * Uses real Bun Shell for testing (no mocking of $).
  */
 
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs'
-import { resolve } from 'path'
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 /**
  * Create a temporary test file.

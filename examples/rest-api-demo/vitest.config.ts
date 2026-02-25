@@ -3,7 +3,7 @@
  * 單元測試和整合測試配置
  */
 
-import path from 'path'
+import path from 'node:path'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({

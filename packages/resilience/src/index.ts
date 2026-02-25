@@ -1,71 +1,13 @@
 /**
  * @gravito/resilience - Event System Resilience Layer
  *
- * Re-exports resilience patterns from @gravito/core for convenient access.
  * Provides circuit breaker, backpressure management, worker pool,
  * aggregation, and other reliability patterns for the Gravito event system.
  */
 
-// === Re-export Core Resilience Components ===
-// These are kept in @gravito/core to maintain architectural coherence
-
-export type {
-  BackpressureConfig,
-  BackpressureDecision,
-  BackpressureMetricsSnapshot,
-  BackpressureStrategy,
-  CircuitBreakerMetrics,
-  CircuitBreakerMetricsRecorder,
-  CircuitBreakerOptions,
-  DeadLetterDecision,
-  DLQEntry,
-  DLQEntryCallback,
-  DLQEntrySource,
-  DLQFilter,
-  EventQueueConfig,
-  FlowControlContext,
-  FlowControlStrategy,
-  MultiPriorityQueueDepth,
-  RetrySchedulerConfig,
-  WindowAdjustment,
-  WorkerPoolConfig,
-  WorkerPoolStats,
-  WorkerStats,
-} from '@gravito/core'
-// Circuit Breaker
-// Dead Letter Queue
-// Backpressure
-// Priority Queue
-// Escalation
-// Retry
-// Idempotency
-// Worker Pool
-export {
-  BackpressureManager,
-  BackpressureState,
-  CircuitBreaker,
-  CircuitBreakerState,
-  CompositeStrategy,
-  DeadLetterQueue,
-  EventPriorityQueue,
-  IdempotencyCache,
-  PriorityEscalationManager,
-  PriorityRebalanceStrategy,
-  PriorityStatistics,
-  QueueDepthStrategy,
-  RateLimitStrategy,
-  RetryScheduler,
-  StarvationProtectionStrategy,
-  WorkerPool,
-  WorkerPoolMetrics,
-} from '@gravito/core'
-
-// === Local Aggregation and Bridge ===
-// These are in this package
-
+// === Aggregation ===
 export { AggregationWindow } from './aggregation/AggregationWindow'
 export { DeduplicationManager } from './aggregation/DeduplicationManager'
-// Aggregation
 export { EventAggregationManager } from './aggregation/EventAggregationManager'
 export { EventBatcher } from './aggregation/EventBatcher'
 export type {
@@ -76,6 +18,56 @@ export type {
   WindowAdjustmentConfig,
   WindowStats,
 } from './aggregation/types'
+export type {
+  BackpressureConfig,
+  BackpressureDecision,
+  BackpressureMetricsSnapshot,
+} from './backpressure/BackpressureManager'
+// === Backpressure Management ===
+export { BackpressureManager, BackpressureState } from './backpressure/BackpressureManager'
+export type {
+  FlowControlContext,
+  FlowControlStrategy,
+} from './backpressure/FlowControlStrategy'
+export type {
+  DeadLetterDecision,
+  MultiPriorityQueueDepth,
+  WindowAdjustment,
+} from './backpressure/types'
+// === Bridge ===
 export type { EventStatus, MessageQueueBridgeConfig } from './bridge/MessageQueueBridge'
-// Bridge
 export { MessageQueueBridge } from './bridge/MessageQueueBridge'
+export type {
+  CircuitBreakerMetrics,
+  CircuitBreakerMetricsRecorder,
+  CircuitBreakerOptions,
+} from './circuit-breaker/CircuitBreaker'
+// === Circuit Breaker ===
+export { CircuitBreaker, CircuitBreakerState } from './circuit-breaker/CircuitBreaker'
+export type {
+  DLQEntry,
+  DLQEntryCallback,
+  DLQEntrySource,
+  DLQFilter,
+} from './dead-letter-queue/DeadLetterQueue'
+// === Dead Letter Queue ===
+export { DeadLetterQueue } from './dead-letter-queue/DeadLetterQueue'
+// === Idempotency ===
+export { IdempotencyCache } from './idempotency/IdempotencyCache'
+// === Observability ===
+export * from './observability'
+export type {
+  BackpressureStrategy,
+  EventQueueConfig,
+  EventTask,
+} from './priority/EventPriorityQueue'
+// === Priority Queue ===
+export { EventPriorityQueue } from './priority/EventPriorityQueue'
+export type { PriorityStatistics } from './priority/PriorityEscalationManager'
+export { PriorityEscalationManager } from './priority/PriorityEscalationManager'
+// === Retry ===
+export { RetryScheduler } from './retry/RetryScheduler'
+// === Worker Pool ===
+export { WorkerPool } from './worker/WorkerPool'
+export type { WorkerPoolConfig, WorkerPoolStats, WorkerStats } from './worker/WorkerPoolConfig'
+export { WorkerPoolMetrics } from './worker/WorkerPoolMetrics'

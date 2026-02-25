@@ -20,7 +20,7 @@ import {
 import type { IInventoryLockRepository } from '../Contracts/IInventoryLockRepository'
 
 export class LockInventory {
-  constructor(private core: PlanetCore) {}
+  constructor(_core: PlanetCore) {}
 
   async execute(request: LockInventoryRequest): Promise<InventoryLock | null> {
     const { core } = this

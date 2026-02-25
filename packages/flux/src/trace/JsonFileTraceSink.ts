@@ -138,7 +138,9 @@ export class JsonFileTraceSink implements FluxTraceSink {
    * @throws {Error} If flushing fails.
    */
   async flushBuffer(): Promise<void> {
-    if (!this.fileSink || this.buffer.length === 0) return
+    if (!this.fileSink || this.buffer.length === 0) {
+      return
+    }
 
     const content = this.buffer.join('')
     this.fileSink.write(content)

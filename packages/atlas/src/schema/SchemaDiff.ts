@@ -192,7 +192,9 @@ export class SchemaDiff {
     // Find modified columns (exist in both but differ)
     for (const [name, desired] of desiredMap) {
       const current = currentMap.get(name)
-      if (!current) continue
+      if (!current) {
+        continue
+      }
 
       if (
         this.normalizeType(current.type) !== this.normalizeType(desired.type) ||

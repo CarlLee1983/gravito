@@ -5,7 +5,6 @@ import type {
   EventOptions,
   EventQueueConfig,
   EventTask,
-  HookManager,
   MultiPriorityQueueDepth,
 } from '@gravito/core'
 import type { Span } from '@opentelemetry/api'
@@ -224,7 +223,7 @@ export class EventPriorityQueue implements EventBackend {
       },
       metricsRecorder: this.eventMetrics
         ? {
-            recordState: (name: string, state: string) =>
+            recordState: (name: string, state: number) =>
               this.eventMetrics?.recordCircuitBreakerState(name, state),
             recordTransition: (name: string, from: string, to: string) =>
               this.eventMetrics?.recordCircuitBreakerTransition(name, from, to),

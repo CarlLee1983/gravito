@@ -41,7 +41,9 @@ export function streamFromGenerator(
   return stream(c, async (s: StreamingApi) => {
     try {
       for await (const chunk of generator) {
-        if (s.aborted) break
+        if (s.aborted) {
+          break
+        }
         await s.write(chunk)
       }
     } finally {
@@ -122,25 +124,29 @@ export function streamJSONLines<T>(
         const batch: T[] = []
 
         for await (const item of generator) {
-          if (s.aborted) break
+          if (s.aborted) {
+            break
+          }
 
           batch.push(item)
 
           if (batch.length >= batchSize) {
             // 批次達到上限，一次序列化並寫入所有項目
-            await s.write(batch.map((i) => JSON.stringify(i)).join('\n') + '\n')
+            await s.write(`${batch.map((i) => JSON.stringify(i)).join('\n')}\n`)
             batch.length = 0
           }
         }
 
         // flush 剩餘未達批次上限的項目
         if (batch.length > 0 && !s.aborted) {
-          await s.write(batch.map((i) => JSON.stringify(i)).join('\n') + '\n')
+          await s.write(`${batch.map((i) => JSON.stringify(i)).join('\n')}\n`)
         }
       } else {
         // 逐行模式（預設）：逐個項目序列化寫入，保持向後相容
         for await (const item of generator) {
-          if (s.aborted) break
+          if (s.aborted) {
+            break
+          }
           await s.writeln(JSON.stringify(item))
         }
       }

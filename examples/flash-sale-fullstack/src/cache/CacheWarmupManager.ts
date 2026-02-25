@@ -8,7 +8,7 @@
  * 4. 事件驅動預熱 - 監聽失效事件，自動重新加載
  */
 
-import type { HeatMetrics, HotProductTracker } from './HotProductTracker'
+import type { HotProductTracker } from './HotProductTracker'
 import type { L1CacheManager } from './L1CacheManager'
 
 export interface WarmupConfig {

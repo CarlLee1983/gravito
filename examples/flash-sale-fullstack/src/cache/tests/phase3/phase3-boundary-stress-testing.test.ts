@@ -5,9 +5,9 @@
  * 場景：高並發、大數據、深隊列、長時間運行
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
-import { AsyncEventPath, createAsyncEventPath } from '../../events/AsyncEventPath.js'
-import { BatchSubmitter, createBatchSubmitter } from '../../events/BatchSubmitter.js'
+import { describe, expect, it } from 'vitest'
+import { createAsyncEventPath } from '../../events/AsyncEventPath.js'
+import { createBatchSubmitter } from '../../events/BatchSubmitter.js'
 import { EventDeduplicator } from '../../events/EventDeduplicator.js'
 import { EventQueue } from '../../events/EventQueue.js'
 import type { CacheEvent } from '../../events/types.js'

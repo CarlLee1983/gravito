@@ -95,7 +95,7 @@ export function createBunAdapter(): RuntimeAdapter {
       let timeoutHandle: Timer | undefined
 
       const exitPromise = proc.exited
-        .then((code) => ({ code, timedOut }))
+        .then((code: number) => ({ code, timedOut }))
         .catch(() => ({
           code: -1,
           timedOut: true,

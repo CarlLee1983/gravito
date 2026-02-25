@@ -45,7 +45,7 @@ describe('P1 快取系統集成測試', () => {
 
     // 初始化 Mock Redis
     mockRedisClient = {
-      zscore: async (key: string, member: string) => {
+      zscore: async (_key: string, member: string) => {
         // 返回模擬的熱度分數
         return member === 'hot-product' ? 150 : null
       },
@@ -69,7 +69,7 @@ describe('P1 快取系統集成測試', () => {
 
     // 初始化 Mock L2 Cache
     const mockL2Cache = {
-      get: async (key: string) => null,
+      get: async (_key: string) => null,
       set: async () => {},
       deletePattern: async () => 0,
     }

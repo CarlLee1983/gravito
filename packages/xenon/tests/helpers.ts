@@ -3,9 +3,9 @@
  * Utilities for creating mock FFI loaders and handles
  */
 
-import { createMockHandle, LibraryHandleImpl } from '../src/library/LibraryHandle'
+import { createMockHandle } from '../src/library/LibraryHandle'
 import type { FFILoader } from '../src/library/LibraryLoader'
-import { FFISymbolDef, type FFISymbols } from '../src/types'
+import type { FFISymbols } from '../src/types'
 
 /**
  * Create a mock FFI loader for testing
@@ -15,7 +15,7 @@ import { FFISymbolDef, type FFISymbols } from '../src/types'
 export function createMockFfiLoader(
   implementations: Record<string, (...args: any[]) => any> = {} // eslint-disable-line @typescript-eslint/no-explicit-any
 ): FFILoader {
-  return (path: string, symbols: FFISymbols) => {
+  return (_path: string, symbols: FFISymbols) => {
     const result: any = {} // eslint-disable-line @typescript-eslint/no-explicit-any
     for (const [name] of Object.entries(symbols)) {
       result[name] = implementations[name] || (() => null)
@@ -68,9 +68,9 @@ export const TEST_IMPLEMENTATIONS = {
   version: () => '1.0.0',
   sqrt: (x: number) => Math.sqrt(x),
   pow: (x: number, y: number) => x ** y,
-  malloc: (size: number) => Math.random() * 0xffffffff,
+  malloc: (_size: number) => Math.random() * 0xffffffff,
   free: () => null,
-  memcpy: (dst: number, src: number, n: number) => dst,
+  memcpy: (dst: number, _src: number, _n: number) => dst,
 }
 
 /**

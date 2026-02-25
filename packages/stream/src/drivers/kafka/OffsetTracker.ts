@@ -1,139 +1,154 @@
 /**
- * Continuous-ack offset tracker for at-least-once semantics.
+ * Kafka Offset 追蹤器。
  *
- * Optimized with BigInt offset comparison to eliminate O(n log n) string sorting.
- * Tracks the highest contiguously-resolved offset per partition for efficient commit.
+ * 追蹤每個 topic-partition 的已處理 offset，
+ * 支援手動 commit 和 at-least-once 語意。
  *
- * Performance improvements over original:
- * - getCommittableOffsets(): O(partitions) instead of O(offsets * log(offsets))
- * - resolve(): O(1) BigInt comparison instead of Set iteration
- * - clear(): O(partitions-in-topic) with topic-keyed index
+ * 使用「連續確認」演算法：
+ * - 只有當 offset 0, 1, 2 都已 resolve 時才 commit offset 3
+ * - 確保未來 consumer 重啟時不會跳過未處理的訊息
  *
  * @public
  */
 export class OffsetTracker {
-  // topic:partition → Set of pending offset strings
-  private pending = new Map<string, Set<string>>()
+  /** topic -> partition -> 最高已確認 offset */
+  private readonly committed = new Map<string, Map<number, string>>()
 
-  // topic:partition → highest resolved offset as bigint
-  private highestResolved = new Map<string, bigint>()
-
-  // topic → Set of partition keys (for fast clear)
-  private topicKeys = new Map<string, Set<string>>()
-
-  // Aggregate counters
-  private trackedCount = new Map<string, number>()
-  private committedCount = new Map<string, number>()
-  private pendingCount = new Map<string, number>()
+  /** topic -> partition -> 待確認 offset 集合 */
+  private readonly pending = new Map<string, Map<number, Set<string>>>()
 
   /**
-   * Track an offset for a topic/partition.
+   * 標記一個 offset 為待處理。
+   *
+   * @param topic 主題名稱
+   * @param partition 分區編號
+   * @param offset Offset 值
    */
   track(topic: string, partition: number, offset: string): void {
-    const key = `${topic}:${partition}`
-
-    if (!this.pending.has(key)) {
-      this.pending.set(key, new Set())
+    if (!this.pending.has(topic)) {
+      this.pending.set(topic, new Map())
     }
-    this.pending.get(key)?.add(offset)
 
-    // 維護 topic → keys 索引
-    if (!this.topicKeys.has(topic)) {
-      this.topicKeys.set(topic, new Set())
+    const topicPending = this.pending.get(topic)!
+    if (!topicPending.has(partition)) {
+      topicPending.set(partition, new Set())
     }
-    this.topicKeys.get(topic)?.add(key)
 
-    this.trackedCount.set(topic, (this.trackedCount.get(topic) ?? 0) + 1)
-    this.pendingCount.set(topic, (this.pendingCount.get(topic) ?? 0) + 1)
+    topicPending.get(partition)?.add(offset)
   }
 
   /**
-   * Mark an offset as resolved (successfully processed).
-   * Uses BigInt comparison to track highest resolved offset in O(1).
+   * 標記一個 offset 為已完成。
+   *
+   * @param topic 主題名稱
+   * @param partition 分區編號
+   * @param offset Offset 值
    */
   resolve(topic: string, partition: number, offset: string): void {
-    const key = `${topic}:${partition}`
-    const pending = this.pending.get(key)
+    const topicPending = this.pending.get(topic)
+    if (!topicPending) {
+      return
+    }
 
-    if (pending?.delete(offset)) {
-      this.pendingCount.set(topic, (this.pendingCount.get(topic) ?? 0) - 1)
-      this.committedCount.set(topic, (this.committedCount.get(topic) ?? 0) + 1)
+    const partitionPending = topicPending.get(partition)
+    if (!partitionPending) {
+      return
+    }
 
-      // 用 BigInt 追蹤最高已解析 offset（取代 Set + sort）
-      const offsetBig = BigInt(offset)
-      const current = this.highestResolved.get(key)
-      if (current === undefined || offsetBig > current) {
-        this.highestResolved.set(key, offsetBig)
+    partitionPending.delete(offset)
+
+    // 如果此分區已無待確認，更新已確認的最高值
+    if (partitionPending.size === 0) {
+      if (!this.committed.has(topic)) {
+        this.committed.set(topic, new Map())
       }
+
+      this.committed.get(topic)?.set(partition, offset)
     }
   }
 
   /**
-   * Get all committable offsets.
-   * O(partitions) - only returns partitions with no pending offsets.
+   * 取得可安全 commit 的 offset（連續已完成的最高值）。
+   *
+   * 使用連續確認演算法：
+   * 只回傳連續完成的 offset（即從 0 開始的連續序列）。
+   *
+   * @returns 可提交的 offset 陣列
    */
-  getCommittableOffsets(): Array<{ topic: string; partition: number; offset: string }> {
-    const result: Array<{ topic: string; partition: number; offset: string }> = []
+  getCommittableOffsets(): Array<{
+    topic: string
+    partition: number
+    offset: string
+  }> {
+    const result: Array<{
+      topic: string
+      partition: number
+      offset: string
+    }> = []
 
-    for (const [key, highest] of this.highestResolved.entries()) {
-      const pending = this.pending.get(key)
-      if (pending && pending.size > 0) {
-        continue
+    for (const [topic, partitions] of this.committed.entries()) {
+      for (const [partition, offset] of partitions.entries()) {
+        // 檢查此 offset 是否在待確認中
+        const topicPending = this.pending.get(topic)
+        const partitionPending = topicPending?.get(partition)
+
+        if (!partitionPending || partitionPending.size === 0) {
+          result.push({
+            topic,
+            partition,
+            offset,
+          })
+        }
       }
-
-      const colonIdx = key.lastIndexOf(':')
-      const topic = key.slice(0, colonIdx)
-      const partition = parseInt(key.slice(colonIdx + 1), 10)
-
-      result.push({ topic, partition, offset: String(highest) })
     }
 
     return result
   }
 
   /**
-   * Get current statistics.
+   * 清除指定 topic 的追蹤資料。
+   *
+   * @param topic 主題名稱
    */
-  getStats(): { tracked: number; committed: number; pending: number } {
-    let totalTracked = 0
-    let totalCommitted = 0
-    let totalPending = 0
-
-    for (const count of this.trackedCount.values()) {
-      totalTracked += count
-    }
-
-    for (const count of this.committedCount.values()) {
-      totalCommitted += count
-    }
-
-    for (const count of this.pendingCount.values()) {
-      totalPending += count
-    }
-
-    return {
-      tracked: totalTracked,
-      committed: totalCommitted,
-      pending: totalPending,
-    }
+  clear(topic: string): void {
+    this.committed.delete(topic)
+    this.pending.delete(topic)
   }
 
   /**
-   * Clear all data for a topic.
-   * O(partitions-in-topic) using topic-keyed index.
+   * 取得統計資訊。
+   *
+   * @returns 統計物件
    */
-  clear(topic: string): void {
-    this.trackedCount.delete(topic)
-    this.committedCount.delete(topic)
-    this.pendingCount.delete(topic)
+  getStats(): {
+    tracked: number
+    committed: number
+    pending: number
+  } {
+    let tracked = 0
+    let committed = 0
+    let pending = 0
 
-    const keys = this.topicKeys.get(topic)
-    if (keys) {
-      for (const key of keys) {
-        this.pending.delete(key)
-        this.highestResolved.delete(key)
+    for (const topicPending of this.pending.values()) {
+      for (const partitionPending of topicPending.values()) {
+        tracked += partitionPending.size
       }
-      this.topicKeys.delete(topic)
+    }
+
+    for (const topicCommitted of this.committed.values()) {
+      committed += topicCommitted.size
+    }
+
+    for (const topicPending of this.pending.values()) {
+      for (const partitionPending of topicPending.values()) {
+        pending += partitionPending.size
+      }
+    }
+
+    return {
+      tracked,
+      committed,
+      pending,
     }
   }
 }

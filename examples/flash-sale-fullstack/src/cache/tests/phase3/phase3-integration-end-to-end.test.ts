@@ -9,7 +9,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { type AsyncEventPath, createAsyncEventPath } from '../../events/AsyncEventPath.js'
 import { type BatchSubmitter, createBatchSubmitter } from '../../events/BatchSubmitter.js'
-import { EventAggregator } from '../../events/EventAggregator.js'
 import { EventDeduplicator } from '../../events/EventDeduplicator.js'
 import type { CacheEvent } from '../../events/types.js'
 import { CacheEventType, createCacheEvent, EventPriority } from '../../events/types.js'
@@ -31,7 +30,7 @@ describe('Phase 3 - 集成與端到端測試', () => {
       submittedEvents.push([...events])
     }
 
-    const mockSyncFn = async (event: CacheEvent) => {
+    const mockSyncFn = async (_event: CacheEvent) => {
       syncCount++
     }
 
@@ -202,7 +201,7 @@ describe('Phase 3 - 集成與端到端測試', () => {
 
     it('應該在隊列滿時自動降級', async () => {
       const limitedAsyncPath = createAsyncEventPath(
-        async (event) => {
+        async (_event) => {
           syncCount++
         },
         async () => {

@@ -6,7 +6,7 @@
  */
 
 import { RequestScopeManager } from '@gravito/core'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { RequestProductCache } from '../src/Services/RequestProductCache'
 import { WishlistService } from '../src/Services/WishlistService'
 

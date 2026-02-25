@@ -10,12 +10,7 @@
  */
 
 import { beforeEach, describe, expect, it } from 'bun:test'
-import {
-  CBOR_MAJOR_TYPES,
-  CBOR_SIMPLE_VALUES,
-  CborFallbackDecoder,
-  CborFallbackEncoder,
-} from '../../src/ffi'
+import { CborFallbackEncoder } from '../../src/ffi'
 import { NativeAccelerator } from '../../src/ffi/NativeAccelerator'
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -196,7 +191,7 @@ describe('C CBOR 編碼器 (gravito_cbor_encode)', () => {
     })
 
     it('應能編碼浮點數 (float64)', () => {
-      const obj = { pi: 3.14159 }
+      const obj = { pi: Math.PI }
       const result = accelerator.encode(obj)
       const decoded = fallbackDecode(result)
       expect(decoded).toEqual(obj)
@@ -673,7 +668,7 @@ describe('CBOR Round-trip 完整性', () => {
     { name: '簡單字串', input: { key: 'value' } },
     { name: '整數', input: { count: 42 } },
     { name: '負整數', input: { value: -100 } },
-    { name: '浮點數', input: { pi: 3.14159 } },
+    { name: '浮點數', input: { pi: Math.PI } },
     { name: '布林值', input: { a: true, b: false } },
     { name: 'null', input: { value: null } },
     { name: '陣列', input: { items: [1, 2, 3] } },

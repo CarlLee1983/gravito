@@ -169,7 +169,7 @@ export class DeduplicationManager {
       if (!byPrefix.has(prefix)) {
         byPrefix.set(prefix, [])
       }
-      byPrefix.get(prefix)!.push(pattern)
+      byPrefix.get(prefix)?.push(pattern)
     }
 
     // If a prefix has >50% of patterns, use wildcard

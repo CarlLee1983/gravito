@@ -154,7 +154,7 @@ export class DataReconciliation {
    * 驗證指定分片的數據
    */
   async reconcileShard(
-    shardId: number,
+    _shardId: number,
     sourceData: any[],
     targetData: any[]
   ): Promise<ReconciliationResult> {
@@ -176,7 +176,9 @@ export class DataReconciliation {
 
     for (let i = 0; i < records.length; i += step) {
       sampled.push(records[i])
-      if (sampled.length >= sampleSize) break
+      if (sampled.length >= sampleSize) {
+        break
+      }
     }
 
     return sampled
@@ -261,7 +263,7 @@ export class DataReconciliation {
         if (!byReason.has(detail.reason)) {
           byReason.set(detail.reason, [])
         }
-        byReason.get(detail.reason)!.push(detail)
+        byReason.get(detail.reason)?.push(detail)
       }
 
       for (const [reason, details] of byReason) {
@@ -290,7 +292,7 @@ export class DataReconciliation {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, [])
     }
-    this.eventListeners.get(event)!.push(callback)
+    this.eventListeners.get(event)?.push(callback)
   }
 
   /**

@@ -8,7 +8,7 @@ import { expect } from 'bun:test'
 /**
  * 驗證延遲在指定範圍內
  */
-export function assertLatency(actualMs: number, maxMs: number, label = '延遲'): void {
+export function assertLatency(actualMs: number, maxMs: number, _label = '延遲'): void {
   expect(actualMs).toBeLessThanOrEqual(maxMs)
 }
 
@@ -19,7 +19,7 @@ export function assertHitRate(
   hits: number,
   total: number,
   minRate: number,
-  label = '命中率'
+  _label = '命中率'
 ): void {
   const hitRate = total > 0 ? hits / total : 0
   expect(hitRate).toBeGreaterThanOrEqual(minRate)
@@ -32,7 +32,7 @@ export function assertThroughput(
   requests: number,
   durationSeconds: number,
   minQPS: number,
-  label = '吞吐量'
+  _label = '吞吐量'
 ): void {
   const qps = requests / Math.max(1, durationSeconds)
   expect(qps).toBeGreaterThanOrEqual(minQPS)
@@ -45,7 +45,7 @@ export function assertPercentileLatency(
   latencies: number[],
   percentile: number,
   maxMs: number,
-  label = ''
+  _label = ''
 ): void {
   if (latencies.length === 0) {
     throw new Error('沒有延遲數據')
@@ -88,7 +88,7 @@ export function assertCacheHitPattern(
 /**
  * 驗證數據一致性
  */
-export function assertDataConsistency<T>(values: T[], expected: T, label = '數據一致性'): void {
+export function assertDataConsistency<T>(values: T[], expected: T, _label = '數據一致性'): void {
   for (const value of values) {
     expect(JSON.stringify(value)).toBe(JSON.stringify(expected))
   }
@@ -112,7 +112,7 @@ export function assertErrorRate(
   failures: number,
   total: number,
   maxRate: number,
-  label = '錯誤率'
+  _label = '錯誤率'
 ): void {
   const errorRate = total > 0 ? failures / total : 0
   expect(errorRate).toBeLessThanOrEqual(maxRate)
@@ -121,7 +121,7 @@ export function assertErrorRate(
 /**
  * 驗證緩存大小
  */
-export function assertCacheSize(actualSize: number, maxSize: number, label = '快取大小'): void {
+export function assertCacheSize(actualSize: number, maxSize: number, _label = '快取大小'): void {
   expect(actualSize).toBeLessThanOrEqual(maxSize)
 }
 

@@ -13,7 +13,7 @@ describe('CacheInvalidationBatcher', () => {
 
   beforeEach(() => {
     mockL1Cache = {
-      deletePattern: mock((pattern) => 5),
+      deletePattern: mock((_pattern) => 5),
     }
 
     mockL2Cache = {

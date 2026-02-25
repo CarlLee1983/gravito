@@ -43,7 +43,7 @@ class MockCacheService implements CacheService {
     return (this.data.get(key) as T) || null
   }
 
-  async set(key: string, value: unknown, ttl?: number): Promise<void> {
+  async set(key: string, value: unknown, _ttl?: number): Promise<void> {
     this.setCalled++
     this.data.set(key, value)
   }
@@ -58,7 +58,9 @@ class MockCacheService implements CacheService {
 
   async remember<T>(key: string, ttl: number, callback: () => Promise<T>): Promise<T> {
     const cached = await this.get<T>(key)
-    if (cached !== null) return cached
+    if (cached !== null) {
+      return cached
+    }
 
     const result = await callback()
     await this.set(key, result, ttl)
@@ -164,7 +166,7 @@ class MockHotnessTracker {
   getTopHotCalls = 0
   getNessCalls = 0
 
-  async getTopHot(limit: number): Promise<string[]> {
+  async getTopHot(_limit: number): Promise<string[]> {
     this.getTopHotCalls++
     return ['product-1', 'product-2']
   }

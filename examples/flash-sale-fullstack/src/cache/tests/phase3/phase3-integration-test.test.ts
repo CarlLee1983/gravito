@@ -6,7 +6,7 @@
 
 import { beforeEach, describe, expect, it } from 'vitest'
 import { EventAggregator } from '../../events/EventAggregator.js'
-import { CacheEventType, createCacheEvent, EventPriority, EventSource } from '../../events/types.js'
+import { CacheEventType, createCacheEvent, EventSource } from '../../events/types.js'
 
 describe('Phase 3 - ObjectPool Integration', () => {
   let aggregator: EventAggregator
@@ -154,7 +154,7 @@ describe('Phase 3 - ObjectPool Integration', () => {
       // 直接創建的速度
       const startCreate = performance.now()
       for (let i = 0; i < iterations; i++) {
-        createCacheEvent(CacheEventType.PRODUCT_UPDATED, ['product:' + i])
+        createCacheEvent(CacheEventType.PRODUCT_UPDATED, [`product:${i}`])
       }
       const createTime = performance.now() - startCreate
 

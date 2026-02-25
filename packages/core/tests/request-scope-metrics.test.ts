@@ -161,7 +161,9 @@ describe('RequestScopeMetricsCollector', () => {
       const metrics2 = new RequestScopeMetrics()
 
       metrics1.recordCleanupStart()
-      for (let i = 0; i < 5000000; i++) Math.sqrt(i)
+      for (let i = 0; i < 5000000; i++) {
+        Math.sqrt(i)
+      }
       metrics1.recordCleanupEnd(1, 1, 0)
 
       metrics2.recordCleanupStart()
@@ -345,7 +347,9 @@ describe('RequestScopeManager with observer', () => {
 
       scope.resolve('service1', () => ({
         async cleanup() {
-          for (let i = 0; i < 1000000; i++) Math.sqrt(i)
+          for (let i = 0; i < 1000000; i++) {
+            Math.sqrt(i)
+          }
         },
       }))
 

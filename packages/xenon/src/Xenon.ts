@@ -76,7 +76,7 @@ export class Xenon {
    * List all loaded libraries
    * @returns Array of [name, path] tuples
    */
-  static listLibraries(): Array<[string, string]> {
+  static listLibraries(): [string, string][] {
     const manager = Xenon.getInstance()
     return manager.listLibraries()
   }

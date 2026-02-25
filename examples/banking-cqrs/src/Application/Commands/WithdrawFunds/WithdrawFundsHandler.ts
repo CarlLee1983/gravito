@@ -4,7 +4,6 @@ import type { IAccountRepository } from '../../../Domain/Account/IAccountReposit
 import { Money } from '../../../Domain/Shared/Money'
 import type { ITransactionRepository } from '../../../Domain/Transaction/ITransactionRepository'
 import { Transaction } from '../../../Domain/Transaction/Transaction'
-import { TransactionType } from '../../../Domain/Transaction/TransactionType'
 import { publishDomainEvents } from '../../Bus/publishDomainEvents'
 import type { WithdrawFundsCommand } from './WithdrawFundsCommand'
 

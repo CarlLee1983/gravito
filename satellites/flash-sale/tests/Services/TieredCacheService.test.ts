@@ -10,10 +10,10 @@ import { TieredCacheService } from '../../src/Infrastructure/Services/TieredCach
  * Mock Logger
  */
 class MockLogger {
-  debug(message: string): void {}
-  info(message: string): void {}
-  warn(message: string): void {}
-  error(message: string): void {}
+  debug(_message: string): void {}
+  info(_message: string): void {}
+  warn(_message: string): void {}
+  error(_message: string): void {}
 }
 
 /**
@@ -26,7 +26,7 @@ class MockL2Cache implements CacheService {
     return (this.data.get(key) as T) || null
   }
 
-  async set(key: string, value: unknown, ttl?: number): Promise<void> {
+  async set(key: string, value: unknown, _ttl?: number): Promise<void> {
     this.data.set(key, value)
   }
 

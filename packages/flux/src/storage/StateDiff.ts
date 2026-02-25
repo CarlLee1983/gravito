@@ -7,6 +7,7 @@
  * @module @gravito/flux/storage
  */
 
+import { getDeepEquals } from '@gravito/core'
 import * as Errors from '../errors'
 import type { WorkflowState } from '../types'
 
@@ -101,7 +102,8 @@ export class StateDiff {
    * @private
    */
   private diffObject(prev: any, next: any, basePath: string, operations: PatchOperation[]): void {
-    if (this.deepEquals(prev, next)) {
+    const deepEquals = getDeepEquals()
+    if (deepEquals(prev, next)) {
       return
     }
 
@@ -117,7 +119,7 @@ export class StateDiff {
     }
 
     if (prev instanceof Date || next instanceof Date) {
-      if (!this.deepEquals(prev, next)) {
+      if (!deepEquals(prev, next)) {
         operations.push({
           op: 'replace',
           path: basePath || '/',
@@ -185,6 +187,7 @@ export class StateDiff {
    * @private
    */
   private applyOperation(state: any, operation: PatchOperation): any {
+    const deepEquals = getDeepEquals()
     const result = this.deepClone(state)
 
     switch (operation.op) {
@@ -210,7 +213,7 @@ export class StateDiff {
       }
       case 'test': {
         const current = this.getValue(result, operation.path)
-        if (!this.deepEquals(current, operation.value)) {
+        if (!deepEquals(current, operation.value)) {
           const path = operation.path
           throw new Errors.FluxError(
             `Test operation failed at ${path}: expected ${JSON.stringify(operation.value)}, got ${JSON.stringify(current)}`,
@@ -363,40 +366,6 @@ export class StateDiff {
       return clone
     }
     return obj
-  }
-
-  /**
-   * Deep equality check for values.
-   * @private
-   */
-  private deepEquals(a: any, b: any): boolean {
-    if (a === b) {
-      return true
-    }
-    if (this.isPrimitive(a) || this.isPrimitive(b)) {
-      return a === b
-    }
-    if (a instanceof Date && b instanceof Date) {
-      return a.getTime() === b.getTime()
-    }
-
-    if (Array.isArray(a) && Array.isArray(b)) {
-      if (a.length !== b.length) {
-        return false
-      }
-      return a.every((item, index) => this.deepEquals(item, b[index]))
-    }
-
-    if (typeof a === 'object' && typeof b === 'object') {
-      const keysA = Object.keys(a)
-      const keysB = Object.keys(b)
-      if (keysA.length !== keysB.length) {
-        return false
-      }
-      return keysA.every((key) => this.deepEquals(a[key], b[key]))
-    }
-
-    return false
   }
 
   /**

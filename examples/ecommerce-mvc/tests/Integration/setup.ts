@@ -6,7 +6,6 @@
  */
 
 import { DB } from '@gravito/atlas'
-import { randomBytes } from 'crypto'
 import { sql } from '../../src/utils/db'
 
 let testDbInitialized = false

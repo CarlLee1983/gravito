@@ -189,35 +189,26 @@ export class MemoryDriver implements QueueDriver {
   }
 
   /**
-   * Enables notifications (no-op for MemoryDriver).
-   *
-   * MemoryDriver supports notifications through a simple callback mechanism.
+   * Stub: MemoryDriver doesn't support reactive notifications.
    */
   async enableNotifications(): Promise<void> {
     // No-op for in-memory driver
   }
 
   /**
-   * Disables notifications (no-op for MemoryDriver).
+   * Stub: MemoryDriver doesn't support reactive notifications.
    */
   async disableNotifications(): Promise<void> {
     // No-op for in-memory driver
   }
 
   /**
-   * Registers notification listener for MemoryDriver.
-   *
-   * For testing purposes, stores callbacks but doesn't actively invoke them.
-   * In production, use RedisDriver for reactive notifications.
-   *
-   * @param _queues - Queue names (ignored for MemoryDriver).
-   * @param _callback - Notification callback (stored but not invoked).
+   * Stub: MemoryDriver doesn't support reactive notifications.
    */
   async onNotify(
     _queues: string | string[],
     _callback: (queue: string) => Promise<void>
   ): Promise<void> {
-    // MemoryDriver doesn't actively send notifications
-    // It's suitable for testing reactive consumer with mock notifications
+    // No-op for in-memory driver
   }
 }

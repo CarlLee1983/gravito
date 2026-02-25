@@ -342,7 +342,7 @@ export class Account {
    *
    * @internal This should be called only by command handlers managing transfers
    */
-  receiveTransfer(fromAccountId: string, amount: Money): void {
+  receiveTransfer(_fromAccountId: string, amount: Money): void {
     this.assertAccountIsActive()
     this._balance = this._balance.add(amount)
     this._updatedAt = new Date()

@@ -8,7 +8,7 @@ describe('AOTRouter Middleware Precompilation and Caching', () => {
       const router = new AOTRouter()
       let globalMiddlewareCallCount = 0
 
-      const globalMiddleware: Middleware = async (c, next) => {
+      const globalMiddleware: Middleware = async (_c, next) => {
         globalMiddlewareCallCount++
         return next()
       }
@@ -30,14 +30,14 @@ describe('AOTRouter Middleware Precompilation and Caching', () => {
     it('should invalidate cache when middleware version changes', () => {
       const router = new AOTRouter()
 
-      const middleware1: Middleware = async (c, next) => next()
+      const middleware1: Middleware = async (_c, next) => next()
       router.use(middleware1)
 
       // First collection
       const first = router.collectMiddlewarePublic('/api/users', [])
 
       // Add new middleware - this changes router version
-      const middleware2: Middleware = async (c, next) => next()
+      const middleware2: Middleware = async (_c, next) => next()
       router.use(middleware2)
 
       // Second collection - cache should be invalidated
@@ -52,9 +52,9 @@ describe('AOTRouter Middleware Precompilation and Caching', () => {
     it('should collect all global middleware', () => {
       const router = new AOTRouter()
 
-      const middleware1: Middleware = async (c, next) => next()
-      const middleware2: Middleware = async (c, next) => next()
-      const middleware3: Middleware = async (c, next) => next()
+      const middleware1: Middleware = async (_c, next) => next()
+      const middleware2: Middleware = async (_c, next) => next()
+      const middleware3: Middleware = async (_c, next) => next()
 
       router.use(middleware1)
       router.use(middleware2)
@@ -72,13 +72,13 @@ describe('AOTRouter Middleware Precompilation and Caching', () => {
       const router = new AOTRouter()
       const callOrder: string[] = []
 
-      const middleware1: Middleware = async (c, next) => {
+      const middleware1: Middleware = async (_c, next) => {
         callOrder.push('m1-before')
         await next()
         callOrder.push('m1-after')
       }
 
-      const middleware2: Middleware = async (c, next) => {
+      const middleware2: Middleware = async (_c, next) => {
         callOrder.push('m2-before')
         await next()
         callOrder.push('m2-after')
@@ -98,8 +98,8 @@ describe('AOTRouter Middleware Precompilation and Caching', () => {
     it('should collect pattern-based middleware for matching paths', () => {
       const router = new AOTRouter()
 
-      const globalMiddleware: Middleware = async (c, next) => next()
-      const apiMiddleware: Middleware = async (c, next) => next()
+      const globalMiddleware: Middleware = async (_c, next) => next()
+      const apiMiddleware: Middleware = async (_c, next) => next()
 
       router.use(globalMiddleware)
       router.usePattern('/api/*', apiMiddleware)
@@ -114,8 +114,8 @@ describe('AOTRouter Middleware Precompilation and Caching', () => {
     it('should not collect pattern middleware for non-matching paths', () => {
       const router = new AOTRouter()
 
-      const globalMiddleware: Middleware = async (c, next) => next()
-      const apiMiddleware: Middleware = async (c, next) => next()
+      const globalMiddleware: Middleware = async (_c, next) => next()
+      const apiMiddleware: Middleware = async (_c, next) => next()
 
       router.use(globalMiddleware)
       router.usePattern('/api/*', apiMiddleware)
@@ -130,9 +130,9 @@ describe('AOTRouter Middleware Precompilation and Caching', () => {
     it('should handle multiple pattern middleware', () => {
       const router = new AOTRouter()
 
-      const globalMiddleware: Middleware = async (c, next) => next()
-      const apiMiddleware: Middleware = async (c, next) => next()
-      const authMiddleware: Middleware = async (c, next) => next()
+      const globalMiddleware: Middleware = async (_c, next) => next()
+      const apiMiddleware: Middleware = async (_c, next) => next()
+      const authMiddleware: Middleware = async (_c, next) => next()
 
       router.use(globalMiddleware)
       router.usePattern('/api/*', apiMiddleware)
@@ -157,7 +157,7 @@ describe('AOTRouter Middleware Precompilation and Caching', () => {
     it('should include route-specific middleware in collection', () => {
       const router = new AOTRouter()
 
-      const routeMiddleware: Middleware = async (c, next) => next()
+      const routeMiddleware: Middleware = async (_c, next) => next()
 
       const collected = router.collectMiddlewarePublic('/api/users', [routeMiddleware])
 
@@ -167,9 +167,9 @@ describe('AOTRouter Middleware Precompilation and Caching', () => {
     it('should combine global, pattern, and route middleware', () => {
       const router = new AOTRouter()
 
-      const globalMiddleware: Middleware = async (c, next) => next()
-      const patternMiddleware: Middleware = async (c, next) => next()
-      const routeMiddleware: Middleware = async (c, next) => next()
+      const globalMiddleware: Middleware = async (_c, next) => next()
+      const patternMiddleware: Middleware = async (_c, next) => next()
+      const routeMiddleware: Middleware = async (_c, next) => next()
 
       router.use(globalMiddleware)
       router.usePattern('/api/*', patternMiddleware)
@@ -194,7 +194,7 @@ describe('AOTRouter Middleware Precompilation and Caching', () => {
   describe('cache size limits', () => {
     it('should maintain LRU cache within size limit', () => {
       const router = new AOTRouter()
-      const middleware: Middleware = async (c, next) => next()
+      const middleware: Middleware = async (_c, next) => next()
       router.use(middleware)
 
       // Generate many paths to fill cache
@@ -219,13 +219,13 @@ describe('AOTRouter Middleware Precompilation and Caching', () => {
       const router = new AOTRouter()
       const executionOrder: string[] = []
 
-      const middleware1: Middleware = async (c, next) => {
+      const middleware1: Middleware = async (_c, next) => {
         executionOrder.push('m1-start')
         await next()
         executionOrder.push('m1-end')
       }
 
-      const middleware2: Middleware = async (c, next) => {
+      const middleware2: Middleware = async (_c, next) => {
         executionOrder.push('m2-start')
         await next()
         executionOrder.push('m2-end')
@@ -249,7 +249,7 @@ describe('AOTRouter Middleware Precompilation and Caching', () => {
   describe('edge cases', () => {
     it('should handle empty path', () => {
       const router = new AOTRouter()
-      const middleware: Middleware = async (c, next) => next()
+      const middleware: Middleware = async (_c, next) => next()
       router.use(middleware)
 
       const collected = router.collectMiddlewarePublic('', [])
@@ -259,7 +259,7 @@ describe('AOTRouter Middleware Precompilation and Caching', () => {
 
     it('should handle paths with query strings', () => {
       const router = new AOTRouter()
-      const middleware: Middleware = async (c, next) => next()
+      const middleware: Middleware = async (_c, next) => next()
       router.use(middleware)
 
       // collectMiddlewarePublic receives just the path, not the full URL
@@ -270,7 +270,7 @@ describe('AOTRouter Middleware Precompilation and Caching', () => {
 
     it('should handle duplicate middleware usage', () => {
       const router = new AOTRouter()
-      const middleware: Middleware = async (c, next) => next()
+      const middleware: Middleware = async (_c, next) => next()
 
       router.use(middleware)
       router.use(middleware) // Added twice
@@ -284,7 +284,7 @@ describe('AOTRouter Middleware Precompilation and Caching', () => {
 
     it('should handle null or undefined route middleware gracefully', () => {
       const router = new AOTRouter()
-      const middleware: Middleware = async (c, next) => next()
+      const middleware: Middleware = async (_c, next) => next()
       router.use(middleware)
 
       const collected = router.collectMiddlewarePublic('/api/test', [])
@@ -301,7 +301,7 @@ describe('AOTRouter Middleware Precompilation and Caching', () => {
 
       // Add multiple middleware to increase collection complexity
       for (let i = 0; i < 10; i++) {
-        const middleware: Middleware = async (c, next) => next()
+        const middleware: Middleware = async (_c, next) => next()
         router.use(middleware)
       }
 
@@ -319,7 +319,7 @@ describe('AOTRouter Middleware Precompilation and Caching', () => {
 
     it('should handle rapid requests to same path efficiently', () => {
       const router = new AOTRouter()
-      const middleware: Middleware = async (c, next) => next()
+      const middleware: Middleware = async (_c, next) => next()
       router.use(middleware)
 
       const path = '/api/rapid'

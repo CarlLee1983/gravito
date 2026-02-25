@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { XenonLibraryError, XenonSecurityError } from '../src/errors'
+import { XenonSecurityError } from '../src/errors'
 import { LibraryLoader } from '../src/library/LibraryLoader'
 import { createMockFfiLoader, TEST_IMPLEMENTATIONS, TEST_SYMBOLS } from './helpers'
 

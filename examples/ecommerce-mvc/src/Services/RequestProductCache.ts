@@ -80,7 +80,9 @@ export class RequestProductCache {
    * Batch-load products from database
    */
   private async loadProducts(productIds: number[]): Promise<void> {
-    if (productIds.length === 0) return
+    if (productIds.length === 0) {
+      return
+    }
 
     const result = await DB.raw(
       sql(

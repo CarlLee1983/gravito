@@ -1,7 +1,7 @@
 import { bootstrap } from './bootstrap'
 
 const { core } = await bootstrap({
-  port: parseInt(process.env.PORT || '3000'),
+  port: parseInt(process.env.PORT || '3000', 10),
   name: process.env.APP_NAME || 'MVC Application',
   version: process.env.APP_VERSION || '1.0.0',
 })

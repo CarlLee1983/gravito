@@ -5,12 +5,16 @@ import { streamFromGenerator, streamJSONLines } from '../src/middleware/streamin
 // 輔助函式：從 ReadableStream 收集所有文字
 async function collectText(res: Response): Promise<string> {
   const reader = res.body?.getReader()
-  if (!reader) return ''
+  if (!reader) {
+    return ''
+  }
   const decoder = new TextDecoder()
   let result = ''
   while (true) {
     const { done, value } = await reader.read()
-    if (done) break
+    if (done) {
+      break
+    }
     result += decoder.decode(value, { stream: true })
   }
   result += decoder.decode()

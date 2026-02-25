@@ -127,8 +127,8 @@ describe('Order Integration - Full Workflow', () => {
       expect(order.status).toBe(OrderStatus.PENDING)
 
       // Step 2: Simulate Stripe payment and mark as paid
-      const stripeSessionId = 'cs_test_' + Date.now()
-      const paymentIntentId = 'pi_test_' + Date.now()
+      const stripeSessionId = `cs_test_${Date.now()}`
+      const paymentIntentId = `pi_test_${Date.now()}`
 
       await orderService.updateStripeSession(order.id, stripeSessionId)
       await orderService.markAsPaid(order.id, paymentIntentId)

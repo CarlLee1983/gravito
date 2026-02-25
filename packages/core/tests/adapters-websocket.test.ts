@@ -80,10 +80,14 @@ describe('BunNativeAdapter - WebSocket Support', () => {
       const wsHandler = adapter.websocket!
 
       mockWs.data.path = '/chat'
-      if (wsHandler.open) wsHandler.open(mockWs)
+      if (wsHandler.open) {
+        wsHandler.open(mockWs)
+      }
 
       mockWs.data.path = '/notifications'
-      if (wsHandler.open) wsHandler.open(mockWs)
+      if (wsHandler.open) {
+        wsHandler.open(mockWs)
+      }
 
       expect(openChat).toHaveBeenCalledTimes(1)
       expect(openNotif).toHaveBeenCalledTimes(1)
@@ -96,7 +100,9 @@ describe('BunNativeAdapter - WebSocket Support', () => {
       mockWs.data.path = '/chat'
 
       expect(() => {
-        if (wsHandler.open) wsHandler.open(mockWs)
+        if (wsHandler.open) {
+          wsHandler.open(mockWs)
+        }
       }).not.toThrow()
     })
   })
@@ -157,10 +163,14 @@ describe('BunNativeAdapter - WebSocket Support', () => {
       const wsHandler = adapter.websocket!
 
       mockWs.data.path = '/chat'
-      if (wsHandler.message) wsHandler.message(mockWs, 'msg1')
+      if (wsHandler.message) {
+        wsHandler.message(mockWs, 'msg1')
+      }
 
       mockWs.data.path = '/notifications'
-      if (wsHandler.message) wsHandler.message(mockWs, 'msg2')
+      if (wsHandler.message) {
+        wsHandler.message(mockWs, 'msg2')
+      }
 
       expect(msgChat).toHaveBeenCalledWith(mockWs, 'msg1')
       expect(msgNotif).toHaveBeenCalledWith(mockWs, 'msg2')
@@ -220,7 +230,9 @@ describe('BunNativeAdapter - WebSocket Support', () => {
 
       mockWs.data.path = '/api/chat'
       expect(() => {
-        if (wsHandler.open) wsHandler.open(mockWs)
+        if (wsHandler.open) {
+          wsHandler.open(mockWs)
+        }
       }).not.toThrow()
     })
 
@@ -230,7 +242,9 @@ describe('BunNativeAdapter - WebSocket Support', () => {
       const wsHandler = adapter.websocket!
 
       mockWs.data.path = '/other'
-      if (wsHandler.open) wsHandler.open(mockWs)
+      if (wsHandler.open) {
+        wsHandler.open(mockWs)
+      }
 
       expect(handler).not.toHaveBeenCalled()
     })
@@ -241,7 +255,9 @@ describe('BunNativeAdapter - WebSocket Support', () => {
       const wsHandler = adapter.websocket!
 
       mockWs.data.path = '/api/chat'
-      if (wsHandler.open) wsHandler.open(mockWs)
+      if (wsHandler.open) {
+        wsHandler.open(mockWs)
+      }
 
       expect(handler).toHaveBeenCalledWith(mockWs)
     })
@@ -259,7 +275,7 @@ describe('BunNativeAdapter - WebSocket Support', () => {
       })
 
       const mockServer = {
-        upgrade: vi.fn((request: Request, options?: any) => {
+        upgrade: vi.fn((_request: Request, _options?: any) => {
           return true // 返回 true 表示成功升級
         }),
       }
@@ -351,7 +367,9 @@ describe('BunNativeAdapter - WebSocket Support', () => {
       mockWs.data.path = '/chat'
 
       expect(() => {
-        if (wsHandler.open) wsHandler.open(mockWs)
+        if (wsHandler.open) {
+          wsHandler.open(mockWs)
+        }
       }).not.toThrow()
     })
 
@@ -361,7 +379,9 @@ describe('BunNativeAdapter - WebSocket Support', () => {
       mockWs.data.path = '/chat'
 
       expect(() => {
-        if (wsHandler.message) wsHandler.message(mockWs, 'test')
+        if (wsHandler.message) {
+          wsHandler.message(mockWs, 'test')
+        }
       }).not.toThrow()
     })
 
@@ -371,7 +391,9 @@ describe('BunNativeAdapter - WebSocket Support', () => {
       mockWs.data.path = '/chat'
 
       expect(() => {
-        if (wsHandler.close) wsHandler.close(mockWs, 1000, 'test')
+        if (wsHandler.close) {
+          wsHandler.close(mockWs, 1000, 'test')
+        }
       }).not.toThrow()
     })
 
@@ -381,7 +403,9 @@ describe('BunNativeAdapter - WebSocket Support', () => {
       mockWs.data.path = '/chat'
 
       expect(() => {
-        if (wsHandler.drain) wsHandler.drain(mockWs)
+        if (wsHandler.drain) {
+          wsHandler.drain(mockWs)
+        }
       }).not.toThrow()
     })
   })

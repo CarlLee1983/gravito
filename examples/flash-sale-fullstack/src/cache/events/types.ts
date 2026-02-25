@@ -201,7 +201,7 @@ export const EVENT_CATEGORIES = {
 export function generateInvalidationPatterns(
   eventType: CacheEventType,
   entityId?: string | string[],
-  metadata?: Record<string, any>
+  _metadata?: Record<string, any>
 ): string[] {
   const patterns: string[] = []
 

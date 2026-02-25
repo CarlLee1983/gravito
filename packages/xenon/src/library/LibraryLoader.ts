@@ -124,7 +124,7 @@ export class LibraryLoader {
    * List all loaded libraries
    * @returns Array of (name, path, symbols) tuples
    */
-  listLibraries(): Array<[string, string]> {
+  listLibraries(): [string, string][] {
     return Array.from(this.openLibraries.entries()).map(([path, handle]) => [handle.name, path])
   }
 

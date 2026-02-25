@@ -21,7 +21,7 @@ export class OrderService {
   constructor(
     private orderRepository = new OrderRepository(),
     private events?: EventManager,
-    private productCache?: RequestProductCache
+    _productCache?: RequestProductCache
   ) {}
 
   // ─────────────────────────────────────────────────────────────

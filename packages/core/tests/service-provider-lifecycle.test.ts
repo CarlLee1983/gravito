@@ -15,15 +15,15 @@ describe('ServiceProvider Lifecycle - onReady and onShutdown', () => {
   describe('onReady lifecycle hook', () => {
     it('should call onReady after bootstrap completes', async () => {
       class TestProvider extends ServiceProvider {
-        register(container: Container) {
+        register(_container: Container) {
           lifecycle.push('register')
         }
 
-        boot(core: PlanetCore) {
+        boot(_core: PlanetCore) {
           lifecycle.push('boot')
         }
 
-        onReady(core: PlanetCore) {
+        onReady(_core: PlanetCore) {
           lifecycle.push('onReady')
         }
       }

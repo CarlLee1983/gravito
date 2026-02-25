@@ -24,15 +24,15 @@ export const gravitoConfig = {
     postgres: {
       driver: 'postgres',
       host: process.env.DB_HOST ?? 'localhost',
-      port: parseInt(process.env.DB_PORT ?? '5432'),
+      port: parseInt(process.env.DB_PORT ?? '5432', 10),
       username: process.env.DB_USER ?? 'postgres',
       password: process.env.DB_PASSWORD ?? 'password',
       database: process.env.DB_NAME ?? 'rest_api_demo',
       // 生產環境啟用 SSL 證書驗證
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : false,
       // 連接池配置
-      poolMin: parseInt(process.env.DB_POOL_MIN ?? '5'),
-      poolMax: parseInt(process.env.DB_POOL_MAX ?? '20'),
+      poolMin: parseInt(process.env.DB_POOL_MIN ?? '5', 10),
+      poolMax: parseInt(process.env.DB_POOL_MAX ?? '20', 10),
       poolIdleTimeout: 30000,
       poolConnectTimeout: 2000,
       // 池管理配置
@@ -51,9 +51,9 @@ export const gravitoConfig = {
     redis: {
       driver: 'redis',
       host: process.env.REDIS_HOST ?? 'localhost',
-      port: parseInt(process.env.REDIS_PORT ?? '6379'),
+      port: parseInt(process.env.REDIS_PORT ?? '6379', 10),
       password: process.env.REDIS_PASSWORD,
-      db: parseInt(process.env.REDIS_DB ?? '0'),
+      db: parseInt(process.env.REDIS_DB ?? '0', 10),
       ttl: {
         default: 3600, // 1 小時
         product: 300, // 5 分鐘
@@ -112,7 +112,7 @@ export const gravitoConfig = {
     retryScheduler: {
       enabled: process.env.ENABLE_RETRY_SCHEDULER === 'true',
       redisHost: process.env.REDIS_HOST ?? 'localhost',
-      redisPort: parseInt(process.env.REDIS_PORT ?? '6379'),
+      redisPort: parseInt(process.env.REDIS_PORT ?? '6379', 10),
       redisPassword: process.env.REDIS_PASSWORD,
       initialDelay: 1000,
       maxDelay: 60000,
@@ -127,7 +127,7 @@ export const gravitoConfig = {
   observability: {
     enabled: process.env.OBSERVABILITY_ENABLED === 'true',
     jaegerEndpoint: process.env.JAEGER_ENDPOINT ?? 'http://localhost:4318/v1/traces',
-    prometheusPort: parseInt(process.env.PROMETHEUS_PORT ?? '9090'),
+    prometheusPort: parseInt(process.env.PROMETHEUS_PORT ?? '9090', 10),
     logLevel: process.env.LOG_LEVEL ?? 'info',
     logFormat: process.env.NODE_ENV === 'production' ? 'json' : 'pretty',
   },
@@ -137,7 +137,7 @@ export const gravitoConfig = {
   // ============================================================================
   http: {
     host: process.env.HTTP_HOST ?? '0.0.0.0',
-    port: parseInt(process.env.HTTP_PORT ?? '3000'),
+    port: parseInt(process.env.HTTP_PORT ?? '3000', 10),
     trustProxy: true,
     bodyLimit: '10mb',
     rateLimitEnabled: true,
@@ -155,7 +155,7 @@ export const gravitoConfig = {
   queue: {
     driver: 'bull',
     redisHost: process.env.REDIS_HOST ?? 'localhost',
-    redisPort: parseInt(process.env.REDIS_PORT ?? '6379'),
+    redisPort: parseInt(process.env.REDIS_PORT ?? '6379', 10),
     redisPassword: process.env.REDIS_PASSWORD,
     defaultConcurrency: 5,
   },

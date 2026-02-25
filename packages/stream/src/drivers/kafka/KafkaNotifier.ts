@@ -1,141 +1,94 @@
 import { EventEmitter } from 'node:events'
 
 /**
- * Typed event data for message arrival notifications.
- * @public
- */
-export interface MessageArrivedEvent {
-  queue: string
-  count: number
-  timestamp: number
-}
-
-/**
- * Typed event data for callback completion.
- * @public
- */
-export interface CallbackCompletedEvent {
-  queue: string
-  success: boolean
-  duration: number
-  error?: Error
-}
-
-/**
- * EventEmitter-based notification bridge for ReactiveStrategy integration.
+ * Kafka 通知橋接器。
  *
- * Manages notification callbacks and emits typed events for message arrival,
- * callback completion, and errors. Integrates with subscribe() for reactive consumption.
+ * 將 Kafka Consumer 的訊息到達事件轉換為
+ * QueueDriver.onNotify() 需要的通知回呼。
+ * 用於整合 ReactiveStrategy。
  *
  * @public
  */
 export class KafkaNotifier extends EventEmitter {
-  private callbacks = new Map<string, Array<(queue: string) => Promise<void>>>()
+  private readonly callbacks = new Map<string, Array<(queue: string) => Promise<void>>>()
   private enabled = false
 
   /**
-   * Enable notifications.
+   * 啟用通知。
+   *
+   * 允許 notify() 呼叫觸發已註冊的回呼。
    */
   enable(): void {
     this.enabled = true
   }
 
   /**
-   * Disable notifications.
+   * 停用通知。
+   *
+   * 呼叫 notify() 時將不觸發任何回呼。
    */
   disable(): void {
     this.enabled = false
   }
 
   /**
-   * Check if notifications are enabled.
+   * 是否已啟用。
+   *
+   * @returns 是否已啟用
    */
   isEnabled(): boolean {
     return this.enabled
   }
 
   /**
-   * Register a callback for one or more queues.
+   * 註冊通知回呼。
+   *
+   * @param queues 佇列名稱陣列
+   * @param callback 當訊息到達時呼叫的回呼函式
    */
   registerCallback(queues: string[], callback: (queue: string) => Promise<void>): void {
     for (const queue of queues) {
       if (!this.callbacks.has(queue)) {
         this.callbacks.set(queue, [])
       }
+
       this.callbacks.get(queue)?.push(callback)
     }
   }
 
   /**
-   * Register typed event listener for message arrival.
+   * 觸發通知（由 Consumer 的 eachMessage 呼叫）。
+   *
+   * 執行已註冊的所有回呼，並發出 'notify' 事件。
+   * 如果回呼拋出錯誤，不會中斷其他回呼的執行。
+   *
+   * @param queue 佇列名稱
    */
-  onMessageArrived(listener: (event: MessageArrivedEvent) => void): void {
-    this.on('messageArrived', listener)
-  }
-
-  /**
-   * Register typed event listener for callback completion.
-   */
-  onCallbackCompleted(listener: (event: CallbackCompletedEvent) => void): void {
-    this.on('callbackCompleted', listener)
-  }
-
-  /**
-   * Notify subscribers of a queue with message count (non-blocking).
-   */
-  notifyWithCount(queue: string, count: number): void {
+  notify(queue: string): void {
     if (!this.enabled) {
       return
     }
 
-    const timestamp = Date.now()
-
-    // Emit typed event
-    const event: MessageArrivedEvent = { queue, count, timestamp }
-    this.emit('messageArrived', event)
-
-    // Legacy event for backward compatibility
     this.emit('notify', queue)
 
-    // Call registered callbacks (non-blocking)
-    const cbs = this.callbacks.get(queue)
-    if (cbs) {
-      for (const cb of cbs) {
-        const startTime = Date.now()
-        cb(queue)
-          .then(() => {
-            const duration = Date.now() - startTime
-            const completedEvent: CallbackCompletedEvent = {
-              queue,
-              success: true,
-              duration,
-            }
-            this.emit('callbackCompleted', completedEvent)
-          })
-          .catch((err) => {
-            const duration = Date.now() - startTime
-            const completedEvent: CallbackCompletedEvent = {
-              queue,
-              success: false,
-              duration,
-              error: err instanceof Error ? err : new Error(String(err)),
-            }
-            this.emit('callbackCompleted', completedEvent)
-          })
-      }
+    const queueCallbacks = this.callbacks.get(queue)
+    if (!queueCallbacks) {
+      return
+    }
+
+    // 非同步執行回呼，不等待
+    for (const callback of queueCallbacks) {
+      callback(queue).catch((_err) => {
+        // 回呼錯誤不應中斷通知流程
+        // 可在此記錄錯誤，但暫不拋出
+      })
     }
   }
 
   /**
-   * Notify subscribers of a queue (non-blocking, legacy method).
-   * Prefer notifyWithCount() for better metrics and typed events.
-   */
-  notify(queue: string): void {
-    this.notifyWithCount(queue, 1)
-  }
-
-  /**
-   * Clear all callbacks and event listeners.
+   * 清除所有已註冊的回呼。
+   *
+   * 用於優雅關閉時調用。
    */
   clearCallbacks(): void {
     this.callbacks.clear()

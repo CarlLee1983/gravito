@@ -1,8 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import * as coreModule from '@gravito/core'
-import { astral } from '../src'
 import { generateStaticSite, type StaticExportConfig } from '../src/export-static'
 
 /** 建立帶 logger 的 mockCore */
@@ -19,7 +18,7 @@ const createMockCore = () => ({
 })
 
 /** 建立 mock ArchiveAdapter，直接寫出一個空的 tar.gz 檔案（固定位元組） */
-const createMockArchiveAdapter = (targetPathRef: { path: string }) => ({
+const createMockArchiveAdapter = (_targetPathRef: { path: string }) => ({
   create: mock(async (_entries: Record<string, unknown>, _opts?: unknown) => {
     // 回傳最小合法的 gzip tarball（空檔案，31 bytes）
     return new Uint8Array([

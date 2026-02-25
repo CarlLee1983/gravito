@@ -418,7 +418,7 @@ describe('ReportUIManager - 報表 UI 管理系統', () => {
   describe('State Subscription', () => {
     it('should notify subscribers of state changes', () => {
       let stateChangeCount = 0
-      const unsubscribe = uiManager.subscribe((state: UIState) => {
+      const unsubscribe = uiManager.subscribe((_state: UIState) => {
         stateChangeCount++
       })
 

@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { DB } from '@gravito/atlas'
 import { Account } from '../../../src/Domain/Account/Account'
 import { Money } from '../../../src/Domain/Shared/Money'
 import { AtlasAccountRepository } from '../../../src/Infrastructure/Persistence/AtlasAccountRepository'

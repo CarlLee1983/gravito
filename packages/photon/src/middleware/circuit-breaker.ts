@@ -269,7 +269,7 @@ export function circuitBreaker(config: CircuitBreakerConfig): MiddlewareHandler 
 
   const breaker = new CircuitBreaker(config)
 
-  return async (c: Context, next: Next): Promise<Response | void> => {
+  return async (c: Context, next: Next): Promise<Response | undefined> => {
     // 檢查熔斷器是否允許請求通過
     if (!breaker.canRequest()) {
       return await onOpen(c, breaker.getState())

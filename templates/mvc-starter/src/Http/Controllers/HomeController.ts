@@ -4,7 +4,7 @@ export class HomeController {
   async index(ctx: GravitoContext) {
     return ctx.view.render('home', {
       title: 'Welcome to MVC Application',
-      authenticated: ctx.auth?.user ? true : false,
+      authenticated: !!ctx.auth?.user,
     })
   }
 

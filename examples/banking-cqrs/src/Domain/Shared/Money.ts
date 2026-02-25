@@ -33,7 +33,9 @@ export class Money {
    * @throws Error 當金額為負數或貨幣代碼不合法
    */
   constructor(cents: number, currency = 'TWD') {
-    if (cents < 0) throw new Error('金額不能為負數')
+    if (cents < 0) {
+      throw new Error('金額不能為負數')
+    }
     if (!currency || typeof currency !== 'string') {
       throw new Error('貨幣代碼不合法')
     }
@@ -101,7 +103,9 @@ export class Money {
   subtract(other: Money): Money {
     this.assertSameCurrency(other)
     const result = this._cents - other._cents
-    if (result < 0) throw new Error('餘額不足')
+    if (result < 0) {
+      throw new Error('餘額不足')
+    }
     return new Money(result, this._currency)
   }
 

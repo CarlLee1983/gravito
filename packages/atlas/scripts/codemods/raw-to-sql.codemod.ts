@@ -43,10 +43,14 @@ const stats: MigrationStats = {
 
 function isDbRawCall(path: ASTPath<any>): boolean {
   const node = path.value
-  if (node.type !== 'CallExpression') return false
+  if (node.type !== 'CallExpression') {
+    return false
+  }
 
   const callee = node.callee
-  if (callee.type !== 'MemberExpression') return false
+  if (callee.type !== 'MemberExpression') {
+    return false
+  }
 
   const property = (callee as any).property
   return property?.name === 'raw' || property?.value === 'raw'
@@ -158,7 +162,7 @@ function handleArrayArgument(j: any, node: any): any {
   return null
 }
 
-export default function transform(file: FileInfo, api: API, options: Options): string {
+export default function transform(file: FileInfo, api: API, _options: Options): string {
   const j = api.jscodeshift
   const root = j(file.source)
   let fileHasChanges = false

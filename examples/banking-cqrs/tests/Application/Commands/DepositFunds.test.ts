@@ -3,7 +3,6 @@ import type { PlanetCore } from '@gravito/core'
 import { DepositFundsCommand } from '../../../src/Application/Commands/DepositFunds/DepositFundsCommand'
 import { DepositFundsHandler } from '../../../src/Application/Commands/DepositFunds/DepositFundsHandler'
 import { Account } from '../../../src/Domain/Account/Account'
-import { Money } from '../../../src/Domain/Shared/Money'
 
 describe('DepositFundsHandler', () => {
   let handler: DepositFundsHandler

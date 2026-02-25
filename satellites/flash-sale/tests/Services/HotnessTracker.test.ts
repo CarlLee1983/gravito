@@ -2,7 +2,7 @@
  * HotnessTracker 單元測試
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import type { RedisClientContract } from '@gravito/plasma'
 import { HotnessTracker } from '../../src/Infrastructure/Services/HotnessTracker'
 
@@ -10,10 +10,10 @@ import { HotnessTracker } from '../../src/Infrastructure/Services/HotnessTracker
  * Mock Logger
  */
 class MockLogger {
-  debug(message: string): void {}
-  info(message: string): void {}
-  warn(message: string): void {}
-  error(message: string): void {}
+  debug(_message: string): void {}
+  info(_message: string): void {}
+  warn(_message: string): void {}
+  error(_message: string): void {}
 }
 
 /**
@@ -33,7 +33,9 @@ class MockRedisClient implements Partial<RedisClientContract> {
 
   async zrevrange(key: string, start: number, stop: number): Promise<string[]> {
     const zset = this.data.get(key) as Map<string, number> | undefined
-    if (!zset) return []
+    if (!zset) {
+      return []
+    }
 
     const sorted = Array.from(zset.entries())
       .sort(([, a], [, b]) => b - a)
@@ -59,13 +61,15 @@ class MockRedisClient implements Partial<RedisClientContract> {
     return existed
   }
 
-  async eval(script: string, numKeys: number, ...args: any[]): Promise<any> {
+  async eval(_script: string, _numKeys: number, ...args: any[]): Promise<any> {
     // 簡單模擬衰減
     const key = args[0]
     const factor = parseFloat(args[1])
     const zset = this.data.get(key) as Map<string, number> | undefined
 
-    if (!zset) return 0
+    if (!zset) {
+      return 0
+    }
 
     for (const [member] of zset) {
       const score = zset.get(member) || 0

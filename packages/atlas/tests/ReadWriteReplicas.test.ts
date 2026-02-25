@@ -3,7 +3,7 @@
  * @description Unit tests for ReplicaConnectionPool and ConnectionManager replica routing.
  */
 
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import { ReplicaConnectionPool } from '../src/connection/ReplicaConnectionPool'
 import type { ConnectionContract } from '../src/types'
 

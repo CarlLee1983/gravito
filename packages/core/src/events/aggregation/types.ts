@@ -110,7 +110,9 @@ export const DEFAULT_AGGREGATION_CONFIG: Required<AggregationConfig> = {
   batchSize: 50,
   deduplication: 'pattern',
   pattern: (args: unknown) => {
-    if (!args || typeof args !== 'object') return 'default'
+    if (!args || typeof args !== 'object') {
+      return 'default'
+    }
     const keys = Object.keys(args as Record<string, unknown>).sort()
     return keys.join(':')
   },

@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
-import { BackpressureManager, BackpressureState } from '../../../src/events/BackpressureManager'
+import { BackpressureManager } from '../../../src/events/BackpressureManager'
 import { EventPriorityQueue } from '../../../src/events/EventPriorityQueue'
-import {
-  PriorityEscalationManager,
-  PriorityStatistics,
-} from '../../../src/events/PriorityEscalationManager'
+import { PriorityStatistics } from '../../../src/events/PriorityEscalationManager'
 import type { EventTask } from '../../../src/events/types'
 
 describe('Priority System Integration', () => {

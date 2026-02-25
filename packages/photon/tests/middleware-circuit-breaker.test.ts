@@ -98,7 +98,9 @@ describe('Circuit Breaker Middleware', () => {
 
     let shouldFail = true
     app.get('/test', (c) => {
-      if (shouldFail) return c.text('error', 500)
+      if (shouldFail) {
+        return c.text('error', 500)
+      }
       return c.text('ok')
     })
 
