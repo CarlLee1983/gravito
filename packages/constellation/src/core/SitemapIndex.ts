@@ -1,3 +1,4 @@
+import { getEscapeHtml } from '@gravito/core'
 import type { SitemapIndexEntry, SitemapStreamOptions } from '../types'
 
 /**
@@ -20,6 +21,7 @@ import type { SitemapIndexEntry, SitemapStreamOptions } from '../types'
 export class SitemapIndex {
   private options: SitemapStreamOptions
   private entries: SitemapIndexEntry[] = []
+  private escapeHtml = getEscapeHtml()
 
   constructor(options: SitemapStreamOptions) {
     this.options = { ...options }
@@ -81,7 +83,7 @@ export class SitemapIndex {
       }
 
       xml += `${indent}<sitemap>${nl}`
-      xml += `${subIndent}<loc>${this.escape(loc)}</loc>${nl}`
+      xml += `${subIndent}<loc>${this.escapeHtml(loc)}</loc>${nl}`
 
       if (entry.lastmod) {
         const date = entry.lastmod instanceof Date ? entry.lastmod : new Date(entry.lastmod)
@@ -98,12 +100,4 @@ export class SitemapIndex {
   /**
    * Escapes special XML characters in a string.
    */
-  private escape(str: string): string {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;')
-  }
 }

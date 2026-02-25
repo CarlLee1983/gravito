@@ -16,6 +16,7 @@
  * @since 3.0.0
  */
 
+import { getEscapeHtml } from '@gravito/core'
 import type { ImageCDNLoader } from './ImageCDNLoader'
 
 /**
@@ -119,6 +120,8 @@ export interface ImageOptions {
  * @since 3.0.0
  */
 export class ImageService {
+  private escapeHtml = getEscapeHtml()
+
   /**
    * Generate a dictionary of HTML attributes for an image.
    *
@@ -497,17 +500,5 @@ export class ImageService {
     }
 
     return src
-  }
-
-  /**
-   * Escape HTML special characters.
-   */
-  private escapeHtml(unsafe: string): string {
-    return unsafe
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;')
   }
 }

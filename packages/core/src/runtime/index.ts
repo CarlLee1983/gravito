@@ -64,6 +64,11 @@ export { getCompressionAdapter } from './compression'
 
 export { createHtmlRenderCallbacks, getMarkdownAdapter } from './markdown'
 
+// ============ Escape Exports ============
+
+export type { EscapeHtmlFn } from './escape'
+export { getEscapeHtml } from './escape'
+
 // ============ Runtime Adapter Singleton ============
 
 let runtimeAdapter: RuntimeAdapter | null = null

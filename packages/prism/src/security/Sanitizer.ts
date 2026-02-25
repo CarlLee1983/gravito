@@ -26,6 +26,8 @@
  * @since 3.2.0
  */
 
+import { getEscapeHtml } from '@gravito/core'
+
 /**
  * Configuration options for the Sanitizer.
  */
@@ -178,6 +180,7 @@ export class Sanitizer {
   private allowedAttributes: Set<string>
   private allowedSchemes: Set<string>
   private stripAll: boolean
+  private escapeHtml = getEscapeHtml()
 
   /**
    * Create a new Sanitizer instance.
@@ -290,7 +293,7 @@ export class Sanitizer {
       }
 
       // Escape attribute value
-      const escapedValue = this.escapeAttribute(attrValue)
+      const escapedValue = this.escapeHtml(attrValue)
       sanitizedAttrs.push(`${attrName}="${escapedValue}"`)
     }
 
@@ -336,15 +339,6 @@ export class Sanitizer {
    * @returns Escaped attribute value.
    * @private
    */
-  private escapeAttribute(value: string): string {
-    return value
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;')
-  }
-
   /**
    * Strip all HTML tags from a string, leaving only text content.
    *

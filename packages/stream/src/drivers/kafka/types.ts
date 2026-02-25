@@ -1,0 +1,171 @@
+import type { SerializedJob } from '../../types'
+
+/**
+ * Kafka client factory interface (compatible with KafkaJS).
+ *
+ * Defines the minimal API surface to allow any compatible Kafka client implementation.
+ *
+ * @public
+ */
+export interface KafkaClientFactory {
+  producer: () => KafkaProducerClient
+  admin: () => KafkaAdminClient
+  consumer: (config: { groupId: string }) => KafkaConsumerClient
+}
+
+/**
+ * Kafka Producer client interface.
+ *
+ * @public
+ */
+export interface KafkaProducerClient {
+  connect(): Promise<void>
+  send(args: {
+    topic: string
+    messages: Array<{
+      key?: string | Buffer | null
+      value: string | Buffer
+      partition?: number
+      headers?: Record<string, string | Buffer>
+    }>
+  }): Promise<Array<{ topicName: string; partition: number; errorCode: number; offset: string }>>
+  disconnect(): Promise<void>
+}
+
+/**
+ * Kafka Admin client interface.
+ *
+ * @public
+ */
+export interface KafkaAdminClient {
+  connect(): Promise<void>
+  createTopics(args: {
+    topics: Array<{
+      topic: string
+      numPartitions?: number
+      replicationFactor?: number
+      configEntries?: Array<{ name: string; value: string }>
+    }>
+  }): Promise<boolean>
+  deleteTopics(args: { topics: string[] }): Promise<void>
+  fetchTopicOffsets(topic: string): Promise<
+    Array<{
+      partition: number
+      offset: string
+      high: string
+      low: string
+    }>
+  >
+  fetchOffsets(args: { groupId: string; topics: string[] }): Promise<
+    Array<{
+      topic: string
+      partitions: Array<{ partition: number; offset: string }>
+    }>
+  >
+  listTopics(): Promise<string[]>
+  disconnect(): Promise<void>
+}
+
+/**
+ * Kafka Consumer client interface.
+ *
+ * @public
+ */
+export interface KafkaConsumerClient {
+  connect(): Promise<void>
+  subscribe(args: { topics: string[]; fromBeginning?: boolean }): Promise<void>
+  run(args: {
+    eachMessage?: (args: {
+      topic: string
+      partition: number
+      message: KafkaMessage
+    }) => Promise<void>
+    eachBatch?: (args: {
+      batch: {
+        topic: string
+        partition: number
+        messages: KafkaMessage[]
+      }
+      resolveOffset: (offset: string) => void
+      heartbeat: () => Promise<void>
+      isRunning: () => boolean
+      commitOffsetsIfNecessary: () => Promise<void>
+    }) => Promise<void>
+    autoCommit?: boolean
+  }): Promise<void>
+  commitOffsets(
+    offsets: Array<{
+      topic: string
+      partition: number
+      offset: string
+    }>
+  ): Promise<void>
+  seek(args: { topic: string; partition: number; offset: string }): void
+  pause(topics: Array<{ topic: string; partitions?: number[] }>): void
+  resume(topics: Array<{ topic: string; partitions?: number[] }>): void
+  disconnect(): Promise<void>
+}
+
+/**
+ * Kafka message interface.
+ *
+ * @public
+ */
+export interface KafkaMessage {
+  key?: Buffer | null
+  value: Buffer | null
+  offset: string
+  timestamp?: string
+  headers?: Record<string, Buffer | string>
+}
+
+/**
+ * Full Kafka driver configuration.
+ *
+ * @public
+ */
+export interface KafkaDriverFullConfig {
+  /** Kafka client factory (KafkaJS compatible) */
+  client: KafkaClientFactory
+
+  /** Consumer Group ID */
+  consumerGroupId?: string
+
+  /** Message buffer size limit (per queue) */
+  bufferSize?: number
+
+  /** pop() wait timeout (milliseconds) */
+  popTimeout?: number
+
+  /** Auto-create topics */
+  autoCreateTopics?: boolean
+
+  /** DLQ topic suffix */
+  dlqSuffix?: string
+
+  /** Auto-commit offsets */
+  autoCommit?: boolean
+
+  /** Auto-commit interval (milliseconds) */
+  autoCommitInterval?: number
+
+  /** Max batch size per fetch */
+  maxBatchSize?: number
+
+  /** Message serializer (default: json) */
+  serializer?: 'json' | 'binary'
+}
+
+/**
+ * Buffered Kafka message.
+ *
+ * @public
+ */
+export interface BufferedMessage {
+  job: SerializedJob
+  topic: string
+  partition: number
+  offset: string
+  timestamp: number
+  acknowledged: boolean
+}

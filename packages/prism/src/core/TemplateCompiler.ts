@@ -82,6 +82,8 @@ const INTERPOLATE_REGEX = /\{\{\{?\s*([\w.]+)\s*\}?\}\}/g
 const MARKDOWN_BLOCK_REGEX = /@markdown\b([\s\S]*?)@endmarkdown/g
 const UNCLOSED_MARKDOWN_REGEX = /@markdown\b(?![\s\S]*?@endmarkdown)/
 
+import { getEscapeHtml } from '@gravito/core'
+
 /**
  * TemplateCompiler handles the transformation of template source code into HTML.
  *
@@ -110,6 +112,8 @@ const UNCLOSED_MARKDOWN_REGEX = /@markdown\b(?![\s\S]*?@endmarkdown)/
  * @since 3.1.0
  */
 export class TemplateCompiler {
+  private escapeHtml = getEscapeHtml()
+
   /**
    * Compile template source to rendered HTML.
    *
@@ -703,18 +707,6 @@ export class TemplateCompiler {
       }
       return this.escapeHtml(str)
     })
-  }
-
-  /**
-   * Escape HTML special characters
-   */
-  private escapeHtml(unsafe: string): string {
-    return unsafe
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;')
   }
 
   /**

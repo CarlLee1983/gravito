@@ -1,6 +1,7 @@
 import { join, parse } from 'node:path'
 import {
   createHtmlRenderCallbacks,
+  getEscapeHtml,
   getMarkdownAdapter,
   type MarkdownRenderCallbacks,
   type RuntimeMarkdownAdapter,
@@ -44,8 +45,13 @@ export class ContentManager {
   private cache = new Map<string, ContentItem>()
   // In-memory search index: term -> Set<cacheKey>
   private searchIndex = new Map<string, Set<string>>()
+
+  // Escape HTML helper
+  private escapeHtml = getEscapeHtml()
+
   // RuntimeMarkdownAdapter（自動選擇 Bun 原生或 marked fallback）
   private readonly mdAdapter: RuntimeMarkdownAdapter = getMarkdownAdapter()
+
   // 完整的 HTML 渲染回調（含 XSS 防護覆寫）
   private readonly renderCallbacks: MarkdownRenderCallbacks = createHtmlRenderCallbacks({
     html: (rawHtml: string) => this.escapeHtml(rawHtml),
@@ -282,15 +288,6 @@ export class ContentManager {
       return null
     }
     return value
-  }
-
-  private escapeHtml(value: string): string {
-    return value
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;')
   }
 
   private isSafeUrl(href: string): boolean {
