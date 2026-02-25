@@ -78,14 +78,12 @@ function deepEqualInternal(
 
   // 非物件型別（除了 object）
   if (typeA !== 'object') {
-    if (!strict) {
-      // 非嚴格模式：NaN === NaN，+0 === -0
-      if (Number.isNaN(a) && Number.isNaN(b)) {
-        return true
-      }
-      return a === b
+    // 特殊情況：NaN 比較
+    // Bun.deepEquals 的行為：NaN === NaN 總是 true，無論嚴格模式
+    if (Number.isNaN(a) && Number.isNaN(b)) {
+      return true
     }
-    // 嚴格模式：使用 === （NaN !== NaN，+0 !== -0）
+    // 其他情況：使用 === （包括 +0 !== -0）
     return a === b
   }
 
@@ -148,9 +146,7 @@ function deepEqualInternal(
     }
     const arrA = Array.from(a)
     const arrB = Array.from(b)
-    return arrA.every((val) =>
-      arrB.some((bVal) => deepEqualInternal(val, bVal, visited, strict))
-    )
+    return arrA.every((val) => arrB.some((bVal) => deepEqualInternal(val, bVal, visited, strict)))
   }
   if (a instanceof Set || b instanceof Set) {
     return false

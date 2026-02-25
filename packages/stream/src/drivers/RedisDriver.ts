@@ -920,4 +920,76 @@ export class RedisDriver implements QueueDriver {
     }
     return ['default']
   }
+
+  /**
+   * Enables real-time notifications for job arrivals via Redis Pub/Sub.
+   *
+   * Sets up the pub/sub connection and prepares for notification callbacks.
+   *
+   * @throws {Error} If the Redis client doesn't support pub/sub operations.
+   */
+  async enableNotifications(): Promise<void> {
+    if (!this.client.subscribe || !this.client.on) {
+      throw new Error('[RedisDriver] Client does not support pub/sub for reactive notifications')
+    }
+    // Pub/sub is ready to use when onNotify is called
+  }
+
+  /**
+   * Disables real-time notifications for job arrivals.
+   *
+   * Stops listening to notification channels.
+   */
+  async disableNotifications(): Promise<void> {
+    if (this.client.unsubscribe && typeof this.client.unsubscribe === 'function') {
+      try {
+        await this.client.unsubscribe()
+      } catch (_e) {
+        // Ignore errors during unsubscribe
+      }
+    }
+  }
+
+  /**
+   * Registers a notification listener for one or more queues.
+   *
+   * Uses Redis Pub/Sub to listen for job arrivals. When a job is pushed,
+   * the driver publishes a notification that triggers the callback.
+   *
+   * @param queues - Queue name(s) to listen for.
+   * @param callback - Function called with queue name when a job arrives.
+   */
+  async onNotify(
+    queues: string | string[],
+    callback: (queue: string) => Promise<void>
+  ): Promise<void> {
+    if (!this.client.subscribe || !this.client.on) {
+      throw new Error('[RedisDriver] Client does not support pub/sub for reactive notifications')
+    }
+
+    const queueList = Array.isArray(queues) ? queues : [queues]
+    const channels = queueList.map((q) => `${this.prefix}notify:${q}`)
+
+    // Subscribe to notification channels
+    try {
+      await this.client.subscribe(...channels)
+    } catch (err) {
+      throw new Error(`[RedisDriver] Failed to subscribe to notifications: ${err}`)
+    }
+
+    // Set up message handler
+    this.client.on('message', async (channel: string, _message: string) => {
+      // Extract queue name from channel
+      const prefix = `${this.prefix}notify:`
+      if (channel.startsWith(prefix)) {
+        const queueName = channel.slice(prefix.length)
+        try {
+          await callback(queueName)
+        } catch (err) {
+          // Log but don't fail the notification handler
+          console.error(`[RedisDriver] Notification callback error: ${err}`)
+        }
+      }
+    })
+  }
 }
