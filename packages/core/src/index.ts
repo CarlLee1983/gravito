@@ -87,20 +87,11 @@ export {
 } from './error-handling/RequestScopeErrorContext'
 // Event System
 export type {
-  CircuitBreakerOptions,
-  DLQEntry,
-  DLQFilter,
   EventBackend,
   EventOptions,
   EventTask,
 } from './events'
-export {
-  CircuitBreaker,
-  CircuitBreakerState,
-  DEFAULT_EVENT_OPTIONS,
-  DeadLetterQueue,
-  EventPriorityQueue,
-} from './events'
+export { DEFAULT_EVENT_OPTIONS } from './events'
 // Event System Observability
 export type {
   EventTracingConfig,

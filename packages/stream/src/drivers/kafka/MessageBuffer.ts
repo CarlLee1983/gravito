@@ -1,12 +1,16 @@
+import { RingBuffer } from './RingBuffer'
 import type { BufferedMessage } from './types'
 
 /**
  * FIFO message buffer per topic for bridging Kafka push to QueueDriver pull model.
  *
+ * 內部使用 RingBuffer 實現 O(1) enqueue/dequeue，
+ * 取代原本 Array.shift() 的 O(n) 操作。
+ *
  * @public
  */
 export class MessageBuffer {
-  private buffers = new Map<string, BufferedMessage[]>()
+  private buffers = new Map<string, RingBuffer<BufferedMessage>>()
   private waiters = new Map<string, Array<() => void>>()
   private destroyed = false
 
@@ -17,20 +21,20 @@ export class MessageBuffer {
    * @returns true if successfully queued, false if buffer is full
    */
   enqueue(topic: string, message: BufferedMessage): boolean {
-    if (this.destroyed) return false
-
-    if (!this.buffers.has(topic)) {
-      this.buffers.set(topic, [])
-    }
-
-    const buffer = this.buffers.get(topic)!
-    if (buffer.length >= this.maxSize) {
+    if (this.destroyed) {
       return false
     }
 
-    buffer.push(message)
-    this.notifyWaiters(topic)
-    return true
+    if (!this.buffers.has(topic)) {
+      this.buffers.set(topic, new RingBuffer<BufferedMessage>(this.maxSize))
+    }
+
+    const buffer = this.buffers.get(topic)!
+    const result = buffer.push(message)
+    if (result) {
+      this.notifyWaiters(topic)
+    }
+    return result
   }
 
   /**
@@ -39,7 +43,7 @@ export class MessageBuffer {
    */
   dequeue(topic: string): BufferedMessage | null {
     const buffer = this.buffers.get(topic)
-    if (!buffer || buffer.length === 0) {
+    if (!buffer || buffer.isEmpty) {
       return null
     }
     return buffer.shift() ?? null
@@ -53,7 +57,7 @@ export class MessageBuffer {
   dequeueBlocking(topic: string, timeout: number): Promise<BufferedMessage | null> {
     return new Promise((resolve) => {
       const buffer = this.buffers.get(topic)
-      if (buffer && buffer.length > 0) {
+      if (buffer && !buffer.isEmpty) {
         resolve(buffer.shift() ?? null)
         return
       }
@@ -68,12 +72,18 @@ export class MessageBuffer {
       let cleaned = false
 
       const cleanup = () => {
-        if (cleaned) return
+        if (cleaned) {
+          return
+        }
         cleaned = true
-        if (timerId) clearTimeout(timerId)
+        if (timerId) {
+          clearTimeout(timerId)
+        }
         const waiters = this.waiters.get(topic) ?? []
         const idx = waiters.indexOf(checkMessage)
-        if (idx >= 0) waiters.splice(idx, 1)
+        if (idx >= 0) {
+          waiters.splice(idx, 1)
+        }
       }
 
       const checkMessage = () => {
@@ -84,7 +94,7 @@ export class MessageBuffer {
         }
 
         const buf = this.buffers.get(topic)
-        if (buf && buf.length > 0) {
+        if (buf && !buf.isEmpty) {
           cleanup()
           resolve(buf.shift() ?? null)
           return
@@ -103,7 +113,7 @@ export class MessageBuffer {
       if (!this.waiters.has(topic)) {
         this.waiters.set(topic, [])
       }
-      this.waiters.get(topic)!.push(checkMessage)
+      this.waiters.get(topic)?.push(checkMessage)
 
       timerId = setTimeout(checkMessage, 0)
     })
@@ -114,16 +124,10 @@ export class MessageBuffer {
    */
   dequeueMany(topic: string, count: number): BufferedMessage[] {
     const buffer = this.buffers.get(topic)
-    if (!buffer || buffer.length === 0) {
+    if (!buffer || buffer.isEmpty) {
       return []
     }
-
-    const result: BufferedMessage[] = []
-    for (let i = 0; i < count && buffer.length > 0; i++) {
-      const msg = buffer.shift()
-      if (msg) result.push(msg)
-    }
-    return result
+    return buffer.shiftMany(count)
   }
 
   /**
@@ -157,7 +161,9 @@ export class MessageBuffer {
 
   private notifyWaiters(topic: string): void {
     const waiters = this.waiters.get(topic)
-    if (!waiters) return
+    if (!waiters) {
+      return
+    }
 
     for (const waiter of waiters.splice(0, 1)) {
       waiter()
