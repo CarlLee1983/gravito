@@ -1,9 +1,31 @@
 import { EventEmitter } from 'node:events'
 
 /**
+ * Typed event data for message arrival notifications.
+ * @public
+ */
+export interface MessageArrivedEvent {
+  queue: string
+  count: number
+  timestamp: number
+}
+
+/**
+ * Typed event data for callback completion.
+ * @public
+ */
+export interface CallbackCompletedEvent {
+  queue: string
+  success: boolean
+  duration: number
+  error?: Error
+}
+
+/**
  * EventEmitter-based notification bridge for ReactiveStrategy integration.
  *
- * Manages notification callbacks and emits events when jobs arrive in queues.
+ * Manages notification callbacks and emits typed events for message arrival,
+ * callback completion, and errors. Integrates with subscribe() for reactive consumption.
  *
  * @public
  */
@@ -48,23 +70,69 @@ export class KafkaNotifier extends EventEmitter {
   }
 
   /**
-   * Notify subscribers of a queue (non-blocking).
+   * Register typed event listener for message arrival.
    */
-  notify(queue: string): void {
+  onMessageArrived(listener: (event: MessageArrivedEvent) => void): void {
+    this.on('messageArrived', listener)
+  }
+
+  /**
+   * Register typed event listener for callback completion.
+   */
+  onCallbackCompleted(listener: (event: CallbackCompletedEvent) => void): void {
+    this.on('callbackCompleted', listener)
+  }
+
+  /**
+   * Notify subscribers of a queue with message count (non-blocking).
+   */
+  notifyWithCount(queue: string, count: number): void {
     if (!this.enabled) return
 
-    // Emit event
+    const timestamp = Date.now()
+
+    // Emit typed event
+    const event: MessageArrivedEvent = { queue, count, timestamp }
+    this.emit('messageArrived', event)
+
+    // Legacy event for backward compatibility
     this.emit('notify', queue)
 
     // Call registered callbacks (non-blocking)
     const cbs = this.callbacks.get(queue)
     if (cbs) {
       for (const cb of cbs) {
-        cb(queue).catch((err) => {
-          console.error(`[KafkaNotifier] Callback error for ${queue}: ${err}`)
-        })
+        const startTime = Date.now()
+        cb(queue)
+          .then(() => {
+            const duration = Date.now() - startTime
+            const completedEvent: CallbackCompletedEvent = {
+              queue,
+              success: true,
+              duration
+            }
+            this.emit('callbackCompleted', completedEvent)
+          })
+          .catch((err) => {
+            const duration = Date.now() - startTime
+            const completedEvent: CallbackCompletedEvent = {
+              queue,
+              success: false,
+              duration,
+              error: err instanceof Error ? err : new Error(String(err))
+            }
+            this.emit('callbackCompleted', completedEvent)
+          })
       }
     }
+  }
+
+  /**
+   * Notify subscribers of a queue (non-blocking, legacy method).
+   * Prefer notifyWithCount() for better metrics and typed events.
+   */
+  notify(queue: string): void {
+    this.notifyWithCount(queue, 1)
   }
 
   /**

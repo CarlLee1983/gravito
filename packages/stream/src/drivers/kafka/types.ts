@@ -169,3 +169,66 @@ export interface BufferedMessage {
   timestamp: number
   acknowledged: boolean
 }
+
+/**
+ * Consumer lifecycle states for Phase 6C.
+ *
+ * State transitions:
+ * - idle → starting → running → stopping → stopped
+ * - running → restarting → running
+ * - any → error
+ *
+ * @public
+ */
+export type ConsumerLifecycleState =
+  | 'idle'
+  | 'starting'
+  | 'running'
+  | 'restarting'
+  | 'stopping'
+  | 'stopped'
+  | 'error'
+
+/**
+ * Configuration for subscribe() push-based consumption.
+ *
+ * @public
+ */
+export interface SubscribeOptions {
+  /** Parallel callback concurrency (default: 1) */
+  concurrency?: number
+  /** Whether to auto-acknowledge after callback completes (default: true) */
+  autoAcknowledge?: boolean
+  /** Callback timeout in milliseconds (default: 30000) */
+  callbackTimeout?: number
+  /** Whether to start from beginning (default: false) */
+  fromBeginning?: boolean
+}
+
+/**
+ * Backpressure controller configuration.
+ *
+ * @public
+ */
+export interface BackpressureConfig {
+  /** High watermark percentage (0-1). Pause consumer when buffer exceeds this. Default: 0.8 */
+  highWatermark?: number
+  /** Low watermark percentage (0-1). Resume consumer when buffer drops below this. Default: 0.5 */
+  lowWatermark?: number
+  /** Check interval in milliseconds. Default: 100 */
+  checkInterval?: number
+  /** Maximum number of in-flight (processing) callbacks. Default: concurrency * 2 */
+  maxInFlight?: number
+}
+
+/**
+ * Lifecycle event payload.
+ *
+ * @public
+ */
+export interface LifecycleEvent {
+  state: ConsumerLifecycleState
+  previousState: ConsumerLifecycleState
+  timestamp: number
+  error?: Error
+}
