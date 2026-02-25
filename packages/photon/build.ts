@@ -45,8 +45,9 @@ async function buildInParallel() {
           'src/middleware/streaming.ts',
           'src/middleware/websocket.ts',
           'src/adapter/cloudflare.ts',
-          'src/adapter/vercel.ts',
           'src/adapter/deno.ts',
+          'src/adapter/index.ts',
+          'src/adapter/vercel.ts',
           'src/router/reg-exp-router.ts',
           'src/router/trie-router.ts',
         ],
@@ -56,7 +57,7 @@ async function buildInParallel() {
         splitting: false,
         minify: process.env.NODE_ENV === 'production',
         sourcemap: 'external',
-        external: ['hono', '@hono/zod-openapi', 'zod', 'cborg'],
+        external: ['@gravito/core', '@gravito/photon', 'hono', '@hono/zod-openapi', 'zod', 'cborg'],
       })
 
       if (!buildResult.success) {

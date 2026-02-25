@@ -1005,7 +1005,6 @@
       "name": "@gravito/core",
       "version": "1.6.1",
       "dependencies": {
-        "@gravito/photon": "workspace:*",
         "zod": "^4.3.6",
       },
       "devDependencies": {
@@ -1565,15 +1564,18 @@
       "name": "@gravito/nova",
       "version": "1.0.0",
       "devDependencies": {
+        "@gravito/chromatic": "workspace:*",
         "@gravito/core": "workspace:*",
         "bun-types": "latest",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
+        "@gravito/chromatic": "*",
         "@gravito/core": "*",
       },
       "optionalPeers": [
+        "@gravito/chromatic",
         "@gravito/core",
       ],
     },
@@ -1594,6 +1596,7 @@
       "name": "@gravito/photon",
       "version": "1.0.1",
       "dependencies": {
+        "@gravito/core": "workspace:*",
         "@hono/zod-openapi": "^1.2.0",
         "cborg": "^4.3.2",
         "hono": "^4.11.0",

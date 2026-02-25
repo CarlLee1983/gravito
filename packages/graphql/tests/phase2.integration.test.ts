@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { unlink } from 'node:fs/promises'
 import { join } from 'node:path'
-import { defineConfig, GravitoAdapter, PlanetCore } from '@gravito/core'
+import { defineConfig, PlanetCore } from '@gravito/core'
+import { GravitoAdapter } from '@gravito/photon/adapter'
 import { buildSchema } from 'graphql'
 import { OrbitGraphQL } from '../src/index'
 

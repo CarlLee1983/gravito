@@ -4,7 +4,7 @@
  * Type definitions for Photon framework extensions and internal properties.
  * These types help maintain type safety when working with Photon's native APIs.
  *
- * @module @gravito/core/adapters/photon-types
+ * @module @gravito/photon/adapter
  * @since 2.0.0
  */
 

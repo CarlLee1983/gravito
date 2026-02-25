@@ -122,7 +122,6 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@gravito/photon": "workspace:*",
     "zod": "^4.3.6"
   }
 }

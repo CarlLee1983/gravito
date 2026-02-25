@@ -102,7 +102,7 @@ Gravito 框架存在六個結構性問題，需要系統性地進行優化。最
 
 ## Phase 2：核心架構修正（預估 3-4 週）
 
-### 2.1 解除 core 對 photon 的依賴 [CRITICAL PATH] ⭐⭐⭐⭐⭐
+### 2.1 解除 core 對 photon 的依賴 [CRITICAL PATH] ⭐⭐⭐⭐⭐ ✅ 完成 (2026-02-25)
 
 **問題**: `@gravito/core` 的 `package.json` 第 125 行依賴 `@gravito/photon`，違反向心依賴原則。
 

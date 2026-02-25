@@ -23,14 +23,6 @@ export const VERSION = packageJson.version
 // ─────────────────────────────────────────────────────────────────────────────
 
 export { GravitoEngineAdapter } from './adapters/GravitoEngineAdapter'
-export {
-  createGravitoAdapter,
-  createPhotonAdapter,
-  GravitoAdapter,
-  PhotonAdapter,
-  PhotonContextWrapper,
-  PhotonRequestWrapper,
-} from './adapters/PhotonAdapter'
 
 // Adapters
 export type { AdapterConfig, AdapterFactory, HttpAdapter, RouteDefinition } from './adapters/types'
@@ -47,6 +39,7 @@ export type {
   GravitoRequest,
   GravitoVariables,
   HttpMethod,
+  ProxyOptions,
   StatusCode,
   ValidationTarget,
 } from './http/types'
