@@ -328,3 +328,45 @@ export interface MetricsConfig {
   /** Whether to track per-partition lag. Default: false */
   perPartitionLag?: boolean
 }
+
+/**
+ * Circuit breaker states for Kafka operations.
+ * @public
+ */
+export type KafkaCircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN'
+
+/**
+ * Error recovery configuration.
+ * @public
+ */
+export interface ErrorRecoveryConfig {
+  /** Circuit breaker failure threshold. Default: 5 */
+  failureThreshold?: number
+  /** Circuit breaker reset timeout in ms. Default: 30000 */
+  resetTimeoutMs?: number
+  /** Half-open max probe requests. Default: 1 */
+  halfOpenMaxRequests?: number
+  /** Initial backoff delay in ms. Default: 1000 */
+  initialBackoffMs?: number
+  /** Maximum backoff delay in ms. Default: 60000 */
+  maxBackoffMs?: number
+  /** Backoff multiplier. Default: 2 */
+  backoffMultiplier?: number
+  /** Whether to add jitter to backoff. Default: true */
+  jitter?: boolean
+  /** Max consecutive retries before giving up. Default: 10 */
+  maxRetries?: number
+}
+
+/**
+ * Error recovery state snapshot.
+ * @public
+ */
+export interface ErrorRecoveryState {
+  circuitState: KafkaCircuitState
+  consecutiveFailures: number
+  lastFailureTime: number
+  currentBackoffMs: number
+  totalRecoveries: number
+  isRecovering: boolean
+}

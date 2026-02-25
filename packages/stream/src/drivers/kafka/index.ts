@@ -6,39 +6,30 @@
  *
  * @public
  */
+
+export { BackpressureController } from './BackpressureController'
+export { ConsumerLifecycleManager } from './ConsumerLifecycleManager'
+export { ErrorRecoveryManager } from './ErrorRecoveryManager'
+export { HeartbeatManager } from './HeartbeatManager'
 export { KafkaDriver } from './KafkaDriver'
-export {
-  KafkaNotifier,
-} from './KafkaNotifier'
+export { KafkaMetrics } from './KafkaMetrics'
 export type {
   CallbackCompletedEvent,
   MessageArrivedEvent,
 } from './KafkaNotifier'
-export {
-  MessageBuffer,
-} from './MessageBuffer'
-export {
-  OffsetTracker,
-} from './OffsetTracker'
-export {
-  BackpressureController,
-} from './BackpressureController'
-export {
-  ConsumerLifecycleManager,
-} from './ConsumerLifecycleManager'
-export {
-  HeartbeatManager,
-} from './HeartbeatManager'
-export {
-  KafkaMetrics,
-} from './KafkaMetrics'
+export { KafkaNotifier } from './KafkaNotifier'
+export { MessageBuffer } from './MessageBuffer'
+export { OffsetTracker } from './OffsetTracker'
 export type {
   BackpressureConfig,
   BufferedMessage,
   ConsumerLifecycleState,
+  ErrorRecoveryConfig,
+  ErrorRecoveryState,
   HeartbeatConfig,
   HeartbeatStatus,
   KafkaAdminClient,
+  KafkaCircuitState,
   KafkaClientFactory,
   KafkaConsumerClient,
   KafkaDriverFullConfig,
