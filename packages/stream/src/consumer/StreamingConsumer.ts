@@ -155,10 +155,14 @@ export class StreamingConsumer extends EventEmitter {
     try {
       // 主管線迴圈
       for await (const fetchResult of jobSource) {
-        if (this.stopRequested) break
+        if (this.stopRequested) {
+          break
+        }
 
         for (const job of fetchResult.jobs) {
-          if (this.stopRequested) break
+          if (this.stopRequested) {
+            break
+          }
 
           // 等待並發許可（Promise-based，不 busy-wait）
           await this.gate.acquire()
@@ -273,7 +277,9 @@ export class StreamingConsumer extends EventEmitter {
    * 輸出 debug 日誌（僅在 debug=true 時）。
    */
   private log(message: string, data?: unknown): void {
-    if (!this.options.debug) return
+    if (!this.options.debug) {
+      return
+    }
 
     const timestamp = new Date().toISOString()
     const prefix = `[StreamingConsumer:${this.workerId}] [${timestamp}]`

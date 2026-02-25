@@ -4,8 +4,7 @@
  */
 
 import type { AtlasTracer } from '../observability'
-import type { ConnectionConfig } from './connection'
-import type { PoolHealth, PoolStats } from './connection'
+import type { ConnectionConfig, PoolHealth, PoolStats } from './connection'
 import type {
   CompiledQuery,
   ExecuteResult,
@@ -334,4 +333,3 @@ export interface CacheInterface {
   delete(key: string): Promise<void>
   clear(): Promise<void>
 }
-

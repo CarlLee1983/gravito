@@ -4,7 +4,7 @@ import {
   type CacheEvents,
   emitCacheEvent,
 } from './cache-events'
-import { type CacheLock, sleep } from './locks'
+import { sleep } from './locks'
 import type { CacheStore } from './store'
 import { isTaggableStore } from './store'
 import { TaggedStore } from './tagged-store'

@@ -4,7 +4,6 @@ import type {
   KafkaAdminClient,
   KafkaClientFactory,
   KafkaConsumerClient,
-  KafkaDriverFullConfig,
   KafkaMessage,
   KafkaProducerClient,
 } from '../../../../src/drivers/kafka/types'

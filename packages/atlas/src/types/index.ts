@@ -30,7 +30,13 @@ export type {
 
 // 連線配置的函式（非類型，需要 export 而非 export type）
 export { isReadWriteConfig } from './connection'
-
+// 驅動、連線、Grammar 及快取合約
+export type {
+  CacheInterface,
+  ConnectionContract,
+  DriverContract,
+  GrammarContract,
+} from './contracts'
 // 查詢建構器類型、結果類型與合約
 export type {
   BatchExecuteResult,
@@ -51,11 +57,3 @@ export type {
   SafeQueryBuilderContract,
   WhereClause,
 } from './query'
-
-// 驅動、連線、Grammar 及快取合約
-export type {
-  CacheInterface,
-  ConnectionContract,
-  DriverContract,
-  GrammarContract,
-} from './contracts'

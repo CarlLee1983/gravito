@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
+import { describe, expect, it, mock } from 'bun:test'
 import { KafkaDriver } from '../../../../src/drivers/kafka/KafkaDriver'
 import type {
   KafkaAdminClient,

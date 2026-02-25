@@ -58,7 +58,9 @@ export async function* jobSourceGenerator(
     if (capacity <= 0) {
       // 容量已滿，稍候再試（避免 tight loop）
       await sleep(10, signal)
-      if (signal.aborted) break
+      if (signal.aborted) {
+        break
+      }
       continue
     }
 
@@ -74,13 +76,17 @@ export async function* jobSourceGenerator(
       // 所有佇列都被 rate limit，短暫等待（支援提前中止）
       await sleep(currentPollInterval, signal)
       currentPollInterval = Math.min(currentPollInterval * backoffMultiplier, maxPollInterval)
-      if (signal.aborted) break
+      if (signal.aborted) {
+        break
+      }
       yield { jobs: [], didBlock: false }
       continue
     }
 
     // 再次檢查中止信號
-    if (signal.aborted) break
+    if (signal.aborted) {
+      break
+    }
 
     // 抓取 job
     const { jobs, didBlock } = await fetchJobs(

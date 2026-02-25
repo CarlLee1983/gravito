@@ -210,8 +210,8 @@ export class Consumer extends EventEmitter {
   private streaming: StreamingConsumer
 
   constructor(
-    private readonly queueManager: QueueManager,
-    private readonly options: ConsumerOptions
+    readonly queueManager: QueueManager,
+    readonly options: ConsumerOptions
   ) {
     super()
     this.streaming = new StreamingConsumer(queueManager, options)

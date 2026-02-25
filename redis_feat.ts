@@ -1080,11 +1080,15 @@ export class RedisDriver implements QueueDriver {
       // 優先使用 rpopBuffer（支援 binary frame）
       if (typeof this.client.rpopBuffer === 'function') {
         const bufPayload = await this.client.rpopBuffer(failedKey)
-        if (!bufPayload) break
+        if (!bufPayload) {
+          break
+        }
         job = this.parsePayloadAuto(bufPayload as Buffer)
       } else {
         const payload = await this.client.rpop(failedKey)
-        if (!payload) break
+        if (!payload) {
+          break
+        }
         job = this.parsePayloadAuto(payload as string)
       }
 

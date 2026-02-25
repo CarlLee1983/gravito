@@ -98,7 +98,9 @@ export class LocalStore implements StorageStore {
     try {
       while (true) {
         const { done, value } = await reader.read()
-        if (done) break
+        if (done) {
+          break
+        }
         writer.write(value)
       }
       await writer.end()
@@ -109,7 +111,9 @@ export class LocalStore implements StorageStore {
   }
 
   async getStream(key: string): Promise<ReadableStream<Uint8Array> | null> {
-    if (!(await this.exists(key))) return null
+    if (!(await this.exists(key))) {
+      return null
+    }
     const path = this.resolvePath(key)
     const file = Bun.file(path)
     return file.stream()
@@ -199,9 +203,18 @@ export class LocalStore implements StorageStore {
   private guessMimeType(key: string): string {
     const ext = key.split('.').pop()?.toLowerCase()
     const mimeTypes: Record<string, string> = {
-      txt: 'text/plain', html: 'text/html', css: 'text/css', js: 'text/javascript',
-      json: 'application/json', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
-      gif: 'image/gif', svg: 'image/svg+xml', pdf: 'application/pdf', zip: 'application/zip',
+      txt: 'text/plain',
+      html: 'text/html',
+      css: 'text/css',
+      js: 'text/javascript',
+      json: 'application/json',
+      png: 'image/png',
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      gif: 'image/gif',
+      svg: 'image/svg+xml',
+      pdf: 'application/pdf',
+      zip: 'application/zip',
     }
     return mimeTypes[ext ?? ''] ?? 'application/octet-stream'
   }

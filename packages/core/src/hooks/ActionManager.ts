@@ -1,14 +1,14 @@
+import { EventAggregationManager } from '../events/aggregation/EventAggregationManager'
 import { CircuitBreaker } from '../events/CircuitBreaker'
-import { DEFAULT_EVENT_OPTIONS } from '../events/EventOptions'
-import type { EventOptions } from '../events/EventOptions'
 import type { EventBackend } from '../events/EventBackend'
+import type { EventOptions } from '../events/EventOptions'
+import { DEFAULT_EVENT_OPTIONS } from '../events/EventOptions'
 import { EventPriorityQueue } from '../events/EventPriorityQueue'
 import { IdempotencyCache } from '../events/IdempotencyCache'
-import { EventAggregationManager } from '../events/aggregation/EventAggregationManager'
 import type { EventTask } from '../events/types'
-import type { ActionCallback, ListenerOptions, ListenerInfo, HookManagerConfig } from './types'
-import { AsyncDetector } from './AsyncDetector'
-import { MigrationWarner } from './MigrationWarner'
+import type { AsyncDetector } from './AsyncDetector'
+import type { MigrationWarner } from './MigrationWarner'
+import type { ActionCallback, HookManagerConfig, ListenerInfo, ListenerOptions } from './types'
 
 /**
  * 管理 action hook 的登記與執行。
@@ -120,10 +120,7 @@ export class ActionManager {
 
     // 如有 type override，儲存至 AsyncDetector
     if (options?.type && options.type !== 'auto') {
-      this.asyncDetector.setTypeOverride(
-        finalCallback as unknown as ActionCallback,
-        options.type
-      )
+      this.asyncDetector.setTypeOverride(finalCallback as unknown as ActionCallback, options.type)
     }
 
     // Generic type erasure for storage

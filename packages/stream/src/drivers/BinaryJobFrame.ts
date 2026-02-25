@@ -182,11 +182,21 @@ export function encodeBinaryJobFrame(job: SerializedJob): Uint8Array {
 
   // 計算 Flags
   let flags = 0x00
-  if (job.className) flags |= Flags.HAS_CLASS_NAME
-  if (job.groupId) flags |= Flags.HAS_GROUP_ID
-  if (job.delaySeconds !== undefined) flags |= Flags.HAS_DELAY
-  if (job.priority !== undefined) flags |= Flags.HAS_PRIORITY
-  if (job.error || job.failedAt !== undefined) flags |= Flags.HAS_ERROR
+  if (job.className) {
+    flags |= Flags.HAS_CLASS_NAME
+  }
+  if (job.groupId) {
+    flags |= Flags.HAS_GROUP_ID
+  }
+  if (job.delaySeconds !== undefined) {
+    flags |= Flags.HAS_DELAY
+  }
+  if (job.priority !== undefined) {
+    flags |= Flags.HAS_PRIORITY
+  }
+  if (job.error || job.failedAt !== undefined) {
+    flags |= Flags.HAS_ERROR
+  }
 
   // 建構 metadata（使用短鍵減少大小）
   const meta: MetadataShort = {
@@ -194,16 +204,36 @@ export function encodeBinaryJobFrame(job: SerializedJob): Uint8Array {
     t: job.createdAt,
   }
 
-  if (job.attempts !== undefined) meta.a = job.attempts
-  if (job.maxAttempts !== undefined) meta.m = job.maxAttempts
-  if (job.className) meta.c = job.className
-  if (job.groupId) meta.g = job.groupId
-  if (job.delaySeconds !== undefined) meta.d = job.delaySeconds
-  if (job.priority !== undefined) meta.p = job.priority
-  if (job.retryAfterSeconds !== undefined) meta.r = job.retryAfterSeconds
-  if (job.retryMultiplier !== undefined) meta.x = job.retryMultiplier
-  if (job.error) meta.e = job.error
-  if (job.failedAt !== undefined) meta.f = job.failedAt
+  if (job.attempts !== undefined) {
+    meta.a = job.attempts
+  }
+  if (job.maxAttempts !== undefined) {
+    meta.m = job.maxAttempts
+  }
+  if (job.className) {
+    meta.c = job.className
+  }
+  if (job.groupId) {
+    meta.g = job.groupId
+  }
+  if (job.delaySeconds !== undefined) {
+    meta.d = job.delaySeconds
+  }
+  if (job.priority !== undefined) {
+    meta.p = job.priority
+  }
+  if (job.retryAfterSeconds !== undefined) {
+    meta.r = job.retryAfterSeconds
+  }
+  if (job.retryMultiplier !== undefined) {
+    meta.x = job.retryMultiplier
+  }
+  if (job.error) {
+    meta.e = job.error
+  }
+  if (job.failedAt !== undefined) {
+    meta.f = job.failedAt
+  }
 
   // 序列化 metadata
   const metaBytes = encodeMetaFallback(meta)
@@ -299,8 +329,12 @@ export function decodeBinaryJobFrame(data: Uint8Array | Buffer): SerializedJob {
   }
 
   // 根據 flags 和 metadata 還原可選欄位
-  if (meta.a !== undefined) job.attempts = meta.a
-  if (meta.m !== undefined) job.maxAttempts = meta.m
+  if (meta.a !== undefined) {
+    job.attempts = meta.a
+  }
+  if (meta.m !== undefined) {
+    job.maxAttempts = meta.m
+  }
 
   if (flags! & Flags.HAS_CLASS_NAME && meta.c) {
     job.className = meta.c
@@ -314,8 +348,12 @@ export function decodeBinaryJobFrame(data: Uint8Array | Buffer): SerializedJob {
   if (flags! & Flags.HAS_PRIORITY && meta.p !== undefined) {
     job.priority = meta.p
   }
-  if (meta.r !== undefined) job.retryAfterSeconds = meta.r
-  if (meta.x !== undefined) job.retryMultiplier = meta.x
+  if (meta.r !== undefined) {
+    job.retryAfterSeconds = meta.r
+  }
+  if (meta.x !== undefined) {
+    job.retryMultiplier = meta.x
+  }
   if (flags! & Flags.HAS_ERROR && meta.e) {
     job.error = meta.e
   }

@@ -11,7 +11,7 @@
  */
 
 import { readFileSync } from 'node:fs'
-import { dirname, relative, resolve } from 'node:path'
+import { resolve } from 'node:path'
 import { Glob } from 'bun'
 
 // ============================================================================
@@ -23,7 +23,8 @@ const SCAN_PATTERN = 'packages/*/src/**/*.ts'
 
 // 匹配 Error class 定義的正規表示式
 // 捕捉：export class FooError、class FooError、abstract class FooError
-const ERROR_CLASS_REGEX = /^(?:export\s+)?(?:abstract\s+)?class\s+(\w*Error\w*)\s*(?:extends\s+\S+)?/gm
+const ERROR_CLASS_REGEX =
+  /^(?:export\s+)?(?:abstract\s+)?class\s+(\w*Error\w*)\s*(?:extends\s+\S+)?/gm
 
 // ANSI 色彩碼
 const RESET = '\x1b[0m'
@@ -192,9 +193,7 @@ function printHeader(): void {
 }
 
 function printSuccess(stats: ScanStats): void {
-  console.log(
-    `${GREEN}✅ All error classes appear unique (${stats.totalClasses} total)${RESET}`,
-  )
+  console.log(`${GREEN}✅ All error classes appear unique (${stats.totalClasses} total)${RESET}`)
   printSummary(stats)
 }
 
@@ -212,18 +211,16 @@ function printWarnings(stats: ScanStats): void {
     // 顯示每個出現位置與宣告
     for (const occ of group.occurrences) {
       console.log(
-        `    ${DIM}├─${RESET} ${CYAN}${occ.filePath}${RESET}${DIM}:${occ.lineNumber}${RESET}`,
+        `    ${DIM}├─${RESET} ${CYAN}${occ.filePath}${RESET}${DIM}:${occ.lineNumber}${RESET}`
       )
       console.log(`       ${DIM}${occ.declaration}${RESET}`)
     }
     console.log()
   }
 
+  console.log(`${DIM}Note: Cross-package error classes are intentional (domain-specific).${RESET}`)
   console.log(
-    `${DIM}Note: Cross-package error classes are intentional (domain-specific).${RESET}`,
-  )
-  console.log(
-    `${DIM}Review duplicates to ensure they don't cause confusion or import conflicts.${RESET}`,
+    `${DIM}Review duplicates to ensure they don't cause confusion or import conflicts.${RESET}`
   )
 
   printSummary(stats)
@@ -238,7 +235,7 @@ function printSummary(stats: ScanStats): void {
       stats.duplicateGroups.length > 0
         ? `${YELLOW}${BOLD}${stats.duplicateGroups.length}${RESET}`
         : `${GREEN}${BOLD}0${RESET}`
-    }`,
+    }`
   )
 
   // 顯示 Error class 最多的前 6 個套件

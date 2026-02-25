@@ -11,14 +11,8 @@ import type {
   ZAddOptions,
   ZRangeOptions,
 } from '../types'
+import { HashCommands, ListCommands, PubSubCommands, SetCommands, StringCommands } from './commands'
 import type { RedisClient, RedisClientOptions, TLSOptions } from './types'
-import {
-  HashCommands,
-  ListCommands,
-  PubSubCommands,
-  SetCommands,
-  StringCommands,
-} from './commands'
 
 /**
  * Native Bun.redis Client Implementation
@@ -556,8 +550,12 @@ export class BunRedisClient implements RedisClientContract {
 
   async scan(cursor: string, options?: ScanOptions): Promise<ScanResult> {
     const args: string[] = [cursor]
-    if (options?.match) args.push('MATCH', options.match)
-    if (options?.count) args.push('COUNT', String(options.count))
+    if (options?.match) {
+      args.push('MATCH', options.match)
+    }
+    if (options?.count) {
+      args.push('COUNT', String(options.count))
+    }
 
     const result = await this.sendCommand('SCAN', args)
     if (Array.isArray(result) && result.length === 2) {
@@ -667,11 +665,16 @@ export class BunRedisClient implements RedisClientContract {
     const args: string[] = [prefixedKey]
     if (options?.maxlen) {
       args.push('MAXLEN')
-      if (options.approximate) args.push('~')
+      if (options.approximate) {
+        args.push('~')
+      }
       args.push(options.maxlen.toString())
     }
-    if (options?.id) args.push(options.id)
-    else args.push('*')
+    if (options?.id) {
+      args.push(options.id)
+    } else {
+      args.push('*')
+    }
     for (const [field, value] of Object.entries(data)) {
       args.push(field, value)
     }
@@ -684,8 +687,12 @@ export class BunRedisClient implements RedisClientContract {
     options?: import('../types').XReadOptions
   ): Promise<import('../types').StreamReadResult | null> {
     const args: string[] = []
-    if (options?.count) args.push('COUNT', options.count.toString())
-    if (options?.block) args.push('BLOCK', options.block.toString())
+    if (options?.count) {
+      args.push('COUNT', options.count.toString())
+    }
+    if (options?.block) {
+      args.push('BLOCK', options.block.toString())
+    }
     args.push('STREAMS')
     const keys: string[] = []
     const ids: string[] = []
@@ -696,7 +703,9 @@ export class BunRedisClient implements RedisClientContract {
     args.push(...keys, ...ids)
     try {
       const result = await this.sendCommand('XREAD', args)
-      if (!result) return null
+      if (!result) {
+        return null
+      }
       if (!Array.isArray(result) && typeof result === 'object') {
         return Object.entries(result) as any
       }
@@ -713,8 +722,12 @@ export class BunRedisClient implements RedisClientContract {
     options?: import('../types').XReadOptions
   ): Promise<import('../types').StreamReadResult | null> {
     const args: string[] = ['GROUP', group, consumer]
-    if (options?.count) args.push('COUNT', options.count.toString())
-    if (options?.block) args.push('BLOCK', options.block.toString())
+    if (options?.count) {
+      args.push('COUNT', options.count.toString())
+    }
+    if (options?.block) {
+      args.push('BLOCK', options.block.toString())
+    }
     args.push('STREAMS')
     const keys: string[] = []
     const ids: string[] = []
@@ -725,7 +738,9 @@ export class BunRedisClient implements RedisClientContract {
     args.push(...keys, ...ids)
     try {
       const result = await this.sendCommand('XREADGROUP', args)
-      if (!result) return null
+      if (!result) {
+        return null
+      }
       if (!Array.isArray(result) && typeof result === 'object') {
         return Object.entries(result) as any
       }
@@ -747,7 +762,9 @@ export class BunRedisClient implements RedisClientContract {
       const id = (args[0] as string) || '$'
       const mkstream = args[1] as boolean
       cmdArgs.push(id)
-      if (mkstream) cmdArgs.push('MKSTREAM')
+      if (mkstream) {
+        cmdArgs.push('MKSTREAM')
+      }
     } else if (command === 'DELCONSUMER') {
       const consumer = args[0] as string
       cmdArgs.push(consumer)
@@ -779,7 +796,9 @@ export class BunRedisClient implements RedisClientContract {
   ): Promise<import('../types').StreamEntry[]> {
     const prefixedKey = this.prefixKey(key)
     const args: string[] = [prefixedKey, start, end]
-    if (count) args.push('COUNT', count.toString())
+    if (count) {
+      args.push('COUNT', count.toString())
+    }
     const result = await this.sendCommand('XRANGE', args)
     return (result as any) || []
   }
@@ -792,7 +811,9 @@ export class BunRedisClient implements RedisClientContract {
   ): Promise<import('../types').StreamEntry[]> {
     const prefixedKey = this.prefixKey(key)
     const args: string[] = [prefixedKey, end, start]
-    if (count) args.push('COUNT', count.toString())
+    if (count) {
+      args.push('COUNT', count.toString())
+    }
     const result = await this.sendCommand('XREVRANGE', args)
     return (result as any) || []
   }
@@ -800,7 +821,9 @@ export class BunRedisClient implements RedisClientContract {
   async xtrim(key: string, maxlen: number, approximate?: boolean): Promise<number> {
     const prefixedKey = this.prefixKey(key)
     const args: string[] = [prefixedKey, 'MAXLEN']
-    if (approximate) args.push('~')
+    if (approximate) {
+      args.push('~')
+    }
     args.push(maxlen.toString())
     const result = await this.sendCommand('XTRIM', args)
     return Number(result)
@@ -819,23 +842,74 @@ export class BunRedisClient implements RedisClientContract {
 class BunRedisPipeline implements RedisPipelineContract {
   private commands: Array<{ method: string; args: unknown[] }> = []
   constructor(private client: BunRedisClient) {}
-  get(key: string): this { this.commands.push({ method: 'get', args: [key] }); return this }
-  set(key: string, value: string, options?: SetOptions): this { this.commands.push({ method: 'set', args: [key, value, options] }); return this }
-  del(...keys: string[]): this { this.commands.push({ method: 'del', args: keys }); return this }
-  incr(key: string): this { this.commands.push({ method: 'incr', args: [key] }); return this }
-  decr(key: string): this { this.commands.push({ method: 'decr', args: [key] }); return this }
-  hget(key: string, field: string): this { this.commands.push({ method: 'hget', args: [key, field] }); return this }
-  hset(key: string, field: string, value: string): this { this.commands.push({ method: 'hset', args: [key, field, value] }); return this }
-  hgetall(key: string): this { this.commands.push({ method: 'hgetall', args: [key] }); return this }
-  lpush(key: string, ...values: string[]): this { this.commands.push({ method: 'lpush', args: [key, ...values] }); return this }
-  rpush(key: string, ...values: string[]): this { this.commands.push({ method: 'rpush', args: [key, ...values] }); return this }
-  lpop(key: string): this { this.commands.push({ method: 'lpop', args: [key] }); return this }
-  rpop(key: string): this { this.commands.push({ method: 'rpop', args: [key] }); return this }
-  sadd(key: string, ...members: string[]): this { this.commands.push({ method: 'sadd', args: [key, ...members] }); return this }
-  srem(key: string, ...members: string[]): this { this.commands.push({ method: 'srem', args: [key, ...members] }); return this }
-  smembers(key: string): this { this.commands.push({ method: 'smembers', args: [key] }); return this }
-  sismember(key: string, member: string): this { this.commands.push({ method: 'sismember', args: [key, member] }); return this }
-  scard(key: string): this { this.commands.push({ method: 'scard', args: [key] }); return this }
+  get(key: string): this {
+    this.commands.push({ method: 'get', args: [key] })
+    return this
+  }
+  set(key: string, value: string, options?: SetOptions): this {
+    this.commands.push({ method: 'set', args: [key, value, options] })
+    return this
+  }
+  del(...keys: string[]): this {
+    this.commands.push({ method: 'del', args: keys })
+    return this
+  }
+  incr(key: string): this {
+    this.commands.push({ method: 'incr', args: [key] })
+    return this
+  }
+  decr(key: string): this {
+    this.commands.push({ method: 'decr', args: [key] })
+    return this
+  }
+  hget(key: string, field: string): this {
+    this.commands.push({ method: 'hget', args: [key, field] })
+    return this
+  }
+  hset(key: string, field: string, value: string): this {
+    this.commands.push({ method: 'hset', args: [key, field, value] })
+    return this
+  }
+  hgetall(key: string): this {
+    this.commands.push({ method: 'hgetall', args: [key] })
+    return this
+  }
+  lpush(key: string, ...values: string[]): this {
+    this.commands.push({ method: 'lpush', args: [key, ...values] })
+    return this
+  }
+  rpush(key: string, ...values: string[]): this {
+    this.commands.push({ method: 'rpush', args: [key, ...values] })
+    return this
+  }
+  lpop(key: string): this {
+    this.commands.push({ method: 'lpop', args: [key] })
+    return this
+  }
+  rpop(key: string): this {
+    this.commands.push({ method: 'rpop', args: [key] })
+    return this
+  }
+  sadd(key: string, ...members: string[]): this {
+    this.commands.push({ method: 'sadd', args: [key, ...members] })
+    return this
+  }
+  srem(key: string, ...members: string[]): this {
+    this.commands.push({ method: 'srem', args: [key, ...members] })
+    return this
+  }
+  smembers(key: string): this {
+    this.commands.push({ method: 'smembers', args: [key] })
+    return this
+  }
+  sismember(key: string, member: string): this {
+    this.commands.push({ method: 'sismember', args: [key, member] })
+    return this
+  }
+  scard(key: string): this {
+    this.commands.push({ method: 'scard', args: [key] })
+    return this
+  }
   async exec(): Promise<PipelineResult> {
     const promises = this.commands.map(async (cmd) => {
       try {

@@ -135,7 +135,7 @@ describe('HeartbeatManager', () => {
     const calls = mockQueueManager._driver.reportHeartbeat.mock.calls
     expect(calls.length).toBe(1)
 
-    const payload = calls[0]![0] as Record<string, unknown>
+    const payload = calls[0]?.[0] as Record<string, unknown>
     expect(payload.id).toBe('my-worker')
     expect(payload.status).toBe('online')
     expect((payload.metrics as Record<string, unknown>).stats).toMatchObject({
@@ -163,7 +163,7 @@ describe('HeartbeatManager', () => {
     const calls = mockQueueManager._driver.publishLog.mock.calls
     expect(calls.length).toBe(1)
 
-    const payload = calls[0]![0] as Record<string, unknown>
+    const payload = calls[0]?.[0] as Record<string, unknown>
     expect(payload.level).toBe('info')
     expect(payload.message).toBe('Test message')
     expect(payload.jobId).toBe('job-123')

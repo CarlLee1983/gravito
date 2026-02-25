@@ -82,7 +82,9 @@ describe('BunBufferedPersistence', () => {
     // 清理定時器與 flush 狀態，避免測試間互相干擾
     if (bp) {
       const timer = (bp as unknown as Record<string, unknown>).flushTimer
-      if (timer) clearTimeout(timer as ReturnType<typeof setTimeout>)
+      if (timer) {
+        clearTimeout(timer as ReturnType<typeof setTimeout>)
+      }
     }
   })
 

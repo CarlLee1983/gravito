@@ -97,7 +97,9 @@ export class ForgeService {
     } finally {
       this.activeTasks--
       const next = this.waitingTasks.shift()
-      if (next) next()
+      if (next) {
+        next()
+      }
     }
   }
 
@@ -131,21 +133,35 @@ export class ForgeService {
 
   private async getProcessor(input: FileInput): Promise<Processor> {
     const mimeType = await this.getMimeType(input)
-    if (this.videoProcessor.supports(mimeType)) return this.videoProcessor
-    if (this.imageProcessor.supports(mimeType)) return this.imageProcessor
+    if (this.videoProcessor.supports(mimeType)) {
+      return this.videoProcessor
+    }
+    if (this.imageProcessor.supports(mimeType)) {
+      return this.imageProcessor
+    }
     throw new Error(`Unsupported file type: ${mimeType}`)
   }
 
   private async getMimeType(input: FileInput): Promise<string> {
-    if (input.mimeType) return input.mimeType
+    if (input.mimeType) {
+      return input.mimeType
+    }
     const sniffed = await sniffMimeType(input.source)
-    if (sniffed) return sniffed
+    if (sniffed) {
+      return sniffed
+    }
     if (input.filename) {
       const ext = input.filename.split('.').pop()?.toLowerCase()
       const mimeMap: Record<string, string> = {
-        mp4: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime',
-        avi: 'video/x-msvideo', jpg: 'image/jpeg', jpeg: 'image/jpeg',
-        png: 'image/png', webp: 'image/webp', gif: 'image/gif',
+        mp4: 'video/mp4',
+        webm: 'video/webm',
+        mov: 'video/quicktime',
+        avi: 'video/x-msvideo',
+        jpg: 'image/jpeg',
+        jpeg: 'image/jpeg',
+        png: 'image/png',
+        webp: 'image/webp',
+        gif: 'image/gif',
       }
       return mimeMap[ext || ''] || 'application/octet-stream'
     }
@@ -172,19 +188,32 @@ export class ForgeService {
     outputPath: string,
     options: PackageResultsOptions = {}
   ): Promise<PackageResultsOutput> {
-    if (!this.statusStore) throw new Error('[ForgeService] statusStore 未設定')
+    if (!this.statusStore) {
+      throw new Error('[ForgeService] statusStore 未設定')
+    }
     const entries: Record<string, string | Blob | ArrayBuffer | Uint8Array> = {}
     const errors: Array<{ jobId: string; error: string }> = []
     let fileCount = 0
     for (const jobId of jobIds) {
       try {
         const status = await this.statusStore.get(jobId)
-        if (!status) { errors.push({ jobId, error: '作業不存在' }); continue }
-        if (status.status !== 'completed') { errors.push({ jobId, error: `作業尚未完成（${status.status}）` }); continue }
-        if (!status.result) { errors.push({ jobId, error: '作業無輸出' }); continue }
+        if (!status) {
+          errors.push({ jobId, error: '作業不存在' })
+          continue
+        }
+        if (status.status !== 'completed') {
+          errors.push({ jobId, error: `作業尚未完成（${status.status}）` })
+          continue
+        }
+        if (!status.result) {
+          errors.push({ jobId, error: '作業無輸出' })
+          continue
+        }
         const output = status.result
         const fileName = this.extractFileName(output)
-        if (options.pattern && !this.matchesPattern(fileName, options.pattern)) continue
+        if (options.pattern && !this.matchesPattern(fileName, options.pattern)) {
+          continue
+        }
         const fileData = await this.readOutputFile(output)
         if (fileData) {
           entries[`${jobId}/${fileName}`] = fileData
@@ -202,7 +231,9 @@ export class ForgeService {
   }
 
   async downloadResults(jobId: string, outputDir: string): Promise<readonly FileOutput[]> {
-    if (!this.statusStore) throw new Error('[ForgeService] statusStore 未設定')
+    if (!this.statusStore) {
+      throw new Error('[ForgeService] statusStore 未設定')
+    }
     const status = await this.statusStore.get(jobId)
     if (!status || status.status !== 'completed' || !status.result) {
       throw new Error(`[ForgeService] 作業不存在或尚未完成：${jobId}`)
@@ -213,28 +244,42 @@ export class ForgeService {
       await this.runtime.mkdir(outputDir, { recursive: true })
     } catch {}
     const fileData = await this.readOutputFile(output)
-    if (!fileData) throw new Error(`[ForgeService] 無法讀取輸出檔案`)
+    if (!fileData) {
+      throw new Error(`[ForgeService] 無法讀取輸出檔案`)
+    }
     const localPath = `${outputDir}/${fileName}`
     await this.runtime.writeFile(localPath, fileData)
     return [{ ...output, path: localPath }]
   }
 
   private extractFileName(output: FileOutput): string {
-    if (output.path) return output.path.split('/').pop() ?? 'output'
-    if (output.url) return output.url.split('/').pop()?.split('?')[0] ?? 'output'
+    if (output.path) {
+      return output.path.split('/').pop() ?? 'output'
+    }
+    if (output.url) {
+      return output.url.split('/').pop()?.split('?')[0] ?? 'output'
+    }
     return `output-${crypto.randomUUID().slice(0, 8)}`
   }
 
   private async readOutputFile(output: FileOutput): Promise<Uint8Array | null> {
     if (output.path) {
-      try { return await this.runtime.readFile(output.path) } catch { return null }
+      try {
+        return await this.runtime.readFile(output.path)
+      } catch {
+        return null
+      }
     }
     if (output.url && this.storage) {
       try {
         const storageKey = this.extractStorageKey(output.url)
         const blob = await this.storage.get(storageKey)
-        if (blob) return new Uint8Array(await blob.arrayBuffer())
-      } catch { return null }
+        if (blob) {
+          return new Uint8Array(await blob.arrayBuffer())
+        }
+      } catch {
+        return null
+      }
     }
     return null
   }
@@ -243,7 +288,9 @@ export class ForgeService {
     try {
       const parsed = new URL(url)
       return parsed.pathname.slice(1)
-    } catch { return url }
+    } catch {
+      return url
+    }
   }
 
   private matchesPattern(fileName: string, pattern: string): boolean {

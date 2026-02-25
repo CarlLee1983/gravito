@@ -51,7 +51,9 @@ export class HeartbeatManager {
    * 啟動心跳定時器。
    */
   start(): void {
-    if (this.timer) return
+    if (this.timer) {
+      return
+    }
 
     this.timer = setInterval(async () => {
       await this.sendHeartbeat()
@@ -79,7 +81,9 @@ export class HeartbeatManager {
   async sendHeartbeat(): Promise<void> {
     try {
       const driver = this.queueManager.getDriver(this.options.connectionName)
-      if (!driver.reportHeartbeat) return
+      if (!driver.reportHeartbeat) {
+        return
+      }
 
       const os = require('node:os')
       const mem = process.memoryUsage()
@@ -125,7 +129,9 @@ export class HeartbeatManager {
   async publishLog(level: string, message: string, jobId?: string): Promise<void> {
     try {
       const driver = this.queueManager.getDriver(this.options.connectionName)
-      if (!driver.publishLog) return
+      if (!driver.publishLog) {
+        return
+      }
 
       await driver.publishLog(
         {

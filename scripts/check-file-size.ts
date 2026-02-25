@@ -120,15 +120,13 @@ function printHeader(): void {
 
 function printSuccess(stats: ScanStats): void {
   console.log(
-    `${GREEN}✅ All files within limits (0 files > ${formatNumber(LINE_LIMIT)} lines)${RESET}`,
+    `${GREEN}✅ All files within limits (0 files > ${formatNumber(LINE_LIMIT)} lines)${RESET}`
   )
   printSummary(stats)
 }
 
 function printWarnings(stats: ScanStats): void {
-  console.log(
-    `${YELLOW}${BOLD}⚠️  Files exceeding ${formatNumber(LINE_LIMIT)} line limit:${RESET}`,
-  )
+  console.log(`${YELLOW}${BOLD}⚠️  Files exceeding ${formatNumber(LINE_LIMIT)} line limit:${RESET}`)
   console.log()
 
   for (const file of stats.oversizedFiles) {
@@ -136,13 +134,13 @@ function printWarnings(stats: ScanStats): void {
     const lineStr = `${formatNumber(file.lineCount)} lines`
     const severity = file.lineCount > LINE_LIMIT * 2 ? RED : YELLOW
     console.log(
-      `  ${severity}•${RESET} ${BLUE}${file.relativePath}${RESET}: ${severity}${BOLD}${lineStr}${RESET}`,
+      `  ${severity}•${RESET} ${BLUE}${file.relativePath}${RESET}: ${severity}${BOLD}${lineStr}${RESET}`
     )
     // 顯示超出比例
     const overBy = file.lineCount - LINE_LIMIT
     const percent = Math.round((overBy / LINE_LIMIT) * 100)
     console.log(
-      `    ${DIM}(${formatNumber(overBy)} lines over limit, ${filename}, +${percent}%)${RESET}`,
+      `    ${DIM}(${formatNumber(overBy)} lines over limit, ${filename}, +${percent}%)${RESET}`
     )
   }
 
@@ -152,19 +150,21 @@ function printWarnings(stats: ScanStats): void {
 function printSummary(stats: ScanStats): void {
   console.log()
   console.log(`${BOLD}Summary:${RESET}`)
-  console.log(`  ${DIM}-${RESET} Total files scanned:  ${BOLD}${formatNumber(stats.totalFiles)}${RESET}`)
+  console.log(
+    `  ${DIM}-${RESET} Total files scanned:  ${BOLD}${formatNumber(stats.totalFiles)}${RESET}`
+  )
   console.log(
     `  ${DIM}-${RESET} Files > ${formatNumber(LINE_LIMIT)} lines: ${
       stats.oversizedFiles.length > 0
         ? `${YELLOW}${BOLD}${stats.oversizedFiles.length}${RESET}`
         : `${GREEN}${BOLD}0${RESET}`
-    }`,
+    }`
   )
 
   if (stats.maxFile) {
     const maxFilename = basename(stats.maxFile.relativePath)
     console.log(
-      `  ${DIM}-${RESET} Max file size:        ${BOLD}${formatNumber(stats.maxFile.lineCount)} lines${RESET} ${DIM}(${maxFilename})${RESET}`,
+      `  ${DIM}-${RESET} Max file size:        ${BOLD}${formatNumber(stats.maxFile.lineCount)} lines${RESET} ${DIM}(${maxFilename})${RESET}`
     )
   }
   console.log()

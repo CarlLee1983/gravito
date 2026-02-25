@@ -90,11 +90,15 @@ function setCookieHeader(c: Context, name: string, value: string, options: CsrfC
  * 解析 Cookie header 字串（不依賴 Bun.CookieMap 以保持可攜性）
  */
 function parseCookies(header: string): Record<string, string> {
-  if (!header) return {}
+  if (!header) {
+    return {}
+  }
   const out: Record<string, string> = {}
   for (const part of header.split(';')) {
     const eqIdx = part.indexOf('=')
-    if (eqIdx === -1) continue
+    if (eqIdx === -1) {
+      continue
+    }
     const key = part.slice(0, eqIdx).trim()
     const val = part.slice(eqIdx + 1).trim()
     out[key] = decodeURIComponent(val)

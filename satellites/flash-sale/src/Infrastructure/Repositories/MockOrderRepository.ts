@@ -5,7 +5,6 @@
  * 用於快取優化測試與性能基準測試
  */
 
-import type { PlanetCore } from '@gravito/core'
 import type { IOrderRepository } from '../../Application/Contracts/IOrderRepository'
 import { type Order, type OrderItem, OrderStatus } from '../../Domain/Models'
 
@@ -18,8 +17,6 @@ export class MockOrderRepository implements IOrderRepository {
   private orders: Map<string, Order> = new Map()
   private ordersByUserId: Map<string, string[]> = new Map() // userId -> orderId[] 索引
   private orderCounter = 0
-
-  constructor(_core?: PlanetCore) {}
 
   /**
    * 根據 ID 查詢訂單

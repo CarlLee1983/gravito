@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import { encodeBinaryJobFrame, isGravitoJobFrame } from '../src/drivers/BinaryJobFrame'
 import { RedisDriver } from '../src/drivers/RedisDriver'
 import type { SerializedJob } from '../src/types'
@@ -47,7 +47,9 @@ function createMockRedisClientWithBufferSupport() {
   const stringStore = new Map<string, string>()
 
   const getList = (key: string): Array<string | Buffer> => {
-    if (!store.has(key)) store.set(key, [])
+    if (!store.has(key)) {
+      store.set(key, [])
+    }
     return store.get(key)!
   }
 
@@ -63,7 +65,9 @@ function createMockRedisClientWithBufferSupport() {
 
     async rpop(key: string, count?: number): Promise<string | string[] | null> {
       const list = getList(key)
-      if (list.length === 0) return null
+      if (list.length === 0) {
+        return null
+      }
       if (count !== undefined) {
         const items = list
           .splice(list.length - count, count)
@@ -71,7 +75,9 @@ function createMockRedisClientWithBufferSupport() {
         return items.length > 0 ? items : null
       }
       const item = list.pop()
-      if (item === undefined) return null
+      if (item === undefined) {
+        return null
+      }
       return Buffer.isBuffer(item) ? item.toString('utf8') : (item as string)
     },
 
@@ -96,7 +102,7 @@ function createMockRedisClientWithBufferSupport() {
       return stringStore.get(key) ?? null
     },
 
-    async set(key: string, value: string, ...args: any[]): Promise<'OK'> {
+    async set(key: string, value: string, ..._args: any[]): Promise<'OK'> {
       stringStore.set(key, value)
       return 'OK'
     },
@@ -110,7 +116,9 @@ function createMockRedisClientWithBufferSupport() {
     },
 
     async zadd(key: string, score: number, member: string): Promise<number> {
-      if (!zsets.has(key)) zsets.set(key, [])
+      if (!zsets.has(key)) {
+        zsets.set(key, [])
+      }
       const zset = zsets.get(key)!
       zset.push({ score, member })
       zset.sort((a, b) => a.score - b.score)
@@ -129,7 +137,9 @@ function createMockRedisClientWithBufferSupport() {
     },
 
     async zrem(key: string, ...members: string[]): Promise<number> {
-      if (!zsets.has(key)) return 0
+      if (!zsets.has(key)) {
+        return 0
+      }
       const zset = zsets.get(key)!
       const memberSet = new Set(members)
       const before = zset.length
@@ -156,7 +166,9 @@ function createMockRedisClientWithBufferSupport() {
 
     async rpopBuffer(key: string, count?: number): Promise<Buffer | Buffer[] | null> {
       const list = getList(key)
-      if (list.length === 0) return null
+      if (list.length === 0) {
+        return null
+      }
       if (count !== undefined) {
         const items = list
           .splice(list.length - count, count)
@@ -164,7 +176,9 @@ function createMockRedisClientWithBufferSupport() {
         return items.length > 0 ? items : null
       }
       const item = list.pop()
-      if (item === undefined) return null
+      if (item === undefined) {
+        return null
+      }
       return Buffer.isBuffer(item) ? item : Buffer.from(item as string)
     },
 
@@ -176,7 +190,7 @@ function createMockRedisClientWithBufferSupport() {
         .map((v) => (Buffer.isBuffer(v) ? v : Buffer.from(v as string)))
     },
 
-    async eval(script: string, numKeys: number, ...args: any[]): Promise<any> {
+    async eval(_script: string, _numKeys: number, ..._args: any[]): Promise<any> {
       // 模擬簡單的 Lua eval：失敗讓 fallback 接管
       throw new Error('[MockRedis] eval not supported in tests, use fallback')
     },
@@ -222,20 +236,20 @@ describe('RedisDriver Binary Path（支援 Buffer API）', () => {
     const store = client._getStore()
     const list = store.get('test:default')
     expect(list).toBeDefined()
-    expect(list!.length).toBe(1)
-    expect(Buffer.isBuffer(list![0])).toBe(true)
+    expect(list?.length).toBe(1)
+    expect(Buffer.isBuffer(list?.[0])).toBe(true)
     // 確認 Buffer 以 Magic bytes 開頭
-    const buf = list![0] as Buffer
+    const buf = list?.[0] as Buffer
     expect(buf[0]).toBe(0x47)
     expect(buf[1]).toBe(0x4a)
 
     // Pop 並驗證 round-trip
     const popped = await driver.pop('default')
     expect(popped).not.toBeNull()
-    expect(popped!.id).toBe('binary-roundtrip-001')
-    expect(popped!.type).toBe('binary')
-    expect(popped!.data).toBeInstanceOf(Uint8Array)
-    expect(popped!.data).toEqual(new Uint8Array([0xde, 0xad, 0xbe, 0xef]))
+    expect(popped?.id).toBe('binary-roundtrip-001')
+    expect(popped?.type).toBe('binary')
+    expect(popped?.data).toBeInstanceOf(Uint8Array)
+    expect(popped?.data).toEqual(new Uint8Array([0xde, 0xad, 0xbe, 0xef]))
   })
 
   it('Binary job Metadata 完整保留（attempts, groupId, priority）', async () => {
@@ -253,12 +267,12 @@ describe('RedisDriver Binary Path（支援 Buffer API）', () => {
     const popped = await driver.pop('default')
 
     expect(popped).not.toBeNull()
-    expect(popped!.attempts).toBe(3)
-    expect(popped!.maxAttempts).toBe(5)
-    expect(popped!.groupId).toBe('order-group-1')
-    expect(popped!.priority).toBe('high')
-    expect(popped!.className).toBe('ProcessOrderJob')
-    expect(popped!.retryAfterSeconds).toBe(2)
+    expect(popped?.attempts).toBe(3)
+    expect(popped?.maxAttempts).toBe(5)
+    expect(popped?.groupId).toBe('order-group-1')
+    expect(popped?.priority).toBe('high')
+    expect(popped?.className).toBe('ProcessOrderJob')
+    expect(popped?.retryAfterSeconds).toBe(2)
   })
 
   it('Multiple push/pop：多個 binary job 批次正確處理', async () => {
@@ -297,11 +311,11 @@ describe('RedisDriver Binary Path（支援 Buffer API）', () => {
     // 從 DLQ 讀取
     const failedJobs = await driver.getFailed('default')
     expect(failedJobs.length).toBe(1)
-    expect(failedJobs[0]!.id).toBe('dlq-test-001')
-    expect(failedJobs[0]!.type).toBe('binary')
-    expect(failedJobs[0]!.error).toBe('Network timeout')
-    expect(failedJobs[0]!.data).toBeInstanceOf(Uint8Array)
-    expect(failedJobs[0]!.data).toEqual(new Uint8Array([0xff, 0xfe, 0xfd]))
+    expect(failedJobs[0]?.id).toBe('dlq-test-001')
+    expect(failedJobs[0]?.type).toBe('binary')
+    expect(failedJobs[0]?.error).toBe('Network timeout')
+    expect(failedJobs[0]?.data).toBeInstanceOf(Uint8Array)
+    expect(failedJobs[0]?.data).toEqual(new Uint8Array([0xff, 0xfe, 0xfd]))
   })
 
   it('pushMany：批次 binary jobs 正確推送', async () => {
@@ -317,7 +331,7 @@ describe('RedisDriver Binary Path（支援 Buffer API）', () => {
     const store = client._getStore()
     const list = store.get('test:default')
     expect(list).toBeDefined()
-    expect(list!.length).toBe(3)
+    expect(list?.length).toBe(3)
 
     // 所有存入的應為 Buffer
     for (const item of list!) {
@@ -341,9 +355,9 @@ describe('RedisDriver Binary Path（支援 Buffer API）', () => {
     const popped = await driver.pop('default')
 
     expect(popped).not.toBeNull()
-    expect((popped!.data as Uint8Array)[0]).toBe(0xca)
-    expect((popped!.data as Uint8Array)[9]).toBe(0xfe)
-    expect((popped!.data as Uint8Array)[5]).toBe(0x00)
+    expect((popped?.data as Uint8Array)[0]).toBe(0xca)
+    expect((popped?.data as Uint8Array)[9]).toBe(0xfe)
+    expect((popped?.data as Uint8Array)[5]).toBe(0x00)
   })
 })
 
@@ -366,12 +380,12 @@ describe('RedisDriver Legacy Path（JSON job 向後相容）', () => {
     const list = store.get('test:default')
     expect(list).toBeDefined()
     // JSON job 應存為 string（非 Buffer）
-    expect(typeof list![0]).toBe('string')
+    expect(typeof list?.[0]).toBe('string')
 
     const popped = await driver.pop('default')
     expect(popped).not.toBeNull()
-    expect(popped!.id).toBe('json-legacy-001')
-    expect(popped!.type).toBe('json')
+    expect(popped?.id).toBe('json-legacy-001')
+    expect(popped?.type).toBe('json')
   })
 
   it('Push class job（type === "class"）向後相容', async () => {
@@ -387,8 +401,8 @@ describe('RedisDriver Legacy Path（JSON job 向後相容）', () => {
 
     const popped = await driver.pop('default')
     expect(popped).not.toBeNull()
-    expect(popped!.type).toBe('class')
-    expect(popped!.className).toBe('SendNotificationJob')
+    expect(popped?.type).toBe('class')
+    expect(popped?.className).toBe('SendNotificationJob')
   })
 
   it('pushMany：legacy JSON jobs 批次正確處理', async () => {
@@ -427,7 +441,9 @@ describe('Mixed Format（同一 queue 交替 binary + JSON）', () => {
     const jobs: SerializedJob[] = []
     for (let i = 0; i < 3; i++) {
       const job = await driver.pop('default')
-      if (job) jobs.push(job)
+      if (job) {
+        jobs.push(job)
+      }
     }
 
     expect(jobs.length).toBe(3)
@@ -494,8 +510,8 @@ describe('無 Buffer API 降級測試', () => {
 
     const popped = await driver.pop('default')
     expect(popped).not.toBeNull()
-    expect(popped!.id).toBe('degraded-json-001')
-    expect(popped!.type).toBe('json')
+    expect(popped?.id).toBe('degraded-json-001')
+    expect(popped?.type).toBe('json')
   })
 
   it('不支援 lrangeBuffer：getFailed 降級為 string lrange', async () => {
@@ -504,8 +520,8 @@ describe('無 Buffer API 降級測試', () => {
 
     const failed = await driver.getFailed('default')
     expect(failed.length).toBe(1)
-    expect(failed[0]!.id).toBe('degraded-fail-001')
-    expect(failed[0]!.error).toBe('Test error')
+    expect(failed[0]?.id).toBe('degraded-fail-001')
+    expect(failed[0]?.error).toBe('Test error')
   })
 })
 

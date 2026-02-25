@@ -1,4 +1,3 @@
-import { CircuitBreaker, type CircuitBreakerOptions } from './events/CircuitBreaker'
 import { DeadLetterQueue } from './events/DeadLetterQueue'
 import type { EventBackend } from './events/EventBackend'
 import type { EventOptions } from './events/EventOptions'
@@ -25,7 +24,7 @@ export type {
   ListenerOptions,
 } from './hooks/types'
 
-// 補充直接匯入（確保與 @gravito/atlas 型別相容）
+// 導入類型供內部使用
 import type {
   ActionCallback,
   FilterCallback,

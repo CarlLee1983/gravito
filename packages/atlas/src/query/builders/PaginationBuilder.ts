@@ -12,7 +12,10 @@ import { buildCursorWhereClause, decodeCursor, encodeCursor } from '../../utils/
 export class PaginationBuilder<T = Record<string, unknown>> {
   constructor(
     private readonly queryBuilder: QueryBuilderContract<T> & {
-      orderByClause: { getOrders(): { column: string; direction: string }[]; orderBy(column: string, direction: string): void }
+      orderByClause: {
+        getOrders(): { column: string; direction: string }[]
+        orderBy(column: string, direction: string): void
+      }
       modelClass?: { primaryKey?: string }
       clone(): QueryBuilderContract<T>
       limit(value: number): QueryBuilderContract<T>
@@ -105,7 +108,10 @@ export class PaginationBuilder<T = Record<string, unknown>> {
     }
 
     // 多抓一筆以偵測是否有更多記錄
-    const rows = await this.queryBuilder.clone().limit(limit + 1).get()
+    const rows = await this.queryBuilder
+      .clone()
+      .limit(limit + 1)
+      .get()
 
     const hasMore = rows.length > limit
     const data = hasMore ? rows.slice(0, limit) : rows

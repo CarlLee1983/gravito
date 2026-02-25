@@ -11,9 +11,7 @@ import { LibraryHandleImpl } from './LibraryHandle'
 /**
  * FFI loader interface for dependency injection
  */
-export interface FFILoader {
-  (path: string, symbols: FFISymbols): any // eslint-disable-line @typescript-eslint/no-explicit-any
-}
+export type FFILoader = (path: string, symbols: FFISymbols) => any // eslint-disable-line @typescript-eslint/no-explicit-any
 
 /**
  * Default FFI loader using bun:ffi

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { describe, expect, it, mock } from 'bun:test'
 import { jobSourceGenerator } from '../../src/consumer/JobSourceGenerator'
 import type { JobSourceOptions } from '../../src/consumer/types'
 import { Job } from '../../src/Job'
@@ -73,7 +73,9 @@ describe('JobSourceGenerator', () => {
       const qm = createMockQueueManager({
         pop: () => {
           callCount++
-          if (callCount === 1) return Promise.resolve(new TestJob('job1'))
+          if (callCount === 1) {
+            return Promise.resolve(new TestJob('job1'))
+          }
           return Promise.resolve(null)
         },
       })
@@ -88,11 +90,13 @@ describe('JobSourceGenerator', () => {
         controller.signal
       )) {
         results.push(...fetchResult.jobs)
-        if (results.length >= 1) break
+        if (results.length >= 1) {
+          break
+        }
       }
 
       expect(results.length).toBe(1)
-      expect(results[0]!.id).toBe('job1')
+      expect(results[0]?.id).toBe('job1')
     })
 
     it('should terminate when keepAlive=false and queue is empty', async () => {
@@ -111,7 +115,9 @@ describe('JobSourceGenerator', () => {
       )) {
         results.push(fetchResult)
         // 不 break，讓 generator 自然結束
-        if (results.length > 5) break // 安全保護
+        if (results.length > 5) {
+          break // 安全保護
+        }
       }
 
       // keepAlive=false 且佇列為空時應結束（不應超過幾輪）
@@ -138,7 +144,9 @@ describe('JobSourceGenerator', () => {
 
       for await (const _ of generator) {
         count++
-        if (count > 5) break
+        if (count > 5) {
+          break
+        }
       }
 
       expect(count).toBe(0)
@@ -153,7 +161,9 @@ describe('JobSourceGenerator', () => {
       const qm = createMockQueueManager({
         popBlocking: (_qs: string[], _t: number) => {
           callCount++
-          if (callCount === 1) return Promise.resolve(new TestJob('blocked-job'))
+          if (callCount === 1) {
+            return Promise.resolve(new TestJob('blocked-job'))
+          }
           return new Promise((resolve) => setTimeout(() => resolve(null), 5000))
         },
       })
@@ -180,7 +190,7 @@ describe('JobSourceGenerator', () => {
       }
 
       expect(results.length).toBe(1)
-      expect(results[0]!.id).toBe('blocked-job')
+      expect(results[0]?.id).toBe('blocked-job')
     })
 
     it('should set didBlock=true when using popBlocking', async () => {
@@ -349,7 +359,9 @@ describe('JobSourceGenerator', () => {
           controller.abort()
           break
         }
-        if (controller.signal.aborted) break
+        if (controller.signal.aborted) {
+          break
+        }
         break
       }
 
@@ -366,7 +378,9 @@ describe('JobSourceGenerator', () => {
         pop: () => {
           callCount++
           // 第一次回傳 job，之後返回空
-          if (callCount === 1) return Promise.resolve(new TestJob('j1'))
+          if (callCount === 1) {
+            return Promise.resolve(new TestJob('j1'))
+          }
           return Promise.resolve(null)
         },
       })

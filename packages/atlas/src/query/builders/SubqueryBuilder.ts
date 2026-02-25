@@ -102,9 +102,17 @@ export class SubqueryBuilder<T = Record<string, unknown>> {
     }
 
     if (meta.type === 'belongsTo') {
-      subQuery.whereColumn(`${relatedTable}.${localKey}`, '=', `${this.getTableName()}.${foreignKey}`)
+      subQuery.whereColumn(
+        `${relatedTable}.${localKey}`,
+        '=',
+        `${this.getTableName()}.${foreignKey}`
+      )
     } else {
-      subQuery.whereColumn(`${relatedTable}.${foreignKey}`, '=', `${this.getTableName()}.${localKey}`)
+      subQuery.whereColumn(
+        `${relatedTable}.${foreignKey}`,
+        '=',
+        `${this.getTableName()}.${localKey}`
+      )
     }
 
     if (callback) {

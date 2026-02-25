@@ -165,8 +165,12 @@ export class JobExecutor {
    * 檢查是否達到 maxRequests，若達到則發射事件並回傳 shouldStop=true。
    */
   private checkMaxRequests(job: Job): boolean {
-    if (!this.options.maxRequests) return false
-    if (this.stats.processed < this.options.maxRequests) return false
+    if (!this.options.maxRequests) {
+      return false
+    }
+    if (this.stats.processed < this.options.maxRequests) {
+      return false
+    }
 
     this.log(`Max requests reached: ${this.stats.processed}/${this.options.maxRequests}`)
     this.emitter.emit('max_requests_reached', {
@@ -189,7 +193,9 @@ export class JobExecutor {
    * 輸出 debug 日誌（僅在 debug=true 時）。
    */
   private log(message: string, data?: unknown): void {
-    if (!this.options.debug) return
+    if (!this.options.debug) {
+      return
+    }
 
     const timestamp = new Date().toISOString()
     const prefix = `[JobExecutor:${this.options.workerId}] [${timestamp}]`

@@ -1,7 +1,7 @@
-import type { CircuitBreakerOptions } from '../events/CircuitBreaker'
-import type { EventQueueConfig } from '../events/EventPriorityQueue'
-import type { EventBackend } from '../events/EventBackend'
 import type { ConnectionContract } from '@gravito/atlas'
+import type { CircuitBreakerOptions } from '../events/CircuitBreaker'
+import type { EventBackend } from '../events/EventBackend'
+import type { EventQueueConfig } from '../events/EventPriorityQueue'
 
 /**
  * Callback function for filters (transforms values).

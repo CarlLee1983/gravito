@@ -4,7 +4,6 @@ import type {
   KafkaAdminClient,
   KafkaClientFactory,
   KafkaConsumerClient,
-  KafkaDriverFullConfig,
   KafkaProducerClient,
 } from '../../../../src/drivers/kafka/types'
 import type { SerializedJob } from '../../../../src/types'

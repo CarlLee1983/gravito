@@ -57,8 +57,16 @@
       "Bash(bunx tsup:*)",
       "Bash(git stash:*)",
       "Bash(__NEW_LINE_cb38be22b94e4a9c__ echo \"\")",
-      "Bash(git rev-list:*)"
+      "Bash(git rev-list:*)",
+      "Bash(tail:*)",
+      "Bash(rm -rf /Users/carl/Dev/Carl/gravito-core/.turbo && cd /Users/carl/Dev/Carl/gravito-core/packages/atlas && bun tsc -p tsconfig.json --noEmit 2>&1)",
+      "Bash(echo \"✅ $pkg passed\")",
+      "Bash(echo \"❌ $pkg failed\")",
+      "Bash(done)"
     ]
   },
-  "enabledMcpjsonServers": ["pencil", "context7"]
+  "enabledMcpjsonServers": [
+    "pencil",
+    "context7"
+  ]
 }

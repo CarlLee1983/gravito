@@ -132,9 +132,15 @@ function scanPackages(): ScanStats {
 // ============================================================================
 
 function _formatSideEffectsValue(value: boolean | string[] | undefined): string {
-  if (value === false) return `${DIM}false (tree-shakeable)${RESET}`
-  if (value === true) return `${YELLOW}true (有副作用)${RESET}`
-  if (Array.isArray(value)) return `${CYAN}[${value.join(', ')}]${RESET}`
+  if (value === false) {
+    return `${DIM}false (tree-shakeable)${RESET}`
+  }
+  if (value === true) {
+    return `${YELLOW}true (有副作用)${RESET}`
+  }
+  if (Array.isArray(value)) {
+    return `${CYAN}[${value.join(', ')}]${RESET}`
+  }
   return `${DIM}(未宣告)${RESET}`
 }
 
@@ -146,7 +152,7 @@ function printHeader(): void {
 
 function printSuccess(stats: ScanStats): void {
   console.log(
-    `${GREEN}✅ All packages declare sideEffects properly (${stats.withSideEffects}/${stats.total})${RESET}`,
+    `${GREEN}✅ All packages declare sideEffects properly (${stats.withSideEffects}/${stats.total})${RESET}`
   )
   printSummary(stats)
 }
@@ -163,13 +169,17 @@ function printWarnings(stats: ScanStats): void {
 
   console.log()
   console.log(`${DIM}Tip: Add one of the following to each package.json:${RESET}`)
-  console.log(`  ${DIM}"sideEffects": false${RESET}  ${DIM}# Pure ESM, fully tree-shakeable${RESET}`)
+  console.log(
+    `  ${DIM}"sideEffects": false${RESET}  ${DIM}# Pure ESM, fully tree-shakeable${RESET}`
+  )
   console.log(`  ${DIM}"sideEffects": true${RESET}   ${DIM}# Has global side effects${RESET}`)
   console.log(
-    `  ${DIM}"sideEffects": ["*.css"]${RESET}  ${DIM}# Only specific files have side effects${RESET}`,
+    `  ${DIM}"sideEffects": ["*.css"]${RESET}  ${DIM}# Only specific files have side effects${RESET}`
   )
   console.log()
-  console.log(`${DIM}Impact: ${count} package(s) may not be properly tree-shaken by bundlers${RESET}`)
+  console.log(
+    `${DIM}Impact: ${count} package(s) may not be properly tree-shaken by bundlers${RESET}`
+  )
 
   printSummary(stats)
 }
@@ -179,19 +189,17 @@ function printSummary(stats: ScanStats): void {
   console.log(`${BOLD}Summary:${RESET}`)
   console.log(`  ${DIM}-${RESET} Total packages checked: ${BOLD}${stats.total}${RESET}`)
   console.log(
-    `  ${DIM}-${RESET} With sideEffects:       ${GREEN}${BOLD}${stats.withSideEffects}${RESET}`,
+    `  ${DIM}-${RESET} With sideEffects:       ${GREEN}${BOLD}${stats.withSideEffects}${RESET}`
   )
   console.log(
     `  ${DIM}-${RESET} Without sideEffects:    ${
       stats.withoutSideEffects.length > 0
         ? `${YELLOW}${BOLD}${stats.withoutSideEffects.length}${RESET}`
         : `${GREEN}${BOLD}0${RESET}`
-    }`,
+    }`
   )
   if (stats.privatePackages > 0) {
-    console.log(
-      `  ${DIM}-${RESET} Private (skipped):      ${DIM}${stats.privatePackages}${RESET}`,
-    )
+    console.log(`  ${DIM}-${RESET} Private (skipped):      ${DIM}${stats.privatePackages}${RESET}`)
   }
   console.log()
 }

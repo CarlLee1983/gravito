@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import type { ConsumerOptions } from '../../src/Consumer'
 import { StreamingConsumer } from '../../src/consumer/StreamingConsumer'
 import { Job } from '../../src/Job'
@@ -27,7 +27,9 @@ class SleepJob extends Job {
     public readonly gid?: string
   ) {
     super()
-    if (gid) this.groupId = gid
+    if (gid) {
+      this.groupId = gid
+    }
   }
 
   async handle(): Promise<void> {

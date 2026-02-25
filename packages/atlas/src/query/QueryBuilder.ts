@@ -12,6 +12,9 @@ import type {
   PaginateResult,
   QueryBuilderContract,
 } from '../types'
+import { AggregateBuilder } from './builders/AggregateBuilder'
+import { MutationBuilder } from './builders/MutationBuilder'
+import { PaginationBuilder } from './builders/PaginationBuilder'
 import {
   GroupByClause,
   HavingClause,
@@ -24,9 +27,6 @@ import {
 import { Expression } from './Expression'
 import { NPlusOneDetector } from './NPlusOneDetector'
 import type { RelationshipResolver } from './RelationshipResolver'
-import { AggregateBuilder } from './builders/AggregateBuilder'
-import { MutationBuilder } from './builders/MutationBuilder'
-import { PaginationBuilder } from './builders/PaginationBuilder'
 
 export class QueryBuilderError extends Error {
   constructor(message: string) {

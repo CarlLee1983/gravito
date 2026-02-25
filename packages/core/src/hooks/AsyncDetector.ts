@@ -22,8 +22,7 @@ export class AsyncDetector {
   /**
    * 儲存 listener type override（callback -> type）。
    */
-  private listenerTypeOverrides: WeakMap<ActionCallback, 'sync' | 'async' | 'auto'> =
-    new WeakMap()
+  private listenerTypeOverrides: WeakMap<ActionCallback, 'sync' | 'async' | 'auto'> = new WeakMap()
 
   /**
    * 設定 listener 的 type override。

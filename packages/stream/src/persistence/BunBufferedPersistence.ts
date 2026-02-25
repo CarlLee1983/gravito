@@ -180,10 +180,18 @@ function cborDecodeValue(state: DecoderState): unknown {
   // major type 7：特殊值
   if (major === 7) {
     state.pos++
-    if (info === 20) return false // false
-    if (info === 21) return true // true
-    if (info === 22) return null // null
-    if (info === 23) return undefined
+    if (info === 20) {
+      return false // false
+    }
+    if (info === 21) {
+      return true // true
+    }
+    if (info === 22) {
+      return null // null
+    }
+    if (info === 23) {
+      return undefined
+    }
     if (info === 27) {
       // IEEE 754 double
       const v = state.view.getFloat64(state.pos, false)
@@ -254,16 +262,36 @@ function encodeArchiveEntry(queue: string, job: SerializedJob, status: string): 
     createdAt: job.createdAt,
   }
   // 選擇性欄位（只序列化有值的，減少 payload 大小）
-  if (job.className !== undefined) entry.className = job.className
-  if (job.delaySeconds !== undefined) entry.delaySeconds = job.delaySeconds
-  if (job.attempts !== undefined) entry.attempts = job.attempts
-  if (job.maxAttempts !== undefined) entry.maxAttempts = job.maxAttempts
-  if (job.groupId !== undefined) entry.groupId = job.groupId
-  if (job.retryAfterSeconds !== undefined) entry.retryAfterSeconds = job.retryAfterSeconds
-  if (job.retryMultiplier !== undefined) entry.retryMultiplier = job.retryMultiplier
-  if (job.error !== undefined) entry.error = job.error
-  if (job.failedAt !== undefined) entry.failedAt = job.failedAt
-  if (job.priority !== undefined) entry.priority = job.priority
+  if (job.className !== undefined) {
+    entry.className = job.className
+  }
+  if (job.delaySeconds !== undefined) {
+    entry.delaySeconds = job.delaySeconds
+  }
+  if (job.attempts !== undefined) {
+    entry.attempts = job.attempts
+  }
+  if (job.maxAttempts !== undefined) {
+    entry.maxAttempts = job.maxAttempts
+  }
+  if (job.groupId !== undefined) {
+    entry.groupId = job.groupId
+  }
+  if (job.retryAfterSeconds !== undefined) {
+    entry.retryAfterSeconds = job.retryAfterSeconds
+  }
+  if (job.retryMultiplier !== undefined) {
+    entry.retryMultiplier = job.retryMultiplier
+  }
+  if (job.error !== undefined) {
+    entry.error = job.error
+  }
+  if (job.failedAt !== undefined) {
+    entry.failedAt = job.failedAt
+  }
+  if (job.priority !== undefined) {
+    entry.priority = job.priority
+  }
 
   return cborEncodeValue(entry) as Uint8Array
 }
@@ -402,14 +430,18 @@ function frameUnpackAll(data: Uint8Array): Uint8Array[] {
   let pos = 0
 
   while (pos < data.length) {
-    if (pos + 4 > data.length) break
+    if (pos + 4 > data.length) {
+      break
+    }
 
     // 手動讀取 4 bytes 大端序長度（避免 DataView 相容性問題）
     const len = (data[pos] << 24) | (data[pos + 1] << 16) | (data[pos + 2] << 8) | data[pos + 3]
     pos += 4
 
     // 防衛：確保長度合理（正整數且不超出邊界）
-    if (len < 0 || pos + len > data.length) break
+    if (len < 0 || pos + len > data.length) {
+      break
+    }
 
     // 複製 payload bytes（確保獨立的 Uint8Array）
     const payload = new Uint8Array(len)
@@ -858,7 +890,9 @@ export class BunBufferedPersistence implements PersistenceAdapter {
    * 確保定時 flush 計時器正在執行
    */
   private ensureFlushTimer(): void {
-    if (this.flushTimer) return
+    if (this.flushTimer) {
+      return
+    }
 
     this.flushTimer = setTimeout(() => {
       this.flush().catch((err: unknown) => {
