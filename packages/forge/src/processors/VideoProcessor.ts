@@ -1,7 +1,5 @@
-import { randomUUID } from 'node:crypto'
-import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
-import { getRuntimeAdapter } from '@gravito/core'
+import { getRuntimeAdapter, runtimeMkdir } from '@gravito/core'
 import { FFmpegAdapter } from '../adapters/FFmpegAdapter'
 import { FFmpegWasmAdapter } from '../adapters/FFmpegWasmAdapter'
 import type {
@@ -81,7 +79,7 @@ export class VideoProcessor extends BaseProcessor {
    */
   async getMetadata(input: FileInput): Promise<Record<string, unknown>> {
     // Ensure temp directory exists
-    await mkdir(this.tempDir, { recursive: true })
+    await runtimeMkdir(this.runtime, this.tempDir, { recursive: true })
 
     const inputPath = await this.getInputPath(input)
     const isTempInput = typeof input.source !== 'string'
@@ -112,7 +110,7 @@ export class VideoProcessor extends BaseProcessor {
     options: ProcessOptions & { onProgress?: (progress: ProcessingProgress) => void }
   ): Promise<FileOutput> {
     // Ensure temp directory exists
-    await mkdir(this.tempDir, { recursive: true })
+    await runtimeMkdir(this.runtime, this.tempDir, { recursive: true })
 
     // Get input file path. This might create a temporary file if input.source is a Blob/File.
     const inputPath = await this.getInputPath(input)
@@ -120,7 +118,7 @@ export class VideoProcessor extends BaseProcessor {
 
     // Generate output path
     const extension = options.hls ? 'm3u8' : options.format || 'mp4'
-    const outputFilename = `${randomUUID()}.${extension}`
+    const outputFilename = `${crypto.randomUUID()}.${extension}`
     const outputPath = join(this.tempDir, outputFilename)
 
     let watermarkPath: string | undefined
@@ -191,7 +189,7 @@ export class VideoProcessor extends BaseProcessor {
     }
 
     // Write Blob/File to temp directory
-    const inputFilename = input.filename || `${randomUUID()}.tmp`
+    const inputFilename = input.filename || `${crypto.randomUUID()}.tmp`
     const inputPath = join(this.tempDir, inputFilename)
     await this.runtime.writeFile(inputPath, input.source)
     return inputPath
@@ -283,7 +281,7 @@ export class VideoProcessor extends BaseProcessor {
         '-hls_list_size',
         String(hlsOptions.playlistSize || 0),
         '-hls_segment_filename',
-        join(this.tempDir, `${randomUUID()}_%03d.ts`)
+        join(this.tempDir, `${crypto.randomUUID()}_%03d.ts`)
       )
     }
 

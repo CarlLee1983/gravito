@@ -8,7 +8,6 @@
  * @since 1.0.0
  */
 
-import { PhotonAdapter } from './adapters/PhotonAdapter'
 import { type HttpAdapter, isHttpAdapter } from './adapters/types'
 import { ConfigManager } from './ConfigManager'
 import { Container } from './Container'
@@ -88,7 +87,13 @@ export type GravitoConfig = {
   config?: Record<string, unknown>
   orbits?: (new () => GravitoOrbit)[] | GravitoOrbit[]
   /**
-   * HTTP Adapter to use. Defaults to PhotonAdapter.
+   * HTTP Adapter to use. Defaults to BunNativeAdapter in Bun environments.
+   * In non-Bun environments, must be provided explicitly.
+   * @example
+   * ```typescript
+   * import { PhotonAdapter } from '@gravito/photon/adapter'
+   * new PlanetCore({ adapter: new PhotonAdapter() })
+   * ```
    * @since 2.0.0
    */
   adapter?: HttpAdapter
@@ -267,25 +272,18 @@ export class PlanetCore {
    * Initialize Prometheus metrics asynchronously.
    *
    * @internal
+   * @deprecated Prometheus setup has been moved to @gravito/monitor
    */
   private async initializePrometheusAsync(
-    obsConfig: GravitoConfig['observability']
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _obsConfig: GravitoConfig['observability']
   ): Promise<void> {
-    try {
-      const { setupPrometheusMetrics } = await import('./observability/Metrics')
-      const result = await setupPrometheusMetrics({
-        port: obsConfig?.prometheus?.port ?? 9090,
-        prefix: obsConfig?.metricsPrefix ?? 'gravito_event_',
-      })
-
-      if (result) {
-        this.logger.info(
-          `[Observability] Prometheus metrics at http://localhost:${result.port}${result.endpoint}`
-        )
-      }
-    } catch (error) {
-      this.logger.error('[Observability] Failed to setup Prometheus:', error)
-    }
+    // Prometheus metrics setup has been moved to @gravito/monitor
+    // This method is retained for backwards compatibility but is now a no-op.
+    this.logger.debug(
+      '[Observability] Prometheus setup moved to @gravito/monitor. ' +
+        'Use monitor package for metrics initialization.'
+    )
   }
 
   /**
@@ -562,13 +560,18 @@ export class PlanetCore {
     // Priority:
     // 1. Config 'adapter' option (explicit)
     // 2. BunNativeAdapter (if Bun is detected)
-    // 3. PhotonAdapter (fallback for Node/others)
+    // 3. No fallback — caller must provide adapter explicitly
     if (options.adapter) {
       this._adapter = options.adapter
     } else if (typeof Bun !== 'undefined') {
       this._adapter = new BunNativeAdapter()
     } else {
-      this._adapter = new PhotonAdapter()
+      throw new Error(
+        'No HTTP adapter provided. In non-Bun environments, ' +
+          'you must explicitly provide an adapter:\n\n' +
+          '  import { PhotonAdapter } from "@gravito/photon/adapter"\n' +
+          '  new PlanetCore({ adapter: new PhotonAdapter() })'
+      )
     }
 
     /**
@@ -782,10 +785,12 @@ export class PlanetCore {
     } else if (isHttpAdapter(orbitApp)) {
       subAdapter = orbitApp
     } else {
-      // It's likely a native app instance (e.g. Hono)
-      // Wrap it in PhotonAdapter to conform to HttpAdapter interface.
-      // PhotonAdapter.mount() will handle optimization if parent is also Photon.
-      subAdapter = new PhotonAdapter({}, orbitApp)
+      throw new Error(
+        'mountOrbit() expects a PlanetCore instance or HttpAdapter. ' +
+          'To mount a native app (e.g. Hono), wrap it first:\n\n' +
+          '  import { PhotonAdapter } from "@gravito/photon/adapter"\n' +
+          '  core.mountOrbit("/path", new PhotonAdapter({}, honoApp))'
+      )
     }
 
     this.adapter.mount(path, subAdapter)

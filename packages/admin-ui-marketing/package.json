@@ -1,5 +1,6 @@
 {
   "name": "@gravito/admin-ui-marketing",
+  "sideEffects": false,
   "version": "0.1.1",
   "type": "module",
   "main": "dist/index.js",

@@ -1,5 +1,6 @@
 {
   "name": "@gravito/photon",
+  "sideEffects": false,
   "version": "1.0.1",
   "description": "Gravito Photon HTTP engine (compat wrapper)",
   "main": "./dist/index.js",
@@ -9,6 +10,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./adapter": {
+      "types": "./dist/adapter/index.d.ts",
+      "default": "./dist/adapter/index.js"
     },
     "./client": {
       "types": "./dist/client.d.ts",
@@ -86,6 +91,7 @@
     "test:integration": "test $(find tests -name '*.integration.test.ts' 2>/dev/null | wc -l) -gt 0 && find tests -name '*.integration.test.ts' -print0 | xargs -0 bun test --timeout=10000 || echo 'No integration tests found'"
   },
   "dependencies": {
+    "@gravito/core": "workspace:*",
     "@hono/zod-openapi": "^1.2.0",
     "cborg": "^4.3.2",
     "hono": "^4.11.0",

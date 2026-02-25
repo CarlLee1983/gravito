@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
+import { PhotonAdapter } from '@gravito/photon/adapter'
 import { BunNativeAdapter } from '../src/adapters/bun/BunNativeAdapter'
-import { PhotonAdapter } from '../src/adapters/PhotonAdapter'
 import { PlanetCore } from '../src/PlanetCore'
 
 describe('Orbit Middleware Isolation', () => {

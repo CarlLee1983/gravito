@@ -1,5 +1,5 @@
 graph TB
-  %% Gravito 模組依賴關係圖（代碼層級分析 v2）
+  %% Gravito 模組依賴關係圖
 
   %% 節點定義
   admin-ui-support["admin-ui-support<br/><small>v0.1.1</small>"]
@@ -38,7 +38,9 @@ graph TB
   admin-shell-react["admin-shell-react<br/><small>v0.1.1</small>"]
   ripple["ripple<br/><small>v4.0.1</small>"]
   admin-ui-order["admin-ui-order<br/><small>v0.1.1</small>"]
+  xenon["xenon<br/><small>v1.0.0</small>"]
   stasis["stasis<br/><small>v3.1.1</small>"]
+  nova["nova<br/><small>v1.0.0</small>"]
   ion["ion<br/><small>v4.0.1</small>"]
   cosmos["cosmos<br/><small>v3.2.1</small>"]
   dark-matter["dark-matter<br/><small>v1.1.1</small>"]
@@ -52,6 +54,7 @@ graph TB
   nebula["nebula<br/><small>v4.1.1</small>"]
   flux["flux<br/><small>v3.0.2</small>"]
   enterprise["enterprise<br/><small>v1.0.4</small>"]
+  chromatic["chromatic<br/><small>v1.0.0</small>"]
   admin-ui-marketing["admin-ui-marketing<br/><small>v0.1.1</small>"]
   fortify["fortify<br/><small>v3.1.1</small>"]
   core["core<br/><small>v1.6.1</small>"]
@@ -65,130 +68,75 @@ graph TB
   monitor["monitor<br/><small>v3.1.1</small>"]
   mass["mass<br/><small>v3.0.2</small>"]
   ripple-client["ripple-client<br/><small>v4.0.0-alpha.1</small>"]
-  plasma["plasma<br/><small>v1.0.0</small>"]
+  plasma["plasma<br/><small>v2.0.0</small>"]
   admin-ui-dashboard["admin-ui-dashboard<br/><small>v0.1.1</small>"]
   admin-ui-ad["admin-ui-ad<br/><small>v0.1.1</small>"]
-  satellite-invoice["satellite-invoice<br/><small>v0.1.5</small>"]
-  satellite-analytics["satellite-analytics<br/><small>v0.1.5</small>"]
-  satellite-membership["satellite-membership<br/><small>v0.1.8</small>"]
-  satellite-logistics["satellite-logistics<br/><small>v0.1.5</small>"]
-  satellite-announcement["satellite-announcement<br/><small>v0.1.5</small>"]
-  satellite-marketing["satellite-marketing<br/><small>v0.1.5</small>"]
-  satellite-cart["satellite-cart<br/><small>v0.1.5</small>"]
-  satellite-support["satellite-support<br/><small>v0.1.6</small>"]
-  satellite-news["satellite-news<br/><small>v0.1.5</small>"]
-  satellite-catalog["satellite-catalog<br/><small>v0.1.8</small>"]
-  satellite-payment["satellite-payment<br/><small>v0.1.5</small>"]
-  satellite-ad["satellite-ad<br/><small>v0.1.5</small>"]
-  satellite-inventory-lock["satellite-inventory-lock<br/><small>v0.1.1</small>"]
-  satellite-commerce["satellite-commerce<br/><small>v0.1.1</small>"]
-  satellite-flash-sale["satellite-flash-sale<br/><small>v0.1.1</small>"]
 
   %% 依賴關係
+  admin-ui-support --> admin-sdk
   admin-ui-support --> admin-shell-react
+  admin-ui-support --> ripple-client
   impulse --> core
-  signal --> core
-  signal --> prism
+  flare --> core
   launchpad-dashboard --> ripple-client
+  admin-ui-access --> admin-sdk
   admin-ui-access --> admin-shell-react
-  pulsar --> core
-  pulsar --> plasma
+  admin-ui-news --> admin-sdk
   admin-ui-news --> admin-shell-react
-  atlas --> core
-  spectrum --> core
-  spectrum --> atlas
   beam --> photon
+  photon --> core
   site --> core
-  site --> cosmos
   site --> monolith
+  site --> cosmos
+  site --> constellation
+  site --> photon
+  nebula-s3 --> nebula
+  radiance --> core
   luminosity-adapter-express --> luminosity
-  graphql --> atlas
-  forge --> core
-  forge --> stream
+  gravito --> pulse
   luminosity-adapter-photon --> luminosity
+  admin-ui-invoice --> admin-sdk
   admin-ui-invoice --> admin-shell-react
   launchpad --> core
+  launchpad --> enterprise
+  launchpad --> nova
   launchpad --> ripple
   launchpad --> stasis
-  launchpad --> enterprise
   zenith --> atlas
   zenith --> photon
   zenith --> quasar
   zenith --> stream
   freeze-vue --> freeze
-  sentinel --> core
-  sentinel --> photon
   freeze-react --> freeze
-  horizon --> core
-  pulse --> core
+  horizon --> nova
+  pulse --> chromatic
   pulse --> scaffold
-  pulse --> atlas
+  admin-ui-analytics --> admin-sdk
   admin-ui-analytics --> admin-shell-react
   admin-shell-react --> admin-sdk
+  admin-ui-order --> admin-sdk
   admin-ui-order --> admin-shell-react
-  stasis --> core
-  stasis --> plasma
-  prism --> core
-  luminosity --> core
-  quasar --> core
-  stream --> core
   stream --> atlas
+  stream --> core
   constellation --> stream
-  constellation --> core
+  constellation --> photon
+  admin-ui-catalog --> admin-sdk
   admin-ui-catalog --> admin-shell-react
   astral --> core
-  nebula --> core
+  astral --> impulse
+  enterprise --> core
+  admin-ui-marketing --> admin-sdk
   admin-ui-marketing --> admin-shell-react
-  fortify --> core
-  fortify --> sentinel
-  fortify --> signal
-  fortify --> atlas
-  core --> photon
   monolith --> mass
-  monolith --> core
   luminosity-cli --> luminosity
+  admin-ui-announcement --> admin-sdk
   admin-ui-announcement --> admin-shell-react
+  create-gravito-app --> pulse
   support-chat-widget --> ripple-client
+  admin-ui-dashboard --> admin-sdk
   admin-ui-dashboard --> admin-shell-react
+  admin-ui-ad --> admin-sdk
   admin-ui-ad --> admin-shell-react
-  satellite-invoice --> core
-  satellite-invoice --> enterprise
-  satellite-invoice --> atlas
-  satellite-analytics --> core
-  satellite-membership --> core
-  satellite-membership --> sentinel
-  satellite-membership --> enterprise
-  satellite-membership --> atlas
-  satellite-membership --> signal
-  satellite-logistics --> core
-  satellite-logistics --> enterprise
-  satellite-announcement --> core
-  satellite-announcement --> enterprise
-  satellite-marketing --> core
-  satellite-marketing --> enterprise
-  satellite-marketing --> atlas
-  satellite-cart --> core
-  satellite-cart --> enterprise
-  satellite-cart --> atlas
-  satellite-support --> core
-  satellite-support --> enterprise
-  satellite-news --> core
-  satellite-news --> enterprise
-  satellite-catalog --> core
-  satellite-catalog --> enterprise
-  satellite-catalog --> atlas
-  satellite-payment --> core
-  satellite-payment --> enterprise
-  satellite-ad --> core
-  satellite-ad --> enterprise
-  satellite-inventory-lock --> core
-  satellite-commerce --> core
-  satellite-commerce --> enterprise
-  satellite-commerce --> atlas
-  satellite-flash-sale --> core
-  satellite-flash-sale --> plasma
-  satellite-flash-sale --> stasis
-  satellite-flash-sale --> atlas
 
   %% Peer 依賴
   impulse -.peer.-> photon
@@ -221,6 +169,8 @@ graph TB
   ripple -.peer.-> core
   stasis -.peer.-> core
   stasis -.peer.-> plasma
+  nova -.peer.-> core
+  nova -.peer.-> chromatic
   ion -.peer.-> core
   ion -.peer.-> photon
   cosmos -.peer.-> core
@@ -240,21 +190,8 @@ graph TB
   monitor -.peer.-> photon
   mass -.peer.-> core
 
-  %% 隱式依賴（警告：package.json 未聲明）
-  atlas -. IMPLICIT .-> core
-  spectrum -. IMPLICIT .-> atlas
-  graphql -. IMPLICIT .-> atlas
-  pulse -. IMPLICIT .-> atlas
-  luminosity -. IMPLICIT .-> core
-  quasar -. IMPLICIT .-> core
-  fortify -. IMPLICIT .-> atlas
-  satellite-commerce -. IMPLICIT .-> enterprise
-  satellite-flash-sale -. IMPLICIT .-> plasma
-
   %% 樣式
   classDef core fill:#ffd700,stroke:#333,stroke-width:3px
-  classDef satellite fill:#ff9ff3,stroke:#333,stroke-width:2px
   classDef orbit fill:#4ecdc4,stroke:#333,stroke-width:2px
-  classDef implicit fill:#ff6b6b,stroke:#ff0000,stroke-width:2px
+  classDef infrastructure fill:#ff6b6b,stroke:#333,stroke-width:2px
   class core core
-  class satellite-invoice,satellite-analytics,satellite-membership,satellite-logistics,satellite-announcement,satellite-marketing,satellite-cart,satellite-support,satellite-news,satellite-catalog,satellite-payment,satellite-ad,satellite-inventory-lock,satellite-commerce,satellite-flash-sale satellite

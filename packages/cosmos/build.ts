@@ -1,6 +1,8 @@
 import { spawn } from 'bun'
 
-console.log('Building @gravito/cosmos...')
+const isDtsOnly = process.argv.includes('--dts-only')
+
+console.log(isDtsOnly ? 'Building @gravito/cosmos DTS...' : 'Building @gravito/cosmos...')
 
 // Clean dist
 await Bun.$`rm -rf dist`
@@ -12,8 +14,8 @@ const tsup = spawn(
     'tsup',
     'src/index.ts',
     '--format',
-    'esm,cjs',
-    '--dts',
+    isDtsOnly ? 'esm' : 'esm,cjs',
+    ...(isDtsOnly ? ['--dts', '--dts-only'] : ['--dts']),
     '--external',
     '@gravito/core,@gravito/photon',
     '--outDir',
@@ -27,9 +29,11 @@ const tsup = spawn(
 
 const tsupCode = await tsup.exited
 if (tsupCode !== 0) {
-  console.error('❌ tsup build failed')
+  console.error('\u274c tsup build failed')
   process.exit(1)
 }
 
-console.log('✅ Build complete!')
+// Type declaration generation is now handled by tsup --dts
+
+console.log('\u2705 Build complete!')
 process.exit(0)

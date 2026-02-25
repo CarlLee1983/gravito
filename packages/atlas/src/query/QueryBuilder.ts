@@ -12,7 +12,6 @@ import type {
   PaginateResult,
   QueryBuilderContract,
 } from '../types'
-import { buildCursorWhereClause, decodeCursor, encodeCursor } from '../utils/CursorEncoding'
 import {
   GroupByClause,
   HavingClause,
@@ -25,6 +24,9 @@ import {
 import { Expression } from './Expression'
 import { NPlusOneDetector } from './NPlusOneDetector'
 import type { RelationshipResolver } from './RelationshipResolver'
+import { AggregateBuilder } from './builders/AggregateBuilder'
+import { MutationBuilder } from './builders/MutationBuilder'
+import { PaginationBuilder } from './builders/PaginationBuilder'
 
 export class QueryBuilderError extends Error {
   constructor(message: string) {
@@ -137,6 +139,25 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   protected _isApplyingScopes = false
 
+  // ============================================================================
+  // 組合的特化建構器（Composed Specialized Builders）
+  // ============================================================================
+
+  /**
+   * 聚合操作委派建構器（count/sum/avg/min/max）
+   */
+  private readonly aggregateBuilder: AggregateBuilder
+
+  /**
+   * 寫入操作委派建構器（insert/update/delete/upsert/increment/decrement）
+   */
+  private readonly mutationBuilder: MutationBuilder<T>
+
+  /**
+   * 分頁操作委派建構器（paginate/cursorPaginate/chunk）
+   */
+  private readonly paginationBuilder: PaginationBuilder<T>
+
   /**
    * Initializes a new query builder.
    *
@@ -150,6 +171,25 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     table: string
   ) {
     this.tableName = table
+
+    // 初始化委派建構器
+    this.aggregateBuilder = new AggregateBuilder(
+      this.connection,
+      this.grammar,
+      () => this.tableName,
+      () => this.getCompiledQuery()
+    )
+
+    this.mutationBuilder = new MutationBuilder<T>(
+      this.connection,
+      this.grammar,
+      () => this.tableName,
+      () => this.getCompiledQuery(),
+      () => this.getBindings(),
+      (data) => this.update(data)
+    )
+
+    this.paginationBuilder = new PaginationBuilder<T>(this as any)
   }
 
   /**
@@ -955,43 +995,42 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   // ============================================================================
-  // AGGREGATE Execution Methods
+  // AGGREGATE Execution Methods（委派至 AggregateBuilder）
   // ============================================================================
 
   /**
    * Returns the count of matching records.
    */
   async count(column = '*'): Promise<number> {
-    const result = await this.aggregate('count', column)
-    return result ?? 0
+    return this.aggregateBuilder.count(column)
   }
 
   /**
    * Returns the maximum value of a column.
    */
   async max<V = number>(column: string): Promise<V | null> {
-    return this.aggregate('max', column) as Promise<V | null>
+    return this.aggregateBuilder.max<V>(column)
   }
 
   /**
    * Returns the minimum value of a column.
    */
   async min<V = number>(column: string): Promise<V | null> {
-    return this.aggregate('min', column) as Promise<V | null>
+    return this.aggregateBuilder.min<V>(column)
   }
 
   /**
    * Returns the average value of a column.
    */
   async avg(column: string): Promise<number | null> {
-    return this.aggregate('avg', column)
+    return this.aggregateBuilder.avg(column)
   }
 
   /**
    * Returns the sum of a column's values.
    */
   async sum(column: string): Promise<number> {
-    return (await this.aggregate('sum', column)) ?? 0
+    return this.aggregateBuilder.sum(column)
   }
 
   /**
@@ -999,31 +1038,11 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * @internal
    */
   protected async aggregate(func: string, column: string): Promise<number | null> {
-    const tracer = this.connection.getTracer()
-    const span = tracer?.startSpan(`Atlas:Aggregate ${func}`, {
-      'db.system': this.connection.getDriver().getDriverName(),
-      'db.operation': 'select',
-      'db.sql.table': this.tableName,
-    })
-
-    try {
-      const compiled = this.getCompiledQuery()
-      const sql = this.grammar.compileAggregate(compiled, { function: func, column })
-
-      if (span) {
-        span.setAttribute('db.statement', sql)
-      }
-
-      const result = await this.connection.raw<{ aggregate: number | null }>(sql, compiled.bindings)
-      const value = result.rows[0]?.aggregate
-      return value === null || value === undefined ? null : Number(value)
-    } finally {
-      span?.end()
-    }
+    return this.aggregateBuilder.runAggregate(func, column)
   }
 
   // ============================================================================
-  // WRITE Execution Methods
+  // WRITE Execution Methods（委派至 MutationBuilder）
   // ============================================================================
 
   /**
@@ -1035,55 +1054,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * @returns Array of inserted objects (with generated IDs if supported).
    */
   async insert(data: Partial<T> | Partial<T>[]): Promise<T[]> {
-    const tracer = this.connection.getTracer()
-    const span = tracer?.startSpan('Atlas:Insert', {
-      'db.system': this.connection.getDriver().getDriverName(),
-      'db.operation': 'insert',
-      'db.sql.table': this.tableName,
-    })
-
-    try {
-      const values = Array.isArray(data) ? data : [data]
-      if (values.length === 0) {
-        return []
-      }
-
-      const chunkSize = this.calculateOptimalChunkSize(values)
-      const results: T[] = []
-
-      if (values.length > chunkSize) {
-        return await this.connection.transaction(async (trx) => {
-          for (let i = 0; i < values.length; i += chunkSize) {
-            const chunk = values.slice(i, i + chunkSize)
-            const chunkResult = await trx.table<T>(this.tableName).insert(chunk)
-            results.push(...chunkResult)
-          }
-          return results
-        })
-      }
-
-      const allBindings: unknown[] = []
-      for (const row of values) {
-        allBindings.push(...Object.values(row as Record<string, unknown>))
-      }
-
-      const sql = this.grammar.compileInsert(
-        this.getCompiledQuery(),
-        values as Record<string, unknown>[]
-      )
-
-      if (span) {
-        span.setAttribute('db.statement', sql)
-      }
-
-      const result = await this.connection.raw<T>(sql, allBindings)
-      const rows = result.rows as T[]
-      // biome-ignore lint/suspicious/noExplicitAny: Attaching metadata to array
-      ;(rows as any)._queryResult = result
-      return rows
-    } finally {
-      span?.end()
-    }
+    return this.mutationBuilder.insert(data)
   }
 
   /**
@@ -1095,34 +1066,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * @throws {QueryBuilderError} If ID retrieval fails.
    */
   async insertGetId(data: Partial<T>, primaryKey = 'id'): Promise<number | bigint> {
-    const tracer = this.connection.getTracer()
-    const span = tracer?.startSpan('Atlas:InsertGetId', {
-      'db.system': this.connection.getDriver().getDriverName(),
-      'db.operation': 'insert',
-      'db.sql.table': this.tableName,
-    })
-
-    try {
-      const values = Object.values(data as Record<string, unknown>)
-      const sql = this.grammar.compileInsertGetId(
-        this.getCompiledQuery(),
-        data as Record<string, unknown>,
-        primaryKey
-      )
-
-      if (span) {
-        span.setAttribute('db.statement', sql)
-      }
-
-      const result = await this.connection.raw<Record<string, number | bigint>>(sql, values)
-      const id = result.rows[0]?.[primaryKey]
-      if (id === undefined) {
-        throw new QueryBuilderError('Failed to get insert ID')
-      }
-      return id
-    } finally {
-      span?.end()
-    }
+    return this.mutationBuilder.insertGetId(data, primaryKey)
   }
 
   /**
@@ -1132,64 +1076,14 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * @returns Count of affected rows.
    */
   async update(data: Partial<T>): Promise<number> {
-    const tracer = this.connection.getTracer()
-    const span = tracer?.startSpan('Atlas:Update', {
-      'db.system': this.connection.getDriver().getDriverName(),
-      'db.operation': 'update',
-      'db.sql.table': this.tableName,
-    })
-
-    try {
-      const values: unknown[] = []
-      for (const value of Object.values(data as Record<string, unknown>)) {
-        if (value instanceof Expression) {
-          values.push(...value.getBindings())
-        } else {
-          values.push(value)
-        }
-      }
-
-      const allBindings = [...values, ...this.getBindings()]
-
-      const compiled = this.getCompiledQuery()
-      compiled.bindings = allBindings
-
-      const sql = this.grammar.compileUpdate(compiled, data as Record<string, unknown>)
-
-      if (span) {
-        span.setAttribute('db.statement', sql)
-      }
-
-      const result = await this.connection.getDriver().execute(sql, allBindings)
-      return result.affectedRows
-    } finally {
-      span?.end()
-    }
+    return this.mutationBuilder.update(data)
   }
 
   /**
    * Specialized method for updating JSON fields.
    */
   async updateJson(column: string, value: unknown): Promise<number> {
-    const tracer = this.connection.getTracer()
-    const span = tracer?.startSpan('Atlas:UpdateJson', {
-      'db.system': this.connection.getDriver().getDriverName(),
-      'db.operation': 'update',
-      'db.sql.table': this.tableName,
-    })
-
-    try {
-      const sql = this.grammar.compileUpdateJson(this.getCompiledQuery(), column, value)
-
-      if (span) {
-        span.setAttribute('db.statement', sql)
-      }
-
-      const result = await this.connection.getDriver().execute(sql, [value, ...this.getBindings()])
-      return result.affectedRows
-    } finally {
-      span?.end()
-    }
+    return this.mutationBuilder.updateJson(column, value)
   }
 
   /**
@@ -1198,49 +1092,14 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Note: This performs a hard delete. For soft deletes, use the Model layer.
    */
   async delete(): Promise<number> {
-    const tracer = this.connection.getTracer()
-    const span = tracer?.startSpan('Atlas:Delete', {
-      'db.system': this.connection.getDriver().getDriverName(),
-      'db.operation': 'delete',
-      'db.sql.table': this.tableName,
-    })
-
-    try {
-      const sql = this.grammar.compileDelete(this.getCompiledQuery())
-
-      if (span) {
-        span.setAttribute('db.statement', sql)
-      }
-
-      const result = await this.connection.getDriver().execute(sql, this.getBindings())
-      return result.affectedRows
-    } finally {
-      span?.end()
-    }
+    return this.mutationBuilder.delete()
   }
 
   /**
    * Drops all records and resets auto-increment state.
    */
   async truncate(): Promise<void> {
-    const tracer = this.connection.getTracer()
-    const span = tracer?.startSpan('Atlas:Truncate', {
-      'db.system': this.connection.getDriver().getDriverName(),
-      'db.operation': 'truncate',
-      'db.sql.table': this.tableName,
-    })
-
-    try {
-      const sql = this.grammar.compileTruncate(this.getCompiledQuery())
-
-      if (span) {
-        span.setAttribute('db.statement', sql)
-      }
-
-      await this.connection.getDriver().execute(sql)
-    } finally {
-      span?.end()
-    }
+    return this.mutationBuilder.truncate()
   }
 
   // ============================================================================
@@ -1375,33 +1234,25 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   // ============================================================================
-  // INCREMENT/DECREMENT Methods
+  // INCREMENT/DECREMENT Methods（委派至 MutationBuilder）
   // ============================================================================
 
   /**
    * Atomically increments a numeric column.
    */
   async increment(column: string, amount = 1, extra: Partial<T> = {}): Promise<number> {
-    const data = {
-      ...extra,
-      [column]: new Expression(`${this.grammar.wrapColumn(column)} + ${amount}`),
-    } as Partial<T>
-    return this.update(data)
+    return this.mutationBuilder.increment(column, amount, extra)
   }
 
   /**
    * Atomically decrements a numeric column.
    */
   async decrement(column: string, amount = 1, extra: Partial<T> = {}): Promise<number> {
-    const data = {
-      ...extra,
-      [column]: new Expression(`${this.grammar.wrapColumn(column)} - ${amount}`),
-    } as Partial<T>
-    return this.update(data)
+    return this.mutationBuilder.decrement(column, amount, extra)
   }
 
   // ============================================================================
-  // UPSERT Method
+  // UPSERT Method（委派至 MutationBuilder）
   // ============================================================================
 
   /**
@@ -1417,39 +1268,18 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     uniqueBy: string | string[],
     update?: string[]
   ): Promise<number> {
-    const values = (Array.isArray(data) ? data : [data]) as Record<string, unknown>[]
-    if (values.length === 0) {
-      return 0
-    }
-
-    const uniqueByArray = Array.isArray(uniqueBy) ? uniqueBy : [uniqueBy]
-    const updateArray = update || Object.keys(values[0]).filter((k) => !uniqueByArray.includes(k))
-
-    const allBindings: unknown[] = []
-    for (const row of values) {
-      allBindings.push(...Object.values(row))
-    }
-
-    const sql = this.grammar.compileUpsert(
-      this.getCompiledQuery(),
-      values,
-      uniqueByArray,
-      updateArray
-    )
-    const result = await this.connection.getDriver().execute(sql, allBindings)
-
-    return result.affectedRows
+    return this.mutationBuilder.upsert(data, uniqueBy, update)
   }
 
   // ============================================================================
-  // PAGINATION Method
+  // PAGINATION Methods（委派至 PaginationBuilder）
   // ============================================================================
 
   /**
    * Alias for {@link paginate}.
    */
   async simplePaginate(perPage = 15, page = 1, primaryKey = 'id'): Promise<PaginateResult<T>> {
-    return this.paginate(perPage, page, primaryKey)
+    return this.paginationBuilder.simplePaginate(perPage, page, primaryKey)
   }
 
   /**
@@ -1498,71 +1328,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     direction: 'asc' | 'desc' = 'asc'
   ): Promise<CursorPaginateResult<T>> {
     this.ensureOwnState()
-
-    // Determine the primary key column name
-    const primaryKey = (this.modelClass as any)?.primaryKey ?? 'id'
-
-    // Apply cursor condition to WHERE clause
-    if (cursor) {
-      const payload = decodeCursor(cursor)
-      const { sql, bindings } = buildCursorWhereClause(payload, primaryKey)
-      this.whereRaw(sql, bindings)
-    }
-
-    // Ensure deterministic ordering
-    if (sortColumn !== primaryKey) {
-      // Only add sort column order if not already present
-      const existingOrders = this.orderByClause.getOrders()
-      const hasSortCol = existingOrders.some((o) => o.column === sortColumn)
-      if (!hasSortCol) {
-        this.orderByClause.orderBy(sortColumn, direction)
-      }
-    }
-    const existingOrders = this.orderByClause.getOrders()
-    const hasPkOrder = existingOrders.some((o) => o.column === primaryKey)
-    if (!hasPkOrder) {
-      this.orderByClause.orderBy(primaryKey, direction)
-    }
-
-    // Fetch limit + 1 to detect if there are more records
-    const rows = await this.clone()
-      .limit(limit + 1)
-      .get()
-
-    const hasMore = rows.length > limit
-    const data = hasMore ? rows.slice(0, limit) : rows
-
-    // Build next cursor from last record in the current page
-    let nextCursor: string | null = null
-    if (hasMore && data.length > 0) {
-      const lastRow = data[data.length - 1] as Record<string, unknown>
-      nextCursor = encodeCursor({
-        id: lastRow[primaryKey],
-        sortValue: lastRow[sortColumn] ?? lastRow[primaryKey],
-        sortColumn,
-        direction,
-      })
-    }
-
-    // Build prev cursor from first record of the current page
-    let prevCursor: string | null = null
-    if (cursor && data.length > 0) {
-      const firstRow = data[0] as Record<string, unknown>
-      prevCursor = encodeCursor({
-        id: firstRow[primaryKey],
-        sortValue: firstRow[sortColumn] ?? firstRow[primaryKey],
-        sortColumn,
-        direction: direction === 'asc' ? 'desc' : 'asc', // Reverse direction for prev
-      })
-    }
-
-    return {
-      data,
-      nextCursor,
-      prevCursor,
-      hasMore,
-      count: data.length,
-    }
+    return this.paginationBuilder.cursorPaginate(limit, cursor, sortColumn, direction)
   }
 
   /**
@@ -1575,52 +1341,14 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     size: number,
     callback: (results: T[]) => Promise<undefined | boolean>
   ): Promise<void> {
-    let page = 1
-    let count: number
-
-    do {
-      const results = await this.clone().paginate(size, page)
-      count = results.data.length
-
-      if (count === 0) {
-        break
-      }
-
-      const result = await callback(results.data)
-
-      if (result === false) {
-        break
-      }
-
-      page++
-    } while (count === size)
+    return this.paginationBuilder.chunk(size, callback)
   }
 
   /**
    * Returns a paginated result set with metadata.
    */
   async paginate(perPage = 15, page = 1, primaryKey = 'id'): Promise<PaginateResult<T>> {
-    this.ensureDeterministicOrder(primaryKey)
-
-    const total = await this.clone().count()
-
-    const data = await this.limit(perPage)
-      .offset((page - 1) * perPage)
-      .get()
-
-    const totalPages = Math.ceil(total / perPage)
-
-    return {
-      data,
-      pagination: {
-        page,
-        perPage,
-        total,
-        totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1,
-      },
-    }
+    return this.paginationBuilder.paginate(perPage, page, primaryKey)
   }
 
   /**
@@ -1820,18 +1548,5 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     this.ensureOwnState()
     this.removedScopes.add(name)
     return this
-  }
-
-  /**
-   * Optimizes chunk size to prevent too many bindings for the driver.
-   * @internal
-   */
-  private calculateOptimalChunkSize(values: Partial<T>[]): number {
-    const MAX_BINDINGS = 65000
-    const columnsCount = Object.keys(values[0] || {}).length || 1
-
-    const safeChunkSize = Math.floor(MAX_BINDINGS / columnsCount)
-
-    return Math.min(safeChunkSize, 1000)
   }
 }

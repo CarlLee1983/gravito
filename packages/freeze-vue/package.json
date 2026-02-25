@@ -1,5 +1,6 @@
 {
   "name": "@gravito/freeze-vue",
+  "sideEffects": false,
   "version": "1.0.0",
   "description": "Vue adapter for @gravito/freeze SSG module",
   "type": "module",

@@ -17,6 +17,9 @@ type CacheLike = {
  * Rate Limiting Middleware using Orbit Cache.
  * Requires an active CacheService implementation.
  * @public
+ * @deprecated Since v2.0.0. Use `@gravito/photon` middleware instead.
+ * Migration: `import { throttleRequests } from '@gravito/photon/middleware/security'`
+ * Note: New API is function-based: `throttleRequests({ maxAttempts, decaySeconds })` instead of `new ThrottleRequests(core).handle(max, decay)`
  */
 export class ThrottleRequests {
   private keyCache = new WeakMap<Request, string>()

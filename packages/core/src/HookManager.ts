@@ -1,203 +1,62 @@
-import type { ConnectionContract } from '@gravito/atlas'
-import { EventAggregationManager } from './events/aggregation/EventAggregationManager'
 import { CircuitBreaker, type CircuitBreakerOptions } from './events/CircuitBreaker'
 import { DeadLetterQueue } from './events/DeadLetterQueue'
 import type { EventBackend } from './events/EventBackend'
 import type { EventOptions } from './events/EventOptions'
-import { DEFAULT_EVENT_OPTIONS } from './events/EventOptions'
-import { EventPriorityQueue, type EventQueueConfig } from './events/EventPriorityQueue'
-import { IdempotencyCache } from './events/IdempotencyCache'
-import type { EventTask } from './events/types'
+import { EventPriorityQueue } from './events/EventPriorityQueue'
+import { ActionManager } from './hooks/ActionManager'
+import { AsyncDetector } from './hooks/AsyncDetector'
+import {
+  createPersistentDLQHandler,
+  requeueDLQBatch as dlqRequeueBatch,
+  requeueDLQEntry as dlqRequeueEntry,
+  requeuePersistentDLQBatch as persistentDlqRequeueBatch,
+  requeuePersistentDLQEntry as persistentDlqRequeueEntry,
+} from './hooks/dlq-operations'
+import { FilterManager } from './hooks/FilterManager'
+import { MigrationWarner } from './hooks/MigrationWarner'
 import { DeadLetterQueueManager } from './reliability/DeadLetterQueueManager'
 
-/**
- * Callback function for filters (transforms values).
- * @public
- */
-export type FilterCallback<T = unknown> = (value: T, ...args: unknown[]) => Promise<T> | T
+// 重新匯出所有 hook 相關型別，維持向後相容性
+export type {
+  ActionCallback,
+  FilterCallback,
+  HookManagerConfig,
+  ListenerInfo,
+  ListenerOptions,
+} from './hooks/types'
 
-/**
- * Callback function for actions (side effects).
- * @public
- */
-export type ActionCallback<TArgs = unknown> = (args: TArgs) => Promise<void> | void
-
-/**
- * Options for listener registration.
- * @public
- */
-export interface ListenerOptions {
-  /**
-   * Explicitly specify the listener type.
-   * - 'sync': Force synchronous dispatch for this listener
-   * - 'async': Force asynchronous dispatch for this listener
-   * - 'auto': Auto-detect based on function signature (default)
-   * @default 'auto'
-   */
-  type?: 'sync' | 'async' | 'auto'
-
-  /**
-   * Circuit breaker configuration for this listener.
-   */
-  circuitBreaker?: CircuitBreakerOptions
-}
-
-/**
- * Information about a registered listener.
- * @public
- */
-export interface ListenerInfo {
-  /**
-   * The callback function.
-   */
-  callback: ActionCallback
-
-  /**
-   * Whether the listener is considered async.
-   */
-  isAsync: boolean
-
-  /**
-   * The explicit type override, if any.
-   */
-  typeOverride?: 'sync' | 'async' | 'auto'
-}
-
-/**
- * Configuration for HookManager.
- * @public
- */
-export interface HookManagerConfig {
-  /**
-   * Enable async event dispatch by default.
-   * When true, doAction() will automatically use async dispatch if any listener is async.
-   * @default false
-   */
-  asyncByDefault?: boolean
-
-  /**
-   * Migration mode for backward compatibility.
-   * - 'sync': All events use synchronous dispatch (legacy mode)
-   * - 'hybrid': Auto-detect and use async for async listeners (recommended)
-   * - 'async': All events use async dispatch (future mode)
-   * @default 'sync'
-   */
-  migrationMode?: 'sync' | 'hybrid' | 'async'
-
-  /**
-   * Enable deprecation warnings for synchronous event dispatch.
-   * @default false
-   */
-  showDeprecationWarnings?: boolean
-
-  /**
-   * Enable Dead Letter Queue for failed events.
-   * @default true
-   */
-  enableDLQ?: boolean
-
-  /**
-   * Configuration for the event priority queue (Backpressure).
-   */
-  queue?: EventQueueConfig
-
-  /**
-   * Custom event backend for distributed processing.
-   */
-  backend?: EventBackend
-
-  /**
-   * Database connection for persistent DLQ (optional).
-   * If provided, failed events after max retries will be persisted to database.
-   */
-  db?: ConnectionContract
-
-  /**
-   * Enable persistent DLQ for failed events (requires db).
-   * @default false
-   */
-  enablePersistentDLQ?: boolean
-
-  /**
-   * Message Queue Bridge for distributed event processing via Bull Queue.
-   * When provided, enables dispatchQueued() method for routing events to Redis-backed queue.
-   */
-  messageQueueBridge?: any
-
-  /**
-   * Event aggregation configuration (FS-102).
-   * Enables deduplication and micro-batching for improved throughput.
-   */
-  aggregation?: any
-}
+// 補充直接匯入（確保與 @gravito/atlas 型別相容）
+import type {
+  ActionCallback,
+  FilterCallback,
+  HookManagerConfig,
+  ListenerInfo,
+  ListenerOptions,
+} from './hooks/types'
 
 /**
  * Manager for WordPress-style hooks (actions and filters).
+ *
+ * 此為 facade 類別，將職責委派給專門的管理器：
+ * - FilterManager：處理 filter hook 的登記與執行
+ * - ActionManager：處理 action hook 的登記與執行
+ * - AsyncDetector：非同步偵測快取
+ * - MigrationWarner：遷移警告管理
+ *
  * @public
  */
-/**
- * Migration warning manager for deprecation warnings.
- * @internal
- */
-class MigrationWarner {
-  private suppressedWarnings: Set<string> = new Set()
-
-  constructor() {
-    // Load suppressed warnings from environment variable
-    const suppressed = process.env.GRAVITO_SUPPRESS_MIGRATION_WARNING
-    if (suppressed) {
-      suppressed.split(',').forEach((event) => {
-        this.suppressedWarnings.add(event.trim())
-      })
-    }
-  }
-
-  warn(eventName: string, message: string): void {
-    if (this.suppressedWarnings.has(eventName)) {
-      return
-    }
-
-    console.warn(`[Gravito Migration] Event "${eventName}" using synchronous dispatch`)
-    console.warn(`  ${message}`)
-    console.warn(`  Reference: https://gravito.dev/docs/events/async-migration`)
-    console.warn(`  To suppress this warning: GRAVITO_SUPPRESS_MIGRATION_WARNING="${eventName}"`)
-  }
-
-  suppress(eventName: string): void {
-    this.suppressedWarnings.add(eventName)
-  }
-}
-
 export class HookManager {
-  private filters: Map<string, FilterCallback[]> = new Map()
-  private actions: Map<string, ActionCallback[]> = new Map()
+  private filterManager: FilterManager
+  private actionManager: ActionManager
+  private asyncDetector: AsyncDetector
+  private migrationWarner: MigrationWarner
+
   private eventQueue: EventPriorityQueue
   private backend: EventBackend
   private dlq?: DeadLetterQueue
   private persistentDlqManager?: DeadLetterQueueManager
   private messageQueueBridge?: any
-  private idempotencyCache: IdempotencyCache
   private config: HookManagerConfig
-  private migrationWarner: MigrationWarner
-  private aggregationManager?: EventAggregationManager
-
-  /**
-   * Cache for async detection results (WeakMap for automatic garbage collection).
-   * @internal
-   */
-  private asyncDetectionCache: WeakMap<ActionCallback, boolean> = new WeakMap()
-
-  /**
-   * Count of items in the async detection cache (for testing/debugging).
-   * @internal
-   */
-  private asyncDetectionCacheCount = 0
-
-  /**
-   * Map of listener type overrides (callback -> type).
-   * @internal
-   */
-  private listenerTypeOverrides: WeakMap<ActionCallback, 'sync' | 'async' | 'auto'> = new WeakMap()
 
   constructor(config: HookManagerConfig = {}) {
     this.config = {
@@ -210,10 +69,19 @@ export class HookManager {
     }
     this.eventQueue = new EventPriorityQueue(config.queue)
     this.backend = config.backend || this.eventQueue
-    this.idempotencyCache = new IdempotencyCache()
-    this.migrationWarner = new MigrationWarner()
 
-    // Initialize in-memory DLQ
+    // 初始化專門管理器
+    this.asyncDetector = new AsyncDetector()
+    this.migrationWarner = new MigrationWarner()
+    this.filterManager = new FilterManager()
+    this.actionManager = new ActionManager(
+      this.backend,
+      this.config,
+      this.asyncDetector,
+      this.migrationWarner
+    )
+
+    // 初始化記憶體內 DLQ
     if (config.enableDLQ ?? true) {
       if (this.backend instanceof EventPriorityQueue) {
         this.dlq = new DeadLetterQueue()
@@ -221,39 +89,23 @@ export class HookManager {
       }
     }
 
-    // Initialize persistent DLQ if enabled
+    // 若有啟用，初始化持久化 DLQ
     if (config.enablePersistentDLQ && config.db) {
       this.persistentDlqManager = new DeadLetterQueueManager(config.db)
     }
 
-    // Set persistent DLQ handler on EventPriorityQueue if available
+    // 若持久化 DLQ manager 存在，設定 EventPriorityQueue 的持久化 DLQ 處理器
     if (this.persistentDlqManager && this.backend instanceof EventPriorityQueue) {
       this.eventQueue.setPersistentDLQHandler(this.createPersistentDLQHandler())
     }
 
-    // Initialize Message Queue Bridge for distributed processing
+    // 初始化 Message Queue Bridge for distributed processing
     if (config.messageQueueBridge) {
       this.messageQueueBridge = config.messageQueueBridge
     }
-
-    // Initialize event aggregation manager (FS-102)
-    if (config.aggregation?.enabled) {
-      this.aggregationManager = new EventAggregationManager(config.aggregation)
-      this.aggregationManager.setSubmitToQueueFn((tasks) => {
-        for (const task of tasks) {
-          this.backend.enqueue(task)
-        }
-        return Promise.resolve()
-      })
-      // Connect to backpressure manager for window adjustment
-      if (this.backend instanceof EventPriorityQueue) {
-        const backpressure = this.backend.getBackpressureManager()
-        if (backpressure) {
-          this.aggregationManager.setBackpressureManager(backpressure)
-        }
-      }
-    }
   }
+
+  // ========== Filter Methods（委派至 FilterManager）==========
 
   /**
    * Register a filter hook.
@@ -268,16 +120,12 @@ export class HookManager {
    * @example
    * ```typescript
    * core.hooks.addFilter('content', async (content: string) => {
-   *   return content.toUpperCase();
-   * });
+   *   return content.toUpperCase()
+   * })
    * ```
    */
   addFilter<T = unknown>(hook: string, callback: FilterCallback<T>): void {
-    if (!this.filters.has(hook)) {
-      this.filters.set(hook, [])
-    }
-    // Generic type erasure for storage
-    this.filters.get(hook)?.push(callback as unknown as FilterCallback)
+    this.filterManager.addFilter(hook, callback)
   }
 
   /**
@@ -293,24 +141,14 @@ export class HookManager {
    *
    * @example
    * ```typescript
-   * const content = await core.hooks.applyFilters('content', 'hello world');
+   * const content = await core.hooks.applyFilters('content', 'hello world')
    * ```
    */
   async applyFilters<T = unknown>(hook: string, initialValue: T, ...args: unknown[]): Promise<T> {
-    const callbacks = this.filters.get(hook) || []
-    let value = initialValue
-
-    for (const callback of callbacks) {
-      try {
-        value = (await callback(value, ...args)) as T
-      } catch (error) {
-        console.error(`[HookManager] Error in filter '${hook}':`, error)
-        // Error handling strategy: log error and continue with current value
-      }
-    }
-
-    return value
+    return this.filterManager.applyFilters(hook, initialValue, ...args)
   }
+
+  // ========== Action Methods（委派至 ActionManager）==========
 
   /**
    * Register an action hook.
@@ -326,11 +164,8 @@ export class HookManager {
    * @example
    * ```typescript
    * core.hooks.addAction('user_registered', async (user: User) => {
-   *   await sendWelcomeEmail(user);
-   * });
-   *
-   * // With explicit type override
-   * core.hooks.addAction('sync_handler', handler, { type: 'async' });
+   *   await sendWelcomeEmail(user)
+   * })
    * ```
    */
   addAction<TArgs = unknown>(
@@ -338,32 +173,7 @@ export class HookManager {
     callback: ActionCallback<TArgs>,
     options?: ListenerOptions
   ): void {
-    if (!this.actions.has(hook)) {
-      this.actions.set(hook, [])
-    }
-
-    let finalCallback = callback
-
-    if (options?.circuitBreaker) {
-      const breaker = new CircuitBreaker(options.circuitBreaker)
-
-      finalCallback = async (args: TArgs) => {
-        return breaker.execute(async () => {
-          const result = callback(args)
-          if (result instanceof Promise) {
-            await result
-          }
-        })
-      }
-    }
-
-    // Store type override if specified
-    if (options?.type && options.type !== 'auto') {
-      this.listenerTypeOverrides.set(finalCallback as unknown as ActionCallback, options.type)
-    }
-
-    // Generic type erasure for storage
-    this.actions.get(hook)?.push(finalCallback as unknown as ActionCallback)
+    this.actionManager.addAction(hook, callback, options)
   }
 
   /**
@@ -372,6 +182,9 @@ export class HookManager {
    * This method supports both synchronous and asynchronous dispatch based on configuration.
    * In hybrid mode, it auto-detects async listeners and uses async dispatch.
    *
+   * 注意：dispatch 模式決策在此層級完成，以確保子類別（如 ObservableHookManager）
+   * 可透過多型覆寫正確攔截 doActionSync / doActionAsync 的呼叫。
+   *
    * @template TArgs - The type of arguments passed to the action.
    * @param hook - The name of the hook.
    * @param args - The arguments to pass to the callbacks.
@@ -379,7 +192,7 @@ export class HookManager {
    *
    * @example
    * ```typescript
-   * await core.hooks.doAction('user_registered', user);
+   * await core.hooks.doAction('user_registered', user)
    * ```
    */
   async doAction<TArgs = unknown>(
@@ -387,24 +200,10 @@ export class HookManager {
     args: TArgs,
     options?: EventOptions
   ): Promise<void> {
-    const callbacks = this.actions.get(hook) || []
+    const mode = this.actionManager.resolveDispatchMode(hook, args, options)
 
-    // Check if we should use async dispatch
-    const shouldUseAsync = this.shouldUseAsyncDispatch(callbacks, options)
-
-    if (shouldUseAsync) {
+    if (mode === 'async') {
       return this.doActionAsync(hook, args, options)
-    }
-
-    // Synchronous dispatch (legacy mode)
-    if (this.config.showDeprecationWarnings || this.config.migrationMode === 'hybrid') {
-      // Show migration warning in hybrid mode or when explicitly enabled
-      if (this.config.migrationMode === 'hybrid' || this.config.showDeprecationWarnings) {
-        this.migrationWarner.warn(
-          hook,
-          'Consider migrating to async mode for better performance and reliability.'
-        )
-      }
     }
 
     return this.doActionSync(hook, args)
@@ -416,28 +215,13 @@ export class HookManager {
    * @template TArgs - The type of arguments passed to the action.
    * @param hook - The name of the hook.
    * @param args - The arguments to pass to the callbacks.
-   * @internal
    */
   async doActionSync<TArgs = unknown>(hook: string, args: TArgs): Promise<void> {
-    const callbacks = this.actions.get(hook) || []
-
-    for (const callback of callbacks) {
-      try {
-        await callback(args)
-      } catch (error) {
-        console.error(`[HookManager] Error in action '${hook}':`, error)
-      }
-    }
+    return this.actionManager.doActionSync(hook, args)
   }
 
   /**
    * Run all registered actions asynchronously via priority queue.
-   *
-   * This method uses EventPriorityQueue for async dispatch with support for:
-   * - Priority-based processing (high > normal > low)
-   * - Timeout handling
-   * - Ordering guarantees (strict, partition, none)
-   * - Idempotency
    *
    * @template TArgs - The type of arguments passed to the action.
    * @param hook - The name of the hook.
@@ -451,7 +235,7 @@ export class HookManager {
    *   ordering: 'partition',
    *   partitionKey: order.id,
    *   timeout: 5000,
-   * });
+   * })
    * ```
    */
   async doActionAsync<TArgs = unknown>(
@@ -459,78 +243,11 @@ export class HookManager {
     args: TArgs,
     options: EventOptions = {}
   ): Promise<void> {
-    const callbacks = this.actions.get(hook) || []
-
-    if (callbacks.length === 0) {
-      return
-    }
-
-    // Merge with default options
-    const mergedOptions: EventOptions = {
-      ...DEFAULT_EVENT_OPTIONS,
-      ...options,
-      async: true,
-    }
-
-    // Check for idempotency
-    if (mergedOptions.idempotencyKey) {
-      const ttl = mergedOptions.ttl || DEFAULT_EVENT_OPTIONS.ttl
-      const isDuplicate = this.idempotencyCache.isDuplicate(mergedOptions.idempotencyKey, ttl)
-
-      if (isDuplicate) {
-        console.warn(
-          `[HookManager] Event '${hook}' with idempotency key '${mergedOptions.idempotencyKey}' was skipped (duplicate within TTL window)`
-        )
-        return
-      }
-    }
-
-    // Use backend to enqueue
-    // We construct the task here to ensure consistent ID generation and type safety
-    const nowMs = Date.now()
-    const task: EventTask = {
-      id: `task-${nowMs}-${Math.random().toString(36).substr(2, 9)}`,
-      hook,
-      args,
-      callbacks: callbacks as ActionCallback[],
-      options: mergedOptions,
-      createdAt: nowMs,
-      enqueuedAt: nowMs,
-      partitionKey: mergedOptions.partitionKey,
-      retryCount: 0,
-    }
-
-    // === FS-102: Aggregation layer interception ===
-    if (this.aggregationManager && mergedOptions.aggregation?.enabled) {
-      try {
-        const accepted = await this.aggregationManager.submit(task)
-        if (!accepted) {
-          console.warn(
-            `[HookManager] Event '${hook}' was rejected due to backpressure (aggregation overflow)`
-          )
-        }
-      } catch (error) {
-        console.error(`[HookManager] Aggregation error for event '${hook}':`, error)
-        // Fallback to direct enqueue on error
-        this.backend.enqueue(task)
-      }
-    } else {
-      // Direct enqueue without aggregation
-      this.backend.enqueue(task)
-    }
-
-    // Note: We don't await the queue processing here
-    // Events are processed asynchronously in the background
+    return this.actionManager.doActionAsync(hook, args, options)
   }
 
-  /**
-   * Determine if async dispatch should be used.
-   *
-   * @param callbacks - Callbacks to check
-   * @param options - Event options
-   * @returns True if async dispatch should be used
-   * @internal
-   */
+  // ========== Dispatch Mode Detection（委派至 ActionManager）==========
+
   /**
    * Determine the dispatch mode for an event.
    *
@@ -540,75 +257,24 @@ export class HookManager {
    * @public
    */
   detectMode(eventName: string, options?: EventOptions): 'sync' | 'async' {
-    const callbacks = this.getListeners(eventName)
-    const shouldUseAsync = this.shouldUseAsyncDispatch(callbacks, options)
-    return shouldUseAsync ? 'async' : 'sync'
+    return this.actionManager.detectMode(eventName, options)
   }
+
+  // ========== Async Detection（委派至 AsyncDetector）==========
 
   /**
    * Check if a callback is an async function (with caching).
-   *
-   * Detection methods:
-   * 1. Check cache first
-   * 2. Check type override
-   * 3. Check constructor.name === 'AsyncFunction'
-   * 4. Fallback: Check function string representation
    *
    * @param callback - The callback to check
    * @returns True if the callback is async
    * @public
    */
   isAsyncListener(callback: ActionCallback): boolean {
-    // Check cache first
-    const cachedResult = this.asyncDetectionCache.get(callback)
-    if (cachedResult !== undefined) {
-      return cachedResult
-    }
-
-    // Check type override
-    const typeOverride = this.listenerTypeOverrides.get(callback)
-    if (typeOverride === 'async') {
-      this.cacheAsyncResult(callback, true)
-      return true
-    }
-    if (typeOverride === 'sync') {
-      this.cacheAsyncResult(callback, false)
-      return false
-    }
-
-    // Primary detection: constructor name
-    let isAsync = callback.constructor.name === 'AsyncFunction'
-
-    // Fallback detection: function string representation
-    // This handles edge cases like transpiled code or bound functions
-    if (!isAsync) {
-      const fnStr = callback.toString()
-      // Check for async keyword at the start (handles async arrow functions and async function expressions)
-      isAsync = /^async\s/.test(fnStr) || fnStr.startsWith('async ')
-    }
-
-    // Cache result
-    this.cacheAsyncResult(callback, isAsync)
-
-    return isAsync
-  }
-
-  /**
-   * Cache async detection result.
-   * @internal
-   */
-  private cacheAsyncResult(callback: ActionCallback, isAsync: boolean): void {
-    if (!this.asyncDetectionCache.has(callback)) {
-      this.asyncDetectionCacheCount++
-    }
-    this.asyncDetectionCache.set(callback, isAsync)
+    return this.asyncDetector.isAsyncListener(callback)
   }
 
   /**
    * Runtime detection for functions that return Promises but aren't declared async.
-   *
-   * This method executes the callback with test args and checks if the result is a Promise.
-   * Use with caution as it actually invokes the callback.
    *
    * @param callback - The callback to check
    * @param testArgs - Arguments to pass to the callback for testing
@@ -619,24 +285,7 @@ export class HookManager {
     callback: ActionCallback<TArgs>,
     testArgs: TArgs
   ): Promise<boolean> {
-    try {
-      const result = callback(testArgs)
-      const isPromise = result instanceof Promise
-
-      // Update cache with runtime result
-      if (isPromise) {
-        this.cacheAsyncResult(callback as ActionCallback, true)
-        // Wait for the promise to settle (don't leave hanging promises)
-        await result.catch(() => {
-          // Intentionally swallow error - we only care about Promise detection
-        })
-      }
-
-      return isPromise
-    } catch {
-      // If the callback throws, treat it as sync (error will be handled by normal flow)
-      return false
-    }
+    return this.asyncDetector.isAsyncListenerRuntime(callback, testArgs)
   }
 
   /**
@@ -646,7 +295,7 @@ export class HookManager {
    * @public
    */
   getAsyncDetectionCacheSize(): number {
-    return this.asyncDetectionCacheCount
+    return this.asyncDetector.getCacheSize()
   }
 
   /**
@@ -655,8 +304,7 @@ export class HookManager {
    * @public
    */
   clearAsyncDetectionCache(): void {
-    this.asyncDetectionCache = new WeakMap()
-    this.asyncDetectionCacheCount = 0
+    this.asyncDetector.clearCache()
   }
 
   /**
@@ -667,29 +315,7 @@ export class HookManager {
    * @public
    */
   hasAsyncListeners(hook: string): boolean {
-    const callbacks = this.getListeners(hook)
-    return callbacks.some((cb) => this.isListenerEffectivelyAsync(cb))
-  }
-
-  /**
-   * Check if a listener is effectively async (considering type override).
-   *
-   * @param callback - The callback to check
-   * @returns True if the listener should be treated as async
-   * @internal
-   */
-  private isListenerEffectivelyAsync(callback: ActionCallback): boolean {
-    const typeOverride = this.listenerTypeOverrides.get(callback)
-
-    if (typeOverride === 'async') {
-      return true
-    }
-    if (typeOverride === 'sync') {
-      return false
-    }
-
-    // Auto detection
-    return this.isAsyncListener(callback)
+    return this.actionManager.hasAsyncListeners(hook)
   }
 
   /**
@@ -700,50 +326,10 @@ export class HookManager {
    * @public
    */
   getListenerInfo(hook: string): ListenerInfo[] {
-    const callbacks = this.getListeners(hook)
-
-    return callbacks.map((callback) => {
-      const typeOverride = this.listenerTypeOverrides.get(callback)
-      const isAsync = this.isListenerEffectivelyAsync(callback)
-
-      return {
-        callback,
-        isAsync,
-        typeOverride,
-      }
-    })
+    return this.actionManager.getListenerInfo(hook)
   }
 
-  private shouldUseAsyncDispatch(callbacks: ActionCallback[], options?: EventOptions): boolean {
-    // Explicit async option
-    if (options?.async === true) {
-      return true
-    }
-
-    // Explicit sync option
-    if (options?.async === false) {
-      return false
-    }
-
-    // Migration mode: async
-    if (this.config.migrationMode === 'async') {
-      return true
-    }
-
-    // Migration mode: sync
-    if (this.config.migrationMode === 'sync') {
-      return false
-    }
-
-    // Migration mode: hybrid (auto-detect)
-    if (this.config.migrationMode === 'hybrid') {
-      // Check if any callback is async (considering type overrides)
-      const hasAsyncListeners = callbacks.some((cb) => this.isListenerEffectivelyAsync(cb))
-      return hasAsyncListeners || this.config.asyncByDefault === true
-    }
-
-    return false
-  }
+  // ========== Queue Methods ==========
 
   /**
    * Get the current event queue depth.
@@ -774,16 +360,28 @@ export class HookManager {
     return this.eventQueue
   }
 
+  // ========== Listener Management ==========
+
   /**
    * Get all registered listeners for a hook.
    *
    * @param hook - Hook name
    * @returns Array of callbacks
-   * @internal
    */
   getListeners(hook: string): ActionCallback[] {
-    return this.actions.get(hook) || []
+    return this.actionManager.getListeners(hook)
   }
+
+  /**
+   * Remove all listeners for a specific action hook.
+   *
+   * @param hook - Hook name
+   */
+  removeAction(hook: string): void {
+    this.actionManager.removeAction(hook)
+  }
+
+  // ========== Configuration ==========
 
   /**
    * Update HookManager configuration.
@@ -795,6 +393,7 @@ export class HookManager {
       ...this.config,
       ...config,
     }
+    this.actionManager.updateConfig(this.config)
   }
 
   /**
@@ -823,7 +422,10 @@ export class HookManager {
    */
   setBackend(backend: EventBackend): void {
     this.backend = backend
+    this.actionManager.setBackend(backend)
   }
+
+  // ========== Dead Letter Queue (In-Memory) ==========
 
   /**
    * Get the Dead Letter Queue instance.
@@ -844,22 +446,9 @@ export class HookManager {
     if (!this.dlq) {
       return false
     }
-    const entry = this.dlq.get(dlqEntryId)
-
-    if (!entry) {
-      return false
-    }
-
-    // Update last retried timestamp
-    this.dlq.updateLastRetried(dlqEntryId)
-
-    // Requeue the event
-    await this.doActionAsync(entry.eventName, entry.payload, entry.options)
-
-    // Delete from DLQ after successful requeue
-    this.dlq.delete(dlqEntryId)
-
-    return true
+    return dlqRequeueEntry(dlqEntryId, this.dlq, (eventName, payload, options) =>
+      this.doActionAsync(eventName, payload, options)
+    )
   }
 
   /**
@@ -872,17 +461,7 @@ export class HookManager {
     if (!this.dlq) {
       return 0
     }
-    const entries = this.dlq.list({ eventName })
-    let requeuedCount = 0
-
-    for (const entry of entries) {
-      const success = await this.requeueDLQEntry(entry.id)
-      if (success) {
-        requeuedCount++
-      }
-    }
-
-    return requeuedCount
+    return dlqRequeueBatch(eventName, this.dlq, (entryId) => this.requeueDLQEntry(entryId))
   }
 
   /**
@@ -923,6 +502,8 @@ export class HookManager {
     }
     return this.dlq.delete(entryId)
   }
+
+  // ========== Circuit Breaker ==========
 
   /**
    * Get circuit breaker statistics for all events.
@@ -992,6 +573,8 @@ export class HookManager {
     return this.backend.resetCircuitBreaker(eventName)
   }
 
+  // ========== Backpressure ==========
+
   /**
    * Get the current backpressure state.
    *
@@ -1020,14 +603,7 @@ export class HookManager {
     return manager ? manager.getMetrics() : undefined
   }
 
-  /**
-   * Remove all listeners for a specific action hook.
-   *
-   * @param hook - Hook name
-   */
-  removeAction(hook: string): void {
-    this.actions.delete(hook)
-  }
+  // ========== Persistent DLQ ==========
 
   /**
    * Get the persistent DLQ manager instance.
@@ -1047,42 +623,10 @@ export class HookManager {
    * @internal
    */
   private createPersistentDLQHandler() {
-    return async (
-      hook: string,
-      args: unknown,
-      options: EventOptions,
-      error: Error,
-      retryCount: number,
-      _firstFailedAt: number
-    ) => {
-      if (!this.persistentDlqManager) {
-        return
-      }
-
-      try {
-        // Convert event options to retry policy
-        const retryPolicy = options.retry
-          ? {
-              maxRetries: options.retry.maxRetries || 3,
-              backoff: options.retry.backoff || 'exponential',
-              initialDelayMs: options.retry.initialDelayMs || 1000,
-              maxDelayMs: options.retry.maxDelayMs || 30000,
-            }
-          : undefined
-
-        // Move to persistent DLQ
-        await this.persistentDlqManager.moveToDlq(
-          hook,
-          args,
-          options,
-          error,
-          retryCount,
-          retryPolicy
-        )
-      } catch (dlqError) {
-        console.error(`[HookManager] Error moving event to persistent DLQ:`, dlqError)
-      }
+    if (!this.persistentDlqManager) {
+      throw new Error('[HookManager] persistentDlqManager is not initialized')
     }
+    return createPersistentDLQHandler(this.persistentDlqManager)
   }
 
   /**
@@ -1096,28 +640,9 @@ export class HookManager {
     if (!this.persistentDlqManager) {
       return false
     }
-
-    try {
-      const event = await this.persistentDlqManager.getById(dlqId)
-      if (!event) {
-        return false
-      }
-
-      // Requeue the event
-      await this.doActionAsync(
-        event.event_name,
-        event.event_payload,
-        event.event_options as EventOptions
-      )
-
-      // Mark as requeued
-      await this.persistentDlqManager.requeue(dlqId)
-
-      return true
-    } catch (error) {
-      console.error(`[HookManager] Error requeuing persistent DLQ entry:`, error)
-      return false
-    }
+    return persistentDlqRequeueEntry(dlqId, this.persistentDlqManager, (event, args, options) =>
+      this.doActionAsync(event, args, options)
+    )
   }
 
   /**
@@ -1134,17 +659,13 @@ export class HookManager {
     if (!this.persistentDlqManager) {
       return { total: 0, succeeded: 0, failed: 0 }
     }
-
-    try {
-      return await this.persistentDlqManager.retryBatch(filter)
-    } catch (error) {
-      console.error(`[HookManager] Error in persistent DLQ batch retry:`, error)
-      return { total: 0, succeeded: 0, failed: 0 }
-    }
+    return persistentDlqRequeueBatch(filter, this.persistentDlqManager)
   }
 
+  // ========== Message Queue Bridge（分佈式處理）==========
+
   /**
-   * Dispatch an event through Bull Queue (分佈式異步處理).
+   * Dispatch an event through Bull Queue（分佈式異步處理）.
    *
    * 與 doActionAsync() 不同：
    * - doActionAsync() 使用 EventPriorityQueue (Memory-based)
@@ -1184,9 +705,7 @@ export class HookManager {
   }
 
   /**
-   * Dispatch an event through Bull Queue with delay (延遲隊列分發).
-   *
-   * 通過 Bull Queue 的 delayed jobs 功能實現延遲處理。
+   * Dispatch an event through Bull Queue with delay（延遲隊列分發）.
    *
    * @template TArgs - 事件參數類型
    * @param event - 事件名稱
@@ -1237,12 +756,6 @@ export class HookManager {
    * @param eventId - 事件 ID (task.id 或 jobId)
    * @returns 事件狀態信息
    * @throws 如果未配置 MessageQueueBridge
-   *
-   * @example
-   * ```typescript
-   * const status = await hookManager.getEventStatus('queue-1707000000000-abc123')
-   * console.log(status) // { eventId, status, attempts, createdAt, ... }
-   * ```
    *
    * @public
    */

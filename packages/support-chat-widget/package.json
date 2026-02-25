@@ -1,5 +1,6 @@
 {
   "name": "@gravito/support-chat-widget",
+  "sideEffects": false,
   "version": "0.2.1",
   "type": "module",
   "main": "dist/index.js",

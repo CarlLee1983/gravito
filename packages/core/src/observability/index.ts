@@ -30,14 +30,6 @@ export {
   type WorkerMetricsProvider,
 } from './contracts'
 export {
-  type EventMetricsDefinition,
-  getEventMetricsDefinition,
-  PROMETHEUS_ALERT_RULES,
-  PROMETHEUS_QUERIES,
-  type PrometheusMetricsConfig,
-  setupPrometheusMetrics,
-} from './Metrics'
-export {
   type DashboardSnapshot,
   type ErrorStats,
   type JobEvent,
@@ -46,10 +38,3 @@ export {
   type QueueMetrics,
   type WorkerMetrics,
 } from './QueueDashboard'
-export {
-  getTracer,
-  isTracingInitialized,
-  setupTracing,
-  shutdownTracing,
-  type TracingSetupOptions,
-} from './TracingSetup'

@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "declarationMap": false,
+    "outDir": "./dist",
+    "skipLibCheck": true,
+    "noCheck": true,
+    "types": ["bun-types"],
+    "paths": {
+      "@gravito/atlas": ["./src/index.ts"],
+      "@gravito/core": ["../core/src/index.ts"],
+      "@gravito/*": ["../*/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "tests", "**/*.test.ts"]
+}

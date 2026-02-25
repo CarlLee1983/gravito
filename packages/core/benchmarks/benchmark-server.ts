@@ -1,4 +1,4 @@
-import { PhotonAdapter } from '../src/adapters/PhotonAdapter'
+import { PhotonAdapter } from '@gravito/photon/adapter'
 import { Gravito } from '../src/engine/Gravito'
 import type { FastContext } from '../src/engine/types'
 

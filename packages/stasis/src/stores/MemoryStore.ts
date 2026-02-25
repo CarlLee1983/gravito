@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto'
 import { type CacheLock, LockTimeoutError, sleep } from '../locks'
 import type { CacheStore, TaggableStore } from '../store'
 import {
@@ -357,7 +356,7 @@ export class MemoryStore implements CacheStore, TaggableStore {
         return { ok: false }
       }
 
-      const owner = randomUUID()
+      const owner = crypto.randomUUID()
       locks.set(lockKey, { owner, expiresAt: now + ttlMillis })
       return { ok: true, owner }
     }

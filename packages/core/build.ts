@@ -1,114 +1,120 @@
+import { cp, type Dirent, mkdir, readdir, rm } from 'node:fs/promises'
+import { basename } from 'node:path'
+import { build } from 'bun'
+
 const isDtsOnly = process.argv.includes('--dts-only')
+const pkgName = basename(import.meta.dirname) // "core"
 
 console.log(isDtsOnly ? 'Building @gravito/core DTS...' : 'Building @gravito/core in parallel...')
 
 // Clean dist
-await Bun.$`rm -rf dist`
+await rm('dist', { recursive: true, force: true })
 
-// Build main and engine in parallel (independent builds)
+// External dependencies（workspace deps + bun built-ins）
+const externalDeps = ['@gravito/photon', 'bun:test', 'bun:sqlite', 'bun:ffi', 'zod']
+
 async function buildInParallel() {
-  const format = isDtsOnly ? 'esm' : 'esm,cjs'
+  const tasks: Promise<number>[] = []
+  const tempDir = isDtsOnly ? 'dist' : '.tsc-temp'
 
-  // Task 1: Build main entry point (src/index.ts + src/compat.ts)
-  const mainBuildPromise = (async () => {
-    const args = ['bunx', 'tsup', 'src/index.ts', 'src/compat.ts', '--format', format]
+  if (!isDtsOnly) {
+    await rm(tempDir, { recursive: true, force: true })
 
-    if (isDtsOnly) {
-      args.push('--dts', '--dts-only')
-    } else {
-      args.push('--dts')
-    }
+    // Task 1: bun build ESM
+    const esmPromise = (async () => {
+      const buildResult = await build({
+        entrypoints: ['src/index.ts', 'src/compat.ts', 'src/engine/index.ts', 'src/ffi/index.ts'],
+        outdir: 'dist',
+        format: 'esm',
+        target: 'node',
+        splitting: false,
+        sourcemap: 'external',
+        external: externalDeps,
+      })
 
-    args.push(
-      '--shims',
-      '--external',
-      '@gravito/photon',
-      '--external',
-      'bun:test',
-      '--external',
-      'bun:sqlite',
-      '--external',
-      'bun:ffi',
-      '--minify',
-      '--outDir',
-      'dist'
-    )
-
-    try {
-      await Bun.$`${args}`
+      if (!buildResult.success) {
+        console.error('❌ ESM build failed:', buildResult.logs)
+        return 1
+      }
       return 0
-    } catch (_error) {
-      console.error('❌ tsup main build failed')
-      return 1
-    }
-  })()
+    })()
+    tasks.push(esmPromise)
 
-  // Task 2: Build engine entry point (src/engine/index.ts)
-  const engineBuildPromise = (async () => {
-    const engineFormat = isDtsOnly ? 'esm' : 'esm,cjs'
-    const engineArgs = ['bunx', 'tsup', 'src/engine/index.ts', '--format', engineFormat]
+    // Task 2: bun build CJS
+    const cjsPromise = (async () => {
+      const cjsResult = await build({
+        entrypoints: ['src/index.ts', 'src/compat.ts', 'src/engine/index.ts', 'src/ffi/index.ts'],
+        outdir: 'dist',
+        format: 'cjs',
+        target: 'node',
+        splitting: false,
+        sourcemap: 'external',
+        naming: '[dir]/[name].cjs',
+        external: externalDeps,
+      })
 
-    if (isDtsOnly) {
-      engineArgs.push('--dts', '--dts-only')
-    } else {
-      engineArgs.push('--dts')
-    }
-
-    engineArgs.push(
-      '--shims',
-      '--external',
-      '@gravito/photon',
-      '--external',
-      'bun:test',
-      '--outDir',
-      'dist/engine'
-    )
-
-    try {
-      await Bun.$`${engineArgs}`
+      if (!cjsResult.success) {
+        console.error('❌ CJS build failed:', cjsResult.logs)
+        return 1
+      }
       return 0
-    } catch (_error) {
-      console.error('❌ tsup engine build failed')
-      return 1
-    }
+    })()
+    tasks.push(cjsPromise)
+  }
+
+  // Task 3: tsc 生成型別宣告
+  const tscPromise = (async () => {
+    const tsc = Bun.spawn(['bunx', 'tsc', '-p', 'tsconfig.build.json', '--outDir', tempDir], {
+      stdout: 'inherit',
+      stderr: 'inherit',
+      cwd: import.meta.dirname,
+    })
+    return await tsc.exited
   })()
+  tasks.push(tscPromise)
 
-  // Task 3: Build FFI entry point (src/ffi/index.ts)
-  const ffiBuildPromise = (async () => {
-    const ffiFormat = isDtsOnly ? 'esm' : 'esm,cjs'
-    const ffiArgs = ['bunx', 'tsup', 'src/ffi/index.ts', '--format', ffiFormat]
-
-    if (isDtsOnly) {
-      ffiArgs.push('--dts', '--dts-only')
-    } else {
-      ffiArgs.push('--dts')
+  const results = await Promise.all(tasks)
+  for (const result of results) {
+    if (result !== 0) {
+      process.exit(1)
     }
-
-    ffiArgs.push('--shims', '--external', 'bun:ffi', '--minify', '--outDir', 'dist/ffi')
-
-    try {
-      await Bun.$`${ffiArgs}`
-      return 0
-    } catch (_error) {
-      console.error('❌ tsup ffi build failed')
-      return 1
-    }
-  })()
-
-  // Wait for all builds
-  const [mainResult, engineResult, ffiResult] = await Promise.all([
-    mainBuildPromise,
-    engineBuildPromise,
-    ffiBuildPromise,
-  ])
-
-  if (mainResult !== 0 || engineResult !== 0 || ffiResult !== 0) {
-    process.exit(1)
   }
 }
 
-// Execute parallel build
+// 遞迴複製 .d.ts 檔案
+async function copyDtsFiles(src: string, dest: string) {
+  let entries: Dirent[]
+  try {
+    entries = await readdir(src, { withFileTypes: true })
+  } catch (_e) {
+    return
+  }
+
+  for (const entry of entries) {
+    const srcPath = `${src}/${entry.name}`
+    const destPath = `${dest}/${entry.name}`
+
+    if (entry.isDirectory()) {
+      await mkdir(destPath, { recursive: true }).catch(() => {})
+      await copyDtsFiles(srcPath, destPath)
+    } else if (entry.isFile() && entry.name.endsWith('.d.ts')) {
+      await cp(srcPath, destPath)
+    }
+  }
+}
+
 await buildInParallel()
 
-console.log('✅ Build complete!')
-process.exit(0)
+// 後處理
+const tempDir = isDtsOnly ? 'dist' : '.tsc-temp'
+if (!isDtsOnly) {
+  try {
+    const dtsSourceDir = `${tempDir}/${pkgName}/src`
+    await copyDtsFiles(dtsSourceDir, 'dist')
+    await rm(tempDir, { recursive: true, force: true })
+  } catch (e) {
+    console.warn('⚠️  Warning: Failed to copy type declarations:', e)
+  }
+}
+
+console.log('✅ @gravito/core build completed')

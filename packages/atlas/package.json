@@ -1,5 +1,6 @@
 {
   "name": "@gravito/atlas",
+  "sideEffects": false,
   "version": "1.6.0",
   "description": "The Standard Database Orbit - Custom Query Builder & ORM for Gravito",
   "type": "module",
@@ -83,7 +84,6 @@
     "mongodb": "^6.0.0",
     "mysql2": "^3.9.0",
     "pg": "^8.11.0",
-    "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "mitata": "^1.0.34",
     "typedoc": "^0.27.0"

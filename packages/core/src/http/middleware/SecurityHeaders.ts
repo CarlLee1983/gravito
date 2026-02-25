@@ -50,6 +50,8 @@ function buildHstsHeader(options: HstsOptions): string {
 /**
  * Apply common security headers to responses (Helmet-style).
  * @public
+ * @deprecated Since v2.0.0. Use `@gravito/photon` middleware instead.
+ * Migration: `import { securityHeaders } from '@gravito/photon/middleware/security'`
  */
 export function securityHeaders(options: SecurityHeadersOptions = {}): GravitoMiddleware {
   const defaults: Required<Omit<SecurityHeadersOptions, 'contentSecurityPolicy' | 'hsts'>> = {

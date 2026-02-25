@@ -58,7 +58,7 @@ describe('@gravito/core', () => {
       expect(standaloneText).toBe('pong')
 
       // Test PhotonAdapter directly
-      const { PhotonAdapter } = await import('../src/adapters/PhotonAdapter')
+      const { PhotonAdapter } = await import('@gravito/photon/adapter')
       const adapter = new PhotonAdapter({}, orbit)
       const adapterRes = await adapter.fetch(new Request('http://localhost/ping'))
       const adapterText = await adapterRes.text()
@@ -82,7 +82,9 @@ describe('@gravito/core', () => {
       const freshOrbit = new Photon()
       freshOrbit.get('/ping', (c) => c.text('pong'))
 
-      core.mountOrbit('/fresh', freshOrbit)
+      // PhotonAdapter wraps Photon app as HttpAdapter for mountOrbit
+      const { PhotonAdapter: FreshPhotonAdapter } = await import('@gravito/photon/adapter')
+      core.mountOrbit('/fresh', new FreshPhotonAdapter({}, freshOrbit))
       const { fetch } = core.liftoff(0)
 
       const res = await fetch(new Request('http://localhost/fresh/ping'))

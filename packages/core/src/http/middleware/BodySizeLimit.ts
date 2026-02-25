@@ -16,6 +16,8 @@ const defaultMethods = ['POST', 'PUT', 'PATCH', 'DELETE']
  * @param maxBytes - Maximum allowed size in bytes
  * @param options - Configuration options
  * @public
+ * @deprecated Since v2.0.0. Use `@gravito/photon` middleware instead.
+ * Migration: `import { bodySizeLimit } from '@gravito/photon/middleware/security'`
  */
 export function bodySizeLimit(
   maxBytes: number,

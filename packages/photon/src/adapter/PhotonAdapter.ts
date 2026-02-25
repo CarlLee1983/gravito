@@ -4,13 +4,12 @@
  * This adapter wraps Photon to implement the Gravito HttpAdapter interface.
  * It serves as the default adapter and reference implementation for others.
  *
- * @module @gravito/core/adapters/photon
+ * @module @gravito/photon/adapter
  * @since 2.0.0
  */
 
-import type { Context, Handler, MiddlewareHandler, Next, Photon } from '@gravito/photon'
-import { RequestScopeManager } from '../Container/RequestScopeManager'
 import type {
+  AdapterConfig,
   GravitoContext,
   GravitoErrorHandler,
   GravitoHandler,
@@ -19,17 +18,20 @@ import type {
   GravitoNotFoundHandler,
   GravitoRequest,
   GravitoVariables,
+  HttpAdapter,
   HttpMethod,
   ProxyOptions,
+  RouteDefinition,
   StatusCode,
-} from '../http/types'
+} from '@gravito/core'
+import { RequestScopeManager } from '@gravito/core'
+import type { Context, Handler, MiddlewareHandler, Next, Photon } from '@gravito/photon'
 import type {
   PhotonContextExtended,
   PhotonRequestExtended,
   ResponseWithFlash,
   SessionWithFlash,
 } from './photon-types'
-import type { AdapterConfig, HttpAdapter, RouteDefinition } from './types'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Photon Request Wrapper
@@ -347,10 +349,8 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
   ): string | undefined | undefined {
     if (value !== undefined) {
       if (options?.append) {
-        // console.log('[PhotonAdapter] Appending header:', name, value)
         this.photonCtx.header(name, value, { append: true })
       } else {
-        // console.log('[PhotonAdapter] Setting header:', name, value)
         this.photonCtx.header(name, value)
       }
       return undefined // Return undefined for setter to match type
@@ -553,9 +553,9 @@ function toPhotonErrorHandler<V extends GravitoVariables>(
  *
  * @example
  * ```typescript
- * import { GravitoAdapter } from '@gravito/core'
+ * import { PhotonAdapter } from '@gravito/photon/adapter'
  *
- * const adapter = new GravitoAdapter()
+ * const adapter = new PhotonAdapter()
  *
  * // Register routes
  * adapter.route('get', '/hello', async (ctx) => {
@@ -609,9 +609,6 @@ export class PhotonAdapter<V extends GravitoVariables = GravitoVariables>
     ...handlers: (GravitoHandler<V> | GravitoMiddleware<V>)[]
   ): void {
     const fullPath = (this.config.basePath || '') + path
-    console.log(
-      `[PhotonAdapter] Registering ${method.toUpperCase()} ${fullPath} with ${handlers.length} handlers`
-    )
     // We treat all handlers as potential middleware (accepting next)
     const photonHandlers = handlers.map((h) => toPhotonMiddleware<V>(h as GravitoMiddleware<V>))
 

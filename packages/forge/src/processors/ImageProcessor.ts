@@ -2,10 +2,8 @@
  * @fileoverview Image processor using ImageMagick
  */
 
-import { randomUUID } from 'node:crypto'
-import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
-import { getRuntimeAdapter } from '@gravito/core'
+import { getRuntimeAdapter, runtimeMkdir } from '@gravito/core'
 import { ImageMagickAdapter } from '../adapters/ImageMagickAdapter'
 import type { FileInput, FileOutput, ProcessingProgress, ProcessOptions } from '../types'
 import { BaseProcessor } from './BaseProcessor'
@@ -60,7 +58,7 @@ export class ImageProcessor extends BaseProcessor {
    */
   async getMetadata(input: FileInput): Promise<Record<string, unknown>> {
     // Ensure temp directory exists
-    await mkdir(this.tempDir, { recursive: true })
+    await runtimeMkdir(this.runtime, this.tempDir, { recursive: true })
 
     const inputPath = await this.getInputPath(input)
     const isTempInput = typeof input.source !== 'string'
@@ -90,7 +88,7 @@ export class ImageProcessor extends BaseProcessor {
     options: ProcessOptions & { onProgress?: (progress: ProcessingProgress) => void }
   ): Promise<FileOutput> {
     // Ensure temp directory exists
-    await mkdir(this.tempDir, { recursive: true })
+    await runtimeMkdir(this.runtime, this.tempDir, { recursive: true })
 
     // Get input file path. This might create a temporary file if input.source is a Blob/File.
     const inputPath = await this.getInputPath(input)
@@ -98,7 +96,7 @@ export class ImageProcessor extends BaseProcessor {
 
     // Generate output path
     const format = options.format || this.getFormatFromMimeType(input.mimeType) || 'jpg'
-    const outputFilename = `${randomUUID()}.${format}`
+    const outputFilename = `${crypto.randomUUID()}.${format}`
     const outputPath = join(this.tempDir, outputFilename)
 
     try {
@@ -150,7 +148,7 @@ export class ImageProcessor extends BaseProcessor {
     }
 
     // Write Blob/File to temp directory
-    const inputFilename = input.filename || `${randomUUID()}.tmp`
+    const inputFilename = input.filename || `${crypto.randomUUID()}.tmp`
     const inputPath = join(this.tempDir, inputFilename)
     await this.runtime.writeFile(inputPath, input.source)
     return inputPath

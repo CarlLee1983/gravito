@@ -1,4 +1,3 @@
-import { PhotonAdapter } from './adapters/PhotonAdapter'
 import { type GravitoConfig, PlanetCore } from './PlanetCore'
 import { ServiceProvider } from './ServiceProvider'
 
@@ -34,11 +33,7 @@ export class GravitoServer {
     resolvers: Record<string, ModuleResolver>,
     baseOrbits: any[] = []
   ): Promise<PlanetCore> {
-    const core = new PlanetCore(
-      manifest.config || {
-        adapter: new PhotonAdapter(),
-      }
-    )
+    const core = new PlanetCore(manifest.config || {})
 
     // 掛載基礎設施軌道
     for (const Orbit of baseOrbits) {

@@ -1,4 +1,5 @@
-import { defineConfig, PhotonAdapter, PlanetCore } from '@gravito/core'
+import { defineConfig, PlanetCore } from '@gravito/core'
+import { PhotonAdapter } from '@gravito/photon/adapter'
 import appConfig from '../config/app'
 import databaseConfig from '../config/database'
 import mailConfig from '../config/mail'

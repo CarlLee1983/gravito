@@ -1,5 +1,6 @@
 {
   "name": "@gravito/stasis",
+  "sideEffects": false,
   "version": "3.1.1",
   "publishConfig": {
     "access": "public"
@@ -22,7 +23,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "build": "bun run build.ts",
     "build:dts": "bun run build.ts --dts-only",
     "test": "bun test --timeout=10000",
     "test:coverage": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
@@ -49,7 +50,6 @@
     "@gravito/core": "workspace:*",
     "@gravito/photon": "workspace:*",
     "bun-types": "latest",
-    "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },
   "homepage": "https://github.com/gravito-framework/gravito#readme",

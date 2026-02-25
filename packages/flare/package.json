@@ -1,5 +1,6 @@
 {
   "name": "@gravito/flare",
+  "sideEffects": false,
   "version": "4.0.1",
   "publishConfig": {
     "access": "public"

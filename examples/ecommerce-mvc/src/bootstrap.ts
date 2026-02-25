@@ -13,7 +13,8 @@
  * @module bootstrap
  */
 
-import { defineConfig, PhotonAdapter, PlanetCore } from '@gravito/core'
+import { defineConfig, PlanetCore } from '@gravito/core'
+import { PhotonAdapter } from '@gravito/photon/adapter'
 import { type AppConfig, appConfig } from '../config/app'
 import { databaseConfig } from '../config/database'
 import { orbits } from '../config/orbits'

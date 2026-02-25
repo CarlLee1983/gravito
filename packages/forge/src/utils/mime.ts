@@ -1,4 +1,4 @@
-import { open } from 'node:fs/promises'
+import { getRuntimeAdapter } from '@gravito/core'
 
 const HEADER_SIZE = 16
 
@@ -12,17 +12,12 @@ async function readHeader(source: string | Blob): Promise<Uint8Array | null> {
       return null
     }
     try {
-      const handle = await open(source, 'r')
-      try {
-        const buffer = Buffer.alloc(HEADER_SIZE)
-        const { bytesRead } = await handle.read(buffer, 0, HEADER_SIZE, 0)
-        if (bytesRead <= 0) {
-          return null
-        }
-        return new Uint8Array(buffer.slice(0, bytesRead))
-      } finally {
-        await handle.close()
+      const runtime = getRuntimeAdapter()
+      const data = await runtime.readFile(source)
+      if (!data || data.byteLength === 0) {
+        return null
       }
+      return data.subarray(0, Math.min(HEADER_SIZE, data.byteLength))
     } catch {
       return null
     }

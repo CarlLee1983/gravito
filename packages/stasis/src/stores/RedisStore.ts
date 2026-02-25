@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto'
 import { Redis, type RedisClientContract } from '@gravito/plasma'
 import { type CacheLock, LockTimeoutError, sleep } from '../locks'
 import type { CacheStore, TaggableStore } from '../store'
@@ -276,7 +275,7 @@ export class RedisStore implements CacheStore, TaggableStore {
 
   lock(name: string, seconds = 10): CacheLock {
     const lockKey = `lock:${normalizeCacheKey(name)}`
-    const owner = randomUUID()
+    const owner = crypto.randomUUID()
     const ttlMs = Math.max(1, seconds) * 1000
 
     const client = this.client

@@ -1,5 +1,6 @@
 {
   "name": "@gravito/scaffold",
+  "sideEffects": false,
   "version": "4.0.0",
   "description": "Project scaffolding engine for Gravito - Generate enterprise-grade architecture templates",
   "type": "module",
