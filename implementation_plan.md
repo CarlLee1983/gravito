@@ -118,7 +118,7 @@ Gravito 框架存在六個結構性問題，需要系統性地進行優化。最
 
 ---
 
-### 2.2 OpenTelemetry 提取
+### 2.2 OpenTelemetry 提取 🔄 進行中 (2026-02-25)
 
 **問題**: core 的 `package.json` 有 9 個 `@opentelemetry/*` peerDependencies，相關代碼散佈在 `src/instrumentation/` 和 `src/events/observability/`。
 
@@ -129,6 +129,13 @@ Gravito 框架存在六個結構性問題，需要系統性地進行優化。最
 4. 在 core 中保留 deprecated re-export
 
 **Semver 影響**: MINOR（with deprecation）
+
+**實施進度**:
+- ✅ Step 7：刪除過期的觀測檔案（TracingSetup.ts, Metrics.ts）
+- ⏳ Step 8：全量構建驗證（進行中）
+- ⏳ Step 9：文檔完成報告（進行中）
+
+詳細進度見 PHASE2_2_COMPLETION.md
 
 ---
 
