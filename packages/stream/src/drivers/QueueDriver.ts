@@ -253,10 +253,7 @@ export interface QueueDriver {
    * });
    * ```
    */
-  onNotify?(
-    queues: string | string[],
-    callback: (queue: string) => Promise<void>
-  ): Promise<void>
+  onNotify?(queues: string | string[], callback: (queue: string) => Promise<void>): Promise<void>
 
   /**
    * Enables real-time notifications for job arrivals.

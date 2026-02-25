@@ -332,6 +332,45 @@ const client = createBeam<AppType>('https://api.example.com', {
 })
 ```
 
+### HTTP Connection Pooling
+
+Optimize performance by reusing HTTP connections with automatic pooling (150-200ms savings per request):
+
+```typescript
+const client = createBeam<AppType>('https://api.example.com', {
+  pool: {
+    maxConnectionsPerHost: 10,        // Max concurrent connections per host
+    minIdlePerHost: 2,                // Keep 2 idle connections warm
+    idleTimeoutMs: 30000,             // Close idle connections after 30s
+    maxLifetimeMs: 300000,            // Rotate connections after 5 min
+    acquireTimeoutMs: 5000,           // Timeout if no available connections
+    healthCheck: true,                // Enable periodic health checks
+    metrics: true                     // Track connection metrics
+  }
+})
+
+// Or simply enable with defaults
+const client = createBeam<AppType>('https://api.example.com', {
+  pool: true
+})
+
+// Access pool metrics
+import { ConnectionPool } from '@gravito/beam'
+const pool = new ConnectionPool({ metrics: true })
+const metrics = pool.getMetrics()
+console.log(`Reuse Rate: ${(metrics.reuseRate * 100).toFixed(2)}%`)
+```
+
+**Features:**
+- Per-host connection isolation
+- Automatic idle connection reuse
+- Configurable limits and timeouts
+- Comprehensive metrics and monitoring
+- Health checks for stale connections
+- 100% backward compatible (opt-in)
+
+See [CONNECTION_POOL.md](./docs/CONNECTION_POOL.md) for complete pooling guide, examples, and best practices.
+
 ## Helper Functions
 
 ### `createAuthenticatedBeam`

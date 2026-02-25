@@ -23,14 +23,12 @@ export type EscapeHtmlFn = (value: string) => string
  */
 function createFallbackEscapeHtml(): EscapeHtmlFn {
   return (value: string): string => {
-    return (
-      value
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#x27;')
-    )
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;')
   }
 }
 

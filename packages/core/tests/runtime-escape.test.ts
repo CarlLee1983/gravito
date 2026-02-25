@@ -47,9 +47,7 @@ describe('runtime/escape', () => {
     const escapeHtml = getEscapeHtml()
 
     it('should escape multiple special characters', () => {
-      expect(escapeHtml('a & < > " \' b')).toBe(
-        'a &amp; &lt; &gt; &quot; &#x27; b'
-      )
+      expect(escapeHtml('a & < > " \' b')).toBe('a &amp; &lt; &gt; &quot; &#x27; b')
     })
 
     it('should escape repeated characters', () => {
@@ -63,9 +61,7 @@ describe('runtime/escape', () => {
     const escapeHtml = getEscapeHtml()
 
     it('should escape HTML tags', () => {
-      expect(escapeHtml('<div>content</div>')).toBe(
-        '&lt;div&gt;content&lt;/div&gt;'
-      )
+      expect(escapeHtml('<div>content</div>')).toBe('&lt;div&gt;content&lt;/div&gt;')
     })
 
     it('should escape attribute values with double quotes', () => {
@@ -77,9 +73,7 @@ describe('runtime/escape', () => {
     })
 
     it('should escape XML entities', () => {
-      expect(escapeHtml('<?xml version="1.0"?>')).toBe(
-        '&lt;?xml version=&quot;1.0&quot;?&gt;'
-      )
+      expect(escapeHtml('<?xml version="1.0"?>')).toBe('&lt;?xml version=&quot;1.0&quot;?&gt;')
     })
   })
 
@@ -218,8 +212,7 @@ describe('runtime/escape', () => {
     const escapeHtml = getEscapeHtml()
 
     it('should escape complex HTML structures', () => {
-      const html =
-        '<div class="test" data-value="123">Content & More</div>'
+      const html = '<div class="test" data-value="123">Content & More</div>'
       expect(escapeHtml(html)).toBe(
         '&lt;div class=&quot;test&quot; data-value=&quot;123&quot;&gt;Content &amp; More&lt;/div&gt;'
       )
@@ -227,9 +220,7 @@ describe('runtime/escape', () => {
 
     it('should escape JSON-like structures', () => {
       const json = '{"key": "value<script>"}'
-      expect(escapeHtml(json)).toBe(
-        '{&quot;key&quot;: &quot;value&lt;script&gt;&quot;}'
-      )
+      expect(escapeHtml(json)).toBe('{&quot;key&quot;: &quot;value&lt;script&gt;&quot;}')
     })
 
     it('should escape URL-like strings', () => {
@@ -258,9 +249,7 @@ describe('runtime/escape', () => {
       // The escaped version prevents the quote from closing the attribute
       expect(escaped).toBe('value&quot; onclick=&quot;alert(&#x27;xss&#x27;)')
       // So the attribute injection is neutralized
-      expect(html).toBe(
-        '<div title="value&quot; onclick=&quot;alert(&#x27;xss&#x27;)">Test</div>'
-      )
+      expect(html).toBe('<div title="value&quot; onclick=&quot;alert(&#x27;xss&#x27;)">Test</div>')
     })
 
     it('should escape content for HTML text node', () => {

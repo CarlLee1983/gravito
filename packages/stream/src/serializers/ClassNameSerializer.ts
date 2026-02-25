@@ -110,7 +110,11 @@ export class ClassNameSerializer implements JobSerializer {
       )
     }
 
-    const properties = JSON.parse(serialized.data)
+    const dataStr =
+      typeof serialized.data === 'string'
+        ? serialized.data
+        : Buffer.from(serialized.data).toString('utf8')
+    const properties = JSON.parse(dataStr)
     const job = new JobClass()
 
     // Restore properties

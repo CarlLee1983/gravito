@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import pc from 'picocolors'
+import { Painter as pc } from '@gravito/chromatic'
 import { AtlasMigrationDriver } from './AtlasMigrationDriver'
 import { DrizzleMigrationDriver } from './DrizzleMigrationDriver'
 import type { MigrationDriver, MigrationResult } from './MigrationDriver'

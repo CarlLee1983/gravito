@@ -17,15 +17,20 @@ export type {
   ArchiveFromDirectoryOptions,
   // Compression types
   CompressionOptions,
-  OptionalRuntimeResourceUsage,
   // Escape types
   EscapeHtmlFn,
+  // Markdown types
+  MarkdownRenderCallbacks,
+  MarkdownRenderOptions,
+  OptionalRuntimeResourceUsage,
   // Runtime adapter types
   RuntimeAdapter,
   RuntimeArchiveAdapter,
   RuntimeCompressionAdapter,
+  RuntimeFileSink,
   RuntimeFileStat,
   RuntimeKind,
+  RuntimeMarkdownAdapter,
   RuntimePasswordAdapter,
   RuntimeProcess,
   RuntimeProcessOutput,
@@ -40,6 +45,8 @@ export type {
 export {
   // Archive
   archiveFromDirectory,
+  // Markdown
+  createHtmlRenderCallbacks,
   // SQLite
   createSqliteDatabase,
   // Archive adapter
@@ -48,6 +55,7 @@ export {
   getCompressionAdapter,
   // Escape HTML
   getEscapeHtml,
+  getMarkdownAdapter,
   // Password adapter
   getPasswordAdapter,
   // Runtime adapter
@@ -55,4 +63,5 @@ export {
   // Detection
   getRuntimeEnv,
   getRuntimeKind,
+  toUint8Array,
 } from './runtime/index'

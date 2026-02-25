@@ -268,20 +268,26 @@ export {
   type ArchiveFromDirectoryOptions,
   archiveFromDirectory,
   type CompressionOptions,
+  createHtmlRenderCallbacks,
   createSqliteDatabase,
   type EscapeHtmlFn,
   getArchiveAdapter,
   getCompressionAdapter,
   getEscapeHtml,
+  getMarkdownAdapter,
   getPasswordAdapter,
   getRuntimeAdapter,
   getRuntimeEnv,
   getRuntimeKind,
+  type MarkdownRenderCallbacks,
+  type MarkdownRenderOptions,
   type RuntimeAdapter,
   type RuntimeArchiveAdapter,
   type RuntimeCompressionAdapter,
+  type RuntimeFileSink,
   type RuntimeFileStat,
   type RuntimeKind,
+  type RuntimeMarkdownAdapter,
   type RuntimePasswordAdapter,
   type RuntimeProcess,
   type RuntimeProcessOutput,
@@ -292,7 +298,27 @@ export {
   type RuntimeSpawnSyncResult,
   type RuntimeSqliteDatabase,
   type RuntimeSqliteStatement,
+  toUint8Array,
 } from './runtime'
+export {
+  getDefaultRuntimeAdapter,
+  runtimeAppendFile,
+  runtimeCreateFileSink,
+  runtimeMkdir,
+  runtimeReadDir,
+  runtimeReadJSON,
+  runtimeReadText,
+  runtimeRemoveRecursive,
+  runtimeRename,
+  runtimeStatFull,
+  runtimeWriteFileExclusive,
+} from './runtime-helpers'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Binary Utilities
+// ─────────────────────────────────────────────────────────────────────────────
+
+export { BinaryUtils } from './binary'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Standalone Engine (High-Performance Bun-Only Engine)
@@ -300,6 +326,13 @@ export {
 
 // Re-export engine module for @gravito/core/engine import path
 export * as engine from './engine'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FFI (Foreign Function Interface) - Native Acceleration Layer
+// Re-export via @gravito/core/ffi to avoid compile-time FFI initialization
+// ─────────────────────────────────────────────────────────────────────────────
+// Note: Import via `import { NativeAccelerator } from '@gravito/core/ffi'`
+// Do NOT import directly from main entry to avoid compile-time FFI loading
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Configuration Helper

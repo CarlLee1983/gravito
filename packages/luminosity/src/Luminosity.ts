@@ -2,6 +2,7 @@ import { createWriteStream } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createGzip } from 'node:zlib'
+import { getDefaultRuntimeAdapter } from '@gravito/core'
 import type { SitemapEntry } from './interfaces'
 import { RobotsTxtBuilder } from './robots/RobotsTxtBuilder'
 import { SitemapIndexBuilder } from './xml/SitemapIndexBuilder'
@@ -74,6 +75,7 @@ export class Luminosity {
     const hostname = this.config.hostname || 'http://localhost'
     const limit = this.config.maxEntriesPerFile || 50000
     const useGzip = this.config.gzip === true
+    const adapter = getDefaultRuntimeAdapter()
 
     // Ensure output dir exists
     await mkdir(outDir, { recursive: true })
@@ -172,7 +174,13 @@ export class Luminosity {
 
     // Index is usually not gzipped by default but can be.
     // Standard: sitemap-index.xml pointing to .gz files
-    await writeFile(join(outDir, 'sitemap-index.xml'), indexXml)
+    // Async write with RuntimeAdapter or fallback
+    const indexPath = join(outDir, 'sitemap-index.xml')
+    if (adapter.writeFile) {
+      await adapter.writeFile(indexPath, indexXml)
+    } else {
+      await writeFile(indexPath, indexXml)
+    }
   }
 
   /**

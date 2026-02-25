@@ -90,9 +90,7 @@ export class PollingStrategy implements ConsumerStrategy {
 
     const eligibleQueues = await this.getEligibleQueues()
     if (eligibleQueues.length === 0) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, this.currentPollInterval)
-      )
+      await new Promise((resolve) => setTimeout(resolve, this.currentPollInterval))
       return []
     }
 
@@ -143,9 +141,7 @@ export class PollingStrategy implements ConsumerStrategy {
         this.currentPollInterval = this.options.minPollInterval
       } else {
         // Increase polling interval on empty result
-        await new Promise((resolve) =>
-          setTimeout(resolve, this.currentPollInterval)
-        )
+        await new Promise((resolve) => setTimeout(resolve, this.currentPollInterval))
         this.currentPollInterval = Math.min(
           this.currentPollInterval * this.options.backoffMultiplier,
           this.options.maxPollInterval
@@ -153,9 +149,7 @@ export class PollingStrategy implements ConsumerStrategy {
       }
     } catch (error) {
       console.error('[PollingStrategy] Error fetching jobs:', error)
-      await new Promise((resolve) =>
-        setTimeout(resolve, this.currentPollInterval)
-      )
+      await new Promise((resolve) => setTimeout(resolve, this.currentPollInterval))
     }
 
     return jobs

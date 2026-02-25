@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import pc from 'picocolors'
+import { Painter as pc } from '@gravito/chromatic'
 
 interface VersionCheckResult {
   isLatest: boolean

@@ -1,6 +1,6 @@
 {
   "name": "@gravito/plasma",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Redis client for Gravito - Bun native, Laravel-style API",
   "type": "module",
   "main": "./dist/index.js",
@@ -36,16 +36,7 @@
   ],
   "author": "Gravito Team",
   "license": "MIT",
-  "peerDependencies": {
-    "ioredis": "^5.0.0"
-  },
-  "peerDependenciesMeta": {
-    "ioredis": {
-      "optional": true
-    }
-  },
   "devDependencies": {
-    "@types/ioredis": "^5.0.0",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "bun-types": "latest"

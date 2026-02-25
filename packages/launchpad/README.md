@@ -32,8 +32,8 @@ Launchpad follows **Clean Architecture** principles and is implemented as a **Gr
 - **RefurbishUnit**: Cleans up and resets used containers for return to the pool.
 
 ### Infrastructure Layer (`src/Infrastructure`)
-- **DockerAdapter**: Low-level communication with the Docker daemon.
-- **ShellGitAdapter**: Git operations via shell commands.
+- **DockerAdapter**: Low-level communication with the Docker daemon (shell operations via [@gravito/nova](../nova)).
+- **ShellGitAdapter**: Git operations via shell commands (powered by [@gravito/nova](../nova) for type-safe execution).
 - **OctokitGitHubAdapter**: Interaction with GitHub API for status updates and PR comments.
 - **CachedRocketRepository**: Persistent storage for Rocket states using `@gravito/stasis`.
 - **BunProxyAdapter**: Manages reverse proxying to active containers with sub-millisecond overhead.
@@ -87,6 +87,27 @@ const rocketId = await ctrl.launch(mission, (type, data) => {
   console.log(`[Telemetry] ${type}:`, data)
 })
 ```
+
+## 🔧 Shell Command Execution with Nova
+
+Launchpad uses [@gravito/nova](../nova) for shell operations in the Docker infrastructure layer:
+
+- **Type-Safe Docker Operations**: File operations (mkdir, chmod) use Nova's template literal API
+- **Automatic Escaping**: Prevents shell injection in cache directory paths
+- **Docker CLI Preservation**: Docker commands continue to use native spawning for optimal performance
+- **Consistent Error Handling**: Unified error handling across all shell operations
+
+The integration ensures that filesystem operations in `DockerAdapter` are both safe and readable:
+
+```typescript
+// Before: Raw spawn calls
+const proc = this.runtime.spawn(['mkdir', '-p', cachePath])
+
+// After: Nova Shell API
+await Shell.run`mkdir -p ${cachePath}`.nothrow().run()
+```
+
+---
 
 ## ⚙️ Configuration
 

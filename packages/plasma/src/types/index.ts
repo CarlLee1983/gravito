@@ -8,8 +8,9 @@
 
 /**
  * Redis client implementation type
+ * @deprecated v2.0.0 - Only 'bun' (Bun.redis) is supported. ioredis is no longer available.
  */
-export type RedisClientType = 'bun' | 'ioredis' | 'auto'
+export type RedisClientType = 'bun'
 
 /**
  * Configuration for a single Redis node (standalone or cluster).
@@ -38,20 +39,11 @@ export interface RedisNode {
 
 /**
  * Cluster configuration options for Redis Cluster environments.
- * Requires 'ioredis' client type.
+ * @deprecated v2.0.0 - Redis Cluster is no longer supported in plasma v2.0.0.
+ * Use a Redis Cluster Proxy (e.g., redis-cluster-proxy, Envoy, HAProxy) instead.
+ * See MIGRATION.md for details.
  *
  * @public
- * @example
- * ```typescript
- * const cluster: ClusterOptions = {
- *   enable: true,
- *   nodes: [
- *     { host: '10.0.0.1', port: 7000 },
- *     { host: '10.0.0.2', port: 7000 }
- *   ],
- *   scaleReads: 'slave'
- * };
- * ```
  */
 export interface ClusterOptions {
   /**
@@ -92,9 +84,9 @@ export interface RedisConfig extends RedisNode {
   maxRetries?: number
   /** Milliseconds to wait between reconnection attempts */
   retryDelay?: number
-  /** Client implementation type: 'bun' (Bun.redis), 'ioredis', or 'auto' (default: 'auto') */
+  /** @deprecated v2.0.0 - Only 'bun' is supported */
   clientType?: RedisClientType
-  /** Cluster configuration */
+  /** @deprecated v2.0.0 - Redis Cluster is no longer supported */
   cluster?: ClusterOptions
 }
 

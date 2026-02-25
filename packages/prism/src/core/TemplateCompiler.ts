@@ -2,7 +2,7 @@
  * TemplateCompiler - Core logic for compiling templates into HTML.
  *
  * Responsibilities:
- * - Parsing and processing Blade-like directives (`@if`, `@foreach`, `@section`).
+ * - Parsing and processing Blade-like directives (`@if`, `@foreach`, `@section`, `@markdown`).
  * - Resolving component tags (`<x-component>`).
  * - executing helper functions.
  * - Interpolating variables.
@@ -13,6 +13,9 @@
  * @public
  * @since 3.1.0
  */
+
+import { getMarkdownAdapter } from '@gravito/core'
+import { Sanitizer } from '../security/Sanitizer'
 
 /**
  * Render context for managing template inheritance and stacking.
@@ -76,6 +79,8 @@ const YIELD_REGEX = /@yield\s*\(\s*['"](.+?)['"](?:\s*,\s*['"](.+?)['"])?\s*\)/g
 const STACK_REGEX = /@stack\s*\(\s*['"](.+?)['"]\s*\)/g
 const COMPONENT_TAG_REGEX = /<x-([a-zA-Z0-9-]+)([^>]*)>/
 const INTERPOLATE_REGEX = /\{\{\{?\s*([\w.]+)\s*\}?\}\}/g
+const MARKDOWN_BLOCK_REGEX = /@markdown\b([\s\S]*?)@endmarkdown/g
+const UNCLOSED_MARKDOWN_REGEX = /@markdown\b(?![\s\S]*?@endmarkdown)/
 
 import { getEscapeHtml } from '@gravito/core'
 
@@ -161,6 +166,7 @@ export class TemplateCompiler {
     result = this.processYields(result, ctx)
     result = this.processStacks(result, ctx)
     result = this.processComponents(result, data, ctx, helpers, readTemplate)
+    result = this.processMarkdownBlocks(result, data)
     result = this.processDirectives(result)
     result = this.processLoops(result, data)
     result = this.processConditionals(result, data)
@@ -393,6 +399,55 @@ export class TemplateCompiler {
       }
     }
     return args
+  }
+
+  /**
+   * 處理 @markdown/@endmarkdown 區塊指令。
+   *
+   * 執行步驟：
+   * 1. 檢測未結束的 @markdown 區塊（防禦性錯誤）
+   * 2. 找到所有 @markdown...@endmarkdown 配對
+   * 3. 對區塊內容先執行變數插值
+   * 4. 委派給 RuntimeMarkdownAdapter.html() 渲染為 HTML
+   * 5. 通過 Sanitizer 進行 XSS 防護（深度防禦）
+   *
+   * @param template - 原始模板字串
+   * @param data - 模板資料上下文
+   * @returns 替換 markdown 區塊後的模板字串
+   * @throws {Error} 當 @markdown 未正確關閉時
+   *
+   * @private
+   * @since 3.3.0
+   */
+  private processMarkdownBlocks(template: string, data: Record<string, unknown>): string {
+    // 檢測未結束的 @markdown 區塊
+    if (UNCLOSED_MARKDOWN_REGEX.test(template)) {
+      throw new Error(
+        'Unclosed @markdown block detected. Every @markdown must have a matching @endmarkdown.'
+      )
+    }
+
+    const sanitizer = new Sanitizer()
+    const mdAdapter = getMarkdownAdapter()
+
+    return template.replace(MARKDOWN_BLOCK_REGEX, (_, content: string) => {
+      // 先對區塊內容執行變數插值
+      const interpolated = this.interpolate(content, data)
+
+      // 移除前後空白行（避免額外的空白段落）
+      const trimmed = interpolated.trim()
+
+      // 空內容直接回傳空字串
+      if (!trimmed) {
+        return ''
+      }
+
+      // 渲染 Markdown -> HTML
+      const rawHtml = mdAdapter.html(trimmed)
+
+      // 通過 Sanitizer 進行深度防禦（XSS 防護）
+      return sanitizer.sanitize(rawHtml)
+    })
   }
 
   /**

@@ -1,6 +1,7 @@
 import type { Env, Photon, Schema } from '@gravito/photon'
 import { hc as beamClient } from '@gravito/photon/client'
 import { BeamError, BeamNetworkError } from './errors'
+import { ConnectionPool } from './pool'
 import type { BeamOptions } from './types'
 import {
   createFetchWithTimeout,
@@ -57,7 +58,8 @@ export function createBeam<T extends Photon<Env, Schema, string>>(
     !options?.offlineQueue &&
     !options?.onRequest &&
     !options?.onResponse &&
-    !options?.onError
+    !options?.onError &&
+    !options?.pool
   ) {
     return beamClient<T>(baseUrl, options)
   }
@@ -72,9 +74,14 @@ export function createBeam<T extends Photon<Env, Schema, string>>(
 }
 
 /**
- * Creates an enhanced fetch function with support for timeout, retry, deduplication, and interceptors
+ * Creates an enhanced fetch function with support for timeout, retry, deduplication, connection pooling, and interceptors
  */
 function createEnhancedFetch(options: BeamOptions) {
+  // Create connection pool if enabled
+  const pool = options.pool
+    ? new ConnectionPool(typeof options.pool === 'boolean' ? {} : options.pool)
+    : null
+
   // Create deduplicator instance if enabled
   const deduplicator = options.deduplicate
     ? new RequestDeduplicator(options.deduplicateWindow)
@@ -114,11 +121,15 @@ function createEnhancedFetch(options: BeamOptions) {
         config = { ...config, signal: mergedSignal }
       }
 
-      // 4. Create fetch function (with possible timeout and signal support)
-      const baseFetchFn: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> =
+      // 4. Create base fetch function (with possible timeout, connection pooling, and signal support)
+      const timeoutFn: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> =
         options.timeout
           ? createFetchWithTimeout(options.timeout, options.signal as AbortSignal | undefined)
           : (input: RequestInfo | URL, init?: RequestInit) => fetch(input, init)
+
+      const baseFetchFn: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> = pool
+        ? pool.createPooledFetch()
+        : timeoutFn
 
       // Wrap with deduplicator if enabled
       const fetchFn: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> =
@@ -170,15 +181,25 @@ export {
   BeamError,
   BeamHttpError,
   BeamNetworkError,
+  BeamPoolExhaustedError,
   BeamTimeoutError,
 } from './errors'
 export {
+  collectJsonLines,
+  consumeJsonLines,
   createAuthenticatedBeam,
   createCachedHeaderResolver,
   safeResponse,
   unwrapResponse,
   validateResponse,
 } from './helpers'
+export type {
+  ConnectionPoolConfig,
+  HostPoolMetrics,
+  PoolEntryMetadata,
+  PoolMetricsSnapshot,
+} from './pool'
+export { ConnectionPool } from './pool'
 export type {
   BeamOptions,
   BeamOptions as GravitoClientOptions,

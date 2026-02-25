@@ -51,6 +51,9 @@ export * from '@gravito/freeze'
 export type { LocaleSwitcherProps, StaticLinkProps } from './components'
 // Components
 export { LocaleSwitcher, StaticLink } from './components'
+export type { MarkdownContainerTag, MarkdownProps } from './markdown'
+// Markdown
+export { Markdown } from './markdown'
 export type { FreezeContextValue, FreezeProviderProps } from './provider'
 // Provider
 export { FreezeProvider } from './provider'

@@ -28,15 +28,18 @@ export interface SerializedJob {
    * - 'json': Simple JSON objects.
    * - 'class': Serialized class instances (requires class registration).
    * - 'msgpack': Binary MessagePack format.
+   * - 'binary': CBOR binary format for optimal performance and size.
+   * - 'jsonl': JSON Lines format, optimised for streaming and batch processing.
    */
-  type: 'json' | 'class' | 'msgpack'
+  type: 'json' | 'class' | 'msgpack' | 'binary' | 'jsonl'
 
   /**
    * The actual serialized job payload.
    *
    * Contains the business data needed to execute the job.
+   * For 'binary' and 'msgpack' types, can be Uint8Array or Base64 string for transport.
    */
-  data: string
+  data: string | Uint8Array
 
   /**
    * The fully qualified class name of the job.
@@ -456,7 +459,7 @@ export interface QueueConfig {
   /**
    * The default serialization format to use for jobs.
    */
-  defaultSerializer?: 'json' | 'class' | 'msgpack'
+  defaultSerializer?: 'json' | 'class' | 'msgpack' | 'jsonl'
 
   /**
    * Whether to cache serialized job data.

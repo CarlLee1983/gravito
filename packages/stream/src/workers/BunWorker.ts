@@ -328,10 +328,29 @@ export class BunWorker {
 
       // Send job execution request using postMessage
       // Bun optimizes string messages with a fast path
-      worker.postMessage({
-        type: 'execute',
-        job,
-      })
+      // For large binary payloads (>1KB), use Transferable ArrayBuffer for zero-copy transfer
+      if (job.data instanceof Uint8Array && (job.data as Uint8Array).byteLength > 1024) {
+        const buffer = (job.data as Uint8Array).buffer.slice(
+          (job.data as Uint8Array).byteOffset,
+          (job.data as Uint8Array).byteOffset + (job.data as Uint8Array).byteLength
+        )
+
+        const transferableJob = {
+          ...job,
+          data: buffer,
+          _isTransferable: true,
+        }
+
+        worker.postMessage(
+          { type: 'execute', job: transferableJob },
+          [buffer] // transfer list
+        )
+      } else {
+        worker.postMessage({
+          type: 'execute',
+          job,
+        })
+      }
     })
   }
 

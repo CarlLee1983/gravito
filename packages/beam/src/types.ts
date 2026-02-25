@@ -1,4 +1,5 @@
 import type { BeamError } from './errors'
+import type { ConnectionPoolConfig } from './pool'
 
 /**
  * Retry configuration options
@@ -239,4 +240,37 @@ export interface BeamOptions extends Omit<RequestInit, 'headers'> {
    * ```
    */
   offlineQueue?: OfflineQueueOptions
+
+  /**
+   * Connection pooling configuration
+   *
+   * Enables HTTP connection reuse across requests to the same host.
+   * Reduces TCP handshake and TLS negotiation overhead for high-frequency API calls.
+   *
+   * When set to `true`, uses default pool configuration.
+   * When set to an object, uses custom configuration.
+   * When not specified, connection pooling is disabled (backward compatible).
+   *
+   * Pooling is most effective for:
+   * - Microservices making frequent API calls to backend services
+   * - Real-time applications with many concurrent requests
+   * - Systems where latency is critical
+   *
+   * @example
+   * ```typescript
+   * // Enable with defaults
+   * pool: true
+   * ```
+   *
+   * @example
+   * ```typescript
+   * // Custom configuration
+   * pool: {
+   *   maxConnectionsPerHost: 10,
+   *   idleTimeoutMs: 30000,
+   *   metrics: true
+   * }
+   * ```
+   */
+  pool?: ConnectionPoolConfig | boolean
 }

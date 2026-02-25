@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import { NativeHasher } from '../ffi'
 
 /**
  * Options for the Encrypter class.
@@ -84,9 +85,7 @@ export class Encrypter {
   }
 
   private hash(iv: string, value: string): string {
-    const hmac = crypto.createHmac('sha256', this.key)
-    hmac.update(iv + value)
-    return hmac.digest('hex')
+    return NativeHasher.hmacSha256(this.key.toString(), iv + value)
   }
 
   private validPayload(payload: unknown): payload is { iv: string; value: string; mac: string } {

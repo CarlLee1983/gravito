@@ -3,7 +3,8 @@
  * @description Central registry for table schemas with JIT sniffing and AOT locking
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
+import { getDefaultRuntimeAdapter } from '@gravito/core'
 import { SchemaSniffer } from './SchemaSniffer'
 import type {
   ColumnSchema,
@@ -307,6 +308,9 @@ export class SchemaRegistry {
 
   /**
    * Save schemas to lock file
+   *
+   * Uses RuntimeAdapter for async writes instead of synchronous writeFileSync.
+   * This prevents blocking the event loop during schema persistence.
    */
   async saveToLock(tables: string[], path?: string): Promise<void> {
     const lockPath = path ?? this.lockPath
@@ -323,7 +327,16 @@ export class SchemaRegistry {
       lock.tables[table] = this.serializeTableSchema(schema)
     }
 
-    writeFileSync(lockPath, JSON.stringify(lock, null, 2))
+    // Use RuntimeAdapter for async write to prevent blocking
+    const adapter = getDefaultRuntimeAdapter()
+    const content = JSON.stringify(lock, null, 2)
+    if (adapter.writeFile) {
+      await adapter.writeFile(lockPath, content)
+    } else {
+      // Fallback for runtimes without writeFile support
+      const { writeFile } = await import('node:fs/promises')
+      await writeFile(lockPath, content)
+    }
   }
 
   // ============================================================================

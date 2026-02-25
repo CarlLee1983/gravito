@@ -7,8 +7,8 @@
  * @module @gravito/ion
  */
 
-import { getEscapeHtml } from '@gravito/core'
 import type { GravitoContext, GravitoVariables, ViewService } from '@gravito/core'
+import { getEscapeHtml } from '@gravito/core'
 import { InertiaConfigError, InertiaDataError, InertiaError } from './errors'
 import type { DeferredPropDefinition, InertiaPageObject, MergedPropDefinition } from './types'
 
@@ -244,8 +244,7 @@ export class InertiaService {
    * @returns Safely escaped HTML attribute value.
    */
   private escapeForSingleQuotedHtmlAttribute(value: string): string {
-    return this.escapeHtml(value)
-      .replace(/\\"/g, '\\&quot;')
+    return this.escapeHtml(value).replace(/\\"/g, '\\&quot;')
   }
 
   /**

@@ -1,5 +1,5 @@
 import path from 'node:path'
-import pc from 'picocolors'
+import { Painter as pc } from '@gravito/chromatic'
 
 /**
  * Check if a value is a plain object record.

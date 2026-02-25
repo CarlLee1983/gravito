@@ -1,6 +1,6 @@
+import type { QueueDriver } from '../drivers/QueueDriver'
 import type { Job } from '../Job'
 import type { QueueManager } from '../QueueManager'
-import type { QueueDriver } from '../drivers/QueueDriver'
 import type { ConsumerStrategy } from './ConsumerStrategy'
 
 /**
@@ -64,9 +64,7 @@ export class ReactiveStrategy implements ConsumerStrategy {
         await driver.onNotify(this.queues, async (queue: string) => {
           this.notificationArrived = true
           this.lastNotificationTime = Date.now()
-          this.options.log(
-            `[ReactiveStrategy] Notification for queue: ${queue}`
-          )
+          this.options.log(`[ReactiveStrategy] Notification for queue: ${queue}`)
         })
       }
     } catch (error) {
@@ -205,9 +203,7 @@ export class ReactiveStrategy implements ConsumerStrategy {
 
       // Check if we need fallback polling
       if (timeSinceLastNotification > this.options.reactivePollingFallback) {
-        this.options.log(
-          '[ReactiveStrategy] Fallback polling triggered (no notifications)'
-        )
+        this.options.log('[ReactiveStrategy] Fallback polling triggered (no notifications)')
 
         // Do a fallback poll check
         const jobs = await this.fetchJobs()
@@ -221,10 +217,10 @@ export class ReactiveStrategy implements ConsumerStrategy {
 
       // Check again after interval
       await new Promise((resolve) => {
-        this.fallbackPollingTimer = setTimeout(resolve, Math.min(
-          this.options.reactivePollingFallback / 2,
-          5000
-        ))
+        this.fallbackPollingTimer = setTimeout(
+          resolve,
+          Math.min(this.options.reactivePollingFallback / 2, 5000)
+        )
       })
     }
   }

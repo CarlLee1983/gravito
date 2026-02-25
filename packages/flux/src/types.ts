@@ -346,6 +346,18 @@ export interface FluxTraceSink {
    * @param event - The event to record.
    */
   emit(event: FluxTraceEvent): void | Promise<void>
+
+  /**
+   * Optional method to flush any buffered events.
+   * Called to ensure all events are persisted before shutdown.
+   */
+  flush?(): Promise<void>
+
+  /**
+   * Optional method to close the sink and release resources.
+   * Should be called before process exit.
+   */
+  close?(): Promise<void>
 }
 
 /**

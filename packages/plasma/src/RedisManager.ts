@@ -1,6 +1,4 @@
 import { BunRedisClient } from './clients/BunRedisClient'
-import { RedisClient } from './RedisClient'
-import { RedisClusterClient } from './RedisClusterClient'
 import { type ScriptDefinition, ScriptRegistry } from './ScriptRegistry'
 import type { RedisClientContract, RedisConfig, RedisManagerConfig } from './types'
 
@@ -146,32 +144,17 @@ export class RedisManager {
    * @returns Initialized client instance (not yet connected).
    */
   private createClient(config: RedisConfig): RedisClientContract {
-    // Check for cluster configuration
+    // v2.0.0: Redis Cluster is no longer supported
     if (config.cluster?.enable || config.cluster?.nodes?.length) {
-      return new RedisClusterClient(config)
+      throw new Error(
+        'Redis Cluster is no longer supported in plasma v2.0.0. ' +
+          'Use a Redis Cluster Proxy (e.g., redis-cluster-proxy, Envoy, HAProxy) instead. ' +
+          'See MIGRATION.md for details.'
+      )
     }
 
-    const clientType = config.clientType ?? 'auto'
-
-    if (clientType === 'bun') {
-      return new BunRedisClient(config)
-    }
-
-    if (clientType === 'ioredis') {
-      return new RedisClient(config)
-    }
-
-    // auto: Prefer Bun.redis, fallback to ioredis if unavailable
-    try {
-      // Check if Bun.redis is available
-      if (typeof Bun !== 'undefined' && Bun.redis) {
-        return new BunRedisClient(config)
-      }
-    } catch {
-      // Bun.redis unavailable, use ioredis
-    }
-
-    return new RedisClient(config)
+    // v2.0.0: Only BunRedisClient is supported (clientType deprecated)
+    return new BunRedisClient(config)
   }
 
   /**
