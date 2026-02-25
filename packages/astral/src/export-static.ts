@@ -208,7 +208,7 @@ export async function generateStaticSite(config: StaticExportConfig): Promise<vo
 
   core.logger.info(`[Astral] Static site generated at: ${outputDir}`)
 
-  // 5. 生成歸檔（選用）
+  // 6. 生成歸檔（選用）
   if (config.archive) {
     const archivePath = config.archivePath || `${outputDir}.tar.gz`
     await archiveFromDirectory(outputDir, archivePath, { compress: 'gzip' })

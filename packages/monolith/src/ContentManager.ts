@@ -51,7 +51,6 @@ export class ContentManager {
 
   // RuntimeMarkdownAdapter（自動選擇 Bun 原生或 marked fallback）
   private readonly mdAdapter: RuntimeMarkdownAdapter = getMarkdownAdapter()
-
   // 完整的 HTML 渲染回調（含 XSS 防護覆寫）
   private readonly renderCallbacks: MarkdownRenderCallbacks = createHtmlRenderCallbacks({
     html: (rawHtml: string) => this.escapeHtml(rawHtml),

@@ -14,7 +14,7 @@
  * @since 3.1.0
  */
 
-import { getMarkdownAdapter } from '@gravito/core'
+import { getEscapeHtml, getMarkdownAdapter } from '@gravito/core'
 import { Sanitizer } from '../security/Sanitizer'
 
 /**
@@ -81,8 +81,6 @@ const COMPONENT_TAG_REGEX = /<x-([a-zA-Z0-9-]+)([^>]*)>/
 const INTERPOLATE_REGEX = /\{\{\{?\s*([\w.]+)\s*\}?\}\}/g
 const MARKDOWN_BLOCK_REGEX = /@markdown\b([\s\S]*?)@endmarkdown/g
 const UNCLOSED_MARKDOWN_REGEX = /@markdown\b(?![\s\S]*?@endmarkdown)/
-
-import { getEscapeHtml } from '@gravito/core'
 
 /**
  * TemplateCompiler handles the transformation of template source code into HTML.
