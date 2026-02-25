@@ -1,52 +1,16 @@
+import {
+  type CacheEventEmitterConfig,
+  type CacheEventMode,
+  type CacheEvents,
+  emitCacheEvent,
+} from './cache-events'
 import { type CacheLock, sleep } from './locks'
 import type { CacheStore } from './store'
 import { isTaggableStore } from './store'
+import { TaggedStore } from './tagged-store'
 import { type CacheKey, type CacheTtl, type CompressionOptions, normalizeCacheKey } from './types'
 
-/**
- * Supported modes for emitting cache events.
- *
- * Defines how lifecycle hooks (hit, miss, write, etc.) are dispatched to handlers.
- *
- * @public
- * @since 3.0.0
- *
- * @example
- * ```typescript
- * const mode: CacheEventMode = 'async';
- * ```
- */
-export type CacheEventMode = 'sync' | 'async' | 'off'
-
-/**
- * Event handlers for cache lifecycle events.
- *
- * Provides a contract for reacting to cache operations, enabling logging,
- * monitoring, or custom side effects.
- *
- * @public
- * @since 3.0.0
- *
- * @example
- * ```typescript
- * const events: CacheEvents = {
- *   hit: (key) => console.log(`Cache hit: ${key}`),
- *   miss: (key) => console.log(`Cache miss: ${key}`)
- * };
- * ```
- */
-export type CacheEvents = {
-  /** Triggered on a cache hit. */
-  hit?: (key: string) => void | Promise<void>
-  /** Triggered on a cache miss. */
-  miss?: (key: string) => void | Promise<void>
-  /** Triggered when a value is written to the cache. */
-  write?: (key: string) => void | Promise<void>
-  /** Triggered when a value is removed from the cache. */
-  forget?: (key: string) => void | Promise<void>
-  /** Triggered when the entire cache is flushed. */
-  flush?: () => void | Promise<void>
-}
+export type { CacheEventMode, CacheEvents }
 
 /**
  * Options for configuring the `CacheRepository`.
@@ -146,11 +110,18 @@ export class CacheRepository {
   private refreshSemaphore = new Map<string, Promise<void>>()
   private coalesceSemaphore = new Map<string, Promise<any>>()
   private flexibleStats = { refreshCount: 0, refreshFailures: 0, totalTime: 0 }
+  private eventEmitterConfig: CacheEventEmitterConfig
 
   constructor(
     protected readonly store: CacheStore,
     protected readonly options: CacheRepositoryOptions = {}
-  ) {}
+  ) {
+    this.eventEmitterConfig = {
+      mode: options.eventsMode ?? 'async',
+      throwOnError: options.throwOnEventError,
+      onError: options.onEventError,
+    }
+  }
 
   /**
    * Retrieve statistics about flexible cache operations.
@@ -177,63 +148,7 @@ export class CacheRepository {
   }
 
   private emit(event: keyof CacheEvents, payload: { key?: string } = {}): void | Promise<void> {
-    const mode = this.options.eventsMode ?? 'async'
-    if (mode === 'off') {
-      return
-    }
-
-    const fn = this.options.events?.[event]
-    if (!fn) {
-      return
-    }
-
-    const invoke = (): void | Promise<void> => {
-      if (event === 'flush') {
-        return (fn as NonNullable<CacheEvents['flush']>)()
-      }
-      const key = payload.key ?? ''
-      return (
-        fn as NonNullable<
-          CacheEvents['hit'] | CacheEvents['miss'] | CacheEvents['write'] | CacheEvents['forget']
-        >
-      )(key)
-    }
-
-    const reportError = (error: unknown): void => {
-      try {
-        this.options.onEventError?.(error, event, payload)
-      } catch {
-        // ignore to keep cache ops safe
-      }
-    }
-
-    if (mode === 'sync') {
-      try {
-        return Promise.resolve(invoke()).catch((error) => {
-          reportError(error)
-          if (this.options.throwOnEventError) {
-            throw error
-          }
-        })
-      } catch (error) {
-        reportError(error)
-        if (this.options.throwOnEventError) {
-          throw error
-        }
-      }
-      return
-    }
-
-    queueMicrotask(() => {
-      try {
-        const result = invoke()
-        if (result && typeof (result as Promise<void>).catch === 'function') {
-          void (result as Promise<void>).catch(reportError)
-        }
-      } catch (error) {
-        reportError(error)
-      }
-    })
+    return emitCacheEvent(event, payload, this.options.events, this.eventEmitterConfig)
   }
 
   protected key(key: CacheKey): string {
@@ -936,65 +851,5 @@ export class CacheRepository {
       }
     }
     return value as T
-  }
-}
-
-class TaggedStore implements CacheStore {
-  constructor(
-    private readonly store: CacheStore & {
-      flushTags: (tags: readonly string[]) => Promise<void>
-      tagKey: (key: string, tags: readonly string[]) => string
-      tagIndexAdd: (tags: readonly string[], taggedKey: string) => void
-    },
-    private readonly tags: readonly string[]
-  ) {}
-
-  private tagged(key: CacheKey): string {
-    return this.store.tagKey(normalizeCacheKey(key), this.tags)
-  }
-
-  async get<T = unknown>(key: CacheKey) {
-    return this.store.get<T>(this.tagged(key))
-  }
-
-  async put(key: CacheKey, value: unknown, ttl: CacheTtl): Promise<void> {
-    const taggedKey = this.tagged(key)
-    await this.store.put(taggedKey, value, ttl)
-    this.store.tagIndexAdd(this.tags, taggedKey)
-  }
-
-  async add(key: CacheKey, value: unknown, ttl: CacheTtl): Promise<boolean> {
-    const taggedKey = this.tagged(key)
-    const ok = await this.store.add(taggedKey, value, ttl)
-    if (ok) {
-      this.store.tagIndexAdd(this.tags, taggedKey)
-    }
-    return ok
-  }
-
-  async forget(key: CacheKey): Promise<boolean> {
-    return this.store.forget(this.tagged(key))
-  }
-
-  async flush(): Promise<void> {
-    return this.store.flushTags(this.tags)
-  }
-
-  async increment(key: CacheKey, value?: number): Promise<number> {
-    const taggedKey = this.tagged(key)
-    const next = await this.store.increment(taggedKey, value)
-    this.store.tagIndexAdd(this.tags, taggedKey)
-    return next
-  }
-
-  async decrement(key: CacheKey, value?: number): Promise<number> {
-    const taggedKey = this.tagged(key)
-    const next = await this.store.decrement(taggedKey, value)
-    this.store.tagIndexAdd(this.tags, taggedKey)
-    return next
-  }
-
-  lock(name: string, seconds?: number): CacheLock | undefined {
-    return this.store.lock ? this.store.lock(this.tagged(name), seconds) : undefined
   }
 }
