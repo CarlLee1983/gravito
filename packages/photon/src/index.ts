@@ -88,7 +88,16 @@ export * from './middleware/ratelimit'
  * @public
  */
 export * from './middleware/ratelimit-redis'
-
+/**
+ * Security middleware for Photon.
+ *
+ * Provides HTTP security utilities migrated from `@gravito/core`:
+ * CORS, CSRF protection, security headers, body size limiting,
+ * header token gating, and request throttling.
+ *
+ * @public
+ */
+export * from './middleware/security'
 /**
  * OpenAPI utilities
  * @public
