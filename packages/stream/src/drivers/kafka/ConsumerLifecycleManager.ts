@@ -18,7 +18,7 @@ export class ConsumerLifecycleManager extends EventEmitter {
   private previousState: ConsumerLifecycleState = 'idle'
   private lastTransitionTime = Date.now()
   private stateHistory: Array<{ state: ConsumerLifecycleState; timestamp: number }> = [
-    { state: 'idle', timestamp: this.lastTransitionTime }
+    { state: 'idle', timestamp: this.lastTransitionTime },
   ]
 
   /**
@@ -40,7 +40,7 @@ export class ConsumerLifecycleManager extends EventEmitter {
     this.transition('starting')
     try {
       // Simulate consumer startup delay
-      await new Promise(resolve => setImmediate(resolve))
+      await new Promise((resolve) => setImmediate(resolve))
       this.transition('running')
     } catch (error) {
       this.transitionError(error as Error)
@@ -59,7 +59,7 @@ export class ConsumerLifecycleManager extends EventEmitter {
     this.transition('restarting')
     try {
       // Simulate consumer restart delay
-      await new Promise(resolve => setImmediate(resolve))
+      await new Promise((resolve) => setImmediate(resolve))
       this.transition('running')
     } catch (error) {
       this.transitionError(error as Error)
@@ -78,7 +78,7 @@ export class ConsumerLifecycleManager extends EventEmitter {
     this.transition('stopping')
     try {
       // Simulate consumer shutdown delay
-      await new Promise(resolve => setImmediate(resolve))
+      await new Promise((resolve) => setImmediate(resolve))
       this.transition('stopped')
     } catch (error) {
       this.transitionError(error as Error)
@@ -162,7 +162,7 @@ export class ConsumerLifecycleManager extends EventEmitter {
     const event: LifecycleEvent = {
       state: newState,
       previousState: this.previousState,
-      timestamp: this.lastTransitionTime
+      timestamp: this.lastTransitionTime,
     }
 
     this.emit('stateChange', event)
@@ -181,7 +181,7 @@ export class ConsumerLifecycleManager extends EventEmitter {
       state: 'error',
       previousState: this.previousState,
       timestamp: this.lastTransitionTime,
-      error
+      error,
     }
 
     this.emit('stateChange', event)

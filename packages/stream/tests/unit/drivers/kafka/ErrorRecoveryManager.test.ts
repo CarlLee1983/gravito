@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { ErrorRecoveryManager } from '../../../../src/drivers/kafka/ErrorRecoveryManager'
-import type { ErrorRecoveryState, KafkaCircuitState } from '../../../../src/drivers/kafka/types'
+import type { KafkaCircuitState } from '../../../../src/drivers/kafka/types'
 
 describe('ErrorRecoveryManager', () => {
   let manager: ErrorRecoveryManager

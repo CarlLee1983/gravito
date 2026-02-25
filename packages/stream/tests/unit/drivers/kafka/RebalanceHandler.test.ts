@@ -65,8 +65,8 @@ describe('RebalanceHandler', () => {
 
       const revokingEvent = events.find((e) => e.state === 'revoking')
       expect(revokingEvent).toBeDefined()
-      expect(revokingEvent!.previousState).toBe('stable')
-      expect(revokingEvent!.revokedPartitions).toEqual(partitions)
+      expect(revokingEvent?.previousState).toBe('stable')
+      expect(revokingEvent?.revokedPartitions).toEqual(partitions)
     })
 
     test('handlePartitionsRevoked 提交 offset', async () => {
@@ -357,7 +357,7 @@ describe('RebalanceHandler', () => {
         slowHandler.handlePartitionsRevoked([{ topic: 'topic-b', partition: 0 }])
       ).rejects.toThrow('Max concurrent rebalances exceeded')
 
-      resolveFirst!()
+      resolveFirst?.()
       await first
     })
 
@@ -381,7 +381,7 @@ describe('RebalanceHandler', () => {
 
       const errorEvent = events.find((e) => e.state === 'error')
       expect(errorEvent).toBeDefined()
-      expect(errorEvent!.error?.message).toBe('Test error')
+      expect(errorEvent?.error?.message).toBe('Test error')
     })
   })
 

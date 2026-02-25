@@ -432,3 +432,86 @@ export interface RebalanceStatus {
   lastRebalanceTimestamp: number
   isRebalancing: boolean
 }
+
+/**
+ * 批次處理配置。
+ * @public
+ */
+export interface BatchConfig {
+  /** 最大批次大小。Default: 100 */
+  maxBatchSize?: number
+  /** 批次收集逾時（ms）。Default: 50 */
+  batchLingerMs?: number
+  /** 批次並行度。Default: 3 */
+  concurrency?: number
+  /** 是否啟用 producer batch 管線。Default: true */
+  enablePipeline?: boolean
+}
+
+/**
+ * 批次處理結果。
+ * @public
+ */
+export interface BatchResult {
+  /** 成功處理的訊息 ID */
+  succeeded: string[]
+  /** 失敗的訊息 */
+  failed: Array<{ id: string; error: Error }>
+}
+
+/**
+ * 效能監控配置。
+ * @public
+ */
+export interface PerformanceConfig {
+  /** 快照收集間隔（毫秒）。Default: 5000 */
+  snapshotIntervalMs?: number
+  /** 歷史快照保留數量。Default: 60 */
+  historySize?: number
+  /** 是否啟用效能監控。Default: true */
+  enabled?: boolean
+}
+
+/**
+ * 效能快照，聚合所有元件的狀態。
+ * @public
+ */
+export interface PerformanceSnapshot {
+  /** 快照時間戳 */
+  timestamp: number
+  /** 吞吐量指標（來自 KafkaMetrics） */
+  throughput: Record<string, number>
+  /** 延遲指標（來自 KafkaMetrics） */
+  latency: {
+    p50: number
+    p95: number
+    p99: number
+    avg: number
+  }
+  /** 錯誤統計（來自 KafkaMetrics） */
+  errors: {
+    total: number
+    serialization: number
+    callback: number
+    connection: number
+    timeout: number
+  }
+  /** 電路斷路器狀態（來自 ErrorRecoveryManager） */
+  circuitState: KafkaCircuitState
+  /** 心跳狀態（來自 HeartbeatManager） */
+  heartbeatAlive: boolean
+  /** 背壓狀態（來自 BackpressureController） */
+  backpressurePaused: boolean
+  /** 消費者生命週期狀態（來自 ConsumerLifecycleManager） */
+  consumerState: ConsumerLifecycleState
+  /** 緩衝區利用率 */
+  bufferUtilization: number
+  /** 處理中的訊息數 */
+  inFlight: number
+  /** 總處理量 */
+  totalProcessed: number
+  /** 總失敗量 */
+  totalFailed: number
+  /** 整體健康狀態 */
+  health: 'healthy' | 'degraded' | 'unhealthy'
+}

@@ -98,8 +98,12 @@ export class ErrorRecoveryManager extends EventEmitter {
    * - HALF_OPEN: 限制探測請求數量
    */
   canProceed(): boolean {
-    if (this.circuitState === 'CLOSED') return true
-    if (this.circuitState === 'OPEN') return false
+    if (this.circuitState === 'CLOSED') {
+      return true
+    }
+    if (this.circuitState === 'OPEN') {
+      return false
+    }
 
     // HALF_OPEN: 限制探測請求
     if (this.halfOpenRequests < this.halfOpenMaxRequests) {

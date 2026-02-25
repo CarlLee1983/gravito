@@ -228,17 +228,17 @@ describe('KafkaNotifier', () => {
     it('should emit messageArrived event with count', async () => {
       notifier.enable()
 
-      const events: Array<any> = []
-      notifier.onMessageArrived(event => events.push(event))
+      const events: any[] = []
+      notifier.onMessageArrived((event) => events.push(event))
 
       notifier.notifyWithCount('test', 5)
 
       await new Promise((resolve) => setTimeout(resolve, 10))
 
       expect(events).toHaveLength(1)
-      expect(events[0]!.queue).toBe('test')
-      expect(events[0]!.count).toBe(5)
-      expect(events[0]!.timestamp).toBeGreaterThan(0)
+      expect(events[0]?.queue).toBe('test')
+      expect(events[0]?.count).toBe(5)
+      expect(events[0]?.timestamp).toBeGreaterThan(0)
     })
 
     it('should include timestamp in messageArrived event', async () => {
@@ -247,7 +247,7 @@ describe('KafkaNotifier', () => {
       const before = Date.now()
       let eventTimestamp = 0
 
-      notifier.onMessageArrived(event => {
+      notifier.onMessageArrived((event) => {
         eventTimestamp = event.timestamp
       })
 
@@ -265,7 +265,7 @@ describe('KafkaNotifier', () => {
       notifier.enable()
 
       const counts: number[] = []
-      notifier.onMessageArrived(event => counts.push(event.count))
+      notifier.onMessageArrived((event) => counts.push(event.count))
 
       notifier.notifyWithCount('queue1', 10)
       notifier.notifyWithCount('queue2', 20)
@@ -283,18 +283,18 @@ describe('KafkaNotifier', () => {
       const callback = mock(async () => {})
       notifier.registerCallback(['test'], callback)
 
-      const events: Array<any> = []
-      notifier.onCallbackCompleted(event => events.push(event))
+      const events: any[] = []
+      notifier.onCallbackCompleted((event) => events.push(event))
 
       notifier.notifyWithCount('test', 1)
 
       await new Promise((resolve) => setTimeout(resolve, 50))
 
       expect(events).toHaveLength(1)
-      expect(events[0]!.queue).toBe('test')
-      expect(events[0]!.success).toBe(true)
-      expect(events[0]!.duration).toBeGreaterThanOrEqual(0)
-      expect(events[0]!.error).toBeUndefined()
+      expect(events[0]?.queue).toBe('test')
+      expect(events[0]?.success).toBe(true)
+      expect(events[0]?.duration).toBeGreaterThanOrEqual(0)
+      expect(events[0]?.error).toBeUndefined()
     })
 
     it('should emit callbackCompleted event on failure', async () => {
@@ -305,18 +305,18 @@ describe('KafkaNotifier', () => {
       })
       notifier.registerCallback(['test'], callback)
 
-      const events: Array<any> = []
-      notifier.onCallbackCompleted(event => events.push(event))
+      const events: any[] = []
+      notifier.onCallbackCompleted((event) => events.push(event))
 
       notifier.notifyWithCount('test', 1)
 
       await new Promise((resolve) => setTimeout(resolve, 50))
 
       expect(events).toHaveLength(1)
-      expect(events[0]!.queue).toBe('test')
-      expect(events[0]!.success).toBe(false)
-      expect(events[0]!.error).toBeDefined()
-      expect(events[0]!.error.message).toBe('Test error')
+      expect(events[0]?.queue).toBe('test')
+      expect(events[0]?.success).toBe(false)
+      expect(events[0]?.error).toBeDefined()
+      expect(events[0]?.error.message).toBe('Test error')
     })
 
     it('should track callback duration', async () => {
@@ -328,7 +328,7 @@ describe('KafkaNotifier', () => {
       notifier.registerCallback(['test'], callback)
 
       const durations: number[] = []
-      notifier.onCallbackCompleted(event => durations.push(event.duration))
+      notifier.onCallbackCompleted((event) => durations.push(event.duration))
 
       notifier.notifyWithCount('test', 1)
 
@@ -347,16 +347,16 @@ describe('KafkaNotifier', () => {
       notifier.registerCallback(['test'], callback1)
       notifier.registerCallback(['test'], callback2)
 
-      const events: Array<any> = []
-      notifier.onCallbackCompleted(event => events.push(event))
+      const events: any[] = []
+      notifier.onCallbackCompleted((event) => events.push(event))
 
       notifier.notifyWithCount('test', 1)
 
       await new Promise((resolve) => setTimeout(resolve, 50))
 
       expect(events).toHaveLength(2)
-      expect(events[0]!.queue).toBe('test')
-      expect(events[1]!.queue).toBe('test')
+      expect(events[0]?.queue).toBe('test')
+      expect(events[1]?.queue).toBe('test')
     })
 
     it('should continue emitting even if callback throws non-Error', async () => {
@@ -367,17 +367,17 @@ describe('KafkaNotifier', () => {
       })
       notifier.registerCallback(['test'], callback)
 
-      const events: Array<any> = []
-      notifier.onCallbackCompleted(event => events.push(event))
+      const events: any[] = []
+      notifier.onCallbackCompleted((event) => events.push(event))
 
       notifier.notifyWithCount('test', 1)
 
       await new Promise((resolve) => setTimeout(resolve, 50))
 
       expect(events).toHaveLength(1)
-      expect(events[0]!.success).toBe(false)
-      expect(events[0]!.error).toBeDefined()
-      expect(events[0]!.error.message).toBe('String error')
+      expect(events[0]?.success).toBe(false)
+      expect(events[0]?.error).toBeDefined()
+      expect(events[0]?.error.message).toBe('String error')
     })
   })
 
@@ -415,15 +415,15 @@ describe('KafkaNotifier', () => {
     it('should handle notify() with count=1', async () => {
       notifier.enable()
 
-      const events: Array<any> = []
-      notifier.onMessageArrived(event => events.push(event))
+      const events: any[] = []
+      notifier.onMessageArrived((event) => events.push(event))
 
       notifier.notify('test')
 
       await new Promise((resolve) => setTimeout(resolve, 10))
 
       expect(events).toHaveLength(1)
-      expect(events[0]!.count).toBe(1)
+      expect(events[0]?.count).toBe(1)
     })
 
     it('should respect enabled state with notifyWithCount', async () => {

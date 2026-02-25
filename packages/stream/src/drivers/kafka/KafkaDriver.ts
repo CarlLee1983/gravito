@@ -2,6 +2,7 @@ import type { JobPushOptions, QueueStats, SerializedJob, TopicOptions } from '..
 import type { QueueDriver } from '../QueueDriver'
 import {
   BackpressureController,
+  BatchProcessor,
   ConsumerLifecycleManager,
   ErrorRecoveryManager,
   HeartbeatManager,
@@ -9,18 +10,17 @@ import {
   KafkaNotifier,
   MessageBuffer,
   OffsetTracker,
+  PerformanceMonitor,
   RebalanceHandler,
 } from '.'
 import type {
-  BackpressureConfig,
-  ErrorRecoveryConfig,
   KafkaAdminClient,
-  KafkaClientFactory,
   KafkaConsumerClient,
   KafkaDriverFullConfig,
   KafkaDriverMetrics,
   KafkaMessage,
   KafkaProducerClient,
+  PerformanceSnapshot,
   SubscribeOptions,
 } from './types'
 
@@ -55,6 +55,10 @@ export class KafkaDriver implements QueueDriver {
   private readonly errorRecovery: ErrorRecoveryManager
   private readonly rebalanceHandler: RebalanceHandler
 
+  // Phase 6E components
+  private readonly batchProcessor: BatchProcessor
+  private readonly performanceMonitor: PerformanceMonitor
+
   // Internal state
   private readonly subscribedTopics = new Set<string>()
   private readonly knownQueues = new Set<string>()
@@ -66,6 +70,12 @@ export class KafkaDriver implements QueueDriver {
   private consumerRunning = false
   private offsetCommitTimer: ReturnType<typeof setInterval> | null = null
   private subscriptionCallbacks = new Map<string, (job: SerializedJob) => Promise<void>>()
+
+  // Phase 6E: Reverse index for O(1) clear() by topic
+  private readonly topicToMessageIds = new Map<string, Set<string>>()
+
+  // Phase 6E: Serialization cache for push() hot path (WeakMap for automatic GC)
+  private readonly serializationCache = new WeakMap<SerializedJob, string>()
 
   private readonly config: Required<KafkaDriverFullConfig>
 
@@ -105,6 +115,17 @@ export class KafkaDriver implements QueueDriver {
     this.metrics = new KafkaMetrics()
     this.errorRecovery = new ErrorRecoveryManager()
     this.rebalanceHandler = new RebalanceHandler()
+    this.batchProcessor = new BatchProcessor({
+      maxBatchSize: this.config.maxBatchSize,
+    })
+    this.performanceMonitor = new PerformanceMonitor()
+    this.performanceMonitor.bind({
+      metrics: this.metrics,
+      errorRecovery: this.errorRecovery,
+      heartbeat: this.heartbeatManager,
+      backpressure: this.backpressure,
+      lifecycle: this.lifecycleManager,
+    })
 
     // 註冊重新平衡回調
     this.rebalanceHandler.registerCallbacks({
@@ -112,6 +133,14 @@ export class KafkaDriver implements QueueDriver {
       clearPartitionBuffers: (partitions) => {
         for (const { topic } of partitions) {
           this.buffer.clear(topic)
+          // Also clear reverse index for the partition's topic
+          const messageIds = this.topicToMessageIds.get(topic)
+          if (messageIds) {
+            for (const id of messageIds) {
+              this.messageIdToMeta.delete(id)
+            }
+            this.topicToMessageIds.delete(topic)
+          }
         }
       },
       clearPartitionTracking: (partitions) => {
@@ -135,7 +164,7 @@ export class KafkaDriver implements QueueDriver {
     const producer = await this.ensureProducer()
 
     const messageKey = options?.groupId ?? job.groupId ?? job.id
-    const payload = JSON.stringify(job)
+    const payload = this.serializeJob(job)
 
     await producer.send({
       topic: queue,
@@ -150,24 +179,27 @@ export class KafkaDriver implements QueueDriver {
     this.knownQueues.add(queue)
   }
 
+  /**
+   * Serialize a job with WeakMap caching.
+   * Avoids re-serializing the same object reference (e.g. retries).
+   */
+  private serializeJob(job: SerializedJob): string {
+    let cached = this.serializationCache.get(job)
+    if (!cached) {
+      cached = JSON.stringify(job)
+      this.serializationCache.set(job, cached)
+    }
+    return cached
+  }
+
   async pushMany(queue: string, jobs: SerializedJob[]): Promise<void> {
-    if (jobs.length === 0) return
+    if (jobs.length === 0) {
+      return
+    }
 
     const producer = await this.ensureProducer()
-    const batchSize = this.config.maxBatchSize
 
-    for (let i = 0; i < jobs.length; i += batchSize) {
-      const batch = jobs.slice(i, i + batchSize)
-      const messages = batch.map((job) => ({
-        key: job.groupId ?? job.id,
-        value: JSON.stringify(job),
-      }))
-
-      await producer.send({
-        topic: queue,
-        messages,
-      })
-    }
+    await this.batchProcessor.pushBatches(producer, queue, jobs, (job) => this.serializeJob(job))
 
     this.knownQueues.add(queue)
   }
@@ -178,7 +210,9 @@ export class KafkaDriver implements QueueDriver {
     partition: number,
     message: KafkaMessage
   ): Promise<void> {
-    if (!message.value) return
+    if (!message.value) {
+      return
+    }
 
     try {
       const payload = message.value.toString()
@@ -187,12 +221,18 @@ export class KafkaDriver implements QueueDriver {
       // Track offset in OffsetTracker
       this.offsetTracker.track(topic, partition, message.offset)
 
-      // Create messageId → metadata mapping
+      // Create messageId → metadata mapping + reverse index
       this.messageIdToMeta.set(job.id, {
         topic,
         partition,
         offset: message.offset,
       })
+
+      // Maintain reverse index for O(1) clear()
+      if (!this.topicToMessageIds.has(topic)) {
+        this.topicToMessageIds.set(topic, new Set())
+      }
+      this.topicToMessageIds.get(topic)?.add(job.id)
 
       // Push into buffer
       const queued = this.buffer.enqueue(topic, {
@@ -233,7 +273,9 @@ export class KafkaDriver implements QueueDriver {
   }
 
   private async ensureConsumerForTopic(topic: string): Promise<void> {
-    if (this.subscribedTopics.has(topic)) return
+    if (this.subscribedTopics.has(topic)) {
+      return
+    }
 
     // 如果電路打開，等待退避後再繼續
     if (!this.errorRecovery.canProceed()) {
@@ -259,7 +301,9 @@ export class KafkaDriver implements QueueDriver {
   }
 
   private async restartConsumer(): Promise<void> {
-    if (!this.consumer) return
+    if (!this.consumer) {
+      return
+    }
 
     try {
       // Stop offset commit loop
@@ -327,35 +371,22 @@ export class KafkaDriver implements QueueDriver {
       await this.ensureConsumerForTopic(queue)
     }
 
-    // Try immediate pop
+    // Try immediate pop from any queue
     for (const queue of queueList) {
       const job = await this.pop(queue)
-      if (job) return job
+      if (job) {
+        return job
+      }
     }
 
-    // Wait with timeout
-    return new Promise((resolve) => {
-      const startTime = Date.now()
-      const timeoutMs = timeout * 1000
-
-      const checkQueue = async () => {
-        for (const queue of queueList) {
-          const buffered = this.buffer.dequeue(queue)
-          if (buffered) {
-            resolve(buffered.job)
-            return
-          }
-        }
-
-        if (Date.now() - startTime >= timeoutMs) {
-          resolve(null)
-        } else {
-          setTimeout(checkQueue, 100)
-        }
-      }
-
-      checkQueue()
-    })
+    // Use MessageBuffer's event-driven dequeueBlocking instead of polling
+    const timeoutMs = timeout * 1000
+    const result = await Promise.race(
+      queueList.map((queue) =>
+        this.buffer.dequeueBlocking(queue, timeoutMs).then((msg) => msg?.job ?? null)
+      )
+    )
+    return result
   }
 
   async popMany(queue: string, count: number): Promise<SerializedJob[]> {
@@ -410,13 +441,15 @@ export class KafkaDriver implements QueueDriver {
       }
     })
 
-    // Start heartbeat and subscription loop
+    // Start heartbeat, lifecycle, and performance monitoring
     await this.heartbeatManager.start(this.config.consumerGroupId, [queue])
     await this.lifecycleManager.start()
+    this.performanceMonitor.start()
 
     try {
       await this.runSubscription(queue, callback, opts)
     } catch (error) {
+      this.performanceMonitor.stop()
       await this.heartbeatManager.stop()
       await this.lifecycleManager.stop()
       throw error
@@ -490,7 +523,7 @@ export class KafkaDriver implements QueueDriver {
 
           if (options.autoAcknowledge) {
             this.offsetTracker.resolve(buffered.topic, buffered.partition, buffered.offset)
-            this.messageIdToMeta.delete(messageId)
+            this.removeMessageTracking(messageId, buffered.topic)
           }
 
           // Notify completion
@@ -514,11 +547,11 @@ export class KafkaDriver implements QueueDriver {
   }
 
   // 6B-4: Complete/Ack/Fail + Offset Commit (~30 min)
-  async complete(queue: string, job: SerializedJob): Promise<void> {
+  async complete(_queue: string, job: SerializedJob): Promise<void> {
     const meta = this.messageIdToMeta.get(job.id)
     if (meta) {
       this.offsetTracker.resolve(meta.topic, meta.partition, meta.offset)
-      this.messageIdToMeta.delete(job.id)
+      this.removeMessageTracking(job.id, meta.topic)
     }
   }
 
@@ -526,7 +559,7 @@ export class KafkaDriver implements QueueDriver {
     const meta = this.messageIdToMeta.get(messageId)
     if (meta) {
       this.offsetTracker.resolve(meta.topic, meta.partition, meta.offset)
-      this.messageIdToMeta.delete(messageId)
+      this.removeMessageTracking(messageId, meta.topic)
     }
   }
 
@@ -558,19 +591,21 @@ export class KafkaDriver implements QueueDriver {
       if (!this.dlqBuffer.has(dlqTopic)) {
         this.dlqBuffer.set(dlqTopic, [])
       }
-      this.dlqBuffer.get(dlqTopic)!.push(failedJob)
+      this.dlqBuffer.get(dlqTopic)?.push(failedJob)
       console.error(`[KafkaDriver] Failed to send to DLQ: ${error}`)
     }
 
     // Mark as resolved (at-least-once: already processed)
     if (meta) {
       this.offsetTracker.resolve(meta.topic, meta.partition, meta.offset)
-      this.messageIdToMeta.delete(job.id)
+      this.removeMessageTracking(job.id, meta.topic)
     }
   }
 
   private startOffsetCommitLoop(): void {
-    if (this.offsetCommitTimer) return
+    if (this.offsetCommitTimer) {
+      return
+    }
 
     this.offsetCommitTimer = setInterval(
       () =>
@@ -582,10 +617,14 @@ export class KafkaDriver implements QueueDriver {
   }
 
   private async commitOffsets(): Promise<void> {
-    if (!this.consumer) return
+    if (!this.consumer) {
+      return
+    }
 
     const committable = this.offsetTracker.getCommittableOffsets()
-    if (committable.length === 0) return
+    if (committable.length === 0) {
+      return
+    }
 
     // Kafka offset = next offset to read (offset + 1)
     const offsets = committable.map((c) => ({
@@ -680,15 +719,52 @@ export class KafkaDriver implements QueueDriver {
     return this.metrics.getSnapshot()
   }
 
+  /**
+   * Get aggregated performance snapshot.
+   */
+  getPerformanceSnapshot(): PerformanceSnapshot {
+    return this.performanceMonitor.collectSnapshot()
+  }
+
+  /**
+   * Get performance history.
+   */
+  getPerformanceHistory(count?: number): PerformanceSnapshot[] {
+    return this.performanceMonitor.getHistory(count)
+  }
+
+  /**
+   * Generate a performance report string.
+   */
+  getPerformanceReport(): string {
+    return this.performanceMonitor.generateReport()
+  }
+
   async clear(queue: string): Promise<void> {
     this.buffer.clear(queue)
     this.offsetTracker.clear(queue)
     this.dlqBuffer.delete(`${queue}${this.config.dlqSuffix}`)
 
-    // Clear messageIdToMeta for this queue
-    for (const [id, meta] of this.messageIdToMeta.entries()) {
-      if (meta.topic === queue) {
+    // O(1) clear using reverse index instead of O(n) iteration
+    const messageIds = this.topicToMessageIds.get(queue)
+    if (messageIds) {
+      for (const id of messageIds) {
         this.messageIdToMeta.delete(id)
+      }
+      this.topicToMessageIds.delete(queue)
+    }
+  }
+
+  /**
+   * Remove message tracking from both primary and reverse indexes.
+   */
+  private removeMessageTracking(messageId: string, topic: string): void {
+    this.messageIdToMeta.delete(messageId)
+    const topicIds = this.topicToMessageIds.get(topic)
+    if (topicIds) {
+      topicIds.delete(messageId)
+      if (topicIds.size === 0) {
+        this.topicToMessageIds.delete(topic)
       }
     }
   }
@@ -720,8 +796,12 @@ export class KafkaDriver implements QueueDriver {
     const dlqTopic = `${queue}${this.config.dlqSuffix}`
     const failed = this.dlqBuffer.get(dlqTopic) ?? []
 
-    if (start === undefined) return failed
-    if (end === undefined) return failed.slice(start)
+    if (start === undefined) {
+      return failed
+    }
+    if (end === undefined) {
+      return failed.slice(start)
+    }
     return failed.slice(start, end)
   }
 
@@ -751,6 +831,9 @@ export class KafkaDriver implements QueueDriver {
   // 6B-8: Graceful Shutdown (~15 min)
   async disconnect(): Promise<void> {
     try {
+      // Stop performance monitor
+      this.performanceMonitor.destroy()
+
       // Stop heartbeat manager
       await this.heartbeatManager.stop()
 
@@ -806,6 +889,8 @@ export class KafkaDriver implements QueueDriver {
       this.consumerRunning = false
       this.subscribedTopics.clear()
       this.messageIdToMeta.clear()
+      this.topicToMessageIds.clear()
+      // serializationCache is a WeakMap, auto-cleaned by GC
     } catch (error) {
       console.error(`[KafkaDriver] Disconnect error: ${error}`)
       throw error

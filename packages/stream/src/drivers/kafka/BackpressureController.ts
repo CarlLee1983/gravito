@@ -26,9 +26,7 @@ export class BackpressureController {
     this.maxInFlight = config.maxInFlight ?? 10
 
     if (this.highWatermark <= this.lowWatermark) {
-      throw new Error(
-        'highWatermark must be greater than lowWatermark'
-      )
+      throw new Error('highWatermark must be greater than lowWatermark')
     }
   }
 

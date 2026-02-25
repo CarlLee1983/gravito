@@ -436,8 +436,12 @@ describe('KafkaMetrics', () => {
     it('should handle high-frequency mixed operations', () => {
       for (let i = 0; i < 5000; i++) {
         metrics.recordMessage(`q${i % 10}`, i % 100)
-        if (i % 50 === 0) metrics.recordError('callback')
-        if (i % 30 === 0) metrics.recordRateLimitHit(`q${i % 10}`, i % 2 === 0)
+        if (i % 50 === 0) {
+          metrics.recordError('callback')
+        }
+        if (i % 30 === 0) {
+          metrics.recordRateLimitHit(`q${i % 10}`, i % 2 === 0)
+        }
       }
 
       const snapshot = metrics.getSnapshot()
@@ -456,7 +460,7 @@ describe('KafkaMetrics', () => {
           new Promise<void>((resolve) => {
             metrics.recordMessage('q1', i)
             resolve()
-          }),
+          })
         )
       }
 

@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { HeartbeatManager } from '../../../../src/drivers/kafka/HeartbeatManager'
 import type { HeartbeatStatus } from '../../../../src/drivers/kafka/types'
 

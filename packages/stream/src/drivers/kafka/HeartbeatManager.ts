@@ -39,7 +39,9 @@ export class HeartbeatManager extends EventEmitter {
    * 冪等操作：如果已經在執行中，不會重複啟動。
    */
   async start(consumerId: string, queues: string[]): Promise<void> {
-    if (this.running) return
+    if (this.running) {
+      return
+    }
 
     this.consumerId = consumerId
     this.queues = [...queues]
@@ -59,7 +61,9 @@ export class HeartbeatManager extends EventEmitter {
    * 冪等操作：重複呼叫不會出錯。
    */
   async stop(): Promise<void> {
-    if (!this.running) return
+    if (!this.running) {
+      return
+    }
 
     this.running = false
 
@@ -97,9 +101,7 @@ export class HeartbeatManager extends EventEmitter {
   /**
    * 註冊心跳狀態變更監聽器。
    */
-  onStateChange(
-    listener: (status: HeartbeatStatus) => void
-  ): void {
+  onStateChange(listener: (status: HeartbeatStatus) => void): void {
     this.on('stateChange', listener)
   }
 

@@ -10,7 +10,7 @@ import type {
 } from '../../../../src/drivers/kafka/types'
 import type { SerializedJob } from '../../../../src/types'
 
-function createTestJob(id: string = 'job-1', groupId?: string): SerializedJob {
+function createTestJob(id = 'job-1', groupId?: string): SerializedJob {
   return {
     id,
     type: 'json',
@@ -28,7 +28,7 @@ function createMockKafkaClient(): {
 } {
   const sentMessages: Array<{ topic: string; messages: any[] }> = []
   const subscriptions: string[] = []
-  let eachMessageHandler: Function | null = null
+  let _eachMessageHandler: Function | null = null
   const committedOffsets: Array<{
     topic: string
     partition: number
@@ -69,7 +69,7 @@ function createMockKafkaClient(): {
       subscriptions.push(...topics)
     },
     run: async ({ eachMessage }) => {
-      eachMessageHandler = eachMessage
+      _eachMessageHandler = eachMessage
     },
     commitOffsets: consumerCommitOffsetsMock as any,
     seek: () => {},
@@ -179,11 +179,7 @@ describe('KafkaDriver', () => {
     })
 
     it('should push many jobs in batches', async () => {
-      const jobs = [
-        createTestJob('job-1'),
-        createTestJob('job-2'),
-        createTestJob('job-3'),
-      ]
+      const jobs = [createTestJob('job-1'), createTestJob('job-2'), createTestJob('job-3')]
       await driver.pushMany('test-queue', jobs)
 
       expect(mockClient.producer.send).toHaveBeenCalled()
@@ -206,7 +202,7 @@ describe('KafkaDriver', () => {
   describe('Consumer & Pop', () => {
     it('should pop from buffer', async () => {
       // Simulate incoming message
-      const message: KafkaMessage = {
+      const _message: KafkaMessage = {
         value: Buffer.from(JSON.stringify(createTestJob('job-1'))),
         offset: '0',
       }
@@ -260,9 +256,7 @@ describe('KafkaDriver', () => {
       await driver.fail('test-queue', job)
 
       const calls = (mockClient.producer.send as any).mock.calls
-      const dlqCall = calls.find(
-        (c: any) => c[0].topic === 'test-queue.dlq'
-      )
+      const dlqCall = calls.find((c: any) => c[0].topic === 'test-queue.dlq')
       expect(dlqCall).toBeDefined()
     })
   })
@@ -425,7 +419,7 @@ describe('KafkaDriver', () => {
   describe('Error Handling', () => {
     it('should handle parse errors for invalid messages', async () => {
       // Invalid JSON in message
-      const invalid = Buffer.from('not json')
+      const _invalid = Buffer.from('not json')
       // Simulate message handling error - should not throw
     })
 
@@ -476,20 +470,14 @@ describe('KafkaDriver', () => {
     })
 
     it('should handle concurrent popBlocking on different queues', async () => {
-      const popPromises = [
-        driver.popBlocking('queue1', 0.5),
-        driver.popBlocking('queue2', 0.5),
-      ]
+      const popPromises = [driver.popBlocking('queue1', 0.5), driver.popBlocking('queue2', 0.5)]
 
       const results = await Promise.all(popPromises)
       expect(results.length).toBe(2)
     })
 
     it('should handle concurrent topic creation', async () => {
-      const createPromises = [
-        driver.createTopic('topic1'),
-        driver.createTopic('topic2'),
-      ]
+      const createPromises = [driver.createTopic('topic1'), driver.createTopic('topic2')]
 
       await Promise.all(createPromises)
       expect(mockClient.admin.createTopics).toHaveBeenCalled()
@@ -512,9 +500,7 @@ describe('KafkaDriver', () => {
     })
 
     it('should handle many jobs in batch', async () => {
-      const jobs = Array.from({ length: 500 }, (_, i) =>
-        createTestJob(`job-${i}`)
-      )
+      const jobs = Array.from({ length: 500 }, (_, i) => createTestJob(`job-${i}`))
       await driver.pushMany('batch-queue', jobs)
       expect(mockClient.producer.send).toHaveBeenCalled()
     })

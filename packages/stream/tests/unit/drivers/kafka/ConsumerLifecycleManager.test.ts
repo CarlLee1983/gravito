@@ -17,7 +17,7 @@ describe('ConsumerLifecycleManager', () => {
     it('should initialize state history', () => {
       const history = manager.getStateHistory()
       expect(history).toHaveLength(1)
-      expect(history[0]!.state).toBe('idle')
+      expect(history[0]?.state).toBe('idle')
     })
 
     it('should initialize last transition time', () => {
@@ -30,7 +30,7 @@ describe('ConsumerLifecycleManager', () => {
   describe('Start Lifecycle', () => {
     it('should transition idle → starting → running', async () => {
       const stateChanges: string[] = []
-      manager.onStateChange(event => stateChanges.push(event.state))
+      manager.onStateChange((event) => stateChanges.push(event.state))
 
       await manager.start()
 
@@ -74,7 +74,7 @@ describe('ConsumerLifecycleManager', () => {
       await manager.start()
 
       const stateChanges: string[] = []
-      manager.onStateChange(event => stateChanges.push(event.state))
+      manager.onStateChange((event) => stateChanges.push(event.state))
 
       await manager.restart()
 
@@ -110,7 +110,7 @@ describe('ConsumerLifecycleManager', () => {
       await manager.start()
 
       const stateChanges: string[] = []
-      manager.onStateChange(event => stateChanges.push(event.state))
+      manager.onStateChange((event) => stateChanges.push(event.state))
 
       await manager.stop()
 
@@ -124,7 +124,7 @@ describe('ConsumerLifecycleManager', () => {
       await manager.stop()
 
       const stateChanges: string[] = []
-      manager.onStateChange(event => stateChanges.push(event.state))
+      manager.onStateChange((event) => stateChanges.push(event.state))
 
       await manager.stop()
 
@@ -134,7 +134,7 @@ describe('ConsumerLifecycleManager', () => {
 
     it('should be idempotent when never started', async () => {
       const stateChanges: string[] = []
-      manager.onStateChange(event => stateChanges.push(event.state))
+      manager.onStateChange((event) => stateChanges.push(event.state))
 
       await manager.stop()
 
@@ -175,24 +175,24 @@ describe('ConsumerLifecycleManager', () => {
 
   describe('Event Emission', () => {
     it('should emit lifecycle events with correct data', async () => {
-      const events: Array<any> = []
-      manager.onStateChange(event => events.push(event))
+      const events: any[] = []
+      manager.onStateChange((event) => events.push(event))
 
       await manager.start()
 
       expect(events).toHaveLength(2)
-      expect(events[0]!.state).toBe('starting')
-      expect(events[0]!.previousState).toBe('idle')
-      expect(events[0]!.timestamp).toBeGreaterThan(0)
-      expect(events[0]!.error).toBeUndefined()
+      expect(events[0]?.state).toBe('starting')
+      expect(events[0]?.previousState).toBe('idle')
+      expect(events[0]?.timestamp).toBeGreaterThan(0)
+      expect(events[0]?.error).toBeUndefined()
 
-      expect(events[1]!.state).toBe('running')
-      expect(events[1]!.previousState).toBe('starting')
+      expect(events[1]?.state).toBe('running')
+      expect(events[1]?.previousState).toBe('starting')
     })
 
     it('should emit events with increasing timestamps', async () => {
       const timestamps: number[] = []
-      manager.onStateChange(event => timestamps.push(event.timestamp))
+      manager.onStateChange((event) => timestamps.push(event.timestamp))
 
       await manager.start()
       await manager.restart()
@@ -225,7 +225,7 @@ describe('ConsumerLifecycleManager', () => {
 
       const history = manager.getStateHistory()
 
-      const states = history.map(h => h.state)
+      const states = history.map((h) => h.state)
       expect(states).toContain('idle')
       expect(states).toContain('starting')
       expect(states).toContain('running')
@@ -240,9 +240,17 @@ describe('ConsumerLifecycleManager', () => {
       await manager.stop()
 
       const history = manager.getStateHistory()
-      const states = history.map(h => h.state)
+      const states = history.map((h) => h.state)
 
-      const expectedOrder = ['idle', 'starting', 'running', 'restarting', 'running', 'stopping', 'stopped']
+      const expectedOrder = [
+        'idle',
+        'starting',
+        'running',
+        'restarting',
+        'running',
+        'stopping',
+        'stopped',
+      ]
       expect(states).toEqual(expectedOrder)
     })
 
@@ -288,7 +296,7 @@ describe('ConsumerLifecycleManager', () => {
 
       const history = manager.getStateHistory()
       expect(history).toHaveLength(1)
-      expect(history[0]!.state).toBe('idle')
+      expect(history[0]?.state).toBe('idle')
     })
 
     it('should allow start after reset', async () => {
@@ -342,7 +350,7 @@ describe('ConsumerLifecycleManager', () => {
     it('should update last transition time on each state change', async () => {
       const time1 = manager.getLastTransitionTime()
 
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await new Promise((resolve) => setTimeout(resolve, 10))
       await manager.start()
       const time2 = manager.getLastTransitionTime()
 
@@ -355,7 +363,7 @@ describe('ConsumerLifecycleManager', () => {
       await manager.stop()
 
       const history = manager.getStateHistory()
-      const timestamps = history.map(h => h.timestamp)
+      const timestamps = history.map((h) => h.timestamp)
 
       for (let i = 1; i < timestamps.length; i++) {
         expect(timestamps[i]!).toBeGreaterThanOrEqual(timestamps[i - 1]!)

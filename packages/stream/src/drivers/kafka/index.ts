@@ -8,6 +8,7 @@
  */
 
 export { BackpressureController } from './BackpressureController'
+export { BatchProcessor } from './BatchProcessor'
 export { ConsumerLifecycleManager } from './ConsumerLifecycleManager'
 export { ErrorRecoveryManager } from './ErrorRecoveryManager'
 export { HeartbeatManager } from './HeartbeatManager'
@@ -20,10 +21,14 @@ export type {
 export { KafkaNotifier } from './KafkaNotifier'
 export { MessageBuffer } from './MessageBuffer'
 export { OffsetTracker } from './OffsetTracker'
+export { PerformanceMonitor } from './PerformanceMonitor'
 export type { RebalanceCallbacks } from './RebalanceHandler'
 export { RebalanceHandler } from './RebalanceHandler'
+export { RingBuffer } from './RingBuffer'
 export type {
   BackpressureConfig,
+  BatchConfig,
+  BatchResult,
   BufferedMessage,
   ConsumerLifecycleState,
   ErrorRecoveryConfig,
@@ -41,6 +46,8 @@ export type {
   LifecycleEvent,
   MetricsConfig,
   PartitionAssignment,
+  PerformanceConfig,
+  PerformanceSnapshot,
   RebalanceConfig,
   RebalanceEvent,
   RebalanceState,

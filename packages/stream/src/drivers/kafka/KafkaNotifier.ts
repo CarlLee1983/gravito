@@ -57,15 +57,12 @@ export class KafkaNotifier extends EventEmitter {
   /**
    * Register a callback for one or more queues.
    */
-  registerCallback(
-    queues: string[],
-    callback: (queue: string) => Promise<void>
-  ): void {
+  registerCallback(queues: string[], callback: (queue: string) => Promise<void>): void {
     for (const queue of queues) {
       if (!this.callbacks.has(queue)) {
         this.callbacks.set(queue, [])
       }
-      this.callbacks.get(queue)!.push(callback)
+      this.callbacks.get(queue)?.push(callback)
     }
   }
 
@@ -87,7 +84,9 @@ export class KafkaNotifier extends EventEmitter {
    * Notify subscribers of a queue with message count (non-blocking).
    */
   notifyWithCount(queue: string, count: number): void {
-    if (!this.enabled) return
+    if (!this.enabled) {
+      return
+    }
 
     const timestamp = Date.now()
 
@@ -109,7 +108,7 @@ export class KafkaNotifier extends EventEmitter {
             const completedEvent: CallbackCompletedEvent = {
               queue,
               success: true,
-              duration
+              duration,
             }
             this.emit('callbackCompleted', completedEvent)
           })
@@ -119,7 +118,7 @@ export class KafkaNotifier extends EventEmitter {
               queue,
               success: false,
               duration,
-              error: err instanceof Error ? err : new Error(String(err))
+              error: err instanceof Error ? err : new Error(String(err)),
             }
             this.emit('callbackCompleted', completedEvent)
           })
