@@ -193,25 +193,8 @@ export {
   securityHeaders,
 } from './http/middleware/SecurityHeaders'
 export { ThrottleRequests } from './http/middleware/ThrottleRequests'
-// Re-export instrumentation module for subpath import
-export * as instrumentation from './instrumentation'
-export {
-  DEFAULT_CONFIG as OTEL_DEFAULT_CONFIG,
-  getMeter,
-  getOpenTelemetrySDK,
-  getTracer as getOtelTracer,
-  isOpenTelemetryInitialized,
-  type MetricsConfig as OtelMetricsConfig,
-  type MetricsExporter,
-  type OpenTelemetryConfig,
-  type OpenTelemetrySDK,
-  OTEL_ENV_VARS,
-  resetOpenTelemetry,
-  setupOpenTelemetry,
-  shutdownOpenTelemetry,
-  type TracingConfig as OtelTracingConfig,
-  type TracingExporter,
-} from './instrumentation'
+// OpenTelemetry exports moved to @gravito/monitor (Phase 2.2)
+// Import from @gravito/monitor for OTel functionality
 // Listeners
 export type { Listener, ShouldQueue } from './Listener'
 // Logger
@@ -278,11 +261,8 @@ export {
   archiveFromDirectory,
   type CompressionOptions,
   createSqliteDatabase,
-  type DeepEqualsFn,
-  type DeepEqualsOptions,
   getArchiveAdapter,
   getCompressionAdapter,
-  getDeepEquals,
   getPasswordAdapter,
   getRuntimeAdapter,
   getRuntimeEnv,
@@ -303,6 +283,10 @@ export {
   type RuntimeSqliteDatabase,
   type RuntimeSqliteStatement,
 } from './runtime'
+export type { DeepEqualsFn, DeepEqualsOptions } from './runtime/deep-equals'
+export { getDeepEquals } from './runtime/deep-equals'
+export type { EscapeHtmlFn } from './runtime/escape'
+export { getEscapeHtml } from './runtime/escape'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Standalone Engine (High-Performance Bun-Only Engine)
