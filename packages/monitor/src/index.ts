@@ -41,7 +41,24 @@ export {
   MetricsController,
   MetricsRegistry,
 } from './metrics'
-
+// OpenTelemetry SDK Integration (Phase 2.2)
+export {
+  DEFAULT_CONFIG as OTEL_DEFAULT_CONFIG,
+  getMeter,
+  getOpenTelemetrySDK,
+  getTracer as getOtelTracer,
+  isOpenTelemetryInitialized,
+  type MetricsConfig as OtelMetricsConfig,
+  type MetricsExporter,
+  type OpenTelemetryConfig,
+  type OpenTelemetrySDK,
+  OTEL_ENV_VARS,
+  resetOpenTelemetry,
+  setupOpenTelemetry,
+  shutdownOpenTelemetry,
+  type TracingConfig as OtelTracingConfig,
+  type TracingExporter,
+} from './opentelemetry'
 // Tracing
 export {
   createTracingMiddleware,

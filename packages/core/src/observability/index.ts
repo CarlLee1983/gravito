@@ -7,16 +7,8 @@
  */
 
 // OpenTelemetry SDK Integration moved to @gravito/monitor (Phase 2.2)
-// Import from @gravito/monitor for:
-// - OpenTelemetryConfig, OpenTelemetrySDK
-// - setupOpenTelemetry, getOpenTelemetrySDK, shutdownOpenTelemetry
-// - getMeter, getTracer, etc.
-export type { OpenTelemetryConfig, OpenTelemetrySDK } from '@gravito/monitor'
-export {
-  getOpenTelemetrySDK,
-  setupOpenTelemetry,
-  shutdownOpenTelemetry,
-} from '@gravito/monitor'
+// Currently still in core/instrumentation but marked for migration
+// Import from @gravito/monitor once migration is complete
 export type { EventMetrics } from '../events/observability/EventMetrics'
 export type { EventTracer } from '../events/observability/EventTracer'
 export {
