@@ -73,7 +73,6 @@ describe('RateLimiter', () => {
     it('should handle messages at window boundary', async () => {
       const config = { max: 2, duration: 100 }
 
-      const _start = Date.now()
       expect(limiter.check('queue1', config)).toBe(true)
       expect(limiter.check('queue1', config)).toBe(true)
       expect(limiter.check('queue1', config)).toBe(false)
@@ -81,9 +80,10 @@ describe('RateLimiter', () => {
       // Wait until first message expires (after 100ms)
       await new Promise((resolve) => setTimeout(resolve, 110))
 
-      // Should now allow one message
-      expect(limiter.check('queue1', config)).toBe(true)
-      expect(limiter.check('queue1', config)).toBe(false)
+      // Should now allow messages (old ones pruned)
+      expect(limiter.check('queue1', config)).toBe(true) // Pruned old, added new
+      expect(limiter.check('queue1', config)).toBe(true) // One more allowed
+      expect(limiter.check('queue1', config)).toBe(false) // Now at limit
     })
 
     it('should correctly prune expired timestamps', async () => {
