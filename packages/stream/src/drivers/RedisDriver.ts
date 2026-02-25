@@ -958,11 +958,8 @@ export class RedisDriver implements QueueDriver {
 
     // Try to use the same client if it supports pub/sub
     // Otherwise create a separate pub/sub client
-    const pubsubClient = (this.client as any)
-    if (
-      typeof pubsubClient.subscribe === 'function' &&
-      typeof pubsubClient.on === 'function'
-    ) {
+    const pubsubClient = this.client as any
+    if (typeof pubsubClient.subscribe === 'function' && typeof pubsubClient.on === 'function') {
       this.pubsubClient = pubsubClient
     } else {
       // Cannot enable notifications if client doesn't support pub/sub
@@ -1007,17 +1004,19 @@ export class RedisDriver implements QueueDriver {
     callback: (queue: string) => Promise<void>
   ): Promise<void> {
     if (!this.notificationsEnabled || !this.pubsubClient) {
-      throw new Error(
-        '[RedisDriver] Notifications not enabled. Call enableNotifications() first.'
-      )
+      throw new Error('[RedisDriver] Notifications not enabled. Call enableNotifications() first.')
     }
 
     const queueList = Array.isArray(queues) ? queues : [queues]
     const notifyChannel = `${this.prefix}notifications`
 
-    // Store callback
+    // Store callback with queue filter
     const callbackId = `${Date.now()}-${Math.random()}`
-    this.notificationCallbacks.set(callbackId, callback)
+    this.notificationCallbacks.set(callbackId, async (queue: string) => {
+      if (queueList.includes(queue)) {
+        await callback(queue)
+      }
+    })
 
     // Subscribe to notification channel
     if (this.notificationCallbacks.size === 1) {
