@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.7.0 (2026-02-25)
+
+### Deprecations
+
+- **refactor: Mark HTTP middleware exports as `@deprecated` (v2.0.0)**
+  - `cors`, `csrfProtection`, `getCsrfToken`, `securityHeaders`, `bodySizeLimit`, `requireHeaderToken`, `createHeaderGate`, `ThrottleRequests` are now deprecated
+  - All HTTP security middleware migrated to `@gravito/photon/middleware/security`
+  - Existing exports remain functional but will be removed in the next MAJOR version
+  - Migration: Replace `import { cors } from '@gravito/core'` with `import { cors } from '@gravito/photon/middleware/security'`
+  - See `@gravito/photon` CHANGELOG for migration guide and API changes
+
 ## 1.6.1
 
 ### Patch Changes

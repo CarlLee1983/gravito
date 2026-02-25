@@ -161,11 +161,31 @@ Gravito 框架存在六個結構性問題，需要系統性地進行優化。最
 
 ---
 
-### 2.4 core HTTP 中介軟體提取
+### 2.4 core HTTP 中介軟體提取 ✅ 完成 (2026-02-25)
 
-**問題**: core 包含 CORS、CSRF、SecurityHeaders 等 HTTP 中介軟體。
+**問題**: core 包含 CORS、CSRF、SecurityHeaders 等 HTTP 中介軟體，違反微核心設計原則。
 
-**解決方案**: 移至 `@gravito/photon` 作為中介軟體擴展。
+**解決方案**: 移至 `@gravito/photon/middleware/security` 作為中介軟體擴展。
+
+**實施進度**:
+- ✅ Step 1-2：7 個檔案遷移到 `photon/src/middleware/security/`
+  - cors.ts, csrf.ts, security-headers.ts, body-size-limit.ts, header-token-gate.ts, throttle-requests.ts, index.ts
+  - API 重構：throttle-requests 從類別基底改為函數基底（移除 PlanetCore 依賴）
+  - CSRF 使用內建 parseCookies()（移除 CookieJar 依賴）
+  - 所有中間件使用原生 Hono 型別（不依賴 @gravito/core）
+- ✅ Step 3-4：3 個測試檔案遷移到 `photon/tests/unit/middleware/`
+  - 65/65 測試全部通過
+  - 6 個 core 中間件添加 `@deprecated` 標記（v2.0.0）
+  - core/src/index.ts 導出標記為棄用，含遷移指南
+- ✅ Step 5：整合驗證通過（構建 84/84、typecheck、測試 120/120）
+- ✅ Step 6：文檔更新與 git 提交
+
+**架構決策**:
+- **保持 core 副本**：向後相容性，deprecated re-export 允許漸進式遷移
+- **ThrottleRequests API 重構**：原設計需 PlanetCore 注入，新設計使用純函數 + 選項物件
+- **CSRF 移除 CookieJar 依賴**：改用內建 parseCookies() 實現 photon 完全獨立
+
+**Semver**: photon MINOR (1.1.0)、core MINOR (1.7.0，含 deprecation)
 
 ---
 
@@ -207,10 +227,10 @@ Gravito 框架存在六個結構性問題，需要系統性地進行優化。最
 └─ 1.4 types 拆分 ✓
 
 [Phase 2 序列化]
-└─ 2.1 core 脫離 photon (CRITICAL PATH)
-   ├─ 2.2 OTel 提取
+└─ 2.1 core 脫離 photon (CRITICAL PATH) ✅
+   ├─ 2.2 OTel 提取 🔄
    ├─ 2.3 事件瘦身
-   └─ 2.4 HTTP 提取
+   └─ 2.4 HTTP 提取 ✅
 
 [Phase 3 並行/序列化混合]
 ├─ 3.1 core 最終瘦身 (需 Phase 2 完成)
