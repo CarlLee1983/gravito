@@ -1,35 +1,37 @@
-import type { ConnectionContract } from '@gravito/atlas'
-import { EventAggregationManager } from './events/aggregation/EventAggregationManager'
 import { CircuitBreaker, type CircuitBreakerOptions } from './events/CircuitBreaker'
 import { DeadLetterQueue } from './events/DeadLetterQueue'
 import type { EventBackend } from './events/EventBackend'
 import type { EventOptions } from './events/EventOptions'
-import { DEFAULT_EVENT_OPTIONS } from './events/EventOptions'
-import { EventPriorityQueue, type EventQueueConfig } from './events/EventPriorityQueue'
-import { IdempotencyCache } from './events/IdempotencyCache'
-import type { EventTask } from './events/types'
-import { DeadLetterQueueManager } from './reliability/DeadLetterQueueManager'
+import { EventPriorityQueue } from './events/EventPriorityQueue'
 import { ActionManager } from './hooks/ActionManager'
 import { AsyncDetector } from './hooks/AsyncDetector'
+import {
+  createPersistentDLQHandler,
+  requeueDLQBatch as dlqRequeueBatch,
+  requeueDLQEntry as dlqRequeueEntry,
+  requeuePersistentDLQBatch as persistentDlqRequeueBatch,
+  requeuePersistentDLQEntry as persistentDlqRequeueEntry,
+} from './hooks/dlq-operations'
 import { FilterManager } from './hooks/FilterManager'
 import { MigrationWarner } from './hooks/MigrationWarner'
+import { DeadLetterQueueManager } from './reliability/DeadLetterQueueManager'
 
 // 重新匯出所有 hook 相關型別，維持向後相容性
 export type {
-  FilterCallback,
   ActionCallback,
-  ListenerOptions,
-  ListenerInfo,
+  FilterCallback,
   HookManagerConfig,
+  ListenerInfo,
+  ListenerOptions,
 } from './hooks/types'
 
 // 補充直接匯入（確保與 @gravito/atlas 型別相容）
 import type {
-  FilterCallback,
   ActionCallback,
-  ListenerOptions,
-  ListenerInfo,
+  FilterCallback,
   HookManagerConfig,
+  ListenerInfo,
+  ListenerOptions,
 } from './hooks/types'
 
 /**
@@ -444,22 +446,9 @@ export class HookManager {
     if (!this.dlq) {
       return false
     }
-    const entry = this.dlq.get(dlqEntryId)
-
-    if (!entry) {
-      return false
-    }
-
-    // 更新最後重試時間戳
-    this.dlq.updateLastRetried(dlqEntryId)
-
-    // 重新加入佇列
-    await this.doActionAsync(entry.eventName, entry.payload, entry.options)
-
-    // 成功重新加入後從 DLQ 刪除
-    this.dlq.delete(dlqEntryId)
-
-    return true
+    return dlqRequeueEntry(dlqEntryId, this.dlq, (eventName, payload, options) =>
+      this.doActionAsync(eventName, payload, options)
+    )
   }
 
   /**
@@ -472,17 +461,7 @@ export class HookManager {
     if (!this.dlq) {
       return 0
     }
-    const entries = this.dlq.list({ eventName })
-    let requeuedCount = 0
-
-    for (const entry of entries) {
-      const success = await this.requeueDLQEntry(entry.id)
-      if (success) {
-        requeuedCount++
-      }
-    }
-
-    return requeuedCount
+    return dlqRequeueBatch(eventName, this.dlq, (entryId) => this.requeueDLQEntry(entryId))
   }
 
   /**
@@ -644,42 +623,10 @@ export class HookManager {
    * @internal
    */
   private createPersistentDLQHandler() {
-    return async (
-      hook: string,
-      args: unknown,
-      options: EventOptions,
-      error: Error,
-      retryCount: number,
-      _firstFailedAt: number
-    ) => {
-      if (!this.persistentDlqManager) {
-        return
-      }
-
-      try {
-        // 將 event options 轉換為 retry policy
-        const retryPolicy = options.retry
-          ? {
-              maxRetries: options.retry.maxRetries || 3,
-              backoff: options.retry.backoff || 'exponential',
-              initialDelayMs: options.retry.initialDelayMs || 1000,
-              maxDelayMs: options.retry.maxDelayMs || 30000,
-            }
-          : undefined
-
-        // 移至持久化 DLQ
-        await this.persistentDlqManager.moveToDlq(
-          hook,
-          args,
-          options,
-          error,
-          retryCount,
-          retryPolicy
-        )
-      } catch (dlqError) {
-        console.error(`[HookManager] Error moving event to persistent DLQ:`, dlqError)
-      }
+    if (!this.persistentDlqManager) {
+      throw new Error('[HookManager] persistentDlqManager is not initialized')
     }
+    return createPersistentDLQHandler(this.persistentDlqManager)
   }
 
   /**
@@ -693,28 +640,9 @@ export class HookManager {
     if (!this.persistentDlqManager) {
       return false
     }
-
-    try {
-      const event = await this.persistentDlqManager.getById(dlqId)
-      if (!event) {
-        return false
-      }
-
-      // 重新加入佇列
-      await this.doActionAsync(
-        event.event_name,
-        event.event_payload,
-        event.event_options as EventOptions
-      )
-
-      // 標記為已重新加入佇列
-      await this.persistentDlqManager.requeue(dlqId)
-
-      return true
-    } catch (error) {
-      console.error(`[HookManager] Error requeuing persistent DLQ entry:`, error)
-      return false
-    }
+    return persistentDlqRequeueEntry(dlqId, this.persistentDlqManager, (event, args, options) =>
+      this.doActionAsync(event, args, options)
+    )
   }
 
   /**
@@ -731,13 +659,7 @@ export class HookManager {
     if (!this.persistentDlqManager) {
       return { total: 0, succeeded: 0, failed: 0 }
     }
-
-    try {
-      return await this.persistentDlqManager.retryBatch(filter)
-    } catch (error) {
-      console.error(`[HookManager] Error in persistent DLQ batch retry:`, error)
-      return { total: 0, succeeded: 0, failed: 0 }
-    }
+    return persistentDlqRequeueBatch(filter, this.persistentDlqManager)
   }
 
   // ========== Message Queue Bridge（分佈式處理）==========
