@@ -232,3 +232,99 @@ export interface LifecycleEvent {
   timestamp: number
   error?: Error
 }
+
+/**
+ * Heartbeat configuration.
+ * @public
+ */
+export interface HeartbeatConfig {
+  /** Heartbeat interval in milliseconds. Default: 3000 */
+  interval?: number
+  /** Session timeout in milliseconds. Default: 30000 */
+  sessionTimeout?: number
+  /** Maximum consecutive missed heartbeats before declaring dead. Default: 3 */
+  maxMissed?: number
+}
+
+/**
+ * Heartbeat status snapshot.
+ * @public
+ */
+export interface HeartbeatStatus {
+  consumerId: string
+  lastHeartbeat: number
+  missedCount: number
+  isAlive: boolean
+  uptime: number
+  queues: string[]
+}
+
+/**
+ * Kafka driver metrics snapshot.
+ * @public
+ */
+export interface KafkaDriverMetrics {
+  /** Timestamp of this snapshot */
+  timestamp: number
+
+  /** Per-queue throughput (messages/second) */
+  throughput: Record<string, number>
+
+  /** Consumer lag per topic-partition */
+  lag: Record<string, number>
+
+  /** Error counts by type */
+  errors: {
+    total: number
+    serialization: number
+    callback: number
+    connection: number
+    timeout: number
+  }
+
+  /** Processing latency stats (milliseconds) */
+  latency: {
+    p50: number
+    p95: number
+    p99: number
+    avg: number
+    min: number
+    max: number
+  }
+
+  /** Buffer utilization */
+  buffer: {
+    totalSize: number
+    perQueue: Record<string, number>
+    utilization: number // 0-1
+  }
+
+  /** Rate limit stats */
+  rateLimits: {
+    totalAllowed: number
+    totalDenied: number
+    perQueue: Record<string, { allowed: number; denied: number }>
+  }
+
+  /** In-flight processing stats */
+  inFlight: number
+  /** Total messages processed since start */
+  totalProcessed: number
+  /** Total messages failed since start */
+  totalFailed: number
+}
+
+/**
+ * Metrics configuration.
+ * @public
+ */
+export interface MetricsConfig {
+  /** Enable metrics collection. Default: true */
+  enabled?: boolean
+  /** Collection interval in milliseconds. Default: 5000 */
+  collectionInterval?: number
+  /** Histogram bucket count for latency tracking. Default: 100 */
+  histogramSize?: number
+  /** Whether to track per-partition lag. Default: false */
+  perPartitionLag?: boolean
+}

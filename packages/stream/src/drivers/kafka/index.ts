@@ -26,16 +26,26 @@ export {
 export {
   ConsumerLifecycleManager,
 } from './ConsumerLifecycleManager'
+export {
+  HeartbeatManager,
+} from './HeartbeatManager'
+export {
+  KafkaMetrics,
+} from './KafkaMetrics'
 export type {
   BackpressureConfig,
   BufferedMessage,
   ConsumerLifecycleState,
+  HeartbeatConfig,
+  HeartbeatStatus,
   KafkaAdminClient,
   KafkaClientFactory,
   KafkaConsumerClient,
   KafkaDriverFullConfig,
+  KafkaDriverMetrics,
   KafkaMessage,
   KafkaProducerClient,
   LifecycleEvent,
+  MetricsConfig,
   SubscribeOptions,
 } from './types'

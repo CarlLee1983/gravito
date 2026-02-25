@@ -4,6 +4,7 @@ import type {
   KafkaClientFactory,
   KafkaConsumerClient,
   KafkaDriverFullConfig,
+  KafkaDriverMetrics,
   KafkaMessage,
   KafkaProducerClient,
   SubscribeOptions,
@@ -11,6 +12,8 @@ import type {
 import {
   BackpressureController,
   ConsumerLifecycleManager,
+  HeartbeatManager,
+  KafkaMetrics,
   KafkaNotifier,
   MessageBuffer,
   OffsetTracker,
@@ -47,6 +50,10 @@ export class KafkaDriver implements QueueDriver {
   // Phase 6C components
   private readonly lifecycleManager: ConsumerLifecycleManager
   private readonly backpressure: BackpressureController
+
+  // Phase 6D components
+  private readonly heartbeatManager: HeartbeatManager
+  private readonly metrics: KafkaMetrics
 
   // Internal state
   private readonly subscribedTopics = new Set<string>()
@@ -92,6 +99,10 @@ export class KafkaDriver implements QueueDriver {
       lowWatermark: 0.5,
       maxInFlight: 10,
     })
+
+    // Phase 6D components
+    this.heartbeatManager = new HeartbeatManager()
+    this.metrics = new KafkaMetrics()
   }
 
   // 6B-2: Producer & Push (~25 min)
@@ -189,6 +200,7 @@ export class KafkaDriver implements QueueDriver {
       // Notify subscribers
       this.notifier.notify(topic)
     } catch (error) {
+      this.metrics.recordError('serialization')
       console.error(`[KafkaDriver] Failed to handle message: ${error}`)
     }
   }
@@ -385,12 +397,17 @@ export class KafkaDriver implements QueueDriver {
       }
     })
 
-    // Start subscription loop
+    // Start heartbeat and subscription loop
+    await this.heartbeatManager.start(
+      this.config.consumerGroupId,
+      [queue]
+    )
     await this.lifecycleManager.start()
 
     try {
       await this.runSubscription(queue, callback, opts)
     } catch (error) {
+      await this.heartbeatManager.stop()
       await this.lifecycleManager.stop()
       throw error
     }
@@ -436,7 +453,8 @@ export class KafkaDriver implements QueueDriver {
         timer: setTimeout(() => {}, 0),
       })
 
-      // Execute callback with timeout
+      // Execute callback with timeout and latency tracking
+      const callbackStart = Date.now()
       const callbackPromise = Promise.race([
         callback(job),
         new Promise((_, reject) =>
@@ -449,7 +467,11 @@ export class KafkaDriver implements QueueDriver {
 
       callbackPromise
         .then(() => {
-          // Success
+          // Success - record metrics and signal heartbeat
+          const latencyMs = Date.now() - callbackStart
+          this.metrics.recordMessage(queue, latencyMs)
+          this.heartbeatManager.beat()
+
           if (options.autoAcknowledge) {
             this.offsetTracker.resolve(
               buffered.topic,
@@ -463,7 +485,9 @@ export class KafkaDriver implements QueueDriver {
           this.notifier.notifyWithCount(queue, 1)
         })
         .catch((err) => {
-          // Failure - mark for DLQ
+          // Failure - record error metrics and mark for DLQ
+          const isTimeout = err instanceof Error && err.message === 'Callback timeout'
+          this.metrics.recordError(isTimeout ? 'timeout' : 'callback')
           console.error(`[KafkaDriver] Callback error for ${queue}: ${err}`)
           this.fail(queue, job).catch((failErr) => {
             console.error(
@@ -617,6 +641,7 @@ export class KafkaDriver implements QueueDriver {
 
   async stats(queue: string): Promise<QueueStats> {
     const trackerStats = this.offsetTracker.getStats()
+    const metricsSnapshot = this.metrics.getSnapshot()
     return {
       queue,
       size: this.buffer.size(queue),
@@ -625,8 +650,19 @@ export class KafkaDriver implements QueueDriver {
         pendingAcks: trackerStats.pending,
         committedOffsets: trackerStats.committed,
         trackedMessages: trackerStats.tracked,
+        totalProcessed: metricsSnapshot.totalProcessed,
+        totalFailed: metricsSnapshot.totalFailed,
+        latency: metricsSnapshot.latency,
+        errors: metricsSnapshot.errors,
       },
     }
+  }
+
+  /**
+   * Get full driver metrics snapshot.
+   */
+  getMetrics(): KafkaDriverMetrics {
+    return this.metrics.getSnapshot()
   }
 
   async clear(queue: string): Promise<void> {
@@ -704,6 +740,9 @@ export class KafkaDriver implements QueueDriver {
   // 6B-8: Graceful Shutdown (~15 min)
   async disconnect(): Promise<void> {
     try {
+      // Stop heartbeat manager
+      await this.heartbeatManager.stop()
+
       // Stop offset commit loop
       if (this.offsetCommitTimer) {
         clearInterval(this.offsetCommitTimer)
