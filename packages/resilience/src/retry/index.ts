@@ -1,2 +1,2 @@
-export type { RetryConfig, RetryDecision } from './RetryScheduler'
+export type { QueueStats, RetrySchedulerConfig } from './RetryScheduler'
 export { RetryScheduler } from './RetryScheduler'

@@ -1,22 +1,23 @@
 import type {
+  ActionCallback,
   BackpressureStrategy,
+  EventBackend,
+  EventOptions,
   EventQueueConfig,
   EventTask,
+  HookManager,
   MultiPriorityQueueDepth,
 } from '@gravito/core'
 import type { Span } from '@opentelemetry/api'
-import { BackpressureManager } from '../backpressure'
-import { CircuitBreaker } from '../circuit-breaker'
-import type { DeadLetterQueue } from '../dead-letter-queue'
-import type { ActionCallback } from '../HookManager'
-import type { EventBackend } from './EventBackend'
-import type { EventOptions } from './EventOptions'
-import type { EventMetrics } from './observability/EventMetrics'
-import type { EventTracing } from './observability/EventTracing'
-import type { OTelEventMetrics } from './observability/OTelEventMetrics'
+import { BackpressureManager } from '../backpressure/BackpressureManager'
+import { CircuitBreaker } from '../circuit-breaker/CircuitBreaker'
+import type { DeadLetterQueue } from '../dead-letter-queue/DeadLetterQueue'
+import type { EventMetrics } from '../observability/EventMetrics'
+import type { EventTracing } from '../observability/EventTracing'
+import type { OTelEventMetrics } from '../observability/OTelEventMetrics'
+import type { RetryScheduler } from '../retry/RetryScheduler'
+import type { WorkerPool } from '../worker/WorkerPool'
 import { PriorityEscalationManager, type PriorityStatistics } from './PriorityEscalationManager'
-import type { RetryScheduler } from './RetryScheduler'
-import type { WorkerPool } from './WorkerPool'
 
 export type { EventTask, EventQueueConfig, BackpressureStrategy }
 
@@ -223,12 +224,13 @@ export class EventPriorityQueue implements EventBackend {
       },
       metricsRecorder: this.eventMetrics
         ? {
-            recordState: (name, state) => this.eventMetrics?.recordCircuitBreakerState(name, state),
-            recordTransition: (name, from, to) =>
+            recordState: (name: string, state: string) =>
+              this.eventMetrics?.recordCircuitBreakerState(name, state),
+            recordTransition: (name: string, from: string, to: string) =>
               this.eventMetrics?.recordCircuitBreakerTransition(name, from, to),
-            recordFailure: (name) => this.eventMetrics?.recordCircuitBreakerFailure(name),
-            recordSuccess: (name) => this.eventMetrics?.recordCircuitBreakerSuccess(name),
-            recordOpenDuration: (name, seconds) =>
+            recordFailure: (name: string) => this.eventMetrics?.recordCircuitBreakerFailure(name),
+            recordSuccess: (name: string) => this.eventMetrics?.recordCircuitBreakerSuccess(name),
+            recordOpenDuration: (name: string, seconds: number) =>
               this.eventMetrics?.recordCircuitBreakerOpenDuration(name, seconds),
           }
         : undefined,

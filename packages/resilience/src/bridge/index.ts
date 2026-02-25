@@ -1,2 +1,2 @@
-export type { QueueAdapter, QueueAdapterConfig } from './MessageQueueBridge'
+export type { EventStatus, MessageQueueBridgeConfig } from './MessageQueueBridge'
 export { MessageQueueBridge } from './MessageQueueBridge'

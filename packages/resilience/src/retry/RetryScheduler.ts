@@ -8,7 +8,7 @@
  * Supports exponential backoff, Redis persistence, and failure callbacks.
  */
 
-import type { EventOptions } from './EventOptions'
+import type { EventOptions } from '@gravito/core'
 
 /**
  * 重試排程器配置介面
