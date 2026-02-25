@@ -1,14 +1,14 @@
 # Gravito 模組依賴關係圖（代碼層級分析 v2）
 
-> 自動生成於：2026-02-24T05:36:29.243Z
+> 自動生成於：2026-02-24T15:00:18.900Z
 > 分析方式：Bun.Transpiler.scanImports()（代碼層級，相比 v1 更精確）
 
 ## 摘要統計
 
 - **總套件數**：81
-- **代碼依賴邊數**：96（v2 新增：從實際 import 掃描）
-- **隱式依賴數**：6（需要修復！）
-- **外部依賴數**：0
+- **代碼依賴邊數**：104（v2 新增：從實際 import 掃描）
+- **隱式依賴數**：9（需要修復！）
+- **外部依賴數**：27
 - **循環依賴**：0 個
 - **孤立套件**：60 個
 - **關鍵套件**：4 個
@@ -20,9 +20,12 @@
 
 | 套件 | 隱式依賴 |
 |------|----------|
+| `@gravito/atlas` | `@gravito/core` |
 | `@gravito/fortify` | `@gravito/atlas` |
 | `@gravito/graphql` | `@gravito/atlas` |
+| `@gravito/luminosity` | `@gravito/core` |
 | `@gravito/pulse` | `@gravito/atlas` |
+| `@gravito/quasar` | `@gravito/core` |
 | `@gravito/satellite-commerce` | `@gravito/enterprise` |
 | `@gravito/satellite-flash-sale` | `@gravito/plasma` |
 | `@gravito/spectrum` | `@gravito/atlas` |
@@ -126,6 +129,7 @@ graph TB
   pulsar --> core
   pulsar --> plasma
   admin-ui-news --> admin-shell-react
+  atlas --> core
   spectrum --> core
   spectrum --> atlas
   beam --> photon
@@ -151,17 +155,23 @@ graph TB
   sentinel --> photon
   freeze-react --> freeze
   horizon --> core
+  pulse --> core
   pulse --> scaffold
   pulse --> atlas
-  pulse --> core
   admin-ui-analytics --> admin-shell-react
   admin-shell-react --> admin-sdk
   admin-ui-order --> admin-shell-react
+  stasis --> core
   stasis --> plasma
+  prism --> core
+  luminosity --> core
+  quasar --> core
   stream --> core
   stream --> atlas
   constellation --> stream
+  constellation --> core
   admin-ui-catalog --> admin-shell-react
+  astral --> core
   nebula --> core
   admin-ui-marketing --> admin-shell-react
   fortify --> core
@@ -170,6 +180,7 @@ graph TB
   fortify --> atlas
   core --> photon
   monolith --> mass
+  monolith --> core
   luminosity-cli --> luminosity
   admin-ui-announcement --> admin-shell-react
   support-chat-widget --> ripple-client
@@ -265,9 +276,12 @@ graph TB
   mass -.peer.-> core
 
   %% 隱式依賴（警告：package.json 未聲明）
+  atlas -. IMPLICIT .-> core
   spectrum -. IMPLICIT .-> atlas
   graphql -. IMPLICIT .-> atlas
   pulse -. IMPLICIT .-> atlas
+  luminosity -. IMPLICIT .-> core
+  quasar -. IMPLICIT .-> core
   fortify -. IMPLICIT .-> atlas
   satellite-commerce -. IMPLICIT .-> enterprise
   satellite-flash-sale -. IMPLICIT .-> plasma
@@ -295,7 +309,7 @@ graph TB
 
 | 套件 | 被依賴次數 | 說明 |
 |------|-----------|------|
-| `@gravito/core` | 28 |  |
+| `@gravito/core` | 36 |  |
 | `@gravito/atlas` | 13 | The Standard Database Orbit - Custom Query Builder & ORM for Gravito |
 | `@gravito/enterprise` | 13 | Enterprise architecture primitives for Gravito framework (DDD/Clean Architecture) |
 | `@gravito/admin-shell-react` | 11 | - |
@@ -384,11 +398,11 @@ graph TB
 | `@gravito/admin-ui-news` | v0.1.1 | 1 | 0 | 0 | 0 | 0 | 2 |
 | `@gravito/admin-ui-order` | v0.1.1 | 1 | 0 | 0 | 0 | 0 | 2 |
 | `@gravito/admin-ui-support` | v0.1.1 | 1 | 0 | 0 | 0 | 0 | 2 |
-| `@gravito/astral` | v1.0.2 | 0 | 0 | 0 | 0 | 0 | 10 |
-| `@gravito/atlas` | v1.6.0 | 0 | 0 | 0 | 0 | 13 | 111 |
+| `@gravito/astral` | v1.0.2 | 1 | 0 | 0 | 0 | 0 | 10 |
+| `@gravito/atlas` | v1.6.0 | 1 | 0 | 0 | **1** ⚠️ | 13 | 112 |
 | `@gravito/beam` | v1.0.0 | 1 | 1 | 0 | 0 | 0 | 5 |
-| `@gravito/constellation` | v3.1.1 | 1 | 1 | 0 | 0 | 0 | 29 |
-| `@gravito/core` | v1.6.1 | 1 | 0 | 0 | 0 | 28 | 134 |
+| `@gravito/constellation` | v3.1.1 | 2 | 1 | 0 | 0 | 0 | 29 |
+| `@gravito/core` | v1.6.1 | 1 | 0 | 0 | 0 | 36 | 144 |
 | `@gravito/cosmos` | v3.2.1 | 0 | 2 | 0 | 0 | 1 | 16 |
 | `@gravito/create-gravito-app` | v1.1.3 | 0 | 0 | 0 | 0 | 0 | 2 |
 | `@gravito/dark-matter` | v1.1.1 | 0 | 0 | 0 | 0 | 0 | 9 |
@@ -407,24 +421,24 @@ graph TB
 | `@gravito/impulse` | v1.1.1 | 1 | 1 | 0 | 0 | 0 | 23 |
 | `@gravito/impulse-bridge` | v2.0.1 | 0 | 2 | 0 | 0 | 0 | 1 |
 | `@gravito/ion` | v4.0.1 | 0 | 2 | 0 | 0 | 0 | 4 |
-| `@gravito/launchpad` | v1.3.2 | 4 | 0 | 0 | 0 | 0 | 17 |
+| `@gravito/launchpad` | v1.3.2 | 4 | 0 | 0 | 0 | 0 | 18 |
 | `@gravito/launchpad-dashboard` | v0.1.1 | 1 | 0 | 0 | 0 | 0 | 4 |
-| `@gravito/luminosity` | v2.0.0 | 0 | 0 | 0 | 0 | 3 | 54 |
+| `@gravito/luminosity` | v2.0.0 | 1 | 0 | 0 | **1** ⚠️ | 3 | 54 |
 | `@gravito/luminosity-adapter-express` | v1.0.2 | 1 | 0 | 0 | 0 | 0 | 2 |
 | `@gravito/luminosity-adapter-photon` | v1.0.2 | 1 | 1 | 0 | 0 | 0 | 2 |
 | `@gravito/luminosity-cli` | v1.0.2 | 1 | 0 | 0 | 0 | 0 | 11 |
 | `@gravito/mass` | v3.0.2 | 0 | 1 | 0 | 0 | 1 | 8 |
 | `@gravito/monitor` | v3.1.1 | 0 | 2 | 0 | 0 | 0 | 11 |
-| `@gravito/monolith` | v3.2.1 | 1 | 1 | 0 | 0 | 1 | 11 |
+| `@gravito/monolith` | v3.2.1 | 2 | 1 | 0 | 0 | 1 | 11 |
 | `@gravito/nebula` | v4.1.1 | 1 | 1 | 0 | 0 | 0 | 8 |
 | `@gravito/nebula-s3` | v2.0.0 | 0 | 1 | 0 | 0 | 0 | 2 |
 | `@gravito/orbit-cloudflare` | v1.0.2 | 0 | 1 | 0 | 0 | 0 | 1 |
 | `@gravito/photon` | v1.0.1 | 0 | 0 | 0 | 0 | 4 | 23 |
 | `@gravito/plasma` | v1.0.0 | 0 | 0 | 0 | 0 | 3 | 12 |
-| `@gravito/prism` | v3.1.1 | 0 | 2 | 0 | 0 | 1 | 23 |
+| `@gravito/prism` | v3.1.1 | 1 | 2 | 0 | 0 | 1 | 23 |
 | `@gravito/pulsar` | v3.0.2 | 2 | 2 | 0 | 0 | 0 | 7 |
 | `@gravito/pulse` | v3.3.1 | 3 | 1 | 0 | **1** ⚠️ | 0 | 21 |
-| `@gravito/quasar` | v1.3.0 | 0 | 0 | 0 | 0 | 1 | 90 |
+| `@gravito/quasar` | v1.3.0 | 1 | 0 | 0 | **1** ⚠️ | 1 | 90 |
 | `@gravito/radiance` | v1.0.4 | 0 | 0 | 0 | 0 | 0 | 9 |
 | `@gravito/ripple` | v4.0.1 | 0 | 1 | 0 | 0 | 1 | 39 |
 | `@gravito/ripple-client` | v4.0.0-alpha.1 | 0 | 0 | 0 | 0 | 2 | 8 |
@@ -448,7 +462,7 @@ graph TB
 | `@gravito/signal` | v3.0.4 | 2 | 3 | 0 | 0 | 2 | 34 |
 | `@gravito/site` | v1.0.0-beta.1 | 3 | 0 | 0 | 0 | 0 | 1 |
 | `@gravito/spectrum` | v3.0.2 | 2 | 2 | 0 | **1** ⚠️ | 0 | 6 |
-| `@gravito/stasis` | v3.1.1 | 1 | 2 | 0 | 0 | 2 | 16 |
+| `@gravito/stasis` | v3.1.1 | 2 | 2 | 0 | 0 | 2 | 16 |
 | `@gravito/stream` | v2.0.2 | 2 | 0 | 0 | 0 | 3 | 39 |
 | `@gravito/support-chat-widget` | v0.2.1 | 1 | 0 | 0 | 0 | 0 | 29 |
 | `@gravito/zenith` | v1.1.3 | 4 | 0 | 0 | 0 | 0 | 38 |
@@ -456,4 +470,4 @@ graph TB
 ---
 
 *此文件由 `scripts/generate-dependency-graph.ts` v2 自動生成（代碼層級分析）*
-*最後更新：2026-02-24T05:36:29.246Z*
+*最後更新：2026-02-24T15:00:18.903Z*

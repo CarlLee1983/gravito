@@ -94,6 +94,7 @@ graph TB
   pulsar --> core
   pulsar --> plasma
   admin-ui-news --> admin-shell-react
+  atlas --> core
   spectrum --> core
   spectrum --> atlas
   beam --> photon
@@ -119,17 +120,23 @@ graph TB
   sentinel --> photon
   freeze-react --> freeze
   horizon --> core
+  pulse --> core
   pulse --> scaffold
   pulse --> atlas
-  pulse --> core
   admin-ui-analytics --> admin-shell-react
   admin-shell-react --> admin-sdk
   admin-ui-order --> admin-shell-react
+  stasis --> core
   stasis --> plasma
+  prism --> core
+  luminosity --> core
+  quasar --> core
   stream --> core
   stream --> atlas
   constellation --> stream
+  constellation --> core
   admin-ui-catalog --> admin-shell-react
+  astral --> core
   nebula --> core
   admin-ui-marketing --> admin-shell-react
   fortify --> core
@@ -138,6 +145,7 @@ graph TB
   fortify --> atlas
   core --> photon
   monolith --> mass
+  monolith --> core
   luminosity-cli --> luminosity
   admin-ui-announcement --> admin-shell-react
   support-chat-widget --> ripple-client
@@ -233,9 +241,12 @@ graph TB
   mass -.peer.-> core
 
   %% 隱式依賴（警告：package.json 未聲明）
+  atlas -. IMPLICIT .-> core
   spectrum -. IMPLICIT .-> atlas
   graphql -. IMPLICIT .-> atlas
   pulse -. IMPLICIT .-> atlas
+  luminosity -. IMPLICIT .-> core
+  quasar -. IMPLICIT .-> core
   fortify -. IMPLICIT .-> atlas
   satellite-commerce -. IMPLICIT .-> enterprise
   satellite-flash-sale -. IMPLICIT .-> plasma
