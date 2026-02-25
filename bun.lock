@@ -1679,6 +1679,24 @@
         "typescript": "^5.9.3",
       },
     },
+    "packages/resilience": {
+      "name": "@gravito/resilience",
+      "version": "1.0.0",
+      "devDependencies": {
+        "@gravito/core": "workspace:*",
+        "@opentelemetry/api": "^1.9.0",
+        "bun-types": "latest",
+        "tsup": "^8.5.1",
+        "typescript": "^5.9.3",
+      },
+      "peerDependencies": {
+        "@gravito/core": "workspace:*",
+        "@opentelemetry/api": "^1.9.0",
+      },
+      "optionalPeers": [
+        "@opentelemetry/api",
+      ],
+    },
     "packages/ripple": {
       "name": "@gravito/ripple",
       "version": "4.0.1",
@@ -2771,6 +2789,8 @@
     "@gravito/quasar": ["@gravito/quasar@workspace:packages/quasar"],
 
     "@gravito/radiance": ["@gravito/radiance@workspace:packages/radiance"],
+
+    "@gravito/resilience": ["@gravito/resilience@workspace:packages/resilience"],
 
     "@gravito/ripple": ["@gravito/ripple@workspace:packages/ripple"],
 
