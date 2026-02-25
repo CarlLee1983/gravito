@@ -370,3 +370,65 @@ export interface ErrorRecoveryState {
   totalRecoveries: number
   isRecovering: boolean
 }
+
+/**
+ * Partition assignment descriptor.
+ * @public
+ */
+export interface PartitionAssignment {
+  topic: string
+  partition: number
+}
+
+/**
+ * Rebalance lifecycle states.
+ *
+ * State transitions:
+ * - stable → revoking → assigning → stable
+ * - any → error
+ *
+ * @public
+ */
+export type RebalanceState = 'stable' | 'revoking' | 'assigning' | 'error'
+
+/**
+ * Rebalance event payload emitted during rebalance lifecycle.
+ * @public
+ */
+export interface RebalanceEvent {
+  state: RebalanceState
+  previousState: RebalanceState
+  timestamp: number
+  /** Partitions being revoked (available during 'revoking' state) */
+  revokedPartitions?: PartitionAssignment[]
+  /** Partitions being assigned (available during 'assigning' state) */
+  assignedPartitions?: PartitionAssignment[]
+  error?: Error
+}
+
+/**
+ * Rebalance handler configuration.
+ * @public
+ */
+export interface RebalanceConfig {
+  /** Timeout for revocation processing in milliseconds. Default: 10000 */
+  revocationTimeoutMs?: number
+  /** Whether to commit offsets before revocation. Default: true */
+  commitOnRevoke?: boolean
+  /** Whether to clear buffer for revoked partitions. Default: true */
+  clearBufferOnRevoke?: boolean
+  /** Maximum concurrent rebalance operations. Default: 1 */
+  maxConcurrentRebalances?: number
+}
+
+/**
+ * Rebalance handler status snapshot.
+ * @public
+ */
+export interface RebalanceStatus {
+  state: RebalanceState
+  assignedPartitions: PartitionAssignment[]
+  totalRebalances: number
+  lastRebalanceTimestamp: number
+  isRebalancing: boolean
+}

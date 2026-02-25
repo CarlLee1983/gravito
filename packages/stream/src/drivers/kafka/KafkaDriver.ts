@@ -9,6 +9,7 @@ import {
   KafkaNotifier,
   MessageBuffer,
   OffsetTracker,
+  RebalanceHandler,
 } from '.'
 import type {
   BackpressureConfig,
@@ -52,6 +53,7 @@ export class KafkaDriver implements QueueDriver {
   private readonly heartbeatManager: HeartbeatManager
   private readonly metrics: KafkaMetrics
   private readonly errorRecovery: ErrorRecoveryManager
+  private readonly rebalanceHandler: RebalanceHandler
 
   // Internal state
   private readonly subscribedTopics = new Set<string>()
@@ -102,6 +104,22 @@ export class KafkaDriver implements QueueDriver {
     this.heartbeatManager = new HeartbeatManager()
     this.metrics = new KafkaMetrics()
     this.errorRecovery = new ErrorRecoveryManager()
+    this.rebalanceHandler = new RebalanceHandler()
+
+    // 註冊重新平衡回調
+    this.rebalanceHandler.registerCallbacks({
+      commitOffsets: () => this.commitOffsets(),
+      clearPartitionBuffers: (partitions) => {
+        for (const { topic } of partitions) {
+          this.buffer.clear(topic)
+        }
+      },
+      clearPartitionTracking: (partitions) => {
+        for (const { topic } of partitions) {
+          this.offsetTracker.clear(topic)
+        }
+      },
+    })
   }
 
   // 6B-2: Producer & Push (~25 min)
@@ -736,8 +754,9 @@ export class KafkaDriver implements QueueDriver {
       // Stop heartbeat manager
       await this.heartbeatManager.stop()
 
-      // 清理錯誤恢復管理器
+      // 清理錯誤恢復管理器和重新平衡處理器
       this.errorRecovery.destroy()
+      this.rebalanceHandler.destroy()
 
       // Stop offset commit loop
       if (this.offsetCommitTimer) {

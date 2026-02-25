@@ -20,6 +20,8 @@ export type {
 export { KafkaNotifier } from './KafkaNotifier'
 export { MessageBuffer } from './MessageBuffer'
 export { OffsetTracker } from './OffsetTracker'
+export type { RebalanceCallbacks } from './RebalanceHandler'
+export { RebalanceHandler } from './RebalanceHandler'
 export type {
   BackpressureConfig,
   BufferedMessage,
@@ -38,5 +40,10 @@ export type {
   KafkaProducerClient,
   LifecycleEvent,
   MetricsConfig,
+  PartitionAssignment,
+  RebalanceConfig,
+  RebalanceEvent,
+  RebalanceState,
+  RebalanceStatus,
   SubscribeOptions,
 } from './types'
