@@ -7,6 +7,7 @@
  * @module @gravito/ion
  */
 
+import { getEscapeHtml } from '@gravito/core'
 import type { GravitoContext, GravitoVariables, ViewService } from '@gravito/core'
 import { InertiaConfigError, InertiaDataError, InertiaError } from './errors'
 import type { DeferredPropDefinition, InertiaPageObject, MergedPropDefinition } from './types'
@@ -123,6 +124,7 @@ export class InertiaService {
   private clearHistoryFlag = false
   private readonly logLevel: 'debug' | 'info' | 'warn' | 'error' | 'silent'
   private readonly onRenderCallback?: (metrics: RenderMetrics) => void
+  private escapeHtml = getEscapeHtml()
 
   /**
    * Creates a deferred prop that will be loaded after the initial render.
@@ -242,12 +244,8 @@ export class InertiaService {
    * @returns Safely escaped HTML attribute value.
    */
   private escapeForSingleQuotedHtmlAttribute(value: string): string {
-    return value
-      .replace(/&/g, '&amp;')
+    return this.escapeHtml(value)
       .replace(/\\"/g, '\\&quot;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/'/g, '&#039;')
   }
 
   /**

@@ -1,6 +1,7 @@
 import { join, parse } from 'node:path'
 import matter from 'gray-matter'
 import { marked } from 'marked'
+import { getEscapeHtml } from '@gravito/core'
 import type { ContentDriver } from './driver/ContentDriver'
 
 /**
@@ -34,15 +35,17 @@ export class ContentManager {
   private cache = new Map<string, ContentItem>()
   // In-memory search index: term -> Set<cacheKey>
   private searchIndex = new Map<string, Set<string>>()
+  private escapeHtml = getEscapeHtml()
   private renderer = (() => {
     const renderer = new marked.Renderer()
-    renderer.html = (html: string) => this.escapeHtml(html)
+    const escapeHtmlFn = this.escapeHtml
+    renderer.html = (html: string) => escapeHtmlFn(html)
     renderer.link = (href: string | null, title: string | null, text: string) => {
       if (!href || !this.isSafeUrl(href)) {
         return text
       }
-      const safeHref = this.escapeHtml(href)
-      const titleAttr = title ? ` title="${this.escapeHtml(title)}"` : ''
+      const safeHref = escapeHtmlFn(href)
+      const titleAttr = title ? ` title="${escapeHtmlFn(title)}"` : ''
       return `<a href="${safeHref}"${titleAttr}>${text}</a>`
     }
     return renderer
@@ -270,15 +273,6 @@ export class ContentManager {
       return null
     }
     return value
-  }
-
-  private escapeHtml(value: string): string {
-    return value
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;')
   }
 
   private isSafeUrl(href: string): boolean {

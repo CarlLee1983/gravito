@@ -18,6 +18,8 @@ export type {
   // Compression types
   CompressionOptions,
   OptionalRuntimeResourceUsage,
+  // Escape types
+  EscapeHtmlFn,
   // Runtime adapter types
   RuntimeAdapter,
   RuntimeArchiveAdapter,
@@ -44,6 +46,8 @@ export {
   getArchiveAdapter,
   // Compression adapter
   getCompressionAdapter,
+  // Escape HTML
+  getEscapeHtml,
   // Password adapter
   getPasswordAdapter,
   // Runtime adapter

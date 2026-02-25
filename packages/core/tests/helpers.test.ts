@@ -121,6 +121,115 @@ describe('helpers', () => {
     expect(rnd).toMatch(/^[A-Za-z0-9_-]+$/)
   })
 
+  it('Str.uuidv7 generates valid RFC 9562 UUID v7 identifiers', () => {
+    // RFC 9562 UUID v7 格式: xxxxxxxx-xxxx-7xxx-yxxx-xxxxxxxxxxxx
+    // where 7 = version, y = [8,9,a,b] (variant)
+    const uuid7Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+    const id = Str.uuidv7()
+    expect(id).toMatch(uuid7Regex)
+    expect(id).toHaveLength(36)
+  })
+
+  it('Str.uuidv7 returns different values on consecutive calls', () => {
+    const id1 = Str.uuidv7()
+    const id2 = Str.uuidv7()
+    const id3 = Str.uuidv7()
+
+    expect(id1).not.toBe(id2)
+    expect(id2).not.toBe(id3)
+    expect(id1).not.toBe(id3)
+  })
+
+  it('Str.uuidv7 has monotonically increasing property from timestamp', () => {
+    const id1 = Str.uuidv7()
+    // 等待至少 1ms 以確保時間戳變化
+    const start = Date.now()
+    let id2: string
+    do {
+      id2 = Str.uuidv7()
+    } while (Date.now() === start)
+
+    // 比較時間戳部分（前 12 個字符 = 48 bits）
+    const ts1 = id1.slice(0, 12)
+    const ts2 = id2.slice(0, 12)
+
+    expect(ts2 > ts1 || ts2 === ts1).toBe(true)
+  })
+
+  it('Str.uuidv7 maintains uniqueness across 1000 generations', () => {
+    const uuids = new Set<string>()
+
+    for (let i = 0; i < 1000; i += 1) {
+      uuids.add(Str.uuidv7())
+    }
+
+    expect(uuids.size).toBe(1000)
+  })
+
+  it('Str.uuidv7 has version 7 encoded in correct position', () => {
+    const id = Str.uuidv7()
+    // 版本號位於第 3 個 segment 的第 1 個字符
+    const versionChar = id[14]
+    expect(versionChar).toBe('7')
+  })
+
+  it('Str.uuidv7 has valid RFC 4122 variant bits', () => {
+    for (let i = 0; i < 10; i += 1) {
+      const id = Str.uuidv7()
+      // Variant 位於第 4 個 segment 的第 1 個字符 [8,9,a,b]
+      const variantChar = id[19]?.toLowerCase()
+      expect(['8', '9', 'a', 'b']).toContain(variantChar)
+    }
+  })
+
+  it('Str.uuidv7 format matches standard UUID 8-4-4-4-12 structure', () => {
+    const id = Str.uuidv7()
+    const parts = id.split('-')
+
+    expect(parts).toHaveLength(5)
+    expect(parts[0]).toHaveLength(8)
+    expect(parts[1]).toHaveLength(4)
+    expect(parts[2]).toHaveLength(4)
+    expect(parts[3]).toHaveLength(4)
+    expect(parts[4]).toHaveLength(12)
+
+    // 所有字符應該是十六進制
+    expect(id.replace(/-/g, '')).toMatch(/^[0-9a-f]{32}$/i)
+  })
+
+  it('Str.uuidv7 is backwards compatible with Str.uuid()', () => {
+    // uuid() 應該仍返回 UUID v4
+    const v4 = Str.uuid()
+    const v4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    expect(v4).toMatch(v4Regex)
+
+    // uuidv7() 應該返回 UUID v7
+    const v7 = Str.uuidv7()
+    const v7Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    expect(v7).toMatch(v7Regex)
+
+    // 兩者應該不同
+    expect(v4).not.toBe(v7)
+  })
+
+  it('Str.uuidv7 can extract timestamp within 10ms accuracy', () => {
+    const before = Date.now()
+    const id = Str.uuidv7()
+    const after = Date.now()
+
+    // 提取時間戳（前 6 bytes = 12 個十六進制字符 = 48 bits）
+    // UUID v7 格式：xxxxxxxx-xxxx-7xxx-yxxx-xxxxxxxxxxxx
+    // 時間戳在前 8 字符 + 4 字符 = 12 字符（不含 dash）
+    const parts = id.split('-')
+    const timestampHex = (parts[0] ?? '') + (parts[1] ?? '')
+    const timestamp = parseInt(timestampHex, 16)
+
+    // 時間戳應該在生成前後 10ms 內
+    expect(timestamp >= before).toBe(true)
+    expect(timestamp <= after + 10).toBe(true)
+  })
+
   it('response helpers build standardized payloads', () => {
     expect(ok({ a: 1 })).toEqual({ success: true, data: { a: 1 } })
     expect(fail('Bad', 'BAD_CODE', { x: 1 })).toEqual({

@@ -1,4 +1,4 @@
-import { bodySizeLimit, type GravitoConfig, PlanetCore, securityHeaders } from '@gravito/core'
+import { bodySizeLimit, getEscapeHtml, type GravitoConfig, PlanetCore, securityHeaders } from '@gravito/core'
 import { I18nOrbit } from '@gravito/cosmos'
 import { OrbitMonolith } from '@gravito/monolith'
 
@@ -65,13 +65,7 @@ if (!Number.isNaN(bodyLimit) && bodyLimit > 0) {
   app.adapter.use('*', bodySizeLimit(bodyLimit, { requireContentLength: requireLength }))
 }
 
-const escapeHtml = (value: string): string =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
+const escapeHtml = getEscapeHtml()
 
 // SEO & I18n Routing
 app.router.prefix('/:locale').group((router) => {
