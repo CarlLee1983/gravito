@@ -46,8 +46,8 @@ const switchLang = (lang: string) => {
 
 <template>
   <header 
-    class="fixed top-0 left-0 right-0 z-50 transition-all duration-500 py-6"
-    :class="{ 'py-4 backdrop-blur-xl bg-void/80 border-b border-white/5 shadow-2xl shadow-singularity/5': isScrolled }"
+    class="fixed top-4 left-4 right-4 z-50 transition-all duration-300 rounded-2xl"
+    :class="{ 'py-3 backdrop-blur-xl bg-void/80 border border-white/10 shadow-2xl shadow-singularity/10': isScrolled, 'py-5': !isScrolled }"
   >
     <div class="max-w-7xl mx-auto px-6 flex items-center justify-between">
       <div class="flex items-center gap-4">
