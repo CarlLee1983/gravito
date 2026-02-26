@@ -1,4 +1,4 @@
-import { DB } from '../DB'
+import { CacheRegistry } from '../CacheRegistry'
 import type { Model, ModelConstructor } from '../orm/model/Model'
 import type {
   BooleanOperator,
@@ -862,7 +862,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
         span.setAttribute('db.statement', sql)
       }
 
-      const cache = DB.getCache()
+      const cache = CacheRegistry.getCache()
       let cacheKey: string | undefined
 
       if (cache && this._cache) {

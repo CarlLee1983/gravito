@@ -65,7 +65,8 @@
       "Bash(done)",
       "Bash(cat:*)",
       "Bash(gh issue:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(git tag:*)"
     ]
   },
   "enabledMcpjsonServers": [

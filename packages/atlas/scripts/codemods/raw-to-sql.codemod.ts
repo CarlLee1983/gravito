@@ -52,6 +52,12 @@ function isDbRawCall(path: ASTPath<any>): boolean {
     return false
   }
 
+  // Exclude common non-database objects like 'logger'
+  const object = callee.object
+  if (object.type === 'Identifier' && (object.name === 'logger' || object.name === 'console')) {
+    return false
+  }
+
   const property = (callee as any).property
   return property?.name === 'raw' || property?.value === 'raw'
 }
@@ -61,7 +67,7 @@ function convertStringToTemplate(j: any, value: string): any {
 }
 
 function createSqlCall(j: any, connection: any): any {
-  return j.callExpression(j.memberExpression(connection, j.identifier('sql')), [])
+  return j.memberExpression(connection, j.identifier('sql'))
 }
 
 function addManualReviewComment(j: any, node: any, reason: string): any {
@@ -74,6 +80,11 @@ function addManualReviewComment(j: any, node: any, reason: string): any {
 }
 
 function handleStringLiteral(j: any, node: any): any {
+  // Case 1: db.raw('SELECT...') - Exactly one argument
+  if (node.arguments.length !== 1) {
+    return null
+  }
+
   const firstArg = node.arguments[0]
 
   if (firstArg?.type === 'Literal' && typeof firstArg.value === 'string') {

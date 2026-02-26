@@ -18,7 +18,6 @@ import type { ConsumerStrategy } from './ConsumerStrategy'
  */
 export class PollingStrategy implements ConsumerStrategy {
   private running = false
-  private stopRequested = false
 
   constructor(
     private queueManager: QueueManager,
@@ -43,7 +42,6 @@ export class PollingStrategy implements ConsumerStrategy {
       throw new Error('PollingStrategy is already running')
     }
     this.running = true
-    this.stopRequested = false
     this.options.log('[PollingStrategy] Started')
   }
 
@@ -52,7 +50,6 @@ export class PollingStrategy implements ConsumerStrategy {
       return
     }
     this.options.log('[PollingStrategy] Stopping...')
-    this.stopRequested = true
     this.running = false
     this.options.log('[PollingStrategy] Stopped')
   }

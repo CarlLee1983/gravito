@@ -18,8 +18,6 @@ import type { ConsumerStrategy } from './ConsumerStrategy'
  */
 export class ReactiveStrategy implements ConsumerStrategy {
   private running = false
-  private stopRequested = false
-  private notificationArrived = false
   private lastNotificationTime = Date.now()
   private fallbackPollingTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -43,7 +41,6 @@ export class ReactiveStrategy implements ConsumerStrategy {
     }
 
     this.running = true
-    this.stopRequested = false
     this.lastNotificationTime = Date.now()
 
     this.options.log('[ReactiveStrategy] Starting')
@@ -59,7 +56,6 @@ export class ReactiveStrategy implements ConsumerStrategy {
       // Register notification listener
       if (driver.onNotify) {
         await driver.onNotify(this.queues, async () => {
-          this.notificationArrived = true
           this.lastNotificationTime = Date.now()
         })
       }
@@ -81,7 +77,6 @@ export class ReactiveStrategy implements ConsumerStrategy {
     }
 
     this.options.log('[ReactiveStrategy] Stopping...')
-    this.stopRequested = true
 
     // Stop fallback polling
     if (this.fallbackPollingTimer) {
@@ -152,7 +147,7 @@ export class ReactiveStrategy implements ConsumerStrategy {
 
   private startFallbackPolling(): void {
     const checkFallback = async () => {
-      if (!this.running || this.stopRequested) {
+      if (!this.running) {
         return
       }
 
@@ -163,17 +158,12 @@ export class ReactiveStrategy implements ConsumerStrategy {
         this.options.log('[ReactiveStrategy] Fallback polling triggered')
 
         // Do a fallback poll check
-        const jobs = await this.fetchJobs()
-        if (jobs.length > 0) {
-          // Signal drain loop to drain
-          this.notificationArrived = true
-        }
-
+        await this.fetchJobs()
         this.lastNotificationTime = Date.now()
       }
 
       // Check again after interval
-      if (this.running && !this.stopRequested) {
+      if (this.running) {
         this.fallbackPollingTimer = setTimeout(
           checkFallback,
           Math.min(this.options.reactivePollingFallback / 2, 5000)

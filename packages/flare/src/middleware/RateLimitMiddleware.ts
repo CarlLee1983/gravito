@@ -183,7 +183,7 @@ export class RateLimitMiddleware implements ChannelMiddleware {
    * Create a new RateLimitMiddleware instance.
    *
    * @param config - Rate limit configuration for each channel
-   * @param store - Optional cache store for distributed rate limiting
+   * @param _store - Optional cache store for distributed rate limiting (future use)
    *
    * @example
    * ```typescript
@@ -200,9 +200,8 @@ export class RateLimitMiddleware implements ChannelMiddleware {
    */
   constructor(
     private config: RateLimitConfig,
-    store?: CacheStore
+    _store?: CacheStore
   ) {
-    this.store = store ?? new MemoryStore()
     this.initializeBuckets()
   }
 

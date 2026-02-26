@@ -82,9 +82,10 @@ const jobClasses = new Map<string, any>()
  * @param name - Class name.
  * @param JobClass - The constructor.
  */
-function _registerJobClass(name: string, JobClass: any): void {
-  jobClasses.set(name, JobClass)
-}
+// Reserved for future use in dynamic job registration
+// function _registerJobClass(name: string, JobClass: any): void {
+//   jobClasses.set(name, JobClass)
+// }
 
 /**
  * Deserializes a job from its serialized format.

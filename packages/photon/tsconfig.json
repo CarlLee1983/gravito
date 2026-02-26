@@ -3,16 +3,18 @@
   "compilerOptions": {
     "outDir": "./dist",
     "baseUrl": ".",
-    "rootDir": "src",
-    "allowImportingTsExtensions": true,
     "noEmit": true,
     "composite": true,
-    "types": ["bun-types"],
+    "skipLibCheck": true,
+    "types": ["node", "bun-types"],
     "paths": {
-      "@gravito/core": ["../../packages/core/src/index.ts"],
-      "@gravito/*": ["../../packages/*/src/index.ts"]
+      "@gravito/core": ["../core/src/index.ts"],
+      "@gravito/atlas": ["../atlas/src/index.ts"],
+      "@gravito/resilience": ["../resilience/src/index.ts"],
+      "@gravito/stream": ["../stream/src/index.ts"],
+      "@gravito/*": ["../*/src/index.ts"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist"]
 }

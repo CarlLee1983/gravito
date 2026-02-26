@@ -162,7 +162,6 @@ export class ColorValue {
       throw new InvalidColorValueError(alpha, 'Alpha must be between 0-1')
     }
 
-    const _newRgb = { ...this.rgb, a: alpha }
     const result = new ColorValue(this.hex)
     return Object.defineProperty(result, 'alpha', {
       value: alpha,

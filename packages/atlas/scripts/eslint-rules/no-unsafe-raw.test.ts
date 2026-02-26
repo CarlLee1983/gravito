@@ -158,11 +158,11 @@ import { identifier, DB } from '@gravito/atlas'
 
 async function getUserData(userId: string, tableName: string) {
   // Safe: parameter binding with db.sql
-  const user = await DB.sql\`SELECT * FROM users WHERE id = \${userId}\`.first()
+  const user = await db.sql\`SELECT * FROM users WHERE id = \${userId}\`.first()
 
   // Safe: identifier() for table name
   const table = identifier(tableName)
-  const data = await DB.sql\`SELECT * FROM \${table}\`.all()
+  const data = await db.sql\`SELECT * FROM \${table}\`.all()
 
   return { user, data }
 }

@@ -1,3 +1,4 @@
+import { CacheRegistry } from './CacheRegistry'
 import { fromEnv } from './config/defineConfig'
 import { Connection } from './connection/Connection'
 import { ConnectionManager } from './connection/ConnectionManager'
@@ -39,7 +40,6 @@ export class DB {
   private static manager: ConnectionManager = new ConnectionManager()
   private static shardingManagers: Map<string, ShardingManager> = new Map()
   private static initialized = false
-  private static cache: CacheInterface | undefined
   private static _debug = false
   private static _queryLog: Array<{
     sql: string
@@ -86,7 +86,7 @@ export class DB {
    * @param cache - Implementation of CacheInterface (e.g., Redis, In-Memory).
    */
   static setCache(cache: CacheInterface) {
-    DB.cache = cache
+    CacheRegistry.setCache(cache)
   }
 
   /**
@@ -95,7 +95,7 @@ export class DB {
    * @returns The cache interface or undefined if none is configured.
    */
   static getCache(): CacheInterface | undefined {
-    return DB.cache
+    return CacheRegistry.getCache()
   }
 
   /**
