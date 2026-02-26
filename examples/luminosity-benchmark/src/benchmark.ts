@@ -1,19 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { OrbitSitemap } from '@gravito/constellation'
-import Database from 'better-sqlite3'
 import chalk from 'chalk'
 import Table from 'cli-table3'
 
-const DB_PATH = path.join(process.cwd(), 'db.sqlite')
 const OUT_DIR = path.join(process.cwd(), 'dist-sitemaps')
-
-if (!fs.existsSync(DB_PATH)) {
-  console.error('❌ Database not found. Please run "bun run seed" first.')
-  process.exit(1)
-}
-
-const db = new Database(DB_PATH, { readonly: true })
+const TOTAL_URLS = 1_000_000
 
 console.log('🌌 Luminosity Benchmark: Starting Sitemap Generation...')
 console.log('--------------------------------------------------')
@@ -22,6 +14,11 @@ console.log('--------------------------------------------------')
 const getMemoryUsage = () => {
   const used = process.memoryUsage().heapUsed / 1024 / 1024
   return `${Math.round(used)} MB`
+}
+
+// Attempt garbage collection before benchmark
+if (typeof global.gc === 'function') {
+  global.gc()
 }
 
 const startTime = performance.now()
@@ -38,14 +35,8 @@ const sitemap = OrbitSitemap.static({
   providers: [
     {
       async *getEntries() {
-        const stmt = db.prepare('SELECT slug, updated_at, priority FROM products')
-
-        // Use iterator to stream rows one by one (low memory)
-        for (const row of stmt.iterate() as Iterable<{
-          slug: string
-          updated_at: string
-          priority: number
-        }>) {
+        // Generate URLs on-the-fly instead of reading from database
+        for (let i = 0; i < TOTAL_URLS; i++) {
           processedCount++
 
           // Track peak memory
@@ -60,10 +51,13 @@ const sitemap = OrbitSitemap.static({
             )
           }
 
+          const timestamp = new Date(Date.now() - Math.random() * 86400000).toISOString()
+          const priority = (Math.random() * 10).toFixed(1)
+
           yield {
-            url: `/products/${row.slug}`,
-            lastmod: row.updated_at,
-            priority: row.priority,
+            url: `/products/item-${i.toString().padStart(7, '0')}`,
+            lastmod: timestamp,
+            priority: parseFloat(priority),
             changefreq: 'daily',
           }
         }
@@ -77,6 +71,11 @@ await sitemap.generate()
 
 const endTime = performance.now()
 const duration = (endTime - startTime) / 1000
+const finalHeap = process.memoryUsage().heapUsed
+const peakMemoryMB = Math.round(maxMemory)
+const finalMemoryMB = Math.round(finalHeap / 1024 / 1024)
+const throughput = Math.round(processedCount / duration)
+const filesGenerated = Math.ceil(processedCount / 50000)
 
 // 3. Report
 console.log('\n\n==================================================')
@@ -87,10 +86,18 @@ const table = new Table()
 table.push(
   { '🌌 Total URLs': processedCount.toLocaleString() },
   { '⏱️  Time Elapsed': `${duration.toFixed(2)}s` },
-  { '🧠 Max Memory': chalk.yellow(`${Math.round(maxMemory)} MB`) }, // Highlight low memory
-  { '📂 Files Generated': Math.ceil(processedCount / 50000) },
-  { '🚀 Throughput': `${Math.round(processedCount / duration).toLocaleString()} URLs/sec` }
+  { '🧠 Peak Memory': chalk.yellow(`${peakMemoryMB} MB`) },
+  { '🧠 Final Memory': chalk.cyan(`${finalMemoryMB} MB`) },
+  { '📂 Files Generated': filesGenerated.toString() },
+  { '🚀 Throughput': `${throughput.toLocaleString()} URLs/sec` }
 )
 
 console.log(table.toString())
+
+// 效能指標對比
+console.log('\n📊 Performance Metrics:')
+console.log(`  ✓ Average time per URL: ${((duration / processedCount) * 1000).toFixed(3)} ms`)
+console.log(`  ✓ Memory efficiency: ${(processedCount / peakMemoryMB).toFixed(0)} URLs per MB`)
+console.log(`  ✓ Output size: ${(fs.statSync(OUT_DIR).size / 1024 / 1024).toFixed(1)} MB`)
+
 console.log(`\n✅ Sitemaps generated in: ${OUT_DIR}`)
