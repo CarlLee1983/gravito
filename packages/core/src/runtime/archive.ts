@@ -12,6 +12,7 @@ import type {
   ArchiveExtractOptions,
   ArchiveFileInfo,
   ArchiveFromDirectoryOptions,
+  RuntimeArchiveAdapter,
 } from './types'
 
 // ============ Bun Archive Adapter ============
@@ -29,17 +30,34 @@ function createBunArchiveAdapter(): RuntimeArchiveAdapter {
 
       const tar = new B.Tar()
       for (const [path, data] of Object.entries(entries)) {
-        tar.append(path, data)
+        // Handle different data types
+        let content: Uint8Array
+        if (data instanceof Uint8Array) {
+          content = data
+        } else if (typeof data === 'string') {
+          content = new TextEncoder().encode(data)
+        } else if (data instanceof ArrayBuffer) {
+          content = new Uint8Array(data)
+        } else if (data instanceof Blob) {
+          content = new Uint8Array(await data.arrayBuffer())
+        } else {
+          throw new Error(`[RuntimeArchiveAdapter] Unsupported data type for path: ${path}`)
+        }
+        tar.append(path, content)
       }
       return new Uint8Array(await new Response(tar.out).arrayBuffer())
     },
 
-    async extract(_data, _options = {}) {
+    async extract(_data, _targetDir, _options = {}) {
       throw new Error('[RuntimeArchiveAdapter] Tar extraction not yet implemented via Bun.Tar')
     },
 
-    async list(_data) {
+    async list(_data, _glob?) {
       throw new Error('[RuntimeArchiveAdapter] Tar listing not yet implemented via Bun.Tar')
+    },
+
+    async readFile(_data, _filePath) {
+      throw new Error('[RuntimeArchiveAdapter] Tar readFile not yet implemented via Bun.Tar')
     },
   }
 }
@@ -47,8 +65,7 @@ function createBunArchiveAdapter(): RuntimeArchiveAdapter {
 // ============ Node.js Archive Adapter ============
 
 /**
- * 建立 Node.js 封裝 adapter (使用 tar-stream 或相似方式)
- * 註：此處提供基礎框架，實際實作可能需要外部依賴或更複雜的 Buffer 處理
+ * 建立 Node.js 封裝 adapter
  * @internal
  */
 function createNodeArchiveAdapter(): RuntimeArchiveAdapter {
@@ -58,14 +75,19 @@ function createNodeArchiveAdapter(): RuntimeArchiveAdapter {
         '[RuntimeArchiveAdapter] Node.js archive creation requires external dependencies'
       )
     },
-    async extract(_data, _options = {}) {
+    async extract(_data, _targetDir, _options = {}) {
       throw new Error(
         '[RuntimeArchiveAdapter] Node.js archive extraction requires external dependencies'
       )
     },
-    async list(_data) {
+    async list(_data, _glob?) {
       throw new Error(
         '[RuntimeArchiveAdapter] Node.js archive listing requires external dependencies'
+      )
+    },
+    async readFile(_data, _filePath) {
+      throw new Error(
+        '[RuntimeArchiveAdapter] Node.js archive readFile requires external dependencies'
       )
     },
   }
@@ -88,19 +110,10 @@ function createUnsupportedArchiveAdapter(message: string): RuntimeArchiveAdapter
     async list() {
       throw new Error(message)
     },
+    async readFile() {
+      throw new Error(message)
+    },
   }
-}
-
-// ============ Internal Interface ============
-
-/**
- * Runtime archive adapter interface.
- * @internal
- */
-interface RuntimeArchiveAdapter {
-  create(entries: Record<string, Uint8Array>, options?: ArchiveCreateOptions): Promise<Uint8Array>
-  extract(data: Uint8Array, options?: ArchiveExtractOptions): Promise<ArchiveEntry[]>
-  list(data: Uint8Array): Promise<ArchiveFileInfo[]>
 }
 
 // ============ Singleton ============
@@ -175,15 +188,15 @@ export async function archiveFromDirectory(
 ): Promise<Uint8Array> {
   const kind = getRuntimeKind()
   const createOptions: ArchiveCreateOptions = {
-    format: options.format ?? 'tar',
-    compress: options.compress ?? false,
+    compress: options.compress === 'gzip' ? 'gzip' : undefined,
+    level: options.level,
   }
 
   let entries: Record<string, Uint8Array> = {}
 
   if (kind === 'bun') {
     const B = (globalThis as any).Bun
-    const glob = new B.Glob('**/*')
+    const glob = new B.Glob(options.glob ?? '**/*')
     for await (const file of glob.scan(dirPath)) {
       // biome-ignore lint/security/noGlobalEval: hide from Vite
       const pathMod = await eval('import("node:path")')

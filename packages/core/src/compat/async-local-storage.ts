@@ -50,4 +50,5 @@ if (!AsyncLocalStorageClass) {
   }
 }
 
-export const AsyncLocalStorage = AsyncLocalStorageClass
+// biome-ignore lint/suspicious/noExplicitAny: generic class mock
+export const AsyncLocalStorage: { new <_T>(): any } = AsyncLocalStorageClass

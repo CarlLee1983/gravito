@@ -368,6 +368,8 @@ export interface RuntimeCompressionAdapter {
  * @public
  */
 export interface ArchiveFromDirectoryOptions {
+  /** 歸檔格式 */
+  format?: 'tar' | 'zip'
   /** 壓縮選項 */
   compress?: 'gzip'
   /** 壓縮等級（1-12） */

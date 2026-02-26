@@ -50,6 +50,7 @@ if (nodeCrypto) {
     }
     // Return a Buffer-like object
     return {
+      ...Array.from(bytes),
       length: size,
       [Symbol.iterator]: () => bytes[Symbol.iterator](),
       toString: (encoding: string) => {
@@ -67,7 +68,6 @@ if (nodeCrypto) {
         }
         return ''
       },
-      ...Array.from(bytes),
     }
   }
 }

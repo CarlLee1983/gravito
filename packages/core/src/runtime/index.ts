@@ -40,7 +40,6 @@ export type {
   RuntimeResourceUsage,
   RuntimeServeConfig,
   RuntimeServer,
-  RuntimeServeSyncConfig,
   RuntimeSpawnOptions,
   RuntimeSpawnSyncResult,
   RuntimeSqliteDatabase,
