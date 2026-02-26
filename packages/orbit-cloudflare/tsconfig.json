@@ -1,7 +1,9 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "dist",    "skipLibCheck": true,
-    "types": ["@cloudflare/workers-types", "bun-types", "node"],  },
+    "outDir": "dist",
+    "skipLibCheck": true,
+    "types": ["@cloudflare/workers-types", "bun-types", "node"]
+  },
   "include": ["src/**/*"]
 }

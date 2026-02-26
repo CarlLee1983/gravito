@@ -5,7 +5,8 @@
 
     "declaration": true,
     "declarationMap": true,
-    "types": ["bun-types"],  },
+    "types": ["bun-types"]
+  },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "tests"]
 }
