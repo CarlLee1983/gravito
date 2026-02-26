@@ -1,4 +1,4 @@
-import type { ConnectionContract } from '@gravito/atlas'
+// import type { ConnectionContract } from '@gravito/atlas'
 import type { CircuitBreakerOptions } from '../events/CircuitBreaker'
 import type { EventBackend } from '../events/EventBackend'
 import type { EventQueueConfig } from '../events/EventPriorityQueue'
@@ -103,7 +103,7 @@ export interface HookManagerConfig {
    * Database connection for persistent DLQ (optional).
    * If provided, failed events after max retries will be persisted to database.
    */
-  db?: ConnectionContract
+  db?: any
 
   /**
    * Enable persistent DLQ for failed events (requires db).

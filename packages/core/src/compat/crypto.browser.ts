@@ -26,7 +26,6 @@ export const randomBytes = (size: number) => {
   return {
     length: size,
     [Symbol.iterator]: () => bytes[Symbol.iterator](),
-    // @ts-expect-error
     toString: (encoding: string) => {
       if (encoding === 'base64') {
         let binary = ''
@@ -42,7 +41,5 @@ export const randomBytes = (size: number) => {
       }
       return ''
     },
-    // Add index access simulation
-    ...Array.from(bytes),
-  }
+  } as unknown as Buffer
 }

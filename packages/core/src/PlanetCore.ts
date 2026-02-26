@@ -455,7 +455,7 @@ export class PlanetCore {
         this.registerDeferredProvider(provider)
       }
 
-      return originalMake<T>(key)
+      return originalMake(key) as T
     }
   }
 

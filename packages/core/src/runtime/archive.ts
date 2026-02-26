@@ -8,9 +8,6 @@
 import { getRuntimeKind } from './detection'
 import type {
   ArchiveCreateOptions,
-  ArchiveEntry,
-  ArchiveExtractOptions,
-  ArchiveFileInfo,
   ArchiveFromDirectoryOptions,
   RuntimeArchiveAdapter,
 } from './types'

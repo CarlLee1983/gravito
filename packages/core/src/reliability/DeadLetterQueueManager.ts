@@ -5,7 +5,7 @@
  * 支持 CRUD、重新入隊、批量重試和統計功能
  */
 
-import type { ConnectionContract } from '@gravito/atlas'
+// import type { ConnectionContract } from '@gravito/atlas'
 import { randomUUID } from '../compat/crypto'
 import type { EventOptions } from '../events/EventOptions'
 import type { RetryPolicy } from './RetryPolicy'
@@ -80,7 +80,7 @@ export interface DLQStats {
  *
  * @example
  * ```typescript
- * const db = container.make('db') as ConnectionContract
+ * const db = container.make('db') as any
  * const dlqManager = new DeadLetterQueueManager(db)
  *
  * // 將失敗事件移至 DLQ
@@ -108,7 +108,7 @@ export interface DLQStats {
 export class DeadLetterQueueManager {
   private retryEngine: RetryEngine
 
-  constructor(private db: ConnectionContract) {
+  constructor(private db: any) {
     this.retryEngine = new RetryEngine()
   }
 
@@ -447,7 +447,7 @@ export class DeadLetterQueueManager {
     const total = await this.db.table('event_dlq').count()
 
     // 按事件名稱分組統計（使用 raw SQL 以確保跨數據庫兼容）
-    const byEventResult = await this.db.raw<{ event_name: string; count: number }>(
+    const byEventResult = await this.db.raw(
       'SELECT event_name, COUNT(*) as count FROM event_dlq GROUP BY event_name'
     )
 
@@ -457,7 +457,7 @@ export class DeadLetterQueueManager {
     }
 
     // 按狀態分組統計（使用 raw SQL 以確保跨數據庫兼容）
-    const byStatusResult = await this.db.raw<{ status: string; count: number }>(
+    const byStatusResult = await this.db.raw(
       'SELECT status, COUNT(*) as count FROM event_dlq GROUP BY status'
     )
 

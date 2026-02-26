@@ -237,7 +237,7 @@ export class QueueDashboard {
       status: 'in_dlq' as const,
       priority: entry.options?.priority ?? 'normal',
       createdAt: entry.firstFailedAt ?? Date.now(),
-      error: entry.error?.message ?? entry.error,
+      error: entry.error?.message ?? String(entry.error),
       retryCount: entry.retryCount ?? 0,
     }))
   }

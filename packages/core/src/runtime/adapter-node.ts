@@ -5,7 +5,6 @@
  * @since 3.2.0
  */
 
-import { createRequire } from 'node:module'
 import { toUint8Array } from './detection'
 import type { RuntimeAdapter, RuntimeSpawnOptions } from './types'
 

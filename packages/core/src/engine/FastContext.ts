@@ -69,10 +69,8 @@ class FastRequestImpl implements FastRequest {
    */
   reset(): void {
     // Release references to allow GC
-    // @ts-expect-error - Breaking strict null check for GC
-    this._request = undefined
-    // @ts-expect-error
-    this._params = undefined
+    this._request = undefined as any
+    this._params = undefined as any
     this._url = null
     this._query = null
     this._headers = null
