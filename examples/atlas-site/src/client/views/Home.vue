@@ -67,7 +67,7 @@
             <div class="bg-primary/5 border border-primary/20 backdrop-blur-md rounded-2xl p-6 flex items-center justify-between group">
                 <div>
                   <div class="text-[10px] font-mono font-black text-primary uppercase tracking-[0.2em] mb-1">CORE_ENGINE</div>
-                  <div class="text-sm font-bold text-white">V1.3.0 STABLE</div>
+                  <div class="text-sm font-bold text-white">V2.0.0 STABLE</div>
                 </div>
                 <div class="w-2 h-2 rounded-full bg-primary animate-pulse shadow-neon-blue"></div>
             </div>
