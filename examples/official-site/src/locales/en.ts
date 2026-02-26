@@ -193,9 +193,9 @@ export default {
     lux_note: 'Luminosity (Lux) — The sitemap engine built on Gravito Core.',
     photon: 'Photon',
     photon_note:
-      'Photon (Beta) — High-Performance HTTP Engine with JWT security, CBOR support, and RPC type-safe communication.',
+      'Photon (v1.1.0) — High-Performance HTTP Engine with JWT security, CBOR support, and RPC type-safe communication.',
     atlas: 'Atlas (ORM)',
-    atlas_note: 'Atlas (ORM) — High-Performance Bun-Native ORM.',
+    atlas_note: 'Atlas (v2.0.0) — High-Performance Bun-Native ORM with Horizontal Sharding.',
     zenith: 'Zenith',
     zenith_note: 'Zenith — Zero-Config Control Plane.',
     connect: 'Connect',

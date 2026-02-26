@@ -19,7 +19,7 @@ export interface AppConfig {
 }
 
 export async function bootstrap(options: AppConfig = {}): Promise<PlanetCore> {
-  const { port = 3000, name = 'Gravito Official', version = '1.0.0-singularity' } = options
+  const { port = 3000, name = 'Gravito Official', version = '2.0.0-singularity' } = options
 
   // 1. Configure Host
   const config = defineConfig({
