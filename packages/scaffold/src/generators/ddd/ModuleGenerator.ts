@@ -159,17 +159,13 @@ import { ${name}Created } from '../../Events/${name}Created'
 import { ${name}Status } from './${name}Status'
 
 export interface ${name}Props {
-  // Add properties here
   status: ${name}Status
   createdAt: Date
 }
 
 export class ${name} extends AggregateRoot<Id> {
-  private props: ${name}Props
-
-  private constructor(id: Id, props: ${name}Props) {
+  private constructor(id: Id, private props: ${name}Props) {
     super(id)
-    this.props = props
   }
 
   static create(id: Id): ${name} {
@@ -187,7 +183,12 @@ export class ${name} extends AggregateRoot<Id> {
     return this.props.status
   }
 
-  // Add domain methods here
+  /**
+   * Complete the ${name} process
+   */
+  complete(): void {
+    this.props.status = ${name}Status.COMPLETED
+  }
 }
 `
   }
@@ -214,16 +215,12 @@ export enum ${name}Status {
 import { DomainEvent } from '@gravito/enterprise'
 
 export class ${name}Created extends DomainEvent {
-  constructor(public readonly ${name.toLowerCase()}Id: string) {
+  constructor(public readonly aggregateId: string) {
     super()
   }
 
   override get eventName(): string {
     return '${name.toLowerCase()}.created'
-  }
-
-  get aggregateId(): string {
-    return this.${name.toLowerCase()}Id
   }
 }
 `
@@ -253,7 +250,6 @@ import { Command } from '@gravito/enterprise'
 
 export class Create${name}Command extends Command {
   constructor(
-    // Add command properties
     public readonly id?: string
   ) {
     super()
@@ -311,13 +307,15 @@ export class Get${name}ByIdQuery extends Query {
 import { QueryHandler } from '@gravito/enterprise'
 import type { I${name}Repository } from '../../../Domain/Repositories/I${name}Repository'
 import type { ${name}DTO } from '../../DTOs/${name}DTO'
+import { Id } from '../../../../../Shared/Domain/ValueObjects/Id'
 import type { Get${name}ByIdQuery } from './Get${name}ByIdQuery'
 
 export class Get${name}ByIdHandler implements QueryHandler<Get${name}ByIdQuery, ${name}DTO | null> {
   constructor(private repository: I${name}Repository) {}
 
   async handle(query: Get${name}ByIdQuery): Promise<${name}DTO | null> {
-    const aggregate = await this.repository.findById(query.id as any) // Simplified for demo
+    const id = Id.from(query.id)
+    const aggregate = await this.repository.findById(id)
     if (!aggregate) return null
 
     return {
@@ -339,7 +337,6 @@ import type { ${name}Status } from '../../Domain/Aggregates/${name}/${name}Statu
 export interface ${name}DTO {
   id: string
   status: ${name}Status
-  // Add more fields
 }
 `
   }
@@ -351,29 +348,29 @@ export interface ${name}DTO {
 
 import type { ${name} } from '../../Domain/Aggregates/${name}/${name}'
 import type { I${name}Repository } from '../../Domain/Repositories/I${name}Repository'
-import type { Id } from '../../../../../Shared/Domain/ValueObjects/Id'
-
-const store = new Map<string, ${name}>()
+import { Id } from '../../../../../Shared/Domain/ValueObjects/Id'
 
 export class ${name}Repository implements I${name}Repository {
+  private store = new Map<string, ${name}>()
+
   async findById(id: Id): Promise<${name} | null> {
-    return store.get(id.value) ?? null
+    return this.store.get(id.value) ?? null
   }
 
   async save(aggregate: ${name}): Promise<void> {
-    store.set(aggregate.id.value, aggregate)
+    this.store.set(aggregate.id.value, aggregate)
   }
 
   async delete(id: Id): Promise<void> {
-    store.delete(id.value)
+    this.store.delete(id.value)
   }
 
   async findAll(): Promise<${name}[]> {
-    return Array.from(store.values())
+    return Array.from(this.store.values())
   }
 
   async exists(id: Id): Promise<boolean> {
-    return store.has(id.value)
+    return this.store.has(id.value)
   }
 }
 `

@@ -173,24 +173,39 @@ export class Email extends ValueObject<EmailProps> {
 
 import type { DomainEvent } from '@gravito/enterprise'
 
-type EventHandler = (event: DomainEvent) => void | Promise<void>
+type EventHandler<T extends DomainEvent = any> = (event: T) => void | Promise<void>
 
 export class EventDispatcher {
   private handlers: Map<string, EventHandler[]> = new Map()
 
-  subscribe(eventName: string, handler: EventHandler): void {
+  /**
+   * Subscribe to an event
+   */
+  subscribe<T extends DomainEvent>(eventName: string, handler: EventHandler<T>): void {
     const handlers = this.handlers.get(eventName) ?? []
     handlers.push(handler)
     this.handlers.set(eventName, handlers)
   }
 
+  /**
+   * Dispatch a single event
+   */
   async dispatch(event: DomainEvent): Promise<void> {
     const handlers = this.handlers.get(event.eventName) ?? []
-    for (const handler of handlers) {
-      await handler(event)
-    }
+    const promises = handlers.map(handler => {
+      try {
+        return handler(event)
+      } catch (error) {
+        console.error(\`[EventDispatcher] Error in handler for \${event.eventName}:\`, error)
+      }
+    })
+    
+    await Promise.all(promises)
   }
 
+  /**
+   * Dispatch multiple events sequentially
+   */
   async dispatchAll(events: DomainEvent[]): Promise<void> {
     for (const event of events) {
       await this.dispatch(event)

@@ -45,9 +45,9 @@ export class SatelliteGenerator extends BaseGenerator {
             children: [
               {
                 type: 'directory',
-                name: 'Entities',
+                name: 'Aggregates',
                 children: [
-                  { type: 'file', name: `${name}.ts`, content: this.generateEntity(name) },
+                  { type: 'file', name: `${name}.ts`, content: this.generateAggregate(name) },
                 ],
               },
               {
@@ -61,8 +61,24 @@ export class SatelliteGenerator extends BaseGenerator {
                   },
                 ],
               },
-              { type: 'directory', name: 'ValueObjects', children: [] },
-              { type: 'directory', name: 'Events', children: [] },
+              {
+                type: 'directory',
+                name: 'ValueObjects',
+                children: [
+                  { type: 'file', name: `${name}Id.ts`, content: this.generateIdValueObject(name) },
+                ],
+              },
+              {
+                type: 'directory',
+                name: 'Events',
+                children: [
+                  {
+                    type: 'file',
+                    name: `${name}Created.ts`,
+                    content: this.generateCreatedEvent(name),
+                  },
+                ],
+              },
             ],
           },
           // Application Layer
@@ -120,7 +136,12 @@ export class SatelliteGenerator extends BaseGenerator {
           {
             type: 'file',
             name: 'unit.test.ts',
-            content: `import { describe, it, expect } from "bun:test";\n\ndescribe("${name}", () => {\n  it("should work", () => {\n    expect(true).toBe(true);\n  });\n});`,
+            content: this.generateUnitTest(name),
+          },
+          {
+            type: 'file',
+            name: 'integration.test.ts',
+            content: this.generateIntegrationTest(name),
           },
         ],
       },
@@ -131,12 +152,20 @@ export class SatelliteGenerator extends BaseGenerator {
   // Domain Templates
   // ─────────────────────────────────────────────────────────────
 
-  private generateEntity(name: string): string {
-    return `import { Entity } from '@gravito/enterprise'\n\nexport interface ${name}Props {\n  name: string\n  createdAt: Date\n}\n\nexport class ${name} extends Entity<string> {\n  constructor(id: string, private props: ${name}Props) {\n    super(id)\n  }\n\n  static create(id: string, name: string): ${name} {\n    return new ${name}(id, {\n      name,\n      createdAt: new Date()\n    })\n  }\n\n  get name() { return this.props.name }\n}\n`
+  private generateIdValueObject(name: string): string {
+    return `import { ValueObject } from '@gravito/enterprise'\n\ninterface IdProps {\n  value: string\n}\n\nexport class ${name}Id extends ValueObject<IdProps> {\n  constructor(value: string) {\n    super({ value })\n  }\n\n  static create(): ${name}Id {\n    return new ${name}Id(crypto.randomUUID())\n  }\n\n  get value(): string { return this.props.value }\n}\n`
+  }
+
+  private generateAggregate(name: string): string {
+    return `import { AggregateRoot } from '@gravito/enterprise'\nimport { ${name}Id } from '../ValueObjects/${name}Id'\nimport { ${name}Created } from '../Events/${name}Created'\n\nexport interface ${name}Props {\n  name: string\n  createdAt: Date\n}\n\nexport class ${name} extends AggregateRoot<${name}Id> {\n  constructor(id: ${name}Id, private props: ${name}Props) {\n    super(id)\n  }\n\n  static create(id: ${name}Id, name: string): ${name} {\n    const aggregate = new ${name}(id, {\n      name,\n      createdAt: new Date()\n    })\n\n    aggregate.addDomainEvent(new ${name}Created(id.value))\n\n    return aggregate\n  }\n\n  get name() { return this.props.name }\n}\n`
+  }
+
+  private generateCreatedEvent(name: string): string {
+    return `import { DomainEvent } from '@gravito/enterprise'\n\nexport class ${name}Created extends DomainEvent {\n  constructor(public readonly aggregateId: string) {\n    super()\n  }\n\n  get eventName(): string {\n    return '${this.context?.nameKebabCase}.created'\n  }\n}\n`
   }
 
   private generateRepositoryInterface(name: string): string {
-    return `import { Repository } from '@gravito/enterprise'\nimport { ${name} } from '../Entities/${name}'\n\nexport interface I${name}Repository extends Repository<${name}, string> {\n  // Add custom methods here\n}\n`
+    return `import { Repository } from '@gravito/enterprise'\nimport { ${name} } from '../Aggregates/${name}'\nimport { ${name}Id } from '../ValueObjects/${name}Id'\n\nexport interface I${name}Repository extends Repository<${name}, ${name}Id> {\n  // Add custom methods here\n}\n`
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -144,7 +173,7 @@ export class SatelliteGenerator extends BaseGenerator {
   // ─────────────────────────────────────────────────────────────
 
   private generateUseCase(name: string): string {
-    return `import { UseCase } from '@gravito/enterprise'\nimport { I${name}Repository } from '../../Domain/Contracts/I${name}Repository'\nimport { ${name} } from '../../Domain/Entities/${name}'\n\nexport interface Create${name}Input {\n  name: string\n}\n\nexport class Create${name} extends UseCase<Create${name}Input, string> {\n  constructor(private repository: I${name}Repository) {\n    super()\n  }\n\n  async execute(input: Create${name}Input): Promise<string> {\n    const id = crypto.randomUUID()\n    const entity = ${name}.create(id, input.name)\n    \n    await this.repository.save(entity)\n    \n    return id\n  }\n}\n`
+    return `import { UseCase } from '@gravito/enterprise'\nimport { I${name}Repository } from '../../Domain/Contracts/I${name}Repository'\nimport { ${name} } from '../../Domain/Aggregates/${name}'\nimport { ${name}Id } from '../../Domain/ValueObjects/${name}Id'\n\nexport interface Create${name}Input {\n  name: string\n}\n\nexport class Create${name} extends UseCase<Create${name}Input, string> {\n  constructor(private repository: I${name}Repository) {\n    super()\n  }\n\n  async execute(input: Create${name}Input): Promise<string> {\n    const id = ${name}Id.create()\n    const entity = ${name}.create(id, input.name)\n    \n    await this.repository.save(entity)\n    \n    return id.value\n  }\n}\n`
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -152,7 +181,19 @@ export class SatelliteGenerator extends BaseGenerator {
   // ─────────────────────────────────────────────────────────────
 
   private generateAtlasRepository(name: string): string {
-    return `import { I${name}Repository } from '../../Domain/Contracts/I${name}Repository'\nimport { ${name} } from '../../Domain/Entities/${name}'\nimport { DB } from '@gravito/atlas'\n\nexport class Atlas${name}Repository implements I${name}Repository {\n  async save(entity: ${name}): Promise<void> {\n    // Dogfooding: Use @gravito/atlas for persistence\n    console.log('[Atlas] Saving entity:', entity.id)\n    // await DB.table('${name.toLowerCase()}s').insert({ ... })\n  }\n\n  async findById(id: string): Promise<${name} | null> {\n    return null\n  }\n\n  async findAll(): Promise<${name}[]> {\n    return []\n  }\n\n  async delete(id: string): Promise<void> {}\n\n  async exists(id: string): Promise<boolean> {\n    return false\n  }\n}\n`
+    return `import { I${name}Repository } from '../../Domain/Contracts/I${name}Repository'\nimport { ${name} } from '../../Domain/Aggregates/${name}'\nimport { ${name}Id } from '../../Domain/ValueObjects/${name}Id'\n\nexport class Atlas${name}Repository implements I${name}Repository {\n  async save(entity: ${name}): Promise<void> {\n    // Implementation using @gravito/atlas\n    console.log('[Atlas] Saving aggregate:', entity.id.value)\n  }\n\n  async findById(id: ${name}Id): Promise<${name} | null> {\n    return null\n  }\n\n  async findAll(): Promise<${name}[]> {\n    return []\n  }\n\n  async delete(id: ${name}Id): Promise<void> {}\n\n  async exists(id: ${name}Id): Promise<boolean> {\n    return false\n  }\n}\n`
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Test Templates
+  // ─────────────────────────────────────────────────────────────
+
+  private generateUnitTest(name: string): string {
+    return `import { describe, it, expect } from "bun:test";\nimport { ${name} } from "../src/Domain/Aggregates/${name}";\nimport { ${name}Id } from "../src/Domain/ValueObjects/${name}Id";\n\ndescribe("${name} Aggregate", () => {\n  it("should create a new aggregate with a domain event", () => {\n    const id = ${name}Id.create();\n    const aggregate = ${name}.create(id, "Test Name");\n\n    expect(aggregate.id).toBe(id);\n    expect(aggregate.name).toBe("Test Name");\n    expect(aggregate.pullDomainEvents()).toHaveLength(1);\n  });\n});`
+  }
+
+  private generateIntegrationTest(name: string): string {
+    return `import { describe, it, expect, beforeAll } from "bun:test";\nimport { PlanetCore } from "@gravito/core";\n\ndescribe("${name} Integration", () => {\n  let core: PlanetCore;\n\n  beforeAll(async () => {\n    core = new PlanetCore();\n    // Setup dependencies here\n  });\n\n  it("should handle the creation flow", async () => {\n    expect(true).toBe(true); // Placeholder for actual integration logic\n  });\n});`
   }
 
   // ─────────────────────────────────────────────────────────────
