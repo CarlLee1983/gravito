@@ -4,6 +4,7 @@ import type {
   ControllerClass,
   FormRequestClass,
   ResourceOptions,
+  RouteDefinitionArg,
   RouteHandler,
   RouteOptions,
   Router,
@@ -41,8 +42,12 @@ export class Route {
     middleware: GravitoMiddleware | GravitoMiddleware[],
     handler: RouteHandler
   ): Route
-  static get(path: string, requestOrHandlerOrMiddleware: any, handler?: any): Route {
-    return router().get(path, requestOrHandlerOrMiddleware as any, handler as any)
+  static get(
+    path: string,
+    requestOrHandlerOrMiddleware: RouteDefinitionArg,
+    handler?: RouteHandler
+  ): Route {
+    return router().req('get', path, requestOrHandlerOrMiddleware, handler)
   }
 
   static post(path: string, handler: RouteHandler): Route
@@ -52,8 +57,12 @@ export class Route {
     middleware: GravitoMiddleware | GravitoMiddleware[],
     handler: RouteHandler
   ): Route
-  static post(path: string, requestOrHandlerOrMiddleware: any, handler?: any): Route {
-    return router().post(path, requestOrHandlerOrMiddleware as any, handler as any)
+  static post(
+    path: string,
+    requestOrHandlerOrMiddleware: RouteDefinitionArg,
+    handler?: RouteHandler
+  ): Route {
+    return router().req('post', path, requestOrHandlerOrMiddleware, handler)
   }
 
   static put(path: string, handler: RouteHandler): Route
@@ -63,8 +72,12 @@ export class Route {
     middleware: GravitoMiddleware | GravitoMiddleware[],
     handler: RouteHandler
   ): Route
-  static put(path: string, requestOrHandlerOrMiddleware: any, handler?: any): Route {
-    return router().put(path, requestOrHandlerOrMiddleware as any, handler as any)
+  static put(
+    path: string,
+    requestOrHandlerOrMiddleware: RouteDefinitionArg,
+    handler?: RouteHandler
+  ): Route {
+    return router().req('put', path, requestOrHandlerOrMiddleware, handler)
   }
 
   static delete(path: string, handler: RouteHandler): Route
@@ -74,8 +87,12 @@ export class Route {
     middleware: GravitoMiddleware | GravitoMiddleware[],
     handler: RouteHandler
   ): Route
-  static delete(path: string, requestOrHandlerOrMiddleware: any, handler?: any): Route {
-    return router().delete(path, requestOrHandlerOrMiddleware as any, handler as any)
+  static delete(
+    path: string,
+    requestOrHandlerOrMiddleware: RouteDefinitionArg,
+    handler?: RouteHandler
+  ): Route {
+    return router().req('delete', path, requestOrHandlerOrMiddleware, handler)
   }
 
   static patch(path: string, handler: RouteHandler): Route
@@ -85,8 +102,12 @@ export class Route {
     middleware: GravitoMiddleware | GravitoMiddleware[],
     handler: RouteHandler
   ): Route
-  static patch(path: string, requestOrHandlerOrMiddleware: any, handler?: any): Route {
-    return router().patch(path, requestOrHandlerOrMiddleware as any, handler as any)
+  static patch(
+    path: string,
+    requestOrHandlerOrMiddleware: RouteDefinitionArg,
+    handler?: RouteHandler
+  ): Route {
+    return router().req('patch', path, requestOrHandlerOrMiddleware, handler)
   }
 
   static resource(name: string, controller: ControllerClass, options: ResourceOptions = {}): void {
