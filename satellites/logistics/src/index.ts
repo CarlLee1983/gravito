@@ -68,9 +68,7 @@ export class LogisticsServiceProvider extends ServiceProvider {
     /**
      * GASS 聯動：監聽運費計算 Filter
      */
-    core.hooks.addFilter('commerce:order:adjustments', async (adjustments: any[], args: any) => {
-      const _payload = args as { order: any }
-
+    core.hooks.addFilter('commerce:order:adjustments', async (adjustments: any[], _args: any) => {
       // 預設運費邏輯 (可改為呼叫 Manager 計算)
       const manager = core.container.make<LogisticsManager>('logistics.manager')
       const cost = await manager.provider().calculateCost(1, 'TW') // 假設 1kg
