@@ -389,7 +389,7 @@ export class OrbitGraphQL implements GravitoOrbit {
 
     const maxComplexity = this.config.security?.complexityLimit ?? 1000
     plugins.push({
-      onValidate({ params, addValidationRule }) {
+      onValidate({ addValidationRule }) {
         addValidationRule(
           createComplexityLimitRule({
             maxComplexity,
