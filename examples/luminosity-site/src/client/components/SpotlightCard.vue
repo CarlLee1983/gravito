@@ -28,7 +28,7 @@ const handleMouseLeave = () => {
     ref="container"
     @mousemove="handleMouseMove"
     @mouseleave="handleMouseLeave"
-    class="relative overflow-hidden rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md group"
+    class="relative overflow-hidden rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md group cursor-pointer hover:border-singularity/30 transition-colors duration-300"
   >
     <!-- Spotlight Overlay -->
     <div 
