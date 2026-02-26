@@ -22,7 +22,7 @@ export interface AppConfig {
 }
 
 export async function bootstrap(options: AppConfig = {}) {
-  const { port = 3000, name = 'Gravito Static Site', version = '1.0.0' } = options
+  const { port = 3000, name = 'Gravito Static Site', version = '1.1.3' } = options
 
   // 1. Configure
   const config = defineConfig({
