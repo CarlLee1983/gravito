@@ -170,21 +170,35 @@ async function setupAnalytics(core: PlanetCore) {
   const app = (core as any).app
   const { gravitoSeo } = await import('@gravito/luminosity-adapter-photon')
   const { seoConfig } = await import('./config/seo')
+  const { etherMiddleware } = await import('@gravito/ether')
+
   app.use('*', gravitoSeo(seoConfig))
 
-  app.use('*', async (c: Context, next: Next) => {
-    await next()
-    const gaId = process.env.VITE_GA_ID
-    if (gaId && c.res && c.res.status === 200) {
-      const contentType = c.res.headers.get('Content-Type')
-      if (contentType?.includes('text/html')) {
-        let html = await c.res.text()
-        html = html.replace(
-          '<!-- Google Analytics Placeholder -->',
-          `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config','${gaId}');</script>`
-        )
-        c.res = new Response(html, c.res)
-      }
-    }
-  })
+  const gaId = process.env.VITE_GA_ID
+  if (gaId) {
+    app.use(
+      '*',
+      etherMiddleware({
+        documentRules: [
+          {
+            name: 'ga-injection',
+            comments(comment) {
+              if (comment.text.trim() === 'Google Analytics Placeholder') {
+                comment.replace(
+                  `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
+                   <script>
+                      window.dataLayer = window.dataLayer || [];
+                      function gtag(){dataLayer.push(arguments);}
+                      gtag('js', new Date());
+                      gtag('config', '${gaId}');
+                    </script>`,
+                  { html: true }
+                )
+              }
+            },
+          },
+        ],
+      })
+    )
+  }
 }

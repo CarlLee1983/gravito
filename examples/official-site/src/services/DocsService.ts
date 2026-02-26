@@ -470,6 +470,7 @@ export class DocsService {
             cache_queue: '快取與排程',
             plasma_redis: 'Plasma Redis',
             stasis_cache: 'Stasis Cache',
+            ether_rewriter: 'Ether HTML 轉換',
             seo: 'SEO 與 Sitemap',
             frontend: '前端整合',
             advanced: '進階與維運',
@@ -563,6 +564,7 @@ export class DocsService {
             cache_queue: 'Cache & Queue',
             plasma_redis: 'Plasma Redis',
             stasis_cache: 'Stasis Cache',
+            ether_rewriter: 'Ether HTML Rewriter',
             seo: 'SEO & Sitemap',
             frontend: 'Frontend Integration',
             advanced: 'Advanced / Operations',
@@ -755,6 +757,7 @@ export class DocsService {
         path: '#',
         children: [
           { title: trans.stasis_cache, path: `${prefix}/guide/services/stasis-cache` },
+          { title: trans.ether_rewriter, path: `${prefix}/guide/services/ether-html-rewriter` },
           { title: trans.queues, path: `${prefix}/guide/services/queues` },
         ],
       },

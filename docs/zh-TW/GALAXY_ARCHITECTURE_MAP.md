@@ -33,6 +33,7 @@
 | 模組 | 銀河角色 | 說明 |
 |:---|:---|:---|
 | **`@gravito/photon`** | **感知層** | 基於 Hono 的高效能 HTTP 引擎。 |
+| **`@gravito/ether`** | **感知過濾器** | 基於 Bun HTMLRewriter 的流式 HTML 轉換引擎。 |
 | **`@gravito/impulse`** | **感知過濾器** | 宣告式請求驗證與資料完整性保護。 |
 | **`@gravito/beam`** | **傳送門層** | 零損耗、型別安全的 RPC（客戶端對衛星或 M2M）。 |
 | **`@gravito/graphql`** | **語義閘道器**| 統一的 GraphQL 介面，跨衛星聚合資料。 |

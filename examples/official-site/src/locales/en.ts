@@ -46,6 +46,10 @@ export default {
     kernel_subtitle: 'The Soul of Gravito',
     kernel_desc:
       'Our self-developed high-performance micro-kernel. Native support for Request Context (ALS) and DI Scopes, precision-engineered for rapid I/O coordination.',
+    ether_title: 'Ether',
+    ether_subtitle: 'Streaming HTML Rewriter',
+    ether_desc:
+      'High-performance HTML transformation based on Bun.HTMLRewriter with O(1) memory usage.',
     xenon_title: 'Xenon',
     xenon_subtitle: 'Parallel Satellite Runtime',
     xenon_desc:

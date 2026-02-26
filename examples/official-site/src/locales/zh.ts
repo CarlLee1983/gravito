@@ -44,6 +44,9 @@ export default {
     kernel_subtitle: '核心靈魂',
     kernel_desc:
       '自主開發的高效能微內核，原生支援 AsyncLocalStorage 請求上下文與 DI 作用域，負責極速 I/O 協調。',
+    ether_title: 'Ether',
+    ether_subtitle: '流式 HTML 轉換',
+    ether_desc: '基於 Bun.HTMLRewriter 的高效能 HTML 轉換引擎，記憶體佔用恆定且處理速度極快。',
     xenon_title: 'Xenon',
     xenon_subtitle: '並行衛星運行時',
     xenon_desc: '以共享記憶體效率並行執行獨立的領域衛星服務，具備零配置自動發現與動態加載能力。',

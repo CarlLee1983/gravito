@@ -33,6 +33,7 @@ How the Galaxy interacts with the outside world and filters incoming signals.
 | Module | Galaxy Role | Description |
 |:---|:---|:---|
 | **`@gravito/photon`** | **Sensing Layer** | High-performance HTTP engine based on Hono. |
+| **`@gravito/ether`** | **Sensing Filter** | Streaming HTML rewriter based on Bun HTMLRewriter. |
 | **`@gravito/impulse`** | **Sensing Filter** | Declarative request validation and data integrity. |
 | **`@gravito/beam`** | **Portal Layer** | Zero-overhead, type-safe RPC for Client-to-Satellite and M2M. |
 | **`@gravito/graphql`** | **Semantic Gateway**| Unified GraphQL interface aggregating data across Satellites. |

@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@gravito/constellation": "workspace:*",
+    "@gravito/ether": "workspace:*",
     "@gravito/freeze": "workspace:*",
     "@gravito/freeze-react": "workspace:*",
     "@gravito/ion": "workspace:*",

@@ -194,6 +194,12 @@ const GravitoLanding = ({ t, locale }: HomeProps) => {
                   },
                   {
                     icon: Zap,
+                    title: t.features.ether_title,
+                    subtitle: t.features.ether_subtitle,
+                    description: t.features.ether_desc,
+                  },
+                  {
+                    icon: Zap,
                     title: t.features.xenon_title,
                     subtitle: t.features.xenon_subtitle,
                     description: t.features.xenon_desc,
