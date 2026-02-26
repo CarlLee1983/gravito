@@ -1,11 +1,19 @@
+import { Database } from 'bun:sqlite'
 import fs from 'node:fs'
 import path from 'node:path'
 import { OrbitSitemap } from '@gravito/constellation'
 import chalk from 'chalk'
 import Table from 'cli-table3'
 
+const DB_PATH = path.join(process.cwd(), 'db.sqlite')
 const OUT_DIR = path.join(process.cwd(), 'dist-sitemaps')
-const TOTAL_URLS = 1_000_000
+
+if (!fs.existsSync(DB_PATH)) {
+  console.error('❌ Database not found. Please run "bun run seed" first.')
+  process.exit(1)
+}
+
+const db = new Database(DB_PATH, { readonly: true })
 
 console.log('🌌 Luminosity Benchmark: Starting Sitemap Generation...')
 console.log('--------------------------------------------------')
@@ -14,11 +22,6 @@ console.log('--------------------------------------------------')
 const getMemoryUsage = () => {
   const used = process.memoryUsage().heapUsed / 1024 / 1024
   return `${Math.round(used)} MB`
-}
-
-// Attempt garbage collection before benchmark
-if (typeof global.gc === 'function') {
-  global.gc()
 }
 
 const startTime = performance.now()
@@ -35,31 +38,50 @@ const sitemap = OrbitSitemap.static({
   providers: [
     {
       async *getEntries() {
-        // Generate URLs on-the-fly instead of reading from database
-        for (let i = 0; i < TOTAL_URLS; i++) {
-          processedCount++
+        // Stream in batches to keep memory low
+        const BATCH_SIZE = 50_000
+        let offset = 0
+        let hasMore = true
 
-          // Track peak memory
-          const currentMem = process.memoryUsage().heapUsed / 1024 / 1024
-          if (currentMem > maxMemory) {
-            maxMemory = currentMem
+        while (hasMore) {
+          const stmt = db.prepare(
+            'SELECT slug, updated_at, priority FROM products LIMIT ? OFFSET ?'
+          )
+          const rows = stmt.all(BATCH_SIZE, offset) as Array<{
+            slug: string
+            updated_at: string
+            priority: number
+          }>
+
+          if (rows.length === 0) {
+            hasMore = false
+            break
           }
 
-          if (processedCount % 100_000 === 0) {
-            process.stdout.write(
-              `\r🚀 Processed: ${processedCount.toLocaleString()} | Mem: ${getMemoryUsage()}`
-            )
+          for (const row of rows) {
+            processedCount++
+
+            // Track peak memory
+            const currentMem = process.memoryUsage().heapUsed / 1024 / 1024
+            if (currentMem > maxMemory) {
+              maxMemory = currentMem
+            }
+
+            if (processedCount % 100_000 === 0) {
+              process.stdout.write(
+                `\r🚀 Processed: ${processedCount.toLocaleString()} | Mem: ${getMemoryUsage()}`
+              )
+            }
+
+            yield {
+              url: `/products/${row.slug}`,
+              lastmod: row.updated_at,
+              priority: row.priority,
+              changefreq: 'daily',
+            }
           }
 
-          const timestamp = new Date(Date.now() - Math.random() * 86400000).toISOString()
-          const priority = (Math.random() * 10).toFixed(1)
-
-          yield {
-            url: `/products/item-${i.toString().padStart(7, '0')}`,
-            lastmod: timestamp,
-            priority: parseFloat(priority),
-            changefreq: 'daily',
-          }
+          offset += BATCH_SIZE
         }
       },
     },
@@ -68,6 +90,8 @@ const sitemap = OrbitSitemap.static({
 
 // 2. Run Generation
 await sitemap.generate()
+
+db.close()
 
 const endTime = performance.now()
 const duration = (endTime - startTime) / 1000

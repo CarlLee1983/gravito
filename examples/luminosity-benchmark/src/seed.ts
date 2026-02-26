@@ -1,11 +1,10 @@
+import { Database } from 'bun:sqlite'
 import fs from 'node:fs'
 import path from 'node:path'
 import { faker } from '@faker-js/faker'
-import Database from 'better-sqlite3'
 
 const DB_PATH = path.join(process.cwd(), 'db.sqlite')
 const TOTAL_RECORDS = 1_000_000
-const _BATCH_SIZE = 10_000
 
 console.log('🌌 Luminosity Benchmark: Initializing Big Bang Sequence...')
 
@@ -16,7 +15,7 @@ if (fs.existsSync(DB_PATH)) {
 }
 
 const db = new Database(DB_PATH)
-db.pragma('journal_mode = WAL')
+db.exec('PRAGMA journal_mode = WAL')
 
 console.log('🛠️  Creating schema...')
 db.exec(`
@@ -35,21 +34,21 @@ const insertStmt = db.prepare('INSERT INTO products (slug, updated_at, priority)
 
 const startTime = performance.now()
 
-db.transaction(() => {
-  for (let i = 0; i < TOTAL_RECORDS; i++) {
-    const slug = `product-${faker.helpers.slugify(faker.commerce.productName())}-${i}`
-    const updatedAt = faker.date.recent().toISOString()
-    const priority = Math.random().toFixed(1)
+for (let i = 0; i < TOTAL_RECORDS; i++) {
+  const slug = `product-${faker.helpers.slugify(faker.commerce.productName())}-${i}`
+  const updatedAt = faker.date.recent().toISOString()
+  const priority = Math.random().toFixed(1)
 
-    insertStmt.run(slug, updatedAt, priority)
+  insertStmt.run(slug, updatedAt, priority)
 
-    if ((i + 1) % 100_000 === 0) {
-      console.log(
-        `   ... ${(((i + 1) / TOTAL_RECORDS) * 100).toFixed(0)}% (${(i + 1).toLocaleString()} stars created)`
-      )
-    }
+  if ((i + 1) % 100_000 === 0) {
+    console.log(
+      `   ... ${(((i + 1) / TOTAL_RECORDS) * 100).toFixed(0)}% (${(i + 1).toLocaleString()} stars created)`
+    )
   }
-})()
+}
+
+db.close()
 
 const endTime = performance.now()
 const duration = (endTime - startTime) / 1000
