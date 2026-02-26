@@ -13,8 +13,6 @@ import { LockStatus } from '../../Domain/Models'
 import type { IInventoryLockRepository } from '../Contracts/IInventoryLockRepository'
 
 export class DetectDeadlock {
-  private core: PlanetCore
-
   constructor(core: PlanetCore) {
     this.core = core
   }

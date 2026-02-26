@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
-import { readdirSync, readFileSync, writeFileSync } from 'fs'
-import { join } from 'path'
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 const TIER1_UPDATES = {
   '@gravito/core': { from: '^1.6.1', to: '^2.0.0' },
@@ -78,7 +78,7 @@ function updatePackageJson(filePath: string): {
     }
 
     if (modified) {
-      writeFileSync(filePath, JSON.stringify(pkg, null, 2) + '\n')
+      writeFileSync(filePath, `${JSON.stringify(pkg, null, 2)}\n`)
       return { updated: true, changes: changeCount, errors }
     }
 
@@ -100,7 +100,9 @@ function updateAllPackages() {
   const packageDirs = readdirSync(packagesDir).filter((dir) => !dir.startsWith('.'))
   for (const dir of packageDirs) {
     // Skip Tier 1 packages
-    if (TIER1_PACKAGES.has(dir)) continue
+    if (TIER1_PACKAGES.has(dir)) {
+      continue
+    }
 
     const packageJsonPath = join(packagesDir, dir, 'package.json')
     const result = updatePackageJson(packageJsonPath)

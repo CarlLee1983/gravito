@@ -5,24 +5,114 @@
   "description": "Handles core pages for Gravito Official Site",
   "orbits": ["@gravito/ion", "@gravito/prism", "@gravito/stasis"],
   "routes": [
-    { "path": "/", "method": "GET", "handler": "HomeController@index", "middleware": ["setLocale:en"] },
-    { "path": "/en", "method": "GET", "handler": "HomeController@index", "middleware": ["setLocale:en"] },
-    { "path": "/zh", "method": "GET", "handler": "HomeController@index", "middleware": ["setLocale:zh"] },
-    { "path": "/about", "method": "GET", "handler": "HomeController@about", "middleware": ["setLocale:en"] },
-    { "path": "/en/about", "method": "GET", "handler": "HomeController@about", "middleware": ["setLocale:en"] },
-    { "path": "/zh/about", "method": "GET", "handler": "HomeController@about", "middleware": ["setLocale:zh"] },
-    { "path": "/features", "method": "GET", "handler": "HomeController@features", "middleware": ["setLocale:en"] },
-    { "path": "/en/features", "method": "GET", "handler": "HomeController@features", "middleware": ["setLocale:en"] },
-    { "path": "/zh/features", "method": "GET", "handler": "HomeController@features", "middleware": ["setLocale:zh"] },
-    { "path": "/releases", "method": "GET", "handler": "HomeController@releases", "middleware": ["setLocale:en"] },
-    { "path": "/en/releases", "method": "GET", "handler": "HomeController@releases", "middleware": ["setLocale:en"] },
-    { "path": "/zh/releases", "method": "GET", "handler": "HomeController@releases", "middleware": ["setLocale:zh"] },
-    { "path": "/privacy", "method": "GET", "handler": "HomeController@privacy", "middleware": ["setLocale:en"] },
-    { "path": "/en/privacy", "method": "GET", "handler": "HomeController@privacy", "middleware": ["setLocale:en"] },
-    { "path": "/zh/privacy", "method": "GET", "handler": "HomeController@privacy", "middleware": ["setLocale:zh"] },
-    { "path": "/terms", "method": "GET", "handler": "HomeController@terms", "middleware": ["setLocale:en"] },
-    { "path": "/en/terms", "method": "GET", "handler": "HomeController@terms", "middleware": ["setLocale:en"] },
-    { "path": "/zh/terms", "method": "GET", "handler": "HomeController@terms", "middleware": ["setLocale:zh"] },
+    {
+      "path": "/",
+      "method": "GET",
+      "handler": "HomeController@index",
+      "middleware": ["setLocale:en"]
+    },
+    {
+      "path": "/en",
+      "method": "GET",
+      "handler": "HomeController@index",
+      "middleware": ["setLocale:en"]
+    },
+    {
+      "path": "/zh",
+      "method": "GET",
+      "handler": "HomeController@index",
+      "middleware": ["setLocale:zh"]
+    },
+    {
+      "path": "/about",
+      "method": "GET",
+      "handler": "HomeController@about",
+      "middleware": ["setLocale:en"]
+    },
+    {
+      "path": "/en/about",
+      "method": "GET",
+      "handler": "HomeController@about",
+      "middleware": ["setLocale:en"]
+    },
+    {
+      "path": "/zh/about",
+      "method": "GET",
+      "handler": "HomeController@about",
+      "middleware": ["setLocale:zh"]
+    },
+    {
+      "path": "/features",
+      "method": "GET",
+      "handler": "HomeController@features",
+      "middleware": ["setLocale:en"]
+    },
+    {
+      "path": "/en/features",
+      "method": "GET",
+      "handler": "HomeController@features",
+      "middleware": ["setLocale:en"]
+    },
+    {
+      "path": "/zh/features",
+      "method": "GET",
+      "handler": "HomeController@features",
+      "middleware": ["setLocale:zh"]
+    },
+    {
+      "path": "/releases",
+      "method": "GET",
+      "handler": "HomeController@releases",
+      "middleware": ["setLocale:en"]
+    },
+    {
+      "path": "/en/releases",
+      "method": "GET",
+      "handler": "HomeController@releases",
+      "middleware": ["setLocale:en"]
+    },
+    {
+      "path": "/zh/releases",
+      "method": "GET",
+      "handler": "HomeController@releases",
+      "middleware": ["setLocale:zh"]
+    },
+    {
+      "path": "/privacy",
+      "method": "GET",
+      "handler": "HomeController@privacy",
+      "middleware": ["setLocale:en"]
+    },
+    {
+      "path": "/en/privacy",
+      "method": "GET",
+      "handler": "HomeController@privacy",
+      "middleware": ["setLocale:en"]
+    },
+    {
+      "path": "/zh/privacy",
+      "method": "GET",
+      "handler": "HomeController@privacy",
+      "middleware": ["setLocale:zh"]
+    },
+    {
+      "path": "/terms",
+      "method": "GET",
+      "handler": "HomeController@terms",
+      "middleware": ["setLocale:en"]
+    },
+    {
+      "path": "/en/terms",
+      "method": "GET",
+      "handler": "HomeController@terms",
+      "middleware": ["setLocale:en"]
+    },
+    {
+      "path": "/zh/terms",
+      "method": "GET",
+      "handler": "HomeController@terms",
+      "middleware": ["setLocale:zh"]
+    },
     { "path": "/newsletter", "method": "POST", "handler": "HomeController@subscribe" }
   ]
 }

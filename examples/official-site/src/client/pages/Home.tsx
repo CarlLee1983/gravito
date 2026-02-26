@@ -7,7 +7,6 @@ import {
   Check,
   Code,
   Database,
-  FileText,
   Github,
   Layout as LayoutIcon,
   type LucideIcon,

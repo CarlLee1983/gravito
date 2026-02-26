@@ -1,5 +1,4 @@
 import { Painter } from '@gravito/chromatic'
-import { CreateUserSchema, LoginSchema } from './src/models/User'
 import { AppServiceProvider } from './src/providers/AppServiceProvider'
 import { type ApiContext, createApiRoutes, verifyToken } from './src/routes/api'
 

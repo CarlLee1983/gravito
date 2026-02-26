@@ -1,4 +1,4 @@
-import { bootstrap } from './src/bootstrap'
+import { bootstrap } from './bootstrap'
 
 /**
  * SSG Render Worker

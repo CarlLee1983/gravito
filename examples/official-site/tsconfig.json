@@ -24,7 +24,7 @@
     "baseUrl": ".",
     "paths": {
       "@gravito/core": ["../../packages/core/src/index.ts"],
-      "@gravito/core/compat": ["../../packages/core/src/compat.ts"],
+      "@gravito/core/*": ["../../packages/core/src/*"],
       "@gravito/photon/client": ["../../packages/photon/src/client.ts"],
       "@gravito/photon/jwt": ["../../packages/photon/src/jwt.ts"],
       "@gravito/*": ["../../packages/*/src/index.ts"]

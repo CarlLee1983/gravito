@@ -2,15 +2,14 @@ import { join } from 'node:path'
 import { defineConfig, GravitoEngineAdapter as GravitoAdapter, PlanetCore } from '@gravito/core'
 import { OrbitIon } from '@gravito/ion'
 import { OrbitPrism } from '@gravito/prism'
-import { OrbitResilience } from '@gravito/resilience'
 import { OrbitCache } from '@gravito/stasis'
-import { XenonHost } from '@gravito/xenon'
 import type { Context, Next } from 'hono'
-// Import Controllers for Satellite Mapping
+// Import Controllers
 import { ApiController } from './controllers/ApiController'
 import { DocsController } from './controllers/DocsController'
 import { HomeController } from './controllers/HomeController'
 import { registerHooks } from './hooks'
+import { ResilienceOrbit } from './orbits/ResilienceOrbit'
 import { proxyToVite } from './utils/vite'
 
 export interface AppConfig {
@@ -22,7 +21,7 @@ export interface AppConfig {
 export async function bootstrap(options: AppConfig = {}): Promise<PlanetCore> {
   const { port = 3000, name = 'Gravito Official', version = '1.0.0-singularity' } = options
 
-  // 1. Galaxy Configuration (Host)
+  // 1. Configure Host
   const config = defineConfig({
     config: {
       PORT: port,
@@ -32,12 +31,8 @@ export async function bootstrap(options: AppConfig = {}): Promise<PlanetCore> {
     },
     orbits: [
       new OrbitCache(),
-      new OrbitResilience({
-        circuitBreaker: {
-          enabled: true,
-          threshold: 5,
-          timeout: 10000,
-        },
+      new ResilienceOrbit({
+        circuitBreaker: { threshold: 5, timeout: 10000 },
       }),
       new OrbitPrism({
         cache: {
@@ -54,96 +49,108 @@ export async function bootstrap(options: AppConfig = {}): Promise<PlanetCore> {
   const core = await PlanetCore.boot(config)
   core.registerGlobalErrorHandlers()
 
-  // const app = (core as any).app
+  // 3. Register Satellite Handlers & Routes (Manual Galaxy Mapping)
+  registerSatellites(core)
 
-  // 3. Initialize Xenon Host (Parallel Satellite Runtime)
-  const xenon = new XenonHost(core)
-
-  // 4. Register Satellite Handlers & Middlewares
-  const setLocale = (locale: string) => async (c: any, next: any) => {
-    c.set('locale', locale)
-    return await next()
-  }
-
-  xenon.registerMiddlewares({
-    'setLocale:en': setLocale('en'),
-    'setLocale:zh': setLocale('zh'),
-  })
-
-  xenon.registerHandlers({
-    'HomeController@index': new HomeController(core).index,
-    'HomeController@about': new HomeController(core).about,
-    'HomeController@features': new HomeController(core).features,
-    'HomeController@releases': new HomeController(core).releases,
-    'HomeController@privacy': new HomeController(core).privacy,
-    'HomeController@terms': new HomeController(core).terms,
-    'HomeController@subscribe': new HomeController(core).subscribe,
-    'DocsController@index': new DocsController().index,
-    'DocsController@show': new DocsController().show,
-    'ApiController@health': new ApiController(core).health,
-    'ApiController@config': new ApiController(core).config,
-    'ApiController@stats': new ApiController(core).stats,
-  })
-
-  // 5. Load Satellites via Manifests
-  await xenon.loadSatellite(join(import.meta.dirname, 'satellites/content/manifest.json'))
-  await xenon.loadSatellite(join(import.meta.dirname, 'satellites/docs/manifest.json'))
-  await xenon.loadSatellite(join(import.meta.dirname, 'satellites/api/manifest.json'))
-
-  // 6. Global Middlewares & Custom Asset Handling
+  // 4. Global Middlewares
   setupGlobalMiddlewares(core)
 
-  // 7. Hooks
+  // 5. Hooks
   registerHooks(core)
 
   return core
 }
 
+function registerSatellites(core: PlanetCore) {
+  const router = core.router
+
+  const setLocale = (locale: string) => async (c: any, next: any) => {
+    c.set('locale', locale)
+    return await next()
+  }
+
+  const homeCtrl = new HomeController(core)
+  const docsCtrl = new DocsController()
+  const apiCtrl = new ApiController(core)
+
+  // Satellite: Content
+  router.middleware(setLocale('en')).group((root: any) => {
+    root.get('/', (c: any) => homeCtrl.index(c))
+    root.get('/about', (c: any) => homeCtrl.about(c))
+    root.get('/features', (c: any) => homeCtrl.features(c))
+    root.get('/releases', (c: any) => homeCtrl.releases(c))
+    root.get('/privacy', (c: any) => homeCtrl.privacy(c))
+    root.get('/terms', (c: any) => homeCtrl.terms(c))
+  })
+
+  router
+    .prefix('/en')
+    .middleware(setLocale('en'))
+    .group((en: any) => {
+      en.get('/', (c: any) => homeCtrl.index(c))
+      en.get('/about', (c: any) => homeCtrl.about(c))
+      en.get('/features', (c: any) => homeCtrl.features(c))
+      en.get('/releases', (c: any) => homeCtrl.releases(c))
+    })
+
+  router
+    .prefix('/zh')
+    .middleware(setLocale('zh'))
+    .group((zh: any) => {
+      zh.get('/', (c: any) => homeCtrl.index(c))
+      zh.get('/about', (c: any) => homeCtrl.about(c))
+      zh.get('/features', (c: any) => homeCtrl.features(c))
+      zh.get('/releases', (c: any) => homeCtrl.releases(c))
+    })
+
+  // Satellite: Docs
+  router.get('/docs', (c: any) => docsCtrl.index(c))
+  router.get('/docs/*', (c: any) => docsCtrl.show(c))
+  router.get('/en/docs/*', (c: any) => docsCtrl.show(c))
+  router.get('/zh/docs/*', (c: any) => docsCtrl.show(c))
+
+  // Satellite: API
+  router.prefix('/api').group((api: any) => {
+    api.get('/health', (c: any) => apiCtrl.health(c))
+    api.get('/config', (c: any) => apiCtrl.config(c))
+    api.get('/stats', (c: any) => apiCtrl.stats(c))
+  })
+
+  router.post('/newsletter', (c: any) => homeCtrl.subscribe(c))
+}
+
 function setupGlobalMiddlewares(core: PlanetCore) {
   const app = (core as any).app
 
-  // Vite Proxy for Development
   if (process.env.NODE_ENV !== 'production') {
     core.adapter.use('*', async (c: any, next: any) => {
       const url = new URL(c.req.url)
       const p = url.pathname
-
       const isViteAsset =
         p.startsWith('/@') ||
         p.startsWith('/node_modules/') ||
         p.startsWith('/src/') ||
-        p.includes('react-refresh') ||
-        ['/app.tsx', '/styles.css', '/freeze.config.ts'].includes(p) ||
-        (/\.(ts|tsx|js|jsx|css|json|wasm|png|jpg|jpeg|gif|svg|ico)$/.test(p) &&
-          !p.startsWith('/static/'))
-
+        p.includes('react-refresh')
       if (isViteAsset) {
         const result = await proxyToVite(c, core)
-        if (result) return result
+        if (result) {
+          return result
+        }
       }
-      return await next()
-    })
-
-    app.use('*', async (c: any, next: any) => {
-      c.set('isDev', true)
       return await next()
     })
   }
 
-  // Static Assets
-  app.get(
-    '/favicon.ico',
-    () => new Response(Bun.file(join(import.meta.dirname, '../static/favicon.ico')))
-  )
+  app.get('/favicon.ico', () => new Response(Bun.file(join(process.cwd(), 'static/favicon.ico'))))
   app.get('/static/*', async (c: any) => {
-    const relativePath = c.req.path.replace(/^\/static\//, '')
-    const absFilePath = join(process.cwd(), 'static', relativePath)
+    const absFilePath = join(process.cwd(), 'static', c.req.path.replace(/^\/static\//, ''))
     const bunFile = Bun.file(absFilePath)
-    if (await bunFile.exists()) return new Response(bunFile)
+    if (await bunFile.exists()) {
+      return new Response(bunFile)
+    }
     return c.notFound()
   })
 
-  // SEO & Analytics
   setupAnalytics(core)
 }
 
@@ -162,8 +169,7 @@ async function setupAnalytics(core: PlanetCore) {
         let html = await c.res.text()
         html = html.replace(
           '<!-- Google Analytics Placeholder -->',
-          `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
-           <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${gaId}');</script>`
+          `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config','${gaId}');</script>`
         )
         c.res = new Response(html, c.res)
       }

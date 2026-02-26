@@ -1,6 +1,8 @@
 // Authentication utilities for API context
 export const parseAuthToken = (authHeader: string | undefined): string | null => {
-  if (!authHeader) return null
+  if (!authHeader) {
+    return null
+  }
   const [, token] = authHeader.split(' ')
   return token || null
 }

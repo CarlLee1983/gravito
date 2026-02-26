@@ -9,15 +9,18 @@ This project serves as both the **production-ready official site** and the **fla
 
 ## 🚀 Features & Architecture
 
-This website demonstrates the full power of the Gravito ecosystem, specifically the **Micro-Monolith** pattern:
+This website demonstrates the full power of the Gravito ecosystem, specifically the **Galaxy Architecture**:
 
-### 1. **Core Architecture** (`@gravito/core`)
-- **Micro-Kernel**: Built on `@gravito/core`, leveraging the lifecycle hook system for modularity.
+### 1. **Galaxy Architecture** (`@gravito/core`)
+- **Micro-Kernel**: Built on `PlanetCore`, the 1.6+ engine managing the celestial lifecycle.
+- **Xenon Parallel Runtime**: Orchestrating independent **Domain Satellites** (`Content`, `Docs`, `API`) with zero-config discovery.
+- **Guardian Resilience Layer**: Powered by `@gravito/resilience`, providing built-in Circuit Breakers and fault tolerance.
 - **Photon Adapter**: Utilizing `@gravito/photon` as the high-performance HTTP layer running on **Bun**.
-- **Kinetic Modules**:
+- **Kinetic Orbits**:
     - **@gravito/ion**: Seamless server-side routing with modern SPA user experience.
     - **@gravito/prism**: Server-side template rendering for critical SEO paths.
-    - **@gravito/stasis**: Optimized caching strategies.
+    - **@gravito/stasis**: Optimized caching and distributed locks.
+    - **@gravito/atlas**: Cartesian ORM Mapper v1.6 with horizontal sharding support.
 
 ### 2. **Modern Frontend**
 - **React + Inertia.js**: A hybrid approach delivering the speed of an SPA with the simplicity of a backend-driven app.
@@ -89,19 +92,19 @@ For complete integration guide, see [BUN_WORKERS_GUIDE.md](./BUN_WORKERS_GUIDE.m
 ```bash
 examples/official-site/
 ├── src/
-│   ├── bootstrap.ts       # App wiring (Core + Modules + Middleware)
+│   ├── bootstrap.ts       # Galaxy Host wiring (Orchestrator)
 │   ├── index.ts           # Entry point
+│   ├── satellites/        # Domain-specific Satellites
+│   │   ├── content/       # Home, About, Features (UI)
+│   │   ├── docs/          # Documentation Engine
+│   │   └── api/           # Technical JSON API
+│   ├── orbits/            # Host-level Orbits (Resilience)
 │   ├── config/            # SEO, App configurations
-│   ├── controllers/       # Backend logic (Home, Docs, API)
-│   ├── services/          # Business logic (Markdown processing)
-│   ├── routes/            # Route definitions
-│   └── client/            # Frontend (React)
-│       ├── pages/         # Inertia Page Components
-│       ├── components/    # Shared UI Components
-│       └── app.tsx        # Client entry point
-├── static/                # Public assets (Images, Manifest)
+│   ├── controllers/       # Shared logic (Legacy controllers)
+│   └── client/            # Frontend (React + Inertia)
+├── static/                # Public assets
 ├── vite.config.ts         # Build configuration
-└── build-static.ts        # SSG Build Script
+└── build-static.ts        # Parallel SSG Build Script (via Workers)
 ```
 
 ---

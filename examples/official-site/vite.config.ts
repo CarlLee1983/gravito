@@ -5,6 +5,21 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   root: './src/client', // Source of client code
+  resolve: {
+    alias: {
+      '@gravito/core': path.resolve(__dirname, '../../packages/core/src/index.ts'),
+      '@gravito/photon': path.resolve(__dirname, '../../packages/photon/src/index.ts'),
+      '@gravito/ion': path.resolve(__dirname, '../../packages/ion/src/index.ts'),
+      '@gravito/prism': path.resolve(__dirname, '../../packages/prism/src/index.ts'),
+      '@gravito/freeze': path.resolve(__dirname, '../../packages/freeze/src/index.ts'),
+      '@gravito/freeze-react': path.resolve(__dirname, '../../packages/freeze-react/src/index.ts'),
+      '@gravito/stasis': path.resolve(__dirname, '../../packages/stasis/src/index.ts'),
+      '@gravito/constellation': path.resolve(
+        __dirname,
+        '../../packages/constellation/src/index.ts'
+      ),
+    },
+  },
   build: {
     outDir: '../../static/build', // Output to static/build
     emptyOutDir: true,

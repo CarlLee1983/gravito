@@ -5,6 +5,7 @@
     "baseUrl": ".",
     "paths": {
       "@gravito/core": ["../../packages/core/src/index.ts"],
+      "@gravito/core/*": ["../../packages/core/src/*"],
       "@gravito/*": ["../../packages/*/src/index.ts"]
     },
     "types": ["bun-types"]

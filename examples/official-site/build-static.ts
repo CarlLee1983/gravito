@@ -1,6 +1,6 @@
 import { exec } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { cp, mkdir, rm, writeFile } from 'node:fs/promises'
+import { cp, mkdir, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { promisify } from 'node:util'
 import { generateI18nEntries, SitemapStream } from '@gravito/constellation'
@@ -41,9 +41,13 @@ async function build() {
   const docsRoot = resolve(process.cwd(), '../../docs')
   const glob = new Glob('**/[a-z]*.md')
   for await (const file of glob.scan(docsRoot)) {
-    if (file.startsWith('design/') || file.startsWith('internal/')) continue
+    if (file.startsWith('design/') || file.startsWith('internal/')) {
+      continue
+    }
     const slug = file.replace(/^[a-z-]+\//i, '').replace(/\.md$/, '')
-    if (slug === 'guide/laravel-12-mvc-parity' || slug.includes('node_modules')) continue
+    if (slug === 'guide/laravel-12-mvc-parity' || slug.includes('node_modules')) {
+      continue
+    }
     abstractRoutes.add(`/docs/${slug}`)
   }
 
@@ -120,7 +124,9 @@ async function build() {
       'apple-touch-icon.png',
     ]
     for (const a of rootAssets) {
-      if (existsSync(join(staticDir, a))) await cp(join(staticDir, a), join(outputDir, a))
+      if (existsSync(join(staticDir, a))) {
+        await cp(join(staticDir, a), join(outputDir, a))
+      }
     }
   }
 

@@ -8,74 +8,92 @@
   "module": "./dist/index.js",
   "exports": {
     ".": {
+      "bun": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./adapter": {
+      "bun": "./src/adapter/index.ts",
       "types": "./dist/adapter/index.d.ts",
       "default": "./dist/adapter/index.js"
     },
     "./client": {
+      "bun": "./src/client.ts",
       "types": "./dist/client.d.ts",
       "default": "./dist/client.js"
     },
     "./logger": {
+      "bun": "./src/logger.ts",
       "types": "./dist/logger.d.ts",
       "default": "./dist/logger.js"
     },
     "./bun": {
+      "bun": "./src/bun.ts",
       "types": "./dist/bun.d.ts",
       "default": "./dist/bun.js"
     },
     "./jwt": {
+      "bun": "./src/jwt.ts",
       "types": "./dist/jwt.d.ts",
       "default": "./dist/jwt.js"
     },
     "./middleware/binary": {
+      "bun": "./src/middleware/binary.ts",
       "types": "./dist/middleware/binary.d.ts",
       "default": "./dist/middleware/binary.js"
     },
     "./middleware/htmx": {
+      "bun": "./src/middleware/htmx.ts",
       "types": "./dist/middleware/htmx.d.ts",
       "default": "./dist/middleware/htmx.js"
     },
     "./middleware/ratelimit": {
+      "bun": "./src/middleware/ratelimit.ts",
       "types": "./dist/middleware/ratelimit.d.ts",
       "default": "./dist/middleware/ratelimit.js"
     },
     "./middleware/ratelimit-redis": {
+      "bun": "./src/middleware/ratelimit-redis.ts",
       "types": "./dist/middleware/ratelimit-redis.d.ts",
       "default": "./dist/middleware/ratelimit-redis.js"
     },
     "./middleware/otel": {
+      "bun": "./src/middleware/otel.ts",
       "types": "./dist/middleware/otel.d.ts",
       "default": "./dist/middleware/otel.js"
     },
     "./middleware/streaming": {
+      "bun": "./src/middleware/streaming.ts",
       "types": "./dist/middleware/streaming.d.ts",
       "default": "./dist/middleware/streaming.js"
     },
     "./http-exception": {
+      "bun": "./src/http-exception.ts",
       "types": "./dist/http-exception.d.ts",
       "default": "./dist/http-exception.js"
     },
     "./router/reg-exp-router": {
+      "bun": "./src/router/reg-exp-router.ts",
       "types": "./dist/router/reg-exp-router.d.ts",
       "default": "./dist/router/reg-exp-router.js"
     },
     "./router/trie-router": {
+      "bun": "./src/router/trie-router.ts",
       "types": "./dist/router/trie-router.d.ts",
       "default": "./dist/router/trie-router.js"
     },
     "./adapter/cloudflare": {
+      "bun": "./src/adapter/cloudflare.ts",
       "types": "./dist/adapter/cloudflare.d.ts",
       "default": "./dist/adapter/cloudflare.js"
     },
     "./adapter/vercel": {
+      "bun": "./src/adapter/vercel.ts",
       "types": "./dist/adapter/vercel.d.ts",
       "default": "./dist/adapter/vercel.js"
     },
     "./adapter/deno": {
+      "bun": "./src/adapter/deno.ts",
       "types": "./dist/adapter/deno.d.ts",
       "default": "./dist/adapter/deno.js"
     }
