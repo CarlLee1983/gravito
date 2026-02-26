@@ -6,7 +6,7 @@ export default {
     start: 'Get Started',
   },
   hero: {
-    tag: 'Luminosity Core v1.0 is Live',
+    tag: 'Luminosity Core v2.0 is Live',
     title: 'ATOMIC',
     subtitle: 'SITEMAPS',
     desc: 'The high-performance sitemap engine built for massive scale. Incremental indexing, zero-latency streaming, and intelligent SEO management.',

@@ -6,7 +6,7 @@ export default {
     start: '開始使用',
   },
   hero: {
-    tag: 'Luminosity Core v1.0 已啟動',
+    tag: 'Luminosity Core v2.0 已啟動',
     title: '原子級',
     subtitle: '網站地圖引擎',
     desc: '專為超大規模打造的高效能 Sitemap 引擎。增量索引、零延遲串流，以及智慧 SEO 管理。',
