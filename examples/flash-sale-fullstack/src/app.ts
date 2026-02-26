@@ -15,7 +15,9 @@ import { DynamicPoolManager } from './database/DynamicPoolManager'
 import { GravitoConfig } from './gravito.config'
 import { setupOrderQueueIntegration } from './integrations/order-queue-handler'
 import { setupPaymentQueueIntegration } from './integrations/payment-queue-handler'
+import { setupResilienceIntegration } from './integrations/resilience-integration'
 import { initializeQueueManager } from './queue'
+import { initializeResilience, shutdownResilience } from './resilience/config'
 import { httpTracingMiddleware } from './tracing/http-tracing-middleware'
 
 // import { initializeTracing } from './tracing/setup' // TODO: 遷移到 @gravito/monitor
@@ -110,6 +112,9 @@ async function bootstrap(): Promise<void> {
   // 保存全局應用實例
   globalApp = app
 
+  // P0.2：初始化容錯機制（Resilience）
+  await initializeResilience(app.core)
+
   // P0.3：初始化動態連接池管理器
   globalPoolManager = new DynamicPoolManager(
     {
@@ -158,6 +163,9 @@ async function bootstrap(): Promise<void> {
   globalAsyncInvalidationEngine.start()
   app.core.logger.info('[AsyncInvalidationEngine] 異步失效引擎已初始化')
 
+  // 設置 Resilience 整合（容錯機制）
+  setupResilienceIntegration(app.core)
+
   // 設置 Satellites 與隊列系統的整合
   setupOrderQueueIntegration(app.core)
   setupPaymentQueueIntegration(app.core)
@@ -186,6 +194,8 @@ async function bootstrap(): Promise<void> {
   // 註冊 shutdown hook - 確保 OTel Spans 被正確 flush
   process.on('SIGTERM', async () => {
     app.core.logger.info('SIGTERM received, shutting down gracefully...')
+    // 停止容錯機制
+    await shutdownResilience()
     // 停止動態連接池監控
     if (globalPoolManager) {
       globalPoolManager.stopMonitoring()
@@ -204,6 +214,8 @@ async function bootstrap(): Promise<void> {
 
   process.on('SIGINT', async () => {
     app.core.logger.info('SIGINT received, shutting down gracefully...')
+    // 停止容錯機制
+    await shutdownResilience()
     // 停止動態連接池監控
     if (globalPoolManager) {
       globalPoolManager.stopMonitoring()

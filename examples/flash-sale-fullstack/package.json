@@ -18,6 +18,7 @@
     "@gravito/atlas": "workspace:*",
     "@gravito/signal": "workspace:*",
     "@gravito/stream": "workspace:*",
+    "@gravito/resilience": "workspace:*",
     "@gravito/satellite-flash-sale": "workspace:*",
     "@gravito/satellite-inventory-lock": "workspace:*",
     "@gravito/satellite-payment": "workspace:*",
