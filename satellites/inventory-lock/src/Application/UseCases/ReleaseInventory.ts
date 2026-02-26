@@ -18,6 +18,8 @@ import {
 import type { IInventoryLockRepository } from '../Contracts/IInventoryLockRepository'
 
 export class ReleaseInventory {
+  private core: PlanetCore
+
   constructor(core: PlanetCore) {
     this.core = core
   }

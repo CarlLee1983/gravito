@@ -59,7 +59,6 @@ export class CanaryDeployment {
 
     for (this.phaseIndex = 0; this.phaseIndex < this.config.phases.length; this.phaseIndex++) {
       const phase = this.config.phases[this.phaseIndex]
-      this.currentPhase = phase
 
       const success = await this.runPhase(phase)
 

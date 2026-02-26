@@ -192,7 +192,7 @@ export class DisasterRecoveryManager {
       test.metrics.timeToMigrate = Date.now() - migrateStart
 
       // 4. 驗證恢復
-      const _verified = await this.verifyRecovery(test)
+      await this.verifyRecovery(test)
 
       // 5. 計算 RTO/RPO
       test.metrics.rtoActual = test.metrics.timeToDetect + test.metrics.timeToMigrate

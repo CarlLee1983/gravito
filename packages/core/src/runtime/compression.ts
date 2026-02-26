@@ -75,29 +75,20 @@ function createBunCompressionAdapter(): RuntimeCompressionAdapter {
  * @internal
  */
 function createNodeCompressionAdapter(): RuntimeCompressionAdapter {
-  // node:zlib 使用延遲載入以避免在 Bun 環境中不必要的 import
-  let zlibModule: typeof import('node:zlib') | null = null
-
-  async function loadZlib(): Promise<typeof import('node:zlib')> {
-    if (!zlibModule) {
-      zlibModule = await import('node:zlib')
+  // Use eval('require') to hide the dependency from bundlers like Vite
+  const getNodeModule = (name: string) => {
+    try {
+      // biome-ignore lint/security/noGlobalEval: specialized case for hiding node built-ins
+      return eval('require')(name)
+    } catch (e) {
+      return null
     }
-    return zlibModule
-  }
-
-  function loadZlibSync(): typeof import('node:zlib') {
-    if (!zlibModule) {
-      // 同步路徑：使用 require fallback
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      zlibModule = require('node:zlib')
-    }
-    // zlibModule 在上方已被賦值，此處一定不為 null
-    return zlibModule as typeof import('node:zlib')
   }
 
   return {
     gzipSync(data, options = {}) {
-      const zlib = loadZlibSync()
+      const zlib = getNodeModule('node:zlib')
+      if (!zlib) throw new Error('[RuntimeCompressionAdapter] node:zlib not available')
       const result = zlib.gzipSync(Buffer.from(data), {
         level: options.level ?? 6,
       })
@@ -105,13 +96,15 @@ function createNodeCompressionAdapter(): RuntimeCompressionAdapter {
     },
 
     gunzipSync(data) {
-      const zlib = loadZlibSync()
+      const zlib = getNodeModule('node:zlib')
+      if (!zlib) throw new Error('[RuntimeCompressionAdapter] node:zlib not available')
       const result = zlib.gunzipSync(Buffer.from(data))
       return new Uint8Array(result)
     },
 
     deflateSync(data, options = {}) {
-      const zlib = loadZlibSync()
+      const zlib = getNodeModule('node:zlib')
+      if (!zlib) throw new Error('[RuntimeCompressionAdapter] node:zlib not available')
       const result = zlib.deflateSync(Buffer.from(data), {
         level: options.level ?? 6,
       })
@@ -119,14 +112,17 @@ function createNodeCompressionAdapter(): RuntimeCompressionAdapter {
     },
 
     inflateSync(data) {
-      const zlib = loadZlibSync()
+      const zlib = getNodeModule('node:zlib')
+      if (!zlib) throw new Error('[RuntimeCompressionAdapter] node:zlib not available')
       const result = zlib.inflateSync(Buffer.from(data))
       return new Uint8Array(result)
     },
 
     async gzip(data, options = {}) {
-      const zlib = await loadZlib()
-      const { promisify } = await import('node:util')
+      // biome-ignore lint/security/noGlobalEval: hide from bundlers
+      const zlib = await eval('import("node:zlib")')
+      // biome-ignore lint/security/noGlobalEval: hide from bundlers
+      const { promisify } = await eval('import("node:util")')
       const gzipAsync = promisify(zlib.gzip)
       const result = await gzipAsync(Buffer.from(data), {
         level: options.level ?? 6,
@@ -135,8 +131,10 @@ function createNodeCompressionAdapter(): RuntimeCompressionAdapter {
     },
 
     async gunzip(data) {
-      const zlib = await loadZlib()
-      const { promisify } = await import('node:util')
+      // biome-ignore lint/security/noGlobalEval: hide from bundlers
+      const zlib = await eval('import("node:zlib")')
+      // biome-ignore lint/security/noGlobalEval: hide from bundlers
+      const { promisify } = await eval('import("node:util")')
       const gunzipAsync = promisify(zlib.gunzip)
       const result = await gunzipAsync(Buffer.from(data))
       return new Uint8Array(result)

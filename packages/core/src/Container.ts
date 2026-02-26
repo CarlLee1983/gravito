@@ -1,4 +1,4 @@
-import { AsyncLocalStorage } from 'node:async_hooks'
+import { AsyncLocalStorage } from './compat/async-local-storage'
 import type { RequestScopeManager } from './Container/RequestScopeManager'
 import { CircularDependencyException } from './exceptions/CircularDependencyException'
 

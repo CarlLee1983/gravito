@@ -8,9 +8,6 @@
  * @since 3.2.0
  */
 
-import { createBunAdapter } from './adapter-bun'
-import { createDenoAdapter } from './adapter-deno'
-import { createNodeAdapter } from './adapter-node'
 import { createUnknownAdapter } from './adapter-unknown'
 import { getRuntimeKind } from './detection'
 import type { RuntimeAdapter, RuntimePasswordAdapter, RuntimeSqliteDatabase } from './types'
@@ -87,21 +84,52 @@ export function getRuntimeAdapter(): RuntimeAdapter {
   if (runtimeAdapter) {
     return runtimeAdapter
   }
+  
   const kind = getRuntimeKind()
-  switch (kind) {
-    case 'bun':
-      runtimeAdapter = createBunAdapter()
-      break
-    case 'node':
-      runtimeAdapter = createNodeAdapter()
-      break
-    case 'deno':
-      runtimeAdapter = createDenoAdapter()
-      break
-    default:
-      runtimeAdapter = createUnknownAdapter()
+  
+  // Browser safety: return unknown adapter immediately if we're in a browser
+  if (typeof window !== 'undefined' || typeof process === 'undefined' || (process as any).browser) {
+    return (runtimeAdapter = createUnknownAdapter())
   }
+
+  // Use dynamic-ish resolution to avoid Vite pulling in Node modules eagerly
+  const safeLoad = (path: string) => {
+    try {
+      // biome-ignore lint/security/noGlobalEval: specialized case for hiding node built-ins from bundlers
+      return eval('require')(path)
+    } catch (e) {
+      return null
+    }
+  }
+
+  try {
+    if (kind === 'bun') {
+      const mod = safeLoad('./adapter-bun')
+      if (mod) runtimeAdapter = mod.createBunAdapter()
+    } else if (kind === 'node') {
+      const mod = safeLoad('./adapter-node')
+      if (mod) runtimeAdapter = mod.createNodeAdapter()
+    } else if (kind === 'deno') {
+      const mod = safeLoad('./adapter-deno')
+      if (mod) runtimeAdapter = mod.createDenoAdapter()
+    }
+  } catch (e) {
+    // Fallback if dynamic loading fails
+  }
+
+  if (!runtimeAdapter) {
+    runtimeAdapter = createUnknownAdapter()
+  }
+
   return runtimeAdapter
+}
+
+/**
+ * Reset the runtime adapter (mainly for testing).
+ * @internal
+ */
+export function resetRuntimeAdapter(): void {
+  runtimeAdapter = null
 }
 
 // ============ Password Adapter Singleton ============
@@ -142,12 +170,8 @@ export function getPasswordAdapter(): RuntimePasswordAdapter {
 
   const message = '[RuntimeAdapter] Password hashing requires Bun runtime or a Node/Deno adapter'
   passwordAdapter = {
-    async hash() {
-      throw new Error(message)
-    },
-    async verify() {
-      throw new Error(message)
-    },
+    async hash() { throw new Error(message) },
+    async verify() { throw new Error(message) },
   }
   return passwordAdapter
 }
@@ -160,7 +184,7 @@ export function getPasswordAdapter(): RuntimePasswordAdapter {
  */
 export async function createSqliteDatabase(path: string): Promise<RuntimeSqliteDatabase> {
   const kind = getRuntimeKind()
-  if (kind === 'bun') {
+  if (kind === 'bun' && typeof Bun !== 'undefined') {
     const sqlite = await import('bun:sqlite')
     const db = new sqlite.Database(path, { create: true })
     return db as RuntimeSqliteDatabase

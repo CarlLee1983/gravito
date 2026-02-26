@@ -104,10 +104,17 @@ function registerSatellites(core: PlanetCore) {
     })
 
   // Satellite: Docs
-  router.get('/docs', (c: any) => docsCtrl.index(c))
-  router.get('/docs/*', (c: any) => docsCtrl.show(c))
-  router.get('/en/docs/*', (c: any) => docsCtrl.show(c))
-  router.get('/zh/docs/*', (c: any) => docsCtrl.show(c))
+  router.middleware(setLocale('en')).group((enDocs: any) => {
+    enDocs.get('/docs', (c: any) => docsCtrl.index(c))
+    enDocs.get('/en/docs', (c: any) => docsCtrl.index(c))
+    enDocs.get('/docs/*', (c: any) => docsCtrl.show(c))
+    enDocs.get('/en/docs/*', (c: any) => docsCtrl.show(c))
+  })
+
+  router.middleware(setLocale('zh')).group((zhDocs: any) => {
+    zhDocs.get('/zh/docs', (c: any) => docsCtrl.index(c))
+    zhDocs.get('/zh/docs/*', (c: any) => docsCtrl.show(c))
+  })
 
   // Satellite: API
   router.prefix('/api').group((api: any) => {
@@ -141,7 +148,10 @@ function setupGlobalMiddlewares(core: PlanetCore) {
     })
   }
 
-  app.get('/favicon.ico', () => new Response(Bun.file(join(process.cwd(), 'static/favicon.ico'))))
+  app.get('/test-ping', (c: any) => c.text('PONG'))
+  app.get('/api/v1/health', (c: any) => c.json({ status: 'active', galaxy: 'singularity' }))
+
+  // Static Assets
   app.get('/static/*', async (c: any) => {
     const absFilePath = join(process.cwd(), 'static', c.req.path.replace(/^\/static\//, ''))
     const bunFile = Bun.file(absFilePath)

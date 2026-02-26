@@ -14,6 +14,8 @@ import { InventoryDeducted, LockStatus } from '../../Domain/Models'
 import type { IInventoryLockRepository } from '../Contracts/IInventoryLockRepository'
 
 export class DeductInventory {
+  private core: PlanetCore
+
   constructor(core: PlanetCore) {
     this.core = core
   }

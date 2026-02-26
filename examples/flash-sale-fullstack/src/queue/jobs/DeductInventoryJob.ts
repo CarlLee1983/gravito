@@ -52,7 +52,7 @@ export class DeductInventoryJob extends Job {
         const inventoryLock = core.container.make<any>('inventory-lock.deduct-inventory')
 
         // 執行庫存扣減
-        const _result = await inventoryLock?.execute?.({
+        await inventoryLock?.execute?.({
           orderId: this.payload.orderId,
           lockId: this.payload.lockId,
           version: this.payload.lockVersion,

@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "noEmit": true,
+    "composite": true,
+    "skipLibCheck": true,
+    "types": ["node", "bun-types"],
+    "paths": {
+      "@gravito/core": ["../core/src/index.ts"],
+      "@gravito/*": ["../*/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

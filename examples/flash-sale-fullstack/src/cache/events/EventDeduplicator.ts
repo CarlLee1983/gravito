@@ -130,11 +130,13 @@ export class EventDeduplicator {
 
       // 添加模式
       const patterns = eventMap.get(event.id)?.patterns
-      event.patterns.forEach((p) => {
-        if (!patterns.includes(p)) {
-          patterns.push(p)
-        }
-      })
+      if (patterns) {
+        event.patterns.forEach((p) => {
+          if (!patterns.includes(p)) {
+            patterns.push(p)
+          }
+        })
+      }
     }
 
     // 緩存結果

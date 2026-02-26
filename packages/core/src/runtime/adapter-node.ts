@@ -5,8 +5,6 @@
  * @since 3.2.0
  */
 
-import { createRequire } from 'node:module'
-
 import { toUint8Array } from './detection'
 import type { RuntimeAdapter, RuntimeSpawnOptions } from './types'
 
@@ -15,6 +13,17 @@ import type { RuntimeAdapter, RuntimeSpawnOptions } from './types'
  * @internal
  */
 export function createNodeAdapter(): RuntimeAdapter {
+  // Helper to safely get Node.js modules without triggering bundler errors
+  const getNodeModule = (name: string) => {
+    try {
+      // Use eval('require') to hide the dependency from static analysis tools like Vite/Webpack
+      // biome-ignore lint/security/noGlobalEval: specialized case for hiding node built-ins
+      return eval('require')(name)
+    } catch (e) {
+      throw new Error(`[RuntimeAdapter] Failed to load Node.js module "${name}": ${e}`)
+    }
+  }
+
   return {
     kind: 'node',
     spawn(command, options = {}) {
@@ -22,26 +31,18 @@ export function createNodeAdapter(): RuntimeAdapter {
       if (!cmd) {
         throw new Error('[RuntimeAdapter] spawn() requires a command')
       }
-      const require = createRequire(import.meta.url)
-      const childProcess = require('node:child_process') as typeof import('node:child_process')
-      const stream = require('node:stream') as typeof import('node:stream')
+      
+      const childProcess = getNodeModule('node:child_process')
+      const stream = getNodeModule('node:stream')
 
       const stdioMap = (value: RuntimeSpawnOptions['stdout']) => {
-        if (value === 'inherit') {
-          return 'inherit'
-        }
-        if (value === 'ignore') {
-          return 'ignore'
-        }
+        if (value === 'inherit') return 'inherit'
+        if (value === 'ignore') return 'ignore'
         return 'pipe'
       }
       const stdinMap = (value: RuntimeSpawnOptions['stdin']) => {
-        if (value === 'inherit') {
-          return 'inherit'
-        }
-        if (value === 'ignore') {
-          return 'ignore'
-        }
+        if (value === 'inherit') return 'inherit'
+        if (value === 'ignore') return 'ignore'
         return 'pipe'
       }
 
@@ -52,13 +53,9 @@ export function createNodeAdapter(): RuntimeAdapter {
       }) as import('node:child_process').ChildProcess
 
       const toWeb = (streamReadable: NodeJS.ReadableStream | null) => {
-        if (!streamReadable) {
-          return null
-        }
+        if (!streamReadable) return null
         const maybeWeb = streamReadable as unknown as ReadableStream<Uint8Array>
-        if (typeof (maybeWeb as any).getReader === 'function') {
-          return maybeWeb
-        }
+        if (typeof (maybeWeb as any).getReader === 'function') return maybeWeb
         return stream.Readable.toWeb(streamReadable as any) as unknown as ReadableStream<Uint8Array>
       }
 
@@ -83,12 +80,8 @@ export function createNodeAdapter(): RuntimeAdapter {
 
         child.on('error', reject)
         child.on('exit', (code) => {
-          if (timeoutHandle) {
-            clearTimeout(timeoutHandle)
-          }
-          if (abortListener && options.signal) {
-            options.signal.removeEventListener('abort', abortListener)
-          }
+          if (timeoutHandle) clearTimeout(timeoutHandle)
+          if (abortListener && options.signal) options.signal.removeEventListener('abort', abortListener)
           resolve(code ?? 0)
         })
       })
@@ -98,23 +91,13 @@ export function createNodeAdapter(): RuntimeAdapter {
         stdout: toWeb(child.stdout),
         stderr: toWeb(child.stderr),
         kill: (signal?: string | number) => child.kill(signal as NodeJS.Signals | number),
-        unref: () => {
-          child.unref()
-        },
+        unref: () => { child.unref() },
         resourceUsage: async () => {
           try {
             const usage = (child as any).resourceUsage?.()
-            if (!usage) {
-              return undefined
-            }
+            if (!usage) return undefined
             return {
-              cpuTime:
-                usage.user && usage.system
-                  ? {
-                      user: usage.user,
-                      system: usage.system,
-                    }
-                  : undefined,
+              cpuTime: usage.user && usage.system ? { user: usage.user, system: usage.system } : undefined,
               maxRSS: usage.maxRss,
             }
           } catch {
@@ -125,11 +108,9 @@ export function createNodeAdapter(): RuntimeAdapter {
     },
     async spawnAndCollect(command, options = {}) {
       const [cmd, ...args] = command
-      if (!cmd) {
-        throw new Error('[RuntimeAdapter] spawn() requires a command')
-      }
-      const require = createRequire(import.meta.url)
-      const childProcess = require('node:child_process') as typeof import('node:child_process')
+      if (!cmd) throw new Error('[RuntimeAdapter] spawn() requires a command')
+      
+      const childProcess = getNodeModule('node:child_process')
 
       return new Promise((resolve, reject) => {
         let timedOut = false
@@ -156,20 +137,14 @@ export function createNodeAdapter(): RuntimeAdapter {
         }
 
         if (options.signal) {
-          abortListener = () => {
-            child.kill('SIGTERM')
-          }
+          abortListener = () => { child.kill('SIGTERM') }
           options.signal.addEventListener('abort', abortListener)
         }
 
         child.on('error', reject)
         child.on('exit', (code) => {
-          if (timeoutHandle) {
-            clearTimeout(timeoutHandle)
-          }
-          if (abortListener && options.signal) {
-            options.signal.removeEventListener('abort', abortListener)
-          }
+          if (timeoutHandle) clearTimeout(timeoutHandle)
+          if (abortListener && options.signal) options.signal.removeEventListener('abort', abortListener)
 
           const stdout = Buffer.concat(stdoutChunks).toString('utf-8')
           const stderr = Buffer.concat(stderrChunks).toString('utf-8')
@@ -186,11 +161,9 @@ export function createNodeAdapter(): RuntimeAdapter {
     },
     spawnSync(command, options = {}) {
       const [cmd, ...args] = command
-      if (!cmd) {
-        throw new Error('[RuntimeAdapter] spawn() requires a command')
-      }
-      const require = createRequire(import.meta.url)
-      const childProcess = require('node:child_process') as typeof import('node:child_process')
+      if (!cmd) throw new Error('[RuntimeAdapter] spawn() requires a command')
+      
+      const childProcess = getNodeModule('node:child_process')
 
       const result = childProcess.spawnSync(cmd, args, {
         cwd: options.cwd,

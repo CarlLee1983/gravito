@@ -7,7 +7,7 @@ export default defineConfig({
   root: './src/client', // Source of client code
   resolve: {
     alias: {
-      '@gravito/core': path.resolve(__dirname, '../../packages/core/src/index.ts'),
+      '@gravito/core': path.resolve(__dirname, '../../packages/core/src/index.browser.ts'),
       '@gravito/photon': path.resolve(__dirname, '../../packages/photon/src/index.ts'),
       '@gravito/ion': path.resolve(__dirname, '../../packages/ion/src/index.ts'),
       '@gravito/prism': path.resolve(__dirname, '../../packages/prism/src/index.ts'),

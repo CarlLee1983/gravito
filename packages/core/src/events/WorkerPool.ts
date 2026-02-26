@@ -7,7 +7,7 @@
  * @internal
  */
 
-import { randomUUID } from 'node:crypto'
+import { randomUUID } from '../compat/crypto'
 import type { Meter } from '@opentelemetry/api'
 import type { EventTask } from './types'
 import type { TaskSource, WorkerPoolConfig, WorkerPoolStats, WorkerStats } from './WorkerPoolConfig'
@@ -46,14 +46,23 @@ export class WorkerPool {
     taskSource?: TaskSource
   }
   private metrics?: WorkerPoolMetrics
-  private healthCheckTimer?: NodeJS.Timeout
-  private metricsTimer?: NodeJS.Timeout
+  private healthCheckTimer?: any
+  private metricsTimer?: any
   private isRunning = false
   private scaleDownCounter = 0
 
   constructor(config: WorkerPoolConfig = {}, meter?: Meter) {
     // Set defaults
-    const cpuCores = Math.max(1, require('node:os').cpus().length)
+    let cpuCores = 1
+    try {
+      if (typeof process !== 'undefined' && !(process as any).browser) {
+        // biome-ignore lint/security/noGlobalEval: specialized case for hiding node built-ins
+        cpuCores = Math.max(1, eval('require')('node:os').cpus().length)
+      }
+    } catch (e) {
+      // Fallback to 1
+    }
+
     this.config = {
       concurrency: config.concurrency ?? 4,
       workerThreads: config.workerThreads ?? cpuCores,

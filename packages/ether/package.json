@@ -1,0 +1,54 @@
+{
+  "name": "@gravito/ether",
+  "sideEffects": false,
+  "version": "1.0.0",
+  "description": "Gravito Ether - Bun HTMLRewriter-based HTML transformation engine",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./middleware": {
+      "bun": "./src/middleware/index.ts",
+      "types": "./dist/middleware/index.d.ts",
+      "default": "./dist/middleware/index.js"
+    },
+    "./rules": {
+      "bun": "./src/rules/index.ts",
+      "types": "./dist/rules/index.d.ts",
+      "default": "./dist/rules/index.js"
+    }
+  },
+  "scripts": {
+    "build": "bun run build.ts",
+    "build:dts": "bun run build.ts --dts-only",
+    "test": "bun test --timeout=10000",
+    "test:coverage": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "@gravito/core": ">=1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@gravito/core": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@gravito/core": "workspace:*",
+    "bun-types": "latest"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gravito-framework/gravito.git",
+    "directory": "packages/ether"
+  }
+}

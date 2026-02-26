@@ -4,7 +4,7 @@
  * 搶購系統主應用入口
  */
 
-import { Application, shutdownOpenTelemetry } from '@gravito/core'
+import { Application } from '@gravito/core'
 import { FlashSaleServiceProvider } from '@gravito/satellite-flash-sale'
 import { InventoryLockServiceProvider } from '@gravito/satellite-inventory-lock'
 import { PaymentServiceProvider } from '@gravito/satellite-payment'
@@ -17,7 +17,7 @@ import { setupOrderQueueIntegration } from './integrations/order-queue-handler'
 import { setupPaymentQueueIntegration } from './integrations/payment-queue-handler'
 import { initializeQueueManager } from './queue'
 import { httpTracingMiddleware } from './tracing/http-tracing-middleware'
-import { initializeTracing } from './tracing/setup'
+// import { initializeTracing } from './tracing/setup' // TODO: 遷移到 @gravito/monitor
 
 let globalApp: Application | null = null
 let globalQueueManager: QueueManager | null = null
@@ -72,10 +72,11 @@ async function bootstrap(): Promise<void> {
   const _env = (process.env.NODE_ENV || 'development') as 'development' | 'production' | 'testing'
 
   // 1. 初始化 OpenTelemetry（必須在任何其他初始化之前）
-  const otelSdk = await initializeTracing(GravitoConfig.openTelemetry)
-  if (otelSdk) {
-    console.log('[Tracing] OpenTelemetry SDK initialized successfully')
-  }
+  // TODO: 使用 @gravito/monitor 進行 OpenTelemetry 配置
+  // const otelSdk = await initializeTracing(GravitoConfig.openTelemetry)
+  // if (otelSdk) {
+  //   console.log('[Tracing] OpenTelemetry SDK initialized successfully')
+  // }
 
   // Create Application with proper configuration structure
   const p1 = new FlashSaleServiceProvider()
@@ -195,7 +196,8 @@ async function bootstrap(): Promise<void> {
     if (globalAsyncInvalidationEngine) {
       await globalAsyncInvalidationEngine.stop()
     }
-    await shutdownOpenTelemetry()
+    // TODO: 使用 @gravito/monitor 進行 OpenTelemetry 關閉
+    // await shutdownOpenTelemetry()
     process.exit(0)
   })
 
@@ -212,7 +214,8 @@ async function bootstrap(): Promise<void> {
     if (globalAsyncInvalidationEngine) {
       await globalAsyncInvalidationEngine.stop()
     }
-    await shutdownOpenTelemetry()
+    // TODO: 使用 @gravito/monitor 進行 OpenTelemetry 關閉
+    // await shutdownOpenTelemetry()
     process.exit(0)
   })
 }

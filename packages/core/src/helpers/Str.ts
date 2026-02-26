@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from 'node:crypto'
+import { randomBytes, randomUUID } from '../compat/crypto'
 import { getRuntimeKind } from '../runtime/detection'
 
 type StartsEndsNeedle = string | readonly string[]

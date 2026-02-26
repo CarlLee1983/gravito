@@ -67,7 +67,9 @@
       "Bash(gh issue:*)",
       "Bash(test:*)",
       "Bash(git tag:*)",
-      "Bash(echo === 版本更新分析文檔總結 ===:*)"
+      "Bash(echo === 版本更新分析文檔總結 ===:*)",
+      "Bash(cd:*)",
+      "Bash(echo:*)"
     ]
   },
   "enabledMcpjsonServers": [

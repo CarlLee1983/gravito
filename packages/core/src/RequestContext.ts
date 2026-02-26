@@ -8,7 +8,7 @@
  * @since 2.2.0
  */
 
-import { AsyncLocalStorage } from 'node:async_hooks'
+import { AsyncLocalStorage } from './compat/async-local-storage'
 
 /**
  * 請求上下文資料介面

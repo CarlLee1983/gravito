@@ -9,6 +9,7 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "browser": "./src/index.browser.ts",
       "bun": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
@@ -31,6 +32,14 @@
       "types": "./dist/ffi/index.d.ts",
       "import": "./dist/ffi/index.js",
       "require": "./dist/ffi/index.cjs"
+    },
+    "./compat/async-local-storage": {
+      "browser": "./src/compat/async-local-storage.browser.ts",
+      "default": "./src/compat/async-local-storage.ts"
+    },
+    "./compat/crypto": {
+      "browser": "./src/compat/crypto.browser.ts",
+      "default": "./src/compat/crypto.ts"
     }
   },
   "files": [

@@ -232,8 +232,13 @@ async function scanDirectoryBun(
  * @internal
  */
 async function scanDirectoryNode(dir: string): Promise<Record<string, Uint8Array>> {
-  const { readdir, readFile, stat } = await import('node:fs/promises')
-  const { join } = await import('node:path')
+  // biome-ignore lint/security/noGlobalEval: hide from bundlers
+  const fs = await eval('import("node:fs/promises")')
+  // biome-ignore lint/security/noGlobalEval: hide from bundlers
+  const path = await eval('import("node:path")')
+  
+  const { readdir, readFile, stat } = fs
+  const { join } = path
   const entries: Record<string, Uint8Array> = {}
 
   async function walk(currentDir: string, prefix = ''): Promise<void> {
@@ -293,7 +298,8 @@ export async function archiveFromDirectory(
   const adapter = getArchiveAdapter()
   const archiveData = await adapter.create(entries, createOptions)
 
-  const { writeFile } = await import('node:fs/promises')
+  // biome-ignore lint/security/noGlobalEval: hide from bundlers
+  const { writeFile } = await eval('import("node:fs/promises")')
   await writeFile(archivePath, archiveData)
 
   return archiveData

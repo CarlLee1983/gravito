@@ -49,7 +49,7 @@ export class ConfirmOrderJob extends Job {
         const confirmOrder = core.container.make<any>('flash-sale.confirm-order')
 
         // 執行訂單確認
-        const _result = await confirmOrder?.execute?.({
+        await confirmOrder?.execute?.({
           orderId: this.payload.orderId,
           lockId: this.payload.lockId,
         })

@@ -310,7 +310,6 @@ export class GeographicCacheManager {
   private evictEntries(regionId: string, requiredSpace: number): void {
     const cache = this.caches.get(regionId)!
     const stats = this.stats.get(regionId)!
-    const _config = this.regionConfigs.get(regionId)!
 
     console.log(`[GeographicCacheManager] 開始驅逐: ${regionId} (需要 ${requiredSpace} bytes)`)
 
@@ -558,7 +557,6 @@ export class GeographicCacheManager {
 
     lines.push('--- CACHE STATISTICS ---')
     for (const stats of this.stats.values()) {
-      const _cache = this.caches.get(stats.regionId)
       lines.push(`${stats.regionId}:`)
       lines.push(`  Total Size: ${(stats.totalSize / 1024).toFixed(0)} KB`)
       lines.push(`  Entry Count: ${stats.entryCount}`)
