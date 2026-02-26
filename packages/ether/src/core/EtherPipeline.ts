@@ -6,7 +6,7 @@
  */
 
 import { EtherRewriter } from './EtherRewriter'
-import type { PipelineContext, TransformRule } from './types'
+import type { DocumentRule, PipelineContext, TransformRule } from './types'
 
 /**
  * EtherPipeline - 轉換管道
@@ -63,6 +63,19 @@ export class EtherPipeline {
       updatedRewriter = updatedRewriter.addRule(r)
     }
 
+    return new EtherPipeline(this.name, updatedRewriter, this.condition)
+  }
+
+  /**
+   * 新增文檔級規則到管道
+   *
+   * 採用不可變設計，回傳新實例。
+   *
+   * @param rule - 文檔級規則
+   * @returns 新的 EtherPipeline 實例
+   */
+  addDocumentRule(rule: DocumentRule): EtherPipeline {
+    const updatedRewriter = this.rewriter.addDocumentRule(rule)
     return new EtherPipeline(this.name, updatedRewriter, this.condition)
   }
 

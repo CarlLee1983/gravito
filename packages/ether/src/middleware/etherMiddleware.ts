@@ -8,7 +8,7 @@
 import type { MiddlewareHandler } from 'hono'
 import type { EtherPipeline } from '../core/EtherPipeline'
 import { EtherRewriter } from '../core/EtherRewriter'
-import type { PipelineContext, TransformRule } from '../core/types'
+import type { DocumentRule, PipelineContext, TransformRule } from '../core/types'
 
 /**
  * Ether Middleware 配置選項
@@ -19,6 +19,11 @@ export interface EtherMiddlewareOptions {
    * 會依序套用到 Response 中
    */
   readonly rules?: TransformRule[]
+
+  /**
+   * 文檔級規則列表
+   */
+  readonly documentRules?: DocumentRule[]
 
   /**
    * 命名管道列表
@@ -72,7 +77,7 @@ export function etherMiddleware(options: EtherMiddlewareOptions = {}): Middlewar
   // 準備配置
   const contentTypes = options.contentTypes ?? ['text/html', 'application/xhtml+xml']
   const allowedTypes = new Set(contentTypes)
-  const rewriter = new EtherRewriter(options.rules ?? [])
+  const rewriter = new EtherRewriter(options.rules ?? [], options.documentRules ?? [])
   const pipelines = options.pipelines ?? []
   const debug = options.debug ?? false
 
@@ -108,11 +113,16 @@ export function etherMiddleware(options: EtherMiddlewareOptions = {}): Middlewar
     let response = c.res
 
     // 1. 先套用直接規則（如果有）
-    if (options.rules && options.rules.length > 0) {
+    if (
+      (options.rules && options.rules.length > 0) ||
+      (options.documentRules && options.documentRules.length > 0)
+    ) {
       response = rewriter.transform(response)
 
       if (debug) {
-        console.log(`[EtherMiddleware] Applied ${options.rules.length} rule(s)`)
+        console.log(
+          `[EtherMiddleware] Applied rules (Transform: ${options.rules?.length ?? 0}, Document: ${options.documentRules?.length ?? 0})`
+        )
       }
     }
 
