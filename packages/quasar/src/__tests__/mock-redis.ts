@@ -157,7 +157,6 @@ export class MockRedis {
     let removed = 0
     // Simple implementation: remove all occurrences for test purposes if count != 0
     // Real Redis logic is more complex with count > 0, < 0, = 0
-    const _originalLength = list.length
     const filtered = list.filter((item) => {
       // If element matches, we might remove it
       if (item === element) {
