@@ -1,8 +1,10 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "./dist",    "skipLibCheck": true,
-    "types": ["bun-types"],  },
+    "outDir": "./dist",
+    "skipLibCheck": true,
+    "types": ["bun-types"]
+  },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

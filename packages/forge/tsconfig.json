@@ -4,7 +4,8 @@
     "outDir": "./dist",
     "declaration": true,
     "declarationMap": true,
-    "jsx": "react-jsx",    "types": ["bun-types"]
+    "jsx": "react-jsx",
+    "types": ["bun-types"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "tests"]
