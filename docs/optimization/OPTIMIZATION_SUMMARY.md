@@ -245,6 +245,7 @@ await Bun.build({
 ```
 docs/optimization/
 ├── OPTIMIZATION_SUMMARY.md                    ← 本文件：Phase 1-4 完整成果
+├── CORE_AUDIT_2026.md                        ← Phase 5：核心技術債與效能審查報告 🆕
 ├── PROVIDER_LOADING_OPTIMIZATION.md           ← Provider 預掃描技術細節
 ├── RUNTIME_CONDITIONAL_COMPILATION.md        ← 條件編譯 POC 說明
 └── （BEST_PRACTICES.md - 待建立）              ← 整體最佳實踐
@@ -253,6 +254,14 @@ docs/optimization/
 ---
 
 ## 後續改進機會
+
+### 核心與架構 (Phase 5: Technical Debt & Logic Optimization) 🚀
+
+根據 [2026 核心審查報告](./CORE_AUDIT_2026.md)，下一階段將專注於清理核心技術債：
+
+1.  **類型安全修復**: 徹底消除 `Route.ts` 與 `PhotonAdapter.ts` 中的 `any` 使用，強化重載類型推導。
+2.  **效能對沖**: 實現 `FormRequest` 實例緩存與 O(1) 路由編譯算法（解決 O(n²) 問題）。
+3.  **架構一致化**: 解決 `Application` 與 `PlanetCore` 雙容器不一致問題，實施代碼去重。
 
 ### 高優先級（P1）
 

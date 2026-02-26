@@ -98,7 +98,7 @@ Gravito is optimized for **Bun** runtime with native APIs that deliver **27-46% 
 - **FileSink Buffering**: High-frequency write operations (logs, traces) use buffered writes, reducing syscalls by 40-60%
 - **Cross-Runtime Compatible**: Automatically falls back to Node.js/Deno when needed—no code changes required
 
-📖 **[See detailed optimization analysis](./docs/optimization/OPTIMIZATION_SUMMARY.md)** (Phase 1-4 complete)
+📖 **[See detailed optimization analysis](./docs/optimization/OPTIMIZATION_SUMMARY.md)** (Phase 1-4 complete, Phase 5 Audit ongoing)
 
 ---
 

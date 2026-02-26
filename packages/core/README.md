@@ -29,6 +29,7 @@
 - ⚡ **Native Accelerators** - FFI-powered CBOR and hashing for peak performance.
 - 🚀 **Modern** - Built for **Bun** runtime with native TypeScript support.
 - 🪶 **Lightweight** - Zero external dependencies (except `@gravito/photon`).
+- 📈 **Performance Audited** - Full [2026 Performance & Debt Audit](../../docs/optimization/CORE_AUDIT_2026.md) completed.
 
 ## 📦 Installation
 

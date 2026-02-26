@@ -49,6 +49,7 @@ Gravito is a modular, high-performance framework built on the principles of **Do
 - [Atlas Performance](./benchmarks/ATLAS_PERFORMANCE_WHITEPAPER.md)
 - [Bull Queue Benchmarks](./benchmarks/bull-queue-performance.md)
 - **[Bun File I/O Optimization](./optimization/OPTIMIZATION_SUMMARY.md)** - Phase 1-4 完整成果（27-46% 框架級效能提升）
+  - [Phase 5: Core Audit Report 2026](./optimization/CORE_AUDIT_2026.md) - 技術債與效能缺口分析
   - [Phase 4 Completion Report](./optimization/PHASE_4_COMPLETION.md) - 最後三個模組的非同步化
   - [Provider Loading Optimization](./optimization/PROVIDER_LOADING_OPTIMIZATION.md) - 並行 Provider 預掃描
   - [Runtime Conditional Compilation POC](./optimization/RUNTIME_CONDITIONAL_COMPILATION.md) - Bundle 優化設計

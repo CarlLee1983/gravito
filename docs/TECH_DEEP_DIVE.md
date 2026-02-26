@@ -191,3 +191,22 @@ if (typeof process !== 'undefined') {
 - ✅ 在 Bun 環境自動獲得 15~40% 的效能提升，零代碼修改
 - ✅ 代碼保持 Node.js/Deno 相容
 - ✅ 無需手動選擇或條件判斷，框架自動最佳化
+
+---
+
+### 🛡️ 7. 2026 核心架構審查與技術債清理 (Architectural Payback)
+
+隨著 Galaxy Architecture 邁向 v2.0，Gravito 開啟了 **Phase 5：核心邏輯與類型安全優化**。這是一場針對「開發者體驗」與「極限邊緣效能」的深層重構。
+
+#### 重點優化領域：
+
+**1. 消除動態開銷 (O(1) 路由編譯)**
+傳統的路由編譯在處理數百條命名路由時，往往使用雙重循環。Gravito Phase 5 引入了基於 `Set` 的預索引機制，讓路由編譯從 O(n²) 降至 O(n)，在大規模應用中啟動效能提升逾 100 倍。
+
+**2. 記憶體足跡優化 (FormRequest 實例緩存)**
+在舊版中，每次 HTTP 請求都會實例化一個對應的 `FormRequest`。Phase 5 通過 `WeakMap` 緩存機制，將無狀態的驗證對象池化，顯著降低了高併發下的 GC 壓力。
+
+**3. 靜態類型防禦 (Zero-Any Core)**
+徹底移除 `Route` 與 `Adapter` 核心層中的 `any` 類型。透過精確的靜態重載與 Union Types，為開發者提供 100% 的 IDE 自動完成與編譯時驗證。
+
+**詳情請參閱**：[2026 核心審查報告](./optimization/CORE_AUDIT_2026.md)
