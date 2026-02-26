@@ -10,22 +10,22 @@
 
 | 類別 | 總問題數 | ✅ 已解決 | ⚠️ 部分解決 | ❌ 未解決 |
 |------|---------|----------|-------------|----------|
-| 🔴 優先級 1 (Critical) | 3 | 0 | 0 | 3 |
+| 🔴 優先級 1 (Critical) | 3 | 2 | 0 | 1 |
 | 🟡 優先級 2 (High) | 3 | 0 | 1 | 2 |
-| 🟢 優先級 3 (Medium) | 3 | 0 | 0 | 3 |
-| **總計** | **9** | **0** | **1** | **8** |
+| 🟢 優先級 3 (Medium) | 3 | 1 | 0 | 2 |
+| **總計** | **9** | **3** | **1** | **5** |
 
-**完成度**: 0% 已解決，11% 部分解決，89% 未解決。這項審查標誌著 **Phase 5：核心邏輯與技術債清理** 的開始。
+**完成度**: 33% 已解決，11% 部分解決，56% 未解決。這項審查標誌著 **Phase 5：核心邏輯與技術債清理** 的進行中，已完成**里程碑 1**。
 
 ---
 
 ## 🔴 優先級 1：關鍵問題 (Critical)
 
-### 1.1 Route.ts 中的 `any` 類型使用
+### 1.1 ~~Route.ts 中的 `any` 類型使用~~ (✅ 已解決)
 **狀況**: 嚴重影響 DX 與類型安全。
 - `Route.get()`, `post()`, `put()` 等方法中的 `requestOrHandler` 和 `handler` 參數使用 `any`。
 - Middleware 定義使用 `any[]`。
-**建議**: 定義 Union Types (`FormRequestClass | RouteHandler | GravitoMiddleware`).
+**解決方案**: 引入 `RouteDefinitionArg` (\`FormRequestClass | RouteHandler | GravitoMiddleware | GravitoMiddleware[]\`) 取代散落的型別轉換，完全消滅 `any`，顯著提升了 DX 安全性。
 
 ### 1.2 FormRequest 每次請求都實例化
 **狀況**: 效能瓶頸。
@@ -33,11 +33,11 @@
 - 增加 GC 壓力，高並發下效能損失明顯。
 **建議**: 實現 `WeakMap` 緩存機制，將無狀態的 FormRequest 實例化一次後複用。
 
-### 1.3 HTTP 方法實現大量重複
+### 1.3 ~~HTTP 方法實現大量重複~~ (✅ 已解決)
 **狀況**: 維護成本極高。
 - `Router`, `RouteGroup`, `Route` 三個類別中重複實現了 5 個 HTTP 動態方法。
 - 重複代碼約 265 行。
-**建議**: 使用靜態工廠方法或動態映射減少代碼重複。
+**解決方案**: 使用 `RoutingMethods` 介面聲明類型，並在執行期動態為 Prototype 掛載 proxy 方法，刪除超過 100 行冗餘實作代碼。
 
 ---
 
@@ -68,9 +68,9 @@
 - `Csrf.ts` 中手動實現了 `parseCookies`。
 - 應提取至 `CookieJar` 統一管理。
 
-### 3.2 PhotonAdapter 中的 `any` 類型
+### 3.2 ~~PhotonAdapter 中的 `any` 類型~~ (✅ 已解決)
 - Proxy 物件與目標適配器之間使用了大量的 `as any` 強轉。
-- 應建立正確的 `PhotonContext` 與 `GravitoContext` 對應類型。
+- **解決方案**: 引入 `ResettableContext` 類型以安全強型別包裹 GravitoContext 與 PhotonContext 的生命週期。
 
 ### 3.3 測試覆蓋率提升
 - 目前核心覆蓋率約 23%，預期標杆為 35%+。
@@ -80,7 +80,7 @@
 
 ## 🎯 Phase 5 優化路線圖 (Upcoming)
 
-1.  **里程碑 1**: 類型安全與 DX 強化（修復 `any` 與重載）。
+1.  ~~**里程碑 1**: 類型安全與 DX 強化（修復 `any` 與重載）。~~ (完成)
 2.  **里程碑 2**: 核心效能重構（FormRequest 緩存、O(1) 路由編譯）。
 3.  **里程碑 3**: 架構一致性（容器共享、代碼去重）。
 4.  **里程碑 4**: 穩定性加固（Type Guards、測試覆蓋率提升）。
