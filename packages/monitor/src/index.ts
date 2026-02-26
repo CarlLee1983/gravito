@@ -7,6 +7,12 @@
  * - Tracing (OpenTelemetry OTLP)
  */
 
+// Observability Adapter (Phase 2.2)
+// Integration layer between @gravito/core and OpenTelemetry
+export {
+  createObservabilityProvider,
+  ObservabilityAdapterFactory,
+} from './adapters/ObservabilityAdapter'
 // Configuration
 export {
   defineMonitorConfig,
@@ -31,7 +37,6 @@ export {
 } from './health'
 // Main plugin
 export { MonitorOrbit, type MonitorService } from './MonitorOrbit'
-
 // Metrics
 export {
   Counter,

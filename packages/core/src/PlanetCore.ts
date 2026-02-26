@@ -220,48 +220,75 @@ export class PlanetCore {
    * Initialize observability asynchronously (metrics, tracing, Prometheus).
    * This is called from constructor but doesn't block initialization.
    *
+   * Phase 2.2 Update: Now uses the observabilityProvider passed from @gravito/monitor
+   * or falls back to OTel implementation if available for backward compatibility.
+   *
    * @internal
    */
   private async initializeObservabilityAsync(
     obsConfig: GravitoConfig['observability']
   ): Promise<void> {
     try {
-      // Import OpenTelemetry API
-      const otel = await import('@opentelemetry/api')
-      const meter = otel.metrics.getMeter('@gravito/core', '2.1.0')
-
-      // Create event metrics
-      const eventMetrics = new OTelEventMetrics(meter, obsConfig?.metricsPrefix ?? 'gravito_event_')
-
-      // Create and set ObservableHookManager
-      const observableHooks = new ObservableHookManager(
-        {},
-        {
-          enabled: true,
-          metrics: eventMetrics,
-          tracing: obsConfig?.tracing ?? false,
-          metricsPrefix: obsConfig?.metricsPrefix ?? 'gravito_event_',
+      // If observabilityProvider is already provided (from monitor), use it directly
+      if (
+        this.observabilityProvider &&
+        this.observabilityProvider !== (this.observabilityProvider as any)._isNoOp
+      ) {
+        this.logger.info('[Observability] ✅ Using observability provider from @gravito/monitor')
+        // Prometheus setup is handled by monitor
+        if (obsConfig?.prometheus?.enabled !== false) {
+          await this.initializePrometheusAsync(obsConfig)
         }
-      )
+        return
+      }
 
-      // Set queue depth callback
-      eventMetrics.setQueueDepthCallback(() => {
-        const queue = (observableHooks as any).getEventQueue()
-        return {
-          critical: queue.getDepthByPriority('critical'),
-          high: queue.getDepthByPriority('high'),
-          normal: queue.getDepthByPriority('normal'),
-          low: queue.getDepthByPriority('low'),
+      // Fallback: Import OpenTelemetry API (backward compatibility)
+      // @deprecated This path is deprecated in Phase 2.2. Use @gravito/monitor instead.
+      try {
+        const otel = await import('@opentelemetry/api')
+        const meter = otel.metrics.getMeter('@gravito/core', '2.1.0')
+
+        // Create event metrics
+        const eventMetrics = new OTelEventMetrics(
+          meter,
+          obsConfig?.metricsPrefix ?? 'gravito_event_'
+        )
+
+        // Create and set ObservableHookManager
+        const observableHooks = new ObservableHookManager(
+          {},
+          {
+            enabled: true,
+            metrics: eventMetrics,
+            tracing: obsConfig?.tracing ?? false,
+            metricsPrefix: obsConfig?.metricsPrefix ?? 'gravito_event_',
+          }
+        )
+
+        // Set queue depth callback
+        eventMetrics.setQueueDepthCallback(() => {
+          const queue = (observableHooks as any).getEventQueue()
+          return {
+            critical: queue.getDepthByPriority('critical'),
+            high: queue.getDepthByPriority('high'),
+            normal: queue.getDepthByPriority('normal'),
+            low: queue.getDepthByPriority('low'),
+          }
+        })
+
+        // Replace hooks with observable version
+        this.hooks = observableHooks
+        this.logger.warn(
+          '[Observability] ⚠️  Using legacy OTel path. Migrate to @gravito/monitor for full observability.'
+        )
+
+        // Initialize Prometheus if enabled
+        if (obsConfig?.prometheus?.enabled !== false) {
+          await this.initializePrometheusAsync(obsConfig)
         }
-      })
-
-      // Replace hooks with observable version
-      this.hooks = observableHooks
-      this.logger.info('[Observability] ✅ Event system observability enabled')
-
-      // Initialize Prometheus if enabled
-      if (obsConfig?.prometheus?.enabled !== false) {
-        await this.initializePrometheusAsync(obsConfig)
+      } catch (error) {
+        this.logger.debug('[Observability] OpenTelemetry not available, using no-op', error)
+        // Use the no-op observability provider that was set in constructor
       }
     } catch (error) {
       this.logger.error('[Observability] Failed to initialize observability:', error)

@@ -139,6 +139,19 @@ export {
   ObservableHookManager,
   OTelEventMetrics,
 } from './events/observability'
+// ─────────────────────────────────────────────────────────────────────────────
+// Observability Contracts (Phase 2.2)
+// ─────────────────────────────────────────────────────────────────────────────
+// Abstract interfaces for observability providers
+// Concrete implementations provided by @gravito/monitor
+export type {
+  EventMetricsRecorder,
+  EventTracingProvider,
+  ObservabilityProvider,
+  TracingSpan,
+  WorkerMetricsProvider,
+} from './observability/contracts'
+export { createNoOpObservabilityProvider } from './observability/contracts'
 // Queue Dashboard & CLI
 export {
   type DashboardSnapshot,
