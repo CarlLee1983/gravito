@@ -32,11 +32,11 @@ export default {
     ts_desc: '全架構型別安全，從第一行程式開始。',
   },
   features: {
-    sectionBadge: '1.6 核心發佈',
+    sectionBadge: '2.0 核心發佈',
     sectionTitle: '架構之',
     sectionTitleHighlight: 'Gravito 生態系統',
     sectionDesc:
-      'Gravito 採用微內核設計，1.6 版本導入全新的 Galaxy Architecture 並釋出強大的企業級適配模組。',
+      'Gravito 採用微內核設計，2.0 版本導入全新的 Galaxy Architecture 並釋出強大的企業級適配模組。',
     group_core: '核心層',
     group_data: '資料層',
     group_ops: '維運層',
@@ -60,7 +60,7 @@ export default {
     cli_title: 'Pulse',
     cli_subtitle: '生產力工具 (CLI)',
     cli_desc: '自動化骨架生成與開發指令，讓創意不再受阻。',
-    atlas_title: 'Atlas v1.6',
+    atlas_title: 'Atlas v2.0',
     atlas_subtitle: 'Cartesian Mapper & Sharding',
     atlas_desc: '專為 Bun 打造的高效能 ORM，支援水平分表、原生分片與亞毫秒級的模型映射。',
     seo_title: 'Luminosity',
@@ -220,7 +220,7 @@ export default {
     galaxy_desc:
       '想要 React？加入 Ion。想要 Vue？加入 Ion。想要 HTML？加入 Prism。想要 SEO？加入 Luminosity。需要資料庫？加入 Atlas。根據需求加載模組，杜絕任何不必要的資源浪費。',
     galaxy_atlas_stable:
-      'Atlas (ORM) — 高性能 Bun 原生 ORM (v1.6.0 已發佈，包含水平分表、Active Record 與 OTEL 整合)。',
+      'Atlas (ORM) — 高性能 Bun 原生 ORM (v2.0.0 已發佈，包含水平分表、Active Record 與 OTEL 整合)。',
     scaleTitle: '無限擴展能力',
     scaleDesc: '從單一文件的微型 API 到全球級企業系統，架構會根據項目的「引力」自動適配。',
     aiTitle: 'AI 優先的開發合約',

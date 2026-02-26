@@ -34,11 +34,11 @@ export default {
     ts_desc: 'First-class type safety across the entire framework.',
   },
   features: {
-    sectionBadge: '1.6 Core Release',
+    sectionBadge: '2.0 Core Release',
     sectionTitle: 'The',
     sectionTitleHighlight: 'Gravito Ecosystem',
     sectionDesc:
-      'Gravito uses a micro-kernel design. The 1.6 release features our most stable and powerful base modules with the new Galaxy Architecture.',
+      'Gravito uses a micro-kernel design. The 2.0 release features our most stable and powerful base modules with the new Galaxy Architecture.',
     group_core: 'Core Layer',
     group_data: 'Data Layer',
     group_ops: 'Operations',
@@ -64,7 +64,7 @@ export default {
     cli_title: 'Pulse',
     cli_subtitle: 'Productivity Tool (CLI)',
     cli_desc: 'Automated scaffolding and dev commands for better workflow.',
-    atlas_title: 'Atlas v1.6',
+    atlas_title: 'Atlas v2.0',
     atlas_subtitle: 'Cartesian Mapper & Sharding',
     atlas_desc:
       'High-performance ORM with horizontal sharding, native sharding support, and sub-millisecond model hydration.',
@@ -232,7 +232,7 @@ export default {
     galaxy_desc:
       'Want React? Add Ion. Want Vue? Add Ion. Want HTML? Add Prism. Want SEO? Add Luminosity. Need a Database? Add Atlas. Load only what you need, when you need it.',
     galaxy_atlas_stable:
-      'Atlas (ORM) — High-Performance Bun-Native ORM (v1.6.0 released with Horizontal Sharding, Active Record, and OTEL integration).',
+      'Atlas (ORM) — High-Performance Bun-Native ORM (v2.0.0 released with Horizontal Sharding, Active Record, and OTEL integration).',
     scaleTitle: 'Infinite Scalability',
     scaleDesc:
       "From a single-file API to a global enterprise system, the architecture adapts dynamically to your project's gravity.",
