@@ -31,7 +31,7 @@ const releasesZh: ReleaseEntry[] = [
     highlights: [
       'Xenon 運行時：支援領域衛星 (Satellites) 的並行加載與執行',
       'Guardian 防護層：原生整合 @gravito/resilience，具備熔斷器與容錯機制',
-      'Cartesian Mapper：Atlas ORM v1.6 支援原生分片與高效能模型映射',
+      'Cartesian Mapper：Atlas ORM v2.0 支援原生分片與高效能模型映射',
       'MDD 驅動：全面採用清單驅動開發 (Manifest-Driven Development)',
     ],
     links: [
@@ -201,7 +201,7 @@ const releasesEn: ReleaseEntry[] = [
     highlights: [
       'Xenon Runtime: Parallel satellite loading and shared-memory execution',
       'Guardian Layer: Native @gravito/resilience with built-in circuit breakers',
-      'Cartesian Mapper: Atlas ORM v1.6 with native sharding and extreme hydration',
+      'Cartesian Mapper: Atlas ORM v2.0 with native sharding and extreme hydration',
       'MDD Driven: Transition to full Manifest-Driven Development',
     ],
     links: [
