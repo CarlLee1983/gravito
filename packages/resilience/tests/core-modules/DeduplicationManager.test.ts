@@ -1,14 +1,12 @@
 import { beforeEach, describe, expect, test } from 'bun:test'
+import type { EventTask } from '@gravito/core'
 import { DeduplicationManager } from '../../src/aggregation/DeduplicationManager'
 
 describe('DeduplicationManager', () => {
   let dedup: DeduplicationManager
 
   beforeEach(() => {
-    dedup = new DeduplicationManager({
-      windowSize: 60000, // 60 seconds
-      enabled: true,
-    })
+    dedup = new DeduplicationManager()
   })
 
   describe('Initialization', () => {
@@ -19,234 +17,261 @@ describe('DeduplicationManager', () => {
     test('should initialize with default config', () => {
       expect(dedup).toBeDefined()
     })
+  })
 
-    test('should initialize with custom window size', () => {
-      const customDedup = new DeduplicationManager({
-        windowSize: 120000,
-        enabled: true,
-      })
-      expect(customDedup).toBeDefined()
+  describe('Event Addition', () => {
+    test('should add an event', () => {
+      const event: EventTask = {
+        id: 'task-1',
+        hook: 'test:hook',
+        args: { data: 'test' },
+        options: { timeout: 5000 },
+        callbacks: [],
+        createdAt: Date.now(),
+        enqueuedAt: Date.now(),
+        retryCount: 0,
+      }
+
+      dedup.addEvent(event)
+      expect(dedup.getPatternCount()).toBeGreaterThan(0)
     })
 
-    test('should support disabled state', () => {
-      const disabledDedup = new DeduplicationManager({
-        windowSize: 60000,
-        enabled: false,
-      })
-      expect(disabledDedup).toBeDefined()
+    test('should track pattern count', () => {
+      const event1: EventTask = {
+        id: 'task-1',
+        hook: 'order:created',
+        args: { orderId: '123' },
+        options: { timeout: 5000 },
+        callbacks: [],
+        createdAt: Date.now(),
+        enqueuedAt: Date.now(),
+        retryCount: 0,
+      }
+
+      const event2: EventTask = {
+        id: 'task-2',
+        hook: 'order:updated',
+        args: { orderId: '456' },
+        options: { timeout: 5000 },
+        callbacks: [],
+        createdAt: Date.now(),
+        enqueuedAt: Date.now(),
+        retryCount: 0,
+      }
+
+      const countBefore = dedup.getPatternCount()
+      dedup.addEvent(event1)
+      const countAfter1 = dedup.getPatternCount()
+      dedup.addEvent(event2)
+      const countAfter2 = dedup.getPatternCount()
+
+      expect(countAfter1).toBeGreaterThan(countBefore)
+      expect(countAfter2).toBeGreaterThanOrEqual(countAfter1)
     })
   })
 
-  describe('Deduplication Detection', () => {
-    test('should identify duplicate event', () => {
-      const eventId = 'event-123'
-      const isDuplicate = dedup.isDuplicate('test:hook', eventId)
-      expect(typeof isDuplicate).toBe('boolean')
+  describe('Deduplication', () => {
+    test('should deduplicate events with same pattern', () => {
+      const event1: EventTask = {
+        id: 'task-1',
+        hook: 'order:created',
+        args: { orderId: '123' },
+        options: { timeout: 5000 },
+        callbacks: [],
+        createdAt: Date.now(),
+        enqueuedAt: Date.now(),
+        retryCount: 0,
+      }
+
+      const event2: EventTask = {
+        id: 'task-2',
+        hook: 'order:created',
+        args: { orderId: '123' },
+        options: { timeout: 5000, priority: 'high' },
+        callbacks: [],
+        createdAt: Date.now() + 1,
+        enqueuedAt: Date.now() + 1,
+        retryCount: 0,
+      }
+
+      dedup.addEvent(event1)
+      const countBefore = dedup.getPatternCount()
+      dedup.addEvent(event2)
+      const countAfter = dedup.getPatternCount()
+
+      // Second event should have been deduplicated
+      expect(countAfter).toBeLessThanOrEqual(countBefore)
     })
 
-    test('should not mark first occurrence as duplicate', () => {
-      const isDuplicate = dedup.isDuplicate('test:hook', 'unique-1')
-      expect(isDuplicate).toBe(false)
-    })
+    test('should return deduplicated events', () => {
+      const event: EventTask = {
+        id: 'task-1',
+        hook: 'test:hook',
+        args: { data: 'test' },
+        options: { timeout: 5000 },
+        callbacks: [],
+        createdAt: Date.now(),
+        enqueuedAt: Date.now(),
+        retryCount: 0,
+      }
 
-    test('should mark repeated occurrence as duplicate', () => {
-      const hook = 'test:hook'
-      const id = 'event-123'
-      dedup.isDuplicate(hook, id)
-      const isDuplicate = dedup.isDuplicate(hook, id)
-      expect(isDuplicate).toBe(true)
-    })
+      dedup.addEvent(event)
+      const deduplicated = dedup.getDeduplicated()
 
-    test('should handle different event IDs separately', () => {
-      const isDupe1 = dedup.isDuplicate('test:hook', 'id-1')
-      const isDupe2 = dedup.isDuplicate('test:hook', 'id-2')
-      expect(isDupe1).toBe(false)
-      expect(isDupe2).toBe(false)
-    })
-  })
-
-  describe('Content-Based Deduplication', () => {
-    test('should deduplicate identical payloads', () => {
-      const payload = { user: 'john', action: 'login' }
-      const isDupe = dedup.isDuplicate('user:login', undefined, JSON.stringify(payload))
-      expect(typeof isDupe).toBe('boolean')
-    })
-
-    test('should not deduplicate different payloads', () => {
-      const payload1 = { user: 'john', action: 'login' }
-      const payload2 = { user: 'jane', action: 'login' }
-      dedup.isDuplicate('user:login', undefined, JSON.stringify(payload1))
-      const isDupe = dedup.isDuplicate('user:login', undefined, JSON.stringify(payload2))
-      expect(isDupe).toBe(false)
-    })
-
-    test('should hash payload for comparison', () => {
-      const payload = { data: 'test' }
-      const hash = JSON.stringify(payload)
-      expect(hash).toBeDefined()
-    })
-  })
-
-  describe('Time Window Management', () => {
-    test('should expire old entries after window', async () => {
-      const dedup60s = new DeduplicationManager({
-        windowSize: 100, // Very short for testing
-        enabled: true,
-      })
-      dedup60s.isDuplicate('test:hook', 'event-1')
-      // After 100ms, should be expired
-    })
-
-    test('should support sliding window', () => {
-      const firstTime = Date.now()
-      dedup.isDuplicate('test:hook', 'event-1')
-      const secondTime = Date.now()
-      expect(secondTime).toBeGreaterThanOrEqual(firstTime)
-    })
-
-    test('should clear expired entries periodically', () => {
-      // Cleanup should run periodically
-      const cleanupInterval = 30000 // 30 seconds
-      expect(cleanupInterval).toBeGreaterThan(0)
+      expect(deduplicated).toBeDefined()
+      expect(deduplicated.length).toBeGreaterThan(0)
     })
   })
 
-  describe('Hook-Based Deduplication', () => {
-    test('should deduplicate within same hook', () => {
-      const hook = 'order:created'
-      dedup.isDuplicate(hook, 'order-1')
-      const isDupe = dedup.isDuplicate(hook, 'order-1')
-      expect(isDupe).toBe(true)
+  describe('Pattern Management', () => {
+    test('should check if pattern exists', () => {
+      const event: EventTask = {
+        id: 'task-1',
+        hook: 'test:hook',
+        args: { data: 'test' },
+        options: { timeout: 5000 },
+        callbacks: [],
+        createdAt: Date.now(),
+        enqueuedAt: Date.now(),
+        retryCount: 0,
+      }
+
+      dedup.addEvent(event)
+      const patterns = dedup.getPatterns()
+
+      expect(patterns.length).toBeGreaterThan(0)
     })
 
-    test('should not deduplicate across different hooks', () => {
-      dedup.isDuplicate('order:created', 'order-1')
-      const isDupe = dedup.isDuplicate('order:updated', 'order-1')
-      expect(isDupe).toBe(false)
+    test('should remove pattern', () => {
+      const event: EventTask = {
+        id: 'task-1',
+        hook: 'test:hook',
+        args: { data: 'test' },
+        options: { timeout: 5000 },
+        callbacks: [],
+        createdAt: Date.now(),
+        enqueuedAt: Date.now(),
+        retryCount: 0,
+      }
+
+      dedup.addEvent(event)
+      const patterns = dedup.getPatterns()
+      expect(patterns.length).toBeGreaterThan(0)
+
+      if (patterns.length > 0) {
+        const removed = dedup.removePattern(patterns[0])
+        expect(removed).toBe(true)
+      }
     })
 
-    test('should handle hook hierarchy', () => {
-      // order:created and order:* might be related
-      const isCreated = dedup.isDuplicate('order:created', 'order-1')
-      const isAll = dedup.isDuplicate('order:*', 'order-1')
-      expect(isCreated).toBeDefined()
-      expect(isAll).toBeDefined()
+    test('should clear all patterns', () => {
+      const event: EventTask = {
+        id: 'task-1',
+        hook: 'test:hook',
+        args: { data: 'test' },
+        options: { timeout: 5000 },
+        callbacks: [],
+        createdAt: Date.now(),
+        enqueuedAt: Date.now(),
+        retryCount: 0,
+      }
+
+      dedup.addEvent(event)
+      expect(dedup.getPatternCount()).toBeGreaterThan(0)
+
+      dedup.clear()
+      expect(dedup.getPatternCount()).toBe(0)
     })
   })
 
-  describe('Metrics & Statistics', () => {
+  describe('Statistics', () => {
     test('should report deduplication stats', () => {
-      dedup.isDuplicate('test:hook', 'event-1')
-      const stats = dedup.getStats()
-      expect(stats).toBeDefined()
-      expect(stats.deduplicated).toBeGreaterThanOrEqual(0)
-    })
+      const event: EventTask = {
+        id: 'task-1',
+        hook: 'test:hook',
+        args: { data: 'test' },
+        options: { timeout: 5000 },
+        callbacks: [],
+        createdAt: Date.now(),
+        enqueuedAt: Date.now(),
+        retryCount: 0,
+      }
 
-    test('should track duplicate count', () => {
-      dedup.isDuplicate('test:hook', 'event-1')
-      dedup.isDuplicate('test:hook', 'event-1')
+      dedup.addEvent(event)
       const stats = dedup.getStats()
-      expect(stats.deduplicated).toBeGreaterThanOrEqual(1)
+
+      expect(stats).toBeDefined()
+      expect(stats.totalEvents).toBeGreaterThan(0)
     })
 
     test('should track deduplication rate', () => {
-      for (let i = 0; i < 5; i++) {
-        dedup.isDuplicate('test:hook', 'event-1')
+      const event1: EventTask = {
+        id: 'task-1',
+        hook: 'test:hook',
+        args: { data: 'test' },
+        options: { timeout: 5000 },
+        callbacks: [],
+        createdAt: Date.now(),
+        enqueuedAt: Date.now(),
+        retryCount: 0,
       }
+
+      const event2: EventTask = {
+        id: 'task-2',
+        hook: 'test:hook',
+        args: { data: 'test' },
+        options: { timeout: 5000 },
+        callbacks: [],
+        createdAt: Date.now() + 1,
+        enqueuedAt: Date.now() + 1,
+        retryCount: 0,
+      }
+
+      dedup.addEvent(event1)
+      dedup.addEvent(event2)
+
+      const rate = dedup.getDeduplicationRate()
+      expect(rate).toBeGreaterThanOrEqual(0)
+      expect(rate).toBeLessThanOrEqual(100)
+    })
+
+    test('should reset stats', () => {
+      const event: EventTask = {
+        id: 'task-1',
+        hook: 'test:hook',
+        args: { data: 'test' },
+        options: { timeout: 5000 },
+        callbacks: [],
+        createdAt: Date.now(),
+        enqueuedAt: Date.now(),
+        retryCount: 0,
+      }
+
+      dedup.addEvent(event)
+      dedup.resetStats()
+
       const stats = dedup.getStats()
-      expect(stats).toBeDefined()
-    })
-
-    test('should track window size', () => {
-      const stats = dedup.getStats()
-      expect(stats.windowSize).toBe(60000)
+      expect(stats.totalEvents).toBe(0)
     })
   })
 
-  describe('State Management', () => {
-    test('should enable/disable deduplication', () => {
-      const disabledDedup = new DeduplicationManager({
-        windowSize: 60000,
-        enabled: false,
-      })
-      const isDupe = disabledDedup.isDuplicate('test:hook', 'event-1')
-      expect(isDupe).toBe(false)
-    })
-
-    test('should preserve state across checks', () => {
-      dedup.isDuplicate('test:hook', 'event-1')
-      dedup.isDuplicate('test:hook', 'event-2')
-      const isDupe1 = dedup.isDuplicate('test:hook', 'event-1')
-      expect(isDupe1).toBe(true)
-    })
-
-    test('should reset state on demand', () => {
-      dedup.isDuplicate('test:hook', 'event-1')
-      dedup.reset()
-      const isDupe = dedup.isDuplicate('test:hook', 'event-1')
-      expect(isDupe).toBe(false)
-    })
-  })
-
-  describe('Performance', () => {
-    test('should check duplicates in O(1) time', () => {
-      const start = performance.now()
-      for (let i = 0; i < 1000; i++) {
-        dedup.isDuplicate('test:hook', `event-${i}`)
+  describe('Shutdown', () => {
+    test('should shutdown cleanly', () => {
+      const event: EventTask = {
+        id: 'task-1',
+        hook: 'test:hook',
+        args: { data: 'test' },
+        options: { timeout: 5000 },
+        callbacks: [],
+        createdAt: Date.now(),
+        enqueuedAt: Date.now(),
+        retryCount: 0,
       }
-      const elapsed = performance.now() - start
-      expect(elapsed).toBeLessThan(1000) // Should be very fast
-    })
 
-    test('should handle high event throughput', () => {
-      let duplicates = 0
-      for (let i = 0; i < 10000; i++) {
-        const id = `event-${i % 100}` // 100 unique IDs, 10000 total
-        if (dedup.isDuplicate('test:hook', id)) {
-          duplicates++
-        }
-      }
-      expect(duplicates).toBeGreaterThan(0)
-    })
-  })
+      dedup.addEvent(event)
+      dedup.shutdown()
 
-  describe('Edge Cases', () => {
-    test('should handle empty event ID', () => {
-      const isDupe = dedup.isDuplicate('test:hook', '')
-      expect(typeof isDupe).toBe('boolean')
-    })
-
-    test('should handle null payload', () => {
-      const isDupe = dedup.isDuplicate('test:hook', 'event-1', null as any)
-      expect(typeof isDupe).toBe('boolean')
-    })
-
-    test('should handle very long event IDs', () => {
-      const longId = 'a'.repeat(10000)
-      const isDupe = dedup.isDuplicate('test:hook', longId)
-      expect(typeof isDupe).toBe('boolean')
-    })
-
-    test('should not crash with special characters', () => {
-      const isDupe = dedup.isDuplicate('test:hook', 'event-<script>alert("xss")</script>')
-      expect(typeof isDupe).toBe('boolean')
-    })
-  })
-
-  describe('Cleanup & Maintenance', () => {
-    test('should support cleanup operation', () => {
-      dedup.isDuplicate('test:hook', 'event-1')
-      dedup.cleanup()
-      // After cleanup, should behave consistently
-      const isDupe = dedup.isDuplicate('test:hook', 'event-1')
-      expect(typeof isDupe).toBe('boolean')
-    })
-
-    test('should not lose recent entries during cleanup', () => {
-      dedup.isDuplicate('test:hook', 'recent-event')
-      dedup.cleanup()
-      const isDupe = dedup.isDuplicate('test:hook', 'recent-event')
-      expect(isDupe).toBe(true)
+      expect(dedup.getPatternCount()).toBe(0)
     })
   })
 })

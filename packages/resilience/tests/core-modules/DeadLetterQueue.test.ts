@@ -5,10 +5,7 @@ describe('DeadLetterQueue', () => {
   let dlq: DeadLetterQueue
 
   beforeEach(() => {
-    dlq = new DeadLetterQueue({
-      maxRetries: 3,
-      retryDelay: 1000,
-    })
+    dlq = new DeadLetterQueue(100) // maxEntries
   })
 
   describe('Initialization', () => {
@@ -17,216 +14,328 @@ describe('DeadLetterQueue', () => {
     })
 
     test('should initialize with default config', () => {
-      expect(dlq).toBeDefined()
+      const defaultDLQ = new DeadLetterQueue()
+      expect(defaultDLQ).toBeDefined()
     })
 
-    test('should initialize with custom config', () => {
-      const customDLQ = new DeadLetterQueue({
-        maxRetries: 5,
-        retryDelay: 2000,
-      })
+    test('should initialize with custom maxEntries', () => {
+      const customDLQ = new DeadLetterQueue(50)
       expect(customDLQ).toBeDefined()
     })
+
+    test('should have empty DLQ on creation', () => {
+      expect(dlq.getCount()).toBe(0)
+    })
   })
 
-  describe('Enqueueing Messages', () => {
-    test('should enqueue failed message', async () => {
-      const error = new Error('Processing failed')
-      await dlq.enqueue({
-        hook: 'test:event',
-        args: { data: 'test' },
-        error,
-        timestamp: Date.now(),
-      })
-      expect(error.message).toBe('Processing failed')
+  describe('Adding Entries', () => {
+    test('should add a DLQ entry', () => {
+      const entryId = dlq.add(
+        'test:event',
+        { data: 'test' },
+        { timeout: 5000 },
+        new Error('Processing failed'),
+        0,
+        Date.now(),
+        'retry_exhausted'
+      )
+      expect(entryId).toBeDefined()
+      expect(entryId.startsWith('dlq-')).toBe(true)
     })
 
-    test('should track enqueue timestamp', async () => {
-      const timestamp = Date.now()
-      await dlq.enqueue({
-        hook: 'test:event',
-        args: { data: 'test' },
-        error: new Error('test'),
-        timestamp,
-      })
-      expect(timestamp).toBeGreaterThan(0)
+    test('should increment count after adding', () => {
+      dlq.add(
+        'test:event',
+        { data: 'test' },
+        { timeout: 5000 },
+        new Error('test error'),
+        0,
+        Date.now(),
+        'retry_exhausted'
+      )
+      expect(dlq.getCount()).toBe(1)
     })
 
-    test('should preserve error information', async () => {
+    test('should preserve error information', () => {
       const error = new Error('Detailed error message')
-      await dlq.enqueue({
-        hook: 'test:event',
-        args: { data: 'test' },
+      const entryId = dlq.add(
+        'test:event',
+        { data: 'test' },
+        { timeout: 5000 },
         error,
-        timestamp: Date.now(),
-      })
-      expect(error.message).toBe('Detailed error message')
+        2,
+        Date.now(),
+        'retry_exhausted'
+      )
+
+      const entry = dlq.get(entryId)
+      expect(entry).toBeDefined()
+      expect(entry?.error.message).toBe('Detailed error message')
+    })
+
+    test('should track retry count', () => {
+      const entryId = dlq.add(
+        'test:event',
+        { data: 'test' },
+        { timeout: 5000 },
+        new Error('test'),
+        3,
+        Date.now(),
+        'retry_exhausted'
+      )
+
+      const entry = dlq.get(entryId)
+      expect(entry?.retryCount).toBe(3)
     })
   })
 
-  describe('Message Retrieval', () => {
-    test('should retrieve messages from DLQ', async () => {
-      await dlq.enqueue({
-        hook: 'test:event',
-        args: { data: 'test' },
-        error: new Error('test'),
-        timestamp: Date.now(),
-      })
-      const messages = await dlq.getMessages()
-      expect(messages).toBeDefined()
+  describe('Retrieving Entries', () => {
+    test('should get entry by ID', () => {
+      const entryId = dlq.add(
+        'test:event',
+        { data: 'test' },
+        { timeout: 5000 },
+        new Error('test'),
+        0,
+        Date.now(),
+        'retry_exhausted'
+      )
+
+      const entry = dlq.get(entryId)
+      expect(entry).toBeDefined()
+      expect(entry?.eventName).toBe('test:event')
+      expect(entry?.id).toBe(entryId)
     })
 
-    test('should support pagination', async () => {
-      const messages = await dlq.getMessages({ limit: 10, offset: 0 })
-      expect(messages).toBeDefined()
+    test('should return undefined for non-existent ID', () => {
+      const entry = dlq.get('non-existent-id')
+      expect(entry).toBeUndefined()
     })
 
-    test('should preserve message order', async () => {
+    test('should list all entries', () => {
+      dlq.add('event1', {}, { timeout: 5000 }, new Error('err1'), 0, Date.now(), 'retry_exhausted')
+      dlq.add('event2', {}, { timeout: 5000 }, new Error('err2'), 0, Date.now(), 'retry_exhausted')
+
+      const entries = dlq.list()
+      expect(entries.length).toBe(2)
+    })
+
+    test('should support filtering by event name', () => {
+      dlq.add('event1', {}, { timeout: 5000 }, new Error('err1'), 0, Date.now(), 'retry_exhausted')
+      dlq.add('event2', {}, { timeout: 5000 }, new Error('err2'), 0, Date.now(), 'retry_exhausted')
+
+      const entries = dlq.list({ eventName: 'event1' })
+      expect(entries.length).toBe(1)
+      expect(entries[0].eventName).toBe('event1')
+    })
+
+    test('should support limiting result count', () => {
       for (let i = 0; i < 5; i++) {
-        await dlq.enqueue({
-          hook: `test:event-${i}`,
-          args: { data: `test-${i}` },
-          error: new Error(`error-${i}`),
-          timestamp: Date.now(),
-        })
+        dlq.add(
+          'test:event',
+          {},
+          { timeout: 5000 },
+          new Error('test'),
+          0,
+          Date.now(),
+          'retry_exhausted'
+        )
       }
-      const messages = await dlq.getMessages()
-      expect(messages).toBeDefined()
+
+      const entries = dlq.list({ limit: 2 })
+      expect(entries.length).toBe(2)
+    })
+
+    test('should support time range filtering', () => {
+      const now = Date.now()
+      dlq.add('event1', {}, { timeout: 5000 }, new Error('err'), 0, now, 'retry_exhausted')
+      dlq.add('event2', {}, { timeout: 5000 }, new Error('err'), 0, now, 'retry_exhausted')
+
+      const entries = dlq.list({ from: now - 5000, to: now + 5000 })
+      expect(entries.length).toBe(2)
     })
   })
 
-  describe('Retry Logic', () => {
-    test('should increment retry count', async () => {
-      let retryCount = 0
-      for (let i = 0; i < 3; i++) {
-        retryCount++
-      }
-      expect(retryCount).toBe(3)
+  describe('Deleting Entries', () => {
+    test('should delete entry by ID', () => {
+      const entryId = dlq.add(
+        'test:event',
+        {},
+        { timeout: 5000 },
+        new Error('test'),
+        0,
+        Date.now(),
+        'retry_exhausted'
+      )
+
+      expect(dlq.delete(entryId)).toBe(true)
+      expect(dlq.get(entryId)).toBeUndefined()
     })
 
-    test('should respect max retries', async () => {
-      const maxRetries = 3
-      const currentRetry = 3
-      expect(currentRetry).toBeLessThanOrEqual(maxRetries)
+    test('should return false when deleting non-existent ID', () => {
+      expect(dlq.delete('non-existent')).toBe(false)
     })
 
-    test('should schedule retry with exponential backoff', () => {
-      const baseDelay = 1000
-      const retryCount = 2
-      const delay = baseDelay * 2 ** (retryCount - 1)
-      expect(delay).toBe(2000)
+    test('should delete all matching entries', () => {
+      dlq.add('event1', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
+      dlq.add('event1', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
+      dlq.add('event2', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
+
+      const deleted = dlq.deleteAll({ eventName: 'event1' })
+      expect(deleted).toBe(2)
+      expect(dlq.getCount()).toBe(1)
     })
 
-    test('should mark message after max retries exceeded', async () => {
-      const maxRetries = 3
-      const retries = 4
-      if (retries > maxRetries) {
-        // Message should be marked as permanently failed
-      }
-      expect(retries).toBeGreaterThan(maxRetries)
+    test('should clear all entries', () => {
+      dlq.add('event1', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
+      dlq.add('event2', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
+
+      dlq.clear()
+      expect(dlq.getCount()).toBe(0)
     })
   })
 
   describe('Capacity Management', () => {
-    test('should handle queue capacity limit', async () => {
-      const maxCapacity = 10000
-      const currentSize = 10000
-      expect(currentSize).toBeLessThanOrEqual(maxCapacity)
+    test('should evict oldest when capacity exceeded', () => {
+      const smallDLQ = new DeadLetterQueue(2)
+
+      const now = Date.now()
+      const id1 = smallDLQ.add(
+        'event1',
+        {},
+        { timeout: 5000 },
+        new Error('err'),
+        0,
+        now,
+        'retry_exhausted'
+      )
+
+      // Wait a tiny bit to ensure different timestamps
+      const _id2 = smallDLQ.add(
+        'event2',
+        {},
+        { timeout: 5000 },
+        new Error('err'),
+        0,
+        now + 1,
+        'retry_exhausted'
+      )
+
+      smallDLQ.add('event3', {}, { timeout: 5000 }, new Error('err'), 0, now + 2, 'retry_exhausted')
+
+      expect(smallDLQ.getCount()).toBe(2)
+      expect(smallDLQ.get(id1)).toBeUndefined() // oldest was evicted
     })
 
-    test('should reject when capacity exceeded', async () => {
-      expect(() => {
-        const maxCapacity = 100
-        const newSize = 101
-        if (newSize > maxCapacity) {
-          throw new Error('DLQ capacity exceeded')
-        }
-      }).toThrow('DLQ capacity exceeded')
+    test('should report max entries', () => {
+      expect(dlq.getMaxEntries()).toBe(100)
     })
 
-    test('should report capacity status', async () => {
-      const stats = await dlq.getStats()
-      expect(stats).toBeDefined()
-      expect(stats.size).toBeGreaterThanOrEqual(0)
-    })
-  })
-
-  describe('Message Expiration', () => {
-    test('should expire old messages', async () => {
-      const messageAge = 24 * 60 * 60 * 1000 // 24 hours
-      const ttl = 7 * 24 * 60 * 60 * 1000 // 7 days
-      expect(messageAge).toBeLessThan(ttl)
-    })
-
-    test('should clean up expired messages', async () => {
-      // Cleanup should remove messages older than TTL
-      const cleaned = true
-      expect(cleaned).toBe(true)
-    })
-  })
-
-  describe('Statistics & Monitoring', () => {
-    test('should report DLQ statistics', async () => {
-      const stats = await dlq.getStats()
-      expect(stats.size).toBeGreaterThanOrEqual(0)
-      expect(stats.permanentlyFailed).toBeGreaterThanOrEqual(0)
-    })
-
-    test('should track success rate of retries', async () => {
-      const retries = 10
-      const successes = 7
-      const successRate = successes / retries
-      expect(successRate).toBe(0.7)
-    })
-
-    test('should provide common failure reasons', async () => {
-      const reasons = await dlq.getFailureReasons()
-      expect(reasons).toBeDefined()
+    test('should allow setting max entries', () => {
+      dlq.setMaxEntries(50)
+      expect(dlq.getMaxEntries()).toBe(50)
     })
   })
 
-  describe('Error Categorization', () => {
-    test('should categorize transient errors', () => {
-      const error = new Error('Connection timeout')
-      const isTransient = error.message.includes('timeout')
-      expect(isTransient).toBe(true)
+  describe('Statistics', () => {
+    test('should count entries by event', () => {
+      dlq.add('event1', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
+      dlq.add('event1', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
+      dlq.add('event2', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
+
+      expect(dlq.getCountByEvent('event1')).toBe(2)
+      expect(dlq.getCountByEvent('event2')).toBe(1)
     })
 
-    test('should categorize permanent errors', () => {
-      const error = new Error('Invalid argument')
-      const isPermanent = !error.message.includes('timeout')
-      expect(isPermanent).toBe(true)
+    test('should get oldest entry', () => {
+      dlq.add('event1', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
+      dlq.add('event2', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
+
+      const oldest = dlq.getOldestEntry()
+      expect(oldest).toBeDefined()
+      expect(oldest?.id).toBeDefined()
     })
 
-    test('should handle unknown error types', () => {
-      const unknownError = new Error('Unknown: something happened')
-      expect(unknownError).toBeDefined()
+    test('should get newest entry', () => {
+      dlq.add('event1', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
+      dlq.add('event2', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
+
+      const newest = dlq.getNewestEntry()
+      expect(newest).toBeDefined()
+      expect(newest?.id).toBeDefined()
     })
   })
 
-  describe('Cleanup Operations', () => {
-    test('should remove processed message from DLQ', async () => {
-      const messageId = 'msg-123'
-      // Remove from DLQ after successful retry
-      expect(messageId).toBeDefined()
+  describe('Entry Sources', () => {
+    test('should get entries by source', () => {
+      dlq.add('event1', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
+      dlq.add('event2', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'circuit_breaker')
+
+      const retryExhausted = dlq.getEntriesBySource('retry_exhausted')
+      const circuitBreakerEntries = dlq.getEntriesBySource('circuit_breaker')
+
+      expect(retryExhausted.length).toBe(1)
+      expect(circuitBreakerEntries.length).toBe(1)
+    })
+  })
+
+  describe('Callbacks', () => {
+    test('should call onEntryAdded callback', () => {
+      let callbackCalled = false
+      dlq.setOnEntryAdded(() => {
+        callbackCalled = true
+      })
+
+      dlq.add(
+        'test:event',
+        {},
+        { timeout: 5000 },
+        new Error('err'),
+        0,
+        Date.now(),
+        'retry_exhausted'
+      )
+      expect(callbackCalled).toBe(true)
     })
 
-    test('should support manual purge of old messages', async () => {
-      const before = Date.now()
-      await dlq.purgeOlderThan(before - 86400000)
-      expect(before).toBeGreaterThan(0)
-    })
+    test('should call onEntryRemoved callback', () => {
+      let callbackCalled = false
+      dlq.setOnEntryRemoved(() => {
+        callbackCalled = true
+      })
 
-    test('should preserve recent messages during purge', async () => {
-      const recentMessage = {
-        hook: 'test:event',
-        args: {},
-        error: new Error('test'),
-        timestamp: Date.now(),
-      }
-      await dlq.enqueue(recentMessage)
-      const messages = await dlq.getMessages()
-      expect(messages).toBeDefined()
+      const entryId = dlq.add(
+        'test:event',
+        {},
+        { timeout: 5000 },
+        new Error('err'),
+        0,
+        Date.now(),
+        'retry_exhausted'
+      )
+      dlq.delete(entryId)
+      expect(callbackCalled).toBe(true)
+    })
+  })
+
+  describe('Update Operations', () => {
+    test('should update last retried timestamp', () => {
+      const entryId = dlq.add(
+        'test:event',
+        {},
+        { timeout: 5000 },
+        new Error('err'),
+        0,
+        Date.now(),
+        'retry_exhausted'
+      )
+
+      let entry = dlq.get(entryId)
+      expect(entry?.lastRetriedAt).toBeUndefined()
+
+      dlq.updateLastRetried(entryId)
+      entry = dlq.get(entryId)
+      expect(entry?.lastRetriedAt).toBeDefined()
     })
   })
 })
