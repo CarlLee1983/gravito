@@ -1,341 +1,427 @@
-import { beforeEach, describe, expect, test } from 'bun:test'
-import { DeadLetterQueue } from '../../src/dead-letter-queue/DeadLetterQueue'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import type { EventOptions } from '@gravito/core'
+import {
+  DeadLetterQueue,
+  type DLQEntry,
+  type DLQEntrySource,
+} from '../../src/dead-letter-queue/DeadLetterQueue'
+import { delay } from '../helpers'
+
+// ---------------------------------------------------------------------------
+// 共用工具
+// ---------------------------------------------------------------------------
+
+const defaultOptions: EventOptions = { priority: 'normal' }
+
+/** 快捷新增一筆 DLQ entry 並回傳 entryId */
+const addEntry = (
+  dlq: DeadLetterQueue,
+  eventName = 'test.event',
+  source: DLQEntrySource = 'retry_exhausted'
+): string =>
+  dlq.add(
+    eventName,
+    { data: 'payload' },
+    defaultOptions,
+    new Error('test error'),
+    3,
+    Date.now(),
+    source
+  )
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
 
 describe('DeadLetterQueue', () => {
   let dlq: DeadLetterQueue
 
   beforeEach(() => {
-    dlq = new DeadLetterQueue(100) // maxEntries
+    dlq = new DeadLetterQueue()
   })
 
-  describe('Initialization', () => {
-    test('should create DLQ instance', () => {
-      expect(dlq).toBeDefined()
+  // =========================================================================
+  // 1. add() 基本行為 (5 it)
+  // =========================================================================
+  describe('add() 基本行為', () => {
+    it('should return a unique entry ID starting with "dlq-"', () => {
+      const id = addEntry(dlq)
+      expect(id).toMatch(/^dlq-\d+-\d+$/)
     })
 
-    test('should initialize with default config', () => {
-      const defaultDLQ = new DeadLetterQueue()
-      expect(defaultDLQ).toBeDefined()
-    })
+    it('should store the entry retrievable via get()', () => {
+      const id = addEntry(dlq)
+      const entry = dlq.get(id)
 
-    test('should initialize with custom maxEntries', () => {
-      const customDLQ = new DeadLetterQueue(50)
-      expect(customDLQ).toBeDefined()
-    })
-
-    test('should have empty DLQ on creation', () => {
-      expect(dlq.getCount()).toBe(0)
-    })
-  })
-
-  describe('Adding Entries', () => {
-    test('should add a DLQ entry', () => {
-      const entryId = dlq.add(
-        'test:event',
-        { data: 'test' },
-        { timeout: 5000 },
-        new Error('Processing failed'),
-        0,
-        Date.now(),
-        'retry_exhausted'
-      )
-      expect(entryId).toBeDefined()
-      expect(entryId.startsWith('dlq-')).toBe(true)
-    })
-
-    test('should increment count after adding', () => {
-      dlq.add(
-        'test:event',
-        { data: 'test' },
-        { timeout: 5000 },
-        new Error('test error'),
-        0,
-        Date.now(),
-        'retry_exhausted'
-      )
-      expect(dlq.getCount()).toBe(1)
-    })
-
-    test('should preserve error information', () => {
-      const error = new Error('Detailed error message')
-      const entryId = dlq.add(
-        'test:event',
-        { data: 'test' },
-        { timeout: 5000 },
-        error,
-        2,
-        Date.now(),
-        'retry_exhausted'
-      )
-
-      const entry = dlq.get(entryId)
       expect(entry).toBeDefined()
-      expect(entry?.error.message).toBe('Detailed error message')
+      expect(entry!.id).toBe(id)
+      expect(entry!.eventName).toBe('test.event')
+      expect(entry!.payload).toEqual({ data: 'payload' })
+      expect(entry!.retryCount).toBe(3)
+      expect(entry!.source).toBe('retry_exhausted')
     })
 
-    test('should track retry count', () => {
-      const entryId = dlq.add(
-        'test:event',
-        { data: 'test' },
-        { timeout: 5000 },
-        new Error('test'),
-        3,
-        Date.now(),
-        'retry_exhausted'
-      )
+    it('should serialize the Error into error.message and error.stack', () => {
+      const err = new Error('boom')
+      const id = dlq.add('evt', {}, defaultOptions, err, 0, Date.now())
+      const entry = dlq.get(id)!
 
-      const entry = dlq.get(entryId)
-      expect(entry?.retryCount).toBe(3)
+      expect(entry.error.message).toBe('boom')
+      expect(entry.error.stack).toContain('boom')
+    })
+
+    it('should capture error.code when present on the Error', () => {
+      const err = new Error('fail') as Error & { code: string }
+      err.code = 'ERR_TIMEOUT'
+      const id = dlq.add('evt', {}, defaultOptions, err, 0, Date.now())
+      const entry = dlq.get(id)!
+
+      expect(entry.error.code).toBe('ERR_TIMEOUT')
+    })
+
+    it('should default source to "retry_exhausted" when omitted', () => {
+      const id = dlq.add('evt', {}, defaultOptions, new Error('x'), 0, Date.now())
+      const entry = dlq.get(id)!
+
+      expect(entry.source).toBe('retry_exhausted')
     })
   })
 
-  describe('Retrieving Entries', () => {
-    test('should get entry by ID', () => {
-      const entryId = dlq.add(
-        'test:event',
-        { data: 'test' },
-        { timeout: 5000 },
-        new Error('test'),
-        0,
-        Date.now(),
-        'retry_exhausted'
-      )
+  // =========================================================================
+  // 2. maxEntries 容量管理 (5 it)
+  // =========================================================================
+  describe('maxEntries 容量管理', () => {
+    it('should respect the maxEntries constructor limit', async () => {
+      const limited = new DeadLetterQueue(2)
 
-      const entry = dlq.get(entryId)
-      expect(entry).toBeDefined()
-      expect(entry?.eventName).toBe('test:event')
-      expect(entry?.id).toBe(entryId)
+      addEntry(limited, 'evt-1')
+      await delay(5)
+      addEntry(limited, 'evt-2')
+      await delay(5)
+      addEntry(limited, 'evt-3')
+
+      expect(limited.getCount()).toBe(2)
     })
 
-    test('should return undefined for non-existent ID', () => {
-      const entry = dlq.get('non-existent-id')
-      expect(entry).toBeUndefined()
+    it('should evict the oldest entry when capacity is reached', async () => {
+      const limited = new DeadLetterQueue(2)
+
+      addEntry(limited, 'evt-oldest')
+      await delay(5)
+      addEntry(limited, 'evt-middle')
+      await delay(5)
+      addEntry(limited, 'evt-newest')
+
+      const entries = limited.list()
+      const names = entries.map((e) => e.eventName)
+
+      expect(names).not.toContain('evt-oldest')
+      expect(names).toContain('evt-middle')
+      expect(names).toContain('evt-newest')
     })
 
-    test('should list all entries', () => {
-      dlq.add('event1', {}, { timeout: 5000 }, new Error('err1'), 0, Date.now(), 'retry_exhausted')
-      dlq.add('event2', {}, { timeout: 5000 }, new Error('err2'), 0, Date.now(), 'retry_exhausted')
-
-      const entries = dlq.list()
-      expect(entries.length).toBe(2)
+    it('should allow unlimited entries when maxEntries is undefined', () => {
+      for (let i = 0; i < 100; i++) {
+        addEntry(dlq, `evt-${i}`)
+      }
+      expect(dlq.getCount()).toBe(100)
     })
 
-    test('should support filtering by event name', () => {
-      dlq.add('event1', {}, { timeout: 5000 }, new Error('err1'), 0, Date.now(), 'retry_exhausted')
-      dlq.add('event2', {}, { timeout: 5000 }, new Error('err2'), 0, Date.now(), 'retry_exhausted')
-
-      const entries = dlq.list({ eventName: 'event1' })
-      expect(entries.length).toBe(1)
-      expect(entries[0].eventName).toBe('event1')
+    it('should return undefined from getMaxEntries() when no limit is set', () => {
+      expect(dlq.getMaxEntries()).toBeUndefined()
     })
 
-    test('should support limiting result count', () => {
-      for (let i = 0; i < 5; i++) {
-        dlq.add(
-          'test:event',
-          {},
-          { timeout: 5000 },
-          new Error('test'),
-          0,
-          Date.now(),
-          'retry_exhausted'
-        )
+    it('should return the configured maxEntries value', () => {
+      const limited = new DeadLetterQueue(50)
+      expect(limited.getMaxEntries()).toBe(50)
+    })
+  })
+
+  // =========================================================================
+  // 3. list() 查詢與過濾 (6 it)
+  // =========================================================================
+  describe('list() 查詢與過濾', () => {
+    it('should return all entries when no filter is provided', () => {
+      addEntry(dlq, 'a')
+      addEntry(dlq, 'b')
+      addEntry(dlq, 'c')
+
+      expect(dlq.list()).toHaveLength(3)
+    })
+
+    it('should filter by eventName', () => {
+      addEntry(dlq, 'order.failed')
+      addEntry(dlq, 'payment.failed')
+      addEntry(dlq, 'order.failed')
+
+      const result = dlq.list({ eventName: 'order.failed' })
+      expect(result).toHaveLength(2)
+      expect(result.every((e) => e.eventName === 'order.failed')).toBe(true)
+    })
+
+    it('should filter by time range (from / to)', async () => {
+      addEntry(dlq, 'early')
+      await delay(20)
+
+      const midTime = Date.now()
+      await delay(5)
+
+      addEntry(dlq, 'late')
+
+      const result = dlq.list({ from: midTime })
+      expect(result).toHaveLength(1)
+      expect(result[0].eventName).toBe('late')
+    })
+
+    it('should apply limit to results', () => {
+      for (let i = 0; i < 10; i++) {
+        addEntry(dlq, `evt-${i}`)
       }
 
-      const entries = dlq.list({ limit: 2 })
-      expect(entries.length).toBe(2)
+      const result = dlq.list({ limit: 3 })
+      expect(result).toHaveLength(3)
     })
 
-    test('should support time range filtering', () => {
-      const now = Date.now()
-      dlq.add('event1', {}, { timeout: 5000 }, new Error('err'), 0, now, 'retry_exhausted')
-      dlq.add('event2', {}, { timeout: 5000 }, new Error('err'), 0, now, 'retry_exhausted')
+    it('should sort results by failedAt descending (newest first)', async () => {
+      addEntry(dlq, 'first')
+      await delay(5)
+      addEntry(dlq, 'second')
+      await delay(5)
+      addEntry(dlq, 'third')
 
-      const entries = dlq.list({ from: now - 5000, to: now + 5000 })
-      expect(entries.length).toBe(2)
+      const result = dlq.list()
+      expect(result[0].eventName).toBe('third')
+      expect(result[result.length - 1].eventName).toBe('first')
+    })
+
+    it('should return empty array when no entries match the filter', () => {
+      addEntry(dlq, 'order.failed')
+
+      const result = dlq.list({ eventName: 'nonexistent' })
+      expect(result).toEqual([])
     })
   })
 
-  describe('Deleting Entries', () => {
-    test('should delete entry by ID', () => {
-      const entryId = dlq.add(
-        'test:event',
-        {},
-        { timeout: 5000 },
-        new Error('test'),
-        0,
-        Date.now(),
-        'retry_exhausted'
-      )
-
-      expect(dlq.delete(entryId)).toBe(true)
-      expect(dlq.get(entryId)).toBeUndefined()
+  // =========================================================================
+  // 4. delete() / deleteAll() (4 it)
+  // =========================================================================
+  describe('delete() / deleteAll()', () => {
+    it('should delete a single entry by ID and return true', () => {
+      const id = addEntry(dlq)
+      expect(dlq.delete(id)).toBe(true)
+      expect(dlq.get(id)).toBeUndefined()
+      expect(dlq.getCount()).toBe(0)
     })
 
-    test('should return false when deleting non-existent ID', () => {
-      expect(dlq.delete('non-existent')).toBe(false)
+    it('should return false when deleting a non-existent entry', () => {
+      expect(dlq.delete('dlq-nonexistent-999')).toBe(false)
     })
 
-    test('should delete all matching entries', () => {
-      dlq.add('event1', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
-      dlq.add('event1', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
-      dlq.add('event2', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
+    it('should deleteAll entries matching a filter and return count', () => {
+      addEntry(dlq, 'order.failed')
+      addEntry(dlq, 'payment.failed')
+      addEntry(dlq, 'order.failed')
 
-      const deleted = dlq.deleteAll({ eventName: 'event1' })
+      const deleted = dlq.deleteAll({ eventName: 'order.failed' })
       expect(deleted).toBe(2)
       expect(dlq.getCount()).toBe(1)
+      expect(dlq.list()[0].eventName).toBe('payment.failed')
     })
 
-    test('should clear all entries', () => {
-      dlq.add('event1', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
-      dlq.add('event2', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
+    it('should clear all entries when deleteAll is called with no filter', () => {
+      addEntry(dlq, 'a')
+      addEntry(dlq, 'b')
+      addEntry(dlq, 'c')
 
-      dlq.clear()
+      const deleted = dlq.deleteAll()
+      expect(deleted).toBe(3)
       expect(dlq.getCount()).toBe(0)
     })
   })
 
-  describe('Capacity Management', () => {
-    test('should evict oldest when capacity exceeded', () => {
-      const smallDLQ = new DeadLetterQueue(2)
+  // =========================================================================
+  // 5. callbacks (4 it)
+  // =========================================================================
+  describe('callbacks', () => {
+    it('should invoke onEntryAdded callback when an entry is added', () => {
+      const added: DLQEntry[] = []
+      dlq.setOnEntryAdded((entry) => added.push(entry))
 
-      const now = Date.now()
-      const id1 = smallDLQ.add(
-        'event1',
-        {},
-        { timeout: 5000 },
-        new Error('err'),
-        0,
-        now,
-        'retry_exhausted'
-      )
+      addEntry(dlq)
 
-      // Wait a tiny bit to ensure different timestamps
-      const _id2 = smallDLQ.add(
-        'event2',
-        {},
-        { timeout: 5000 },
-        new Error('err'),
-        0,
-        now + 1,
-        'retry_exhausted'
-      )
-
-      smallDLQ.add('event3', {}, { timeout: 5000 }, new Error('err'), 0, now + 2, 'retry_exhausted')
-
-      expect(smallDLQ.getCount()).toBe(2)
-      expect(smallDLQ.get(id1)).toBeUndefined() // oldest was evicted
+      expect(added).toHaveLength(1)
+      expect(added[0].eventName).toBe('test.event')
     })
 
-    test('should report max entries', () => {
+    it('should invoke onEntryRemoved callback when an entry is deleted', () => {
+      const removed: DLQEntry[] = []
+      dlq.setOnEntryRemoved((entry) => removed.push(entry))
+
+      const id = addEntry(dlq)
+      dlq.delete(id)
+
+      expect(removed).toHaveLength(1)
+      expect(removed[0].id).toBe(id)
+    })
+
+    it('should invoke onEntryRemoved for each entry when clear() is called', () => {
+      const removed: DLQEntry[] = []
+      dlq.setOnEntryRemoved((entry) => removed.push(entry))
+
+      addEntry(dlq, 'a')
+      addEntry(dlq, 'b')
+      dlq.clear()
+
+      expect(removed).toHaveLength(2)
+    })
+
+    it('should allow clearing callbacks by passing undefined', () => {
+      const added: DLQEntry[] = []
+      dlq.setOnEntryAdded((entry) => added.push(entry))
+      dlq.setOnEntryAdded(undefined)
+
+      addEntry(dlq)
+
+      expect(added).toHaveLength(0)
+    })
+  })
+
+  // =========================================================================
+  // 6. 邊界：getOldestEntry / getNewestEntry (3 it)
+  // =========================================================================
+  describe('getOldestEntry / getNewestEntry', () => {
+    it('should return undefined for both when DLQ is empty', () => {
+      expect(dlq.getOldestEntry()).toBeUndefined()
+      expect(dlq.getNewestEntry()).toBeUndefined()
+    })
+
+    it('should return the entry with smallest failedAt as oldest', async () => {
+      addEntry(dlq, 'oldest')
+      await delay(5)
+      addEntry(dlq, 'middle')
+      await delay(5)
+      addEntry(dlq, 'newest')
+
+      expect(dlq.getOldestEntry()!.eventName).toBe('oldest')
+    })
+
+    it('should return the entry with largest failedAt as newest', async () => {
+      addEntry(dlq, 'oldest')
+      await delay(5)
+      addEntry(dlq, 'middle')
+      await delay(5)
+      addEntry(dlq, 'newest')
+
+      expect(dlq.getNewestEntry()!.eventName).toBe('newest')
+    })
+  })
+
+  // =========================================================================
+  // 7. setMaxEntries() 動態縮容 (3 it)
+  // =========================================================================
+  describe('setMaxEntries() 動態縮容', () => {
+    it('should evict excess entries when limit is reduced below current size', async () => {
+      addEntry(dlq, 'a')
+      await delay(5)
+      addEntry(dlq, 'b')
+      await delay(5)
+      addEntry(dlq, 'c')
+      await delay(5)
+      addEntry(dlq, 'd')
+      await delay(5)
+      addEntry(dlq, 'e')
+
+      dlq.setMaxEntries(2)
+
+      expect(dlq.getCount()).toBe(2)
+      expect(dlq.getMaxEntries()).toBe(2)
+
+      // 應保留最新的兩筆
+      const names = dlq.list().map((e) => e.eventName)
+      expect(names).toContain('d')
+      expect(names).toContain('e')
+    })
+
+    it('should remove limit when setMaxEntries(undefined) is called', () => {
+      const limited = new DeadLetterQueue(5)
+      limited.setMaxEntries(undefined)
+
+      expect(limited.getMaxEntries()).toBeUndefined()
+
+      // 無限制，應可新增任意數量
+      for (let i = 0; i < 20; i++) {
+        addEntry(limited, `evt-${i}`)
+      }
+      expect(limited.getCount()).toBe(20)
+    })
+
+    it('should not evict when new limit is greater than current size', () => {
+      addEntry(dlq, 'a')
+      addEntry(dlq, 'b')
+
+      dlq.setMaxEntries(100)
+
+      expect(dlq.getCount()).toBe(2)
       expect(dlq.getMaxEntries()).toBe(100)
     })
-
-    test('should allow setting max entries', () => {
-      dlq.setMaxEntries(50)
-      expect(dlq.getMaxEntries()).toBe(50)
-    })
   })
 
-  describe('Statistics', () => {
-    test('should count entries by event', () => {
-      dlq.add('event1', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
-      dlq.add('event1', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
-      dlq.add('event2', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
-
-      expect(dlq.getCountByEvent('event1')).toBe(2)
-      expect(dlq.getCountByEvent('event2')).toBe(1)
+  // =========================================================================
+  // 附加覆蓋：其他方法 (額外驗證)
+  // =========================================================================
+  describe('其他方法覆蓋', () => {
+    it('getCount() should return the total number of entries', () => {
+      expect(dlq.getCount()).toBe(0)
+      addEntry(dlq, 'a')
+      addEntry(dlq, 'b')
+      expect(dlq.getCount()).toBe(2)
     })
 
-    test('should get oldest entry', () => {
-      dlq.add('event1', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
-      dlq.add('event2', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
+    it('getCountByEvent() should return count for a specific event name', () => {
+      addEntry(dlq, 'order.failed')
+      addEntry(dlq, 'payment.failed')
+      addEntry(dlq, 'order.failed')
 
-      const oldest = dlq.getOldestEntry()
-      expect(oldest).toBeDefined()
-      expect(oldest?.id).toBeDefined()
+      expect(dlq.getCountByEvent('order.failed')).toBe(2)
+      expect(dlq.getCountByEvent('payment.failed')).toBe(1)
+      expect(dlq.getCountByEvent('nonexistent')).toBe(0)
     })
 
-    test('should get newest entry', () => {
-      dlq.add('event1', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
-      dlq.add('event2', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
+    it('getEntriesBySource() should filter entries by DLQ source', () => {
+      addEntry(dlq, 'a', 'retry_exhausted')
+      addEntry(dlq, 'b', 'circuit_breaker')
+      addEntry(dlq, 'c', 'retry_exhausted')
+      addEntry(dlq, 'd', 'backpressure_overflow')
 
-      const newest = dlq.getNewestEntry()
-      expect(newest).toBeDefined()
-      expect(newest?.id).toBeDefined()
-    })
-  })
+      const retryEntries = dlq.getEntriesBySource('retry_exhausted')
+      expect(retryEntries).toHaveLength(2)
 
-  describe('Entry Sources', () => {
-    test('should get entries by source', () => {
-      dlq.add('event1', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'retry_exhausted')
-      dlq.add('event2', {}, { timeout: 5000 }, new Error('err'), 0, Date.now(), 'circuit_breaker')
-
-      const retryExhausted = dlq.getEntriesBySource('retry_exhausted')
-      const circuitBreakerEntries = dlq.getEntriesBySource('circuit_breaker')
-
-      expect(retryExhausted.length).toBe(1)
-      expect(circuitBreakerEntries.length).toBe(1)
-    })
-  })
-
-  describe('Callbacks', () => {
-    test('should call onEntryAdded callback', () => {
-      let callbackCalled = false
-      dlq.setOnEntryAdded(() => {
-        callbackCalled = true
-      })
-
-      dlq.add(
-        'test:event',
-        {},
-        { timeout: 5000 },
-        new Error('err'),
-        0,
-        Date.now(),
-        'retry_exhausted'
-      )
-      expect(callbackCalled).toBe(true)
+      const cbEntries = dlq.getEntriesBySource('circuit_breaker')
+      expect(cbEntries).toHaveLength(1)
+      expect(cbEntries[0].eventName).toBe('b')
     })
 
-    test('should call onEntryRemoved callback', () => {
-      let callbackCalled = false
-      dlq.setOnEntryRemoved(() => {
-        callbackCalled = true
-      })
+    it('updateLastRetried() should set lastRetriedAt timestamp', () => {
+      const id = addEntry(dlq)
+      const before = dlq.get(id)!
+      expect(before.lastRetriedAt).toBeUndefined()
 
-      const entryId = dlq.add(
-        'test:event',
-        {},
-        { timeout: 5000 },
-        new Error('err'),
-        0,
-        Date.now(),
-        'retry_exhausted'
-      )
-      dlq.delete(entryId)
-      expect(callbackCalled).toBe(true)
+      dlq.updateLastRetried(id)
+
+      const after = dlq.get(id)!
+      expect(after.lastRetriedAt).toBeDefined()
+      expect(typeof after.lastRetriedAt).toBe('number')
     })
-  })
 
-  describe('Update Operations', () => {
-    test('should update last retried timestamp', () => {
-      const entryId = dlq.add(
-        'test:event',
-        {},
-        { timeout: 5000 },
-        new Error('err'),
-        0,
-        Date.now(),
-        'retry_exhausted'
-      )
+    it('clear() should remove all entries from the DLQ', () => {
+      addEntry(dlq, 'a')
+      addEntry(dlq, 'b')
+      addEntry(dlq, 'c')
 
-      let entry = dlq.get(entryId)
-      expect(entry?.lastRetriedAt).toBeUndefined()
+      dlq.clear()
 
-      dlq.updateLastRetried(entryId)
-      entry = dlq.get(entryId)
-      expect(entry?.lastRetriedAt).toBeDefined()
+      expect(dlq.getCount()).toBe(0)
+      expect(dlq.list()).toEqual([])
     })
   })
 })
