@@ -1,6 +1,6 @@
 import type { ChangeTracker, ShardManifest, SitemapChange, SitemapEntry } from '../types'
 import { Mutex } from '../utils/Mutex'
-import { DiffCalculator } from './DiffCalculator'
+import type { DiffCalculator } from './DiffCalculator'
 import type { SitemapGenerator, SitemapGeneratorOptions } from './SitemapGenerator'
 import { SitemapGenerator as SitemapGeneratorImpl } from './SitemapGenerator'
 import { SitemapParser } from './SitemapParser'
@@ -34,7 +34,6 @@ export interface IncrementalGeneratorOptions extends SitemapGeneratorOptions {
 export class IncrementalGenerator {
   private options: IncrementalGeneratorOptions
   private changeTracker: ChangeTracker
-  private diffCalculator: DiffCalculator
   private generator: SitemapGenerator
   private mutex = new Mutex()
 
@@ -45,7 +44,6 @@ export class IncrementalGenerator {
       ...options,
     }
     this.changeTracker = this.options.changeTracker
-    this.diffCalculator = this.options.diffCalculator || new DiffCalculator()
     this.generator = new SitemapGeneratorImpl(this.options)
   }
 

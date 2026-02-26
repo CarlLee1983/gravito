@@ -121,7 +121,8 @@ await buildInParallel()
 const tempDir = isDtsOnly ? 'dist' : '.tsc-temp'
 if (!isDtsOnly) {
   try {
-    await copyDtsFiles(tempDir, 'dist')
+    // Copy from .tsc-temp/photon/src to dist (where our actual types are)
+    await copyDtsFiles(`${tempDir}/photon/src`, 'dist')
     await rm(tempDir, { recursive: true, force: true })
   } catch (e) {
     console.warn('⚠️  Warning: Failed to copy type declarations:', e)
