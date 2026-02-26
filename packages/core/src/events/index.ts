@@ -14,8 +14,9 @@ export { DEFAULT_EVENT_OPTIONS } from './EventOptions'
 export type { BackpressureStrategy, EventQueueConfig, EventTask } from './types'
 
 // ==================================================
-// NOTE: Resilience-related symbols have been moved to @gravito/resilience
-// For deprecated re-exports, import from @gravito/core instead
+// NOTE: Resilience-related symbols maintained in @gravito/core
+// @gravito/resilience is a parallel implementation for standalone use
+// For new code, consider using @gravito/resilience directly
 // ==================================================
 
 export type {
