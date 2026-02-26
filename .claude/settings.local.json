@@ -64,7 +64,8 @@
       "Bash(echo \"❌ $pkg failed\")",
       "Bash(done)",
       "Bash(cat:*)",
-      "Bash(gh issue:*)"
+      "Bash(gh issue:*)",
+      "Bash(test:*)"
     ]
   },
   "enabledMcpjsonServers": [

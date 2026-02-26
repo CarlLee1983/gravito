@@ -1,17 +1,38 @@
 {
   "compilerOptions": {
+    // ========================================================================
+    // LANGUAGE & RUNTIME
+    // ========================================================================
     "target": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+
+    // Bun built-in types
+    "types": ["node", "bun-types"],
+
+    // ========================================================================
+    // MODULE RESOLUTION
+    // ========================================================================
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+
+    // ========================================================================
+    // JSX CONFIGURATION
+    // ========================================================================
+    "jsx": "react-jsx",
+
+    // ========================================================================
+    // TYPE CHECKING & SAFETY
+    // ========================================================================
     "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "declaration": true,
     "skipLibCheck": true,
-    "types": ["node", "bun-types"],
-    "esModuleInterop": true,
-    "jsx": "react-jsx",
-    "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
