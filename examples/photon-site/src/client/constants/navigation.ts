@@ -9,6 +9,7 @@ import {
   Layers,
   List,
   Lock,
+  Network,
   Play,
   Radio,
   Settings,
@@ -81,7 +82,9 @@ export const navGroups: NavGroup[] = [
     category: 'EXTENSIONS_ECO',
     items: [
       { id: 'ecosystem', label: 'ECOSYSTEM_REGISTRY', icon: Zap, href: '/ecosystem' },
-      { id: 'rpc-beam', label: 'BEAM_RPC_CLIENT', icon: Zap, href: '/docs/rpc-beam' },
+      { id: 'chromatic', label: 'CHROMATIC_COLORS', icon: Layers, href: '/docs/chromatic' },
+      { id: 'resilience', label: 'ENTERPRISE_RESILIENCE', icon: Shield, href: '/docs/resilience' },
+      { id: 'rpc-beam', label: 'BEAM_RPC_CLIENT', icon: Network, href: '/docs/rpc-beam' },
       { id: 'testing', label: 'TESTING_SUITE', icon: TestTube, href: '/docs/testing' },
       { id: 'auth', label: 'SENTINEL_AUTH', icon: Lock, href: '/docs/auth' },
       { id: 'realtime', label: 'REALTIME_RIPPLE', icon: Radio, href: '/docs/realtime' },

@@ -119,9 +119,8 @@ export default function Home({ lang = 'en', ...props }: HomeProps) {
       <Head title={t.head_title} />
       {/* Enhanced Pro-Max Navbar */}
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 px-4 md:px-12 py-4 md:py-6 flex justify-between items-center transition-all duration-700 ${
-          scrolled ? 'py-3 md:py-4' : 'bg-transparent'
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 px-4 md:px-12 py-4 md:py-6 flex justify-between items-center transition-all duration-700 ${scrolled ? 'py-3 md:py-4' : 'bg-transparent'
+          }`}
       >
         <div
           className={`absolute inset-0 transition-opacity duration-700 ${scrolled ? 'opacity-100' : 'opacity-0'}`}
@@ -196,16 +195,6 @@ export default function Home({ lang = 'en', ...props }: HomeProps) {
             <AnimatePresence mode="wait">
               {theme === 'dark' ? (
                 <motion.div
-                  key="moon"
-                  initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
-                  animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                  exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
-                  className="group-hover:scale-110 transition-transform"
-                >
-                  <Moon size={16} />
-                </motion.div>
-              ) : (
-                <motion.div
                   key="sun"
                   initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
                   animate={{ opacity: 1, rotate: 0, scale: 1 }}
@@ -213,6 +202,16 @@ export default function Home({ lang = 'en', ...props }: HomeProps) {
                   className="group-hover:scale-110 transition-transform"
                 >
                   <Sun size={16} />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="moon"
+                  initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
+                  animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                  exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
+                  className="group-hover:scale-110 transition-transform"
+                >
+                  <Moon size={16} />
                 </motion.div>
               )}
             </AnimatePresence>

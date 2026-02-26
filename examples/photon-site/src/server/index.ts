@@ -359,7 +359,7 @@ const legalContent: Record<string, Record<string, any>> = {
 // Routes
 const supportedLangs = ['en', 'zh-TW']
 
-app.get('/', (c) => renderInertia(c, 'Home', { version: '1.5.0', lang: 'en' }))
+app.get('/', (c) => renderInertia(c, 'Home', { version: '1.0.0', lang: 'en' }))
 
 app.get('/patterns', (c) => {
   const queryLang = c.req.query('lang')
@@ -507,7 +507,7 @@ app.get('/:lang/legal/:page', (c) => {
 })
 
 // Localized Root (Matches /en, /zh-TW) - Catch-all for 1 segment
-app.get('/zh-TW', (c) => renderInertia(c, 'Home', { version: '1.5.0', lang: 'zh-TW' }))
+app.get('/zh-TW', (c) => renderInertia(c, 'Home', { version: '1.0.0', lang: 'zh-TW' }))
 app.get('/:lang', (c) => {
   const pathLang = c.req.param('lang')
   const queryLang = c.req.query('lang')
@@ -518,7 +518,7 @@ app.get('/:lang', (c) => {
     return c.notFound()
   }
 
-  return renderInertia(c, 'Home', { version: '1.5.0', lang })
+  return renderInertia(c, 'Home', { version: '1.0.0', lang })
 })
 
 // ----------------------------------------------------------------------------

@@ -165,6 +165,32 @@ const getOrbits = (lang: 'en' | 'zh-TW', t: any): Orbit[] => {
         : ['Multi-Driver', 'Retry Logic', 'Priority Queues'],
     },
     {
+      name: 'Chromatic',
+      package: '@gravito/chromatic',
+      description: isZh
+        ? '專為 Bun 打造的原生色彩管理引擎。提供自動色彩深度檢測與 WCAG 驗證。'
+        : 'Native Bun color management engine. Automatic depth detection and WCAG validation.',
+      icon: Layers,
+      type: 'OFFICIAL',
+      features: isZh
+        ? ['Truecolor 支援', '語義化主題', '無依賴設計']
+        : ['Truecolor Support', 'Semantic Themes', 'Zero-Deps'],
+      metrics: { label: t.metrics.latency, value: '< 0.01ms' },
+    },
+    {
+      name: 'Resilience',
+      package: '@gravito/resilience',
+      description: isZh
+        ? '企業級韌性模式套件。提供斷路器、背壓控制與重試策略。'
+        : 'Enterprise resilience patterns. Circuit breakers, backpressure, and retry strategies.',
+      icon: Shield,
+      type: 'OFFICIAL',
+      features: isZh
+        ? ['斷路器 V2', '背壓管理', '自動負載捨棄']
+        : ['Circuit Breaker V2', 'Backpressure', 'Load Shedding'],
+      metrics: { label: t.metrics.latency, value: '< 0.1ms' },
+    },
+    {
       name: 'Luminosity',
       package: '@gravito/luminosity',
       description: isZh
@@ -201,7 +227,7 @@ export default function Ecosystem({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
         <div className="absolute -top-24 -left-24 w-64 h-64 bg-photon-gold/5 blur-[100px] rounded-full pointer-events-none" />
         <div className="flex items-center gap-3 mb-8">
           <div className="px-3 py-1 bg-photon-gold/10 border border-photon-gold/20 rounded-full text-[10px] text-photon-gold font-technical tracking-[0.2em] uppercase shadow-[0_0_15px_rgba(255,184,0,0.1)]">
-            Registry_v1.5.0_LATEST
+            Registry_v1.0.0_GALAXY
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full text-[10px] text-green-500 font-technical tracking-[0.1em] uppercase">
             <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />

@@ -161,7 +161,7 @@ export default function Docs({
   }, [content, currentLang])
 
   return (
-    <DocsLayout currentId={id}>
+    <DocsLayout currentId={slug}>
       <Head title={`${title} // ${navT.docs_head_title}`} />
 
       <div className="min-h-screen">

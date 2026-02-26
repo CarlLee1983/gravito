@@ -195,25 +195,29 @@ export const DocsLayout = ({
                   {t(group.category)}
                 </div>
                 <div className="space-y-1">
-                  {group.items.map((item) => (
-                    <StaticLink
-                      key={item.id}
-                      href={item.href}
-                      className={`flex items-center gap-4 px-4 py-2.5 rounded-sm group transition-all ${currentId === item.id ? 'bg-surf-bg border border-s-brd text-p-txt shadow-sm' : 'text-s-txt hover:text-p-txt'}`}
-                    >
-                      <item.icon
-                        size={11}
-                        className={
-                          currentId === item.id
-                            ? 'text-photon-gold'
-                            : 'opacity-40 group-hover:opacity-100'
-                        }
-                      />
-                      <span className="text-[10px] font-bold tracking-[0.15em] uppercase">
-                        {t(item.label)}
-                      </span>
-                    </StaticLink>
-                  ))}
+                  {group.items.map((item) => {
+                    const localizedHref =
+                      currentLang === 'en' ? item.href : `/${currentLang}${item.href}`
+                    return (
+                      <StaticLink
+                        key={item.id}
+                        href={localizedHref}
+                        className={`flex items-center gap-4 px-4 py-2.5 rounded-sm group transition-all ${currentId === item.id ? 'bg-surf-bg border border-s-brd text-p-txt shadow-sm' : 'text-s-txt hover:text-p-txt'}`}
+                      >
+                        <item.icon
+                          size={11}
+                          className={
+                            currentId === item.id
+                              ? 'text-photon-gold'
+                              : 'opacity-40 group-hover:opacity-100'
+                          }
+                        />
+                        <span className="text-[10px] font-bold tracking-[0.15em] uppercase">
+                          {t(item.label)}
+                        </span>
+                      </StaticLink>
+                    )
+                  })}
                 </div>
               </div>
             ))}
