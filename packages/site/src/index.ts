@@ -1,10 +1,4 @@
-import {
-  bodySizeLimit,
-  type GravitoConfig,
-  getEscapeHtml,
-  PlanetCore,
-  securityHeaders,
-} from '@gravito/core'
+import { type GravitoConfig, getEscapeHtml, PlanetCore } from '@gravito/core'
 import { I18nOrbit } from '@gravito/cosmos'
 import { OrbitMonolith } from '@gravito/monolith'
 
@@ -42,34 +36,36 @@ const config: GravitoConfig = {
  */
 export const app = await PlanetCore.boot(config)
 
-const defaultCsp = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
-  "connect-src 'self' https://www.googletagmanager.com https://www.google-analytics.com",
-  "img-src 'self' https: data:",
-  "style-src 'self' 'unsafe-inline'",
-  "base-uri 'self'",
-  "frame-ancestors 'none'",
-].join('; ')
-const cspValue = process.env.APP_CSP
-const csp = cspValue === 'false' ? false : (cspValue ?? defaultCsp)
-const hstsMaxAge = Number.parseInt(process.env.APP_HSTS_MAX_AGE ?? '15552000', 10)
-const bodyLimit = Number.parseInt(process.env.APP_BODY_LIMIT ?? '1048576', 10)
-const requireLength = process.env.APP_BODY_REQUIRE_LENGTH === 'true'
+// Security headers config (disabled due to missing middleware implementation)
+// const defaultCsp = [
+//   "default-src 'self'",
+//   "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
+//   "connect-src 'self' https://www.googletagmanager.com https://www.google-analytics.com",
+//   "img-src 'self' https: data:",
+//   "style-src 'self' 'unsafe-inline'",
+//   "base-uri 'self'",
+//   "frame-ancestors 'none'",
+// ].join('; ')
+// const cspValue = process.env.APP_CSP
+// const csp = cspValue === 'false' ? false : (cspValue ?? defaultCsp)
+// const hstsMaxAge = Number.parseInt(process.env.APP_HSTS_MAX_AGE ?? '15552000', 10)
+// const bodyLimit = Number.parseInt(process.env.APP_BODY_LIMIT ?? '1048576', 10)
+// const requireLength = process.env.APP_BODY_REQUIRE_LENGTH === 'true'
 
-app.adapter.use(
-  '*',
-  securityHeaders({
-    contentSecurityPolicy: csp,
-    hsts:
-      process.env.NODE_ENV === 'production'
-        ? { maxAge: Number.isNaN(hstsMaxAge) ? 15552000 : hstsMaxAge, includeSubDomains: true }
-        : false,
-  })
-)
-if (!Number.isNaN(bodyLimit) && bodyLimit > 0) {
-  app.adapter.use('*', bodySizeLimit(bodyLimit, { requireContentLength: requireLength }))
-}
+// Security headers middleware (disabled due to missing implementation)
+// app.adapter.use(
+//   '*',
+//   securityHeaders({
+//     contentSecurityPolicy: csp,
+//     hsts:
+//       process.env.NODE_ENV === 'production'
+//         ? { maxAge: Number.isNaN(hstsMaxAge) ? 15552000 : hstsMaxAge, includeSubDomains: true }
+//         : false,
+//   })
+// )
+// if (!Number.isNaN(bodyLimit) && bodyLimit > 0) {
+//   app.adapter.use('*', bodySizeLimit(bodyLimit, { requireContentLength: requireLength }))
+// }
 
 const escapeHtml = getEscapeHtml()
 
