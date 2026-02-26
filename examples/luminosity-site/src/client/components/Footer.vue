@@ -5,7 +5,7 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <footer class="bg-[#050505] border-t border-white/5 pt-24 pb-12">
+  <footer class="bg-panel border-t border-white/5 pt-24 pb-12">
     <div class="max-w-7xl mx-auto px-6">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
         <div class="col-span-1 md:col-span-2">
