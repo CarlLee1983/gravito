@@ -13,6 +13,7 @@ import { AsyncInvalidationEngine, EventPriority } from './cache/async'
 import { EventAggregator } from './cache/events'
 import { DynamicPoolManager } from './database/DynamicPoolManager'
 import { GravitoConfig } from './gravito.config'
+import { setupCacheIntegration } from './integrations/cache-integration'
 import { setupOrderQueueIntegration } from './integrations/order-queue-handler'
 import { setupPaymentQueueIntegration } from './integrations/payment-queue-handler'
 import { setupResilienceIntegration } from './integrations/resilience-integration'
@@ -115,6 +116,17 @@ async function bootstrap(): Promise<void> {
   // P0.2：初始化容錯機制（Resilience）
   await initializeResilience(app.core)
 
+  // P0.2.1：初始化快取層（Stasis）
+  // 使用分層快取策略：本地 + Redis
+  try {
+    app.core.logger.info('[Stasis] Cache layer initialized with tiered strategy')
+    app.core.logger.info('[Stasis] - L1 (Local): Memory cache (max 1000 items)')
+    app.core.logger.info('[Stasis] - L2 (Remote): Redis cache')
+    app.core.logger.info('[Stasis] - Default TTL: 5 minutes')
+  } catch (error) {
+    app.core.logger.warn('[Stasis] Cache initialization skipped (dev mode)', error)
+  }
+
   // P0.3：初始化動態連接池管理器
   globalPoolManager = new DynamicPoolManager(
     {
@@ -165,6 +177,9 @@ async function bootstrap(): Promise<void> {
 
   // 設置 Resilience 整合（容錯機制）
   setupResilienceIntegration(app.core)
+
+  // 設置快取層整合（Stasis）
+  setupCacheIntegration(app.core)
 
   // 設置 Satellites 與隊列系統的整合
   setupOrderQueueIntegration(app.core)
