@@ -40,7 +40,7 @@ describe('MakeCommand', () => {
 
     await cmd.run('controller', 'TestUser')
 
-    const file = path.join(TEST_DIR, 'src/controllers/TestUserController.ts')
+    const file = path.join(TEST_DIR, 'src/Http/Controllers/TestUserController.ts')
     expect(await fs.exists(file)).toBe(true)
 
     const content = await fs.readFile(file, 'utf-8')
@@ -54,7 +54,7 @@ describe('MakeCommand', () => {
 
     await cmd.run('middleware', 'EnsureAuth')
 
-    const file = path.join(TEST_DIR, 'src/middleware/ensureAuth.ts')
+    const file = path.join(TEST_DIR, 'src/Http/Middleware/EnsureAuthMiddleware.ts')
     expect(await fs.exists(file)).toBe(true)
 
     const content = await fs.readFile(file, 'utf-8')
@@ -67,7 +67,7 @@ describe('MakeCommand', () => {
 
     await cmd.run('model', 'Product')
 
-    const file = path.join(TEST_DIR, 'src/models/Product.ts')
+    const file = path.join(TEST_DIR, 'src/Models/Product.ts')
     expect(await fs.exists(file)).toBe(true)
 
     const content = await fs.readFile(file, 'utf-8')

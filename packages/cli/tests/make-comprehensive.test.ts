@@ -32,7 +32,7 @@ describe('MakeCommand Comprehensive', () => {
 
     await cmd.run('request', 'CreateUser')
 
-    const file = path.join(TEST_DIR, 'src/requests/CreateUserRequest.ts')
+    const file = path.join(TEST_DIR, 'src/Http/Requests/CreateUserRequest.ts')
     expect(await fs.exists(file)).toBe(true)
 
     const content = await fs.readFile(file, 'utf-8')
@@ -67,9 +67,8 @@ describe('MakeCommand Comprehensive', () => {
 
     await cmd.run('seeder', 'UserSeeder')
 
-    // StubGenerator usually puts seeders in src/database/seeders or database/seeders depending on config.
-    // Based on output log: src/database/seeders/UserSeeder.ts
-    const file = path.join(TEST_DIR, 'src/database/seeders/UserSeeder.ts')
+    // MVC architecture places seeders in database/seeders/
+    const file = path.join(TEST_DIR, 'database/seeders/UserSeeder.ts')
     expect(await fs.exists(file)).toBe(true)
 
     const content = await fs.readFile(file, 'utf-8')
