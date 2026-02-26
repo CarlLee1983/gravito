@@ -49,11 +49,41 @@ bun run typecheck
 
 # Run linting
 bun run check
+```
 
-# Generate Static Documentation
-# When working on @gravito/astral static export, you can test the generation of offline API docs:
+## Working with Examples
+
+Each example application demonstrates specific framework features. Learn and verify functionality:
+
+### Atlas Site (ORM & Database)
+```bash
+cd examples/atlas-site
+
+# Frontend development (Vue 3 + Vite)
+bun run dev              # http://localhost:5173
+
+# Backend API server (Database integration)
+bun run dev:server       # http://localhost:3000/api/demo
+
+# Production build with SPA routes
+bun run build
+```
+
+### Astral Site (Static Documentation)
+```bash
 cd examples/astral-site
+
+# Generate offline API documentation
 bun run build:docs
+```
+
+### Other Examples
+```bash
+# Quick development workflow for any example
+cd examples/{blog-mvc,commerce-fullstack,event-registration-mvc,etc}
+bun run dev              # Start development server
+bun run build            # Create production build
+bun run test             # Run tests (if available)
 ```
 
 ## Styleguides

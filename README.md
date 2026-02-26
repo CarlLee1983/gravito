@@ -89,6 +89,29 @@ For a full-stack integrated example, check out:
 
 ---
 
+## 📚 Example Projects
+
+Learn by doing with our comprehensive examples:
+
+| Example | Description | Key Concepts |
+|---------|-------------|--------------|
+| **[Atlas Site](./examples/atlas-site)** | ORM showcase with SQLite, Redis & MongoDB | Database Models, Migrations, Query Builder, Vue 3 Frontend |
+| **[Commerce Fullstack](./examples/commerce-fullstack)** | Complete e-commerce platform | Domain Satellites, Event Bus, Order Processing, CMS |
+| **[Blog MVC](./examples/blog-mvc)** | Classic MVC blog application | RESTful API, Template Rendering, Authentication |
+| **[Event Registration](./examples/event-registration-mvc)** | Event booking & ticketing system | Clean Architecture, DDD, Event-Driven Design |
+| **[Flash Sale](./examples/flash-sale-fullstack)** | High-concurrency sales platform | Real-time Updates, Inventory Management, WebSocket |
+| **[E-Commerce MVC](./examples/ecommerce-mvc)** | Full-featured e-shop | Catalog, Cart, Payment Integration, Lifecycle Events |
+
+**Quick start an example:**
+```bash
+cd examples/{example-name}
+bun install
+bun run dev      # Start development server
+bun run build    # Production build
+```
+
+---
+
 ## ⚡ Performance: Built for Bun
 
 Gravito is optimized for **Bun** runtime with native APIs that deliver **27-46% framework-level performance improvement**:
