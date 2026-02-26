@@ -94,6 +94,7 @@ export type GravitoConfig = {
    * import { PhotonAdapter } from '@gravito/photon/adapter'
    * new PlanetCore({ adapter: new PhotonAdapter() })
    * ```
+   * See https://gravito.dev/guides/http-adapters for available adapters.
    * @since 2.0.0
    */
   adapter?: HttpAdapter
@@ -568,9 +569,8 @@ export class PlanetCore {
     } else {
       throw new Error(
         'No HTTP adapter provided. In non-Bun environments, ' +
-          'you must explicitly provide an adapter:\n\n' +
-          '  import { PhotonAdapter } from "@gravito/photon/adapter"\n' +
-          '  new PlanetCore({ adapter: new PhotonAdapter() })'
+          'you must explicitly provide an adapter. ' +
+          'See https://gravito.dev/guides/http-adapters for available implementations.'
       )
     }
 
@@ -787,9 +787,8 @@ export class PlanetCore {
     } else {
       throw new Error(
         'mountOrbit() expects a PlanetCore instance or HttpAdapter. ' +
-          'To mount a native app (e.g. Hono), wrap it first:\n\n' +
-          '  import { PhotonAdapter } from "@gravito/photon/adapter"\n' +
-          '  core.mountOrbit("/path", new PhotonAdapter({}, honoApp))'
+          'To mount a native app (e.g. Hono), wrap it with an HTTP adapter. ' +
+          'See https://gravito.dev/guides/http-adapters for available implementations.'
       )
     }
 

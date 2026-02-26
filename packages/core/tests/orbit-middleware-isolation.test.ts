@@ -1,53 +1,8 @@
 import { describe, expect, it } from 'bun:test'
-import { PhotonAdapter } from '@gravito/photon/adapter'
 import { BunNativeAdapter } from '../src/adapters/bun/BunNativeAdapter'
 import { PlanetCore } from '../src/PlanetCore'
 
 describe('Orbit Middleware Isolation', () => {
-  describe('useScoped() validation in PhotonAdapter', () => {
-    it('should reject wildcard "*" path', () => {
-      const adapter = new PhotonAdapter()
-
-      expect(() => {
-        adapter.useScoped('/api', '*', async (_c, next) => next())
-      }).toThrow(/Cannot use wildcard path/)
-    })
-
-    it('should reject wildcard "*/*" path', () => {
-      const adapter = new PhotonAdapter()
-
-      expect(() => {
-        adapter.useScoped('/api', '*/*', async (_c, next) => next())
-      }).toThrow(/Cannot use wildcard path/)
-    })
-
-    it('should accept specific paths under scope', () => {
-      const adapter = new PhotonAdapter()
-
-      expect(() => {
-        adapter.useScoped('/api', '/users', async (_c, next) => next())
-      }).not.toThrow()
-
-      expect(() => {
-        adapter.useScoped('/api', '/users/*', async (_c, next) => next())
-      }).not.toThrow()
-    })
-
-    it('should normalize scope prefix correctly', () => {
-      const adapter = new PhotonAdapter()
-
-      // Should work with leading slash
-      expect(() => {
-        adapter.useScoped('/api', '/users', async (_c, next) => next())
-      }).not.toThrow()
-
-      // Should work without leading slash
-      expect(() => {
-        adapter.useScoped('api', '/users', async (_c, next) => next())
-      }).not.toThrow()
-    })
-  })
-
   describe('useScoped() validation in BunNativeAdapter', () => {
     it('should reject wildcard "*" path', () => {
       const adapter = new BunNativeAdapter()

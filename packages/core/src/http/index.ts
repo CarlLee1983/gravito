@@ -12,15 +12,11 @@ export type { CookieOptions } from './CookieJar'
 // Cookie Management
 export { CookieJar } from './CookieJar'
 export { deleteCookie, getCookie, setCookie } from './cookie'
-// Middleware
-export { type BodySizeLimitOptions, bodySizeLimit } from './middleware/BodySizeLimit'
-export { type CorsOptions, type CorsOrigin, cors } from './middleware/Cors'
-export {
-  createHeaderGate,
-  type HeaderTokenGateOptions,
-  type RequireHeaderTokenOptions,
-  requireHeaderToken,
-} from './middleware/HeaderTokenGate'
+// HTTP Middleware moved to @gravito/photon/middleware (Phase 2.1)
+// Import from @gravito/photon instead:
+// - bodySizeLimit → @gravito/photon/middleware/body
+// - cors → @gravito/photon/middleware/cors
+// - createHeaderGate, requireHeaderToken → @gravito/photon/middleware/security
 // Core HTTP Types (Gravito Abstractions)
 export type {
   ContentfulStatusCode,

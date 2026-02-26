@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'bun:test'
-import { PhotonAdapter } from '@gravito/photon/adapter'
 import { BunNativeAdapter } from '../src/adapters/bun/BunNativeAdapter'
 import { PlanetCore } from '../src/PlanetCore'
 
@@ -11,9 +10,9 @@ describe('PlanetCore Default Adapter', () => {
   })
 
   it('should allow overriding adapter via constructor', () => {
-    const photonAdapter = new PhotonAdapter()
-    const core = new PlanetCore({ adapter: photonAdapter })
-    expect(core.adapter).toBeInstanceOf(PhotonAdapter)
-    expect(core.adapter).toBe(photonAdapter)
+    const customAdapter = new BunNativeAdapter()
+    const core = new PlanetCore({ adapter: customAdapter })
+    expect(core.adapter).toBeInstanceOf(BunNativeAdapter)
+    expect(core.adapter).toBe(customAdapter)
   })
 })

@@ -202,34 +202,13 @@ export * from './helpers/response'
 // HTTP / Security utilities
 export { CookieJar, type CookieOptions } from './http/CookieJar'
 export { deleteCookie, getCookie, setCookie } from './http/cookie'
-// @deprecated Since v2.0.0. Use `@gravito/photon` middleware instead.
-// Migration guide: `import { bodySizeLimit } from '@gravito/photon/middleware/security'`
-export { type BodySizeLimitOptions, bodySizeLimit } from './http/middleware/BodySizeLimit'
-// @deprecated Since v2.0.0. Use `@gravito/photon` middleware instead.
-// Migration guide: `import { cors } from '@gravito/photon/middleware/security'`
-export { type CorsOptions, type CorsOrigin, cors } from './http/middleware/Cors'
-// @deprecated Since v2.0.0. Use `@gravito/photon` middleware instead.
-// Migration guide: `import { csrfProtection, getCsrfToken } from '@gravito/photon/middleware/security'`
-export { type CsrfOptions, csrfProtection, getCsrfToken } from './http/middleware/Csrf'
-// @deprecated Since v2.0.0. Use `@gravito/photon` middleware instead.
-// Migration guide: `import { createHeaderGate, requireHeaderToken } from '@gravito/photon/middleware/security'`
-export {
-  createHeaderGate,
-  type HeaderTokenGateOptions,
-  type RequireHeaderTokenOptions,
-  requireHeaderToken,
-} from './http/middleware/HeaderTokenGate'
-// @deprecated Since v2.0.0. Use `@gravito/photon` middleware instead.
-// Migration guide: `import { securityHeaders } from '@gravito/photon/middleware/security'`
-export {
-  type HstsOptions,
-  type SecurityHeadersOptions,
-  securityHeaders,
-} from './http/middleware/SecurityHeaders'
-// @deprecated Since v2.0.0. Use `@gravito/photon` middleware instead.
-// Migration guide: `import { throttleRequests } from '@gravito/photon/middleware/security'`
-// Note: New API is function-based: `throttleRequests({ maxAttempts, decaySeconds })` instead of `new ThrottleRequests(core).handle(max, decay)`
-export { ThrottleRequests } from './http/middleware/ThrottleRequests'
+// HTTP Middleware moved to @gravito/photon/middleware (Phase 2.1)
+// - bodySizeLimit → @gravito/photon/middleware/body
+// - cors → @gravito/photon/middleware/cors
+// - csrfProtection, getCsrfToken → @gravito/photon/middleware/security
+// - createHeaderGate, requireHeaderToken → @gravito/photon/middleware/security
+// - securityHeaders → @gravito/photon/middleware/security
+// - throttleRequests (was ThrottleRequests) → @gravito/photon/middleware/rate-limit
 // OpenTelemetry exports moved to @gravito/monitor (Phase 2.2)
 // Import from @gravito/monitor for OTel functionality
 // Listeners

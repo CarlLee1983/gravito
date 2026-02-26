@@ -11,7 +11,8 @@ console.log(isDtsOnly ? 'Building @gravito/core DTS...' : 'Building @gravito/cor
 await rm('dist', { recursive: true, force: true })
 
 // External dependencies（workspace deps + bun built-ins）
-const externalDeps = ['@gravito/photon', 'bun:test', 'bun:sqlite', 'bun:ffi', 'zod']
+// Note: @gravito/photon removed in Phase 2.1 - core no longer depends on photon
+const externalDeps = ['bun:test', 'bun:sqlite', 'bun:ffi', 'zod']
 
 async function buildInParallel() {
   const tasks: Promise<number>[] = []

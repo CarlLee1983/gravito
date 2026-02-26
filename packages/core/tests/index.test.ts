@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'bun:test'
-import { Photon } from '@gravito/photon'
 import packageJson from '../package.json'
 import { PlanetCore, VERSION } from '../src/index'
 
@@ -38,59 +37,15 @@ describe('@gravito/core', () => {
 
     it('should mount orbits and serve requests', async () => {
       const core = new PlanetCore()
-      const orbit = new Photon()
-      orbit.use('*', async (c, next) => {
-        console.log('[DEBUG] Orbit Request:', c.req.method, c.req.url, c.req.path)
-        console.log('[DEBUG] Headers:', c.req.header())
-        await next()
-      })
+      const orbit = new PlanetCore()
 
-      orbit.get('/ping', (c) => c.text('pong'))
-      orbit.all('*', (c) => {
-        console.log('[DEBUG] Catch-all:', c.req.path, c.req.method)
-        return c.text('Catch-all', 404)
-      })
+      orbit.router.get('/ping', (c) => c.text('pong'))
 
-      // Verify orbit works standalone
-      const standaloneRes = await orbit.fetch(new Request('http://localhost/ping'))
-      const standaloneText = await standaloneRes.text()
-      console.log('Standalone Orbit Response:', standaloneText)
-      expect(standaloneText).toBe('pong')
-
-      // Test PhotonAdapter directly
-      const { PhotonAdapter } = await import('@gravito/photon/adapter')
-      const adapter = new PhotonAdapter({}, orbit)
-      const adapterRes = await adapter.fetch(new Request('http://localhost/ping'))
-      const adapterText = await adapterRes.text()
-      console.log('PhotonAdapter Response:', adapterText)
-      expect(adapterText).toBe('pong')
-
-      // Simulate BunNativeAdapter request rewriting logic
-      const originalReq = new Request('http://localhost/orbit/ping')
-      const simUrl = new URL(originalReq.url)
-      simUrl.pathname = '/ping'
-      const simulatedReq = new Request(simUrl.toString(), {
-        method: originalReq.method,
-        headers: originalReq.headers,
-      })
-      const simRes = await adapter.fetch(simulatedReq)
-      const simText = await simRes.text()
-      console.log('Simulated Adapter Response:', simText)
-      expect(simText).toBe('pong')
-
-      // Use a fresh instance to rule out state issues
-      const freshOrbit = new Photon()
-      freshOrbit.get('/ping', (c) => c.text('pong'))
-
-      // PhotonAdapter wraps Photon app as HttpAdapter for mountOrbit
-      const { PhotonAdapter: FreshPhotonAdapter } = await import('@gravito/photon/adapter')
-      core.mountOrbit('/fresh', new FreshPhotonAdapter({}, freshOrbit))
+      core.mountOrbit('/orbit', orbit)
       const { fetch } = core.liftoff(0)
 
-      const res = await fetch(new Request('http://localhost/fresh/ping'))
+      const res = await fetch(new Request('http://localhost/orbit/ping'))
       const text = await res.text()
-      console.log('Fresh Orbit Response text:', text)
-      console.log('Fresh Orbit Response status:', res.status)
       expect(text).toBe('pong')
     })
   })
