@@ -10,6 +10,8 @@
     "skipLibCheck": true,
     "types": ["bun-types"],
     "paths": {
+      "@gravito/core": ["../core/src/index.ts"],
+      "@gravito/core/*": ["../core/src/*"],
       "@gravito/photon": ["./src/index.ts"],
       "@gravito/photon/*": ["./src/*"],
       "hono/*": ["../../node_modules/hono/dist/types/*"]

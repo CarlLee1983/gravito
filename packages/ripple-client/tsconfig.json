@@ -5,13 +5,7 @@
 
     "declaration": true,
     "declarationMap": true,
-    "skipLibCheck": true,
-    "baseUrl": ".",
-    "paths": {
-      "@gravito/core": ["../../packages/core/src/index.ts"],
-      "@gravito/*": ["../../packages/*/src/index.ts"]
-    }
-  },
+    "skipLibCheck": true,  },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "tests"]
 }

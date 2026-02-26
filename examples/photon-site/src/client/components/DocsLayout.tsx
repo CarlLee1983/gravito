@@ -8,6 +8,8 @@ import { navGroups } from '../constants/navigation'
 import { navTranslations } from '../locales/layout'
 import { getTranslation } from '../locales/types'
 import { Footer } from './Footer'
+import { LangToggle } from './LangToggle'
+import { ThemeToggle } from './ThemeToggle'
 
 export const DocsLayout = ({
   children,
@@ -130,45 +132,19 @@ export const DocsLayout = ({
             </StaticLink>
 
             <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={toggleLanguage}
-                className="w-8 h-8 flex items-center justify-center rounded-sm border border-s-brd bg-surf-bg text-s-txt hover:text-photon-gold transition-all shadow-sm group"
+              <LangToggle
+                currentLang={currentLang as 'en' | 'zh-TW'}
+                toggleLanguage={toggleLanguage}
                 title={currentLang === 'en' ? 'Switch to Traditional Chinese' : 'Switch to English'}
-              >
-                <span className="text-[10px] font-bold font-technical">
-                  {currentLang === 'en' ? '繁' : 'EN'}
-                </span>
-              </button>
+                className="w-8 h-8 flex items-center justify-center rounded-sm border border-s-brd bg-surf-bg text-s-txt hover:text-photon-gold transition-all shadow-sm group"
+              />
 
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className="w-8 h-8 flex items-center justify-center rounded-sm border border-s-brd bg-surf-bg text-s-txt hover:text-photon-gold transition-all shadow-sm"
+              <ThemeToggle
+                theme={theme}
+                toggleTheme={toggleTheme}
                 title={t('toggle_theme')}
-              >
-                <AnimatePresence mode="wait">
-                  {theme === 'dark' ? (
-                    <motion.div
-                      key="sun"
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.5 }}
-                    >
-                      <Sun size={14} />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="moon"
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.5 }}
-                    >
-                      <Moon size={14} />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </button>
+                className="w-8 h-8 flex items-center justify-center rounded-sm border border-s-brd bg-surf-bg text-s-txt hover:text-photon-gold transition-all shadow-sm group"
+              />
             </div>
           </div>
 

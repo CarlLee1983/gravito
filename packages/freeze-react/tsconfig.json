@@ -1,14 +1,7 @@
 {
   "extends": "../../tsconfig.frontend.json",
   "compilerOptions": {
-    "outDir": "./dist",
-    "baseUrl": ".",
-    "jsx": "react-jsx",
-    "paths": {
-      "@gravito/core": ["../../packages/core/src/index.ts"],
-      "@gravito/*": ["../../packages/*/src/index.ts"]
-    }
-  },
+    "outDir": "./dist",    "jsx": "react-jsx",  },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"]
 }

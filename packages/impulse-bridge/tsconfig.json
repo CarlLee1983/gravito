@@ -1,8 +1,12 @@
 {
   "extends": "../../tsconfig.frontend.json",
   "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "@gravito/impulse": ["../impulse/src/index.ts"],
+      "@gravito/core": ["../core/dist/index.d.ts"]
+    }
   },
   "include": ["src/**/*"]
 }

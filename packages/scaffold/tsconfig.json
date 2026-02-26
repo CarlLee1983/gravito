@@ -5,13 +5,7 @@
 
     "declaration": true,
     "declarationMap": true,
-    "types": ["bun-types"],
-    "baseUrl": ".",
-    "paths": {
-      "@gravito/core": ["../../packages/core/src/index.ts"],
-      "@gravito/*": ["../../packages/*/src/index.ts"]
-    }
-  },
+    "types": ["bun-types"],  },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "tests"]
 }

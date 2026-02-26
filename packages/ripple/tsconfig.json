@@ -3,13 +3,7 @@
   "compilerOptions": {
     "outDir": "./dist",
     "skipLibCheck": true,
-    "types": ["bun-types"],
-    "paths": {
-      "@gravito/core": ["../../packages/core/src/index.ts"],
-      "@gravito/*": ["../../packages/*/src/index.ts"]
-    },
-    "baseUrl": "."
-  },
+    "types": ["bun-types"],  },
   "include": ["src/**/*"],
   "exclude": [
     "node_modules",

@@ -2,12 +2,14 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
+    "types": ["bun-types"],
     "baseUrl": ".",
     "paths": {
-      "@gravito/core": ["../../packages/core/src/index.ts"],
-      "@gravito/*": ["../../packages/*/src/index.ts"]
-    },
-    "types": ["bun-types"]
+      "@gravito/nova": ["../nova/src/index.ts"],
+      "@gravito/stasis": ["../stasis/src/index.ts"],
+      "@gravito/plasma": ["../plasma/src/index.ts"],
+      "@gravito/core": ["../core/dist/index.d.ts"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
