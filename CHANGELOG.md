@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Satellites v0.2.0] - 2026-02-27
+
+### Added
+- **Comprehensive Test Coverage**: 288 new tests across 14 satellite modules
+  - Phase 1: Flash-Sale, Catalog, Commerce (121 tests) - Bug fixes & type safety
+  - Phase 2: Membership, Marketing, Inventory-Lock (46 tests) - Core business logic
+  - Phase 3: Payment, Invoice, Cart, Support, Logistics (89 tests) - Financial & operational
+  - Phase 4: Ad, Announcement, News, Analytics (32 tests) - Skeleton modules & enhancement
+
+- **Bug Fixes**:
+  - flash-sale: Driver name correction (postgresql → postgres)
+  - catalog: Missing Product/Variant getters (15 @ts-expect-error removals)
+
+- **Type Safety Improvements**:
+  - Product entity: brand, status, description, createdAt, updatedAt getters
+  - Variant entity: name, compareAtPrice getters
+  - Full TypeScript strict mode compliance
+
+### Changed
+- **All 14 satellite modules upgraded to v0.2.0**:
+  - ad, analytics, announcement, cart, catalog, commerce
+  - flash-sale, inventory-lock, invoice, logistics, marketing
+  - membership, news, payment, support
+
+### Quality Metrics
+- Test Coverage: 275+ tests passing (exceeds 75% target)
+- TypeScript: 0 strict mode errors
+- Lint: 0 Biome lint errors
+- Version Consistency: 14/14 modules at v0.2.0
+
 ## [1.0.0] - 2026-02-26
 
 ### Added
