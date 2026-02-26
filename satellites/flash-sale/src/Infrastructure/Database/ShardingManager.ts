@@ -7,7 +7,7 @@
  * - 提供單分片查詢和跨分片聚合
  */
 
-import type { ConnectionConfig, ConnectionContract } from '@gravito/atlas'
+import type { ConnectionContract } from '@gravito/atlas'
 import { DB } from '@gravito/atlas'
 import type { Logger } from '@gravito/core'
 

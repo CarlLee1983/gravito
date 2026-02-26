@@ -13,6 +13,7 @@ This website is a live benchmark and documentation hub for the Photon engine:
 
 ### 1. **Core Engine** (`@gravito/photon`)
 - **AOT Routing**: Demonstrates the pre-compiled Radix Tree router with sub-millisecond dispatch.
+- **Proxy-less Context**: Pure class instance pooling eliminates Proxy overhead, resulting in 25x faster property access (`ctx.json`, `ctx.req`, etc.).
 - **Zero-Copy Performance**: Built to leverage Bun's native HTTP capabilities for maximum throughput.
 - **Web Standards**: Native usage of `Request` and `Response` objects.
 

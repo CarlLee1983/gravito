@@ -56,47 +56,7 @@ class PhotonRequestWrapper implements GravitoRequest {
   static create(photonCtx: Context): PhotonRequestWrapper {
     const instance = new PhotonRequestWrapper()
     instance.reset(photonCtx)
-    return PhotonRequestWrapper.wrap(instance)
-  }
-
-  /**
-   * Internal proxy wrapper
-   */
-  static wrap(instance: PhotonRequestWrapper): PhotonRequestWrapper {
-    return new Proxy(instance, {
-      get(target, prop, receiver) {
-        if (prop === 'reset') {
-          return target.reset.bind(target)
-        }
-        if (prop in target) {
-          const value = Reflect.get(target, prop, receiver)
-          if (typeof value === 'function') {
-            return value.bind(target)
-          }
-          return value
-        }
-
-        // Delegate to Photon's native request (with extended properties)
-        const nativeReq = target.photonCtx.req as Context['req'] & PhotonRequestExtended
-        if (prop in nativeReq) {
-          const value = Reflect.get(nativeReq, prop)
-          if (typeof value === 'function') {
-            return value.bind(nativeReq)
-          }
-          return value
-        }
-
-        return undefined
-      },
-      // Allow setting properties (for addValidated etc.)
-      set(target, prop, value) {
-        if (prop in target) {
-          return Reflect.set(target, prop, value)
-        }
-        const extendedReq = target.photonCtx.req as Context['req'] & PhotonRequestExtended
-        return Reflect.set(extendedReq, prop, value)
-      },
-    }) as PhotonRequestWrapper
+    return instance
   }
 
   get url(): string {
@@ -213,41 +173,51 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
   ): GravitoContext<V> {
     const instance = new PhotonContextWrapper<V>()
     instance.reset(photonCtx)
-    return PhotonContextWrapper.wrap(instance)
-  }
-
-  /**
-   * Internal proxy wrapper
-   */
-  static wrap<V extends GravitoVariables = GravitoVariables>(
-    instance: PhotonContextWrapper<V>
-  ): GravitoContext<V> {
-    return new Proxy(instance, {
-      get(target, prop, receiver) {
-        if (prop === 'reset') {
-          return target.reset.bind(target)
-        }
-        // 1. If property exists on the instance (method, property), return it
-        if (Reflect.has(target, prop)) {
-          const value = Reflect.get(target, prop, receiver)
-          if (typeof value === 'function') {
-            return value.bind(target) // Ensure 'this' points to instance
-          }
-          return value
-        }
-
-        // 2. If not, try to fetch from Photon context variables
-        if (typeof prop === 'string') {
-          return target.get(prop as keyof V)
-        }
-
-        return undefined
-      },
-    }) as GravitoContext<V>
+    return instance as unknown as GravitoContext<V>
   }
 
   get req(): GravitoRequest {
     return this._req
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Common Variable Getters (Performance Optimized)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  get session(): any {
+    return this.get('session' as any)
+  }
+
+  get auth(): any {
+    return this.get('auth' as any)
+  }
+
+  get user(): any {
+    return this.get('user' as any)
+  }
+
+  get inertia(): any {
+    return this.get('inertia' as any)
+  }
+
+  get app(): any {
+    return this.get('app' as any)
+  }
+
+  get db(): any {
+    return this.get('db' as any)
+  }
+
+  get cache(): any {
+    return this.get('cache' as any)
+  }
+
+  get sqlite(): any {
+    return this.get('sqlite' as any)
+  }
+
+  get atlas(): any {
+    return this.get('atlas' as any)
   }
 
   get params(): Record<string, string> {

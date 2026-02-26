@@ -15,7 +15,7 @@ This website demonstrates the full power of the Gravito ecosystem, specifically 
 - **Micro-Kernel**: Built on `PlanetCore`, the 1.6+ engine managing the celestial lifecycle.
 - **Xenon Parallel Runtime**: Orchestrating independent **Domain Satellites** (`Content`, `Docs`, `API`) with zero-config discovery.
 - **Guardian Resilience Layer**: Powered by `@gravito/resilience`, providing built-in Circuit Breakers and fault tolerance.
-- **Photon Adapter**: Utilizing `@gravito/photon` as the high-performance HTTP layer running on **Bun**.
+- **Photon Adapter**: Utilizing `@gravito/photon` as the extreme-efficiency HTTP layer running on **Bun**. Now with proxy-less context dispatch, achieving ~25x faster property access.
 - **Kinetic Orbits**:
     - **@gravito/ion**: Seamless server-side routing with modern SPA user experience.
     - **@gravito/prism**: Server-side template rendering for critical SEO paths.

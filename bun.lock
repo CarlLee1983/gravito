@@ -2003,7 +2003,7 @@
     },
     "satellites/ad": {
       "name": "@gravito/satellite-ad",
-      "version": "0.1.5",
+      "version": "0.2.0",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2016,7 +2016,7 @@
     },
     "satellites/analytics": {
       "name": "@gravito/satellite-analytics",
-      "version": "0.1.5",
+      "version": "0.2.0",
       "dependencies": {
         "@gravito/core": "workspace:*",
       },
@@ -2027,7 +2027,7 @@
     },
     "satellites/announcement": {
       "name": "@gravito/satellite-announcement",
-      "version": "0.1.5",
+      "version": "0.2.0",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2040,7 +2040,7 @@
     },
     "satellites/cart": {
       "name": "@gravito/satellite-cart",
-      "version": "0.1.5",
+      "version": "0.2.0",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2055,7 +2055,7 @@
     },
     "satellites/catalog": {
       "name": "@gravito/satellite-catalog",
-      "version": "0.1.8",
+      "version": "0.2.0",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2070,7 +2070,7 @@
     },
     "satellites/commerce": {
       "name": "@gravito/satellite-commerce",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2084,11 +2084,10 @@
     },
     "satellites/flash-sale": {
       "name": "@gravito/satellite-flash-sale",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
-        "@gravito/signal": "workspace:*",
         "@gravito/stasis": "workspace:*",
       },
       "devDependencies": {
@@ -2098,7 +2097,7 @@
     },
     "satellites/inventory-lock": {
       "name": "@gravito/satellite-inventory-lock",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2113,7 +2112,7 @@
     },
     "satellites/invoice": {
       "name": "@gravito/satellite-invoice",
-      "version": "0.1.5",
+      "version": "0.2.0",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2126,7 +2125,7 @@
     },
     "satellites/logistics": {
       "name": "@gravito/satellite-logistics",
-      "version": "0.1.5",
+      "version": "0.2.0",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2140,7 +2139,7 @@
     },
     "satellites/marketing": {
       "name": "@gravito/satellite-marketing",
-      "version": "0.1.5",
+      "version": "0.2.0",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2155,7 +2154,7 @@
     },
     "satellites/membership": {
       "name": "@gravito/satellite-membership",
-      "version": "0.1.8",
+      "version": "0.2.0",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2173,7 +2172,7 @@
     },
     "satellites/news": {
       "name": "@gravito/satellite-news",
-      "version": "0.1.5",
+      "version": "0.2.0",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2186,7 +2185,7 @@
     },
     "satellites/payment": {
       "name": "@gravito/satellite-payment",
-      "version": "0.1.5",
+      "version": "0.2.0",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -2216,7 +2215,7 @@
     },
     "satellites/support": {
       "name": "@gravito/satellite-support",
-      "version": "0.1.6",
+      "version": "0.2.0",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",

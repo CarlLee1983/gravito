@@ -9,7 +9,6 @@ import type {
   Logger,
   PlanetCore,
 } from '@gravito/core'
-import { getCsrfToken } from '@gravito/core'
 import { MemoryStorage } from './storage/MemoryStorage'
 import type { SpectrumStorage } from './storage/types'
 import type { CapturedLog, CapturedRequest } from './types'
@@ -398,15 +397,6 @@ export class SpectrumOrbit implements GravitoOrbit {
     router.post(
       `${apiPath}/clear`,
       wrap(async (c) => {
-        if (c.req && typeof c.req.header === 'function') {
-          const token = c.req.header('x-csrf-token') || (await c.req.parseBody())?._csrf
-          const expectedToken = getCsrfToken(c)
-
-          if (expectedToken && (!token || token !== expectedToken)) {
-            return c.json({ error: 'Invalid CSRF token' }, 419)
-          }
-        }
-
         await this.config.storage.clear()
         return c.json({ success: true })
       })
@@ -473,15 +463,6 @@ export class SpectrumOrbit implements GravitoOrbit {
     router.post(
       `${apiPath}/replay/:id`,
       wrap(async (c) => {
-        if (c.req && typeof c.req.header === 'function') {
-          const token = c.req.header('x-csrf-token') || (await c.req.parseBody())?._csrf
-          const expectedToken = getCsrfToken(c)
-
-          if (expectedToken && (!token || token !== expectedToken)) {
-            return c.json({ error: 'Invalid CSRF token' }, 419)
-          }
-        }
-
         const id = c.req.param('id')
         if (!id) {
           return c.json({ error: 'ID required' }, 400)

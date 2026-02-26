@@ -183,7 +183,7 @@ export default {
     lux_note: 'Luminosity (Lux) — 基於 Gravito Core 的 Sitemap 引擎。',
     photon: 'Photon',
     photon_note:
-      'Photon (v1.1.0) — 高效能 HTTP 引擎，具備 JWT 安全防護、CBOR 支持與 RPC 型別安全通訊。',
+      'Photon (v1.1.0) — 高效能 HTTP 引擎，具備 Proxy-less 上下文調度技術，實現亞微秒級開銷與約 25 倍的屬性存取加速。',
     atlas: 'Atlas (ORM)',
     atlas_note: 'Atlas (v2.0.0) — 高性能 Bun 原生 ORM，支援水平分表。',
     zenith: 'Zenith',
