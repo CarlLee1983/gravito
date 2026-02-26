@@ -52,7 +52,7 @@ onMounted(() => {
     </Head>
     
     <!-- Hero Section -->
-    <section class="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+    <section class="relative min-h-screen flex items-center justify-center overflow-hidden pt-32">
       <!-- Background Effects -->
       <div class="absolute inset-0 z-0">
         <!-- Main Hero Graphic (RESTORED & ENHANCED) -->
@@ -143,7 +143,7 @@ onMounted(() => {
           </div>
           
           <!-- Highlight Card -->
-          <div class="md:col-span-2 lg:col-span-2 rounded-3xl bg-gradient-to-br from-event to-void border border-white/10 relative overflow-hidden group p-8 shadow-[0_0_30px_rgba(139,92,246,0.2)]">
+          <div class="md:col-span-2 lg:col-span-2 rounded-3xl bg-gradient-to-br from-event to-void border border-white/10 relative overflow-hidden group p-8 shadow-[0_0_30px_rgba(139,92,246,0.2)] cursor-pointer hover:border-white/30 transition-all duration-300">
             <div class="absolute inset-0 bg-[url('/assets/grid.svg')] opacity-20"></div>
             <div class="relative z-10 h-full flex flex-col justify-between">
               <div>
