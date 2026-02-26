@@ -186,7 +186,11 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
   private photonCtx!: Context
   private _requestScope!: RequestScopeManager
 
-  public route!: (name: string, params?: Record<string, any>, query?: Record<string, any>) => string
+  public route!: (
+    name: string,
+    params?: Record<string, string | number>,
+    query?: Record<string, string | number | boolean | null | undefined>
+  ) => string
 
   /**
    * Reset the wrapper for pooling
@@ -465,22 +469,26 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
 /**
  * Object pool for Photon Context Wrappers
  */
+type ResettableContext<V extends GravitoVariables = GravitoVariables> = GravitoContext<V> & {
+  reset(photonCtx: Context): void
+}
+
 class PhotonAdapterContextPool {
-  private pool: GravitoContext<any>[] = []
+  private pool: ResettableContext[] = []
   private maxSize = 256
 
   acquire<V extends GravitoVariables>(photonCtx: Context): GravitoContext<V> {
     const wrapper = this.pool.pop()
     if (wrapper) {
-      ;(wrapper as any).reset(photonCtx)
-      return wrapper as GravitoContext<V>
+      wrapper.reset(photonCtx)
+      return wrapper as unknown as GravitoContext<V>
     }
-    return PhotonContextWrapper.create<V>(photonCtx)
+    return PhotonContextWrapper.create<V>(photonCtx) as unknown as ResettableContext<V>
   }
 
-  release(wrapper: GravitoContext<any>): void {
+  release(wrapper: GravitoContext<unknown>): void {
     if (this.pool.length < this.maxSize) {
-      this.pool.push(wrapper)
+      this.pool.push(wrapper as ResettableContext)
     }
   }
 }

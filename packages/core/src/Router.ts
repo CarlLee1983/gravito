@@ -62,6 +62,63 @@ export interface RouteOptions {
 }
 
 /**
+ * Common routing handler argument definition
+ * @public
+ */
+export type RouteDefinitionArg =
+  | FormRequestClass
+  | RouteHandler
+  | GravitoMiddleware
+  | GravitoMiddleware[]
+
+/**
+ * Interface merging for HTTP routing methods to establish overloads
+ * without duplicate bodies.
+ * @public
+ */
+export interface RoutingMethods {
+  get(path: string, handler: RouteHandler): Route
+  get(path: string, request: FormRequestClass, handler: RouteHandler): Route
+  get(
+    path: string,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
+
+  post(path: string, handler: RouteHandler): Route
+  post(path: string, request: FormRequestClass, handler: RouteHandler): Route
+  post(
+    path: string,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
+
+  put(path: string, handler: RouteHandler): Route
+  put(path: string, request: FormRequestClass, handler: RouteHandler): Route
+  put(
+    path: string,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
+
+  delete(path: string, handler: RouteHandler): Route
+  delete(path: string, request: FormRequestClass, handler: RouteHandler): Route
+  delete(
+    path: string,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
+
+  patch(path: string, handler: RouteHandler): Route
+  patch(path: string, request: FormRequestClass, handler: RouteHandler): Route
+  patch(
+    path: string,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
+}
+
+/**
  * RouteGroup
  * Helper class for chained route configuration (prefix, domain, etc.)
  */
@@ -70,6 +127,9 @@ export interface RouteOptions {
  * Helper class for chained route configuration (prefix, domain, etc.)
  * @public
  */
+// biome-ignore lint/suspicious/noUnsafeDeclarationMerging: intentionally merged for dynamic mixins
+export interface RouteGroup extends RoutingMethods {}
+// biome-ignore lint/suspicious/noUnsafeDeclarationMerging: intentionally merged for dynamic mixins
 export class RouteGroup {
   constructor(
     private router: Router,
@@ -106,100 +166,7 @@ export class RouteGroup {
   }
 
   // Proxy HTTP methods to the main router with options merged
-  get(path: string, handler: RouteHandler): Route
-  get(path: string, request: FormRequestClass, handler: RouteHandler): Route
-  get(
-    path: string,
-    middleware: GravitoMiddleware | GravitoMiddleware[],
-    handler: RouteHandler
-  ): Route
-  get(
-    path: string,
-    requestOrHandlerOrMiddleware:
-      | FormRequestClass
-      | RouteHandler
-      | GravitoMiddleware
-      | GravitoMiddleware[],
-    handler?: RouteHandler
-  ): Route {
-    return this.router.req('get', path, requestOrHandlerOrMiddleware, handler, this.options)
-  }
-
-  post(path: string, handler: RouteHandler): Route
-  post(path: string, request: FormRequestClass, handler: RouteHandler): Route
-  post(
-    path: string,
-    middleware: GravitoMiddleware | GravitoMiddleware[],
-    handler: RouteHandler
-  ): Route
-  post(
-    path: string,
-    requestOrHandlerOrMiddleware:
-      | FormRequestClass
-      | RouteHandler
-      | GravitoMiddleware
-      | GravitoMiddleware[],
-    handler?: RouteHandler
-  ): Route {
-    return this.router.req('post', path, requestOrHandlerOrMiddleware, handler, this.options)
-  }
-
-  put(path: string, handler: RouteHandler): Route
-  put(path: string, request: FormRequestClass, handler: RouteHandler): Route
-  put(
-    path: string,
-    middleware: GravitoMiddleware | GravitoMiddleware[],
-    handler: RouteHandler
-  ): Route
-  put(
-    path: string,
-    requestOrHandlerOrMiddleware:
-      | FormRequestClass
-      | RouteHandler
-      | GravitoMiddleware
-      | GravitoMiddleware[],
-    handler?: RouteHandler
-  ): Route {
-    return this.router.req('put', path, requestOrHandlerOrMiddleware, handler, this.options)
-  }
-
-  delete(path: string, handler: RouteHandler): Route
-  delete(path: string, request: FormRequestClass, handler: RouteHandler): Route
-  delete(
-    path: string,
-    middleware: GravitoMiddleware | GravitoMiddleware[],
-    handler: RouteHandler
-  ): Route
-  delete(
-    path: string,
-    requestOrHandlerOrMiddleware:
-      | FormRequestClass
-      | RouteHandler
-      | GravitoMiddleware
-      | GravitoMiddleware[],
-    handler?: RouteHandler
-  ): Route {
-    return this.router.req('delete', path, requestOrHandlerOrMiddleware, handler, this.options)
-  }
-
-  patch(path: string, handler: RouteHandler): Route
-  patch(path: string, request: FormRequestClass, handler: RouteHandler): Route
-  patch(
-    path: string,
-    middleware: GravitoMiddleware | GravitoMiddleware[],
-    handler: RouteHandler
-  ): Route
-  patch(
-    path: string,
-    requestOrHandlerOrMiddleware:
-      | FormRequestClass
-      | RouteHandler
-      | GravitoMiddleware
-      | GravitoMiddleware[],
-    handler?: RouteHandler
-  ): Route {
-    return this.router.req('patch', path, requestOrHandlerOrMiddleware, handler, this.options)
-  }
+  // (Method implementations dynamically attached below)
 
   resource(name: string, controller: ControllerClass, options: ResourceOptions = {}): void {
     const actions: ResourceAction[] = [
@@ -286,6 +253,9 @@ export class RouteGroup {
  * - FormRequest validation: router.post('/users', StoreUserRequest, [UserController, 'store'])
  * - Inline Middleware: router.get('/users', authMiddleware, [UserController, 'index'])
  */
+// biome-ignore lint/suspicious/noUnsafeDeclarationMerging: intentionally merged for dynamic mixins
+export interface Router extends RoutingMethods {}
+// biome-ignore lint/suspicious/noUnsafeDeclarationMerging: intentionally merged for dynamic mixins
 export class Router {
   // Internal list of all registered routes (for scanning and debugging)
   public routes: Array<{ method: string; path: string; domain?: string }> = []
@@ -540,115 +510,7 @@ export class Router {
     return new RouteGroup(this, { middleware: handlers.flat() })
   }
 
-  /**
-   * Register a GET route.
-   */
-  get(path: string, handler: RouteHandler): Route
-  get(path: string, request: FormRequestClass, handler: RouteHandler): Route
-  get(
-    path: string,
-    middleware: GravitoMiddleware | GravitoMiddleware[],
-    handler: RouteHandler
-  ): Route
-  get(
-    path: string,
-    requestOrHandlerOrMiddleware:
-      | FormRequestClass
-      | RouteHandler
-      | GravitoMiddleware
-      | GravitoMiddleware[],
-    handler?: RouteHandler
-  ): Route {
-    return this.req('get', path, requestOrHandlerOrMiddleware, handler)
-  }
-
-  /**
-   * Register a POST route.
-   */
-  post(path: string, handler: RouteHandler): Route
-  post(path: string, request: FormRequestClass, handler: RouteHandler): Route
-  post(
-    path: string,
-    middleware: GravitoMiddleware | GravitoMiddleware[],
-    handler: RouteHandler
-  ): Route
-  post(
-    path: string,
-    requestOrHandlerOrMiddleware:
-      | FormRequestClass
-      | RouteHandler
-      | GravitoMiddleware
-      | GravitoMiddleware[],
-    handler?: RouteHandler
-  ): Route {
-    return this.req('post', path, requestOrHandlerOrMiddleware, handler)
-  }
-
-  /**
-   * Register a PUT route.
-   */
-  put(path: string, handler: RouteHandler): Route
-  put(path: string, request: FormRequestClass, handler: RouteHandler): Route
-  put(
-    path: string,
-    middleware: GravitoMiddleware | GravitoMiddleware[],
-    handler: RouteHandler
-  ): Route
-  put(
-    path: string,
-    requestOrHandlerOrMiddleware:
-      | FormRequestClass
-      | RouteHandler
-      | GravitoMiddleware
-      | GravitoMiddleware[],
-    handler?: RouteHandler
-  ): Route {
-    return this.req('put', path, requestOrHandlerOrMiddleware, handler)
-  }
-
-  /**
-   * Register a DELETE route.
-   */
-  delete(path: string, handler: RouteHandler): Route
-  delete(path: string, request: FormRequestClass, handler: RouteHandler): Route
-  delete(
-    path: string,
-    middleware: GravitoMiddleware | GravitoMiddleware[],
-    handler: RouteHandler
-  ): Route
-  delete(
-    path: string,
-    requestOrHandlerOrMiddleware:
-      | FormRequestClass
-      | RouteHandler
-      | GravitoMiddleware
-      | GravitoMiddleware[],
-    handler?: RouteHandler
-  ): Route {
-    return this.req('delete', path, requestOrHandlerOrMiddleware, handler)
-  }
-
-  /**
-   * Register a PATCH route.
-   */
-  patch(path: string, handler: RouteHandler): Route
-  patch(path: string, request: FormRequestClass, handler: RouteHandler): Route
-  patch(
-    path: string,
-    middleware: GravitoMiddleware | GravitoMiddleware[],
-    handler: RouteHandler
-  ): Route
-  patch(
-    path: string,
-    requestOrHandlerOrMiddleware:
-      | FormRequestClass
-      | RouteHandler
-      | GravitoMiddleware
-      | GravitoMiddleware[],
-    handler?: RouteHandler
-  ): Route {
-    return this.req('patch', path, requestOrHandlerOrMiddleware, handler)
-  }
+  // Implementation of get, post, put, delete, patch are dynamically mixed-in below.
 
   /**
    * Register a route that forwards requests to another URL (Gateway Proxy).
@@ -739,11 +601,7 @@ export class Router {
   req(
     method: HttpMethod,
     path: string,
-    requestOrHandlerOrMiddleware:
-      | FormRequestClass
-      | RouteHandler
-      | GravitoMiddleware
-      | GravitoMiddleware[],
+    requestOrHandlerOrMiddleware: RouteDefinitionArg,
     handler?: RouteHandler,
     options: RouteOptions = {}
   ): Route {
@@ -840,3 +698,31 @@ export interface ResourceOptions {
   only?: ResourceAction[]
   except?: ResourceAction[]
 }
+
+const METHODS: ('get' | 'post' | 'put' | 'delete' | 'patch')[] = [
+  'get',
+  'post',
+  'put',
+  'delete',
+  'patch',
+]
+
+METHODS.forEach((method) => {
+  RouteGroup.prototype[method] = function (
+    this: RouteGroup,
+    path: string,
+    arg1: RouteDefinitionArg,
+    handler?: RouteHandler
+  ) {
+    return (this as any).router.req(method, path, arg1, handler, (this as any).options)
+  }
+
+  Router.prototype[method] = function (
+    this: Router,
+    path: string,
+    arg1: RouteDefinitionArg,
+    handler?: RouteHandler
+  ) {
+    return this.req(method, path, arg1, handler)
+  }
+})

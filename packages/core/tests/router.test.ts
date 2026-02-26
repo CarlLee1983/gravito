@@ -60,6 +60,7 @@ describe('Router', () => {
     const testMiddleware: GravitoMiddleware = async (_c, next) => {
       middlewareCalled = true
       await next()
+      return undefined
     }
 
     router
@@ -104,14 +105,17 @@ describe('Router', () => {
     const mw1: GravitoMiddleware = async (_c, next) => {
       callOrder.push('mw1')
       await next()
+      return undefined
     }
     const mw2: GravitoMiddleware = async (_c, next) => {
       callOrder.push('mw2')
       await next()
+      return undefined
     }
     const mw3: GravitoMiddleware = async (_c, next) => {
       callOrder.push('mw3')
       await next()
+      return undefined
     }
 
     // Pass array directly
@@ -230,5 +234,32 @@ describe('Router', () => {
     // Invalid
     const res2 = await core.adapter.fetch(new Request('http://localhost/api/search'))
     expect(res2.status).toBe(422)
+  })
+
+  it('should generate URL from named routes', () => {
+    const core = new PlanetCore()
+    const router = new Router(core)
+
+    router.get('/users/:id/posts/:postId', () => new Response('ok')).name('user.post.show')
+
+    // Basic generation
+    expect(router.url('user.post.show', { id: 1, postId: 42 })).toBe('/users/1/posts/42')
+
+    // With query parameters
+    expect(
+      router.url(
+        'user.post.show',
+        { id: 'foo', postId: 'bar' },
+        { sort: 'desc', filter: 'active', empty: null, undef: undefined }
+      )
+    ).toBe('/users/foo/posts/bar?sort=desc&filter=active')
+
+    // Missing param throws
+    expect(() => router.url('user.post.show', { id: 1 })).toThrow(
+      "Missing route param 'postId' for route 'user.post.show'"
+    )
+
+    // Unregistered route throws
+    expect(() => router.url('unknown.route')).toThrow("Named route 'unknown.route' not found")
   })
 })
