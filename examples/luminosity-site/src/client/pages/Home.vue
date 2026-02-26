@@ -1,12 +1,20 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { useI18n } from '../composables/useI18n'
+import heroGraphicWebp from '../assets/hero-graphic.webp'
+import heroGraphicPng from '../assets/hero-graphic.png'
 
 defineProps<{
   message?: string
 }>()
 
 const { t, locale } = useI18n()
+
+// Hero graphic with WebP support (fallback to PNG)
+const heroGraphic = computed(() => {
+  // 優先使用 WebP，不支援則使用 PNG
+  return heroGraphicWebp || heroGraphicPng
+})
 
 // Typing Animation
 const typedText = ref('')
