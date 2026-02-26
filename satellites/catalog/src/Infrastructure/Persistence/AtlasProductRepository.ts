@@ -15,17 +15,12 @@ export class AtlasProductRepository implements IProductRepository {
         id: product.id,
         name: JSON.stringify(product.name),
         slug: product.slug,
-        // @ts-expect-error
-        description: product.props.description || null,
-        // @ts-expect-error
-        brand: product.props.brand || null,
-        // @ts-expect-error
-        status: product.props.status,
+        description: product.description || null,
+        brand: product.brand || null,
+        status: product.status,
         thumbnail: product.thumbnail || null,
-        // @ts-expect-error
-        created_at: product.props.createdAt,
-        // @ts-expect-error
-        updated_at: product.props.updatedAt,
+        created_at: product.createdAt,
+        updated_at: product.updatedAt,
         metadata: JSON.stringify(product.metadata),
       }
 
@@ -43,17 +38,13 @@ export class AtlasProductRepository implements IProductRepository {
           id: variant.id,
           product_id: product.id,
           sku: variant.sku,
-          // @ts-expect-error
-          name: variant.props.name,
+          name: variant.name,
           price: variant.price,
-          // @ts-expect-error
-          compare_at_price: variant.props.compareAtPrice,
+          compare_at_price: variant.compareAtPrice,
           stock: variant.stock,
           options: JSON.stringify(variant.options),
-          // @ts-expect-error
-          created_at: variant.props.createdAt,
-          // @ts-expect-error
-          updated_at: variant.props.updatedAt,
+          created_at: variant.createdAt,
+          updated_at: variant.updatedAt,
           metadata: JSON.stringify(variant.metadata),
         })
       }

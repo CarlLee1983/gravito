@@ -30,8 +30,9 @@ export class CreateProduct extends UseCase<CreateProductInput, ProductDTO> {
     // 1. 建立 Product 主體
     const product = Product.create(crypto.randomUUID(), input.name, input.slug)
 
-    // @ts-expect-error
-    product.props.brand = input.brand
+    if (input.brand) {
+      product.setBrand(input.brand)
+    }
 
     // 2. 加入分類
     if (input.categoryIds) {

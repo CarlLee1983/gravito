@@ -37,6 +37,18 @@ export class Variant extends Entity<string> {
   get metadata() {
     return this.props.metadata || {}
   }
+  get name() {
+    return this.props.name ?? null
+  }
+  get compareAtPrice() {
+    return this.props.compareAtPrice ?? null
+  }
+  get createdAt() {
+    return this.props.createdAt
+  }
+  get updatedAt() {
+    return this.props.updatedAt
+  }
 
   public reduceStock(quantity: number): void {
     if (this.props.stock < quantity) {
@@ -104,9 +116,29 @@ export class Product extends Entity<string> {
   get metadata() {
     return this.props.metadata || {}
   }
+  get brand() {
+    return this.props.brand
+  }
+  get status() {
+    return this.props.status
+  }
+  get description() {
+    return this.props.description
+  }
+  get createdAt() {
+    return this.props.createdAt
+  }
+  get updatedAt() {
+    return this.props.updatedAt
+  }
 
   public setThumbnail(key: string): void {
     this.props.thumbnail = key
+    this.props.updatedAt = new Date()
+  }
+
+  public setBrand(brand: string): void {
+    this.props.brand = brand
     this.props.updatedAt = new Date()
   }
 

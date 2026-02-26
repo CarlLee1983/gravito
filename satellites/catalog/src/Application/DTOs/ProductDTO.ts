@@ -44,17 +44,13 @@ export class ProductMapper {
       id: product.id,
       name: product.name,
       slug: product.slug,
-      // @ts-expect-error - access private props for mapping
-      description: product.props.description,
-      // @ts-expect-error
-      brand: product.props.brand,
-      // @ts-expect-error
-      status: product.props.status,
+      description: product.description,
+      brand: product.brand,
+      status: product.status,
       thumbnailUrl,
       variants: product.variants.map((v) => this.variantToDTO(v)),
       categoryIds: product.categoryIds,
-      // @ts-expect-error
-      createdAt: product.props.createdAt.toISOString(),
+      createdAt: product.createdAt.toISOString(),
     }
   }
 
@@ -62,11 +58,9 @@ export class ProductMapper {
     return {
       id: variant.id,
       sku: variant.sku,
-      // @ts-expect-error
-      name: variant.props.name,
+      name: variant.name,
       price: variant.price,
-      // @ts-expect-error
-      compareAtPrice: variant.props.compareAtPrice,
+      compareAtPrice: variant.compareAtPrice,
       stock: variant.stock,
       options: variant.options,
     }

@@ -58,7 +58,7 @@ export class ShardingManager {
 
       // 添加分片連接配置到 Atlas
       DB.addConnection(connectionName, {
-        driver: 'postgresql',
+        driver: 'postgres',
         host: shardConfig.host,
         port: shardConfig.port,
         database: shardConfig.database,
@@ -68,7 +68,7 @@ export class ShardingManager {
           min: 2,
           max: 10,
         },
-      } as unknown as ConnectionConfig)
+      })
 
       // 獲取連接實例
       const connection = DB.connection(connectionName)
