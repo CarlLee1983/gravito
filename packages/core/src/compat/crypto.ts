@@ -8,11 +8,15 @@ let randomBytesFn: (size: number) => any
 
 const tryGetNodeCrypto = () => {
   try {
-    if (typeof window === 'undefined' && typeof process !== 'undefined' && !(process as any).browser) {
+    if (
+      typeof window === 'undefined' &&
+      typeof process !== 'undefined' &&
+      !(process as any).browser
+    ) {
       // biome-ignore lint/security/noGlobalEval: specialized case for hiding node built-ins
       return eval('require')('node:crypto')
     }
-  } catch (e) {
+  } catch (_e) {
     return null
   }
 }
@@ -57,7 +61,9 @@ if (nodeCrypto) {
           return btoa(binary)
         }
         if (encoding === 'hex') {
-          return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('')
+          return Array.from(bytes)
+            .map((b) => b.toString(16).padStart(2, '0'))
+            .join('')
         }
         return ''
       },

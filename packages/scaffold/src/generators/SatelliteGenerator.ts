@@ -119,6 +119,31 @@ export class SatelliteGenerator extends BaseGenerator {
               },
             ],
           },
+          // Interface Layer (HTTP/API)
+          {
+            type: 'directory',
+            name: 'Interface',
+            children: [
+              {
+                type: 'directory',
+                name: 'Http',
+                children: [
+                  {
+                    type: 'directory',
+                    name: 'Controllers',
+                    children: [
+                      {
+                        type: 'file',
+                        name: `${name}Controller.ts`,
+                        content: this.generateController(name),
+                      },
+                    ],
+                  },
+                  { type: 'directory', name: 'Middleware', children: [] },
+                ],
+              },
+            ],
+          },
           // Entry Point
           { type: 'file', name: 'index.ts', content: this.generateEntryPoint(name) },
           {
@@ -197,11 +222,19 @@ export class SatelliteGenerator extends BaseGenerator {
   }
 
   // ─────────────────────────────────────────────────────────────
+  // Interface Templates
+  // ─────────────────────────────────────────────────────────────
+
+  private generateController(name: string): string {
+    return `import type { GravitoContext } from '@gravito/core'\nimport { Create${name} } from '../../../Application/UseCases/Create${name}'\n\nexport class ${name}Controller {\n  constructor(private createUseCase: Create${name}) {}\n\n  async store(ctx: GravitoContext) {\n    const body = await ctx.req.json()\n    const id = await this.createUseCase.execute({ name: body.name })\n    \n    return ctx.json({\n      success: true,\n      data: { id }\n    }, 201)\n  }\n\n  async index(ctx: GravitoContext) {\n    return ctx.json({\n      success: true,\n      data: []\n    })\n  }\n}\n`
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // Entry Point & Manifest
   // ─────────────────────────────────────────────────────────────
 
   private generateEntryPoint(name: string): string {
-    return `import { ServiceProvider, type Container } from '@gravito/core'\nimport { Atlas${name}Repository } from './Infrastructure/Persistence/Atlas${name}Repository'\n\nexport class ${name}ServiceProvider extends ServiceProvider {\n  register(container: Container): void {\n    // Bind Repository\n    container.singleton('${name.toLowerCase()}.repo', () => new Atlas${name}Repository())\n    \n    // Bind UseCases\n    container.singleton('${name.toLowerCase()}.create', () => {\n        return new (require('./Application/UseCases/Create${name}').Create${name})(\n            container.make('${name.toLowerCase()}.repo')\n        )\n    })\n  }\n\n  boot(): void {\n    this.core?.logger.info('🛰️ Satellite ${name} is operational')\n  }\n}\n`
+    return `import { ServiceProvider, type Container } from '@gravito/core'\nimport { Atlas${name}Repository } from './Infrastructure/Persistence/Atlas${name}Repository'\nimport { Create${name} } from './Application/UseCases/Create${name}'\nimport { ${name}Controller } from './Interface/Http/Controllers/${name}Controller'\n\nexport class ${name}ServiceProvider extends ServiceProvider {\n  register(container: Container): void {\n    // 1. Bind Repository (Infrastructure)\n    container.singleton('${name.toLowerCase()}.repo', () => new Atlas${name}Repository())\n    \n    // 2. Bind UseCases (Application)\n    container.singleton('${name.toLowerCase()}.usecase.create', (c) => {\n        return new Create${name}(c.make('${name.toLowerCase()}.repo'))\n    })\n\n    // 3. Bind Controllers (Interface)\n    container.singleton('${name.toLowerCase()}.controller', (c) => {\n        return new ${name}Controller(c.make('${name.toLowerCase()}.usecase.create'))\n    })\n  }\n\n  boot(): void {\n    this.core?.logger.info('🛰️ Satellite ${name} is operational')\n  }\n}\n`
   }
 
   private generateManifest(context: GeneratorContext): string {

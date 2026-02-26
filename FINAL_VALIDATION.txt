@@ -1,0 +1,30 @@
+PHASE 2.3 最終驗證清單
+=========================
+
+1. 新增檔案驗證:
+✅ SeoRule.ts
+     179 packages/ether/src/rules/SeoRule.ts
+
+✅ InjectRule.ts
+      84 packages/ether/src/rules/InjectRule.ts
+
+✅ SeoRule.test.ts
+     164 packages/ether/tests/rules/SeoRule.test.ts
+
+✅ InjectRule.test.ts
+     147 packages/ether/tests/rules/InjectRule.test.ts
+
+✅ full-pipeline.test.ts
+     236 packages/ether/tests/integration/full-pipeline.test.ts
+
+2. 型別檢查:
+
+3. 測試驗證:
+
+4. 構建驗證:
+
+5. API 導出驗證:
+✅ SeoRule export:
+  createSeoRule,
+✅ InjectRule export:
+  createInjectRule,

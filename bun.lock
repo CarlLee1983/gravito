@@ -478,7 +478,7 @@
     },
     "examples/official-site": {
       "name": "gravito-official-site",
-      "version": "0.1.8",
+      "version": "1.0.0-singularity",
       "dependencies": {
         "@gravito/constellation": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -489,7 +489,10 @@
         "@gravito/luminosity-adapter-photon": "workspace:*",
         "@gravito/photon": "workspace:*",
         "@gravito/prism": "workspace:*",
+        "@gravito/resilience": "workspace:*",
         "@gravito/stasis": "workspace:*",
+        "@gravito/stream": "workspace:*",
+        "@gravito/xenon": "workspace:*",
         "@inertiajs/react": "^1.0.0",
         "@react-three/drei": "^10.7.7",
         "@react-three/fiber": "^9.4.2",
@@ -919,7 +922,7 @@
     },
     "packages/atlas": {
       "name": "@gravito/atlas",
-      "version": "1.6.0",
+      "version": "2.0.0",
       "bin": {
         "orbit": "src/cli.ts",
       },
@@ -972,7 +975,7 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/photon": "^1.0.1",
+        "@gravito/photon": "^1.1.0",
       },
     },
     "packages/chromatic": {
@@ -1021,12 +1024,12 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "^1.6.1",
+        "@gravito/core": "^2.0.0",
       },
     },
     "packages/core": {
       "name": "@gravito/core",
-      "version": "1.6.1",
+      "version": "2.0.0",
       "dependencies": {
         "zod": "^4.3.6",
       },
@@ -1104,6 +1107,20 @@
         "typescript": "^5.9.3",
       },
     },
+    "packages/ether": {
+      "name": "@gravito/ether",
+      "version": "1.0.0",
+      "devDependencies": {
+        "@gravito/core": "workspace:*",
+        "bun-types": "latest",
+      },
+      "peerDependencies": {
+        "@gravito/core": ">=1.0.0",
+      },
+      "optionalPeers": [
+        "@gravito/core",
+      ],
+    },
     "packages/flare": {
       "name": "@gravito/flare",
       "version": "4.0.1",
@@ -1140,7 +1157,7 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "^1.6.1",
+        "@gravito/core": "^2.0.0",
         "pg": "^8.18.0",
       },
       "optionalPeers": [
@@ -1169,9 +1186,9 @@
         "vue": "^3.5.26",
       },
       "peerDependencies": {
-        "@gravito/core": "^1.6.1",
+        "@gravito/core": "^2.0.0",
         "@gravito/nebula": "^4.1.1",
-        "@gravito/stream": "^2.0.2",
+        "@gravito/stream": "^2.1.0",
       },
       "optionalPeers": [
         "@gravito/nebula",
@@ -1196,10 +1213,10 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "^1.6.1",
-        "@gravito/photon": "^1.0.1",
+        "@gravito/core": "^2.0.0",
+        "@gravito/photon": "^1.1.0",
         "@gravito/sentinel": "^4.0.1",
-        "@gravito/signal": "^3.0.4",
+        "@gravito/signal": "^3.1.0",
       },
       "optionalPeers": [
         "@gravito/signal",
@@ -1307,8 +1324,8 @@
         "cron-parser": "^4.9.0",
       },
       "peerDependencies": {
-        "@gravito/core": "^1.6.1",
-        "@gravito/stasis": "^3.1.1",
+        "@gravito/core": "^2.0.0",
+        "@gravito/stasis": "^3.2.0",
       },
     },
     "packages/impulse": {
@@ -1326,7 +1343,7 @@
         "valibot": "^1.2.0",
       },
       "peerDependencies": {
-        "@gravito/photon": "^1.0.1",
+        "@gravito/photon": "^1.1.0",
       },
     },
     "packages/impulse-bridge": {
@@ -1339,7 +1356,7 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "^1.6.1",
+        "@gravito/core": "^2.0.0",
         "@gravito/impulse": "^1.1.1",
       },
     },
@@ -1354,8 +1371,8 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "^1.6.1",
-        "@gravito/photon": "^1.0.1",
+        "@gravito/core": "^2.0.0",
+        "@gravito/photon": "^1.1.0",
       },
     },
     "packages/launchpad": {
@@ -1432,14 +1449,14 @@
       "name": "@gravito/luminosity-adapter-photon",
       "version": "1.0.2",
       "dependencies": {
-        "@gravito/luminosity": "^2.0.0",
+        "@gravito/luminosity": "workspace:*",
       },
       "devDependencies": {
         "bun-types": "latest",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/photon": "^1.0.1",
+        "@gravito/photon": "^1.1.0",
       },
     },
     "packages/luminosity-cli": {
@@ -1474,7 +1491,7 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "^1.6.1",
+        "@gravito/core": "^2.0.0",
       },
     },
     "packages/monitor": {
@@ -1498,8 +1515,8 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "^1.6.1",
-        "@gravito/photon": "^1.0.1",
+        "@gravito/core": "^2.0.0",
+        "@gravito/photon": "^1.1.0",
       },
     },
     "packages/monolith": {
@@ -1521,7 +1538,7 @@
         "marked": "^11.1.1",
       },
       "peerDependencies": {
-        "@gravito/core": "^1.6.1",
+        "@gravito/core": "^2.0.0",
       },
     },
     "packages/nebula": {
@@ -1535,7 +1552,7 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "^1.6.1",
+        "@gravito/core": "^2.0.0",
       },
     },
     "packages/nebula-s3": {
@@ -1582,12 +1599,12 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "^1.6.1",
+        "@gravito/core": "^2.0.0",
       },
     },
     "packages/photon": {
       "name": "@gravito/photon",
-      "version": "1.0.1",
+      "version": "1.1.0",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@hono/zod-openapi": "^1.2.0",
@@ -1628,8 +1645,8 @@
         "vue": "^3.5.26",
       },
       "peerDependencies": {
-        "@gravito/core": "^1.6.1",
-        "@gravito/photon": "^1.0.1",
+        "@gravito/core": "^2.0.0",
+        "@gravito/photon": "^1.1.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "vue": "^3.0.0",
@@ -1652,7 +1669,7 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "^1.6.1",
+        "@gravito/core": "^2.0.0",
         "@gravito/plasma": "^2.0.0",
       },
     },
@@ -1713,6 +1730,7 @@
       "version": "1.0.0",
       "devDependencies": {
         "@gravito/core": "workspace:*",
+        "@gravito/photon": "workspace:*",
         "@opentelemetry/api": "^1.9.0",
         "bun-types": "latest",
         "tsup": "^8.5.1",
@@ -1795,13 +1813,13 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "^1.6.1",
-        "@gravito/photon": "^1.0.1",
+        "@gravito/core": "^2.0.0",
+        "@gravito/photon": "^1.1.0",
       },
     },
     "packages/signal": {
       "name": "@gravito/signal",
-      "version": "3.0.4",
+      "version": "3.1.0",
       "dependencies": {
         "@aws-sdk/client-ses": "^3.953.0",
         "nodemailer": "^7.0.11",
@@ -1819,9 +1837,9 @@
         "vue": "^3.0.0",
       },
       "peerDependencies": {
-        "@gravito/core": "^1.6.1",
+        "@gravito/core": "^2.0.0",
         "@gravito/prism": "^3.1.1",
-        "@gravito/stream": "^2.0.2",
+        "@gravito/stream": "^2.1.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "vue": "^3.0.0",
@@ -1866,13 +1884,13 @@
         "@opentelemetry/semantic-conventions": "^1.28.0",
       },
       "peerDependencies": {
-        "@gravito/core": "^1.6.1",
-        "@gravito/photon": "^1.0.1",
+        "@gravito/core": "^2.0.0",
+        "@gravito/photon": "^1.1.0",
       },
     },
     "packages/stasis": {
       "name": "@gravito/stasis",
-      "version": "3.1.1",
+      "version": "3.2.0",
       "devDependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/photon": "workspace:*",
@@ -1881,13 +1899,13 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "@gravito/core": "^1.6.1",
+        "@gravito/core": "^2.0.0",
         "@gravito/plasma": "^2.0.0",
       },
     },
     "packages/stream": {
       "name": "@gravito/stream",
-      "version": "2.0.2",
+      "version": "2.1.0",
       "dependencies": {
         "@aws-sdk/client-sqs": "^3.955.0",
         "@gravito/atlas": "workspace:*",
@@ -2788,6 +2806,8 @@
     "@gravito/echo": ["@gravito/echo@workspace:packages/echo"],
 
     "@gravito/enterprise": ["@gravito/enterprise@workspace:packages/enterprise"],
+
+    "@gravito/ether": ["@gravito/ether@workspace:packages/ether"],
 
     "@gravito/example-banking-event-driven": ["@gravito/example-banking-event-driven@workspace:examples/banking-event-driven"],
 

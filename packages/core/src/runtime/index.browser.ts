@@ -5,8 +5,8 @@
 import { createUnknownAdapter } from './adapter-unknown'
 import type { RuntimeAdapter, RuntimePasswordAdapter, RuntimeSqliteDatabase } from './types'
 
-export * from './types'
 export { getRuntimeEnv, getRuntimeKind } from './detection'
+export * from './types'
 
 let runtimeAdapter: RuntimeAdapter | null = null
 
@@ -23,8 +23,12 @@ export function getPasswordAdapter(): RuntimePasswordAdapter {
   if (!passwordAdapter) {
     const message = '[RuntimeAdapter] Password hashing is not supported in the browser'
     passwordAdapter = {
-      async hash() { throw new Error(message) },
-      async verify() { throw new Error(message) },
+      async hash() {
+        throw new Error(message)
+      },
+      async verify() {
+        throw new Error(message)
+      },
     }
   }
   return passwordAdapter
@@ -34,11 +38,21 @@ export async function createSqliteDatabase(_path: string): Promise<RuntimeSqlite
   throw new Error('[RuntimeAdapter] SQLite storage is not supported in the browser')
 }
 
-export async function archiveFromDirectory() { throw new Error('Not supported in browser') }
-export function getArchiveAdapter() { throw new Error('Not supported in browser') }
-export function getCompressionAdapter() { throw new Error('Not supported in browser') }
-export function createHtmlRenderCallbacks() { throw new Error('Not supported in browser') }
-export function getMarkdownAdapter() { throw new Error('Not supported in browser') }
+export async function archiveFromDirectory() {
+  throw new Error('Not supported in browser')
+}
+export function getArchiveAdapter() {
+  throw new Error('Not supported in browser')
+}
+export function getCompressionAdapter() {
+  throw new Error('Not supported in browser')
+}
+export function createHtmlRenderCallbacks() {
+  throw new Error('Not supported in browser')
+}
+export function getMarkdownAdapter() {
+  throw new Error('Not supported in browser')
+}
 
 // Deep Equals - Browser safe implementation
 export function getDeepEquals() {
@@ -47,9 +61,18 @@ export function getDeepEquals() {
 
 // Escape - Browser safe
 export function getEscapeHtml() {
-  return (str: string) => str.replace(/[&<>"']/g, (m) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[m] || m))
+  return (str: string) =>
+    str.replace(
+      /[&<>"']/g,
+      (m) =>
+        ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+        })[m] || m
+    )
 }
 
 /**

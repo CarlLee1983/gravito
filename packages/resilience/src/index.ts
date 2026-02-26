@@ -37,6 +37,8 @@ export type {
 // === Bridge ===
 export type { EventStatus, MessageQueueBridgeConfig } from './bridge/MessageQueueBridge'
 export { MessageQueueBridge } from './bridge/MessageQueueBridge'
+// === Photon/HTTP Bridge ===
+export { resilience } from './bridge/photon'
 export type {
   CircuitBreakerMetrics,
   CircuitBreakerMetricsRecorder,

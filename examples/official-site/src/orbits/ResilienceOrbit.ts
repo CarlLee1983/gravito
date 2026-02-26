@@ -13,7 +13,7 @@ export class ResilienceOrbit implements GravitoOrbit {
   constructor(private config: ResilienceConfig = {}) {}
 
   async install(core: PlanetCore): Promise<void> {
-    core.logger.info('🛡️ Guardian Resilience Layer is active')
+    core.logger.info('[Guardian] Resilience Layer is active')
 
     // Register Circuit Breaker in Container
     core.container.singleton('resilience.circuit-breaker', () => {

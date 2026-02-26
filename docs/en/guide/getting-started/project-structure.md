@@ -1,94 +1,94 @@
 ---
 title: Project Structure
-description: Understanding the directory layout and architecture of a Gravito app.
+description: Understanding the directory layout and the Galaxy Architecture of a Gravito system.
 ---
 
-# Project Structure
+# 📁 Project Structure
 
-Gravito follows a predictable, clean directory structure. Developers familiar with MVC frameworks like Laravel will feel right at home, while also benefiting from optimizations for performance and modularity.
+Gravito follows a predictable, clean directory structure. In v1.6+, we've evolved the layout to support the **Galaxy Architecture**, allowing your application to scale from a simple site to a multi-satellite system seamlessly.
 
-## Directory Layout (Enterprise MVC)
+---
 
-By default, Gravito scaffolds projects using the **Enterprise MVC** layout, which is suitable for most web applications:
+## 🛰️ Galaxy Host Layout (v1.6+ Standard)
+
+By default, a new Gravito project is a **Galaxy Host**. It orchestrates multiple **Satellites** (domain modules) and provides the global infrastructure (**Orbits**).
 
 ```text
-my-gravito-app/
-├── config/              # Feature & Module configuration files
-│   ├── app.ts           # Core application settings
-│   ├── database.ts      # Database connection settings
-│   └── auth.ts          # Authentication & Authorization settings
+my-galaxy/
 ├── src/
-│   ├── Http/            # HTTP Transport Layer
-│   │   ├── Controllers/ # Controllers (Handle request logic)
-│   │   ├── Middleware/  # Middleware (Filter requests)
-│   │   └── Kernel.ts    # HTTP Kernel (Register global middleware)
-│   ├── Models/          # Data Models (Atlas ORM)
-│   ├── Services/        # Business Logic layer
-│   ├── Providers/       # Service Providers
-│   ├── Exceptions/      # Exception handling logic
-│   ├── routes.ts        # Route definitions
-│   └── bootstrap.ts     # Application bootstrapper
-├── database/            # Database-related resources
-│   ├── migrations/      # Database migrations
-│   ├── factories/       # Model factories (Test data generation)
-│   └── seeders/         # Database seeders
-├── public/              # Static assets (images, robots.txt)
-├── tests/               # Test cases (Unit & Feature)
-├── gravito.config.ts    # Project root configuration
+│   ├── satellites/      # Domain-specific modules (Satellites)
+│   │   ├── catalog/     # e.g., Product Catalog domain
+│   │   │   ├── manifest.json
+│   │   │   ├── Controllers/
+│   │   │   └── Models/
+│   │   └── auth/        # e.g., Identity & Access domain
+│   ├── orbits/          # Host-level custom Orbits
+│   ├── config/          # Global configuration
+│   ├── bootstrap.ts     # Galaxy Host initializer (Xenon)
+│   └── index.ts         # Entry point
+├── static/              # Public assets (Favicon, manifest)
+├── tests/               # Global integration tests
+├── gravito.config.ts    # Project root metadata
 ├── package.json
 └── tsconfig.json
 ```
 
 ---
 
-## Core Directories
+## 🧩 Satellite Structure (Clean Architecture)
 
-### `config/`
-Contains all your application's configuration files. Gravito encourages splitting configuration by feature into separate files to keep things organized.
+Each Satellite inside `src/satellites/` is a self-contained business unit. We recommend using **Clean Architecture** patterns within satellites:
 
-### `src/Http/`
-The entry point for handling web requests. `Controllers` receive input and return responses, while `Middleware` provides a convenient mechanism for filtering HTTP requests (e.g., authentication).
+```text
+satellites/catalog/
+├── manifest.json        # Declarative satellite metadata
+├── Application/         # UseCases & Business logic
+├── Domain/              # Entities, Value Objects, Aggregates
+├── Infrastructure/      # Repositories & External adapters
+└── Interface/           # Controllers & HTTP Middleware
+```
 
-### `src/Models/`
-Where your Atlas (ORM) models reside. Each model typically represents a single table in your database.
+---
 
-### `src/Providers/`
-Service Providers are the "ignition points" for Gravito apps. They are responsible for binding services into the **IoC Container**, and registering middleware, event listeners, etc.
+## 🏗️ Core Components
+
+### `src/satellites/`
+This is where your business value lives. Each folder represents a **Domain Satellite**. Satellites are decoupled; they don't import from each other but communicate via the event bus or shared kernels.
+
+### `manifest.json`
+Every satellite must have a `manifest.json`. This file tells the **Xenon Host** how to load the satellite, defining its routes, dependencies, and registered hooks.
 
 ### `src/bootstrap.ts`
-The file responsible for initializing `PlanetCore` and loading the necessary Orbits.
+The "Command Center" of your galaxy. This file initializes `PlanetCore`, registers global Orbits (like Resilience or Cache), and uses the **XenonHost** to discover and boot satellites.
+
+### `gravito.config.ts`
+The high-level configuration for the entire ecosystem. Here you define the project name, port, environment, and global feature toggles.
 
 ---
 
-## Core Philosophy: Galaxy Architecture
+## 🌌 Galaxy Architecture Philosophy
 
-Gravito utilizes a "Micro-kernel + Orbits" design pattern:
+Gravito utilizes a "Host + Satellite" design pattern:
 
-1.  **PlanetCore (Micro-kernel)**: Intentionally tiny, handling only the application lifecycle, IoC container, and Hook system.
-2.  **Orbits (Modules)**: Features are added as pluggable modules. For example:
-    *   Need a database? Add `@gravito/atlas`.
-    *   Need authentication? Add `@gravito/sentinel`.
-    *   Need task scheduling? Add `@gravito/horizon`.
-
-This ensures "pay only for what you use" performance, meaning your app only runs the code it actually needs.
+1.  **PlanetCore (Micro-kernel)**: Intentionally tiny, handling only the application lifecycle and IoC container.
+2.  **Orbits (Pluggable Modules)**: Infrastructure features added at the host level (e.g., `@gravito/atlas` for DB, `@gravito/resilience` for safety).
+3.  **Xenon (Parallel Runtime)**: The engine that runs satellites in parallel, providing high resource density and isolation.
 
 ---
 
-## The Lifecycle
+## 🔄 The Lifecycle
 
-When you run `gravito dev` or start the server:
+When you run `bun dev` or start the server:
 
-1.  **Load Config**: The system reads files in `config/` and `gravito.config.ts`.
-2.  **Register Providers**: Every Service Provider's `register()` method is executed, binding services to the container.
-3.  **Boot Providers**: Every Service Provider's `boot()` method is executed once all services are registered and ready.
-4.  **Routing**: HTTP requests hit the `Http/Kernel`, pass through middleware, and finally reach the designated Controller.
+1.  **Host Ignition**: `PlanetCore` boots up and loads the core configuration.
+2.  **Orbit Installation**: Infrastructure modules (Orbits) register their services to the container.
+3.  **Satellite Discovery**: The **Xenon Host** scans `manifest.json` files in the satellites directory.
+4.  **Parallel Boot**: Satellites are initialized in parallel. Routes are mounted, and providers are registered.
+5.  **Liftoff**: The HTTP hub (Photon) starts receiving traffic and directing it to the appropriate satellite.
 
-## Diverse Architectural Choices
+---
 
-The strength of Gravito lies in its flexibility. While the Enterprise MVC structure is the default recommendation, you can switch patterns based on your project's complexity:
-
-- **Clean Architecture**: Strict dependency rules that decouple business logic from the framework.
-- **Domain-Driven Design (DDD)**: Modular development suited for hyper-scale or complex domain logic.
-
-> **Next Step**: If you need a different structure, check out the [Architectural Patterns & Scaffolding](./cli-init.md) guide.
-
+## 🔗 Next Steps
+- 📜 [MDD: Manifest-Driven Development](../architecture/config-contract.md)
+- 📡 [Xenon Parallel Runtime](../architecture/xenon-architecture-deep-dive.md)
+- 🚦 [Routing Basics](../basics/routing.md)

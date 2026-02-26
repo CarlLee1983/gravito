@@ -17,6 +17,7 @@ import { setupOrderQueueIntegration } from './integrations/order-queue-handler'
 import { setupPaymentQueueIntegration } from './integrations/payment-queue-handler'
 import { initializeQueueManager } from './queue'
 import { httpTracingMiddleware } from './tracing/http-tracing-middleware'
+
 // import { initializeTracing } from './tracing/setup' // TODO: 遷移到 @gravito/monitor
 
 let globalApp: Application | null = null

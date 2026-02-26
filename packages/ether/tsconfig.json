@@ -3,7 +3,8 @@
   "compilerOptions": {
     "outDir": "./dist",
     "baseUrl": ".",
-    "noEmit": true,
+    "declaration": true,
+    "emitDeclarationOnly": false,
     "composite": true,
     "skipLibCheck": true,
     "types": ["node", "bun-types"],

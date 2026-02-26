@@ -114,6 +114,8 @@ function registerSatellites(core: PlanetCore) {
   router.middleware(setLocale('zh')).group((zhDocs: any) => {
     zhDocs.get('/zh/docs', (c: any) => docsCtrl.index(c))
     zhDocs.get('/zh/docs/*', (c: any) => docsCtrl.show(c))
+    zhDocs.get('/zh-TW/docs', (c: any) => docsCtrl.index(c))
+    zhDocs.get('/zh-TW/docs/*', (c: any) => docsCtrl.show(c))
   })
 
   // Satellite: API

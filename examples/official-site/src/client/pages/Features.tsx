@@ -13,6 +13,8 @@ import {
   Shuffle,
   Terminal,
   Zap,
+  Check,
+  X,
 } from 'lucide-react'
 import Layout from '../components/Layout'
 
@@ -427,16 +429,16 @@ const GalaxyComparisonSection = ({ t }: { t: Translation }) => {
               </thead>
               <tbody className="text-gray-300">
                 {[
-                  ['Hook System', '❌', '❌', '✅'],
-                  ['IoC Container', '❌', '❌', '✅'],
-                  ['Controller Routing', 'Plugin', '❌', '✅'],
-                  ['Route Model Binding', '❌', '❌', '✅'],
-                  ['FormRequest Validation', '❌', '❌', '✅'],
-                  ['Adapter Pattern', '❌', '❌', '✅'],
-                  ['Bun Native Support', '❌', '✅', '✅'],
-                  ['TypeScript First', 'Plugin', '✅', '✅'],
+                  ['Hook System', <X key="1" className="inline text-red-500" size={18} />, <X key="2" className="inline text-red-500" size={18} />, <Check key="3" className="inline text-singularity" size={18} />],
+                  ['IoC Container', <X key="1" className="inline text-red-500" size={18} />, <X key="2" className="inline text-red-500" size={18} />, <Check key="3" className="inline text-singularity" size={18} />],
+                  ['Controller Routing', 'Plugin', <X key="2" className="inline text-red-500" size={18} />, <Check key="3" className="inline text-singularity" size={18} />],
+                  ['Route Model Binding', <X key="1" className="inline text-red-500" size={18} />, <X key="2" className="inline text-red-500" size={18} />, <Check key="3" className="inline text-singularity" size={18} />],
+                  ['FormRequest Validation', <X key="1" className="inline text-red-500" size={18} />, <X key="2" className="inline text-red-500" size={18} />, <Check key="3" className="inline text-singularity" size={18} />],
+                  ['Adapter Pattern', <X key="1" className="inline text-red-500" size={18} />, <X key="2" className="inline text-red-500" size={18} />, <Check key="3" className="inline text-singularity" size={18} />],
+                  ['Bun Native Support', <X key="1" className="inline text-red-500" size={18} />, <Check key="2" className="inline text-green-500" size={18} />, <Check key="3" className="inline text-singularity" size={18} />],
+                  ['TypeScript First', 'Plugin', <Check key="2" className="inline text-green-500" size={18} />, <Check key="3" className="inline text-singularity" size={18} />],
                 ].map(([feature, express, hono, gravito]) => (
-                  <tr key={feature} className="border-t border-white/5">
+                  <tr key={String(feature)} className="border-t border-white/5">
                     <td className="py-4 font-medium text-white">{feature}</td>
                     <td className="py-4 text-center">{express}</td>
                     <td className="py-4 text-center">{hono}</td>

@@ -498,7 +498,7 @@ const StatsSection = ({ t }: { t: Translation }) => {
   )
 }
 
-// 🚀 星際感啟動控制台 (Quick Start Section) - Reactor Ignition
+// 星際感啟動控制台 (Quick Start Section) - Reactor Ignition
 const QuickStartSection = () => {
   const [copied, setCopied] = useState(false)
   const command = 'bun create gravito-app@latest ./'

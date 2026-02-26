@@ -1,7 +1,7 @@
 import { bootstrap } from './bootstrap'
 
 /**
- * 🌌 Gravito Demo Application
+ * Gravito Demo Application
  */
 const core = await bootstrap({
   port: 3000,
@@ -9,7 +9,7 @@ const core = await bootstrap({
   version: '1.0.0',
 })
 
-// 🚀 Predictive Route Warming
+// Predictive Route Warming
 if (process.env.NODE_ENV === 'production') {
   await core.warmup(['/', '/features', '/docs', '/releases'])
 }

@@ -1,66 +1,44 @@
-# Gravito Documentation Hub
+# 🌌 Gravito Documentation Hub
 
-Welcome to the official documentation for the **Gravito Galaxy Architecture**.
+Welcome to the official documentation for the **Gravito Galaxy Architecture**. Gravito is a modular, high-performance TypeScript framework built for the Bun era, focusing on extreme performance, architectural elegance, and AI-native development.
 
-## 🌌 Galaxy Architecture 1.0
+---
 
-Gravito is a modular, high-performance framework built on the principles of **Domain-Driven Design (DDD)** and **Clean Architecture**.
-
-### Core Pillars
-- **PlanetCore**: The micro-kernel managing the application lifecycle.
-- **Orbits**: Strategic infrastructure extensions (ORM, Auth, Mail).
-- **Satellites**: Self-contained business domain modules.
+## 🗺️ Galaxy Panorama
+The **[Galaxy Master Map](./en/GALAXY_ARCHITECTURE_MAP.md)** provides a 100% comprehensive index of all modules, orbits, and satellites in the ecosystem.
 
 ---
 
 ## 📚 Documentation Index
 
 ### 🚀 Getting Started
-- [Quick Start Guide](./en/guide/getting-started/getting-started.md) - Get up and running in minutes.
-- [Development Examples](./guides/development-examples.md) - Common patterns and recipes.
-- [AI Assistant Guide](./guides/ai/gravito-ai-guide.md) - How to work with the Gravito AI agent.
+- **[Installation Guide](./en/guide/getting-started/installation.md)** - Set up your first Galaxy Host.
+- **[Project Structure](./en/guide/getting-started/project-structure.md)** - Understand the Satellite-based layout.
+- **[Core Concepts](./en/guide/architecture/core-concepts.md)** - Deep dive into Singularity & Gravity.
 
-### 🏗️ Architecture & Core Concepts
-- [Architecture Spec](./spec/ARCHITECTURE_SPEC.md) - Core system design specifications.
-- [Satellite Specification](./spec/SATELLITE_SPEC.md) - Standards for building domain modules.
-- [Event System & Observability](./architecture/event-system-observability.md) - Deep dive into event tracking.
-- [Constellation Locks](./architecture/constellation-locks.md) - Distributed locking mechanism.
+### 🏗️ Architecture & Advanced
+- **[Galaxy Architecture](./en/guide/architecture/architecture.md)** - The celestial design pattern.
+- **[Xenon Parallel Runtime](./en/guide/architecture/xenon-architecture-deep-dive.md)** - Secure FFI and Satellite orchestration.
+- **[Photon HTTP Engine](./en/guide/architecture/photon-core.md)** - The high-performance I/O hub.
+- **[Flux Workflow](./en/guide/architecture/flux-workflow.md)** - Distributed logic orchestration.
 
-### 🛠️ Operations & Infrastructure
-- [Development Guide](./operations/DEVELOPMENT_GUIDE.md) - Monorepo contribution guide.
-- [NPM Publishing](./operations/NPM_PUBLISHING_GUIDE.md) - Package release workflow.
-- [Migration Guides](./operations/migration/) - Guides for upgrading and migrating features.
-- [CI/CD Optimization](./operations/optimization/ci.md) - Pipeline strategies.
+### 🛠️ Core Services & Orbits
+- **[Atlas ORM](./en/guide/database/orm-usage.md)** - Cartesian Mapper & Native Sharding.
+- **[Resilience (Guardian)](./en/guide/services/resilience.md)** - Circuit Breakers & Fault Tolerance.
+- **[Stream (Async)](./en/guide/services/queues.md)** - Background jobs and Bun Workers.
+- **[Ion (Inertia)](./en/guide/frontend/inertia-react.md)** - The neural bridge for Modern Monoliths.
 
-### ⚡ Core Features & Guides
-**System Resilience:**
-- [Circuit Breakers](./guides/core/circuit-breaker.md)
-- [Pool Management](./guides/core/pool-management.md)
-
-**Queues & Async:**
-- [Bull Queue Integration](./guides/core/bull-queue-integration.md)
-- [DLQ & Retry Strategies](./guides/core/dlq-and-retry.md)
-
-**Observability:**
-- [Observability Guide](./guides/core/observability.md)
-
-### 📈 Benchmarks & Performance Optimization
-- [Gravito Whitepaper](./whitepaper/gravito-whitepaper.md)
-- [Atlas Performance](./benchmarks/ATLAS_PERFORMANCE_WHITEPAPER.md)
-- [Bull Queue Benchmarks](./benchmarks/bull-queue-performance.md)
-- **[Bun File I/O Optimization](./optimization/OPTIMIZATION_SUMMARY.md)** - Phase 1-4 完整成果（27-46% 框架級效能提升）
-  - [Phase 5: Core Audit Report 2026](./optimization/CORE_AUDIT_2026.md) - 技術債與效能缺口分析
-  - [Phase 4 Completion Report](./optimization/PHASE_4_COMPLETION.md) - 最後三個模組的非同步化
-  - [Provider Loading Optimization](./optimization/PROVIDER_LOADING_OPTIMIZATION.md) - 並行 Provider 預掃描
-  - [Runtime Conditional Compilation POC](./optimization/RUNTIME_CONDITIONAL_COMPILATION.md) - Bundle 優化設計
+### 📈 Benchmarks & Optimization
+- **[Core Audit 2026](./optimization/CORE_AUDIT_2026.md)** - Technical debt and performance gap analysis.
+- **[Optimization Summary](./optimization/OPTIMIZATION_SUMMARY.md)** - Complete results of Bun I/O optimizations.
 
 ---
 
 ## 📂 Multi-language Support
-- `zh-TW/` - [繁體中文文檔](./zh-TW/guide/getting-started/introduction.md)
-- `en/` - [English Documentation](./en/guide/getting-started/introduction.md) (WIP)
+- **[繁體中文文檔 (ZH-TW)](./zh-TW/guide/getting-started/introduction.md)**
+- **[English Documentation (EN)](./en/guide/getting-started/introduction.md)**
 
-## 🗃️ Archive
-- [Task Logs & History](./archive/tasks/) - Historical task breakdowns.
-- [Progress Logs](./archive/logs/) - Past session summaries and progress reports.
+---
 
+## 📄 License
+MIT © 2026 Gravito Framework Team

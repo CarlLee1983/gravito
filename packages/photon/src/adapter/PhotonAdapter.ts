@@ -486,9 +486,9 @@ class PhotonAdapterContextPool {
     return PhotonContextWrapper.create<V>(photonCtx) as unknown as ResettableContext<V>
   }
 
-  release(wrapper: GravitoContext<unknown>): void {
+  release<V extends GravitoVariables>(wrapper: GravitoContext<V>): void {
     if (this.pool.length < this.maxSize) {
-      this.pool.push(wrapper as ResettableContext)
+      this.pool.push(wrapper as ResettableContext<V>)
     }
   }
 }

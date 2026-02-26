@@ -26,7 +26,7 @@ export const randomBytes = (size: number) => {
   return {
     length: size,
     [Symbol.iterator]: () => bytes[Symbol.iterator](),
-    // @ts-ignore
+    // @ts-expect-error
     toString: (encoding: string) => {
       if (encoding === 'base64') {
         let binary = ''

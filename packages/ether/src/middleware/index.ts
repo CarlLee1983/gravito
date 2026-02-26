@@ -1,7 +1,10 @@
 /**
  * @gravito/ether - Middleware 入口
- * 階段 1.1 佔位符
- * 詳細實作見 Phase 2.2
+ *
+ * 提供 Hono/Photon HTTP 中介軟體，用於 HTML 轉換
  */
 
-export {}
+export type { CSPMiddlewareOptions } from './cspMiddleware'
+export { cspMiddleware } from './cspMiddleware'
+export type { EtherMiddlewareOptions } from './etherMiddleware'
+export { etherMiddleware } from './etherMiddleware'

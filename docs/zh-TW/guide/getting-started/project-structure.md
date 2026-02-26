@@ -1,94 +1,94 @@
 ---
 title: 專案結構
-description: 深入瞭解 Gravito 應用程式的目錄佈局與架構設計。
+description: 深入了解 Gravito 系統的目錄配置與銀河架構 (Galaxy Architecture) 配置。
 ---
 
-# 專案結構
+# 📁 專案結構
 
-Gravito 遵循一種可預測且整潔的目錄結構。對於熟悉 MVC (如 Laravel) 的開發者來說會感到非常親切，同時它也針對效能與模組化進行了極致優化。
+Gravito 遵循可預測且清爽的目錄結構。在 v1.6+ 中，我們將架構演進為支援 **銀河架構 (Galaxy Architecture)**，讓您的應用能從單一網站平滑擴展到複雜的多衛星系統。
 
-## 目錄佈局 (Enterprise MVC)
+---
 
-Gravito 預設生成的專案採用 **Enterprise MVC** 佈局，這最適合大多數的 Web 應用程序：
+## 🛰️ 銀河宿主佈局 (v1.6+ 標準)
+
+預設情況下，一個新的 Gravito 專案就是一個 **銀河宿主 (Galaxy Host)**。它負責協調多個 **領域衛星 (Satellites)** 並提供全局的基礎設施 (**Orbits**)。
 
 ```text
-my-gravito-app/
-├── config/              # 框架與模組設定檔
-│   ├── app.ts           # 核心應用程式設定
-│   ├── database.ts      # 資料庫連接設定
-│   └── auth.ts          # 認證與授權設定
+my-galaxy/
 ├── src/
-│   ├── Http/            # HTTP 傳輸層
-│   │   ├── Controllers/ # 控制器 (處理請求邏輯)
-│   │   ├── Middleware/  # 中介層 (過濾請求)
-│   │   └── Kernel.ts    # HTTP 核心 (註冊全域中介層)
-│   ├── Models/          # 資料模型 (Atlas ORM)
-│   ├── Services/        # 商業邏輯層 (Business Logic)
-│   ├── Providers/       # 服務提供者 (Service Providers)
-│   ├── Exceptions/      # 例外處理規則
-│   ├── routes.ts        # 路由定義
-│   └── bootstrap.ts     # 應用程式引導程式
-├── database/            # 資料庫相關資源
-│   ├── migrations/      # 資料表遷移檔
-│   ├── factories/       # 資料工廠 (測試數據生成)
-│   └── seeders/         # 資料種子
-├── public/              # 靜態資源 (圖片、 robots.txt)
-├── tests/               # 測試案例 (Unit & Feature)
-├── gravito.config.ts    # 專案根設定
+│   ├── satellites/      # 領域特定模組 (領域衛星)
+│   │   ├── catalog/     # 例如：商品目錄領域
+│   │   │   ├── manifest.json
+│   │   │   ├── Controllers/
+│   │   │   └── Models/
+│   │   └── auth/        # 例如：身份驗證領域
+│   ├── orbits/          # 宿主層級的自定義軌道模組
+│   ├── config/          # 全局配置
+│   ├── bootstrap.ts     # 銀河宿主初始化器 (Xenon)
+│   └── index.ts         # 進入點
+├── static/              # 靜態資源 (Favicon, manifest)
+├── tests/               # 全局整合測試
+├── gravito.config.ts    # 專案根目錄元數據
 ├── package.json
 └── tsconfig.json
 ```
 
 ---
 
-## 核心目錄說明
+## 🧩 衛星內部結構 (整潔架構)
 
-### `config/`
-包含所有應用程式的設定點。Gravito 鼓勵將不同功能的設定拆分到獨立的檔案中，以保持整潔。
+`src/satellites/` 下的每個衛星都是一個獨立的業務單元。我們建議在衛星內部使用 **整潔架構 (Clean Architecture)** 模式：
 
-### `src/Http/`
-這是應用程式處理 Web 請求的入口。`Controllers` 負責接收輸入並返回回應，而 `Middleware` 提供了一個方便的機制來過濾進入應用的 HTTP 請求（例如驗證）。
+```text
+satellites/catalog/
+├── manifest.json        # 宣告式衛星清單
+├── Application/         # UseCases 與業務邏輯
+├── Domain/              # 實體 (Entities)、值對象、聚合
+├── Infrastructure/      # 存儲庫 (Repositories) 與外部適配器
+└── Interface/           # 控制器 (Controllers) 與 HTTP 中間件
+```
 
-### `src/Models/`
-這裡存放您的 Atlas (ORM) 模型。每個模型通常代表資料庫中的一個資料表。
+---
 
-### `src/Providers/`
-服務提供者是 Gravito 應用的「點火點」。它們負責將服務綁定到 **IoC 容器**，以及註冊中介層、事件監聽器等。
+## 🏗️ 核心組件說明
+
+### `src/satellites/`
+這是您的業務價值所在。每個資料夾代表一個 **領域衛星**。衛星之間是解耦的；它們不會直接互相 import，而是透過事件匯流排 (Event Bus) 或共享核心進行通訊。
+
+### `manifest.json`
+每個衛星必須包含一個 `manifest.json`。這個檔案告訴 **Xenon 宿主** 如何載入該衛星，定義其路由、依賴關係以及註冊的 Hook。
 
 ### `src/bootstrap.ts`
-這是應用的引導檔案，負責初始化 `PlanetCore` 並加載所需的動力模組 (Orbits)。
+您銀河系的「指揮中心」。此檔案負責初始化 `PlanetCore`、註冊全域軌道模組（如 Resilience 或 Cache），並使用 **XenonHost** 來發現並啟動衛星。
+
+### `gravito.config.ts`
+整個生態系統的高階配置。在這裡您可以定義專案名稱、端口、環境變數以及全域功能開關。
 
 ---
 
-## 核心哲學：星系架構 (Galaxy Architecture)
+## 🌌 銀河架構設計哲學
 
-Gravito 採用「微核心 + 動力軌道」的設計模式：
+Gravito 採用「宿主 + 衛星」的設計模式：
 
-1.  **PlanetCore (微核心)**: 核心極端精簡，僅負責生命週期、IoC 容器與 Hook 系統。
-2.  **Orbits (動力軌道)**: 功能透過模組化方式擴充。例如：
-    *   想要資料庫？加入 `@gravito/atlas`。
-    *   需要驗證？加入 `@gravito/sentinel`。
-    *   任務排程？加入 `@gravito/horizon`。
-
-這種設計確保了「按需付費」的效能表現，您的應用只會運行真正需要的程式碼。
+1.  **PlanetCore (微核心)**：刻意保持極小化，僅處理應用程式生命週期與 IoC 容器。
+2.  **Orbits (可插拔模組)**：在宿主層級添加的基礎設施功能（例如用於資料庫的 `@gravito/atlas`，用於安全的 `@gravito/resilience`）。
+3.  **Xenon (並行運行時)**：並行執行衛星的引擎，提供極高的資源密度與隔離性。
 
 ---
 
-## 生命週期 (Lifecycle)
+## 🔄 啟動生命週期
 
-當您執行 `gravito dev` 或啟動伺服器時：
+當您執行 `bun dev` 或啟動伺服器時：
 
-1.  **載入設定**: 系統讀取 `config/` 與 `gravito.config.ts`。
-2.  **註冊提供者**: 執行所有 Service Providers 的 `register()` 方法，將服務注入容器。
-3.  **引導提供者**: 執行所有 Service Providers 的 `boot()` 方法，此時所有服務皆已就緒。
-4.  **路由匹配**: HTTP 請求進入 `Http/Kernel`，經過中介層後到達指定的 Controller。
+1.  **宿主點火 (Host Ignition)**：`PlanetCore` 啟動並載入核心配置。
+2.  **軌道安裝 (Orbit Installation)**：基礎設施模組 (Orbits) 將其服務註冊到容器中。
+3.  **衛星發現 (Satellite Discovery)**：**Xenon 宿主** 掃描衛星目錄中的 `manifest.json` 檔案。
+4.  **並行啟動 (Parallel Boot)**：衛星並行初始化。掛載路由、註冊服務提供者。
+5.  **升空 (Liftoff)**：HTTP 樞紐 (Photon) 開始接收流量並將其導向正確的衛星。
 
-## 多樣化的架構選擇
+---
 
-Gravito 的強大之處在於它不強迫您使用單一的開發範式。雖然上述的 MVC 結構是預設推薦的，但您隨時可以根據專案複雜度切換：
-
-- **Clean Architecture**: 嚴格的依賴規則，將業務邏輯與框架完全解耦。
-- **Domain-Driven Design (DDD)**: 適合超大型、複雜領域邏輯的模組化開發。
-
-> **下一步**：如果您需要不同的架構，請查看 [架構模式與腳手架](./cli-init.md) 了解更多。
-
+## 🔗 接下來
+- 📜 [MDD：清單驅動開發](../architecture/config-contract.md)
+- 📡 [Xenon 並行運行時](../architecture/xenon-architecture-deep-dive.md)
+- 🚦 [基礎路由導覽](../basics/routing.md)

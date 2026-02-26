@@ -8,11 +8,15 @@ let AsyncLocalStorageClass: any
 // Use eval('require') to hide the dependency from bundlers like Vite
 const tryGetNodeAsyncHooks = () => {
   try {
-    if (typeof window === 'undefined' && typeof process !== 'undefined' && !(process as any).browser) {
+    if (
+      typeof window === 'undefined' &&
+      typeof process !== 'undefined' &&
+      !(process as any).browser
+    ) {
       // biome-ignore lint/security/noGlobalEval: specialized case for hiding node built-ins
       return eval('require')('node:async_hooks').AsyncLocalStorage
     }
-  } catch (e) {
+  } catch (_e) {
     return null
   }
 }

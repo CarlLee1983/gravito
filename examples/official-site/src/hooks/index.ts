@@ -10,7 +10,9 @@ export function registerHooks(core: PlanetCore): void {
   // Log when app starts
   core.hooks.addAction('app:liftoff', (args) => {
     const { port } = args as { port: number }
-    core.logger.info(`🌌 ${core.config.get('APP_NAME')} is ready at http://localhost:${port}`)
+    core.logger.info(
+      `[Gravito] ${core.config.get('APP_NAME')} is ready at http://localhost:${port}`
+    )
   })
 
   // Add metadata to all API responses

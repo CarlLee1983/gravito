@@ -144,6 +144,30 @@ export class ModuleGenerator {
             },
           ],
         },
+        // UserInterface Layer
+        {
+          type: 'directory',
+          name: 'UserInterface',
+          children: [
+            {
+              type: 'directory',
+              name: 'Http',
+              children: [
+                {
+                  type: 'directory',
+                  name: 'Controllers',
+                  children: [
+                    {
+                      type: 'file',
+                      name: `${name}Controller.ts`,
+                      content: this.generateController(name),
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
       ],
     }
   }
@@ -392,6 +416,38 @@ export class ${name}ServiceProvider extends ServiceProvider {
     boot(_core: PlanetCore): void {
         console.log('[${name}] Module loaded')
     }
+}
+`
+  }
+
+  private generateController(name: string): string {
+    return `/**
+ * ${name} Controller
+ */
+
+import type { GravitoContext } from '@gravito/core'
+
+export class ${name}Controller {
+  /**
+   * GET /${name.toLowerCase()}
+   */
+  async index(ctx: GravitoContext) {
+    return ctx.json({
+      success: true,
+      data: []
+    })
+  }
+
+  /**
+   * GET /${name.toLowerCase()}/:id
+   */
+  async show(ctx: GravitoContext) {
+    const id = ctx.req.param('id')
+    return ctx.json({
+      success: true,
+      data: { id }
+    })
+  }
 }
 `
   }

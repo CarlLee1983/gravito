@@ -24,12 +24,9 @@ export async function initializeTracing(config: {
   }
 }) {
   // TODO: 遷移到 @gravito/monitor 進行 OpenTelemetry 設置
-  console.log(
-    '[Tracing] OpenTelemetry initialization deferred to @gravito/monitor',
-    {
-      serviceName: config.serviceName,
-      environment: config.environment,
-    }
-  )
+  console.log('[Tracing] OpenTelemetry initialization deferred to @gravito/monitor', {
+    serviceName: config.serviceName,
+    environment: config.environment,
+  })
   return null
 }

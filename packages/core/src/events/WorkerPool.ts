@@ -7,8 +7,8 @@
  * @internal
  */
 
-import { randomUUID } from '../compat/crypto'
 import type { Meter } from '@opentelemetry/api'
+import { randomUUID } from '../compat/crypto'
 import type { EventTask } from './types'
 import type { TaskSource, WorkerPoolConfig, WorkerPoolStats, WorkerStats } from './WorkerPoolConfig'
 import { WorkerPoolMetrics } from './WorkerPoolMetrics'
@@ -56,10 +56,10 @@ export class WorkerPool {
     let cpuCores = 1
     try {
       if (typeof process !== 'undefined' && !(process as any).browser) {
-        // biome-ignore lint/security/noGlobalEval: specialized case for hiding node built-ins
+        // biome-ignore lint/security/noGlobalEval: hide from Vite
         cpuCores = Math.max(1, eval('require')('node:os').cpus().length)
       }
-    } catch (e) {
+    } catch (_e) {
       // Fallback to 1
     }
 

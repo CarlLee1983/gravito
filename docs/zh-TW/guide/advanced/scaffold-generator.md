@@ -1,109 +1,103 @@
 ---
-title: Scaffold 專案生成器
-description: 提供 MVC、DDD 與 Clean Architecture 的專案生成工具。
+title: Scaffold 藍圖引擎
+description: 深入了解 Gravito Scaffold，這是用於生成領域衛星 (Satellites) 與擴展銀河架構 (Galaxy Architecture) 的強大腳手架工具。
 ---
 
-# Scaffold 專案生成器
+# 🏗️ Scaffold 藍圖引擎
 
-Scaffold 提供 Gravito 的專案生成器，包含 MVC、DDD 與 Clean Architecture 等範本。
+`@gravito/scaffold` 是 Gravito 生態系統中的 **Blueprint Engine (藍圖引擎)**。它不僅負責初始化新的專案（銀河宿主），更核心的功能是自動化生成標準化的 **領域衛星 (Satellites)**，並確保它們符合企業級的開發規範。
 
-## 特色
+在 v1.6 "Galaxy" 版本中，Scaffold 已經全面轉向 **清單驅動開發 (MDD)**，自動生成包含 `manifest.json` 在內的完整結構。
 
-- 內建多種架構範本（MVC / DDD / Clean）
-- CLI 與程式化 API 雙模式
-- 可擴充自訂 Generator
-- 內建模板引擎與 Helpers
+---
 
-## 安裝
+## ✨ 核心特色
 
-```bash
-bun add @gravito/scaffold
-```
+- 🛰️ **衛星專化**：一鍵生成符合 Clean Architecture 或 DDD 規範的領域衛星。
+- 📜 **MDD 整合**：自動生成並配置 `manifest.json`，實現零配置發現。
+- 🏢 **企業級原語**：內建 `AggregateRoot`, `DomainEvent`, `UseCase` 等高階開發模板。
+- 🛠️ **CLI 與 API 雙模**：支援從終端機快速操作，也支援程式化大規模生成。
 
-## CLI 使用方式
+---
 
-```bash
-npx gravito init my-app --architecture ddd
-```
+## 🚀 CLI 使用方式
 
-## 常用選項
+### 1. 初始化銀河宿主 (Galaxy Host)
+建立一個新的 Gravito 容器環境：
 
 ```bash
-npx gravito init my-app \
-  --architecture clean \
-  --package-manager bun \
-  --skip-install \
-  --skip-git
+bunx gravito create my-galaxy
 ```
 
-## 架構範本
+### 2. 生成領域衛星 (Satellite)
+在現有的宿主專案中添加新的業務領域：
 
-| 類型 | 說明 |
-| --- | --- |
-| `enterprise-mvc` | 類 Laravel MVC 結構 |
-| `clean` | 嚴格分層的 Clean Architecture |
-| `ddd` | Domain-Driven Design（限界上下文） |
-
-## 生成結果（範例）
-
-```
-my-app/
-  src/
-  tests/
-  .env
-  package.json
-  README.md
+```bash
+# 生成一個名為 'catalog' 的衛星，採用 DDD 架構
+bun gravito make:satellite catalog --type ddd
 ```
 
-## 程式化 API
+### 3. 生成領域組件
+在衛星內部快速添加代碼單元：
+
+```bash
+# 為 'catalog' 衛星生成一個新的控制器
+bun gravito make:controller ProductController --satellite catalog
+
+# 生成一個 UseCase
+bun gravito make:usecase CreateProduct --satellite catalog
+```
+
+---
+
+## 📐 架構藍圖 (Blueprints)
+
+Scaffold 支援多種標準化的架構模板，滿足不同複雜度的業務需求：
+
+| 模板 | 說明 | 適用場景 |
+| :--- | :--- | :--- |
+| `minimal` | 僅包含基礎路由與一個清單檔案 | 小型工具、簡單 API |
+| `clean` | 嚴格分層的整潔架構 (Domain/Application/Infra) | 中型業務、邏輯清晰的服務 |
+| `ddd` | 基於限界上下文的領域驅動設計 | 複雜業務、大型企業級系統 |
+
+---
+
+## 📄 生成結果：衛星標準結構
+
+當您執行 `make:satellite` 時，Scaffold 會為您建立以下標準結構：
+
+```text
+src/satellites/catalog/
+├── manifest.json        # 衛星身份證，定義路由與依賴
+├── Application/         # 業務邏輯 (UseCases)
+├── Domain/              # 核心領域 (Entities, Aggregates)
+├── Infrastructure/      # 外部對接 (Repositories, DB)
+└── Interface/           # 外部介面 (Controllers, Middleware)
+```
+
+---
+
+## 🛠️ 程式化 API
+
+您也可以在腳本中使用 Scaffold 進行自動化操作：
 
 ```ts
-import { Scaffold } from '@gravito/scaffold'
+import { SatelliteGenerator } from '@gravito/scaffold';
 
-const scaffold = new Scaffold({
-  name: 'my-app',
-  architecture: 'ddd',
-  targetPath: './my-app',
-  packageManager: 'bun',
-})
+const generator = new SatelliteGenerator({
+  name: 'orders',
+  type: 'ddd',
+  targetDir: './src/satellites/orders'
+});
 
-await scaffold.generate()
+await generator.generate();
+console.log('🛰️ Satellite "orders" has entered the galaxy!');
 ```
 
-## 模板引擎與 Helpers
+---
 
-Scaffold 內建 Handlebars 風格模板與常用字串轉換工具：
+## 🔗 延伸閱讀
 
-- `pascalCase` / `camelCase` / `kebabCase`
-- `snakeCase` / `upperCase` / `lowerCase`
-- `pluralize` / `singularize`
-
-```ts
-import { StubGenerator } from '@gravito/scaffold'
-
-const generator = new StubGenerator()
-generator.registerHelper('uppercase', (str) => str.toUpperCase())
-const result = generator.render('Hello {{uppercase name}}!', { name: 'world' })
-```
-
-## 自訂 Generator
-
-```ts
-import { BaseGenerator, type GeneratorContext, type DirectoryNode } from '@gravito/scaffold'
-
-export class MyCustomGenerator extends BaseGenerator {
-  getDirectoryStructure(context: GeneratorContext): DirectoryNode[] {
-    return [
-      {
-        type: 'directory',
-        name: 'src',
-        children: [{ type: 'file', name: 'index.ts', content: 'console.log(\"Hello\")' }],
-      },
-    ]
-  }
-}
-```
-
-## 下一步
-
-- 參考 CLI 流程：[專案初始化](./cli-init.md)
+- 🌌 [銀河全景圖](../../GALAXY_ARCHITECTURE_MAP.md)
+- 🛰️ [領域衛星規範](../../spec/SATELLITE_SPEC.md)
+- 📡 [Xenon 並行運行時](../architecture/xenon-architecture-deep-dive.md)

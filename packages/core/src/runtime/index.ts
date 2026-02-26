@@ -8,6 +8,9 @@
  * @since 3.2.0
  */
 
+import { createBunAdapter } from './adapter-bun'
+import { createDenoAdapter } from './adapter-deno'
+import { createNodeAdapter } from './adapter-node'
 import { createUnknownAdapter } from './adapter-unknown'
 import { getRuntimeKind } from './detection'
 import type { RuntimeAdapter, RuntimePasswordAdapter, RuntimeSqliteDatabase } from './types'
@@ -37,6 +40,7 @@ export type {
   RuntimeResourceUsage,
   RuntimeServeConfig,
   RuntimeServer,
+  RuntimeServeSyncConfig,
   RuntimeSpawnOptions,
   RuntimeSpawnSyncResult,
   RuntimeSqliteDatabase,
@@ -84,41 +88,26 @@ export function getRuntimeAdapter(): RuntimeAdapter {
   if (runtimeAdapter) {
     return runtimeAdapter
   }
-  
+
   const kind = getRuntimeKind()
-  
+
   // Browser safety: return unknown adapter immediately if we're in a browser
-  if (typeof window !== 'undefined' || typeof process === 'undefined' || (process as any).browser) {
+  if (typeof window !== 'undefined' || (globalThis as any).process?.browser) {
     return (runtimeAdapter = createUnknownAdapter())
   }
 
-  // Use dynamic-ish resolution to avoid Vite pulling in Node modules eagerly
-  const safeLoad = (path: string) => {
-    try {
-      // biome-ignore lint/security/noGlobalEval: specialized case for hiding node built-ins from bundlers
-      return eval('require')(path)
-    } catch (e) {
-      return null
-    }
-  }
-
-  try {
-    if (kind === 'bun') {
-      const mod = safeLoad('./adapter-bun')
-      if (mod) runtimeAdapter = mod.createBunAdapter()
-    } else if (kind === 'node') {
-      const mod = safeLoad('./adapter-node')
-      if (mod) runtimeAdapter = mod.createNodeAdapter()
-    } else if (kind === 'deno') {
-      const mod = safeLoad('./adapter-deno')
-      if (mod) runtimeAdapter = mod.createDenoAdapter()
-    }
-  } catch (e) {
-    // Fallback if dynamic loading fails
-  }
-
-  if (!runtimeAdapter) {
-    runtimeAdapter = createUnknownAdapter()
+  switch (kind) {
+    case 'bun':
+      runtimeAdapter = createBunAdapter()
+      break
+    case 'node':
+      runtimeAdapter = createNodeAdapter()
+      break
+    case 'deno':
+      runtimeAdapter = createDenoAdapter()
+      break
+    default:
+      runtimeAdapter = createUnknownAdapter()
   }
 
   return runtimeAdapter
@@ -144,17 +133,20 @@ export function getPasswordAdapter(): RuntimePasswordAdapter {
   if (passwordAdapter) {
     return passwordAdapter
   }
+
   const kind = getRuntimeKind()
-  if (kind === 'bun' && typeof Bun !== 'undefined') {
+  const B = (globalThis as any).Bun
+
+  if (kind === 'bun' && B) {
     passwordAdapter = {
       async hash(value, options) {
         if (options.algorithm === 'bcrypt') {
-          return await Bun.password.hash(value, {
+          return await B.password.hash(value, {
             algorithm: 'bcrypt',
             cost: options.cost ?? 12,
           })
         }
-        return await Bun.password.hash(value, {
+        return await B.password.hash(value, {
           algorithm: 'argon2id',
           ...(options.memoryCost !== undefined ? { memoryCost: options.memoryCost } : {}),
           ...(options.timeCost !== undefined ? { timeCost: options.timeCost } : {}),
@@ -162,7 +154,7 @@ export function getPasswordAdapter(): RuntimePasswordAdapter {
         })
       },
       async verify(value, hashed) {
-        return await Bun.password.verify(value, hashed)
+        return await B.password.verify(value, hashed)
       },
     }
     return passwordAdapter
@@ -170,8 +162,12 @@ export function getPasswordAdapter(): RuntimePasswordAdapter {
 
   const message = '[RuntimeAdapter] Password hashing requires Bun runtime or a Node/Deno adapter'
   passwordAdapter = {
-    async hash() { throw new Error(message) },
-    async verify() { throw new Error(message) },
+    async hash() {
+      throw new Error(message)
+    },
+    async verify() {
+      throw new Error(message)
+    },
   }
   return passwordAdapter
 }
@@ -184,7 +180,9 @@ export function getPasswordAdapter(): RuntimePasswordAdapter {
  */
 export async function createSqliteDatabase(path: string): Promise<RuntimeSqliteDatabase> {
   const kind = getRuntimeKind()
-  if (kind === 'bun' && typeof Bun !== 'undefined') {
+  const B = (globalThis as any).Bun
+
+  if (kind === 'bun' && B) {
     const sqlite = await import('bun:sqlite')
     const db = new sqlite.Database(path, { create: true })
     return db as RuntimeSqliteDatabase

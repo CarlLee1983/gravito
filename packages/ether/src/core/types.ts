@@ -87,12 +87,12 @@ export interface PipelineConfig {
    * 轉換規則列表
    * 會依序執行
    */
-  readonly rules: ReadonlyArray<TransformRule>
+  readonly rules: readonly TransformRule[]
 
   /**
    * 文檔級規則列表（可選）
    */
-  readonly documentRules?: ReadonlyArray<DocumentRule>
+  readonly documentRules?: readonly DocumentRule[]
 
   /**
    * 是否啟用此管道

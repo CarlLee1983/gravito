@@ -29,14 +29,14 @@ export class ${className}Controller {
   }
 
   async show(ctx: GravitoContext) {
-    const id = ctx.request.params.id
+    const id = ctx.req.param('id')
     // Get single resource
     return ctx.json({ data: { id } })
   }
 
   async create(ctx: GravitoContext) {
     // Show create form
-    return ctx.view.render('${this.toKebabCase(className)}/create')
+    return (ctx as any).view.render('${this.toKebabCase(className)}/create')
   }
 
   async store(ctx: GravitoContext) {
@@ -45,19 +45,19 @@ export class ${className}Controller {
   }
 
   async edit(ctx: GravitoContext) {
-    const id = ctx.request.params.id
+    const id = ctx.req.param('id')
     // Show edit form
-    return ctx.view.render('${this.toKebabCase(className)}/edit', { id })
+    return (ctx as any).view.render('${this.toKebabCase(className)}/edit', { id })
   }
 
   async update(ctx: GravitoContext) {
-    const id = ctx.request.params.id
+    const id = ctx.req.param('id')
     // Update resource
     return ctx.json({ message: 'Resource updated' })
   }
 
   async destroy(ctx: GravitoContext) {
-    const id = ctx.request.params.id
+    const id = ctx.req.param('id')
     // Delete resource
     return ctx.json({ message: 'Resource deleted' })
   }

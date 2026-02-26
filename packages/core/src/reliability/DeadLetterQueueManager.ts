@@ -5,8 +5,8 @@
  * 支持 CRUD、重新入隊、批量重試和統計功能
  */
 
-import { randomUUID } from '../compat/crypto'
 import type { ConnectionContract } from '@gravito/atlas'
+import { randomUUID } from '../compat/crypto'
 import type { EventOptions } from '../events/EventOptions'
 import type { RetryPolicy } from './RetryPolicy'
 import { RetryEngine } from './RetryPolicy'

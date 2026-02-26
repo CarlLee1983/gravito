@@ -67,7 +67,7 @@ export class DocsService {
   }
 
   private static stripLeadingEmojiFromHeadingInnerHtml(value: string): string {
-    // Headings are typically plain text at the start (e.g. "📚 Title").
+    // Headings are typically plain text at the start (e.g. "Title").
     // Keep this conservative: only remove leading emoji + whitespace.
     // biome-ignore lint/suspicious/noMisleadingCharacterClass: Emoji regex
     return value.replace(/^\s*[\p{Extended_Pictographic}\uFE0F\u200D]+[\s]+/u, '')

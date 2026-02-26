@@ -47,7 +47,12 @@ export type {
 export { ConfigManager } from './ConfigManager'
 export { Container, type Factory, type ServiceKey, type ServiceMap } from './Container'
 export { registerQueueCommands } from './cli/queue-commands'
-export { codeFromStatus, ErrorHandler, type ErrorHandlerDeps, messageFromStatus } from './ErrorHandler'
+export {
+  codeFromStatus,
+  ErrorHandler,
+  type ErrorHandlerDeps,
+  messageFromStatus,
+} from './ErrorHandler'
 export { EventManager } from './EventManager'
 
 // Event System (Types are safe)

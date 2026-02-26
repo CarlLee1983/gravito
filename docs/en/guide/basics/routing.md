@@ -1,184 +1,166 @@
-# Routing
+---
+title: Routing Basics
+description: Master the Gravito router. Learn about basic routing, parameters, named routes, and declarative routing via manifest.json.
+---
 
-Gravito router provides an elegant and fluent API for mapping URL requests to specific actions or controllers.
+# 🚦 Routing
 
-## Basic Routing
+The Gravito router provides an elegant and fluent API for mapping URL requests to specific actions or controllers. It is built on top of Photon's O(1) Radix Tree engine for extreme performance.
 
-The most basic routes accept a URI and a closure:
+---
+
+## 🏗️ Basic Routing
+
+The most basic routes accept a URI and a closure or a controller method:
 
 ```typescript
-// src/routes/index.ts
-export default function(routes: Router) {
-  routes.get('/greeting', (c) => {
-    return c.text('Hello World');
-  });
+// Simple closure
+router.get('/greeting', (c) => {
+  return c.text('Hello World');
+});
+
+// Controller method
+router.get('/profile', [UserController, 'show']);
+```
+
+### Available Methods
+
+The router supports all standard HTTP verbs:
+
+```typescript
+router.get(uri, handler);
+router.post(uri, handler);
+router.put(uri, handler);
+router.patch(uri, handler);
+router.delete(uri, handler);
+router.options(uri, handler);
+```
+
+---
+
+## 📄 Declarative Routing (Manifest-Driven)
+
+In the **Galaxy Architecture**, we recommend defining routes declaratively inside a Satellite's `manifest.json`. This allows for zero-config discovery and parallel loading.
+
+```json
+{
+  "name": "UserSatellite",
+  "routes": [
+    { 
+      "path": "/profile", 
+      "method": "GET", 
+      "handler": "UserController@show",
+      "middleware": ["auth"]
+    },
+    { 
+      "path": "/settings", 
+      "method": "POST", 
+      "handler": "UserController@update" 
+    }
+  ]
 }
 ```
 
-### Available Router Methods
+> **Note**: To use string-based handlers like `"UserController@show"`, you must register the class or function in the host's **Xenon** registry.
 
-The router allows you to register routes that respond to any HTTP verb:
+---
 
-```typescript
-routes.get(uri, handler);
-routes.post(uri, handler);
-routes.put(uri, handler);
-routes.patch(uri, handler);
-routes.delete(uri, handler);
-```
-
-## Route Parameters
+## 🔗 Route Parameters
 
 ### Required Parameters
-
-Sometimes you will need to capture segments of the URI within your route. For example, you may need to capture a user's ID from the URL:
+Capture segments of the URI by using the `:` prefix:
 
 ```typescript
-routes.get('/user/:id', (c) => {
+router.get('/user/:id', (c) => {
   const id = c.req.param('id');
   return c.text(`User ID: ${id}`);
 });
 ```
 
-You may define as many route parameters as required by your route:
-
-```typescript
-routes.get('/posts/:post/comments/:comment', (c) => {
-  const { post, comment } = c.req.params();
-  // ...
-});
-```
-
 ### Optional Parameters
-
-To define an optional parameter, place a `?` mark after the parameter name:
+Append a `?` to the parameter name:
 
 ```typescript
-routes.get('/user/:name?', (c) => {
+router.get('/user/:name?', (c) => {
   const name = c.req.param('name') || 'Guest';
   return c.text(`Hello ${name}`);
 });
 ```
 
-## Named Routes
+---
 
-Named routes allow the convenient generation of URLs for specific routes. You may specify a name for a route by chaining the `name` method onto the route definition:
+## 🏷️ Named Routes
+
+Named routes allow the convenient generation of URLs. You can specify a name by chaining the `name` method:
 
 ```typescript
-routes.get('/user/profile', [UserController, 'show']).name('profile');
+router.get('/user/profile', [UserController, 'show']).name('profile');
 ```
 
-### Generating URLs to Named Routes
-
-Once you have assigned a name to a given route, you may use the `c.route()` helper to generate URLs:
+### Generating URLs
+Use the `c.route()` helper to generate URLs for named routes:
 
 ```typescript
-// In a controller
+// Simple route
 const url = c.route('profile');
 
 // Route with parameters
-routes.get('/user/:id/profile', [UserController, 'show']).name('user.profile');
-
-const urlWithParam = c.route('user.profile', { id: 1 }); 
-// Output: /user/1/profile
+router.get('/user/:id', [UserController, 'show']).name('user.show');
+const urlWithParam = c.route('user.show', { id: 42 }); // /user/42
 ```
 
-## Route Groups
+---
 
-Route groups allow you to share route attributes, such as middleware or prefixes, across a large number of routes without needing to define those attributes on each individual route.
+## 👥 Route Groups
 
-### Prefixes
-
-The `prefix` method may be used to prefix each route in the group with a given URI:
+Groups allow you to share attributes like middleware or prefixes across multiple routes.
 
 ```typescript
-routes.prefix('/admin').group((group) => {
-  group.get('/users', [AdminController, 'users']); // Matches /admin/users
+router.prefix('/admin').middleware(auth()).group((admin) => {
+  admin.get('/dashboard', [AdminController, 'index']);
+  admin.get('/users', [AdminController, 'users']);
 });
 ```
 
-### Middleware
+---
 
-To assign middleware to all routes within a group, you may use the `middleware` method:
+## 📦 Resource Routes
 
-```typescript
-routes.middleware(auth()).group((group) => {
-  group.get('/dashboard', [DashboardController, 'index']);
-  group.get('/profile', [UserController, 'profile']);
-});
-```
-
-### Subdomain Routing
-
-Gravito routes can also handle subdomain constraints:
+Gravito follows RESTful conventions via the `resource` method:
 
 ```typescript
-routes.domain('api.example.com').group((group) => {
-  group.get('/', () => {
-    // Only triggered on api.example.com
-  });
-});
+router.resource('photos', PhotoController);
 ```
 
-## Resource Routes
+| Verb | Action | URI | Method Name |
+| --- | --- | --- | --- |
+| GET | `index` | `/photos` | `index` |
+| POST | `store` | `/photos` | `store` |
+| GET | `show` | `/photos/:id` | `show` |
+| PUT | `update` | `/photos/:id` | `update` |
+| DELETE | `destroy` | `/photos/:id` | `destroy` |
 
-If you follow RESTful conventions, you can quickly define a set of routes using the `resource` method:
+---
+
+## 🛡️ Signed URLs
+
+Generate URLs with a cryptographic signature to prevent tampering:
 
 ```typescript
-routes.resource('photos', PhotoController);
+// Generate
+const url = c.route('unsubscribe', { user: 1 }).signed();
+
+// Verify
+router.get('/unsubscribe/:user', (c) => {
+  if (!c.req.hasValidSignature()) {
+    return c.forbidden();
+  }
+}).name('unsubscribe');
 ```
 
-This single line creates several routes to handle various actions on the resource:
+---
 
-| Verb | Action | URI | Method Name | Route Name |
-| --- | --- | --- | --- | --- |
-| GET | `index` | `/photos` | `index` | `photos.index` |
-| GET | `create` | `/photos/create` | `create` | `photos.create` |
-| POST | `store` | `/photos` | `store` | `photos.store` |
-| GET | `show` | `/photos/:id` | `show` | `photos.show` |
-| GET | `edit` | `/photos/:id/edit` | `edit` | `photos.edit` |
-| PUT/PATCH | `update` | `/photos/:id` | `update` | `photos.update` |
-| DELETE | `destroy` | `/photos/:id` | `destroy` | `photos.destroy` |
-
-### Restricting Resource Routes
-
-You may use the `only` or `except` options to restrict the actions generated:
-
-```typescript
-routes.resource('photos', PhotoController, {
-  only: ['index', 'show']
-});
-```
-
-## Route Model Binding
-
-Gravito supports automatic injection of model instances into your routes.
-
-### Explicit Binding
-
-In your route definitions, use the `model` method to associate a parameter with a specific model class:
-
-```typescript
-import { User } from '../models/User';
-
-export default function(routes: Router) {
-  // Register binding
-  routes.model('user', User);
-
-  routes.get('/users/:user', (c) => {
-    // Automatically fetches User from DB, throws 404 if not found
-    const user = c.get('routeModels').user;
-    return c.json(user);
-  });
-}
-```
-
-## Fallback Routes
-
-When no other route matches the incoming request, you can define fallback logic (usually at the end of all route definitions):
-
-```typescript
-routes.get('*', (c) => {
-  return c.notFound('Page Not Found');
-});
-```
+## 🔗 Further Reading
+- 🛡️ [Middleware](./middleware.md)
+- 📥 [Requests](./requests.md)
+- 📤 [Responses](./responses.md)

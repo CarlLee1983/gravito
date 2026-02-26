@@ -1,15 +1,14 @@
 import { exec } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { cp, mkdir, writeFile } from 'node:fs/promises'
+import { cp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { promisify } from 'node:util'
 import { generateI18nEntries, SitemapStream } from '@gravito/constellation'
 import { StaticSiteGenerator } from '@gravito/prism'
-import { WorkerPool } from '@gravito/stream'
 import { Glob } from 'bun'
 import { bootstrap } from './src/bootstrap.ts'
 
-console.log('🏗️  Starting Parallel SSG Build for Gravito Official (v1.6)...')
+console.log('🏗️  Starting Refactored SSG Build for Gravito Official (v1.6)...')
 
 const execAsync = promisify(exec)
 
@@ -20,7 +19,7 @@ async function build() {
   console.log('⚡ Building client assets (Vite)...')
   await execAsync('bun run build:client')
 
-  // Initialize Core & Host
+  // Initialize Core
   const core = await bootstrap({ port: 3000 })
   const outputDir = join(process.cwd(), 'dist-static')
   const domain = 'https://gravito.dev'
@@ -28,7 +27,7 @@ async function build() {
 
   await mkdir(outputDir, { recursive: true })
 
-  // 1. Path Discovery
+  // 1. Discovery
   const abstractRoutes = new Set<string>()
   abstractRoutes.add('/')
   abstractRoutes.add('/about')
@@ -41,13 +40,9 @@ async function build() {
   const docsRoot = resolve(process.cwd(), '../../docs')
   const glob = new Glob('**/[a-z]*.md')
   for await (const file of glob.scan(docsRoot)) {
-    if (file.startsWith('design/') || file.startsWith('internal/')) {
-      continue
-    }
+    if (file.startsWith('design/') || file.startsWith('internal/')) continue
     const slug = file.replace(/^[a-z-]+\//i, '').replace(/\.md$/, '')
-    if (slug === 'guide/laravel-12-mvc-parity' || slug.includes('node_modules')) {
-      continue
-    }
+    if (slug === 'guide/laravel-12-mvc-parity' || slug.includes('node_modules')) continue
     abstractRoutes.add(`/docs/${slug}`)
   }
 
@@ -79,29 +74,19 @@ async function build() {
     }
   }
 
-  // 3. Parallel Rendering using @gravito/stream WorkerPool
-  console.log(`🚀 Exporting ${extraPaths.length} paths using Parallel Worker Pool...`)
-
-  const pool = new WorkerPool({
-    runtime: 'bun',
-    poolSize: 8, // Use more workers for high concurrency
-    minWorkers: 2,
-  })
-
-  // Use Prism SSG Engine with the core
+  // 3. Render using Prism SSG Engine
+  // (Uses internal concurrency, optimized for single-process memory safety)
+  console.log(`🚀 Exporting ${extraPaths.length} paths using Incremental Builder...`)
   const ssg = new StaticSiteGenerator(core)
-
-  // Actually, StaticSiteGenerator already has some internal logic,
-  // but we'll wrap it or use its incremental builder which we can speed up.
-  // For this refactor, we demonstrate manual pool usage for the extra paths.
 
   await ssg.exportIncremental(outputDir, {
     baseUrl: domain,
     incremental: true,
     extraPaths,
+    concurrency: 20, // High concurrency within the process
   })
 
-  // 4. Post-processing: 404.html, CNAME, .nojekyll, Sitemap
+  // 4. Post-processing
   console.log('🧹 Post-processing...')
 
   const res404 = await core.adapter.fetch(new Request('http://localhost/__force_404__'))
@@ -124,16 +109,12 @@ async function build() {
       'apple-touch-icon.png',
     ]
     for (const a of rootAssets) {
-      if (existsSync(join(staticDir, a))) {
-        await cp(join(staticDir, a), join(outputDir, a))
-      }
+      if (existsSync(join(staticDir, a))) await cp(join(staticDir, a), join(outputDir, a))
     }
   }
 
   const duration = ((performance.now() - startTime) / 1000).toFixed(2)
   console.log(`✅ SSG Build Complete in ${duration}s!`)
-
-  await pool.shutdown()
   process.exit(0)
 }
 
