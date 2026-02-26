@@ -132,12 +132,13 @@ export function createSeoRule(options: SeoRuleOptions = {}): TransformRule[] {
 
   // 3. Open Graph 標籤
   if (options.og && Object.keys(options.og).length > 0) {
+    const ogData = options.og
     rules.push({
       name: 'seo:og-tags',
       selector: 'head',
       element(el) {
         let ogTags = ''
-        for (const [key, value] of Object.entries(options.og!)) {
+        for (const [key, value] of Object.entries(ogData)) {
           ogTags += `<meta property="og:${escapeHtml(key)}" content="${escapeHtml(value)}" />`
         }
         if (ogTags) {
@@ -149,12 +150,13 @@ export function createSeoRule(options: SeoRuleOptions = {}): TransformRule[] {
 
   // 4. Twitter Cards 標籤
   if (options.twitter && Object.keys(options.twitter).length > 0) {
+    const twitterData = options.twitter
     rules.push({
       name: 'seo:twitter-tags',
       selector: 'head',
       element(el) {
         let twitterTags = ''
-        for (const [key, value] of Object.entries(options.twitter!)) {
+        for (const [key, value] of Object.entries(twitterData)) {
           twitterTags += `<meta name="twitter:${escapeHtml(key)}" content="${escapeHtml(value)}" />`
         }
         if (twitterTags) {
@@ -166,11 +168,12 @@ export function createSeoRule(options: SeoRuleOptions = {}): TransformRule[] {
 
   // 5. HTML lang 屬性
   if (options.lang) {
+    const lang = options.lang
     rules.push({
       name: 'seo:lang',
       selector: 'html',
       element(el) {
-        el.setAttribute('lang', options.lang!)
+        el.setAttribute('lang', lang)
       },
     })
   }
