@@ -43,7 +43,7 @@ export class FlashSaleServiceProvider extends ServiceProvider {
 
     // 註冊 Mock Repository （用於測試與性能基準測試）
     container.singleton('product.repository', () => {
-      return new MockProductRepository(core)
+      return new MockProductRepository()
     })
 
     // 註冊 ShardingManager（如果啟用分片）
@@ -80,7 +80,7 @@ export class FlashSaleServiceProvider extends ServiceProvider {
       }
 
       // 回退到 MockOrderRepository
-      return new MockOrderRepository(core)
+      return new MockOrderRepository()
     })
 
     // 註冊區域特定的 TieredCacheService（用於多區域部署）
