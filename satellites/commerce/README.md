@@ -40,3 +40,17 @@ await core.use(new CommerceServiceProvider())
 
 ## 🏎️ 渦輪增壓模式 (Turbo Mode)
 本模組支援「秒開渦輪」。當環境變數 `COMMERCE_MODE=turbo` 時，可切換為 Redis 預扣與非同步隊列模式（需安裝 turbo-engine 擴展包）。
+
+## 📚 設計文檔
+
+### [DESIGN_DECISIONS.md](./DESIGN_DECISIONS.md)
+
+詳細的架構設計決策，包括：
+- **Flash-Sale 依賴集成** - 為什麼透過 DI 整合而非事件驅動
+- **調整項系統** - 靈活費用管理與行銷插件擴展
+- **樂觀鎖庫存** - 高併發無鎖設計
+- **訂單快照** - 防止調價糾紛的財務追蹤機制
+- **Galaxy Hook 整合** - 跨 Satellite 功能擴展
+- **v2.0.0 演進路線** - 未來完全事件驅動的評估計畫
+
+建議在修改商業邏輯前閱讀此文檔，了解設計權衡。
