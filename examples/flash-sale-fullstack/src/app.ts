@@ -5,6 +5,7 @@
  */
 
 import { Application } from '@gravito/core'
+import { MonitorOrbit, type MonitorService } from '@gravito/monitor'
 import { FlashSaleServiceProvider } from '@gravito/satellite-flash-sale'
 import { InventoryLockServiceProvider } from '@gravito/satellite-inventory-lock'
 import { PaymentServiceProvider } from '@gravito/satellite-payment'
@@ -14,9 +15,13 @@ import { EventAggregator } from './cache/events'
 import { DynamicPoolManager } from './database/DynamicPoolManager'
 import { GravitoConfig } from './gravito.config'
 import { setupCacheIntegration } from './integrations/cache-integration'
+import { setupMonitoringIntegration } from './integrations/monitor-integration'
 import { setupOrderQueueIntegration } from './integrations/order-queue-handler'
 import { setupPaymentQueueIntegration } from './integrations/payment-queue-handler'
 import { setupResilienceIntegration } from './integrations/resilience-integration'
+import { registerAllHealthChecks } from './monitoring/health-checks'
+import { registerBusinessMetrics } from './monitoring/metrics-integration'
+import { getMonitorConfig } from './monitoring/monitor-config'
 import { initializeQueueManager } from './queue'
 import { initializeResilience, shutdownResilience } from './resilience/config'
 import { httpTracingMiddleware } from './tracing/http-tracing-middleware'
@@ -28,6 +33,7 @@ let globalQueueManager: QueueManager | null = null
 let globalPoolManager: DynamicPoolManager | null = null
 let globalEventAggregator: EventAggregator | null = null
 let globalAsyncInvalidationEngine: AsyncInvalidationEngine | null = null
+let globalMonitorService: MonitorService | null = null
 
 /**
  * 取得全局 Core 實例（供 Job 和其他異步代碼使用）
@@ -67,6 +73,16 @@ export function getAsyncInvalidationEngine(): AsyncInvalidationEngine {
     throw new Error('AsyncInvalidationEngine not initialized. Call bootstrap() first.')
   }
   return globalAsyncInvalidationEngine
+}
+
+/**
+ * 取得全局 Monitor 實例
+ */
+export function getMonitorService(): MonitorService {
+  if (!globalMonitorService) {
+    throw new Error('MonitorService not initialized. Call bootstrap() first.')
+  }
+  return globalMonitorService
 }
 
 /**
@@ -112,6 +128,21 @@ async function bootstrap(): Promise<void> {
 
   // 保存全局應用實例
   globalApp = app
+
+  // P0.1：初始化監控和可觀測性（Monitor）
+  // 提供健康檢查、指標收集和分布式追蹤
+  const monitorConfig = getMonitorConfig(_env)
+  const monitorOrbit = new MonitorOrbit(monitorConfig)
+  await monitorOrbit.install(app.core)
+
+  // 從容器取得 Monitor 服務
+  globalMonitorService = app.core.container.make('monitor') as MonitorService
+
+  // 註冊健康檢查
+  registerAllHealthChecks(globalMonitorService.health, app.core.logger)
+
+  // 註冊業務指標
+  const businessMetrics = registerBusinessMetrics(globalMonitorService.metrics, app.core.logger)
 
   // P0.2：初始化容錯機制（Resilience）
   await initializeResilience(app.core)
@@ -181,6 +212,9 @@ async function bootstrap(): Promise<void> {
   // 設置快取層整合（Stasis）
   setupCacheIntegration(app.core)
 
+  // 設置監控整合（Monitor）
+  setupMonitoringIntegration(app.core, businessMetrics)
+
   // 設置 Satellites 與隊列系統的整合
   setupOrderQueueIntegration(app.core)
   setupPaymentQueueIntegration(app.core)
@@ -199,6 +233,9 @@ async function bootstrap(): Promise<void> {
   app.core.logger.info(`🌐 Listen on: http://localhost:${liftoffConfig.port}`)
   app.core.logger.info('📦 Queue Manager initialized')
   app.core.logger.info('🔗 Satellites integrations configured')
+  app.core.logger.info('📊 Observability endpoints:')
+  app.core.logger.info('   - Health: /health, /ready, /live')
+  app.core.logger.info('   - Metrics: /metrics (Prometheus format)')
 
   // 啟動 Bun 服務器
   if (typeof Bun !== 'undefined') {
@@ -206,9 +243,9 @@ async function bootstrap(): Promise<void> {
     app.core.logger.info('✅ HTTP Server is running')
   }
 
-  // 註冊 shutdown hook - 確保 OTel Spans 被正確 flush
-  process.on('SIGTERM', async () => {
-    app.core.logger.info('SIGTERM received, shutting down gracefully...')
+  // 註冊 shutdown hook - 確保所有服務都正確關閉
+  const shutdown = async () => {
+    app.core.logger.info('Shutting down gracefully...')
     // 停止容錯機制
     await shutdownResilience()
     // 停止動態連接池監控
@@ -222,28 +259,21 @@ async function bootstrap(): Promise<void> {
     if (globalAsyncInvalidationEngine) {
       await globalAsyncInvalidationEngine.stop()
     }
-    // TODO: 使用 @gravito/monitor 進行 OpenTelemetry 關閉
-    // await shutdownOpenTelemetry()
+    // 關閉監控 Orbit（包含 OpenTelemetry shutdown）
+    if (globalMonitorService) {
+      await monitorOrbit.shutdown()
+    }
+  }
+
+  process.on('SIGTERM', async () => {
+    app.core.logger.info('SIGTERM received, shutting down gracefully...')
+    await shutdown()
     process.exit(0)
   })
 
   process.on('SIGINT', async () => {
     app.core.logger.info('SIGINT received, shutting down gracefully...')
-    // 停止容錯機制
-    await shutdownResilience()
-    // 停止動態連接池監控
-    if (globalPoolManager) {
-      globalPoolManager.stopMonitoring()
-    }
-    // 停止事件驅動系統
-    if (globalEventAggregator) {
-      await globalEventAggregator.stop()
-    }
-    if (globalAsyncInvalidationEngine) {
-      await globalAsyncInvalidationEngine.stop()
-    }
-    // TODO: 使用 @gravito/monitor 進行 OpenTelemetry 關閉
-    // await shutdownOpenTelemetry()
+    await shutdown()
     process.exit(0)
   })
 }

@@ -20,6 +20,7 @@
     "@gravito/stream": "workspace:*",
     "@gravito/resilience": "workspace:*",
     "@gravito/stasis": "workspace:*",
+    "@gravito/monitor": "workspace:*",
     "@gravito/satellite-flash-sale": "workspace:*",
     "@gravito/satellite-inventory-lock": "workspace:*",
     "@gravito/satellite-payment": "workspace:*",
