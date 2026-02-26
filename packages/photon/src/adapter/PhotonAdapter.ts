@@ -374,7 +374,7 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
     this.photonCtx.set(key as string, value)
   }
 
-  get executionCtx(): ExecutionContext | undefined {
+  get executionCtx(): any | undefined {
     return this.photonCtx.executionCtx
   }
 
@@ -441,7 +441,7 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
     // Overwrite with custom headers
     if (options.headers) {
       Object.entries(options.headers).forEach(([k, v]) => {
-        headers.set(k, v)
+        headers.set(k, String(v))
       })
     }
 

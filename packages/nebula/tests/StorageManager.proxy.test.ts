@@ -156,6 +156,7 @@ describe('StorageManager - Lazy Initialization', () => {
 
     // Factory 不應在建構時被呼叫
     expect(factory).not.toHaveBeenCalled()
+    expect(_manager).toBeDefined()
   })
 
   it('should create store only once per disk name', () => {

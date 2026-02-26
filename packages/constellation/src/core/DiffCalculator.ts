@@ -37,11 +37,7 @@ export interface DiffCalculatorOptions {
  * @since 3.0.0
  */
 export class DiffCalculator {
-  private batchSize: number
-
-  constructor(options: DiffCalculatorOptions = {}) {
-    this.batchSize = options.batchSize || 10000
-  }
+  constructor(_options: DiffCalculatorOptions = {}) {}
 
   /**
    * Calculates the difference between two sets of sitemap entries.

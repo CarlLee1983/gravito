@@ -941,6 +941,7 @@ export class EventPriorityQueue implements EventBackend {
    * Clear all tasks from the queue.
    */
   clear(): void {
+    this.criticalPriority = []
     this.highPriority = []
     this.normalPriority = []
     this.lowPriority = []

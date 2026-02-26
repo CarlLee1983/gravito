@@ -208,10 +208,7 @@ describe('EventPriorityQueue', () => {
       rel()
     })
 
-    // BUG: clear() 在第 944-948 行未清除 criticalPriority 陣列
-    // 預期行為：clear() 應將所有優先級（含 critical）歸零
-    // 實際行為：criticalPriority 殘留，getDepth() 不為 0
-    it.skip('should clear criticalPriority queue (BUG: clear() does not reset criticalPriority)', () => {
+    it('should clear criticalPriority queue', () => {
       // critical 使用 setImmediate，任務留在佇列中
       queue.enqueue(makeEventTask('a', 'critical'))
       queue.enqueue(makeEventTask('b', 'critical'))
@@ -219,7 +216,7 @@ describe('EventPriorityQueue', () => {
 
       queue.clear()
 
-      // BUG 驗證：以下斷言會失敗，因為 clear() 未清除 criticalPriority
+      // 驗證 clear() 已清除所有優先級
       expect(queue.getDepthByPriority('critical')).toBe(0)
       expect(queue.getDepth()).toBe(0)
     })

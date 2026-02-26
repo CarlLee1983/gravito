@@ -5,15 +5,15 @@
  */
 
 export {
-  createCustomLoaderPlugin,
-  createDefaultGravitoPlugins,
-  createGravitoConfigPlugin,
-  createNamespaceResolverPlugin,
-  createSchemaValidationPlugin,
-  createSourceTransformerPlugin,
+  // createCustomLoaderPlugin,
+  // createDefaultGravitoPlugins,
+  // createGravitoConfigPlugin,
+  // createNamespaceResolverPlugin,
+  // createSchemaValidationPlugin,
+  // createSourceTransformerPlugin,
   type GravitoPluginConfig,
   gravitoPlugins,
-  PluginFactory,
+  // PluginFactory,
 } from './bun-loader'
 
 export {

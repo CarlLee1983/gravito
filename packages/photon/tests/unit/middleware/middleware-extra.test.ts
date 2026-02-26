@@ -72,7 +72,7 @@ describe('cors middleware', () => {
     const middleware = cors({ origin: ['https://example.com'], maxAge: 600 })
     const res = await middleware(ctx, async () => {})
 
-    expect(res.status).toBe(204)
+    expect((res as any)?.status).toBe(204)
     expect(ctx.headers['Access-Control-Allow-Methods']).toContain('POST')
     expect(ctx.headers['Access-Control-Allow-Headers']).toBe('X-Test')
     expect(ctx.headers['Access-Control-Max-Age']).toBe('600')
@@ -92,19 +92,19 @@ describe('bodySizeLimit middleware', () => {
   test('returns 411 when length required', async () => {
     const ctx = makeContext({ method: 'POST', headers: {} }) as any
     const res = await bodySizeLimit(10, { requireContentLength: true })(ctx, async () => {})
-    expect(res.status).toBe(411)
+    expect((res as any)?.status).toBe(411)
   })
 
   test('returns 400 on invalid length', async () => {
     const ctx = makeContext({ method: 'POST', headers: { 'Content-Length': 'nope' } }) as any
     const res = await bodySizeLimit(10, { requireContentLength: true })(ctx, async () => {})
-    expect(res.status).toBe(400)
+    expect((res as any)?.status).toBe(400)
   })
 
   test('returns 413 when length exceeds limit', async () => {
     const ctx = makeContext({ method: 'POST', headers: { 'Content-Length': '20' } }) as any
     const res = await bodySizeLimit(10)(ctx, async () => {})
-    expect(res.status).toBe(413)
+    expect((res as any)?.status).toBe(413)
   })
 
   test('passes when length is within limit', async () => {
@@ -169,7 +169,7 @@ describe('csrf helpers', () => {
   test('csrfProtection rejects missing token', async () => {
     const ctx = makeContext({ method: 'POST', headers: {} }) as any
     const res = await csrfProtection()(ctx, async () => {})
-    expect(res.status).toBe(419)
+    expect((res as any)?.status).toBe(419)
   })
 
   test('csrfProtection accepts form body token', async () => {
@@ -199,7 +199,7 @@ describe('header token gate', () => {
   test('requireHeaderToken blocks when missing', async () => {
     const ctx = makeContext({ headers: {} }) as any
     const res = await requireHeaderToken({ token: 'secret', message: 'nope' })(ctx, async () => {})
-    expect(res.status).toBe(403)
-    expect(res.body).toBe('nope')
+    expect((res as any)?.status).toBe(403)
+    expect((res as any)?.body).toBe('nope')
   })
 })

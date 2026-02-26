@@ -1,7 +1,7 @@
 /**
  * Bun plugin for loading Gravito configuration and schema files
  */
-import type { OnLoadArgs, Plugin, PluginBuilder } from 'bun'
+import type { BunPlugin, OnLoadArgs, PluginBuilder } from 'bun'
 
 export interface GravitoPluginConfig {
   validateSchemas?: boolean
@@ -11,7 +11,7 @@ export interface GravitoPluginConfig {
 /**
  * Main plugin for Gravito loaders
  */
-export const createGravitoPlugin = (config: GravitoPluginConfig = {}): Plugin => {
+export const createGravitoPlugin = (config: GravitoPluginConfig = {}): BunPlugin => {
   return {
     name: 'gravito-loader',
     setup(build: PluginBuilder) {

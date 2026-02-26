@@ -215,7 +215,7 @@ describe('MemoryStore - Metadata Enhancement', () => {
     const secondModified = meta2?.lastModified
 
     expect(secondModified).toBeInstanceOf(Date)
-    expect(secondModified?.getTime()).toBeGreaterThan(firstModified?.getTime())
+    expect(secondModified!.getTime()).toBeGreaterThan(firstModified!.getTime())
   })
 
   it('應該能夠使用 contentType 選項影響 Blob 類型', async () => {

@@ -47,7 +47,7 @@ describe('BodySizeLimit edge cases', () => {
       headers: { 'Content-Length': '100' },
     }) as any
     const res = await bodySizeLimit(50)(ctx, async () => {})
-    expect(res.status).toBe(413)
+    expect((res as any)?.status).toBe(413)
   })
 
   it('should allow PATCH method by default', async () => {
@@ -56,7 +56,7 @@ describe('BodySizeLimit edge cases', () => {
       headers: { 'Content-Length': '100' },
     }) as any
     const res = await bodySizeLimit(50)(ctx, async () => {})
-    expect(res.status).toBe(413)
+    expect((res as any)?.status).toBe(413)
   })
 
   it('should allow DELETE method by default', async () => {
@@ -65,7 +65,7 @@ describe('BodySizeLimit edge cases', () => {
       headers: { 'Content-Length': '100' },
     }) as any
     const res = await bodySizeLimit(50)(ctx, async () => {})
-    expect(res.status).toBe(413)
+    expect((res as any)?.status).toBe(413)
   })
 
   it('should skip non-default methods like OPTIONS', async () => {
@@ -84,7 +84,7 @@ describe('BodySizeLimit edge cases', () => {
       headers: { 'Content-Length': '100' },
     }) as any
     const res = await bodySizeLimit(50, { methods: ['CUSTOM'] })(ctx, async () => {})
-    expect(res.status).toBe(413)
+    expect((res as any)?.status).toBe(413)
   })
 
   it('should be case-insensitive for method matching', async () => {
@@ -93,7 +93,7 @@ describe('BodySizeLimit edge cases', () => {
       headers: { 'Content-Length': '100' },
     }) as any
     const res = await bodySizeLimit(50)(ctx, async () => {})
-    expect(res.status).toBe(413)
+    expect((res as any)?.status).toBe(413)
   })
 
   it('should pass through when no Content-Length and not required', async () => {
@@ -122,8 +122,8 @@ describe('BodySizeLimit edge cases', () => {
       headers: {},
     }) as any
     const res = await bodySizeLimit(100, { requireContentLength: true })(ctx, async () => {})
-    expect(res.status).toBe(411)
-    expect(res.body).toBe('Length Required')
+    expect((res as any)?.status).toBe(411)
+    expect((res as any)?.body).toBe('Length Required')
   })
 
   it('should return 400 when Content-Length is invalid and requireContentLength=true', async () => {
@@ -132,8 +132,8 @@ describe('BodySizeLimit edge cases', () => {
       headers: { 'Content-Length': 'abc' },
     }) as any
     const res = await bodySizeLimit(100, { requireContentLength: true })(ctx, async () => {})
-    expect(res.status).toBe(400)
-    expect(res.body).toBe('Invalid Content-Length')
+    expect((res as any)?.status).toBe(400)
+    expect((res as any)?.body).toBe('Invalid Content-Length')
   })
 
   it('should allow exact size limit', async () => {
@@ -152,8 +152,8 @@ describe('BodySizeLimit edge cases', () => {
       headers: { 'Content-Length': '101' },
     }) as any
     const res = await bodySizeLimit(100)(ctx, async () => {})
-    expect(res.status).toBe(413)
-    expect(res.body).toBe('Payload Too Large')
+    expect((res as any)?.status).toBe(413)
+    expect((res as any)?.body).toBe('Payload Too Large')
   })
 })
 
@@ -420,7 +420,7 @@ describe('HeaderTokenGate edge cases', () => {
     it('should return 403 by default when token fails', async () => {
       const ctx = makeContext({ headers: {} }) as any
       const res = await requireHeaderToken({ token: 'secret' })(ctx, async () => {})
-      expect(res.status).toBe(403)
+      expect((res as any)?.status).toBe(403)
     })
 
     it('should use custom status code', async () => {
@@ -429,7 +429,7 @@ describe('HeaderTokenGate edge cases', () => {
         token: 'secret',
         status: 401,
       })(ctx, async () => {})
-      expect(res.status).toBe(401)
+      expect((res as any)?.status).toBe(401)
     })
 
     it('should use custom message', async () => {
@@ -438,13 +438,13 @@ describe('HeaderTokenGate edge cases', () => {
         token: 'secret',
         message: 'Access denied',
       })(ctx, async () => {})
-      expect(res.body).toBe('Access denied')
+      expect((res as any)?.body).toBe('Access denied')
     })
 
     it('should use default message "Unauthorized"', async () => {
       const ctx = makeContext({ headers: {} }) as any
       const res = await requireHeaderToken({ token: 'secret' })(ctx, async () => {})
-      expect(res.body).toBe('Unauthorized')
+      expect((res as any)?.body).toBe('Unauthorized')
     })
   })
 })

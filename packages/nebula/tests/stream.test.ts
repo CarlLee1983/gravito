@@ -200,7 +200,7 @@ describe('MemoryStore - Stream Operations', () => {
     const chunks: Uint8Array[] = []
 
     while (true) {
-      const { done, value } = await reader.read()
+      const { done, value } = await reader!.read()
       if (done) {
         break
       }

@@ -356,7 +356,6 @@ export class S3SitemapStorage implements SitemapStorage {
 
       // Extract original key (remove .shadow.{id} part)
       const originalKey = shadowFile.Key.replace(/\.shadow\.[^/]+$/, '')
-      const _originalFilename = originalKey.replace(prefix, '')
 
       if (this.shadowMode === 'atomic') {
         // Atomic switch: copy shadow file to target

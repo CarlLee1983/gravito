@@ -137,7 +137,7 @@ export class LocalStore implements StorageStore {
       await archiveAdapter.extract(archiveData, tempDir, {})
       await this.clearDirectory(rootDir)
       const copyDir = async (src: string, dst: string): Promise<void> => {
-        const items = await runtime.readDir(src)
+        const items = await runtime.readDir!(src)
         for (const item of items) {
           const srcPath = join(src, item.name)
           const dstPath = join(dst, item.name)
@@ -153,15 +153,15 @@ export class LocalStore implements StorageStore {
       await copyDir(tempDir, rootDir)
     } finally {
       try {
-        await runtime.removeRecursive(tempDir)
+        await runtime.removeRecursive!(tempDir)
       } catch {}
     }
   }
 
   private async clearDirectory(dir: string): Promise<void> {
     try {
-      const items = await this.runtime.readDir(dir)
-      await Promise.all(items.map((item) => this.runtime.removeRecursive(join(dir, item.name))))
+      const items = await this.runtime.readDir!(dir)
+      await Promise.all(items.map((item) => this.runtime.removeRecursive!(join(dir, item.name))))
     } catch {}
   }
 

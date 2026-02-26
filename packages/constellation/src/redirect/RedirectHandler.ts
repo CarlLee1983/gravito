@@ -57,7 +57,6 @@ export class RedirectHandler {
    */
   async processEntries(entries: SitemapEntry[]): Promise<SitemapEntry[]> {
     const { manager, strategy, followChains, maxChainLength } = this.options
-    const _processedEntries: SitemapEntry[] = []
     const redirectMap = new Map<string, RedirectRule>()
 
     // 1. Resolve all redirects

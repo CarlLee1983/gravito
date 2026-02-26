@@ -1,13 +1,21 @@
 /**
  * File System Router adapter for Astral static site generation
  */
-import type { FileSystemRouter } from 'bun'
+import type { FileSystemRouter, MatchedRoute } from 'bun'
 
 export interface AstralRouterConfig {
   dir: string
   origin: string
   assetPrefix?: string
   fileExtensions?: string[]
+}
+
+export type RouteMatch = MatchedRoute
+
+export interface StaticRouteMetadata {
+  path: string
+  filePath: string
+  kind: 'static' | 'dynamic'
 }
 
 export class AstralFileSystemRouter {
@@ -26,16 +34,16 @@ export class AstralFileSystemRouter {
   /**
    * Match a pathname and return route metadata
    */
-  match(pathname: string) {
-    return this.router.match(pathname)
+  match(pathname: string): RouteMatch | null {
+    return this.router.match(pathname) as RouteMatch | null
   }
 
   /**
    * Get all available routes
    */
-  async getAllRoutes() {
+  async getAllRoutes(): Promise<string[]> {
     // Scanner would enumerate all files in configured directory
-    const routes = []
+    const routes: string[] = []
     // Implementation details...
     return routes
   }
@@ -43,7 +51,7 @@ export class AstralFileSystemRouter {
   /**
    * Reload routes (useful for dev server)
    */
-  reload() {
+  reload(): void {
     this.router.reload()
   }
 }
@@ -56,3 +64,6 @@ export const createAstralRouter = (dir: string, origin: string) => {
     fileExtensions: ['.ts', '.tsx', '.md'],
   })
 }
+
+export const createDevRouter = createAstralRouter
+export const createProdRouter = createAstralRouter

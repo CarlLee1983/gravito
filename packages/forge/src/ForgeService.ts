@@ -241,7 +241,9 @@ export class ForgeService {
     const output = status.result
     const fileName = this.extractFileName(output)
     try {
-      await this.runtime.mkdir(outputDir, { recursive: true })
+      if (this.runtime.mkdir) {
+        await this.runtime.mkdir(outputDir, { recursive: true })
+      }
     } catch {}
     const fileData = await this.readOutputFile(output)
     if (!fileData) {

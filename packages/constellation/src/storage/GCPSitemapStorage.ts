@@ -291,7 +291,6 @@ export class GCPSitemapStorage implements SitemapStorage {
     for (const shadowFile of shadowFiles) {
       // Extract original key (remove .shadow.{id} part)
       const originalKey = shadowFile.name.replace(/\.shadow\.[^/]+$/, '')
-      const _originalFilename = originalKey.replace(prefix, '')
 
       if (this.shadowMode === 'atomic') {
         // Atomic switch: copy shadow file to target

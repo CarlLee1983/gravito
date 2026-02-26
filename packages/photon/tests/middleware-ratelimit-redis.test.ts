@@ -2,7 +2,7 @@
  * @gravito/photon - Redis Rate Limit Store Tests
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'bun:test'
 import { RedisStore } from '../src/middleware/ratelimit-redis'
 
 describe('RedisStore (Rate Limiting)', () => {

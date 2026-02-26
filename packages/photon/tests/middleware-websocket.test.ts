@@ -93,7 +93,7 @@ describe('defineWSHandler - 工廠函式', () => {
 
 describe('defineWSHandler - onOpen', () => {
   it('應觸發 onOpen 並傳入 TypedWSContext', () => {
-    let receivedWs: TypedWSContext | null = null
+    let receivedWs: any = null
 
     const factory = defineWSHandler({
       onOpen(ws) {
@@ -190,7 +190,7 @@ describe('defineWSHandler - onMessage', () => {
   })
 
   it('應傳入 TypedWSContext 給 onMessage', () => {
-    let receivedWs: TypedWSContext | null = null
+    let receivedWs: any = null
 
     const factory = defineWSHandler({
       onMessage(_data, ws) {
@@ -212,8 +212,8 @@ describe('defineWSHandler - onMessage', () => {
 
 describe('defineWSHandler - onClose', () => {
   it('應觸發 onClose 並傳入 code 和 reason', () => {
-    let receivedCode: number | null = null
-    let receivedReason: string | null = null
+    let receivedCode: any = null
+    let receivedReason: any = null
 
     const factory = defineWSHandler({
       onClose(code, reason) {
@@ -232,8 +232,8 @@ describe('defineWSHandler - onClose', () => {
   })
 
   it('應提供 CloseEvent 預設 code 0 和空 reason', () => {
-    let receivedCode: number | null = null
-    let receivedReason: string | null = null
+    let receivedCode: any = null
+    let receivedReason: any = null
 
     const factory = defineWSHandler({
       onClose(code, reason) {
@@ -260,7 +260,7 @@ describe('defineWSHandler - onClose', () => {
 
 describe('defineWSHandler - onError', () => {
   it('應觸發 onError 並傳入 Event 物件', () => {
-    let receivedEvent: Event | null = null
+    let receivedEvent: any = null
 
     const factory = defineWSHandler({
       onError(event) {
@@ -320,7 +320,7 @@ describe('TypedWSContext - send 方法', () => {
   })
 
   it('readyState 應反映底層 WSContext 的狀態', () => {
-    let contextReadyState: number | null = null
+    let contextReadyState: any = null
 
     const factory = defineWSHandler({
       onOpen(ws) {

@@ -2,7 +2,7 @@
  * @gravito/photon - Circuit Breaker Middleware Tests
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'bun:test'
 import { Photon } from '../src/index'
 import { circuitBreaker, circuitBreakerPresets } from '../src/middleware/circuit-breaker'
 
