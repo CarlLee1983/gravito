@@ -1,6 +1,6 @@
 import type { ConnectionContract } from '@gravito/atlas'
 import type { Router } from '@gravito/core'
-import { csrfProtection } from '@gravito/core'
+import { csrfProtection } from '@gravito/photon'
 import type { FortifyConfig } from '../config'
 import { ForgotPasswordController } from '../controllers/ForgotPasswordController'
 import { LoginController } from '../controllers/LoginController'
@@ -54,7 +54,7 @@ export function registerAuthRoutes(
 ): void {
   const prefix = config.prefix ?? ''
   const csrfOptions = resolveCsrfOptions(config)
-  const csrfMiddleware = csrfOptions ? csrfProtection(csrfOptions) : null
+  const csrfMiddleware = csrfOptions ? (csrfProtection(csrfOptions) as any) : null
 
   const securityConfig = config.security?.securityHeaders
   const middlewareStack = []

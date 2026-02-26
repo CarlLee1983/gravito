@@ -1,5 +1,5 @@
-import type { CsrfOptions, GravitoContext } from '@gravito/core'
-import { getCsrfToken } from '@gravito/core'
+import type { GravitoContext } from '@gravito/core'
+import { type CsrfOptions, getCsrfToken } from '@gravito/photon'
 import type { FortifyConfig } from './config'
 
 /**
@@ -42,5 +42,5 @@ export function ensureCsrfToken(c: GravitoContext, config: FortifyConfig): strin
   if (!options) {
     return null
   }
-  return getCsrfToken(c, options)
+  return getCsrfToken(c.native as any, options)
 }
