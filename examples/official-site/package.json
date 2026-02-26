@@ -1,6 +1,6 @@
 {
   "name": "gravito-official-site",
-  "version": "0.1.8",
+  "version": "1.0.0-singularity",
   "type": "module",
   "scripts": {
     "predev": "bun run clean:ports",
@@ -23,7 +23,10 @@
     "@gravito/luminosity": "workspace:*",
     "@gravito/luminosity-adapter-photon": "workspace:*",
     "@gravito/prism": "workspace:*",
+    "@gravito/resilience": "workspace:*",
     "@gravito/stasis": "workspace:*",
+    "@gravito/stream": "workspace:*",
+    "@gravito/xenon": "workspace:*",
     "@inertiajs/react": "^1.0.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.4.2",

@@ -45,7 +45,7 @@
   },
   "homepage": "https://github.com/gravito-framework/gravito#readme",
   "peerDependencies": {
-    "@gravito/core": "^1.6.1"
+    "@gravito/core": "^2.0.0"
   },
   "devDependencies": {
     "bun-types": "latest",

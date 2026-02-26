@@ -1,0 +1,15 @@
+{
+  "name": "SiteDocs",
+  "version": "1.0.0",
+  "type": "satellite",
+  "description": "Handles documentation rendering for Gravito Official Site",
+  "orbits": ["@gravito/ion", "@gravito/prism"],
+  "routes": [
+    { "path": "/docs", "method": "GET", "handler": "DocsController@index" },
+    { "path": "/en/docs", "method": "GET", "handler": "DocsController@index" },
+    { "path": "/zh/docs", "method": "GET", "handler": "DocsController@index" },
+    { "path": "/docs/*", "method": "GET", "handler": "DocsController@show" },
+    { "path": "/en/docs/*", "method": "GET", "handler": "DocsController@show" },
+    { "path": "/zh/docs/*", "method": "GET", "handler": "DocsController@show" }
+  ]
+}

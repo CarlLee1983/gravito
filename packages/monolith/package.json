@@ -41,7 +41,7 @@
     "marked": "^11.1.1"
   },
   "peerDependencies": {
-    "@gravito/core": "^1.6.1"
+    "@gravito/core": "^2.0.0"
   },
   "devDependencies": {
     "@gravito/core": "workspace:*",

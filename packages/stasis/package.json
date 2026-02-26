@@ -1,7 +1,7 @@
 {
   "name": "@gravito/stasis",
   "sideEffects": false,
-  "version": "3.1.1",
+  "version": "3.2.0",
   "publishConfig": {
     "access": "public"
   },
@@ -42,7 +42,7 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "peerDependencies": {
-    "@gravito/core": "^1.6.1",
+    "@gravito/core": "^2.0.0",
     "@gravito/plasma": "^2.0.0"
   },
   "devDependencies": {

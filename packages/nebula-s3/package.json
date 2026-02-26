@@ -41,6 +41,6 @@
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "@gravito/core": "^1.6.1"
+    "@gravito/core": "^2.0.0"
   }
 }

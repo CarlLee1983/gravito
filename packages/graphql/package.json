@@ -35,7 +35,7 @@
     "graphql-yoga": "^5.1.1"
   },
   "peerDependencies": {
-    "@gravito/core": "^1.6.1",
+    "@gravito/core": "^2.0.0",
     "typescript": "^5.9.3"
   },
   "devDependencies": {

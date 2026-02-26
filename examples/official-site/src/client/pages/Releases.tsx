@@ -21,6 +21,26 @@ interface ReleaseEntry {
 // Release data - can be moved to a separate data file or CMS later
 const releasesZh: ReleaseEntry[] = [
   {
+    id: 'core-v1-6-galaxy',
+    date: '2026-02-26',
+    type: 'release',
+    version: '1.6.0',
+    title: 'Gravito v1.6 "Galaxy" 正式版發佈',
+    description:
+      '重大架構演進！引進 Galaxy Architecture 與 Xenon 並行運行時，標誌著從單體核心向分佈式銀河架構的跨越。',
+    highlights: [
+      'Xenon 運行時：支援領域衛星 (Satellites) 的並行加載與執行',
+      'Guardian 防護層：原生整合 @gravito/resilience，具備熔斷器與容錯機制',
+      'Cartesian Mapper：Atlas ORM v1.6 支援原生分片與高效能模型映射',
+      'MDD 驅動：全面採用清單驅動開發 (Manifest-Driven Development)',
+    ],
+    links: [
+      { label: '查看銀河架構圖', url: '/zh/docs/guide/architecture/core-concepts' },
+      { label: '閱讀 2026 審計報告', url: '/zh/docs/guide/advanced/rest-api' },
+    ],
+    featured: true,
+  },
+  {
     id: 'photon-site-launch',
     date: '2026-01-22',
     type: 'announcement',
@@ -170,6 +190,26 @@ const releasesZh: ReleaseEntry[] = [
 ]
 
 const releasesEn: ReleaseEntry[] = [
+  {
+    id: 'core-v1-6-galaxy',
+    date: '2026-02-26',
+    type: 'release',
+    version: '1.6.0',
+    title: 'Gravito v1.6 "Galaxy" Officially Released',
+    description:
+      'Major architectural evolution! Introducing Galaxy Architecture and Xenon Parallel Runtime, marking the leap from monolithic core to distributed galaxy systems.',
+    highlights: [
+      'Xenon Runtime: Parallel satellite loading and shared-memory execution',
+      'Guardian Layer: Native @gravito/resilience with built-in circuit breakers',
+      'Cartesian Mapper: Atlas ORM v1.6 with native sharding and extreme hydration',
+      'MDD Driven: Transition to full Manifest-Driven Development',
+    ],
+    links: [
+      { label: 'Galaxy Map', url: '/en/docs/guide/architecture/core-concepts' },
+      { label: '2026 Audit Report', url: '/en/docs/guide/advanced/rest-api' },
+    ],
+    featured: true,
+  },
   {
     id: 'photon-site-launch',
     date: '2026-01-22',

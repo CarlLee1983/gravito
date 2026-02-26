@@ -46,9 +46,9 @@
   "license": "MIT",
   "peerDependencies": {
     "@gravito/sentinel": "^4.0.1",
-    "@gravito/core": "^1.6.1",
-    "@gravito/photon": "^1.0.1",
-    "@gravito/signal": "^3.0.4"
+    "@gravito/core": "^2.0.0",
+    "@gravito/photon": "^1.1.0",
+    "@gravito/signal": "^3.1.0"
   },
   "peerDependenciesMeta": {
     "@gravito/signal": {

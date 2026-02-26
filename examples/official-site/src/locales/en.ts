@@ -38,24 +38,32 @@ export default {
     sectionTitle: 'The',
     sectionTitleHighlight: 'Gravito Ecosystem',
     sectionDesc:
-      'Gravito uses a micro-kernel design. The initial 1.0 release features our most stable and powerful base modules.',
+      'Gravito uses a micro-kernel design. The 1.6 release features our most stable and powerful base modules with the new Galaxy Architecture.',
     group_core: 'Core Layer',
     group_data: 'Data Layer',
     group_ops: 'Operations',
     kernel_title: 'PlanetCore',
     kernel_subtitle: 'The Soul of Gravito',
     kernel_desc:
-      'Our self-developed high-performance micro-kernel. Native support for Request Context (ALS) and DI Scopes, precision-engineered for rapid I/O coordination and lifecycle management.',
+      'Our self-developed high-performance micro-kernel. Native support for Request Context (ALS) and DI Scopes, precision-engineered for rapid I/O coordination.',
+    xenon_title: 'Xenon',
+    xenon_subtitle: 'Parallel Satellite Runtime',
+    xenon_desc:
+      'Execute independent domain satellites in parallel with shared-memory efficiency and zero-config discovery.',
+    resilience_title: 'Guardian',
+    resilience_subtitle: 'Fault Tolerance Layer',
+    resilience_desc:
+      'Built-in Circuit Breakers, Retries, and Fallbacks to ensure system stability under extreme load.',
     inertia_title: 'Ion',
     inertia_subtitle: 'Full-stack Bridge (Inertia)',
     inertia_desc: 'Let the backend fully control UI, creating a seamless SPA-like experience.',
     cli_title: 'Pulse',
     cli_subtitle: 'Productivity Tool (CLI)',
     cli_desc: 'Automated scaffolding and dev commands for better workflow.',
-    atlas_title: 'Atlas',
-    atlas_subtitle: 'Bun-Native ORM & Sharding',
+    atlas_title: 'Atlas v1.6',
+    atlas_subtitle: 'Cartesian Mapper & Sharding',
     atlas_desc:
-      'A modern Active Record layer inspired by Prisma and Drizzle, optimized for Bun performance.',
+      'High-performance ORM with horizontal sharding, native sharding support, and sub-millisecond model hydration.',
     seo_title: 'Luminosity',
     seo_subtitle: 'Smart Indexing (SEO)',
     seo_desc: 'Automated sitemap generation and meta management for visibility.',
@@ -71,15 +79,14 @@ export default {
     astral_title: 'Astral',
     astral_subtitle: 'Shadow Contracts (OpenAPI)',
     astral_desc:
-      'Zero-pollution documentation engine. Automatically extracts specs from DTOs and routes with integrated Swagger UI.',
+      'Zero-pollution documentation engine. Automatically extracts specs from DTOs and routes.',
     image_title: 'Prism',
     image_subtitle: 'Performance Focus (Image)',
     image_desc:
-      'Inspired by Next.js, our image component handles CLS prevention, lazy loading, and responsive `srcset` with zero client-side overhead.',
+      'CLS prevention, lazy loading, and responsive `srcset` with zero client-side overhead.',
     i18n_title: 'Cosmos',
     i18n_subtitle: 'Global Gravity (I18n)',
-    i18n_desc:
-      'Native locale detection and prefixed routing with type-safe translations, ready for global scaling.',
+    i18n_desc: 'Native locale detection and prefixed routing with type-safe translations.',
     getStarted: 'Get Started',
   },
   features_page: {

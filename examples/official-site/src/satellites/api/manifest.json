@@ -1,0 +1,11 @@
+{
+  "name": "SiteAPI",
+  "version": "1.0.0",
+  "type": "satellite",
+  "description": "Handles JSON API for Gravito Official Site",
+  "routes": [
+    { "path": "/api/health", "method": "GET", "handler": "ApiController@health" },
+    { "path": "/api/config", "method": "GET", "handler": "ApiController@config" },
+    { "path": "/api/stats", "method": "GET", "handler": "ApiController@stats" }
+  ]
+}

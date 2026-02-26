@@ -46,8 +46,8 @@
     "cron-parser": "^4.9.0"
   },
   "peerDependencies": {
-    "@gravito/core": "^1.6.1",
-    "@gravito/stasis": "^3.1.1"
+    "@gravito/core": "^2.0.0",
+    "@gravito/stasis": "^3.2.0"
   },
   "devDependencies": {
     "@gravito/stasis": "workspace:*",

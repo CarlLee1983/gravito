@@ -1,7 +1,7 @@
 {
   "name": "@gravito/signal",
   "sideEffects": false,
-  "version": "3.0.4",
+  "version": "3.1.0",
   "description": "Powerful email framework for Gravito applications with Dev UI and multi-renderer support.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -31,8 +31,8 @@
     "nodemailer": "^7.0.11"
   },
   "peerDependencies": {
-    "@gravito/core": "^1.6.1",
-    "@gravito/stream": "^2.0.2",
+    "@gravito/core": "^2.0.0",
+    "@gravito/stream": "^2.1.0",
     "@gravito/prism": "^3.1.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

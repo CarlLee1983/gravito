@@ -124,16 +124,12 @@ export class RemoteLoader implements TranslationLoaderChain {
    * @returns 翻譯資源,載入失敗則返回 null
    */
   async load(locale: string): Promise<TranslationMap | null> {
-    let _lastError: Error | null = null
-
     // 重試邏輯
     for (let attempt = 0; attempt <= this.retries; attempt++) {
       try {
         const result = await this.fetchWithTimeout(locale)
         return result
-      } catch (error) {
-        _lastError = error as Error
-
+      } catch {
         // 如果不是最後一次嘗試,等待後重試
         if (attempt < this.retries) {
           const delay = this.retryDelay * 2 ** attempt

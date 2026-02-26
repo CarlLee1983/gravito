@@ -35,7 +35,7 @@
     "node-fetch-native": "^1.6.7"
   },
   "peerDependencies": {
-    "@gravito/core": "^1.6.1"
+    "@gravito/core": "^2.0.0"
   },
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",

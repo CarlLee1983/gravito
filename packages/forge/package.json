@@ -53,9 +53,9 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "peerDependencies": {
-    "@gravito/core": "^1.6.1",
+    "@gravito/core": "^2.0.0",
     "@gravito/nebula": "^4.1.1",
-    "@gravito/stream": "^2.0.2"
+    "@gravito/stream": "^2.1.0"
   },
   "peerDependenciesMeta": {
     "react": {
