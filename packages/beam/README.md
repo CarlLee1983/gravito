@@ -2,13 +2,31 @@
 
 A lightweight, type-safe HTTP client wrapper for Gravito framework applications. It provides an experience similar to tRPC but uses standard Photon app types with **zero runtime overhead**.
 
-## Features
+## ✨ Features
 
-- **Zero Runtime Overhead**: Pure type wrapper that directly delegates to the Beam client, no additional abstraction layers
-- **Zero-Config Type Safety**: Automatically infers types from your backend `AppType` or `AppRoutes`
-- **IntelliSense Support**: Full autocomplete for routes, methods, request bodies, and response data
-- **Lightweight**: A thin wrapper around `@gravito/photon/client` (< 1kb), minimal dependencies
-- **AI-Friendly**: Clear JSDoc annotations and examples for reliable code generation
+- 🚀 **Zero Runtime Overhead**: Pure type wrapper that delegates directly to the underlying engine with no validation overhead.
+- 🌌 **Galaxy Portal**: The standard "Portal Layer" for Client-to-Satellite and Satellite-to-Satellite communication.
+- 🎯 **Zero-Config Type Safety**: Automatically infers types from backend `AppType` or `AppRoutes`.
+- 📡 **Inter-Satellite RPC**: Seamlessly call other Satellites' APIs with full type safety as if they were local functions.
+- 🛡️ **Internal Service Auth**: Built-in support for secure machine-to-machine (M2M) communication within the Galaxy.
+- 🔌 **Connection Pooling**: High-performance HTTP/2 connection reuse (150-200ms faster per request).
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Beam acts as the **Portal Layer (Teleportation)**.
+
+- **Frontend Sensing**: Connects the `Photon` Sensing Layer to the client (Web/Mobile), providing a seamless, type-safe development experience.
+- **Inter-Satellite Bridge**: Enables Satellite A (e.g., `Order`) to call Satellite B (e.g., `Catalog`) securely and with full type safety, breaking down silos while maintaining modularity.
+- **Zero-Trust Communication**: Integrates with `@gravito/fortify` to ensure every cross-satellite call is authenticated and authorized.
+
+```mermaid
+graph LR
+    Client([Client]) -- Beam --> Photon[Photon Engine]
+    subgraph Galaxy
+        Photon --> SatA[Satellite: Order]
+        SatA -- "Beam (M2M)" --> SatB[Satellite: Catalog]
+    end
+```
 
 ## Installation
 
@@ -675,15 +693,15 @@ BeamError provides structured error information:
 - `code`: Error code (e.g., 'TIMEOUT', 'NETWORK_ERROR')
 - `cause`: Original error for debugging
 
-## Design Principles
+## 📚 Documentation
 
-This package follows Gravito's core values:
+Detailed documentation and guides for the Galaxy Architecture:
 
-- **High Performance**: Zero runtime overhead, direct delegation to the Beam client
-- **Low Overhead**: No abstraction layers or middleware, minimal bundle size
-- **Lightweight**: Single function, < 1kb, minimal dependencies (only `@gravito/photon/client`)
-- **AI-Friendly**: Clear JSDoc annotations, complete type inference, intuitive API
+- [🏗️ **Beam Architecture**](./docs/CONNECTION_POOL.md) — Internals and connection pooling details.
+- [🛰️ **Inter-Satellite Comms**](./doc/INTER_SATELLITE.md) — **NEW**: Secure, type-safe communication between Satellites.
+- [🔌 **Connection Pooling**](./docs/CONNECTION_POOL.md) — High-performance HTTP connection management.
+- [🧪 **Examples & Integration**](./examples/README.md) — React Query, SWR, and more.
 
-## License
+## 📄 License
 
 MIT

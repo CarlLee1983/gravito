@@ -62,7 +62,9 @@
       "Bash(rm -rf /Users/carl/Dev/Carl/gravito-core/.turbo && cd /Users/carl/Dev/Carl/gravito-core/packages/atlas && bun tsc -p tsconfig.json --noEmit 2>&1)",
       "Bash(echo \"✅ $pkg passed\")",
       "Bash(echo \"❌ $pkg failed\")",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(cat:*)",
+      "Bash(gh issue:*)"
     ]
   },
   "enabledMcpjsonServers": [

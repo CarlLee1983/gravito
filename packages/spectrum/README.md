@@ -6,18 +6,30 @@
 
 ![Spectrum Dashboard](https://via.placeholder.com/1200x600/0f172a/38bdf8?text=Gravito+Spectrum+UI)
 
-## 🌟 Features
+## ✨ Features
 
-- **⚡️ Real-time Updates**: Powered by **Server-Sent Events (SSE)**, observe requests and logs as they happen without refreshing the page.
-- **🔍 Deep Inspection**: View detailed request/response headers, status codes, and precise execution timing.
-- **🗄️ Database Profiling**: Automatically hooks into `@gravito/atlas` to capture SQL queries, bindings, and execution duration.
-- **↺ Request Replay**: One-click replay of any captured request directly from the dashboard to quickly reproduce bugs or test fixes.
-- **📊 Live Statistics**: Monitor total requests, average latency, and error rates via a real-time dashboard.
-- **💾 Pluggable Storage**: 
-  - **MemoryStorage**: Fast, zero-config storage for development (default).
-  - **FileStorage**: Persistent storage that survives server restarts.
-- **🛡️ Security Gates**: Built-in authorization support to protect your debug data in sensitive environments.
-- **🎨 Modern UI**: A clean, responsive dashboard built with Tailwind CSS and Vue.js.
+- **⚡️ Real-time Insights**: Observe HTTP requests, logs, and database queries across the Galaxy as they happen.
+- **🔍 Request Correlation**: Automatically link logs and SQL queries to their originating request for deep debugging.
+- **🌌 Galaxy-Wide Scope**: Capture events from multiple Satellites and Orbits in a single unified dashboard.
+- **🗄️ Database Profiling**: Real-time inspection of SQL queries and execution duration via `@gravito/atlas`.
+- **↺ Smart Replay**: One-click replay of any captured request to reproduce bugs in isolation.
+- **🛡️ Debug Gates**: Secure the dashboard with built-in authorization middleware.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Spectrum acts as the **Visual Telescope (Local Insights)**.
+
+- **Developer Clarity**: Provides the "Eyes" needed during development to understand how isolated Satellites interact with each other and with the shared Orbits.
+- **Event Correlation**: Leverages the Galaxy's internal `Signal` system to group related events (e.g., a Web request that triggers a background job and an email).
+- **Optimization Lens**: Identifies slow queries or heavy middleware within the `Photon` Sensing Layer before they reach production.
+
+```mermaid
+graph TD
+    S1[Satellite: Order] -- "Log/Query" --> Spectrum{Spectrum Orbit}
+    S2[Satellite: Payment] -- "Request" --> Spectrum
+    Spectrum --> UI[Real-time Web UI]
+    Spectrum -.->|SSE| Dev([Developer])
+```
 
 ## 📦 Installation
 
@@ -44,6 +56,14 @@ await core.liftoff()
 ```
 
 By default, visit **`http://localhost:3000/gravito/spectrum`** to access your dashboard.
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Real-time debugging telescope.
+- [🔭 **Local Insights**](./doc/LOCAL_INSIGHTS.md) — **NEW**: Request correlation and live inspection.
+- [🛡️ **Production Safety**](#-production-safety) — Securing your debug data.
 
 ## ⚙️ Configuration
 

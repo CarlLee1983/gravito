@@ -4,16 +4,34 @@
 
 `@gravito/zenith` (also known as **Flux Console**) is the official management interface for Gravito's asynchronous ecosystem. It provides real-time visibility into your queues, workers, and background jobs, enabling powerful operational control with zero configuration.
 
-## 🌟 Key Features
+## ✨ Key Features
 
-- **📊 Real-time Monitoring**: Visualize throughput, error rates, and queue latencies with live-updating charts.
-- **👷 Worker Health**: Track CPU, RAM, and uptime for all active Gravito and Laravel workers in your cluster.
-- **🛠️ Queue Management**: Pause/Resume queues and inspect jobs in Waiting, Delayed, or Failed states.
-- **♻️ Dead Letter Queue (DLQ) Ops**: Batch retry or clear failed jobs directly from the UI with a single click.
-- **🔍 Job Auditing & Search**: Deep search through historical jobs stored in SQL (SQLite/MySQL) or Redis.
-- **📜 Operational Log Archiving**: Persistent storage and full-text search for worker activities and system events.
-- **🚨 Automated Alerting**: Native integration with Slack, Discord, and Email for failure spikes or backlog thresholds.
-- **📅 Schedule Management**: Full-featured UI to manage and trigger your `@gravito/stream` Cron jobs.
+- **🧭 Galaxy-Wide Monitoring**: Centralized dashboard for visualizing throughput, error rates, and latencies across all Satellites.
+- **🎮 Operational Control**: Real-time management of queues, workers, and background jobs with zero configuration.
+- **👷 Worker Health**: Cluster-wide tracking of CPU, RAM, and uptime for all active Gravito service instances.
+- **♻️ Dead Letter Queue (DLQ) Ops**: Single-click batch retry or clearing of failed jobs across the system.
+- **🔍 Distributed Auditing**: Deep search through historical jobs stored in SQL or Redis throughout the Galaxy.
+- **🚨 Unified Alerting**: Integrated Slack and Discord notifications for critical system thresholds and failure spikes.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Zenith acts as the **Control Plane (Navigational Command)**.
+
+- **Galaxy Insight**: Provides the "Cockpit" for developers and SREs to observe and manage the internal state of the asynchronous ecosystem.
+- **Remote Orchestration**: Enables remote control of background processes without needing direct terminal access to the production nodes.
+- **Telemetry Aggregator**: Works with `Quasar` agents to consolidate metrics and logs from isolated Satellites into a single operational view.
+
+```mermaid
+graph TD
+    Zenith[Zenith Control Plane] <--> Q1[Quasar: Order Worker]
+    Zenith <--> Q2[Quasar: Stock Worker]
+    Zenith <--> Q3[Quasar: API Node]
+    subgraph Operational Control
+        Zenith --> Queues[Queue Management]
+        Zenith --> Metrics[Visual Monitoring]
+        Zenith --> Alerts[Smart Alerting]
+    end
+```
 
 ## 📦 Installation
 

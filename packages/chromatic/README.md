@@ -10,13 +10,32 @@
 - **解析色彩**：HEX、RGB、HSL、HSV、named colors（使用 Bun 原生 `Bun.color()` API）
 - **色彩轉換**：支援所有色彩空間之間的相互轉換
 - **色彩混合**：線性插值式色彩混合，支援 alpha 通道
-- **色彩值物件**：型別安全的色彩操作介面
+
+### 🌌 Galaxy-Ready Styling
+- **Aesthetic Spectrum**: Defines the visual identity and style across the Gravito Galaxy.
+- **Distributed Theming**: Automatically propagate theme changes to all Satellites and CLI tools.
+- **Semantic Consistency**: Ensure that "Success", "Error", and "Primary" mean the same thing everywhere.
 
 ### 終端樣式化
 - **文字樣式**：Bold、Dim、Italic、Underline、Strikethrough 等 8 種
 - **色彩輸出**：16 色 ANSI（前景 + 背景）
 - **終端偵測**：自動偵測終端能力（顏色深度、TTY、CI 環境）
-- **picocolors 相容**：完全相容 picocolors API，可直接替換
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Chromatic acts as the **Aesthetic Spectrum (Styling Layer)**.
+
+- **Visual Identity**: Provides the source of truth for colors and styles, ensuring that every user interface (Web or CLI) maintains a consistent brand feel.
+- **Spectrum Propagation**: Works with the `Prism` and `Radiance` orbits to distribute style updates across multiple Satellite instances in real-time.
+- **Developer Clarity**: Enhances the `PlanetCore` logs and `Orbit` outputs with semantic coloring, making system health and errors immediately visible.
+
+```mermaid
+graph LR
+    C[Chromatic: Theme Config] --> Prism[Prism: Web UI]
+    C --> CLI[CLI: Developer Tools]
+    C --> Logs[Radiance: Monitoring]
+    Prism -.->|Update| Sync[Real-time State Sync]
+```
 
 ### 主題管理
 - **預設主題**：Light、Dark、Solarized Dark、Solarized Light（4 個內建主題）
@@ -162,62 +181,14 @@ await core.install(new OrbitChromatic(customThemes))
 const themeManager = core.container.get('@gravito/chromatic:ThemeManager')
 ```
 
-## 📚 完整 API 參考
+## 📚 說明文件 (Documentation)
 
-### Chromatic Facade（推薦使用）
+針對 Galaxy 架構的詳細指南與參考：
 
-```typescript
-// 色彩轉換（Bun.color() 包裝）
-Chromatic.parse(color: string): ColorValue
-Chromatic.toRgb(input: string | ColorValue): RGB
-Chromatic.toHex(input: string | ColorValue): string
-Chromatic.toHsl(input: string | ColorValue): HSL
-Chromatic.toHsv(input: string | ColorValue): HSV
-Chromatic.mix(color1: string, color2: string, ratio: number): string
-
-// 文字樣式
-Chromatic.bold(text: string): string
-Chromatic.dim(text: string): string
-Chromatic.italic(text: string): string
-Chromatic.underline(text: string): string
-Chromatic.inverse(text: string): string
-Chromatic.hidden(text: string): string
-Chromatic.strikethrough(text: string): string
-
-// 前景色（16 色）
-Chromatic.black(text: string): string
-Chromatic.red(text: string): string
-Chromatic.green(text: string): string
-Chromatic.yellow(text: string): string
-Chromatic.blue(text: string): string
-Chromatic.magenta(text: string): string
-Chromatic.cyan(text: string): string
-Chromatic.white(text: string): string
-Chromatic.gray(text: string): string
-
-// 背景色（8 色）
-Chromatic.bgBlack(text: string): string
-Chromatic.bgRed(text: string): string
-// ... 其他背景色
-
-// 語義色彩
-Chromatic.success(text: string): string
-Chromatic.warning(text: string): string
-Chromatic.error(text: string): string
-Chromatic.info(text: string): string
-Chromatic.primary(text: string): string
-
-// 主題管理
-Chromatic.setTheme(name: string): void
-Chromatic.getTheme(): ThemeDefinition
-Chromatic.registerTheme(theme: ThemeDefinition): void
-
-// 終端偵測
-Chromatic.getCapabilities(): TerminalCapabilities
-
-// 建構器（進階）
-Chromatic.builder(text?: string): StyleBuilder
-```
+- [🏗️ **架構概覽**](#🏗️-架構概覽) — Chromatic 分層架構與核心原理。
+- [🎨 **分佈式主題 (Theming)**](./doc/DISTRIBUTED_THEMING.md) — **NEW**: 如何在跨衛星環境中維持視覺一致性。
+- [📖 **完整 API 參考**](#📚-完整-api-參考) — 色彩、樣式與主題的 API 手冊。
+- [🔄 **picocolors 遷移**](#🔄-picocolors-遷移指南) — 從舊有工具無縫升級。
 
 ### ColorValue 類
 

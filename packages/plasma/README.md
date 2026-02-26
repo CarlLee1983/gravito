@@ -11,15 +11,28 @@
 
 ## ✨ Features
 
-- 🪐 **Orbit Integration** - Seamlessly plugs into the PlanetCore micro-kernel.
-- 🚀 **Bun Native** - Uses `Bun.redis` exclusively for zero-overhead TCP/Unix socket communication.
-- 🎯 **Laravel-style API** - Familiar fluent interface for all Redis data structures.
-- 🔌 **Multi-connection** - Manage multiple named Redis connections (e.g., `cache`, `session`, `queue`).
-- 🔄 **Pipeline Support** - Batch multiple commands in a single round-trip for higher throughput.
-- 📡 **Pub/Sub** - Real-time messaging with a simple subscription API.
-- 💓 **Health Check** - Built-in connection verification and status monitoring.
-- 🛡️ **Reliability** - Automatic reconnection with exponential backoff and graceful shutdown.
-- 🏢 **Enterprise Ready** - Context-aware middleware and IoC container registration.
+- 🪐 **Galaxy-Ready Shared State**: Native integration with PlanetCore for universal data synchronization across Satellites.
+- 🚀 **Bun Native (Zero-Overhead)**: Uses `Bun.redis` exclusively for maximum performance and minimum memory footprint.
+- ⚡ **Distributed Synchronization**: The primary "Energy Grid" for locks, rate limiting, and shared counters across the Galaxy.
+- 🔌 **Multi-connection**: Manage multiple named Redis connections (e.g., `cache`, `session`, `queue`) with ease.
+- 🔄 **Pipeline & Lua**: Batch complex operations into single round-trips for industry-leading throughput.
+- 📡 **Pub/Sub & Streams**: Real-time messaging and event-driven data flows built into the core.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Plasma acts as the **Energy Grid (Distributed State Layer)**.
+
+- **Shared Memory**: Provides the "Instant Access" memory layer that allows Satellites to share state without hitting the `Atlas` persistent database.
+- **Coordination Center**: Acts as the source of truth for distributed locks (used by `Flux`) and rate limits (used by `Photon/Fortify`).
+- **Real-time Arteries**: Drives the `Radiance` broadcast system and internal event streams, ensuring that a change in one part of the Galaxy is felt everywhere else instantly.
+
+```mermaid
+graph TD
+    S1[Satellite: Cart] -- "State" --> Plasma{Plasma Grid}
+    S2[Satellite: Stock] -- "Lock" --> Plasma
+    S3[Satellite: Promo] -- "Rate Limit" --> Plasma
+    Plasma --> Redis[(Redis backend)]
+```
 
 ## 📦 Installation
 
@@ -135,6 +148,14 @@ const plasma = new OrbitPlasma({
 ```
 
 For detailed migration guidance, see [MIGRATION.md](./MIGRATION.md#redis-cluster-migration).
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Bun-native Redis core.
+- [⚡ **Distributed Caching**](./doc/DISTRIBUTED_CACHING.md) — **NEW**: Global state, locking, and event streams.
+- [🔄 **Migration Guide**](./MIGRATION.md) — Moving from v1 to v2 (Bun.redis).
 
 ## 📖 API Reference
 

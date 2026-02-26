@@ -6,17 +6,32 @@ File Processing Orbit for Gravito - Video and Image Processing with Real-time St
 
 `@gravito/forge` is a high-performance file processing module for the Gravito framework. It provides video and image processing capabilities (resize, rotate, transcode) with real-time status tracking via Server-Sent Events (SSE). It's designed to be used as an "Orbit" within the Gravito Galaxy Architecture.
 
-## Features
+## ✨ Features
 
-- **Video Processing**: Resize, rotate, transcode using FFmpeg.
-- **Image Processing**: Resize, rotate, format conversion using ImageMagick.
-- **Fluent Pipeline API**: Chain processing operations with ease.
-- **Synchronous & Asynchronous Processing**: 
-  - **Synchronous**: Immediate processing for small files or blocking operations.
-  - **Asynchronous**: Offload heavy tasks to a background queue (integration with `@gravito/stream`).
-- **Real-time Status Tracking**: Built-in SSE (Server-Sent Events) support for tracking processing progress.
-- **Storage Integration**: Automatic upload of processed files to `@gravito/nebula` storage.
-- **Framework Components**: First-class React and Vue components to display processing status out-of-the-box.
+- 🪐 **Galaxy-Ready Media Engine**: Native integration with PlanetCore for universal file processing across Satellites.
+- 🎬 **Video Transcoding**: High-performance resize, rotate, and transcode powered by FFmpeg.
+- 🖼️ **Image Processing**: Professional-grade transformations using ImageMagick.
+- 📡 **Real-time Status**: Built-in SSE support to stream processing progress to frontend components.
+- ⚙️ **Async Pipelines**: Offload heavy media tasks to `@gravito/stream` for distributed background processing.
+- 📦 **Storage Auto-Sync**: Automatic integration with `@gravito/nebula` for seamless output management.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Forge acts as the **Industrial Core (Heavy Processing)**.
+
+- **Resource Intensive Offloading**: Protects the `Photon` Sensing Layer by moving CPU-intensive media tasks to background Workers managed by `Resilience`.
+- **Unified Media Standard**: Provides a single, consistent API for all Satellites to process user uploads, ensuring that media handling logic is not duplicated.
+- **Progress Feedback**: Works with `Radiance` or built-in SSE to provide users with a "Real-time" experience during long-running tasks.
+
+```mermaid
+graph LR
+    S[Satellite: Media] -- "Upload" --> Photon[Photon Engine]
+    Photon -- "ProcessAsync" --> Forge{Forge Engine}
+    Forge -- "Job" --> Stream[Stream Orbit]
+    Stream --> Worker[Forge Worker]
+    Worker --> Nebula[(Nebula Storage)]
+    Worker -.->|SSE Progress| User([User UI])
+```
 
 ## Installation
 
@@ -163,6 +178,14 @@ import { ProcessingVideo } from '@gravito/forge/vue'
 const onComplete = (res) => console.log(res.url)
 </script>
 ```
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — High-performance media engine core.
+- [🎬 **Media Pipelines**](./doc/MEDIA_PIPELINES.md) — **NEW**: Chaining video and image processing tasks.
+- [📡 **Real-time Status**](#-real-time-status-tracking) — Using SSE for progress tracking.
 
 ## API Architecture
 

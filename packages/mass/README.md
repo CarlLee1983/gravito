@@ -4,14 +4,31 @@
 
 `@gravito/mass` provides the "weight" of data integrity to your Gravito applications. Built on top of **TypeBox**, it offers ultra-fast runtime validation with full TypeScript type inference, designed to work seamlessly with the **Photon** HTTP engine.
 
-## 🌟 Key Features
+## ✨ Key Features
 
-- **🚀 Performance-First**: Leverages TypeBox's build-time validator generation for near-zero runtime overhead.
-- **🛡️ Full Type Safety**: Automatic TypeScript type inference—no need to manually maintain interfaces and schemas separately.
-- **🔌 Photon Integration**: Native middleware for `@gravito/photon` to validate JSON, query, params, and form data.
-- **🛠️ Schema Utilities**: Advanced helpers like `partial()` for easy creation of PATCH schemas.
-- **🪝 Extensible Hooks**: Intercept validation results to provide custom error responses or logging.
-- **📦 Galaxy-Ready**: Follows Gravito's modular philosophy for lean, efficient dependency management.
+- 🚀 **Performance-First**: Built on TypeBox, it generates ultra-fast validators that outperform standard libraries like Zod.
+- 🌌 **Galaxy-Ready**: The "Data Quality Layer" ensuring integrity across all Gravito Satellites and Orbits.
+- 🛡️ **Full Type Safety**: Zero-config type inference—your schemas are your TypeScript types.
+- 📡 **Beam Integration**: Share schemas between backend and frontend for end-to-end type-safe RPC.
+- 🔌 **Photon Integration**: Native middleware for `@gravito/photon` to validate JSON, query, params, and form data.
+- 📦 **Binary (CBOR) Support**: Optimized validation for binary protocols in high-performance microservices.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Mass serves as the **Data Quality Layer (Immune System)**.
+
+- **Sensing Filter**: Acts as the first line of defense in the `Photon` Sensing Layer, filtering out malformed or malicious data before it reaches your business logic.
+- **Contract Definition**: Provides the shared language (Schemas) used by `Beam` to ensure that Satellites and clients communicate with perfect understanding.
+- **Type Propagation**: Injects strong types from the edge of the network into the deepest parts of your IoC container.
+
+```mermaid
+graph LR
+    Request([Request]) --> Mass{Mass Filter}
+    Mass -- "Valid" --> Satellite[Satellite Business Logic]
+    Mass -- "Invalid" --> Error[400 Bad Request]
+    Satellite -- "Beam RPC" --> Client([Typed Client])
+    Mass -.->|Schema| Client
+```
 
 ## 📦 Installation
 
@@ -128,6 +145,15 @@ The central builder for defining data structures. Re-exports all TypeBox builder
 
 ### `partial(schema)`
 Recursively makes all properties in an object schema optional.
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Data integrity and schema validation.
+- [📐 **Schema Design**](./doc/SCHEMA_DESIGN.md) — **NEW**: Best practices for domain-specific schemas and composition.
+- [🛡️ **Validation Strategy**](./doc/VALIDATION_STRATEGY.md) — **NEW**: Multi-source validation, hooks, and performance tuning.
+- [🔌 **Photon Integration**](#-photon-integration) — Native middleware for request validation.
 
 ## 🤝 Contributing
 

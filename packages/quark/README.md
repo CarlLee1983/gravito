@@ -2,15 +2,29 @@
 
 High-performance TCP networking for Gravito Galaxy Architecture. Built on Bun's native networking APIs with support for custom frame protocols, automatic retry with exponential backoff, and comprehensive backpressure management.
 
-## Features
+## ✨ Features
 
-- **Bun Native**: Uses `Bun.listen()` and `Bun.connect()` for maximum performance
-- **Type-Safe**: Full TypeScript support with strict mode enabled
-- **Frame Protocols**: Built-in support for length-prefixed and line-delimited protocols
-- **Backpressure Management**: Automatic flow control with `drain` events
-- **Retry Logic**: Configurable exponential backoff for client connections
-- **Zero-Copy**: Efficient memory management with minimal allocations
-- **Galaxy Architecture**: Seamless PlanetCore integration via `OrbitQuark`
+- 🪐 **Galaxy-Ready TCP Engine**: Native integration with PlanetCore for specialized low-level communication links.
+- 🚀 **Bun Native Performance**: Built on `Bun.listen()` and `Bun.connect()` for extreme throughput and sub-millisecond latency.
+- 📡 **Low-Latency Synapse**: The preferred choice for high-frequency Inter-Satellite or specialized hardware integration.
+- 🛠️ **Frame Protocols**: Powerful built-in support for length-prefixed and line-delimited message framing.
+- 🌊 **Backpressure Management**: Automatic flow control with `drain` events to prevent memory exhaustion.
+- 🛡️ **Zero-Copy Serialization**: Efficient memory management designed for the highest performance networking.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Quark acts as the **Quantum Link (Synaptic Gap)**.
+
+- **High-Frequency Highway**: Provides the low-level "Highway" for Satellites that require performance beyond standard HTTP/Beam (e.g., Real-time gaming data, sensor streams, or fast-cache replication).
+- **Protocol Enforcer**: Allows developers to define strict binary or text-based protocols for secure, efficient communication at the edge of the Galaxy.
+- **Hardware Bridge**: The primary interface for connecting Gravito to external non-HTTP systems (IoT devices, Legacy mainframes, or specialized proxy servers).
+
+```mermaid
+graph LR
+    S1[Satellite: Realtime] -- "Binary Protocol" --> Quark{Quark Engine}
+    Quark -- "Fast Path" --> S2[Satellite: Analytics]
+    Quark -- "External Link" --> HW([Native Device])
+```
 
 ## Installation
 
@@ -92,6 +106,14 @@ try {
   console.error(`Connection failed: ${error.message}`)
 }
 ```
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Bun-native TCP core.
+- [📡 **TCP Protocol Design**](./doc/TCP_PROTOCOL_DESIGN.md) — **NEW**: Framing strategies, backpressure, and security.
+- [🛠️ **Frame Protocols**](#-frame-protocol) — Built-in message framing.
 
 ## Protocols
 

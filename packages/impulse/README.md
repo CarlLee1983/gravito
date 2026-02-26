@@ -6,16 +6,31 @@ title: Orbit Request (Impulse)
 
 **Impulse** (@gravito/impulse) is a high-performance request validation module for the Gravito framework. It provides a declarative, class-based approach to request validation, inspired by Laravel's FormRequest, but reimagined for the TypeScript ecosystem with native support for **Zod** and **Valibot**.
 
-## 🌟 Key Features
+## ✨ Key Features
 
-- **Declarative Validation**: Organize your validation rules into clean, reusable classes.
-- **Library Agnostic**: Built-in support for both [Zod](https://zod.dev/) and [Valibot](https://valibot.dev/).
-- **Extreme Performance**: Multi-layer caching system (Instance, Schema, Compilation) ensures validation is blazing fast.
-- **Type Safety**: Full TypeScript inference. Your validated data is automatically typed based on your schema.
-- **Rich Context**: Integrated authorization hooks, data transformation, and custom error messaging.
-- **Multi-Source**: Easily validate JSON bodies, multipart forms, query parameters, or route parameters.
-- **Blueprint Generation**: Automatically export validation rules to JSON for frontend synchronization.
-- **i18n Ready**: Pluggable `MessageProvider` for localized error messages.
+- **🪐 Galaxy-Ready Validation**: Native integration with PlanetCore for universal request filtering across all Satellites.
+- **🛡️ Declarative Validation**: Organize your validation rules into clean, reusable classes inspired by FormRequest.
+- **🚀 Extreme Performance**: Multi-layer caching system (Compilation/Schema) for sub-millisecond execution.
+- **📡 Distributed Blueprints**: Automatically export rules to JSON for real-time frontend synchronization across the Galaxy.
+- **🔌 Multi-Source Sensing**: Easily validate JSON, multipart forms, query parameters, or route parameters.
+- **i18n Ready**: Pluggable `MessageProvider` for localized error messages integrated with `@gravito/cosmos`.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Impulse acts as the **Sensing Filter (Data Integrity Layer)**.
+
+- **Request Firewall**: Operates at the outermost edge of the `Photon` Sensing Layer, ensuring that only "Clean" data enters the Galaxy's business Satellites.
+- **Type Injector**: Uses TypeScript inference to inject strong types from the network edge deep into the IoC container, reducing runtime errors.
+- **Structural Bond**: Provides the "Blueprints" that keep Frontend and Backend in perfect synchronization without manual API documentation overhead.
+
+```mermaid
+graph LR
+    Request([User Request]) --> Photon[Photon Sensing Layer]
+    Photon --> Impulse{Impulse Filter}
+    Impulse -- "Valid" --> Sat[Satellite Logic]
+    Impulse -- "Invalid" --> Error[422 Unprocessable]
+    Impulse -.->|Blueprints| Client([Frontend UI])
+```
 
 ## 📦 Installation
 

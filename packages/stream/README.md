@@ -11,14 +11,32 @@
 
 ## ✨ Features
 
-- 🪐 **Orbit Integration** - Native integration with PlanetCore micro-kernel and dependency injection.
+- 🪐 **Galaxy-Ready Orbit** - Native integration with PlanetCore micro-kernel and dependency injection.
 - 🔌 **Multi-Broker Support** - Built-in drivers for **Redis**, **SQS**, **Kafka**, **RabbitMQ**, **Database** (SQL), and **Memory**.
 - 🛠️ **Job-Based API** - Clean, class-based job definitions with built-in serialization and failure handling.
 - 🚀 **High Throughput** - Optimized for **Bun**, supporting batch consumption, concurrent processing, and adaptive polling.
+- 📡 **Cross-Satellite Event Streaming** - Enable loosely coupled communication between isolated Satellites.
 - 🛡️ **Reliability** - Built-in exponential backoff retries, Dead Letter Queues (DLQ), and sequential job grouping.
 - 📝 **Audit & Persistence** - Optional SQL-based persistence layer for archiving job history and providing complete audit trails.
 - 🕒 **Scheduler** - Built-in CRON-based task scheduling for recurring jobs.
 - 🏢 **Worker Modes** - Run embedded workers during development or standalone worker processes in production.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Stream acts as the **Async Engine (Background Processing)**.
+
+- **Satellite Decoupling**: Instead of Satellite A calling Satellite B synchronously and waiting for a response, Satellite A fires an event/job into Stream, and Satellite B consumes it asynchronously.
+- **Resilience Backbone**: Works hand-in-hand with `@gravito/resilience` to ensure that failed web requests or heavy tasks are retried in the background without affecting the user experience.
+- **Distributed State**: Facilitates event-driven architecture (EDA), allowing multiple Satellites to react to the same domain event reliably.
+
+```mermaid
+graph TD
+    SatA[Satellite: Order] -- "Push Job" --> Stream{Stream Orbit}
+    Stream -- "Queue: emails" --> Worker1[Worker Pool]
+    Worker1 --> SatB[Satellite: Notification]
+    Stream -- "Queue: payments" --> Worker2[Worker Pool]
+    Worker2 --> SatC[Satellite: Finance]
+```
 
 ## 📦 Installation
 
@@ -147,6 +165,14 @@ Accessed via `c.get('queue')` or `core.container.make('queue')`.
 - **`delay(seconds)`**: Set initial delay.
 - **`backoff(seconds, multiplier?)`**: Configure retry strategy.
 - **`withPriority(priority)`**: Set job priority.
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Multi-broker queue and job system.
+- [📡 **Event-Driven Architecture**](./doc/EVENT_DRIVEN_ARCHITECTURE.md) — **NEW**: Cross-Satellite communication and pub/sub.
+- [⚙️ **Worker Configuration**](#-worker-modes) — Embedded vs standalone background workers.
 
 ## 🔌 Supported Drivers
 

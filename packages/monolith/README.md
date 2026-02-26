@@ -53,10 +53,34 @@ bun add @gravito/monolith
 
 ## ✨ Features
 
--   **Markdown Support**: Full Markdown parsing via `marked`.
--   **Frontmatter**: Parses YAML frontmatter using `gray-matter`.
--   **Collections**: Organize content into collections (folders).
--   **Query API**: Fluent API to fetch by slug, list all, etc. `collection('posts').slug('...').fetch()`.
+- 🪐 **Galaxy-Ready Content API**: Native integration with PlanetCore to serve file-based content across all Satellites.
+- 📝 **Markdown-to-State**: Transform flat markdown files into rich, type-safe API responses with zero runtime DB overhead.
+- 📂 **Flexible Collections**: Organize the Galaxy's knowledge into intuitive collections and sub-collections.
+- ⚡ **Zero-Config Performance**: Built-in caching and frontmatter parsing for lightning-fast content retrieval.
+- 🏗️ **SSG Integration**: Works seamlessly with `@gravito/prism` for building blazing-fast static sites.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Monolith acts as the **Knowledge Core (Content Layer)**.
+
+- **Immutable Truth**: Provides a file-based "Single Source of Truth" for documentation, blogs, and marketing content, allowing developers to manage knowledge via Git.
+- **Micro-CMS Interface**: Enables Satellites to fetch static content through a unified Query API, decoupling presentation from raw data storage.
+- **Hybrid Bridge**: Works with `Atlas` to allow Satellites to combine static markdown knowledge with dynamic relational data in a single view.
+
+```mermaid
+graph LR
+    Git([Git Repo]) --> MD[Markdown Files]
+    MD --> Monolith{Monolith Core}
+    Monolith -->|Query| Sat[Satellite: Blog]
+    Sat -->|Render| User([User UI])
+```
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — File-based CMS core.
+- [📝 **Knowledge Management**](./doc/KNOWLEDGE_MANAGEMENT.md) — **NEW**: Collections, frontmatter, and SSG integration.
 
 ## 📚 API
 

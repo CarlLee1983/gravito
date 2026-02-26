@@ -6,18 +6,41 @@
 
 ---
 
-## 📖 Quick Index
-*   [**Architecture Deep Dive**](./docs/architecture.md) — Understand the mechanics of hybrid caching and predictive engines.
-*   [**Observability & Protection**](./docs/observability.md) — How to prevent OOM and monitor cache performance.
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Deep Dive**](./docs/architecture.md) — Under the hood of tiered caching.
+- [🧊 **Hybrid Caching**](./doc/HYBRID_CACHING.md) — **NEW**: L1/L2 strategy and predictive warming.
+- [📊 **Observability**](./docs/observability.md) — Monitoring cache health and hit rates.
 
 ---
 
 ## 🌟 Core Capabilities
 *   🚀 **Unified API**: Seamlessly switch between Memory, Redis, File, and other storage drivers.
 *   🏗️ **Tiered Cache (Hybrid)**: Combine local Memory with distributed Redis for extreme read speeds.
-*   🔒 **Distributed Locks**: Atomic cross-instance concurrency control.
+*   🧠 **Predictive State Warming**: Access path prediction and automated pre-fetching powered by Markov Chains.
+*   🔒 **Distributed Locks**: Atomic cross-instance concurrency control across the Galaxy.
 *   🚦 **Rate Limiting**: Built-in traffic throttling on top of your cache infrastructure.
-*   🧠 **Smart Pre-warming**: Access path prediction and automated pre-fetching powered by Markov Chains.
+*   🪐 **Galaxy-Ready**: Native integration with PlanetCore for universal caching.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Stasis acts as the **Thermal Buffer (Insulation Layer)**.
+
+- **Load Insulation**: Protects the `Atlas` Data Gravity core from being overwhelmed by repetitive queries, ensuring low-latency responses for the `Photon` Sensing Layer.
+- **Distributed Consistency**: Works with `Plasma` to provide a consistent view of frequently accessed state across multiple Satellite instances.
+- **Predictive Efficiency**: Uses advanced algorithms to warm up the cache before a Satellite even receives a request, minimizing cold-start latency in serverless or edge environments.
+
+```mermaid
+graph TD
+    P[Photon: Sensing] --> S[Satellite]
+    S --> Stasis{Stasis Buffer}
+    Stasis -- "Hit" --> S
+    Stasis -- "Miss" --> Atlas[(Atlas: DB)]
+    Atlas --> Stasis
+    Stasis -.-> Plasma[(Plasma: Shared State)]
+```
 
 ## 📦 Installation
 ```bash

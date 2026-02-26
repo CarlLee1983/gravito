@@ -6,18 +6,43 @@
 
 ## ✨ Core Features
 
-- **🔥 Rocket Pool**: Pre-warmed container pool eliminates cold start times.
+- **🔥 Rocket Pool**: Pre-warmed container pool eliminates cold start times for sub-second deployment.
+- 🪐 **Galaxy-Ready Deployment**: Native integration with PlanetCore for managing the Galaxy's expansion into containers.
 - **💉 Payload Injection**: Skip `docker build`. Code is injected via `docker cp` in milliseconds.
-- **🏗️ DDD Architecture**: Built on `@gravito/enterprise` with rigorous state machine management.
-- **♻️ Auto-Recycling**: Containers are automatically refurbished and returned to the pool after missions.
-- **🤖 GitHub Integration**: Built-in webhook handler for PR previews and automated comments.
-- **🛡️ Secure Isolation**: Each deployment runs in an isolated container environment.
-- **📡 Real-time Telemetry**: Integrated with `@gravito/ripple` for live deployment progress updates via WebSockets.
-- **🕸️ Dynamic Proxying**: High-performance routing to active deployments using Bun's native HTTP capabilities.
+- **🏗️ Clean Architecture**: Built on DDD principles with a rigorous state machine for mission management.
+- **🤖 GitHub Sync**: Automated PR previews and deployment comments for a seamless developer loop.
+- **📡 Real-time Telemetry**: Integrated with `Ripple` for live deployment progress updates via "Gravitational Waves".
+- **🕸️ Dynamic Proxying**: High-performance routing to active deployments using Bun's native network stack.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Launchpad acts as the **Launch Platform (Expansion Layer)**.
+
+- **Galaxy Manifestation**: The engine that physically "Deploys" the Galaxy's code into isolated execution environments (Rockets).
+- **Environment Orchestrator**: Manages the lifecycle of multiple environments (Staging, Preview, Prod) simultaneously, ensuring they are correctly insulated and routed.
+- **Operational Bridge**: Connects the high-level Galaxy logic to the low-level Docker infrastructure via `Nova` thrusters.
+
+```mermaid
+graph TD
+    User([Developer]) -- "Push" --> Git([GitHub])
+    Git -- "Webhook" --> Echo[Echo Radar]
+    Echo --> Launchpad{Launch Platform}
+    Launchpad -->|Inject| Rocket[Rocket Pool: Bun Container]
+    Launchpad -.->|Telemetry| Ripple[Ripple Pulse]
+    Ripple -.-> User
+```
 
 ## 🏗️ Architecture Overview
 
-Launchpad follows **Clean Architecture** principles and is implemented as a **Gravito Orbit**:
+Launchpad follows **Clean Architecture** principles and is implemented as a **Gravito Orbit**.
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Container lifecycle and Clean Architecture.
+- [🚀 **Rocket Pool**](./doc/ROCKET_POOL.md) — **NEW**: Sub-second deployments and payload injection.
+- [🛡️ **Security & Isolation**](#-secure-isolation) — Docker networking and sandboxing.
 
 ### Domain Layer (`src/Domain`)
 - **Rocket**: The aggregate root representing a container instance and its lifecycle state.

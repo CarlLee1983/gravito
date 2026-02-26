@@ -18,6 +18,7 @@ import type { ConsumerStrategy } from './ConsumerStrategy'
  */
 export class PollingStrategy implements ConsumerStrategy {
   private running = false
+  private stopRequested = false
 
   constructor(
     private queueManager: QueueManager,

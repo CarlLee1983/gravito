@@ -8,7 +8,8 @@
   "scripts": {
     "build": "tsup src/index.tsx --format esm",
     "build:dts": "tsup src/index.tsx --format esm --dts",
-    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test": "true"
   },
   "dependencies": {
     "@gravito/admin-sdk": "workspace:*",

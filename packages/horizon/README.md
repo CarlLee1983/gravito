@@ -4,15 +4,32 @@ Enterprise-grade distributed task scheduler for the Gravito framework.
 
 `@gravito/horizon` provides a robust, fluent, and highly configurable system for managing scheduled tasks (Cron jobs) in a distributed environment. It supports multiple locking mechanisms to prevent duplicate execution, node role filtering, retries, and comprehensive monitoring hooks.
 
-## Features
+## ✨ Features
 
-- **Fluent API**: Human-readable syntax for defining task schedules (e.g., `.daily().at('14:00')`).
-- **Distributed Locking**: Prevents duplicate task execution across multiple servers (supports Memory, Cache, and Redis).
-- **Node Role Awareness**: Restrict tasks to specific nodes (e.g., only run on `worker` nodes) or broadcast maintenance tasks to all matching nodes.
-- **Reliability Features**: Built-in support for task timeouts and automatic retries with configurable delays.
-- **Shell Command Support**: Schedule raw shell commands alongside TypeScript callbacks (powered by [@gravito/nova](../nova) for type-safe execution).
-- **Lazy Cron Parsing**: Lightweight `SimpleCronParser` for standard expressions, with `cron-parser` only loaded when complex logic is required.
-- **Comprehensive Hooks**: Lifecycle events for monitoring task success, failure, retries, and scheduler activity.
+- 🪐 **Galaxy-Ready Distributed Scheduler**: Native integration with PlanetCore for universal task management across all Satellites.
+- 🕒 **Fluent API**: Human-readable syntax for defining task schedules (e.g., `.daily().at('14:00')`).
+- 🔐 **Distributed Locking**: Prevents duplicate task execution across multiple servers (supports Redis/Plasma and SQL).
+- 🧬 **Node-Role Awareness**: Intelligently restrict tasks to specific nodes (e.g., only run on `worker` nodes) or broadcast maintenance tasks.
+- 🛡️ **Reliability Features**: Built-in support for task timeouts and automatic retries with configurable exponential backoff.
+- 🐚 **Shell Command Support**: Schedule raw shell commands alongside TypeScript callbacks (powered by `@gravito/nova`).
+- 📊 **Monitoring Hooks**: Comprehensive lifecycle events for tracking task success, failure, and execution duration.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Horizon acts as the **Clockwork of Jobs (Temporal Coordinator)**.
+
+- **System Heartbeat**: Triggers recurring maintenance, cleanup, and synchronization tasks that keep the Galaxy running smoothly over time.
+- **Node Coordination**: Ensures that even if you have 100 instances of a Satellite, a "Daily Report" task only runs exactly once per day across the entire cluster.
+- **Background Orchestration**: Works with `@gravito/stream` to initiate long-running background processes at specific intervals.
+
+```mermaid
+graph TD
+    H[Horizon: Scheduler] -->|Time Trigger| L{Distributed Lock}
+    L -- "Win Lock" --> T[Task: Daily Cleanup]
+    L -- "Lose Lock" --> S[Skip Execution]
+    T -->|Call| Sat[Satellite: Admin]
+    T -->|Metrics| Mon[Monitor Orbit]
+```
 
 ## Installation
 
@@ -72,6 +89,14 @@ scheduler.exec('sync-storage', 'aws s3 sync ./local s3://bucket')
   .retry(3, 5000) // Retry 3 times with 5s delay
   .timeout(300000) // 5 minute timeout
 ```
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Distributed task scheduler core.
+- [🕒 **Distributed Scheduling**](./doc/DISTRIBUTED_SCHEDULING.md) — **NEW**: Multi-server coordination and locking.
+- [🐚 **Shell Execution**](#shell-execution-with-nova) — Type-safe shell commands via Nova.
 
 ## Scheduling API
 

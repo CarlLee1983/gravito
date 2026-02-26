@@ -89,15 +89,36 @@ Navigate to `http://localhost:3000/docs` to see your Swagger UI!
 
 - **🚀 Performance-First**: Highly optimized specification generation with internal schema caching.
 - **🛡️ Zero Purity Loss**: No decorators or JSDoc in your Controllers. Keep your business logic clean.
+- **🌌 Galaxy-Wide Discovery**: Automatically aggregate API contracts from all mounted Satellites.
 - **🔄 Type Inference**: Automatically converts Zod schemas and Impulse FormRequests to OpenAPI components.
 - **📂 Shadow Contracts**: Define documentation in separate files, allowing for clean separation of concerns.
 - **📡 Dynamic Updates**: Your documentation always matches your DTOs in real-time.
-- **🎨 Built-in UI**: Integrated Swagger UI powered by CDN for a zero-config setup.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Astral acts as the **Transparent Membrane (Discovery Layer)**.
+
+- **Galaxy Insight**: Provides a clear view of the available APIs and data structures across all Satellites, allowing developers and external systems to discover and interact with the ecosystem.
+- **Structural Integrity**: Enforces documentation through Shadow Contracts, ensuring that API definitions are decoupled from business logic, maintaining the "Purity" of the Galaxy's core.
+- **External Portal**: Works with `Beam` to provide the metadata needed for generating high-quality client SDKs and testing suites.
+
+```mermaid
+graph TD
+    S1[Satellite: Catalog] -- "Contract" --> Astral{Astral Orbit}
+    S2[Satellite: Membership] -- "Contract" --> Astral
+    Astral --> UI[Swagger UI]
+    Astral --> JSON[OpenAPI 3.1 Spec]
+    JSON --> SDK[Client SDKs]
+```
 
 ## 📚 Documentation
 
-- [API Reference](./docs/API.md) - Detailed guide on configuration, interfaces, and helpers.
-- [Advanced Usage](./docs/ADVANCED.md) - Learn about security schemes, reusable components, and custom error handling.
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Shadow contracts and purity.
+- [📂 **Shadow Contracts**](./doc/SHADOW_CONTRACTS.md) — **NEW**: Best practices for zero-purity-loss documentation.
+- [📖 **API Reference**](./docs/API.md) — Configuration and interfaces.
+- [🧪 **Advanced Usage**](./docs/ADVANCED.md) — Security schemes and custom errors.
 
 ## 📄 License
 

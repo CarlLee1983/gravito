@@ -103,22 +103,26 @@ describe('InertiaService', () => {
     const viewData = renderCallArgs[1]
     const pageAttr = viewData.page
 
-    const decoded = pageAttr.replace(/&(amp|lt|gt|quot|#039);/g, (_full: string, ent: string) => {
-      switch (ent) {
-        case 'amp':
-          return '&'
-        case 'lt':
-          return '<'
-        case 'gt':
-          return '>'
-        case 'quot':
-          return '"'
-        case '#039':
-          return "'"
-        default:
-          return _full
+    const decoded = pageAttr.replace(
+      /&(amp|lt|gt|quot|#039|#x27);/g,
+      (_full: string, ent: string) => {
+        switch (ent) {
+          case 'amp':
+            return '&'
+          case 'lt':
+            return '<'
+          case 'gt':
+            return '>'
+          case 'quot':
+            return '"'
+          case '#039':
+          case '#x27':
+            return "'"
+          default:
+            return _full
+        }
       }
-    })
+    )
 
     const parsed = JSON.parse(decoded)
     expect(parsed.component).toBe('Docs')

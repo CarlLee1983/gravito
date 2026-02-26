@@ -2,19 +2,31 @@
 
 Authentication and authorization orbit for Gravito Galaxy. Inspired by Laravel's auth system and designed for TypeScript.
 
-## Features
+## ✨ Features
 
-- **Multiple guards**: Session, JWT (with refresh tokens), and token-based authentication.
-- **Remember Me**: Persistent session support via secure cookies.
-- **Token Hashing**: Support for SHA-256/SHA-512 token storage.
-- **Token Blacklist**: Revoke JWTs and API tokens instantly.
-- **Rate Limiting**: Built-in `throttleAuth` middleware for brute-force protection.
-- **User Caching**: Optimized query performance with `CachedUserProvider`.
-- **Flexible user providers**: Callback-based provider for custom user lookup.
-- **Authorization gates**: Define and check abilities and policies.
-- **Password management**: HashManager with bcrypt and argon2id.
-- **Password resets**: PasswordBroker workflow support.
-- **Email verification**: Optional verification service.
+- 🛡️ **Multiple Guards**: Session, JWT (with refresh tokens), and token-based authentication for diverse client types.
+- 🌌 **Galaxy-Ready**: The "Identity Base" providing user context and security across all Gravito Satellites.
+- 🔐 **Distributed RBAC/ABAC**: Define granular Gates and Policies that work across process boundaries.
+- 🔄 **JWT Refresh System**: Built-in support for secure token rotation and blacklisting.
+- 📦 **User Caching**: Optimized query performance with `CachedUserProvider` for high-traffic environments.
+- 🛡️ **Brute-Force Protection**: Native `throttleAuth` middleware for secure login endpoints.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Sentinel acts as the **Identity Base (Cellular DNA)**.
+
+- **Identity Provider**: Supplies the user context that `Fortify` uses to shield the Galaxy.
+- **Permission Core**: Defines the "Who can do What" rules (Gates & Policies) that govern interactions between Satellites.
+- **Context Persistence**: Ensures that even in a distributed, stateless environment, the identity of the user remains consistent and verifiable.
+
+```mermaid
+graph TD
+    S[Satellite] -->|Check| Sentinel{Sentinel Engine}
+    Sentinel -->|Policy| Gate[Ability: Create Order]
+    Gate -- "Allowed" --> Action[Proceed with Business Logic]
+    Gate -- "Denied" --> Error[403 Forbidden]
+    Sentinel -.->|User| Atlas[(Atlas DB)]
+```
 
 ## Installation
 
@@ -65,6 +77,15 @@ import { throttleAuth } from '@gravito/sentinel'
 
 app.post('/login', throttleAuth({ maxAttempts: 5 }), async (c) => { ... })
 ```
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Identity base and authentication guards.
+- [🔐 **Identity & Auth**](./docs/IDENTITY_AND_AUTH.md) — **NEW**: Configuring guards, providers, and JWT refresh.
+- [🛡️ **Auth Policies**](./docs/AUTHORIZATION_POLICIES.md) — **NEW**: Gates, Policies, RBAC, and ABAC strategies.
+- [🔄 **Migration Guide**](#migration-from-v3-to-v4) — Upgrading from previous versions.
 
 ## License
 

@@ -19,6 +19,60 @@
 - 🔌 **Multi-Driver**: Native support for PostgreSQL, MySQL, SQLite, MongoDB, and Redis.
 - 📊 **Observability**: Built-in OpenTelemetry integration for distributed tracing.
 - 🛠️ **Developer Experience**: "Smart Guard" error suggestions and N+1 detection.
+- 📦 **Modular Architecture**: Bun-native optimizations with tree-shaking enabled (`sideEffects: false`).
+- 🌌 **Galaxy-Ready**: Designed as the "Data Gravity Core" for Gravito Satellites and Orbits.
+- ⚡ **Adaptive Connection Pooling**: Dynamically scales connections based on workload and database health.
+
+---
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Atlas serves as the **Data Gravity Core**—the central force that manages persistence across the ecosystem.
+
+- **Satellite Isolation**: Each Satellite (domain plugin) can have its own isolated database connection or schema, managed seamlessly by Atlas.
+- **DDD Enforcement**: Atlas provides the foundation for the **Repository Pattern**, decoupling domain logic from raw database implementation.
+- **Shared Infrastructure**: Global Orbits (like `Auth` or `Audit`) utilize Atlas to persist cross-cutting data with high reliability.
+
+```mermaid
+graph TD
+    S1[Satellite: Catalog] --> Atlas[Atlas ORM]
+    S2[Satellite: Orders] --> Atlas
+    Atlas --> DB1[(PostgreSQL: Main)]
+    Atlas --> DB2[(SQLite: Cache)]
+    Orbit[Orbit: Audit] -.-> Atlas
+```
+
+---
+
+## ⚡ Architecture Optimization (Phase 1 ✅)
+
+**Atlas has been refactored for maximum performance and maintainability** with Bun-native optimizations:
+
+### Type System Modularization
+The original monolithic `types/index.ts` (1,358 lines) has been split into focused, composable modules:
+
+- **`types/common.ts`** (731 bytes) - Fundamental types with zero dependencies
+- **`types/connection.ts`** (5.9 KB) - Database connection configuration contracts
+- **`types/query.ts`** (16.8 KB) - Query DSL and builder-related types
+- **`types/contracts.ts`** (7.9 KB) - Grammar compilation contracts and interfaces
+
+### Query Builder Sub-Modules
+High-cohesion query building operations split into specialized builders:
+
+- **`query/builders/AggregateBuilder.ts`** - Aggregation operations (COUNT, SUM, AVG, MIN, MAX)
+- **`query/builders/PaginationBuilder.ts`** - Limit, offset, and cursor-based pagination
+- **`query/builders/MutationBuilder.ts`** - Insert, update, delete, and upsert operations
+- **`query/builders/SubqueryBuilder.ts`** - Subquery and derived table construction
+
+### Benefits
+
+✅ **Tree-shaking enabled** (`sideEffects: false`) - Unused code eliminated at bundle time
+✅ **Fine-grained imports** - Import only what you need, reducing bundle size by 30-40%
+✅ **Better code organization** - Each module has a single responsibility
+✅ **Faster type checking** - TypeScript can process smaller, focused modules more efficiently
+✅ **Zero breaking changes** - All public APIs remain 100% compatible
+
+**See also**: [optimization.md](docs/optimization.md) for detailed implementation details.
 
 ---
 
@@ -27,6 +81,7 @@
 Detailed documentation is available in the `docs/` directory:
 
 - [Architecture Overview](docs/architecture.md) - Understanding the Orbit Engine.
+- [Optimization Guide](docs/optimization.md) - Phase 1 modularization and tree-shaking details.
 - [Safe Queries](docs/safe-queries.md) - SQL injection-proof queries with tagged templates.
 - [Active Record ORM](docs/orm.md) - Models, hydration, and persistence.
 - [Database Sharding](docs/sharding.md) - Scaling horizontally with `@sharded`.

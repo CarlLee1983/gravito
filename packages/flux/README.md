@@ -2,16 +2,31 @@
 
 > ⚡ Platform-agnostic, high-performance workflow engine for Gravito
 
-## Features
+## ✨ Features
 
-- **Pure State Machine** - No runtime dependencies, Web Standard APIs only
-- **Fluent Builder API** - Type-safe, chainable workflow definitions
-- **Storage Adapters** - Memory, SQLite (Bun), PostgreSQL (coming soon)
-- **Distributed Locking** - Redis-based locking for multi-node deployments
-- **Retry & Timeout** - Automatic retry with exponential backoff
-- **Event Hooks** - Subscribe to workflow/step lifecycle events
-- **Dual Platform** - Works with both Bun and Node.js
-- **Well-Tested** - 87% function coverage, 92% line coverage, 277 passing tests
+- 🪐 **Galaxy-Ready Workflow Engine** - Native integration with PlanetCore for universal business process orchestration.
+- 🔄 **Distributed Saga Coordination** - Reliable transaction management across multiple isolated Satellites with automatic rollback.
+- ⚡ **Pure State Machine** - High-performance engine with zero runtime dependencies beyond Web Standard APIs.
+- 🔐 **Distributed Locking** - Plasma-backed Redis locking to ensure process safety in multi-node clusters.
+- 📡 **Signal & Suspend** - Pause workflows to wait for external stimulus (Webhooks, manual approvals) and resume instantly.
+- 🛠️ **Fluent Builder API** - Fully type-safe, chainable definitions for complex logic flows.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Flux acts as the **Logic Orchestrator (Cerebral Cortex)**.
+
+- **Process Master**: Manages complex, long-running business processes that span across multiple Satellites (e.g., a "Checkout" process involving `Catalog`, `Payment`, and `Notification`).
+- **Reliability Engine**: Ensures that even if a Satellite fails mid-process, the state is preserved and the appropriate compensation logic (Saga) is executed.
+- **State Persistence**: Works with `Atlas` or `Plasma` to store the execution state, allowing workflows to survive system restarts or move between nodes.
+
+```mermaid
+graph TD
+    S1[Satellite: Order] -- "Trigger Workflow" --> Flux{Flux Engine}
+    Flux -- "Step 1" --> S2[Satellite: Inventory]
+    Flux -- "Step 2" --> S3[Satellite: Payment]
+    Flux -- "Fail / Rollback" --> S2
+    Flux -.-> State[(State: Plasma/Redis)]
+```
 
 ## Installation
 
@@ -150,6 +165,14 @@ const reportWorkflow = createWorkflow('generate-report')
     await email.send(ctx.input.requestedBy, 'report-ready', { url: ctx.data.url })
   })
 ```
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Under the hood of the state machine.
+- [🔄 **Workflow Patterns**](./doc/WORKFLOW_PATTERNS.md) — **NEW**: Sagas, Suspension, and Distributed Locking.
+- [🧪 **Testing Workflows**](./tests/README.md) — Mocking and execution testing.
 
 ## API
 

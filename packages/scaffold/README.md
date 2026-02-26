@@ -34,13 +34,29 @@ const result = await scaffold.generate()
 console.log(`Created ${result.filesCreated} files`)
 ```
 
-## Architecture Types
+## ✨ Key Features
 
-| Type | Description |
-|------|-------------|
-| `enterprise-mvc` | Laravel-inspired MVC structure |
-| `clean` | Clean Architecture with strict dependency rules |
-| `ddd` | Domain-Driven Design with bounded contexts |
+- 🪐 **Galaxy-Ready Scaffolding**: Native integration with the Gravito CLI to bootstrap new Satellites and Orbits instantly.
+- 🏗️ **Architectural Blueprints**: Built-in support for **DDD**, **Clean Architecture**, and **Enterprise MVC** patterns.
+- 🧩 **Satellite Templates**: Generate isolated, "plug-and-play" domain units with correct directory structures.
+- 🛠️ **Stub Generator**: Highly customizable Handlebars-based engine for generating boilerplate-free code.
+- 📂 **Directory Integrity**: Ensures that every new module follows the strict dependency rules of the Galaxy.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Scaffold acts as the **Blueprint Engine (Constructive Core)**.
+
+- **Galaxy Expansion**: Provides the "DNA" for creating new planets (Satellites) within the ecosystem, ensuring that every new piece of code is consistent with the framework's standards.
+- **Structural Enforcement**: Automates the creation of `manifest.json`, `src/index.ts`, and `tests/` directories, preventing architectural drift.
+- **Developer Onboarding**: Lowers the barrier to entry by providing ready-to-use "Starter Kits" for different domain complexities.
+
+```mermaid
+graph TD
+    CLI([Gravito CLI]) -- "init" --> Scaffold{Scaffold Engine}
+    Scaffold --> Blueprint[Architecture: DDD]
+    Blueprint --> S1[New Satellite: Orders]
+    Blueprint --> S2[New Orbit: Telemetry]
+```
 
 ## Generators
 
@@ -109,6 +125,14 @@ export class MyCustomGenerator extends BaseGenerator {
   }
 }
 ```
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Blueprint engine and structural integrity.
+- [🏗️ **Galaxy Blueprints**](./doc/GALAXY_BLUEPRINTS.md) — **NEW**: DDD, Clean, and MVC starter kits.
+- [🛠️ **Stub Customization**](#generators) — Building your own code generators.
 
 ## API Reference
 

@@ -2,21 +2,34 @@
 
 Enterprise architecture primitives for Gravito framework. This package provides the building blocks for Domain-Driven Design (DDD) and Clean Architecture in Gravito applications.
 
-## Features
+## ✨ Key Features
 
-### Domain-Driven Design (DDD)
-- **AggregateRoot**: Aggregate root entity with domain event management.
-- **Entity**: Base entity class with identity equality.
-- **ValueObject**: Immutable value types with structural equality.
-- **DomainEvent**: Standard structure for domain events including ID and occurrence time.
-- **Repository**: Generic repository interface definition.
+### 🧬 Galaxy-Ready DDD Primitives
+- **AggregateRoot**: The standard foundation for Satellite domain models with integrated event dispatching.
+- **Entity & ValueObject**: Building blocks for consistent domain logic and type safety across the Galaxy.
+- **DomainEvent**: Unified structure for cross-satellite communication and state transitions.
 
-### CQRS & Application
-- **Command**: Base class for write operations.
-- **Query**: Base class for read operations.
-- **CommandHandler**: Interface for command handlers.
-- **QueryHandler**: Interface for query handlers.
-- **UseCase**: Simple clean architecture use case base class.
+### 🏗️ Universal Clean Architecture
+- **UseCase & Repository**: Clean interfaces for decoupling business rules from infrastructure Orbits.
+- **CQRS Primitives**: Base classes for Commands, Queries, and their respective Handlers.
+- **Validation Shield**: Integration with `Mass` or `Impulse` for input protection.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Enterprise acts as the **Architectural Blueprint DNA (Core Patterns)**.
+
+- **Universal Language**: Provides the "Shared Vocabulary" (Entities, Events, Repositories) that allows developers to understand any Satellite's code at a glance.
+- **Structural Guardian**: Enforces the separation of concerns, ensuring that the "Pure" business logic of a Satellite is never contaminated by infrastructure details.
+- **Event-Driven Foundation**: Defines the standard for Domain Events that are propagated through the Galaxy's `Signal` and `Stream` nervous systems.
+
+```mermaid
+graph TD
+    S[Satellite: Domain] -->|Implements| E{Enterprise Patterns}
+    E -->|Aggregate| M[Model]
+    E -->|Command| H[Handler]
+    E -->|Event| D[Domain Event]
+    D -->|Propagate| Signal[Signal Orbit]
+```
 
 ## Usage
 

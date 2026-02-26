@@ -4,14 +4,29 @@ Lightweight, high-performance broadcasting for Gravito with multiple drivers (Pu
 
 **Status**: v0.1.0 - core features complete with multiple broadcast drivers.
 
-## Features
+## ✨ Features
 
-- **Zero runtime overhead**: Pure type wrappers that delegate to drivers
-- **Multi-driver support**: Pusher, Ably, Redis, WebSocket
-- **Modular**: Install only the driver you need
-- **Events integration**: Events can implement `ShouldBroadcast`
-- **Channel authorization**: Private and presence channels supported
-- **AI-friendly**: Strong typing, clear JSDoc, and predictable APIs
+- 🪐 **Galaxy-Ready Broadcasting**: Native integration with PlanetCore events for automatic real-time delivery.
+- 🔌 **Multi-Driver Support**: Seamlessly switch between **Pusher**, **Ably**, **Redis**, and native **WebSockets**.
+- 📡 **Cross-Satellite Sync**: Synchronize state across multiple isolated Satellite instances.
+- 🛡️ **Channel Authorization**: Built-in support for Private and Presence channels with granular auth logic.
+- 🚀 **Zero Runtime Overhead**: Pure type-safe wrappers designed for maximum performance on Bun.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Radiance acts as the **Event Horizon Layer (State Synchronization)**.
+
+- **Real-time Interface**: Connects the internal events of the Galaxy to external observers (Clients) via persistent connections.
+- **Satellite Interconnect**: Allows Satellites to broadcast state changes that other Satellites' frontend components can react to instantly.
+- **Presence Core**: Manages the "Who is Online" state across the entire ecosystem, enabling collaborative features.
+
+```mermaid
+graph LR
+    S[Satellite] -->|Dispatch| E[Event]
+    E -->|implement ShouldBroadcast| Radiance{Radiance Orbit}
+    Radiance --> Driver[Driver: WS/Pusher]
+    Driver --> Client([Connected Clients])
+```
 
 ## Installation
 
@@ -215,6 +230,14 @@ OrbitRadiance.configure({
   },
 })
 ```
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Multi-driver broadcasting.
+- [📡 **Real-time Sync**](./doc/REAL_TIME_SYNC.md) — **NEW**: Syncing state across Satellites and Clients.
+- [🛡️ **Channel Auth**](#channel-authorization) — Securing private and presence channels.
 
 ## API Reference
 

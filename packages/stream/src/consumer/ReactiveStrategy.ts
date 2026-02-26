@@ -19,6 +19,7 @@ import type { ConsumerStrategy } from './ConsumerStrategy'
 export class ReactiveStrategy implements ConsumerStrategy {
   private running = false
   private stopRequested = false
+  private notificationArrived = false
   private lastNotificationTime = Date.now()
   private fallbackPollingTimer: ReturnType<typeof setTimeout> | null = null
 

@@ -2,21 +2,32 @@
 
 `@gravito/signal` is the powerful, multi-driver email framework for the Gravito ecosystem. It provides a clean, fluent API for building and sending emails with support for multiple rendering engines and transport drivers.
 
-## 🌟 Features
+## ✨ Features
 
-- **Fluent API**: Expressive `Mailable` classes for building email messages.
-- **Multi-Driver Transport**: Support for SMTP (Nodemailer), AWS SES, Log (console), and Memory.
-- **Flexible Rendering**: Render email content using:
-  - Raw HTML
-  - **Prism** (Edge-optimized view engine)
-  - **React** Components (via `react-dom/server`)
-  - **Vue** Components (via `@vue/server-renderer`)
-- **Development Experience**:
-  - **Dev Mode**: Intercept emails locally and view them in a built-in UI.
-  - **Mailbox UI**: Access intercepted emails at `/__mail` during development.
-- **Queue Integration**: Built-in support for asynchronous email sending via `@gravito/stream`.
-- **Internationalization**: Integrated I18n support for localized email content.
-- **Type-Safe**: Written in TypeScript with full type safety for configuration and usage.
+- 🚀 **Fluent API**: Expressive `Mailable` classes for building complex email messages with zero friction.
+- 🌌 **Galaxy-Ready**: A native Gravito Orbit that integrates seamlessly into the IoC container and context.
+- 🔌 **Multi-Driver Transport**: Support for SMTP, AWS SES, SendGrid, Log, and Memory drivers.
+- 🎨 **Modern Rendering**: Design emails using **React**, **Vue**, **MJML**, or **Prism** templates.
+- 📬 **Dev Mailbox UI**: Built-in visual interface at `/__mail` for local email inspection and debugging.
+- ⚙️ **Distributed Queueing**: Automatic offloading to `@gravito/stream` for background delivery.
+- 🛡️ **Webhook Processing**: Handle inbound delivery events (bounces, clicks) with ease.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Signal serves as the **Communication Nervous System**.
+
+- **Outbound Signal**: Satellites (domain plugins) trigger `Signal` to communicate with the outside world (users, other systems).
+- **Inbound Feedback**: Signal processes Webhooks from providers to update the state of the Galaxy (e.g., marking an email as invalid in the `Membership` Satellite).
+- **Event-Driven**: Leverages `@gravito/core`'s lifecycle to ensure emails are sent only after transactions are committed.
+
+```mermaid
+graph LR
+    S[Satellite] -->|Trigger| Signal[Signal Orbit]
+    Signal -->|Render| MW[MJML/React/Vue]
+    MW -->|Send| Provider[SES/SMTP]
+    Provider -.->|Webhook| Signal
+    Signal -.->|Event| S
+```
 
 ## 📦 Installation
 

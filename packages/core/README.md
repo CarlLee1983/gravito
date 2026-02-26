@@ -20,9 +20,13 @@
 - 🛰️ **Orbit Mounting** - Easily mount external Photon applications (Orbits) to specific paths.
 - 📝 **Logger System** - PSR-3 style logger interface with default standard output implementation.
 - ⚙️ **Config Manager** - Unified configuration management supporting environment variables, runtime injection, and file-based config loading.
-- 🛡️ **Security Middleware** - Built-in protection including CSRF, CORS, HSTS, and request throttling.
+- 🛡️ **Security Middleware** - Built-in protection (deprecated in v1.7.0, moved to `@gravito/photon`).
 - 🔌 **Runtime Adapters** - Abstraction layer for underlying runtimes (Bun, Node.js) and HTTP engines.
 - 🛡️ **Error Handling** - Built-in standardized JSON error responses, 404 handling, and process-level error management.
+- 🧠 **Request Context** - Global access to request data via `AsyncLocalStorage` (requestId, userId, etc.).
+- 🛠️ **CLI Commands** - CommandKernel for building artisan-style CLI tools.
+- 🏥 **Health Probes** - Cloud-native Liveness and Readiness probes.
+- ⚡ **Native Accelerators** - FFI-powered CBOR and hashing for peak performance.
 - 🚀 **Modern** - Built for **Bun** runtime with native TypeScript support.
 - 🪶 **Lightweight** - Zero external dependencies (except `@gravito/photon`).
 
@@ -64,7 +68,19 @@ const core = new PlanetCore({
 });
 ```
 
-### 2. Dependency Injection
+### 2. Request Context (AsyncLocalStorage)
+
+Access request-scoped data anywhere in your application without parameter drilling:
+
+```typescript
+import { RequestContext } from '@gravito/core';
+
+// In a deep service layer
+const userId = RequestContext.get()?.userId;
+const requestId = RequestContext.get()?.requestId;
+```
+
+### 3. Dependency Injection
 
 Use the IoC Container to manage your application services:
 
@@ -95,7 +111,7 @@ await core.bootstrap();
 const cache = core.container.make('cache');
 ```
 
-### 3. Register Hooks
+### 4. Register Hooks
 
 Use **Filters** to modify data:
 
@@ -118,7 +134,23 @@ core.hooks.addAction('user_registered', async (userId: string) => {
 await core.hooks.doAction('user_registered', 'user_123');
 ```
 
-### 4. Mount an Orbit
+### 5. Reliability & Distributed Retries
+
+Built-in support for distributed retries via Bull Queue:
+
+```typescript
+import { RetryScheduler } from '@gravito/core';
+
+const scheduler = new RetryScheduler({
+  initialDelayMs: 1000,
+  multiplier: 2,
+  maxRetries: 5
+});
+
+core.hooks.setRetryScheduler(scheduler);
+```
+
+### 6. Mount an Orbit
 
 Orbits are just standard Photon applications that plug into the core.
 
@@ -132,14 +164,14 @@ blogOrbit.get('/posts', (c) => c.json({ posts: [] }));
 core.mountOrbit('/api/blog', blogOrbit);
 ```
 
-### 5. Liftoff! 🚀
+### 7. Liftoff! 🚀
 
 ```typescript
 // Export for Bun.serve
 export default core.liftoff(); // Automatically uses PORT from config/env
 ```
 
-### 6. Process-level Error Handling (Recommended)
+### 8. Process-level Error Handling (Recommended)
 
 Request-level errors are handled by `PlanetCore` automatically, but background jobs and startup code can still fail outside the request lifecycle.
 
@@ -152,6 +184,65 @@ core.hooks.addAction('processError:report', async (ctx) => {
   // ctx.kind: 'unhandledRejection' | 'uncaughtException'
   // ctx.error: unknown
 })
+```
+
+## 📊 Observability & Metrics
+
+### Route Pattern Support
+
+To prevent high cardinality in Prometheus metrics caused by dynamic paths (e.g., `/users/123`, `/users/456`), Gravito automatically detects the `routePattern`:
+
+- **Path**: `/users/123`
+- **Pattern**: `/users/:id`
+
+The `routePattern` is available on the request object and used by the monitoring system.
+
+## 🩺 Health Probes
+
+Built-in support for cloud-native health checks:
+
+```typescript
+import { HealthProvider } from '@gravito/core';
+
+app.register(new HealthProvider());
+
+// Check: http://localhost:3000/health/liveness
+// Check: http://localhost:3000/health/readiness
+```
+
+## 🛠️ CLI Commands
+
+Easily build artisan-style CLI tools:
+
+```typescript
+import { CommandKernel } from '@gravito/core';
+
+const kernel = new CommandKernel(container);
+kernel.register('greet', async (args) => {
+  console.log('Hello', args[0]);
+});
+
+await kernel.handle(process.argv.slice(2));
+```
+
+## ⚡ Native Accelerators (FFI)
+
+Gravito Core leverages FFI to use high-performance C implementations for critical tasks:
+
+- **CBOR**: Efficient binary serialization.
+- **Hashing**: SIMD-accelerated SHA-256 and HMAC via Bun primitives.
+
+## 🛡️ Security Middleware Migration
+
+As of v1.7.0, all HTTP security middleware has been migrated to `@gravito/photon` for better engine alignment. Existing exports in `@gravito/core` are marked as `@deprecated` and will be removed in v2.0.0.
+
+**Migration:**
+```typescript
+// Before
+import { cors } from '@gravito/core';
+
+// After
+import { cors } from '@gravito/photon/middleware/security';
 ```
 
 ## 📖 API Reference
@@ -185,6 +276,8 @@ core.hooks.addAction('processError:report', async (ctx) => {
 - **`make(key)`**: Resolve a service instance. Supports automatic type inference via `ServiceMap` augmentation.
 - **`instance(key, instance)`**: Register an existing object instance.
 - **`has(key)`**: Check if a service is bound.
+
+The container includes built-in **circular dependency detection** to help identify architectural issues during development.
 
 #### Type Safety (ServiceMap)
 

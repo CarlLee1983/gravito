@@ -15,14 +15,11 @@ export { ErrorRecoveryManager } from './ErrorRecoveryManager'
 export { HeartbeatManager } from './HeartbeatManager'
 export { KafkaDriver } from './KafkaDriver'
 export { KafkaMetrics } from './KafkaMetrics'
-export type {
-  CallbackCompletedEvent,
-  MessageArrivedEvent,
-} from './KafkaNotifier'
 export { KafkaNotifier } from './KafkaNotifier'
 export { MessageBuffer } from './MessageBuffer'
 export { OffsetTracker } from './OffsetTracker'
 export { PerformanceMonitor } from './PerformanceMonitor'
+export { RebalanceHandler } from './RebalanceHandler'
 export type {
   BufferedMessage,
   ConsumerLifecycleState,

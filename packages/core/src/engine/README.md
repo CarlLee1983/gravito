@@ -15,6 +15,17 @@ Universal frameworks sacrifice 20% of potential performance for cross-platform c
 3. **Lazy Parsing**: Only parse request data when accessed
 4. **Bun-Native**: Direct integration with `Bun.serve` without wrapper layers
 
+## 📊 Observability & Monitoring
+
+### Route Pattern Support (v1.6.0+)
+
+To prevent high cardinality in Prometheus metrics caused by dynamic paths (e.g., `/users/123`, `/users/456`), Gravito Engine automatically detects the `routePattern`:
+
+- **Path**: `/users/123`
+- **Pattern**: `/users/:id`
+
+The `routePattern` is available on the `FastRequest` object (`c.req.routePattern`) and should be used as the label for HTTP request metrics.
+
 ### Benchmark Goals
 
 - **Static routes**: 20%+ faster than Hono

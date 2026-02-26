@@ -9,7 +9,7 @@
   "type": "module",
   "scripts": {
     "build": "echo Skipping build...",
-    "test": "echo No tests..."
+    "test": "true"
   },
   "publishConfig": {
     "access": "public"

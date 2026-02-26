@@ -20,9 +20,13 @@
 - 🛰️ **Orbit Mounting** - 輕鬆將外部 Photon 應用程式（Orbits）掛載到特定路徑。
 - 📝 **Logger System** - PSR-3 風格的日誌介面，內建標準輸出實作。
 - ⚙️ **Config Manager** - 統一的配置管理，支援環境變數、運行時注入與基於檔案的配置載入。
-- 🛡️ **Security Middleware** - 內建保護功能，包括 CSRF、CORS、HSTS 與請求限流（Throttling）。
+- 🛡️ **Security Middleware** - 內建保護功能（自 v1.7.0 起標記為棄用，已遷移至 `@gravito/photon`）。
 - 🔌 **Runtime Adapters** - 底層運行時（Bun, Node.js）與 HTTP 引擎的抽象層。
 - 🛡️ **Error Handling** - 內建標準化 JSON 錯誤回應、404 處理與進程級別錯誤管理。
+- 🧠 **Request Context** - 透過 `AsyncLocalStorage` 全域存取請求資料（requestId, userId 等）。
+- 🛠️ **CLI Commands** - 使用 CommandKernel 構建 Artisan 風格的命令行工具。
+- 🏥 **Health Probes** - 雲原生 Liveness 與 Readiness 探針支援。
+- ⚡ **Native Accelerators** - 基於 FFI 的高效能 CBOR 與雜湊計算（雜湊加速）。
 - 🚀 **Modern** - 專為 **Bun** 運行時設計，原生支援 TypeScript。
 - 🪶 **Lightweight** - 除了 `@gravito/photon` 外零外部依賴。
 
@@ -64,7 +68,19 @@ const core = new PlanetCore({
 });
 ```
 
-### 2. 依賴注入
+### 2. 請求上下文 (AsyncLocalStorage)
+
+在應用程式的任何地方存取請求範圍內的資料，無需透過參數逐層傳遞：
+
+```typescript
+import { RequestContext } from '@gravito/core';
+
+// 在深層 Service 中
+const userId = RequestContext.get()?.userId;
+const requestId = RequestContext.get()?.requestId;
+```
+
+### 3. 依賴注入
 
 使用 IoC 容器管理應用程式服務：
 
@@ -95,7 +111,7 @@ await core.bootstrap();
 const cache = core.container.make('cache');
 ```
 
-### 3. 註冊 Hooks
+### 4. 註冊 Hooks
 
 使用 **Filters** 修改資料：
 
@@ -118,7 +134,23 @@ core.hooks.addAction('user_registered', async (userId: string) => {
 await core.hooks.doAction('user_registered', 'user_123');
 ```
 
-### 4. 掛載 Orbit
+### 5. 可靠性與分佈式重試
+
+內建透過 Bull Queue 實作的分佈式重試支援：
+
+```typescript
+import { RetryScheduler } from '@gravito/core';
+
+const scheduler = new RetryScheduler({
+  initialDelayMs: 1000,
+  multiplier: 2,
+  maxRetries: 5
+});
+
+core.hooks.setRetryScheduler(scheduler);
+```
+
+### 6. 掛載 Orbit
 
 Orbits 是標準的 Photon 應用程式，可以插入核心中。
 
@@ -132,14 +164,14 @@ blogOrbit.get('/posts', (c) => c.json({ posts: [] }));
 core.mountOrbit('/api/blog', blogOrbit);
 ```
 
-### 5. Liftoff! 🚀
+### 7. Liftoff! 🚀
 
 ```typescript
 // 為 Bun.serve 導出
 export default core.liftoff(); // 自動使用來自配置或環境變數的 PORT
 ```
 
-### 6. 進程級別錯誤處理（推薦）
+### 8. 進程級別錯誤處理（推薦）
 
 請求級別的錯誤由 `PlanetCore` 自動處理，但背景工作與啟動代碼仍可能在請求生命週期外失敗。
 
@@ -152,6 +184,65 @@ core.hooks.addAction('processError:report', async (ctx) => {
   // ctx.kind: 'unhandledRejection' | 'uncaughtException'
   // ctx.error: unknown
 })
+```
+
+## 📊 可觀測性與指標
+
+### 路由模式（Route Pattern）支援
+
+為了防止因動態路徑（如 `/users/123`, `/users/456`）導致 Prometheus 指標基數（cardinality）爆炸，Gravito 會自動偵測 `routePattern`：
+
+- **Path**: `/users/123`
+- **Pattern**: `/users/:id`
+
+`routePattern` 可在請求物件中取得，並由監控系統自動使用。
+
+## 🩺 健康檢查（Health Probes）
+
+內建雲原生健康檢查支援：
+
+```typescript
+import { HealthProvider } from '@gravito/core';
+
+app.register(new HealthProvider());
+
+// 檢查: http://localhost:3000/health/liveness
+// 檢查: http://localhost:3000/health/readiness
+```
+
+## 🛠️ 命令行工具（CLI Commands）
+
+輕鬆構建 Artisan 風格的 CLI 工具：
+
+```typescript
+import { CommandKernel } from '@gravito/core';
+
+const kernel = new CommandKernel(container);
+kernel.register('greet', async (args) => {
+  console.log('Hello', args[0]);
+});
+
+await kernel.handle(process.argv.slice(2));
+```
+
+## ⚡ 原生加速器（Native Accelerators）
+
+Gravito Core 利用 FFI (Foreign Function Interface) 使用高效能的 C 語言實作來處理關鍵任務：
+
+- **CBOR**: 高效的二進位序列化。
+- **雜湊（Hashing）**: 使用 Bun 原生指令集加速的 SHA-256 與 HMAC 計算。
+
+## 🛡️ 安全中介軟體遷移
+
+自 v1.7.0 起，所有 HTTP 安全相關的中介軟體已遷移至 `@gravito/photon` 以獲得更好的引擎適配。`@gravito/core` 中的現有匯出已被標記為 `@deprecated`，並將於 v2.0.0 中移除。
+
+**遷移方式：**
+```typescript
+// 之前
+import { cors } from '@gravito/core';
+
+// 之後
+import { cors } from '@gravito/photon/middleware/security';
 ```
 
 ## 📖 API 參考
@@ -185,6 +276,8 @@ core.hooks.addAction('processError:report', async (ctx) => {
 - **`make<T>(key)`**: 解析服務實例。
 - **`instance(key, instance)`**: 註冊現有的物件實例。
 - **`has(key)`**: 檢查服務是否已綁定。
+
+容器內建 **循環依賴偵測（Circular Dependency Detection）**，幫助您在開發階段及時發現架構設計問題。
 
 ### `HookManager`
 

@@ -8,18 +8,30 @@ End-to-End Authentication Workflows for the Gravito Framework.
 
 Fortify comes packed with everything you need for modern application authentication:
 
+- **Distributed RBAC/ABAC**: Flexible permission system that works across multiple Satellites.
+- **Service-to-Service (M2M) Auth**: Secure, cryptographically signed tokens for inter-satellite communication (Beam).
 - **User Registration**: Customizable registration flow with password strength validation and email verification.
 - **Authentication**: Secure login/logout with session management and "Remember Me" support.
 - **Two-Factor Authentication (2FA)**: TOTP-based 2FA with recovery codes.
 - **OAuth / Social Login**: Built-in support for Google and GitHub, extensible to other providers.
 - **API Tokens**: Sanctum-style personal access tokens for stateless API authentication.
-- **Magic Link Login**: Passwordless authentication via secure email links.
-- **Security Features**:
-  - **Rate Limiting**: Sliding window rate limiter for login, password resets, and verification requests.
-  - **Account Lockout**: Automatic temporary or permanent lockout after multiple failed attempts.
-  - **Security Headers**: Automatic injection of CSP, HSTS, XSS-Protection, and Frame Options.
-  - **Password Strength**: Rule-based password validation (length, character types, common password prevention).
-  - **Event Logging**: Detailed audit logs for authentication events (Login, Failed Login, 2FA enabled, etc.).
+- **Security Features**: Rate Limiting, Account Lockout, Security Headers, and Password Rules.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Fortify serves as the **Security Shield Layer**.
+
+- **Gatekeeper**: Protects the `Photon` Sensing Layer by ensuring only authenticated users can reach the business Satellites.
+- **Identity Provider**: Manages the "Single Source of Truth" for identities, allowing Satellites to remain stateless while maintaining user context.
+- **Trust Broker**: Issues and validates Internal Service Tokens for `Beam` requests, ensuring that Satellite A is authorized to call Satellite B.
+
+```mermaid
+graph TD
+    User([User]) -- "JWT/Session" --> Fortify{Fortify Shield}
+    Fortify --> SatA[Satellite: Order]
+    SatA -- "Service Token (Beam)" --> SatB[Satellite: Catalog]
+    Fortify -.->|Verify| SatB
+```
 
 ## 📦 Installation
 
@@ -158,9 +170,14 @@ router.middleware(verified).group((r) => {
 
 Fortify is built on the **Galaxy Architecture**. It operates as an **Orbit** that integrates services into the Gravito core.
 
-- **Controllers**: Handlers for auth logic, inheriting from `BaseController` for unified error and response handling.
-- **Services**: Domain logic for OAuth, 2FA, Magic Links, and Tokens.
-- **Events**: Dispatches events like `auth:login` and `auth:register` that you can listen to in your application.
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Authentication workflows and orbits.
+- [🛡️ **Distributed Security**](./docs/DISTRIBUTED_SECURITY.md) — **NEW**: M2M Auth, Distributed RBAC, and Zero-Trust.
+- [🔐 **Two-Factor Auth**](./docs/2FA.md) — Setting up TOTP and recovery codes.
+- [📡 **OAuth / Social**](./docs/OAUTH.md) — Google, GitHub, and custom providers.
 
 ## 📄 License
 

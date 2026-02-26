@@ -4,14 +4,33 @@
 
 `@gravito/pulsar` provides a stateful experience for stateless HTTP requests. Inspired by Laravel's session system, it offers a high-performance, developer-friendly API for managing user data across requests, coupled with robust CSRF protection.
 
-## 🌟 Key Features
+## ✨ Key Features
 
-- **🚀 Performance-First**: Lazy-loading session data and configurable touch intervals minimize storage I/O.
-- **🛡️ Integrated CSRF Protection**: Automatic token generation and verification for all non-safe HTTP methods.
-- **💾 Multiple Storage Drivers**: Out-of-the-box support for Memory, Redis, SQLite, and File-based storage.
-- **⚡ Flash Data Support**: Seamlessly pass temporary data (like success messages) between requests.
-- **🔒 Security-Centric**: Cryptographically secure session IDs, automatic rotation, and secure cookie handling.
-- **📦 Galaxy-Ready**: Designed as a standard Gravito Orbit for zero-config integration.
+- 🪐 **Galaxy-Ready Session Core**: Native integration with PlanetCore for universal request state management.
+- 🚀 **Performance-First**: Lazy-loading session data and configurable touch intervals minimize storage I/O.
+- 🛡️ **Integrated CSRF Protection**: Automatic token generation and verification for all non-safe HTTP methods.
+- 💾 **Distributed State Persistence**: Multi-driver support (Redis, SQL, Memory) for multi-node Galaxy clusters.
+- ⚡ **Flash Data Support**: Seamlessly pass temporary data (like success messages) between requests and Satellites.
+- 🔒 **Security-Centric**: Cryptographically secure session IDs, automatic rotation, and secure cookie handling.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Pulsar acts as the **Memory of Requests (Stateful Interface)**.
+
+- **Request Context**: Bridging the gap between stateless HTTP and stateful user experiences, allowing Satellites to "remember" users across different process boundaries.
+- **Security Buffer**: Provides the CSRF protection layer that shields the `Photon` Sensing Layer from cross-site request forgery attacks.
+- **Coordination Center**: Works with `Plasma` to ensure that a user session is consistent even if their requests are handled by different Satellite instances.
+
+```mermaid
+graph TD
+    User([User]) -- "Cookie: sid" --> Photon[Photon Engine]
+    Photon --> Pulsar{Pulsar Orbit}
+    subgraph Persistence
+        Pulsar --> Plasma[Plasma: Distributed Redis]
+        Pulsar --> Atlas[Atlas: Persistent SQL]
+    end
+    Pulsar -.->|Session Data| Sat[Satellite: Membership]
+```
 
 ## 📦 Installation
 
@@ -69,6 +88,14 @@ app.get('/dashboard', async (c) => {
   return c.html(`User ${userId}: ${status}`)
 })
 ```
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Stateful session base and security layer.
+- [🧠 **Distributed Sessions**](./doc/DISTRIBUTED_SESSIONS.md) — **NEW**: Multi-node session scaling and persistence.
+- [🛡️ **CSRF Protection**](#-csrf-protection) — Automatic token handling.
 
 ## 🛠️ Supported Drivers
 

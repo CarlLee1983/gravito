@@ -11,16 +11,32 @@
 
 ## Features
 
-- ⚡ **Multi-Runtime Support** - Run on Bun (native WebSocket), Node.js (uWebSockets.js or ws)
-- 🚀 **Simplified API** - Single `start()` method to initialize and run your server
-- 📡 **Channel-based Broadcasting** - Public, Private, and Presence channels
-- 🔒 **Secure Authorization** - Flexible callback-based authorization system
-- 📊 **Production Ready** - 95.24% test coverage, battle-tested architecture
-- 🌐 **Horizontal Scaling** - Redis or NATS driver for multi-server deployments
-- 🔍 **Full Observability** - Built-in logging, health checks, metrics, and connection tracking
-- 💪 **Type-Safe** - Comprehensive TypeScript support with runtime-agnostic types
-- 🎯 **Laravel Echo Compatible** - Familiar API for Laravel developers
-- 🔄 **Backward Compatible** - Seamless upgrade from v4.x
+- ⚡ **Multi-Runtime Support** - Run on Bun (native WebSocket), Node.js (uWebSockets.js or ws).
+- 🚀 **Simplified API** - Single `start()` method to initialize and run your server.
+- 📡 **Real-time Pulse Sync** - Channel-based broadcasting for Public, Private, and Presence channels.
+- 🪐 **Galaxy-Ready Core** - Native integration with PlanetCore for universal WebSocket communication.
+- 🔒 **Secure Authorization** - Flexible callback-based authorization system.
+- 🌐 **Horizontal Scaling** - Redis or NATS driver for multi-server Galaxy deployments.
+- 🔍 **Full Observability** - Built-in logging, health checks, metrics, and connection tracking.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Ripple acts as the **Gravitational Waves (Real-time Pulse)**.
+
+- **Instant Propagation**: Propagates state changes from the Galaxy's core to external observers (Users) with sub-millisecond latency.
+- **Satellite Interactivity**: Provides the foundation for real-time collaboration features within and between Satellites.
+- **Bi-directional Channel**: Unlike the one-way `Radiance` broadcast, Ripple provides a bi-directional "Pulse" that allows Clients to interact with the Sensing Layer over a persistent connection.
+
+```mermaid
+graph LR
+    Client([Client]) <--> Ripple{Ripple Pulse}
+    Ripple <--> Photon[Photon Engine]
+    subgraph Galaxy
+        Photon <--> S1[Satellite: Chat]
+        Photon <--> S2[Satellite: Dashboard]
+    end
+    Ripple -.-> Plasma[(Plasma: Redis Sync)]
+```
 
 ## Why Ripple?
 

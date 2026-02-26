@@ -4,12 +4,29 @@ Bun Shell Orchestration Engine for Gravito - Type-safe, shell-injection-resistan
 
 ## Features
 
-- **Template Literal API**: Type-safe shell commands with automatic argument escaping
-- **Shell Injection Protection**: All interpolated values are automatically escaped
-- **Pipeline Support**: Compose multiple commands with pipe operations
-- **PlanetCore Integration**: Seamless integration with Gravito's lifecycle management
-- **No Dependencies**: Pure Bun + TypeScript, zero external dependencies
-- **Full TypeScript Support**: 100% type coverage with strict mode
+- 🪐 **Galaxy-Ready Orchestration**: Seamless PlanetCore integration via `OrbitNova` for system-wide command execution.
+- 🛡️ **Shell Injection Protection**: All interpolated values are automatically escaped for maximum security.
+- 🚀 **Bun Native Performance**: Direct usage of `Bun.spawn()` for minimal overhead and memory efficiency.
+- 🛠️ **Template Literal API**: Type-safe shell commands with intuitive syntax.
+- 🌊 **Pipeline Support**: Compose multiple commands with fluent pipe operations.
+- 🐚 **Safe System Bridge**: The preferred choice for Orbits like `Horizon` and `Launchpad` to interact with the OS.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Nova acts as the **External Thrusters (System Interaction)**.
+
+- **OS Manifestation**: Allows the Galaxy to manifest its logic into the physical world (the Operating System) by executing shell commands, managing processes, and interacting with legacy binaries.
+- **Trusted Bridge**: Provides a secure "Bridge" that prevents user-supplied data from escaping the Galaxy's protection through shell injection attacks.
+- **Satellite Automation**: Powers the automation scripts and background maintenance tasks triggered by `Horizon` or `Forge`.
+
+```mermaid
+graph TD
+    S[Satellite] -->|Run Command| Nova{Nova Thrusters}
+    Nova -->|Escape| Val[Arguments Validation]
+    Val -->|Execute| OS([Operating System])
+    OS -->|Output| Nova
+    Nova -->|Result| S
+```
 
 ## Installation
 
@@ -52,6 +69,14 @@ async handle(ctx: GravitoContext) {
   const result = await ctx.get('shell').run`ls -la`
 }
 ```
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Type-safe shell orchestration core.
+- [🐚 **System Orchestration**](./doc/SYSTEM_ORCHESTRATION.md) — **NEW**: Safe command execution and pipelines.
+- [🛡️ **Security Rules**](#shell-injection-protection) — Preventing shell injection.
 
 ## API
 

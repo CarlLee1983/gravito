@@ -24,11 +24,30 @@
 
 ## ✨ Features
 
-- 🚀 **Ultra-Fast Performance**: Built for maximum throughput on Bun runtime.
-- 🎯 **Type-Safe Routing**: Full TypeScript support with intelligent type inference.
-- 🔌 **Middleware System**: Composable middleware for authentication, validation, and more.
-- 📡 **RPC Support**: Powers `@gravito/beam` for type-safe client-server communication.
-- 🛡️ **Security Middleware**: CORS, CSRF, Security Headers, Rate Limiting, Body Size Limit, and Header Token Gate.
+- 🚀 **Ultra-Fast Performance**: Built for maximum throughput on Bun runtime, outperforming standard Node.js engines.
+- 🎯 **Type-Safe Routing**: Full TypeScript support with intelligent type inference for parameters, query, and body.
+- 🌌 **Galaxy-Ready**: Designed as the "Sensing Layer" to host Satellites (domains) and Orbits (infrastructure).
+- 🔌 **Plug & Play Middleware**: Composable middleware for auth, validation, security, and protocol handling (HTMX/CBOR).
+- 📡 **Beam RPC Support**: Foundation for `@gravito/beam` for end-to-end type-safe client-server communication.
+- 🛡️ **Enterprise Security**: Built-in CORS, CSRF, HSTS, Rate Limiting, and Body Size limiting.
+
+## 🌌 Role in Galaxy Architecture
+
+Within the **Gravito Galaxy Architecture**, Photon serves as the **Sensing Layer (Entry Point)**.
+
+- **Satellites**: Domain business units (like `Catalog` or `Membership`) define their routes using Photon's router and are mounted into the main application.
+- **Orbits**: Infrastructure modules (like `Auth` or `Telemetry`) provide middleware that Photon executes globally or per-route.
+- **IoC Bridge**: Photon seamlessly integrates with `@gravito/core`'s IoC container, allowing handlers to access injected services with zero boilerplate.
+
+```mermaid
+graph LR
+    User([User]) --> Photon[Photon Engine]
+    subgraph Galaxy
+        Photon --> SatelliteA[Satellite: Catalog]
+        Photon --> SatelliteB[Satellite: Auth]
+        Orbit[Orbit: Telemetry] -.-> Photon
+    end
+```
 
 ## 🚀 Quick Start
 
@@ -98,13 +117,16 @@ app.use('/api/*', throttleRequests({ maxAttempts: 100, decaySeconds: 60 }))
 
 ## 📚 Documentation
 
-Detailed guides and references:
+Detailed guides and references for the Galaxy Architecture:
 
+- [🏗️ **Architecture**](./doc/ARCHITECTURE.md) — Internals and implementation details.
 - [📖 **API Guide**](./doc/GUIDE.md) — Routing, Context, and Application API.
+- [🛰️ **Satellite Routing**](./doc/SATELLITE_ROUTING.md) — **NEW**: Best practices for mounting domain plugins.
+- [📡 **Real-time Comms**](./doc/REAL_TIME_COMMUNICATION.md) — **NEW**: SSE, WebSockets, and Streaming.
+- [🧪 **Testing Guide**](./doc/TESTING_GUIDE.md) — **NEW**: API testing, IoC mocking, and WebSocket tests.
 - [🔌 **Middleware**](./doc/MIDDLEWARE.md) — Built-in middleware (HTMX, Binary, Logger) and custom MW.
 - [🛡️ **Security Middleware**](#-security-middleware) — CORS, CSRF, Security Headers, Rate Limiting, and more.
 - [🔐 **JWT & Auth**](./doc/SECURITY.md) — Authentication, tokens, and best practices.
-- [🏗️ **Architecture**](./doc/ARCHITECTURE.md) — Internals and implementation details.
 - [🚀 **Evolution Plan**](./doc/EVOLUTION_PLAN.md) — Future roadmap and architectural enhancements.
 
 ---

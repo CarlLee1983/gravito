@@ -7,13 +7,27 @@
 ## ✨ Key Features
 
 - **🚀 Modern Monolith Architecture**: Combine the productivity of server-side routing with the interactivity of SPA frameworks.
-- **🛠️ Zero API Development**: Pass data directly from controllers to components as typed props—no more managing endpoints or manual serialization.
-- **⚡ High-Performance Rendering**: Built-in multi-layer caching, version caching (60s TTL), and component metadata optimization.
-- **🛡️ Native Type Safety**: Full TypeScript support with generics for props, ensuring end-to-end type safety from server to client.
-- **🔗 Ecosystem Integration**: Seamlessly works with `OrbitPrism` for root templates and Gravito's session/auth modules.
-- **🔍 SEO & SSR Friendly**: Designed for modern web requirements, supporting Server-Side Rendering patterns for optimal visibility.
-- **🎨 Multi-Framework Support**: Official support for **React**, **Vue**, and **Svelte**.
+- **🌌 Galaxy-Ready Interface**: Native integration with PlanetCore for universal frontend state management across Satellites.
+- **🛠️ Zero API Development**: Pass data directly from controllers to components as typed props—no more managing endpoints.
+- **⚡ High-Performance Rendering**: Built-in multi-layer caching and versioning optimized for the Bun runtime.
+- **🛡️ Native Type Safety**: End-to-end TypeScript support with automatic generics for server-to-client propagation.
 - **✨ Inertia v2 Protocol**: Full support for deferred props, merge strategies, error bags, and CSRF protection.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Ion acts as the **Neural Bridge (Monolith Interface)**.
+
+- **Unified Frontend Overlay**: Connects the `Photon` Sensing Layer directly to the UI components (React/Vue/Svelte), allowing Satellites to control the user experience without needing a complex REST/GraphQL middle layer.
+- **Context Teleporter**: Effortlessly propagates the "State of the Galaxy" (User, Auth, Permissions) from the backend IoC container directly into the frontend component tree as "Shared Props".
+- **Productivity Catalyst**: Enables rapid development of feature-rich administrative interfaces and dashboards that interact with multiple Satellites through a single "Stateful" pipeline.
+
+```mermaid
+graph LR
+    S[Satellite: Membership] -- "render('Profile', data)" --> Ion{Ion Bridge}
+    Ion -->|Teleport State| UI[Frontend: React/Vue]
+    UI -->|XHR Request| Photon[Photon Sensing Layer]
+    Photon --> S
+```
 
 ## 📦 Installation
 
@@ -74,6 +88,14 @@ export class DashboardController {
   };
 }
 ```
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Inertia.js integration and monolith bridge.
+- [🌉 **Modern Monolith**](./doc/MODERN_MONOLITH.md) — **NEW**: Zero-API philosophy, shared props, and deferred loading.
+- [✨ **Inertia v2 Protocol**](#-inertia-v2-protocol-features) — New protocol features and migration.
 
 ## 🔧 Inertia v2 Protocol Features
 

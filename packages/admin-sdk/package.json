@@ -9,6 +9,7 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm",
     "build:dts": "tsup src/index.ts --format esm --dts",
+    "test": "true",
     "test:ci": "echo \"No unit tests for admin-sdk\" && exit 0",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },

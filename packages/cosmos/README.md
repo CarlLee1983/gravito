@@ -6,13 +6,28 @@
 
 ## ✨ Features
 
-- **🚀 Performance-First**: Highly optimized translation resolution with internal caching.
-- **🛡️ Type-Safe**: Support for type-safe translation keys using TypeScript generics.
-- **🔄 Request-Scoped**: Clones i18n instances per request to maintain locale state without resource duplication.
-- **📂 Lazy Loading**: Load translation files from the filesystem only when needed.
-- **🔗 Flexible Fallbacks**: Define custom fallback chains and missing key strategies.
-- **🌍 Pluralization**: Integrated support for `Intl.PluralRules` based pluralization.
-- **📡 Auto-Detection**: Detects locale from Route Params, Query Strings, or `Accept-Language` headers.
+- 🪐 **Galaxy-Ready Globalization**: Native integration with PlanetCore for universal translation support across all Satellites.
+- 🚀 **Performance-First**: Highly optimized translation resolution with internal caching and lazy loading.
+- 🛡️ **Type-Safe Keys**: End-to-end TypeScript support for translation keys using generics.
+- 🔄 **Request-Scoped State**: Clones i18n instances per request to maintain locale consistency without overhead.
+- 🌍 **Intl.PluralRules Support**: Native pluralization following international standards.
+- 📡 **Smart Auto-Detection**: Detects locale from Route Params, Query Strings, or `Accept-Language` headers.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Cosmos acts as the **Universal Translator (Linguistic Base)**.
+
+- **Cross-Satellite Language**: Ensures that "Success" or "Error" messages are consistent and translated correctly, regardless of which Satellite generates the response.
+- **Linguistic Context**: Propagates the user's preferred language from the `Photon` Sensing Layer deep into the business logic of every Satellite.
+- **Dynamic Localization**: Works with `Atlas` or `Nebula` to load domain-specific translation files on demand, keeping the core Galaxy lean.
+
+```mermaid
+graph LR
+    User([User]) -- "Accept-Language: zh-TW" --> Photon[Photon Engine]
+    Photon --> Cosmos{Cosmos Orbit}
+    Cosmos -->|Translate| Sat[Satellite: Shop]
+    Sat -->|Response| User
+```
 
 ## 📦 Installation
 
@@ -87,6 +102,14 @@ app.get('/items', (c) => {
   return c.text(i18n.t('items.count', { count: 5 })); // "Found 5 items"
 });
 ```
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Linguistic base and request-scoped state.
+- [🌍 **Localization Strategy**](./doc/LOCALIZATION_STRATEGY.md) — **NEW**: Managing translations across isolated Satellites.
+- [🔗 **Integration with Orbits**](#-quick-start) — Using i18n in Signal and Flare.
 
 ## 📚 Core Concepts
 

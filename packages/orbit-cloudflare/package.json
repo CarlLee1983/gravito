@@ -25,7 +25,8 @@
     "build": "tsup src/index.ts --format cjs,esm --clean",
     "build:dts": "tsup src/index.ts --format cjs,esm --dts --clean",
     "test:ci": "echo \"No unit tests for orbit-cloudflare\" && exit 0",
-    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test": "true"
   },
   "peerDependencies": {
     "@gravito/core": "^1.6.1"

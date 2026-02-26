@@ -1,0 +1,32 @@
+{
+  "name": "galaxy-showcase",
+  "version": "1.0.0",
+  "description": "Full-stack Gravito framework showcase - production-ready integration demo",
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "dev": "bun run src/index.ts",
+    "verify": "bun verify.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@gravito/atlas": "workspace:*",
+    "@gravito/chromatic": "workspace:*",
+    "@gravito/core": "workspace:*",
+    "@gravito/nova": "workspace:*",
+    "@gravito/photon": "workspace:*",
+    "@gravito/resilience": "workspace:*",
+    "@gravito/sentinel": "workspace:*",
+    "@gravito/signal": "workspace:*",
+    "@gravito/stasis": "workspace:*",
+    "@gravito/stream": "workspace:*",
+    "ioredis": "^5.3.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/ioredis": "^5.0.0",
+    "typescript": "^5.9.3"
+  }
+}

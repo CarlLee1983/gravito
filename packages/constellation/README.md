@@ -13,18 +13,33 @@ Powerful, high-performance SEO and Sitemap orchestration module for **Gravito ap
 ## 🌟 Key Features
 
 ### 🚀 High Performance & Scalability
-- **Streaming Generation**: Uses `SitemapStream` for memory-efficient XML building.
-- **Stream Writing (v3.1+)**: Reduces memory peaks by 40%+ with async iterable streaming to storage.
-- **Gzip Compression (v3.1+)**: Automatically compress sitemaps to reduce file size by 70%+ and save bandwidth.
+- **🪐 Galaxy-Ready Indexing**: Native integration with PlanetCore for universal sitemap management across all Satellites.
+- **✨ Atomic SEO Deployments**: Shadow-processing engine for "Blue-Green" sitemap swaps, ensuring zero downtime for search crawlers.
+- **Streaming Generation**: Uses `SitemapStream` for memory-efficient XML building with 40%+ memory peak reduction.
 - **Auto-Sharding**: Automatically splits large sitemaps into multiple files (50,000 URLs limit) and generates sitemap indexes.
-- **Async Iterators**: Support for streaming data directly from databases via async generators.
-- **Distributed Locking**: Prevents "cache stampedes" in distributed environments (e.g., Kubernetes) using Redis locks.
+- **Distributed Locking**: Plasma-backed Redis locks to prevent "cache stampedes" in multi-node clusters.
 
 ### 🏢 Enterprise SEO Orchestration
 - **Incremental Generation**: Only update modified URLs instead of regenerating the entire sitemap.
-- **Shadow Processing**: Atomic "blue-green" deployments for sitemaps using temporary staging and swapping.
-- **301/302 Redirect Handling**: Intelligent detection and removal/replacement of redirected URLs to ensure search engines only see canonical links.
+- **301/302 Redirect Handling**: Intelligent detection and removal/replacement of redirected URLs.
 - **Cloud Storage Integration**: Built-in support for AWS S3 and Google Cloud Storage (GCS).
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Constellation acts as the **Star Chart (Navigation Layer)**.
+
+- **Galaxy Map**: Aggregates the public-facing "Coodinates" (URLs) of all isolated Satellites, creating a unified map for search engines to navigate the entire ecosystem.
+- **Discovery Pulse**: Works with the `Photon` Sensing Layer to identify and index new content as soon as it is manifested by a Satellite.
+- **SEO Orchestrator**: Coordinates the deployment of metadata across multiple domains and environments, ensuring consistent brand visibility.
+
+```mermaid
+graph TD
+    S1[Satellite: Blog] -- "URLs" --> Const{Constellation Chart}
+    S2[Satellite: Shop] -- "URLs" --> Const
+    Const -->|Stream| S3[(S3 Storage)]
+    Const -->|Index| Google([Search Engines])
+    Const -.->|Lock| Plasma[(Plasma Redis)]
+```
 
 ### 🛠️ Advanced Capabilities
 - **Rich Extensions**: Support for Images, Videos, News, and i18n alternate links (hreflang).
@@ -94,6 +109,14 @@ await sitemap.generate()
 ```
 
 ---
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — SEO and Sitemap orchestration engine.
+- [🛰️ **Galaxy SEO**](./doc/GALAXY_SEO.md) — **NEW**: Multi-satellite sitemaps and shadow deployment.
+- [💎 **Advanced Usage**](#-advanced-usage) — Compression, AWS S3, and streaming.
 
 ## 🏗️ Architecture & Modules
 

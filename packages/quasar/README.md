@@ -2,32 +2,33 @@
 
 Universal system monitoring agent for Gravito Zenith. Provides comprehensive monitoring for Node.js/Bun applications including system metrics, queue statistics, and real-time job execution tracking.
 
-## Features
+## ✨ Features
 
-### 🔍 System Monitoring
-- CPU, memory, and process metrics (cached for performance)
-- Automatic heartbeat reporting with adaptive interval
-- Multi-runtime support (Node.js, Bun, Deno)
-- Internal agent health monitoring
+### 🔍 Galaxy-Ready Telemetry
+- 🪐 **Native PlanetCore Agent**: Seamlessly reports health and metrics from any Gravito service instance.
+- **System Monitoring**: CPU, memory, and process metrics (cached for performance) with Bun-native support.
+- **Automatic Heartbeat**: Reliable reporting with adaptive intervals to minimize network overhead.
 
-### 📊 Queue Monitoring (Probes)
-Monitor queue statistics from various queue systems:
-- **BullMQ** (v5+)
-- **Bull** (v3/v4)
-- **Bee-Queue**
-- **Laravel Queues**
-- **Redis Lists** (generic)
-- **RabbitMQ** (via Management API)
-- **AWS SQS**
-- **Kafka** (Consumer Group Lag)
+### 📊 Distributed Worker Bridges
+- **Real-time Job Tracking**: Detailed execution logs for BullMQ, Bull, Bee-Queue, and Laravel.
+- **Queue Probes**: Monitor statistics from Kafka (Lag), RabbitMQ, AWS SQS, and Redis.
+- **🎮 Remote Execution**: Bridge for management commands from the Zenith dashboard (Retry, Pause, Resume).
 
-### 📝 Real-time Job Tracking (Bridges)
-Track individual job execution with detailed logs:
-- **BullMQ**
-- **Bull** (v3/v4)
-- **Bee-Queue**
-- **Agenda**
-- **Generic EventEmitter** (Custom integration)
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Quasar acts as the **Heartbeat Agent (Telemetry Link)**.
+
+- **Galaxy Sensor**: Injects monitoring capabilities into every Satellite and Orbit without polluting business logic.
+- **Unified Feedback Loop**: Connects isolated service instances to the `Zenith` Control Plane, enabling real-time operational awareness.
+- **Performance Messenger**: Propagates local resource utilization and queue metrics to the central Observability cluster.
+
+```mermaid
+graph LR
+    S[Satellite: Payment] -- "Metrics" --> Quasar{Quasar Agent}
+    Quasar -- "Heartbeat (Redis)" --> Zenith[Zenith Control Plane]
+    Zenith -- "Remote Command" --> Quasar
+    Quasar -->|Retry/Pause| Worker[Local Worker]
+```
 
 Features:
 - Job lifecycle events (started, completed, failed)

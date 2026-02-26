@@ -2,15 +2,30 @@
 
 > 📡 Enterprise-grade webhook handling for Gravito. Secure receiving and reliable sending.
 
-## Features
+## ✨ Features
 
-- **Secure Receiving** - HMAC signature verification, timestamp validation
-- **Built-in Providers** - Stripe, GitHub, and generic provider support
-- **Reliable Sending** - Exponential backoff retry with configurable strategy
-- **Gravito Integration** - First-class OrbitEcho module for PlanetCore
-- **Request Buffering (v1.1)** - Prevents signature verification failures from framework auto-parsing
-- **Circuit Breaker (v1.1)** - Protects downstream services with automatic failure detection
-- **Key Rotation (v1.2)** - Zero-downtime key updates with multi-version support
+- 🪐 **Galaxy-Ready Gateway**: The primary entry/exit point for external asynchronous communication.
+- 🛡️ **Secure Receiving**: HMAC signature verification, timestamp validation, and multi-key support.
+- 🔄 **Boundary Reliability**: Built-in **Circuit Breaker**, **Retry Scheduler**, and **DLQ** for outgoing hooks.
+- 📦 **Built-in Providers**: Native support for Stripe, GitHub, Shopify, Slack, and more.
+- ⚡ **Request Buffering**: Prevents signature failures by handling raw bodies before framework parsing.
+- 🔐 **Key Rotation**: Seamless, zero-downtime secret rotation for enterprise security.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Echo acts as the **Deep Space Radar Layer (Boundary Communication)**.
+
+- **External Stimuli**: Converts external world signals (Webhooks from Stripe, etc.) into internal `Signal` events that Satellites can react to.
+- **Outbound Pulse**: Provides a reliable way for internal Galaxy state changes to be broadcasted to the outside world (e.g., notifying a 3rd party logistics provider).
+- **Isolation Barrier**: Protects the core Galaxy from external failure ripples by utilizing circuit breakers on outgoing requests.
+
+```mermaid
+graph LR
+    World([External Service]) -- Webhook --> Echo{Echo Orbit}
+    Echo -->|Verified Signal| Sat[Satellite: Payment]
+    Sat -->|Internal Event| Stream[Stream Orbit]
+    Echo -.->|Circuit Breaker| World
+```
 
 ## Installation
 

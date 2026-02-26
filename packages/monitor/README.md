@@ -4,10 +4,32 @@ Lightweight observability module for Gravito - Health Checks, Metrics, and Traci
 
 ## 🚀 Features
 
-- 🏥 **Health Checks** - Kubernetes-ready `/health`, `/ready`, `/live` endpoints with custom check support.
-- 📊 **Metrics** - Prometheus-compatible `/metrics` endpoint with built-in Node.js runtime and HTTP metrics.
-- 🔍 **Tracing** - OpenTelemetry OTLP support for distributed tracing across services.
-- 🛡️ **Kubernetes Native** - Seamless integration with probe configurations and Prometheus ServiceMonitors.
+- 🪐 **Galaxy-Ready Observability**: Native integration with PlanetCore for universal health and performance monitoring.
+- 🏥 **Health Probes**: Kubernetes-ready `/health`, `/ready`, `/live` endpoints with custom check support for Satellites.
+- 📊 **Metric Streams**: Prometheus-compatible `/metrics` for Node.js runtime and custom business metrics.
+- 🔍 **Cross-Satellite Tracing**: Distributed tracing powered by OpenTelemetry (OTLP) to track requests across the Galaxy.
+- 🛡️ **Kubernetes Native**: Pre-configured for Prometheus ServiceMonitors and K8s probes.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Monitor acts as the **Vital Signs Layer (Biological Feedback)**.
+
+- **Galaxy Health Monitor**: Continuously polls Satellites and Orbits to ensure the entire system is healthy and ready to serve.
+- **Diagnostic Eyes**: Provides the telemetry data needed to understand how requests flow through multiple decoupled Satellites via `Beam` and `Signal`.
+- **Performance Baseline**: Establishes metrics for throughput and latency, allowing for data-driven scaling decisions.
+
+```mermaid
+graph TD
+    User([User]) --> Photon[Photon Engine]
+    Photon --> Monitor{Monitor Orbit}
+    subgraph Observability
+        Monitor --> Metrics[Prometheus: Metrics]
+        Monitor --> Tracing[Tempo/Jaeger: Traces]
+        Monitor --> Health[K8s: Probes]
+    end
+    Sat1[Satellite: Order] -.-> Monitor
+    Sat2[Satellite: Stock] -.-> Monitor
+```
 
 ## 📦 Installation
 
@@ -49,9 +71,14 @@ core.orbit(new MonitorOrbit({
 await core.liftoff()
 ```
 
-## 🏥 Health Checks
+## 📚 Documentation
 
-The health system provides three distinct probes following Kubernetes best practices:
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Health checks and metrics core.
+- [🔍 **Distributed Tracing**](./doc/DISTRIBUTED_TRACING.md) — **NEW**: Tracking requests across the Galaxy.
+- [🏥 **Health Probes**](#-health-checks) — Setting up liveness and readiness.
+- [📊 **Metric Streams**](#-metrics) — Prometheus integration.
 
 - **Liveness (`/live`)**: Indicates if the process is running.
 - **Readiness (`/ready`)**: Indicates if the app is ready to serve traffic (waits for all checks to pass).

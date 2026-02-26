@@ -4,18 +4,32 @@
 
 **Status**: v3.4.0 - Production ready with advanced features (Retries, Metrics, Batching, Timeout, Rate Limiting, Preference Driver).
 
-## Features
+## ✨ Key Features
 
-- **Zero runtime overhead**: Pure type wrappers that delegate to channel drivers
-- **Multi-channel delivery**: Mail, database, broadcast, Slack, SMS (Twilio & AWS SNS)
-- **High Performance**: Parallel channel execution and batch sending capabilities
-- **Reliability**: Built-in retry mechanism with exponential backoff and timeout protection
-- **Observability**: Comprehensive metrics with Prometheus support
-- **Developer Experience**: Strong typing, lifecycle hooks, and template system
-- **Queue support**: Works with `@gravito/stream` for async delivery with Lazy Loading
-- **Rate Limiting**: Channel-level rate limiting with Token Bucket algorithm
-- **Preference Driver**: User notification preferences with automatic channel filtering
-- **Middleware System**: Extensible middleware chain for custom notification processing
+- 🪐 **Galaxy-Ready Notifications**: Native integration with PlanetCore for universal user notification across all Satellites.
+- 📡 **Multi-Channel Delivery**: Seamlessly broadcast via **Mail**, **SMS**, **Slack**, **Discord**, and **Push Notifications**.
+- 🛠️ **Distributed Preference Management**: User-level notification settings that persist across the entire Galaxy.
+- 🛡️ **Reliability Stack**: Built-in exponential backoff, timeout protection, and automatic retries.
+- 🚀 **High Performance**: Parallel channel execution and batch sending optimized for Bun.
+- ⚙️ **Queue Integration**: Offload notification delivery to `@gravito/stream` with zero configuration.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Flare acts as the **Communication Flux (Nervous System Extension)**.
+
+- **Outbound Feedback**: Provides the primary mechanism for Satellites to communicate directly with users (e.g., "Your order has shipped" from the `Shop` Satellite).
+- **Preference Guard**: Ensures that user privacy and communication preferences are respected globally, regardless of which Satellite initiates the notification.
+- **Micro-Infrastructure Bridge**: Connects internal domain events to external communication providers (Twilio, AWS, SendGrid) without bloating Satellite logic.
+
+```mermaid
+graph LR
+    S[Satellite: Order] -- "Notify" --> Flare{Flare Orbit}
+    Flare -->|Check| Pref[User Preferences]
+    Flare -->|Route| C1[Mail: SES]
+    Flare -->|Route| C2[SMS: Twilio]
+    Flare -->|Route| C3[Social: Slack]
+    Flare -.->|Queue| Stream[Stream Orbit]
+```
 
 ## Installation
 
@@ -275,6 +289,14 @@ OrbitFlare.configure({
   middleware: [rateLimiter, preferenceFilter]
 })
 ```
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Multi-channel notification core.
+- [📡 **Notification Strategies**](./doc/NOTIFICATION_STRATEGIES.md) — **NEW**: Multi-channel routing, preferences, and queuing.
+- [⚙️ **Queue Support**](#-queue-support) — Asynchronous delivery with `@gravito/stream`.
 
 ## API Reference
 

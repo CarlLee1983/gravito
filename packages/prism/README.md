@@ -4,15 +4,31 @@
 
 `@gravito/prism` is the standard view orbit for the Gravito framework. It features a Blade-inspired server-side template engine combined with a powerful image optimization service designed to achieve perfect Core Web Vitals scores.
 
-## 🌟 Key Features
+## ✨ Key Features
 
-- **🚀 Performance-First Rendering**: LRU template caching with hash-based invalidation (140x faster renders).
-- **🖼️ Advanced Image Optimization**: Automatic AVIF/WebP conversion, responsive `srcset` generation, and LQIP blur placeholders.
-- **🏗️ Static Site Generation (SSG)**: Full site export with incremental build support (only rebuilds changed pages).
-- **🧩 Component System**: Build UI using clean `<x-component>` syntax.
-- **⚡ Core Web Vitals Ready**: Automatic CLS prevention, lazy loading, and priority hints.
-- **🔒 Built-in Security**: XSS protection with HTML sanitization helpers for user-generated content.
-- **🔌 Multi-Framework Support**: Optional React and Vue components for seamless integration.
+- 🚀 **Performance-First Rendering**: LRU template caching with hash-based invalidation (140x faster renders).
+- 🌌 **Galaxy-Ready View Engine**: Native integration with PlanetCore for universal template rendering across Satellites.
+- 🖼️ **Edge-Optimized Images**: Automatic AVIF/WebP conversion, responsive `srcset` generation, and LQIP blur placeholders.
+- 🏗️ **Static Site Generation (SSG)**: Full site export with incremental build support (only rebuilds changed pages).
+- 🧩 **Component System**: Build UI using clean `<x-component>` syntax.
+- ⚡ **Core Web Vitals Ready**: Automatic CLS prevention, lazy loading, and priority hints.
+- 🔒 **Built-in Security**: XSS protection with HTML sanitization helpers for user-generated content.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Prism acts as the **Visual Focus (Retina)**.
+
+- **Frontend Interface**: Translates internal Galaxy data into human-readable HTML, serving as the primary bridge between business logic and the user's browser.
+- **Sensing Enhancement**: Works with the `Photon` Sensing Layer to deliver highly optimized, accessible, and fast web experiences.
+- **Satellite Presentation**: Provides a unified template system that Satellites use to define their UI fragments or full pages without reinventing the rendering wheel.
+
+```mermaid
+graph LR
+    S[Satellite] -->|Data| Prism{Prism Engine}
+    Prism -->|Render| HTML[Optimized HTML]
+    Prism -->|Optimize| Assets[Images/JS/CSS]
+    HTML --> Browser([User Browser])
+```
 
 ## 📦 Installation
 
@@ -203,25 +219,15 @@ Prism integrates with popular CDNs for on-the-fly transformations:
 - **imgix**: `createImgixLoader({ domain: '...' })`
 - **Vercel**: `vercelLoader` (built-in)
 
-## 🧩 API Reference
+## 📚 Documentation
 
-### Template Engine
-- `view.render(name, data)`: Render a template file.
-- `view.registerHelper(name, fn)`: Add custom template helpers.
+Detailed guides and references for the Galaxy Architecture:
 
-### Security
-- `Sanitizer.sanitize(html, mode)`: Sanitize HTML with configurable strictness.
-- `Sanitizer.stripTags(html)`: Remove all HTML tags, returning plain text.
-- `{{sanitize html=variable mode="default"}}`: Template helper for safe HTML output.
-
-### Static Site Generation
-- `ssg.export(outDir, baseUrl, options?)`: Export site to static files.
-- `ssg.exportIncremental(outDir, options)`: Incremental build with change detection.
-- `ExportOptions`: Configure batch size and memory logging.
-
-### Image Optimization
-- `ImageService`: Core logic for generating optimized image tags.
-- `{{image}}`: Template helper for responsive image generation.
+- [🏗️ **Architecture Overview**](./docs/ARCHITECTURE.md) — Under the hood of the view engine.
+- [🖼️ **Image Optimization**](#-image-optimization) — Achieving 100/100 Core Web Vitals.
+- [🛰️ **Satellite Views**](./doc/SATELLITE_VIEWS.md) — **NEW**: How Satellites register and render templates.
+- [🏗️ **SSG Guide**](#-static-site-generation-ssg) — Incremental static export.
+- [🔒 **Security Guide**](#-security-best-practices) — XSS prevention and sanitization.
 
 ## 🤝 Contributing
 

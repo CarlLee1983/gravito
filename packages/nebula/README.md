@@ -11,13 +11,30 @@
 
 ## ✨ Features
 
-- 🪐 **Orbit Integration** - Seamlessly plugs into the PlanetCore micro-kernel.
+- 🪐 **Galaxy-Ready Orbit** - Seamlessly plugs into the PlanetCore micro-kernel as the default Storage Core.
 - 💽 **Multi-Disk Support** - Manage multiple storage backends (disks) within a single application.
 - 🔌 **Pluggable Drivers** - Built-in support for `local`, `memory`, and `null` drivers, with easy `custom` driver implementation.
 - 🪝 **Powerful Hooks** - Intercept and modify storage operations (upload, delete, etc.) using Gravito's async Hook system.
 - 🏢 **Enterprise Ready** - Automatic service registration in the IoC container and context-aware middleware.
 - 🧪 **Test Friendly** - Includes a `MemoryStore` for fast, zero-side-effect unit testing.
 - 🚀 **Modern** - Built for **Bun** with native TypeScript support.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Nebula acts as the **Storage Core (File Management)**.
+
+- **Unified Abstraction**: Satellites don't need to know if a file is on the local disk or an S3 bucket. They interact with a single, unified `StorageManager` API.
+- **Environment Agnostic**: You can configure Nebula to use `local` storage in development and `s3` in production without changing any Satellite code.
+- **Global Asset Hooks**: Orbits (like an Image Optimizer) can register global hooks that automatically compress images uploaded by any Satellite before they hit the disk.
+
+```mermaid
+graph TD
+    SatA[Satellite: Media] -- "put('avatar.png')" --> Nebula{Nebula Orbit}
+    Nebula -- "Upload Hook" --> Optimizer[Image Optimizer]
+    Optimizer -- "Compressed" --> Nebula
+    Nebula --> S3[(AWS S3: production)]
+    Nebula --> Local[(Disk: local)]
+```
 
 ## 📦 Installation
 
@@ -140,6 +157,14 @@ core.hooks.addFilter('storage:upload', async (data, context) => {
   return data;
 });
 ```
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — Storage manager and multi-disk setup.
+- [💽 **Storage Architecture Guide**](./doc/STORAGE_ARCHITECTURE.md) — **NEW**: Managing files across Satellites, Global Hooks, and Streaming.
+- [🪝 **Storage Hooks**](#-hooks) — Intercepting uploads and downloads.
 
 ## 🔌 Custom Drivers
 

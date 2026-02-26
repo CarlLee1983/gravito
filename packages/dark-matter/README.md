@@ -35,18 +35,30 @@ const users = await Mongo.collection('users')
 await Mongo.disconnect()
 ```
 
-## Features
+## ✨ Features
 
-- 🚀 **Bun Native** - Optimized for Bun runtime
-- 🎯 **Laravel-style API** - Familiar fluent interface
-- 🔍 **Query Builder** - Type-safe query building
-- 📊 **Aggregation Pipeline** - Fluent aggregation API
-- 🔌 **Multi-connection** - Named connections support
-- 🛡️ **Transactions** - ACID transactions with convenient API
-- 🗑️ **Soft Deletes** - Built-in soft delete support with restore capability
-- 📦 **GridFS** - Handle large file uploads/downloads
-- ⚡ **Change Streams** - Real-time database event listening
-- ✅ **Schema Validation** - Type-safe Schema Builder API for MongoDB validation
+- 🚀 **Bun Native Performance**: Optimized for the Bun runtime with zero-copy data handling.
+- 🌌 **Galaxy-Ready Persistence**: Native integration with PlanetCore for universal NoSQL data management.
+- 🎯 **Laravel-style API**: Familiar, fluent interface for MongoDB collections and aggregation pipelines.
+- 🛡️ **Distributed Document State**: ACID transactions and robust multi-connection management across the Galaxy.
+- 🗑️ **Soft Deletes**: Built-in logic for logical record deletion with restoration support.
+- 📦 **GridFS & Streams**: Specialized support for large-scale file storage and real-time change listening.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, Dark Matter acts as the **MongoDB Gravity Core (NoSQL Persistence)**.
+
+- **Document Focus**: Provides an alternative gravity core for Satellites that require schema-less flexibility or massive-scale document storage.
+- **Micro-State Bridge**: Enables real-time reactive logic via MongoDB Change Streams, allowing one Satellite to react instantly to data changes in another.
+- **File Distribution**: Leverages GridFS to provide a distributed file storage layer that works alongside `@gravito/nebula`.
+
+```mermaid
+graph TD
+    S1[Satellite: Analytics] -- "Save" --> DM{Dark Matter}
+    S2[Satellite: Logs] -- "Query" --> DM
+    DM -->|Native Driver| MongoDB[(MongoDB Atlas)]
+    DM -.->|Watch| Realtime[Real-time Events]
+```
 
 ## API Reference
 

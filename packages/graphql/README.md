@@ -4,17 +4,34 @@
 
 `@gravito/graphql` provides a seamless integration of [GraphQL Yoga](https://the-guild.dev/graphql/yoga) into the Gravito ecosystem. It allows you to build high-performance, type-safe GraphQL APIs with minimal configuration while maintaining full access to Gravito's core features.
 
-## 🌟 Features
+## ✨ Key Features
 
-- **⚡️ Powered by Yoga**: Leverages the performance and flexibility of GraphQL Yoga 5.
-- **🛠️ Zero Config**: Automatically works out of the box with a default schema if none is provided.
-- **🔗 Context Integration**: Seamlessly passes `GravitoContext` into your GraphQL resolvers as `gravito`.
-- **🔌 Flexible Schema Resolution**: 
-  - Pass a pre-built `GraphQLSchema` in the constructor.
-  - Define `GRAPHQL_SCHEMA` in your application config.
-  - Register `GRAPHQL_SCHEMA` in the IoC container.
-- **🚀 Fully Type-Safe**: Written in TypeScript with complete type definitions for configuration and context.
-- **🎨 Integrated Playground**: Comes with a built-in GraphQL IDE (GraphiQL) for easy testing in development.
+- **⚡️ Powered by Yoga**: High-performance execution based on GraphQL Yoga 5 and Web Standards.
+- **🌌 Galaxy-Ready Interface**: Native integration with PlanetCore for universal data access across Satellites.
+- **🛡️ Enterprise Security**: Built-in Query Complexity, Depth Limiting, and Persisted Queries (APQ).
+- **🚀 Distributed Data Fetching**: Seamlessly combine data from multiple Satellites into a single unified schema.
+- **🔌 Context-Aware Resolvers**: Direct access to `GravitoContext` and all registered Orbits within every resolver.
+- **📦 Optimized Performance**: Automatic batching with DataLoader and response caching for sub-millisecond lookups.
+
+## 🌌 Role in Galaxy Architecture
+
+In the **Gravito Galaxy Architecture**, GraphQL acts as the **Semantic Gateway (Alternative Interface)**.
+
+- **Unified Surface**: Provides a single, self-documenting "Surface" for complex clients (Web/Mobile) to interact with multiple business Satellites simultaneously.
+- **Micro-Data Orchestrator**: Aggregates and transforms data from various `Atlas` databases and `Beam` services into a cohesive object graph.
+- **Adaptive Performance**: Allows clients to request exactly what they need, minimizing over-fetching while protecting the core Galaxy from "Deep Nesting" attacks.
+
+```mermaid
+graph TD
+    Client([Mobile/Web Client]) -- "Query / Mutation" --> GraphQL{GraphQL Gateway}
+    subgraph Galaxy
+        GraphQL --> S1[Satellite: Catalog]
+        GraphQL --> S2[Satellite: Membership]
+        GraphQL --> S3[Satellite: Promo]
+    end
+    S1 -.-> A[(Atlas: DB)]
+    S2 -.-> B[(Atlas: DB)]
+```
 
 ## 📦 Installation
 
@@ -237,6 +254,14 @@ await core.orbit(new OrbitGraphQL({
 ```
 
 See [OPTIMIZATION_PLAN.md](./OPTIMIZATION_PLAN.md) for implementation details and benchmarks.
+
+## 📚 Documentation
+
+Detailed guides and references for the Galaxy Architecture:
+
+- [🏗️ **Architecture Overview**](./README.md) — GraphQL Yoga integration and context.
+- [🕸️ **Distributed Schema**](./doc/SCHEMA_FEDERATION.md) — **NEW**: Schema aggregation across Satellites and DataLoader.
+- [🛡️ **Security Guide**](#-query-complexity-limiting) — Complexity, depth limits, and APQ.
 
 ## 📄 License
 

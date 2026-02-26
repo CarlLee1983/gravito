@@ -28,11 +28,49 @@ graph TD
     H --> C(Gravito Core / Orbits)
 ```
 
-## Internal Modules
+## 🏗️ Architecture Deep Dive
 
-- `Context`: Wraps the standard Request/Response.
-- `Router`: High-speed Radix Tree based routing.
-- `Adapters`: Specialized logic for different deployment targets (Bun, Node, etc.).
+### 1. IoC Bridge (Container Integration)
+
+Photon is designed to be the "entry point" to the Gravito Galaxy's IoC container. Every request handled by Photon can optionally access the global or satellite-specific container via middleware.
+
+- **Request Context Enrichment**: We provide a standard middleware that injects the `GravitoContainer` instance into the Hono Context (`c.get('container')`).
+- **Scoped Injection**: For complex Satellite logic, Photon supports scoped containers that are created per-request and disposed of after the response is sent.
+
+### 2. Lifecycle Synchronization
+
+The startup sequence of Photon is tightly coupled with `@gravito/core`'s lifecycle events:
+
+1. **`PRE_BOOT`**: Photon initializes its router and loads environment configurations.
+2. **`BOOT`**: Satellites and Orbits register their routes and middleware into Photon.
+3. **`POST_BOOT`**: Photon starts the actual HTTP server (via Bun.serve) and signals the "Ready" state to the Galaxy.
+4. **`SHUTDOWN`**: Photon gracefully closes active connections and waits for pending requests to complete before exiting.
+
+### 3. Adapter Strategy (Cross-Runtime)
+
+Photon utilizes a sophisticated **Adapter Pattern** to maintain consistent behavior across different runtimes while leveraging native performance:
+
+| Runtime | Adapter | Implementation Detail |
+|---------|---------|-----------------------|
+| **Bun** | `BunAdapter` | Uses `Bun.serve()` with direct buffer access for maximum speed. |
+| **Node.js**| `NodeAdapter`| Uses `http.createServer` via Hono's Node adapter layer. |
+| **Edge** | `EdgeAdapter`| Optimized for Cloudflare Workers and Vercel Edge with zero Node-specific globals. |
+
+## Stack Diagram
+
+```mermaid
+graph TD
+    User([User Request]) --> B(Bun Runtime)
+    B --> P(Photon Engine)
+    subgraph Photon Layer
+        P --> R(Router)
+        R --> M(Middleware Pipeline)
+        M --> H(Handler)
+    end
+    H --> C(Gravito Core / Orbits)
+    C -.-> IoC[(PlanetCore IoC)]
+    IoC -.-> H
+```
 
 ---
 

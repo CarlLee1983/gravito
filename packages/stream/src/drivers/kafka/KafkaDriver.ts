@@ -604,7 +604,7 @@ export class KafkaDriver implements QueueDriver {
           }
 
           // Notify completion
-          this.notifier.notifyWithCount(queue, 1)
+          this.notifier.notify(queue)
         })
         .catch((err) => {
           // Failure - record error metrics and mark for DLQ
