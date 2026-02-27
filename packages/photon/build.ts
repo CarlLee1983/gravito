@@ -127,6 +127,16 @@ if (!isDtsOnly) {
   } catch (e) {
     console.warn('⚠️  Warning: Failed to copy type declarations:', e)
   }
+} else {
+  // In dts-only mode, tsc outputs to dist, but with nested photon/src structure
+  // Move dist/photon/src/* to dist/* and clean up
+  try {
+    await copyDtsFiles('dist/photon/src', 'dist')
+    await rm('dist/photon', { recursive: true, force: true })
+    await rm('dist/core', { recursive: true, force: true })
+  } catch (e) {
+    console.warn('⚠️  Warning: Failed to reorganize type declarations:', e)
+  }
 }
 
 // Move .js or .d.ts files from dist/src to dist root
