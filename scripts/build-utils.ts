@@ -63,6 +63,12 @@ export interface BuildConfig {
   tscArgs?: string[]
   /** 是否靜默輸出（預設 false） */
   silent?: boolean
+  /**
+   * CJS stub ESM 引用副檔名
+   * 若不指定，將自動從 esmNaming 中提取，預設為 'js'
+   * 必須與 esmNaming 的檔案副檔名一致
+   */
+  cjsStubEsmExt?: 'js' | 'mjs' | 'cjs'
 }
 
 /**
@@ -158,6 +164,54 @@ async function collectDtsFiles(dir: string): Promise<string[]> {
     // 目錄不存在時忽略
   }
   return files
+}
+
+/**
+ * 從 esmNaming 配置中自動提取 ESM 副檔名
+ * 例如：'[name].mjs' → 'mjs'，'[name].js' → 'js'
+ */
+function extractEsmExt(esmNaming?: string): 'js' | 'mjs' | 'cjs' {
+  if (!esmNaming) return 'js'
+
+  const match = esmNaming.match(/\[name\]\.(\w+)/)
+  if (match?.[1]) {
+    const ext = match[1] as 'js' | 'mjs' | 'cjs'
+    if (['js', 'mjs', 'cjs'].includes(ext)) {
+      return ext
+    }
+  }
+
+  return 'js'
+}
+
+/**
+ * 驗證 ESM 文件是否存在（運行時檢查）
+ */
+async function verifyEsmFilesExist(
+  distDir: string,
+  entrypoints: string[],
+  esmExt: string
+): Promise<{ exist: boolean; missing: string[] }> {
+  const missing: string[] = []
+
+  for (const entrypoint of entrypoints) {
+    const name = basename(entrypoint).replace(/\.(ts|tsx)$/, '')
+    const esmFile = join(distDir, `${name}.${esmExt}`)
+
+    try {
+      const exists = await Bun.file(esmFile).exists()
+      if (!exists) {
+        missing.push(`${name}.${esmExt}`)
+      }
+    } catch {
+      missing.push(`${name}.${esmExt}`)
+    }
+  }
+
+  return {
+    exist: missing.length === 0,
+    missing,
+  }
 }
 
 /**
@@ -562,6 +616,22 @@ export async function buildPackage(config: BuildConfig): Promise<BuildResult> {
 
   // 等待所有任務完成
   await Promise.all(tasks)
+
+  // ─── 運行時驗證：ESM 文件副檔名檢查 ───
+  if (!isDtsOnly && errors.length === 0 && formats.includes('esm')) {
+    // 自動檢測 ESM 副檔名
+    const esmExt = config.cjsStubEsmExt ?? extractEsmExt(config.esmNaming)
+
+    // 驗證 ESM 文件是否存在
+    const verification = await verifyEsmFilesExist(distDir, config.entrypoints, esmExt)
+
+    if (!verification.exist) {
+      errors.push(
+        `ESM 文件缺失（副檔名 .${esmExt}）: ${verification.missing.join(', ')}。` +
+          `請確保 esmNaming 配置與實際輸出副檔名一致。`
+      )
+    }
+  }
 
   const success = errors.length === 0
   const duration = totalTimer.elapsed()
