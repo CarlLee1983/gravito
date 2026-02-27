@@ -32,9 +32,9 @@ We ran a controlled test generating a Sitemap Index for **1,000,000 URLs**.
 | Metric | Result | Note |
 | :--- | :--- | :--- |
 | **Total URLs** | **1,000,000** | Full sitemap index generation |
-| **Time Elapsed** | **~8.3s** | End-to-end processing |
-| **Throughput** | **> 120,000 URLs/sec** | Extremely fast processing |
-| **Peak Memory** | **60-150 MB** | **Constant Heap Usage** 🤯 |
+| **Time Elapsed** | **~6.5s** | End-to-end processing |
+| **Throughput** | **> 150,000 URLs/sec** | Extremely fast processing |
+| **Peak Memory** | **60-160 MB** | **Constant Heap Usage** 🤯 |
 
 > **Note**: The most impressive metric is the memory usage. It stays flat regardless of whether you process 10k or 10M URLs.
 
