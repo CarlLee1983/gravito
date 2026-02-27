@@ -49,6 +49,7 @@ packages/*/src/**/*.js.map
 .luminosity/
 examples/*/static/build/
 examples/*/dist/
+examples/luminosity-benchmark/dist-sitemaps/
 
 # Flux Dev Viewer
 .flux/
