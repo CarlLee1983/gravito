@@ -316,12 +316,24 @@ export async function buildCJS(
  *
  * @param distDir - 輸出目錄
  * @param entrypoints - 入口點（用於命名）
- * @param esmExt - ESM 文件副檔名（預設 'js'，支援 'mjs' 等）
+ * @param esmExt - ESM 文件副檔名（預設 'js'）
+ *   必須與 buildPackage 配置中的 esmNaming 後綴一致，例如：
+ *   - esmNaming: '[name].js' → esmExt: 'js'（預設）
+ *   - esmNaming: '[name].mjs' → esmExt: 'mjs'
+ *
+ * @example
+ * ```typescript
+ * // 預設：ESM 輸出為 index.js, CJS 引用 ./index.js
+ * await buildCJSStub('dist', ['src/index.ts'])
+ *
+ * // 自定義：ESM 輸出為 index.mjs, CJS 引用 ./index.mjs
+ * await buildCJSStub('dist', ['src/index.ts'], 'mjs')
+ * ```
  */
 export async function buildCJSStub(
   distDir: string,
   entrypoints: string[],
-  esmExt = 'js'
+  esmExt: 'js' | 'mjs' | 'cjs' = 'js'
 ): Promise<{ duration: number; outputs: string[] }> {
   const timer = createTimer()
   const outputs: string[] = []
