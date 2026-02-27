@@ -1,4 +1,5 @@
 import { createInertiaApp, Head, Link } from '@inertiajs/vue3'
+import * as LucideIcons from 'lucide-vue-next'
 import { createApp, h } from 'vue'
 import './app.css'
 
@@ -42,6 +43,22 @@ createInertiaApp({
     app.component('SpotlightCard', SpotlightCard)
     app.component('StaticLink', StaticLink)
     app.component('Head', Head)
+
+    // Register Lucide Icons (skip if already registered)
+    const registeredComponents = new Set([
+      'Layout',
+      'Nav',
+      'Footer',
+      'Logo',
+      'SpotlightCard',
+      'StaticLink',
+      'Head',
+    ])
+    for (const [key, component] of Object.entries(LucideIcons)) {
+      if (!registeredComponents.has(key)) {
+        app.component(key, component as any)
+      }
+    }
 
     app.mount(el)
   },

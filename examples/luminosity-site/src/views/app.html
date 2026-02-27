@@ -20,23 +20,44 @@
     <!-- Google Analytics -->
     <script>
         (function() {
-            // Extract shared data from Inertia page object
-            try {
-                var page = JSON.parse('{{{ page }}}');
-                var gaId = page.props.gaId;
-                if (gaId) {
-                    var script = document.createElement('script');
-                    script.async = true;
-                    script.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
-                    document.head.appendChild(script);
+            // Defer GA initialization until DOM is ready
+            var initGA = function() {
+                try {
+                    var pageEl = document.querySelector('[data-page]');
+                    if (!pageEl) {
+                        console.debug('[GA] Page element not found (yet)');
+                        return;
+                    }
+                    var pageData = pageEl.getAttribute('data-page');
+                    if (!pageData) {
+                        console.warn('[GA] Page data attribute is empty');
+                        return;
+                    }
+                    var page = JSON.parse(pageData);
+                    var gaId = page.props && page.props.gaId;
+                    if (gaId) {
+                        var script = document.createElement('script');
+                        script.async = true;
+                        script.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+                        document.head.appendChild(script);
 
-                    window.dataLayer = window.dataLayer || [];
-                    function gtag(){dataLayer.push(arguments);}
-                    gtag('js', new Date());
-                    gtag('config', gaId);
+                        window.dataLayer = window.dataLayer || [];
+                        function gtag(){dataLayer.push(arguments);}
+                        gtag('js', new Date());
+                        gtag('config', gaId);
+                    } else {
+                        console.debug('[GA] GA ID not found in props');
+                    }
+                } catch (e) {
+                    console.warn('[GA] Failed to initialize:', e);
                 }
-            } catch (e) {
-                console.warn('[GA] Failed to initialize:', e);
+            };
+
+            // Try to initialize immediately if DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initGA);
+            } else {
+                initGA();
             }
         })();
     </script>

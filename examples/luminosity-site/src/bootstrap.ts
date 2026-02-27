@@ -18,13 +18,16 @@ export async function bootstrap(options: { port?: number } = {}) {
 
   const core = await PlanetCore.boot(config)
 
+  const isDev = process.env.NODE_ENV !== 'production'
   const defaultCsp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    isDev ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'" : "script-src 'self' 'unsafe-inline'",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: *",
-    "connect-src 'self' ws://localhost:3000 ws://127.0.0.1:5173",
+    isDev
+      ? "connect-src 'self' ws://localhost:5173 ws://127.0.0.1:5173 http://localhost:5173 http://127.0.0.1:5173"
+      : "connect-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
     "frame-ancestors 'none'",
@@ -49,7 +52,7 @@ export async function bootstrap(options: { port?: number } = {}) {
     core.adapter.use('*', bodySizeLimit(bodyLimit, { requireContentLength: requireLength }))
   }
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (isDev) {
     setupViteProxy(core)
     // Inject isDev for view templates (handlebars)
     core.adapter.use('*', (async (c: GravitoContext, next: () => Promise<void>) => {

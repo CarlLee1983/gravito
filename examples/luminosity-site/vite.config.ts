@@ -23,11 +23,13 @@ export default defineConfig(({ command }) => ({
   server: {
     host: '127.0.0.1',
     port: 5173,
-    strictPort: true,
+    strictPort: false,
     cors: true,
     hmr: {
       port: 5173,
+      protocol: 'ws',
     },
+    middlewareMode: false,
   },
   resolve: {
     alias: {
