@@ -10,7 +10,7 @@ function testBunSqlite() {
   const stmt = db.prepare('SELECT id, slug, updated_at, priority FROM products')
   const start = performance.now()
   let count = 0
-  for (const row of stmt.all()) {
+  for (const _row of stmt.all()) {
     count++
   }
   const duration = performance.now() - start
@@ -19,7 +19,7 @@ function testBunSqlite() {
   const start2 = performance.now()
   count = 0
   const stmt2 = db.query('SELECT id, slug, updated_at, priority FROM products')
-  for (const row of stmt2) {
+  for (const _row of stmt2) {
     count++
   }
   const duration2 = performance.now() - start2
@@ -34,7 +34,7 @@ function testBetterSqlite3() {
   const stmt = db.prepare('SELECT id, slug, updated_at, priority FROM products')
   const start = performance.now()
   let count = 0
-  for (const row of stmt.all()) {
+  for (const _row of stmt.all()) {
     count++
   }
   const duration = performance.now() - start
@@ -43,7 +43,7 @@ function testBetterSqlite3() {
   const start2 = performance.now()
   count = 0
   const stmt2 = db.prepare('SELECT id, slug, updated_at, priority FROM products')
-  for (const row of stmt2.iterate()) {
+  for (const _row of stmt2.iterate()) {
     count++
   }
   const duration2 = performance.now() - start2

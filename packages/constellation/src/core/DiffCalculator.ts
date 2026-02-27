@@ -37,8 +37,6 @@ export interface DiffCalculatorOptions {
  * @since 3.0.0
  */
 export class DiffCalculator {
-  constructor(_options: DiffCalculatorOptions = {}) {}
-
   /**
    * Calculates the difference between two sets of sitemap entries.
    *
