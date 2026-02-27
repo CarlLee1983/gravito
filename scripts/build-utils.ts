@@ -316,17 +316,19 @@ export async function buildCJS(
  *
  * @param distDir - 輸出目錄
  * @param entrypoints - 入口點（用於命名）
+ * @param esmExt - ESM 文件副檔名（預設 'js'，支援 'mjs' 等）
  */
 export async function buildCJSStub(
   distDir: string,
-  entrypoints: string[]
+  entrypoints: string[],
+  esmExt = 'js'
 ): Promise<{ duration: number; outputs: string[] }> {
   const timer = createTimer()
   const outputs: string[] = []
 
   for (const entrypoint of entrypoints) {
     const name = basename(entrypoint).replace(/\.(ts|tsx)$/, '')
-    const esmFile = `./${name}.js`
+    const esmFile = `./${name}.${esmExt}`
     const cjsFile = join(distDir, `${name}.cjs`)
     const stub = `"use strict";\nmodule.exports = require("${esmFile}");\n`
     await Bun.write(cjsFile, stub)

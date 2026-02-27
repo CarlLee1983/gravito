@@ -40,8 +40,9 @@ const result = await buildPackage({
 })
 
 // 為主入口生成 CJS stub（package.json exports.require 指向 index.cjs）
+// 注意：使用 'mjs' 作為 ESM 副檔名，因為 ripple-client 使用 .mjs 後綴
 if (!dtsOnly && result.success) {
-  await buildCJSStub('dist', ['src/index.ts'])
+  await buildCJSStub('dist', ['src/index.ts'], 'mjs')
 }
 
 printBuildSummary(result, '@gravito/ripple-client')
