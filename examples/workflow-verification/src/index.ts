@@ -1,6 +1,7 @@
-import { bodySizeLimit, PlanetCore, securityHeaders } from '@gravito/core'
+import { PlanetCore } from '@gravito/core'
 import { FluxEngine } from '@gravito/flux'
 import { Schema, validate } from '@gravito/mass'
+import { bodySizeLimit, securityHeaders } from '@gravito/photon/middleware/security'
 import { StoreOrderRequest } from './requests/StoreOrderRequest'
 import { UpdateOrderRequest } from './requests/UpdateOrderRequest'
 import { OrderWorkflow } from './workflows/OrderWorkflow'

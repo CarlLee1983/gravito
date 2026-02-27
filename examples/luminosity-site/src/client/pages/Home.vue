@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
-import { useI18n } from '../composables/useI18n'
-import heroGraphicWebp from '../assets/hero-graphic.webp'
+import { computed, onMounted, ref } from 'vue'
 import heroGraphicPng from '../assets/hero-graphic.png'
+import heroGraphicWebp from '../assets/hero-graphic.webp'
+import { useI18n } from '../composables/useI18n'
 
 defineProps<{
   message?: string

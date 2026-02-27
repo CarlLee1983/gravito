@@ -42,7 +42,7 @@ Satellites (業務領域)
 | 包名 | 用途 | 關鍵依賴 | 何時使用 |
 |---|---|---|---|
 | **@gravito/core** | 微核心：IoC 容器、Hooks、生命週期管理、應用啟動 | 無 | 所有包的依賴基礎 |
-| **@gravito/photon** | HTTP 引擎，基於 Hono 的 web 框架集成 | core | 構建 HTTP 伺服器時 |
+| **@gravito/photon** | HTTP 引擎，基於 Hono 的 web 框架集成；提供 `middleware/security`、`middleware/body`、`middleware/cors`、`middleware/rate-limit` 子路徑 | core | 構建 HTTP 伺服器時 |
 | **@gravito/atlas** | ORM + 資料庫遷移，支持 MySQL、PostgreSQL、SQLite | core | 需要資料庫訪問時 |
 | **@gravito/signal** | 事件總線，跨包通訊和訂閱-發佈 | core | 實現 Satellite 間通訊時 |
 
@@ -108,6 +108,7 @@ Satellites (業務領域)
 | **@gravito/forge** | 文件處理（視頻和圖像處理，實時狀態追蹤） | core | 需要多媒體處理時 |
 | **@gravito/mass** | TypeBox 驗證（高性能 schema 驗證） | core | 需要數據驗證時 |
 | **@gravito/horizon** | 任務排程和定時器 | core, stream, nova | 需要定時執行任務時 |
+| **@gravito/resilience** | 韌性模式：Circuit Breaker、Dead Letter Queue (DLQ)、Backpressure 控制、Worker Pool 管理、事件優先級隊列 | core | 需要容錯、流量控制、失敗重試或背壓機制時 |
 
 ---
 
@@ -154,7 +155,7 @@ Satellites (業務領域)
 
 | 包名 | 用途 | 關鍵依賴 | 何時使用 |
 |---|---|---|---|
-| **@gravito/monitor** | 可觀測性模組（健康檢查、指標、追蹤） | core | 監控和診斷時 |
+| **@gravito/monitor** | 可觀測性模組（健康檢查、指標、追蹤）；提供 ObservabilityAdapterFactory 整合 OTel Metrics/Tracing/Worker Pool 度量 | core | 監控和診斷時；搭配 core 的 ObservabilityProvider 接口使用 |
 | **@gravito/constellation** | Sitemap 生成（動態/靜態，分片，快取） | core | 生成網站地圖時 |
 
 ---

@@ -32,9 +32,9 @@ We ran a controlled test generating a Sitemap Index for **1,000,000 URLs**.
 | Metric | Result | Note |
 | :--- | :--- | :--- |
 | **Total URLs** | **1,000,000** | Full sitemap index generation |
-| **Time Elapsed** | **~14.2s** | End-to-end processing |
-| **Throughput** | **~70,000 URLs/sec** | Extremely fast processing |
-| **Peak Memory** | **84 MB** | **Constant Heap Usage** 🤯 |
+| **Time Elapsed** | **~8.3s** | End-to-end processing |
+| **Throughput** | **> 120,000 URLs/sec** | Extremely fast processing |
+| **Peak Memory** | **60-150 MB** | **Constant Heap Usage** 🤯 |
 
 > **Note**: The most impressive metric is the memory usage. It stays flat regardless of whether you process 10k or 10M URLs.
 
@@ -44,16 +44,17 @@ Here is the core logic used in our benchmark. Notice the use of `yield` to strea
 
 ```typescript
 // Example using @gravito/luminosity
-const sitemap = new SeoEngine({
+const sitemap = OrbitSitemap.static({
   baseUrl: 'https://store.example.com',
-  mode: 'dynamic', // or incremental
-  resolvers: [
+  outDir: './dist-sitemaps',
+  providers: [
     {
       async *getEntries() {
         const stmt = db.prepare('SELECT slug, updated_at FROM products')
         
         // Iterate row by row - never load 1M rows into array!
-        for (const row of stmt.iterate()) {
+        // bun:sqlite statement is a native Iterable
+        for (const row of stmt as Iterable<any>) {
           yield {
             url: `/products/${row.slug}`,
             lastmod: row.updated_at,
@@ -65,7 +66,7 @@ const sitemap = new SeoEngine({
   ]
 })
 
-await sitemap.init()
+await sitemap.generate()
 ```
 
 ## Reproduce It

@@ -32,9 +32,9 @@ Luminosity 專為 **極大規模 (Extreme Scale)** 而設計。我們不只空�
 | 指標 | 結果 | 備註 |
 | :--- | :--- | :--- |
 | **總 URL 數** | **1,000,000** | 完整的 Sitemap 索引產生 |
-| **耗時** | **~14.2s** | 端到端處理時間 |
-| **吞吐量** | **~70,000 URLs/sec** | 極速處理能力 |
-| **記憶體峰值** | **84 MB** | **固定 Heap 用量 (Constant Usage)** 🤯 |
+| **耗時** | **~8.3s** | 端到端處理時間 |
+| **吞吐量** | **> 120,000 URLs/sec** | 極速處理能力 |
+| **記憶體峰值** | **60-150 MB** | **固定 Heap 用量 (Constant Usage)** 🤯 |
 
 > **注意**：最令人印象深刻的是記憶體用量。無論處理 1 萬還是 1000 萬個 URL，記憶體佔用都保持平穩。
 
@@ -44,17 +44,18 @@ Luminosity 專為 **極大規模 (Extreme Scale)** 而設計。我們不只空�
 
 ```typescript
 // 使用 @gravito/luminosity 的範例
-const sitemap = new SeoEngine({
+const sitemap = OrbitSitemap.static({
   baseUrl: 'https://store.example.com',
-  mode: 'dynamic', // 或 incremental
-  resolvers: [
+  outDir: './dist-sitemaps',
+  providers: [
     {
       async *getEntries() {
         // 從資料庫獲取 Iterator
         const stmt = db.prepare('SELECT slug, updated_at FROM products')
         
         // 逐行迭代 - 永遠不要把 100 萬行塞進陣列！
-        for (const row of stmt.iterate()) {
+        // bun:sqlite 的 statement 本身就是 Iterable
+        for (const row of stmt as Iterable<any>) {
           yield {
             url: `/products/${row.slug}`,
             lastmod: row.updated_at,
@@ -66,7 +67,7 @@ const sitemap = new SeoEngine({
   ]
 })
 
-await sitemap.init()
+await sitemap.generate()
 ```
 
 ## 親自驗證

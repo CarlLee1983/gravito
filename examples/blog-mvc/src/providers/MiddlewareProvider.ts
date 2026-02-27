@@ -9,13 +9,8 @@
  * - boot(): Register global middleware
  */
 
-import {
-  bodySizeLimit,
-  type Container,
-  type PlanetCore,
-  ServiceProvider,
-  securityHeaders,
-} from '@gravito/core'
+import { type Container, type PlanetCore, ServiceProvider } from '@gravito/core'
+import { bodySizeLimit, securityHeaders } from '@gravito/photon/middleware/security'
 import { getSecurityConfig } from '../config/security'
 import { handleInertiaRequests } from '../middleware/HandleInertiaRequests'
 

@@ -1,8 +1,9 @@
 import { appendFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createBeam } from '@gravito/beam'
-import { bodySizeLimit, PlanetCore, securityHeaders } from '@gravito/core'
+import { PlanetCore } from '@gravito/core'
 import { Notification, type NotificationManager, OrbitFlare } from '@gravito/flare'
+import { bodySizeLimit, securityHeaders } from '@gravito/photon/middleware/security'
 import type { ProviderApp } from './provider'
 
 const ALERT_LOG = join(process.cwd(), 'storage/alerts.log')

@@ -1,12 +1,7 @@
-import {
-  bodySizeLimit,
-  defineConfig,
-  type GravitoMiddleware,
-  PlanetCore,
-  securityHeaders,
-} from '@gravito/core'
+import { defineConfig, type GravitoMiddleware, PlanetCore } from '@gravito/core'
 import { OrbitIon } from '@gravito/ion'
 import { serveStatic } from '@gravito/photon/bun'
+import { bodySizeLimit, securityHeaders } from '@gravito/photon/middleware/security'
 import { OrbitPrism } from '@gravito/prism'
 import { OrbitCache } from '@gravito/stasis'
 import { registerHooks } from './hooks'

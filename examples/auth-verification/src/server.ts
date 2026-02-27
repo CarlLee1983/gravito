@@ -1,6 +1,7 @@
 import { DB } from '@gravito/atlas'
-import { bodySizeLimit, PlanetCore, securityHeaders } from '@gravito/core'
+import { PlanetCore } from '@gravito/core'
 import { FortifyOrbit } from '@gravito/fortify'
+import { bodySizeLimit, securityHeaders } from '@gravito/photon/middleware/security'
 import { OrbitPulsar } from '@gravito/pulsar'
 import { auth, CallbackUserProvider, can, OrbitSentinel } from '@gravito/sentinel'
 import { User } from './models/User'

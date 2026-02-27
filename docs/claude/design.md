@@ -327,6 +327,37 @@ satellite-membership
 - 性能優化（背壓機制）
 ```
 
+### v2.0 - Architecture Optimization（Phase 2.x）
+
+v2.0 針對框架核心進行系統性架構優化，目標是降低包間耦合、減少核心體積、提升可維護性。
+
+#### Phase 2.1：移除 core→photon 循環依賴
+
+- 將 core 中的 HTTP 中間件（bodySizeLimit、cors、csrfProtection、securityHeaders 等）完整遷移至 `@gravito/photon/middleware`
+- 移除 core 對 photon 的直接依賴（從 externalDeps 中刪除）
+- 提供子路徑導入：`middleware/security`、`middleware/body`、`middleware/cors`、`middleware/rate-limit`
+- 零破壞性變更，附帶遷移指南
+
+#### Phase 2.2：提取 OpenTelemetry 抽象層
+
+- 在 `@gravito/core` 中定義 Observability 合約接口（EventMetricsRecorder、EventTracingProvider、ObservabilityProvider 等），移除所有 OTel 直接依賴
+- 在 `@gravito/monitor` 中實作具體適配器（OTelEventMetricsRecorder、OTelEventTracingProvider、OTelWorkerMetricsProvider）
+- 架構：`core（無 OTel 依賴）→ monitor（9 OTel 依賴）→ OpenTelemetry SDK`
+- Observability 變為可選、可插拔的功能
+
+#### Phase 2.3：實施 @gravito/resilience 核心測試
+
+- 新建 `@gravito/resilience` v1.0.0，從 core 中提取韌性模式
+- 涵蓋：Circuit Breaker、Dead Letter Queue、Backpressure 控制、Worker Pool 管理、事件優先級隊列
+- 182 個測試通過，2,563 行測試代碼，365 個斷言
+- 釐清韌性模式架構文檔，明確 core 與 resilience 的職責邊界
+
+#### Phase 2.4：最終驗證與清理
+
+- 全量構建與類型檢查驗證
+- 確認所有依賴包正常運作
+- 文檔更新與版本同步
+
 ---
 
 ## 相關文件

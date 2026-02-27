@@ -67,6 +67,26 @@
       "types": "./dist/middleware/streaming.d.ts",
       "default": "./dist/middleware/streaming.js"
     },
+    "./middleware/security": {
+      "bun": "./src/middleware/security/index.ts",
+      "types": "./dist/middleware/security/index.d.ts",
+      "default": "./dist/middleware/security/index.js"
+    },
+    "./middleware/body": {
+      "bun": "./src/middleware/security/body-size-limit.ts",
+      "types": "./dist/middleware/security/body-size-limit.d.ts",
+      "default": "./dist/middleware/security/body-size-limit.js"
+    },
+    "./middleware/cors": {
+      "bun": "./src/middleware/security/cors.ts",
+      "types": "./dist/middleware/security/cors.d.ts",
+      "default": "./dist/middleware/security/cors.js"
+    },
+    "./middleware/rate-limit": {
+      "bun": "./src/middleware/ratelimit.ts",
+      "types": "./dist/middleware/ratelimit.d.ts",
+      "default": "./dist/middleware/ratelimit.js"
+    },
     "./http-exception": {
       "bun": "./src/http-exception.ts",
       "types": "./dist/http-exception.d.ts",

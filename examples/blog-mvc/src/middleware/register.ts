@@ -1,4 +1,5 @@
-import { bodySizeLimit, type PlanetCore, securityHeaders } from '@gravito/core'
+import type { PlanetCore } from '@gravito/core'
+import { bodySizeLimit, securityHeaders } from '@gravito/photon/middleware/security'
 import { getSecurityConfig } from '../config/security'
 import { handleInertiaRequests } from './HandleInertiaRequests'
 

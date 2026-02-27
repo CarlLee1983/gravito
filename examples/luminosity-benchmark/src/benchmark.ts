@@ -38,50 +38,29 @@ const sitemap = OrbitSitemap.static({
   providers: [
     {
       async *getEntries() {
-        // Stream in batches to keep memory low
-        const BATCH_SIZE = 50_000
-        let offset = 0
-        let hasMore = true
+        const stmt = db.prepare('SELECT slug, updated_at, priority FROM products')
 
-        while (hasMore) {
-          const stmt = db.prepare(
-            'SELECT slug, updated_at, priority FROM products LIMIT ? OFFSET ?'
-          )
-          const rows = stmt.all(BATCH_SIZE, offset) as Array<{
-            slug: string
-            updated_at: string
-            priority: number
-          }>
+        for (const row of stmt as Iterable<any>) {
+          processedCount++
 
-          if (rows.length === 0) {
-            hasMore = false
-            break
+          // Track peak memory
+          const currentMem = process.memoryUsage().heapUsed / 1024 / 1024
+          if (currentMem > maxMemory) {
+            maxMemory = currentMem
           }
 
-          for (const row of rows) {
-            processedCount++
-
-            // Track peak memory
-            const currentMem = process.memoryUsage().heapUsed / 1024 / 1024
-            if (currentMem > maxMemory) {
-              maxMemory = currentMem
-            }
-
-            if (processedCount % 100_000 === 0) {
-              process.stdout.write(
-                `\r🚀 Processed: ${processedCount.toLocaleString()} | Mem: ${getMemoryUsage()}`
-              )
-            }
-
-            yield {
-              url: `/products/${row.slug}`,
-              lastmod: row.updated_at,
-              priority: row.priority,
-              changefreq: 'daily',
-            }
+          if (processedCount % 100_000 === 0) {
+            process.stdout.write(
+              `\r🚀 Processed: ${processedCount.toLocaleString()} | Mem: ${getMemoryUsage()}`
+            )
           }
 
-          offset += BATCH_SIZE
+          yield {
+            url: `/products/${row.slug}`,
+            lastmod: row.updated_at,
+            priority: row.priority,
+            changefreq: 'daily',
+          }
         }
       },
     },

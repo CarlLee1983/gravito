@@ -1,7 +1,8 @@
 import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { DB } from '@gravito/atlas'
-import { bodySizeLimit, PlanetCore, securityHeaders } from '@gravito/core'
+import { PlanetCore } from '@gravito/core'
+import { bodySizeLimit, securityHeaders } from '@gravito/photon/middleware/security'
 import { FileStorage, SpectrumOrbit } from '@gravito/spectrum'
 
 const core = new PlanetCore()

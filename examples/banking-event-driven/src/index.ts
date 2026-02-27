@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 
-import { cors, PlanetCore } from '@gravito/core'
+import { PlanetCore } from '@gravito/core'
+import { cors } from '@gravito/photon/middleware/cors'
 import gravitoConfig from './gravito.config'
 import type { DeadLetterListener } from './infrastructure/listeners/DeadLetterListener'
 import type { AccountController } from './presentation/http/controllers/AccountController'

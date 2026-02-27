@@ -1,10 +1,6 @@
 import { serveStatic } from '@gravito/photon/bun'
-import {
-  bodySizeLimit,
-  defineConfig,
-  PlanetCore,
-  securityHeaders,
-} from '../packages/core/src/index.ts'
+import { defineConfig, PlanetCore } from '../packages/core/src/index.ts'
+import { bodySizeLimit, securityHeaders } from '../packages/photon/src/middleware/security/index.ts'
 import { OrbitCache } from '../packages/stasis/src/index.ts'
 
 // 1. Define Configuration (IoC Style)

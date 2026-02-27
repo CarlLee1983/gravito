@@ -123,8 +123,19 @@ export class SitemapStream {
 
     // 逐條 yield entry XML
     const { baseUrl, pretty } = this.options
+    let buffer = ''
+    let count = 0
     for (const entry of this.entries) {
-      yield this.renderUrl(entry, baseUrl, pretty)
+      buffer += this.renderUrl(entry, baseUrl, pretty)
+      count++
+      if (count >= 5000) {
+        yield buffer
+        buffer = ''
+        count = 0
+      }
+    }
+    if (buffer) {
+      yield buffer
     }
 
     // Yield 閉標籤

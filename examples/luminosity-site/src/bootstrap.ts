@@ -1,12 +1,7 @@
-import {
-  bodySizeLimit,
-  defineConfig,
-  type GravitoContext,
-  PlanetCore,
-  securityHeaders,
-} from '@gravito/core'
+import { defineConfig, type GravitoContext, PlanetCore } from '@gravito/core'
 import { OrbitIon } from '@gravito/ion'
 import { GravitoAdapter } from '@gravito/photon/adapter'
+import { bodySizeLimit, securityHeaders } from '@gravito/photon/middleware/security'
 import { OrbitPrism } from '@gravito/prism'
 import { setupViteProxy } from './utils/vite'
 

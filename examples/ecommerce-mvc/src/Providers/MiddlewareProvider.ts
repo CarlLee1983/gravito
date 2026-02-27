@@ -4,7 +4,8 @@
  * Registers global middleware for security and request handling.
  */
 
-import { bodySizeLimit, ServiceProvider, securityHeaders } from '@gravito/core'
+import { ServiceProvider } from '@gravito/core'
+import { bodySizeLimit, securityHeaders } from '@gravito/photon/middleware/security'
 import { securityConfig } from '../../config/security'
 import { HandleInertiaRequests } from '../Http/Middleware'
 
