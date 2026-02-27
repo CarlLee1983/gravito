@@ -118,6 +118,39 @@ bun run build      # 驗證構建
 
 → **完整工作流程**：[docs/claude/development.md](docs/claude/development.md)
 
+### 構建系統最佳實踐
+
+#### ESM/CJS 副檔名一致性
+
+若在 `build.ts` 中使用自定義 ESM 副檔名（如 `esmNaming: '[name].mjs'`）並調用 `buildCJSStub`，**必須確保副檔名一致**：
+
+```typescript
+// ✅ 正確：ESM 副檔名與 buildCJSStub 第三參數一致
+const result = await buildPackage({
+  esmNaming: '[name].mjs',
+  // ...
+})
+
+if (!dtsOnly && result.success) {
+  await buildCJSStub('dist', ['src/index.ts'], 'mjs')
+  //                                             ↑ 必須匹配 esmNaming
+}
+
+// ❌ 錯誤：不匹配會導致 Vite 構建失敗
+await buildCJSStub('dist', ['src/index.ts'], 'js')
+// CJS stub 會引用 ./index.js，但 ESM 輸出是 index.mjs
+```
+
+**運行時驗證**：
+- buildPackage 會自動檢測 ESM 文件是否存在
+- 若副檔名不匹配，會在構建時報詳細錯誤
+- 支援自動副檔名提取：`buildCJSStub` 可從 `esmNaming` 推斷副檔名
+
+**檢查清單**（使用自定義 ESM 副檔名時）：
+- [ ] 驗證 `esmNaming` 與 `buildCJSStub` 第三參數一致
+- [ ] 執行 `bun run build` 確認構建成功
+- [ ] 檢查 `packages/<name>/dist/index.cjs` 內容是否正確
+
 ## 問題快速診斷
 
 | 問題 | 快速解法 | 詳細指南 |
