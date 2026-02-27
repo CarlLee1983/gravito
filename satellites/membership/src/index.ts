@@ -18,7 +18,10 @@ import { VerifyEmail } from './Application/UseCases/VerifyEmail'
 import { SentinelMemberProvider } from './Infrastructure/Auth/SentinelMemberProvider'
 import { AtlasMemberPasskeyRepository } from './Infrastructure/Persistence/AtlasMemberPasskeyRepository'
 import { AtlasMemberRepository } from './Infrastructure/Persistence/AtlasMemberRepository'
+import { MemberAuthController } from './Interface/Http/Controllers/MemberAuthController'
+import { MemberProfileController } from './Interface/Http/Controllers/MemberProfileController'
 import { PasskeyController } from './Interface/Http/Controllers/PasskeyController'
+import { AuthStrategyFactory } from './Interface/Http/Strategies/AuthStrategyFactory'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
@@ -87,6 +90,23 @@ export class MembershipServiceProvider extends ServiceProvider {
         container.make('membership.passkeys.service'),
         container.make('membership.repo')
       )
+    })
+
+    // Bind DCI-based auth strategy and controllers
+    container.singleton('membership.auth.strategy', () => {
+      return AuthStrategyFactory.create(this.core!, container.make('membership.repo'))
+    })
+
+    container.singleton('membership.auth.controller', () => {
+      return new MemberAuthController(
+        container.make('membership.auth.strategy'),
+        container.make('membership.repo'),
+        this.core!
+      )
+    })
+
+    container.singleton('membership.profile.controller', () => {
+      return new MemberProfileController(container.make('membership.repo'))
     })
   }
 
@@ -164,6 +184,7 @@ export class MembershipServiceProvider extends ServiceProvider {
     }
 
     if (this.core) {
+      // Passkey routes
       const passkeyController = this.core.container.make(
         'membership.passkeys.controller'
       ) as PasskeyController
@@ -174,6 +195,28 @@ export class MembershipServiceProvider extends ServiceProvider {
       const protectedRoutes = passkeyRoutes.middleware(auth())
       protectedRoutes.post('/register/options', (c) => passkeyController.registrationOptions(c))
       protectedRoutes.post('/register/verify', (c) => passkeyController.verifyRegistration(c))
+
+      // DCI-based member authentication and profile routes
+      const authController = this.core.container.make(
+        'membership.auth.controller'
+      ) as MemberAuthController
+      const profileController = this.core.container.make(
+        'membership.profile.controller'
+      ) as MemberProfileController
+
+      const memberRoutes = this.core.router.prefix('/api/member')
+
+      // Public authentication routes
+      memberRoutes.post('/register', (c) => authController.register(c))
+      memberRoutes.post('/login', (c) => authController.login(c))
+      memberRoutes.post('/logout', (c) => authController.logout(c))
+      memberRoutes.post('/refresh', (c) => authController.refresh(c))
+
+      // Protected profile routes (require authentication)
+      // 使用 Sentinel auth 中間件保護路由
+      const protectedMemberRoutes = memberRoutes.middleware(auth())
+      protectedMemberRoutes.get('/me', (c) => profileController.me(c))
+      protectedMemberRoutes.put('/profile', (c) => profileController.update(c))
     }
 
     const startMsg =

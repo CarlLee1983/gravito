@@ -1,6 +1,7 @@
 import type { PlanetCore } from '@gravito/core'
 import { UseCase } from '@gravito/enterprise'
 import type { IMemberRepository } from '../../Domain/Contracts/IMemberRepository'
+import { AuthenticationContext } from '../../Domain/DCI/Contexts/AuthenticationContext'
 import type { MemberDTO } from '../DTOs/MemberDTO'
 import { MemberMapper } from '../DTOs/MemberDTO'
 
@@ -13,8 +14,10 @@ export interface LoginMemberInput {
 /**
  * Login Member Use Case
  *
- * Uses Gravito Sentinel for robust authentication.
- * Supports multi-device login restriction toggle via config.
+ * 支援雙模式認證：
+ * - Session 模式：保留現有 Sentinel 邏輯（向後相容）
+ * - JWT 模式：委派於 AuthenticationContext（DCI）
+ * - Dual 模式：優先使用 JWT，fallback Session
  */
 export class LoginMember extends UseCase<LoginMemberInput, MemberDTO> {
   constructor(
@@ -25,40 +28,50 @@ export class LoginMember extends UseCase<LoginMemberInput, MemberDTO> {
   }
 
   async execute(input: LoginMemberInput): Promise<MemberDTO> {
-    // 使用核心的 auth 管理器 (Sentinel) 進行驗證
-    const auth = this.core.container.make<any>('auth')
+    const mode = this.core.config.get('membership.auth.mode', 'session') as string
 
-    const result = await auth.guard('web').attempt(
-      {
-        email: input.email,
-        password: input.passwordPlain,
-      },
-      input.remember || false
-    )
+    // Session 模式：使用現有 Sentinel 邏輯（向後相容）
+    if (mode === 'session') {
+      const auth = this.core.container.make<any>('auth')
 
-    if (!result) {
-      throw new Error('Invalid credentials')
-    }
+      const result = await auth.guard('web').attempt(
+        {
+          email: input.email,
+          password: input.passwordPlain,
+        },
+        input.remember || false
+      )
 
-    const user = await auth.guard('web').user()
+      if (!result) {
+        throw new Error('Invalid credentials')
+      }
 
-    // 多設備限制邏輯
-    const singleDevice = this.core.config.get('membership.auth.single_device', false)
-    if (singleDevice) {
-      const session = this.core.container.make<any>('session')
-      if (session) {
-        // 獲取目前生成的 Session ID
-        const sessionId = session.id()
+      const user = await auth.guard('web').user()
 
-        // 更新會員實體中的 Session ID
-        const member = await this.repository.findById(user.id)
-        if (member) {
-          member.bindSession(sessionId)
-          await this.repository.save(member)
+      // 多設備限制邏輯
+      const singleDevice = this.core.config.get('membership.auth.single_device', false)
+      if (singleDevice) {
+        const session = this.core.container.make<any>('session')
+        if (session) {
+          const sessionId = session.id()
+          const member = await this.repository.findById(user.id)
+          if (member) {
+            member.bindSession(sessionId)
+            await this.repository.save(member)
+          }
         }
       }
+
+      return MemberMapper.toDTO(user)
     }
 
-    return MemberMapper.toDTO(user)
+    // JWT 模式或 Dual 模式：使用 DCI Context
+    const ctx = new AuthenticationContext(this.repository, this.core)
+    const { member } = await ctx.execute({
+      email: input.email,
+      passwordPlain: input.passwordPlain,
+    })
+
+    return MemberMapper.toDTO(member)
   }
 }
