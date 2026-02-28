@@ -15,6 +15,17 @@ import type { IOrderRepository } from './Domain/Contracts/IOrderRepository'
 import { AtlasOrderRepository } from './Infrastructure/Repositories/AtlasOrderRepository'
 
 /**
+ * commerce:order-placed 事件 payload 型別
+ */
+interface OrderPlacedPayload {
+  orderId: string
+  memberId?: string | null
+  totalAmount?: number
+  currency?: string
+  items?: Array<{ variantId: string; quantity: number }>
+}
+
+/**
  * CommerceServiceProvider
  *
  * 負責：
@@ -79,7 +90,7 @@ export class CommerceServiceProvider extends ServiceProvider {
     const rewardSubscriber = new RewardSubscriber(core)
 
     // 監聽訂單已建立事件（用於分配紅利）
-    core.hooks.addAction('commerce:order-placed', async (payload: any) => {
+    core.hooks.addAction('commerce:order-placed', async (payload: OrderPlacedPayload) => {
       await rewardSubscriber.handleOrderPlaced({ orderId: payload.orderId })
     })
 

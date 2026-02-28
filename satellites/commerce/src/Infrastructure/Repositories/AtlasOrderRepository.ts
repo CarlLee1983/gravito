@@ -4,6 +4,12 @@ import { Order, type OrderStatus } from '../../Domain/Entities/Order'
 import { Adjustment, type AdjustmentType } from '../../Domain/ValueObjects/Adjustment'
 import { LineItem } from '../../Domain/ValueObjects/LineItem'
 import { Money } from '../../Domain/ValueObjects/Money'
+import {
+  isOrderAdjustmentRow,
+  isOrderItemRow,
+  isOrderRow,
+  type OrderRow,
+} from '../Types/OrderDbTypes'
 
 /**
  * Atlas ORM 訂單 Repository 實作
@@ -13,19 +19,19 @@ export class AtlasOrderRepository implements IOrderRepository {
    * 根據 ID 查找訂單
    */
   async findById(id: string): Promise<Order | null> {
-    const orderRow = (await DB.table('orders').where('id', id).first()) as any
-    if (!orderRow) {
+    const raw = await DB.table('orders').where('id', id).first()
+    if (!raw || !isOrderRow(raw)) {
       return null
     }
-
-    return this.reconstitute(orderRow)
+    return this.reconstitute(raw)
   }
 
   /**
    * 根據會員 ID 查找訂單列表
    */
   async findByUserId(userId: string): Promise<Order[]> {
-    const rows = (await DB.table('orders').where('member_id', userId).get()) as any[]
+    const raw = await DB.table('orders').where('member_id', userId).get()
+    const rows = Array.isArray(raw) ? (raw as unknown[]).filter(isOrderRow) : []
     return Promise.all(rows.map((row) => this.reconstitute(row)))
   }
 
@@ -33,12 +39,11 @@ export class AtlasOrderRepository implements IOrderRepository {
    * 根據冪等性鑰匙查找訂單
    */
   async findByIdempotencyKey(key: string): Promise<Order | null> {
-    const orderRow = (await DB.table('orders').where('idempotency_key', key).first()) as any
-    if (!orderRow) {
+    const raw = await DB.table('orders').where('idempotency_key', key).first()
+    if (!raw || !isOrderRow(raw)) {
       return null
     }
-
-    return this.reconstitute(orderRow)
+    return this.reconstitute(raw)
   }
 
   /**
@@ -66,8 +71,9 @@ export class AtlasOrderRepository implements IOrderRepository {
     // 分頁
     const limit = filters?.limit || 20
     const offset = filters?.offset || 0
-    const rows = (await query.limit(limit).offset(offset).get()) as any[]
+    const raw = await query.limit(limit).offset(offset).get()
 
+    const rows = Array.isArray(raw) ? (raw as unknown[]).filter(isOrderRow) : []
     const items = await Promise.all(rows.map((row) => this.reconstitute(row)))
 
     return { items, total }
@@ -165,41 +171,43 @@ export class AtlasOrderRepository implements IOrderRepository {
   /**
    * 從 DB 行重建 Order 實例
    */
-  private async reconstitute(orderRow: any): Promise<Order> {
+  private async reconstitute(orderRow: OrderRow): Promise<Order> {
     // 載入明細項目
-    const itemRows = (await DB.table('order_items').where('order_id', orderRow.id).get()) as any[]
+    const rawItems = await DB.table('order_items').where('order_id', orderRow.id).get()
+    const itemRows = Array.isArray(rawItems) ? (rawItems as unknown[]).filter(isOrderItemRow) : []
 
     const items = itemRows.map((row) =>
       LineItem.reconstitute({
         productId: row.product_id,
-        variantId: row.variant_id,
+        variantId: row.variant_id ?? '',
         sku: row.sku,
         name: row.name,
         unitPrice: Money.of(row.unit_price / 100, orderRow.currency),
         quantity: row.quantity,
-        options: row.options ? JSON.parse(row.options) : undefined,
+        options: row.options ? (JSON.parse(row.options) as Record<string, string>) : undefined,
       })
     )
 
     // 載入調整項目
-    const adjustmentRows = (await DB.table('order_adjustments')
-      .where('order_id', orderRow.id)
-      .get()) as any[]
+    const rawAdj = await DB.table('order_adjustments').where('order_id', orderRow.id).get()
+    const adjustmentRows = Array.isArray(rawAdj)
+      ? (rawAdj as unknown[]).filter(isOrderAdjustmentRow)
+      : []
 
     const adjustments = adjustmentRows.map((row) =>
       Adjustment.reconstitute({
         type: row.type as AdjustmentType,
         label: row.label,
         amount: Money.of(row.amount / 100, orderRow.currency),
-        sourceType: row.source_type,
-        sourceId: row.source_id,
+        sourceType: row.source_type ?? undefined,
+        sourceId: row.source_id ?? undefined,
       })
     )
 
     // 重建 Order
     return Order.reconstitute(orderRow.id, {
       memberId: orderRow.member_id,
-      idempotencyKey: orderRow.idempotency_key,
+      idempotencyKey: orderRow.idempotency_key ?? undefined,
       status: orderRow.status as OrderStatus,
       subtotal: Money.of(orderRow.subtotal_amount / 100, orderRow.currency),
       adjustmentAmount: Money.of(orderRow.adjustment_amount / 100, orderRow.currency),

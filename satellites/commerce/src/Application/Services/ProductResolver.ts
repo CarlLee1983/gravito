@@ -8,6 +8,26 @@ export interface ProductSnapshot {
   price: number
 }
 
+/**
+ * 資料庫商品變體資料列
+ */
+interface VariantRow {
+  id: unknown
+  sku: unknown
+  name: unknown
+  price: unknown
+}
+
+/**
+ * Type guard：檢查未知值是否為 VariantRow
+ */
+function isVariantRow(value: unknown): value is VariantRow {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+  return 'id' in value && 'sku' in value && 'price' in value
+}
+
 export class ProductResolver {
   constructor(private cache: CacheManager) {}
 
@@ -21,20 +41,20 @@ export class ProductResolver {
       }
     }
 
-    const variant = (await DB.table('product_variants')
+    const raw = await DB.table('product_variants')
       .where('id', variantId)
       .select('id', 'sku', 'name', 'price')
-      .first()) as any
+      .first()
 
-    if (!variant) {
+    if (!raw || !isVariantRow(raw)) {
       throw new Error(`Product variant ${variantId} not found`)
     }
 
     const snapshot: ProductSnapshot = {
-      id: String(variant.id),
-      sku: String(variant.sku),
-      name: String(variant.name || 'Unnamed'),
-      price: Number(variant.price),
+      id: String(raw.id),
+      sku: String(raw.sku),
+      name: String(raw.name || 'Unnamed'),
+      price: Number(raw.price),
     }
 
     if (useCache) {

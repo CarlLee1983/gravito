@@ -1,8 +1,10 @@
 import type { PlanetCore } from '@gravito/core'
 import { UseCase } from '@gravito/enterprise'
+import type { IAdjustmentCalculator } from '../../Domain/Contracts/IAdjustmentCalculator'
 import type { IOrderRepository } from '../../Domain/Contracts/IOrderRepository'
 import type { CheckoutInput } from '../../Domain/DCI/Contexts/CheckoutContext'
 import { CheckoutContext } from '../../Domain/DCI/Contexts/CheckoutContext'
+import type { AdjustmentType } from '../../Domain/ValueObjects/Adjustment'
 import { OrderMapper } from '../DTOs/OrderMapper'
 
 /**
@@ -52,7 +54,7 @@ export class PlaceOrder extends UseCase<PlaceOrderInput, PlaceOrderOutput> {
   constructor(
     private core: PlanetCore,
     private orderRepository: IOrderRepository,
-    private adjustmentCalculator?: any // AdjustmentCalculator 可選
+    private adjustmentCalculator?: IAdjustmentCalculator
   ) {
     super()
   }
@@ -75,7 +77,13 @@ export class PlaceOrder extends UseCase<PlaceOrderInput, PlaceOrderOutput> {
       // 透過 Hook 讓其他 Satellite 提供調整項目
       const hookAdjustments = await this.core.hooks.applyFilters(
         'commerce:calculate-adjustments',
-        [] as any[],
+        [] as Array<{
+          type: AdjustmentType
+          label: string
+          amount: number
+          sourceType?: string
+          sourceId?: string
+        }>,
         { items: input.items, currency }
       )
       if (hookAdjustments && hookAdjustments.length > 0) {

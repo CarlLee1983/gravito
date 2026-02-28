@@ -1,86 +1,64 @@
 /**
  * 扣減庫存 Use Case
  *
- * 當支付成功時執行此 Use Case：
- * 1. 驗證訂單存在且狀態為 PAID
- * 2. 呼叫 Flash-Sale Satellite 扣減庫存
- * 3. 更新訂單狀態為 CONFIRMED
- * 4. 發送 OrderConfirmed 事件
+ * 透過 Hook 通知 Catalog Satellite 扣減庫存
+ * 使用事件通訊，遵守 Satellite 隔離原則
  */
 
 import type { PlanetCore } from '@gravito/core'
-import { DeductInventoryRequest } from '../../Domain/Models'
+import { UseCase } from '@gravito/enterprise'
+import { CommerceError } from '../Errors/CommerceError'
 
-export interface DeductInventoryResponse {
-  success: boolean
+/**
+ * DeductInventory 輸入
+ */
+export interface DeductInventoryInput {
   orderId: string
-  message: string
-  newStatus: string
+  items: Array<{
+    variantId: string
+    quantity: number
+  }>
 }
 
 /**
- * DeductInventory Use Case
+ * DeductInventory UseCase
  *
- * 這是 Commerce ← Payment 流程的核心
- * 當支付服務通知支付成功時，此 Use Case 執行庫存扣減
+ * 當訂單確認支付後，透過 Hook 通知 Catalog Satellite 扣減庫存。
+ * 遵守 Satellite 隔離原則：不直接導入 Catalog，使用事件通訊。
  */
-export class DeductInventory {
-  constructor(private core: PlanetCore) {}
+export class DeductInventory extends UseCase<DeductInventoryInput, void> {
+  constructor(private core: PlanetCore) {
+    super()
+  }
 
   /**
-   * 執行 Use Case
+   * 執行庫存扣減
    *
-   * @param orderId - 訂單 ID
-   * @param productId - 商品 ID
-   * @param quantity - 扣減數量
+   * 透過 `catalog.inventory.deduct` Hook 通知 Catalog Satellite
    */
-  async execute(
-    orderId: string,
-    productId: string,
-    quantity: number
-  ): Promise<DeductInventoryResponse> {
-    // 1. 驗證請求
-    const request = new DeductInventoryRequest(orderId, productId, quantity)
-    const validationErrors = request.validate()
-
-    if (validationErrors.length > 0) {
-      throw new Error(`Validation failed: ${validationErrors.join(', ')}`)
+  async execute(input: DeductInventoryInput): Promise<void> {
+    if (!input.orderId) {
+      throw CommerceError.orderNotFound('')
     }
 
-    this.core.logger.info(`[Commerce] Starting inventory deduction for order ${orderId}`)
-
-    // 2. TODO: 查詢訂單驗證狀態為 PAID
-    // const order = await this.orderRepository.findById(orderId)
-    // if (!order) {
-    //   throw new Error(`Order not found: ${orderId}`)
-    // }
-    // if (order.status !== OrderStatus.PAID) {
-    //   throw new Error(`Order not in PAID status: ${order.status}`)
-    // }
-
-    // 3. TODO: 呼叫 Flash-Sale Satellite 扣減庫存
-    // const productService = this.core.container.make('product.service')
-    // await productService.deductStock(productId, quantity)
-
-    // 4. TODO: 發送訂單狀態轉移事件
-    // const transition: OrderStatusTransition = {
-    //   orderId,
-    //   fromStatus: OrderStatus.PAID,
-    //   toStatus: OrderStatus.CONFIRMED,
-    //   timestamp: new Date(),
-    // }
-    // this.core.events.dispatch(new OrderStatusChanged(transition))
-
-    // 5. TODO: 更新訂單狀態
-    // await this.orderRepository.updateStatus(orderId, OrderStatus.CONFIRMED)
-
-    this.core.logger.info(`[Commerce] Inventory deducted for order ${orderId}`)
-
-    return {
-      success: true,
-      orderId,
-      message: 'Inventory deducted successfully',
-      newStatus: 'CONFIRMED',
+    if (!input.items || input.items.length === 0) {
+      throw CommerceError.invalidCheckout('庫存扣減項目不能為空')
     }
+
+    this.core.logger.info(
+      `[Commerce] 扣減庫存 - 訂單: ${input.orderId}, 項目數: ${input.items.length}`
+    )
+
+    // 透過 Hook 通知 Catalog Satellite 執行庫存扣減
+    // Catalog Satellite 監聽此 Hook 並執行實際扣減
+    await this.core.hooks.doAction('catalog.inventory.deduct', {
+      orderId: input.orderId,
+      items: input.items.map((item) => ({
+        variantId: item.variantId,
+        quantity: item.quantity,
+      })),
+    })
+
+    this.core.logger.info(`[Commerce] 庫存扣減請求已發送 - 訂單: ${input.orderId}`)
   }
 }

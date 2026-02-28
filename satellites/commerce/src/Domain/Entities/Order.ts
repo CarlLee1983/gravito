@@ -1,4 +1,5 @@
 import { AggregateRoot } from '@gravito/enterprise'
+import { CommerceError } from '../../Application/Errors/CommerceError'
 import type { Adjustment } from '../ValueObjects/Adjustment'
 import type { LineItem } from '../ValueObjects/LineItem'
 import { Money } from '../ValueObjects/Money'
@@ -149,7 +150,7 @@ export class Order extends AggregateRoot<string> {
    */
   addItem(item: LineItem): void {
     if (this._status !== OrderStatus.PENDING) {
-      throw new Error(`Cannot add item to order in ${this._status} state`)
+      throw CommerceError.invalidStatusTransition(this._status, 'addItem')
     }
     this._items.push(item)
     this.recalculate()
@@ -160,7 +161,7 @@ export class Order extends AggregateRoot<string> {
    */
   addAdjustment(adjustment: Adjustment): void {
     if (this._status !== OrderStatus.PENDING) {
-      throw new Error(`Cannot add adjustment to order in ${this._status} state`)
+      throw CommerceError.invalidStatusTransition(this._status, 'addAdjustment')
     }
     this._adjustments.push(adjustment)
     this.recalculate()
@@ -171,7 +172,7 @@ export class Order extends AggregateRoot<string> {
    */
   markAsPaid(): void {
     if (this._status !== OrderStatus.PENDING) {
-      throw new Error(`Invalid status transition from ${this._status} to ${OrderStatus.PAID}`)
+      throw CommerceError.invalidStatusTransition(this._status, OrderStatus.PAID)
     }
     this._status = OrderStatus.PAID
     this._updatedAt = new Date()
@@ -182,7 +183,7 @@ export class Order extends AggregateRoot<string> {
    */
   markAsProcessing(): void {
     if (this._status !== OrderStatus.PAID) {
-      throw new Error(`Invalid status transition from ${this._status} to ${OrderStatus.PROCESSING}`)
+      throw CommerceError.invalidStatusTransition(this._status, OrderStatus.PROCESSING)
     }
     this._status = OrderStatus.PROCESSING
     this._updatedAt = new Date()
@@ -193,7 +194,7 @@ export class Order extends AggregateRoot<string> {
    */
   markAsShipped(): void {
     if (this._status !== OrderStatus.PROCESSING) {
-      throw new Error(`Invalid status transition from ${this._status} to ${OrderStatus.SHIPPED}`)
+      throw CommerceError.invalidStatusTransition(this._status, OrderStatus.SHIPPED)
     }
     this._status = OrderStatus.SHIPPED
     this._updatedAt = new Date()
@@ -204,7 +205,7 @@ export class Order extends AggregateRoot<string> {
    */
   markAsCompleted(): void {
     if (this._status !== OrderStatus.SHIPPED) {
-      throw new Error(`Invalid status transition from ${this._status} to ${OrderStatus.COMPLETED}`)
+      throw CommerceError.invalidStatusTransition(this._status, OrderStatus.COMPLETED)
     }
     this._status = OrderStatus.COMPLETED
     this._updatedAt = new Date()
@@ -216,9 +217,7 @@ export class Order extends AggregateRoot<string> {
   requestRefund(): void {
     const allowedStatuses = [OrderStatus.PAID, OrderStatus.PROCESSING, OrderStatus.COMPLETED]
     if (!allowedStatuses.includes(this._status)) {
-      throw new Error(
-        `Cannot request refund for order in ${this._status} state. Allowed: ${allowedStatuses.join(', ')}`
-      )
+      throw CommerceError.invalidStatusTransition(this._status, OrderStatus.REQUESTED_REFUND)
     }
     this._status = OrderStatus.REQUESTED_REFUND
     this._updatedAt = new Date()
@@ -229,7 +228,7 @@ export class Order extends AggregateRoot<string> {
    */
   markAsRefunded(): void {
     if (this._status !== OrderStatus.REQUESTED_REFUND) {
-      throw new Error(`Invalid status transition from ${this._status} to ${OrderStatus.REFUNDED}`)
+      throw CommerceError.invalidStatusTransition(this._status, OrderStatus.REFUNDED)
     }
     this._status = OrderStatus.REFUNDED
     this._updatedAt = new Date()
@@ -240,7 +239,7 @@ export class Order extends AggregateRoot<string> {
    */
   cancel(): void {
     if (this._status !== OrderStatus.PENDING) {
-      throw new Error(`Cannot cancel order in ${this._status} state`)
+      throw CommerceError.invalidStatusTransition(this._status, OrderStatus.CANCELLED)
     }
     this._status = OrderStatus.CANCELLED
     this._updatedAt = new Date()
