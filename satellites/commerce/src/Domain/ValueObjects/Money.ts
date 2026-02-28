@@ -22,13 +22,11 @@ export class Money extends ValueObject<MoneyProps> {
   /**
    * 建立 Money 實例
    *
-   * @param amount - 金額（十進位），如 99.99
+   * @param amount - 金額（十進位），可為正或負（如折扣時為負）
    * @param currency - 通貨代碼，預設 'TWD'
    */
   static of(amount: number, currency = 'TWD'): Money {
-    if (amount < 0) {
-      throw CommerceError.invalidAmount(amount)
-    }
+    // 允許負數（用於折扣、退款等）
     const amountInCents = Math.round(amount * 100)
     return new Money({ amountInCents, currency })
   }
