@@ -1,93 +1,38 @@
 /**
- * 查詢商品列表 Use Case
+ * ListProducts UseCase（薄殼）
  *
- * 支持 Redis 快取（5 分鐘 TTL）
+ * 委派 ProductQueryContext 查詢商品列表，
+ * 使用 ProductMapper 轉換結果為 ProductDTO 陣列。
  */
 
-import type { Product } from '../../Domain/Models'
-import type { CacheService } from '../../Infrastructure/Services/CacheService'
-import type { IProductRepository } from '../Contracts/IProductRepository'
+import type { CacheService } from '@gravito/core'
+import type { IProductRepository } from '../../Domain/Contracts/IProductRepository'
+import { ProductQueryContext } from '../../Domain/DCI/Contexts/ProductQueryContext'
+import type { ProductDTO } from '../DTOs/ProductDTO'
+import { ProductMapper } from '../DTOs/ProductDTO'
 
 /**
- * 查詢商品列表的請求與回應
- */
-export interface ListProductsRequest {
-  page?: number
-  limit?: number
-  status?: string
-}
-
-export interface ListProductsResponse {
-  items: Product[]
-  total: number
-  page: number
-  limit: number
-  hasMore: boolean
-}
-
-/**
- * ListProducts Use Case
+ * ListProducts UseCase
  *
- * 查詢商品列表，支援分頁與篩選
- * 查詢結果在 5 分鐘內快取
+ * 薄殼：只負責 DTO 轉換 + 委派 ProductQueryContext
  */
 export class ListProducts {
-  constructor(
-    private repository: IProductRepository,
-    private cache?: CacheService
-  ) {}
+  private readonly queryContext: ProductQueryContext
 
-  /**
-   * 生成快取鍵
-   */
-  private getCacheKey(request: ListProductsRequest): string {
-    const page = Math.max(request.page || 1, 1)
-    const limit = Math.min(request.limit || 20, 100)
-    const status = request.status || 'active'
-    return `product:list:${page}:${limit}:${status}`
+  constructor(productRepo: IProductRepository, cache: CacheService) {
+    this.queryContext = new ProductQueryContext(productRepo, cache)
   }
 
   /**
-   * 執行 Use Case
+   * 查詢商品列表
+   *
+   * @returns ProductDTO 陣列
    */
-  async execute(request: ListProductsRequest): Promise<ListProductsResponse> {
-    // 驗證請求
-    const page = Math.max(request.page || 1, 1)
-    const limit = Math.min(request.limit || 20, 100) // 最多 100 個
+  async execute(): Promise<ProductDTO[]> {
+    // 委派 ProductQueryContext 查詢
+    const products = await this.queryContext.listProducts()
 
-    // 嘗試從快取讀取
-    if (this.cache) {
-      const cacheKey = this.getCacheKey(request)
-      const cached = await this.cache.get<ListProductsResponse>(cacheKey)
-      if (cached) {
-        return cached
-      }
-    }
-
-    // 快取未命中，查詢數據庫
-    const result = await this.repository.findAll({
-      page,
-      limit,
-      status: request.status,
-    })
-
-    // 計算是否有更多項目
-    const hasMore = (page - 1) * limit + result.items.length < result.total
-
-    const response: ListProductsResponse = {
-      items: result.items,
-      total: result.total,
-      page,
-      limit,
-      hasMore,
-    }
-
-    // 保存到快取（5 分鐘）
-    if (this.cache) {
-      const cacheKey = this.getCacheKey(request)
-      await this.cache.set(cacheKey, response, 300)
-    }
-
-    return response
+    // 轉換為 DTO
+    return ProductMapper.toDTOList(products)
   }
 }

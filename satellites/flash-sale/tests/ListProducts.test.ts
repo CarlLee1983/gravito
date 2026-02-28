@@ -1,139 +1,187 @@
 /**
  * ListProducts Use Case 單元測試
+ *
+ * 驗證薄殼 UseCase 委派 ProductQueryContext 並返回 ProductDTO 陣列
  */
 
 import { beforeEach, describe, expect, it } from 'bun:test'
-import type { IProductRepository } from '../src/Application/Contracts/IProductRepository'
+import type { CacheService } from '@gravito/core'
 import { ListProducts } from '../src/Application/UseCases/ListProducts'
-import type { Product } from '../src/Domain/Models'
+import type { IProductRepository } from '../src/Domain/Contracts/IProductRepository'
+import { Product } from '../src/Domain/Entities/Product'
 import { ProductStatus } from '../src/Domain/Models'
+import { Money } from '../src/Domain/ValueObjects/Money'
+import { Stock } from '../src/Domain/ValueObjects/Stock'
 
 /**
- * Mock ProductRepository
+ * Mock ProductRepository（Domain Contract）
  */
 class MockProductRepository implements IProductRepository {
-  private products: Product[] = [
-    {
-      id: '1',
-      name: 'Product 1',
-      sku: 'SKU-001',
-      description: 'Test product 1',
-      price: 100,
-      cost: 50,
-      stock: 10,
-      status: ProductStatus.ACTIVE,
-      images: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      id: '2',
-      name: 'Product 2',
-      sku: 'SKU-002',
-      description: 'Test product 2',
-      price: 200,
-      cost: 100,
-      stock: 0,
-      status: ProductStatus.ACTIVE,
-      images: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  ]
+  private products: Map<string, Product> = new Map()
+
+  constructor() {
+    const product1 = Product.create(
+      '1',
+      'Product 1',
+      'SKU-001',
+      'Test product 1',
+      Money.of(100),
+      Money.of(50),
+      Stock.of(10),
+      []
+    )
+    const product2 = Product.create(
+      '2',
+      'Product 2',
+      'SKU-002',
+      'Test product 2',
+      Money.of(200),
+      Money.of(100),
+      Stock.of(0),
+      []
+    )
+    this.products.set('1', product1)
+    this.products.set('2', product2)
+  }
+
+  async save(entity: Product): Promise<void> {
+    this.products.set(entity.id, entity)
+  }
 
   async findById(id: string): Promise<Product | null> {
-    return this.products.find((p) => p.id === id) || null
+    return this.products.get(id) ?? null
   }
 
-  async findBySku(sku: string): Promise<Product | null> {
-    return this.products.find((p) => p.sku === sku) || null
+  async findAll(): Promise<Product[]> {
+    return Array.from(this.products.values())
   }
 
-  async findAll(filters?: {
-    status?: string
-    page?: number
-    limit?: number
-  }): Promise<{ items: Product[]; total: number; page: number; limit: number }> {
-    const page = filters?.page || 1
-    const limit = filters?.limit || 20
-
-    const start = (page - 1) * limit
-    const items = this.products.slice(start, start + limit)
-
-    return {
-      items,
-      total: this.products.length,
-      page,
-      limit,
-    }
+  async delete(_id: string): Promise<void> {
+    // no-op
   }
 
-  async create(): Promise<Product> {
-    throw new Error('Not implemented')
+  async exists(id: string): Promise<boolean> {
+    return this.products.has(id)
   }
 
-  async update(): Promise<Product> {
-    throw new Error('Not implemented')
+  async findBySku(_sku: string): Promise<Product | null> {
+    return null
+  }
+
+  async findByIds(_ids: string[]): Promise<Product[]> {
+    return []
   }
 
   async updateStock(): Promise<void> {
-    throw new Error('Not implemented')
+    // no-op
+  }
+}
+
+/**
+ * Mock CacheService
+ */
+class MockCacheService implements CacheService {
+  private data: Map<string, unknown> = new Map()
+
+  async get<T = unknown>(key: string): Promise<T | null> {
+    return (this.data.get(key) as T) ?? null
   }
 
-  async delete(): Promise<void> {
-    throw new Error('Not implemented')
+  async set(key: string, value: unknown, _ttl?: number): Promise<void> {
+    this.data.set(key, value)
   }
 
-  async findByIds(): Promise<Product[]> {
-    throw new Error('Not implemented')
+  async delete(key: string): Promise<void> {
+    this.data.delete(key)
+  }
+
+  async clear(): Promise<void> {
+    this.data.clear()
+  }
+
+  async remember<T>(key: string, ttl: number, callback: () => Promise<T>): Promise<T> {
+    const cached = await this.get<T>(key)
+    if (cached !== null) return cached
+    const result = await callback()
+    await this.set(key, result, ttl)
+    return result
+  }
+
+  async has(key: string): Promise<boolean> {
+    return this.data.has(key)
+  }
+
+  async increment(key: string, value?: number): Promise<number> {
+    const current = (this.data.get(key) as number) || 0
+    const next = current + (value || 1)
+    this.data.set(key, next)
+    return next
+  }
+
+  async decrement(key: string, value?: number): Promise<number> {
+    return this.increment(key, -(value || 1))
+  }
+
+  async deletePattern(_pattern: string): Promise<number> {
+    return 0
   }
 }
 
 describe('ListProducts Use Case', () => {
   let useCase: ListProducts
   let repository: MockProductRepository
+  let cache: MockCacheService
 
   beforeEach(() => {
     repository = new MockProductRepository()
-    useCase = new ListProducts(repository)
+    cache = new MockCacheService()
+    useCase = new ListProducts(repository, cache)
   })
 
-  it('should return all products with default pagination', async () => {
-    const result = await useCase.execute({})
+  it('should return all products as ProductDTO array', async () => {
+    const result = await useCase.execute()
 
-    expect(result.items.length).toBe(2)
-    expect(result.total).toBe(2)
-    expect(result.page).toBe(1)
-    expect(result.limit).toBe(20)
-    expect(result.hasMore).toBe(false)
+    expect(result).toHaveLength(2)
+    expect(result[0].id).toBeTruthy()
+    expect(typeof result[0].price).toBe('number')
+    expect(typeof result[0].cost).toBe('number')
   })
 
-  it('should return products with custom page and limit', async () => {
-    const result = await useCase.execute({
-      page: 1,
-      limit: 1,
-    })
+  it('should convert Money values to decimal', async () => {
+    const result = await useCase.execute()
 
-    expect(result.items.length).toBe(1)
-    expect(result.total).toBe(2)
-    expect(result.hasMore).toBe(true)
+    const prod1 = result.find((p) => p.id === '1')
+    expect(prod1!.price).toBe(100)
+    expect(prod1!.cost).toBe(50)
   })
 
-  it('should validate page number (minimum 1)', async () => {
-    const result = await useCase.execute({
-      page: 0,
-      limit: 20,
-    })
+  it('should include stock information', async () => {
+    const result = await useCase.execute()
 
-    expect(result.page).toBe(1)
+    const prod1 = result.find((p) => p.id === '1')
+    expect(prod1!.stock.quantity).toBe(10)
+    expect(prod1!.stock.isAvailable).toBe(true)
+
+    const prod2 = result.find((p) => p.id === '2')
+    expect(prod2!.stock.quantity).toBe(0)
+    expect(prod2!.stock.isAvailable).toBe(false)
   })
 
-  it('should limit max limit to 100', async () => {
-    const result = await useCase.execute({
-      page: 1,
-      limit: 200,
-    })
+  it('should return empty array when no products exist', async () => {
+    const emptyRepo: IProductRepository = {
+      save: async () => {},
+      findById: async () => null,
+      findAll: async () => [],
+      delete: async () => {},
+      exists: async () => false,
+      findBySku: async () => null,
+      findByIds: async () => [],
+      updateStock: async () => {},
+    }
 
-    expect(result.limit).toBe(100)
+    const emptyUseCase = new ListProducts(emptyRepo, cache)
+    const result = await emptyUseCase.execute()
+
+    expect(result).toHaveLength(0)
   })
 })

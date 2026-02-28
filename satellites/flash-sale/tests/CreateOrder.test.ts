@@ -1,111 +1,106 @@
 /**
  * CreateOrder Use Case 單元測試
+ *
+ * 驗證薄殼 UseCase 委派 PurchaseContext 完成搶購
  */
 
 import { beforeEach, describe, expect, it } from 'bun:test'
-import type { IOrderRepository } from '../src/Application/Contracts/IOrderRepository'
-import type { IProductRepository } from '../src/Application/Contracts/IProductRepository'
+import { FlashSaleError, FlashSaleErrorCode } from '../src/Application/Errors/FlashSaleError'
 import { CreateOrder } from '../src/Application/UseCases/CreateOrder'
-import {
-  CreateOrderRequest,
-  type Order,
-  OrderStatus,
-  type Product,
-  ProductStatus,
-} from '../src/Domain/Models'
+import type { IOrderRepository } from '../src/Domain/Contracts/IOrderRepository'
+import type { IProductRepository } from '../src/Domain/Contracts/IProductRepository'
+import type { Order } from '../src/Domain/Entities/Order'
+import { Product } from '../src/Domain/Entities/Product'
+import { OrderStatus } from '../src/Domain/Models'
+import { Money } from '../src/Domain/ValueObjects/Money'
+import { Stock } from '../src/Domain/ValueObjects/Stock'
 
 /**
- * Mock ProductRepository
+ * Mock ProductRepository（Domain Contract）
  */
 class MockProductRepository implements IProductRepository {
+  private products: Map<string, Product> = new Map()
+
+  constructor() {
+    // 建立測試商品
+    const product = Product.create(
+      'PROD-1',
+      'Flash Sale Item',
+      'FSI-001',
+      'Limited item',
+      Money.of(50),
+      Money.of(25),
+      Stock.of(5),
+      []
+    )
+    this.products.set('PROD-1', product)
+  }
+
+  async save(entity: Product): Promise<void> {
+    this.products.set(entity.id, entity)
+  }
+
   async findById(id: string): Promise<Product | null> {
-    if (id === 'PROD-1') {
-      return {
-        id: 'PROD-1',
-        name: 'Flash Sale Item',
-        sku: 'FSI-001',
-        description: 'Limited item',
-        price: 50,
-        cost: 25,
-        stock: 5,
-        status: ProductStatus.ACTIVE,
-        images: [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
-    }
+    return this.products.get(id) ?? null
+  }
+
+  async findAll(): Promise<Product[]> {
+    return Array.from(this.products.values())
+  }
+
+  async delete(_id: string): Promise<void> {
+    // no-op
+  }
+
+  async exists(id: string): Promise<boolean> {
+    return this.products.has(id)
+  }
+
+  async findBySku(_sku: string): Promise<Product | null> {
     return null
   }
 
-  async findBySku(): Promise<Product | null> {
-    throw new Error('Not implemented')
-  }
-
-  async findAll(): Promise<any> {
-    throw new Error('Not implemented')
-  }
-
-  async create(): Promise<Product> {
-    throw new Error('Not implemented')
-  }
-
-  async update(): Promise<Product> {
-    throw new Error('Not implemented')
+  async findByIds(_ids: string[]): Promise<Product[]> {
+    return []
   }
 
   async updateStock(): Promise<void> {
-    // Mock implementation
-  }
-
-  async delete(): Promise<void> {
-    throw new Error('Not implemented')
-  }
-
-  async findByIds(): Promise<Product[]> {
-    throw new Error('Not implemented')
+    // no-op
   }
 }
 
 /**
- * Mock OrderRepository
+ * Mock OrderRepository（Domain Contract）
  */
 class MockOrderRepository implements IOrderRepository {
-  private orders: Order[] = []
-  private nextId = 1
+  private orders: Map<string, Order> = new Map()
+
+  async save(entity: Order): Promise<void> {
+    this.orders.set(entity.id, entity)
+  }
 
   async findById(id: string): Promise<Order | null> {
-    return this.orders.find((o) => o.id === id) || null
+    return this.orders.get(id) ?? null
   }
 
-  async findByUserId(): Promise<any> {
-    throw new Error('Not implemented')
+  async findAll(): Promise<Order[]> {
+    return Array.from(this.orders.values())
   }
 
-  async create(data: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>): Promise<Order> {
-    const order: Order = {
-      id: `ORD-${this.nextId++}`,
-      ...data,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-    this.orders.push(order)
-    return order
+  async delete(_id: string): Promise<void> {
+    // no-op
   }
 
-  async update(): Promise<Order> {
-    throw new Error('Not implemented')
+  async exists(id: string): Promise<boolean> {
+    return this.orders.has(id)
   }
 
-  async updateStatus(): Promise<Order> {
-    throw new Error('Not implemented')
-  }
-
-  async delete(): Promise<void> {
-    throw new Error('Not implemented')
+  async findByUserId(_userId: string): Promise<Order[]> {
+    return []
   }
 
   async findByDateRange(): Promise<Order[]> {
-    throw new Error('Not implemented')
+    return []
   }
 }
 
@@ -120,68 +115,87 @@ describe('CreateOrder Use Case', () => {
     useCase = new CreateOrder(productRepository, orderRepository)
   })
 
-  it('should create order successfully', async () => {
-    const request = new CreateOrderRequest('USER-1', 'PROD-1', 2)
-    const result = await useCase.execute(request)
+  it('should create order successfully and return OrderDTO', async () => {
+    const result = await useCase.execute({
+      userId: 'USER-1',
+      productId: 'PROD-1',
+      quantity: 2,
+    })
 
-    expect(result.order.id).toBeTruthy()
-    expect(result.order.userId).toBe('USER-1')
-    expect(result.order.status).toBe(OrderStatus.PENDING)
-    expect(result.order.totalAmount).toBe(100) // 50 * 2
+    expect(result.id).toBeTruthy()
+    expect(result.userId).toBe('USER-1')
+    expect(result.status).toBe(OrderStatus.PENDING)
+    expect(result.totalAmount).toBe(100) // 50 * 2
+    expect(result.items).toHaveLength(1)
+    expect(result.items[0].productId).toBe('PROD-1')
   })
 
-  it('should reject order with invalid userId', async () => {
-    const request = new CreateOrderRequest('', 'PROD-1', 1)
-
+  it('should throw FlashSaleError for non-existent product', async () => {
     try {
-      await useCase.execute(request)
+      await useCase.execute({
+        userId: 'USER-1',
+        productId: 'UNKNOWN',
+        quantity: 1,
+      })
       expect.unreachable('Should have thrown')
     } catch (error) {
-      expect(String(error)).toContain('Validation failed')
+      expect(error).toBeInstanceOf(FlashSaleError)
+      expect((error as FlashSaleError).code).toBe(FlashSaleErrorCode.PRODUCT_NOT_FOUND)
     }
   })
 
-  it('should reject order for non-existent product', async () => {
-    const request = new CreateOrderRequest('USER-1', 'UNKNOWN', 1)
-
+  it('should throw FlashSaleError for insufficient stock', async () => {
     try {
-      await useCase.execute(request)
+      await useCase.execute({
+        userId: 'USER-1',
+        productId: 'PROD-1',
+        quantity: 10, // Only 5 in stock
+      })
       expect.unreachable('Should have thrown')
     } catch (error) {
-      expect(String(error)).toContain('Product not found')
+      expect(error).toBeInstanceOf(FlashSaleError)
+      expect((error as FlashSaleError).code).toBe(FlashSaleErrorCode.INSUFFICIENT_STOCK)
     }
   })
 
-  it('should reject order with insufficient stock', async () => {
-    const request = new CreateOrderRequest('USER-1', 'PROD-1', 10) // Only 5 in stock
-
+  it('should throw FlashSaleError for zero quantity', async () => {
     try {
-      await useCase.execute(request)
+      await useCase.execute({
+        userId: 'USER-1',
+        productId: 'PROD-1',
+        quantity: 0,
+      })
       expect.unreachable('Should have thrown')
     } catch (error) {
-      expect(String(error)).toContain('Insufficient stock')
+      expect(error).toBeInstanceOf(FlashSaleError)
+      expect((error as FlashSaleError).code).toBe(FlashSaleErrorCode.INVALID_QUANTITY)
     }
   })
 
-  it('should reject order with zero quantity', async () => {
-    const request = new CreateOrderRequest('USER-1', 'PROD-1', 0)
-
+  it('should throw FlashSaleError for excessive quantity', async () => {
     try {
-      await useCase.execute(request)
+      await useCase.execute({
+        userId: 'USER-1',
+        productId: 'PROD-1',
+        quantity: 1001,
+      })
       expect.unreachable('Should have thrown')
     } catch (error) {
-      expect(String(error)).toContain('Validation failed')
+      expect(error).toBeInstanceOf(FlashSaleError)
+      expect((error as FlashSaleError).code).toBe(FlashSaleErrorCode.INVALID_QUANTITY)
     }
   })
 
-  it('should reject order with excessive quantity', async () => {
-    const request = new CreateOrderRequest('USER-1', 'PROD-1', 1001)
-
+  it('should throw FlashSaleError for empty userId', async () => {
     try {
-      await useCase.execute(request)
+      await useCase.execute({
+        userId: '',
+        productId: 'PROD-1',
+        quantity: 1,
+      })
       expect.unreachable('Should have thrown')
     } catch (error) {
-      expect(String(error)).toContain('Validation failed')
+      expect(error).toBeInstanceOf(FlashSaleError)
     }
   })
 })
