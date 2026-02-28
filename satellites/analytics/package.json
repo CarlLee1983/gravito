@@ -11,7 +11,8 @@
   },
   "types": "dist/index.d.ts",
   "dependencies": {
-    "@gravito/core": "workspace:*"
+    "@gravito/core": "workspace:*",
+    "@gravito/enterprise": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.3.5",

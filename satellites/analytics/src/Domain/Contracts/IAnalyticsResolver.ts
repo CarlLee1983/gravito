@@ -1,16 +1,22 @@
-export interface AnalyticsQuery {
-  metric: string
-  period: '24h' | '7d' | '30d' | '90d'
-  filters?: Record<string, any>
+import type { AnalyticsFilters } from '../ValueObjects/AnalyticsFilters'
+import type { MetricId } from '../ValueObjects/MetricId'
+import type { Period } from '../ValueObjects/Period'
+
+export type ResponseType = 'TIMESERIES' | 'SINGLE_VALUE' | 'PIE' | 'TABLE'
+
+export interface MetricQuery {
+  metric: MetricId
+  period: Period
+  filters: AnalyticsFilters
 }
 
-export interface AnalyticsResponse {
-  type: 'TIMESERIES' | 'SINGLE_VALUE' | 'PIE' | 'TABLE'
-  data: any
+export interface MetricResult {
+  type: ResponseType
+  data: unknown
   summary?: string
 }
 
-export interface IAnalyticsResolver {
-  metric: string
-  resolve(query: AnalyticsQuery): Promise<AnalyticsResponse>
+export interface IMetricResolver {
+  readonly metric: MetricId
+  resolve(query: MetricQuery): Promise<MetricResult>
 }
