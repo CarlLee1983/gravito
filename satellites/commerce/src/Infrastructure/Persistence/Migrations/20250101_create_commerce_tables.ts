@@ -6,14 +6,27 @@ import { type Blueprint, Schema } from '@gravito/atlas'
 export default {
   async up() {
     // 1. Orders Table
+    // 注意：金額以整數儲存（分），避免浮點精度問題
+    // 例如 99.99 TWD = 9999 (cents)
     await Schema.create('orders', (table: Blueprint) => {
       table.string('id').primary()
       table.string('member_id').nullable()
       table.string('idempotency_key').unique().nullable()
-      table.string('status').default('pending') // pending, paid, processing, shipped, completed, cancelled
-      table.decimal('subtotal_amount', 15, 2)
-      table.decimal('adjustment_amount', 15, 2).default(0)
-      table.decimal('total_amount', 15, 2)
+      table
+        .enum('status', [
+          'pending',
+          'paid',
+          'processing',
+          'shipped',
+          'completed',
+          'cancelled',
+          'requested_refund',
+          'refunded',
+        ])
+        .default('pending')
+      table.bigInteger('subtotal_amount').default(0) // 金額（分）
+      table.bigInteger('adjustment_amount').default(0) // 調整金額（分）
+      table.bigInteger('total_amount').default(0) // 總金額（分）
       table.string('currency').default('TWD')
       table.timestamp('created_at').default('CURRENT_TIMESTAMP')
       table.timestamp('updated_at').nullable()
@@ -21,38 +34,35 @@ export default {
     })
 
     // 2. Order Items (Snapshotting)
+    // 商品快照，記錄訂單建立時的商品資訊（包含已刪除的商品）
     await Schema.create('order_items', (table: Blueprint) => {
       table.string('id').primary()
       table.string('order_id')
+      table.string('product_id')
       table.string('variant_id')
       table.string('sku')
       table.string('name')
-      table.decimal('unit_price', 15, 2)
+      table.bigInteger('unit_price').default(0) // 單價（分）
       table.integer('quantity')
-      table.decimal('total_price', 15, 2)
-      table.text('options').nullable()
+      table.bigInteger('total_price').default(0) // 總價（分）
+      table.text('options').nullable() // JSON 格式選項
     })
 
     // 3. Order Adjustments (Marketing/Tax/Shipping)
+    // 金額調整（折扣、運費、稅務等）
     await Schema.create('order_adjustments', (table: Blueprint) => {
       table.string('id').primary()
       table.string('order_id')
+      table.enum('type', ['discount', 'shipping', 'tax', 'surcharge']).default('discount')
       table.string('label') // e.g., "Christmas Sale -10%", "Shipping Fee"
-      table.decimal('amount', 15, 2)
+      table.bigInteger('amount').default(0) // 金額（分）
       table.string('source_type').nullable() // e.g., "coupon", "tax"
       table.string('source_id').nullable()
     })
 
-    // 4. Patch Inventory for Optimistic Locking
-    // We add 'version' to support atomic updates:
-    // UPDATE ... SET stock = stock - ?, version = version + 1 WHERE id = ? AND version = ?
-    try {
-      await Schema.table('product_variants', (table: Blueprint) => {
-        table.integer('version').default(1)
-      })
-    } catch (_e) {
-      // Column might already exist, ignore in review environment
-    }
+    // NOTE: Optimistic Locking 應由 Catalog Satellite 管理
+    // Commerce Satellite 應透過事件而非直接修改 product_variants 表
+    // 庫存扣減應由 commerce:order-placed Hook 觸發 Catalog 的庫存更新
   },
 
   async down() {

@@ -22,7 +22,7 @@ export class CheckoutController {
 
     try {
       const result = await placeOrder.execute({
-        memberId,
+        userId: memberId,
         idempotencyKey,
         items: body.items,
       })

@@ -1,164 +1,292 @@
-import { AggregateRoot, Entity } from '@gravito/enterprise'
+import { AggregateRoot } from '@gravito/enterprise'
+import type { Adjustment } from '../ValueObjects/Adjustment'
+import type { LineItem } from '../ValueObjects/LineItem'
+import { Money } from '../ValueObjects/Money'
 
-export interface AdjustmentProps {
-  label: string
-  amount: number
-  sourceType: string | null
-  sourceId: string | null
+/**
+ * 訂單狀態
+ */
+export enum OrderStatus {
+  PENDING = 'pending',
+  PAID = 'paid',
+  PROCESSING = 'processing',
+  SHIPPED = 'shipped',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+  REQUESTED_REFUND = 'requested_refund',
+  REFUNDED = 'refunded',
 }
 
-export class Adjustment extends Entity<string> {
-  constructor(
-    id: string,
-    public readonly props: AdjustmentProps
-  ) {
-    super(id)
-  }
-}
-
-export interface LineItemProps {
-  variantId: string
-  sku: string
-  name: string
-  unitPrice: number
-  quantity: number
-  totalPrice: number
-  options?: Record<string, string>
-}
-
-export class LineItem extends Entity<string> {
-  constructor(
-    id: string,
-    public readonly props: LineItemProps
-  ) {
-    super(id)
-  }
-}
-
+/**
+ * Order 屬性介面
+ */
 export interface OrderProps {
   memberId: string | null
   idempotencyKey?: string
-  status:
-    | 'pending'
-    | 'paid'
-    | 'processing'
-    | 'shipped'
-    | 'completed'
-    | 'cancelled'
-    | 'requested_refund'
-    | 'refunded'
-  subtotalAmount: number
-  adjustmentAmount: number
-  totalAmount: number
+  status: OrderStatus
+  subtotal: Money
+  adjustmentAmount: Money
+  total: Money
   currency: string
   items: LineItem[]
   adjustments: Adjustment[]
   createdAt: Date
-  updatedAt?: Date
+  updatedAt: Date
 }
 
+/**
+ * Order AggregateRoot
+ *
+ * 訂單聚合根，管理訂單的完整生命週期。
+ * 使用私有欄位和方法控制狀態修改，確保一致性。
+ */
 export class Order extends AggregateRoot<string> {
-  private constructor(
-    id: string,
-    private readonly props: OrderProps
-  ) {
+  private _memberId: string | null
+  private _idempotencyKey?: string
+  private _status: OrderStatus
+  private _subtotal: Money
+  private _adjustmentAmount: Money
+  private _total: Money
+  private _currency: string
+  private _items: LineItem[]
+  private _adjustments: Adjustment[]
+  private _createdAt: Date
+  private _updatedAt: Date
+
+  private constructor(id: string, props: OrderProps) {
     super(id)
+    this._memberId = props.memberId
+    this._idempotencyKey = props.idempotencyKey
+    this._status = props.status
+    this._subtotal = props.subtotal
+    this._adjustmentAmount = props.adjustmentAmount
+    this._total = props.total
+    this._currency = props.currency
+    this._items = props.items
+    this._adjustments = props.adjustments
+    this._createdAt = props.createdAt
+    this._updatedAt = props.updatedAt
   }
 
-  static create(id: string, memberId: string | null = null, currency = 'TWD'): Order {
+  /**
+   * 建立新訂單
+   */
+  static create(
+    id: string,
+    memberId: string | null = null,
+    idempotencyKey?: string,
+    currency = 'TWD'
+  ): Order {
     return new Order(id, {
       memberId,
-      status: 'pending',
-      subtotalAmount: 0,
-      adjustmentAmount: 0,
-      totalAmount: 0,
+      idempotencyKey,
+      status: OrderStatus.PENDING,
+      subtotal: Money.of(0, currency),
+      adjustmentAmount: Money.of(0, currency),
+      total: Money.of(0, currency),
       currency,
       items: [],
       adjustments: [],
       createdAt: new Date(),
+      updatedAt: new Date(),
     })
   }
 
-  // Public Getters for Persistence & Logic
-  get memberId() {
-    return this.props.memberId
-  }
-  get status() {
-    return this.props.status
-  }
-  get subtotalAmount() {
-    return this.props.subtotalAmount
-  }
-  get adjustmentAmount() {
-    return this.props.adjustmentAmount
-  }
-  get totalAmount() {
-    return this.props.totalAmount
-  }
-  get createdAt() {
-    return this.props.createdAt
-  }
-  get items() {
-    return [...this.props.items]
-  }
-  get adjustments() {
-    return [...this.props.adjustments]
+  /**
+   * 從資料庫重建訂單
+   */
+  static reconstitute(id: string, props: OrderProps): Order {
+    return new Order(id, props)
   }
 
-  public addItem(item: LineItem): void {
-    if (this.props.status !== 'pending') {
-      throw new Error('Order is not in pending state')
+  // Getters
+  get memberId(): string | null {
+    return this._memberId
+  }
+
+  get idempotencyKey(): string | undefined {
+    return this._idempotencyKey
+  }
+
+  get status(): OrderStatus {
+    return this._status
+  }
+
+  get subtotal(): Money {
+    return this._subtotal
+  }
+
+  get adjustmentAmount(): Money {
+    return this._adjustmentAmount
+  }
+
+  get total(): Money {
+    return this._total
+  }
+
+  get currency(): string {
+    return this._currency
+  }
+
+  get items(): LineItem[] {
+    return [...this._items]
+  }
+
+  get adjustments(): Adjustment[] {
+    return [...this._adjustments]
+  }
+
+  get createdAt(): Date {
+    return this._createdAt
+  }
+
+  get updatedAt(): Date {
+    return this._updatedAt
+  }
+
+  /**
+   * 新增明細項目（僅限 PENDING 狀態）
+   */
+  addItem(item: LineItem): void {
+    if (this._status !== OrderStatus.PENDING) {
+      throw new Error(`Cannot add item to order in ${this._status} state`)
     }
-    this.props.items.push(item)
+    this._items.push(item)
     this.recalculate()
   }
 
-  public addAdjustment(adj: Adjustment): void {
-    if (this.props.status !== 'pending') {
-      throw new Error('Order is not in pending state')
+  /**
+   * 新增金額調整（僅限 PENDING 狀態）
+   */
+  addAdjustment(adjustment: Adjustment): void {
+    if (this._status !== OrderStatus.PENDING) {
+      throw new Error(`Cannot add adjustment to order in ${this._status} state`)
     }
-    this.props.adjustments.push(adj)
+    this._adjustments.push(adjustment)
     this.recalculate()
   }
 
+  /**
+   * 標記為已付款
+   */
+  markAsPaid(): void {
+    if (this._status !== OrderStatus.PENDING) {
+      throw new Error(`Invalid status transition from ${this._status} to ${OrderStatus.PAID}`)
+    }
+    this._status = OrderStatus.PAID
+    this._updatedAt = new Date()
+  }
+
+  /**
+   * 標記為處理中
+   */
+  markAsProcessing(): void {
+    if (this._status !== OrderStatus.PAID) {
+      throw new Error(`Invalid status transition from ${this._status} to ${OrderStatus.PROCESSING}`)
+    }
+    this._status = OrderStatus.PROCESSING
+    this._updatedAt = new Date()
+  }
+
+  /**
+   * 標記為已出貨
+   */
+  markAsShipped(): void {
+    if (this._status !== OrderStatus.PROCESSING) {
+      throw new Error(`Invalid status transition from ${this._status} to ${OrderStatus.SHIPPED}`)
+    }
+    this._status = OrderStatus.SHIPPED
+    this._updatedAt = new Date()
+  }
+
+  /**
+   * 標記為已完成
+   */
+  markAsCompleted(): void {
+    if (this._status !== OrderStatus.SHIPPED) {
+      throw new Error(`Invalid status transition from ${this._status} to ${OrderStatus.COMPLETED}`)
+    }
+    this._status = OrderStatus.COMPLETED
+    this._updatedAt = new Date()
+  }
+
+  /**
+   * 申請退款（允許的狀態: PAID, PROCESSING, COMPLETED）
+   */
+  requestRefund(): void {
+    const allowedStatuses = [OrderStatus.PAID, OrderStatus.PROCESSING, OrderStatus.COMPLETED]
+    if (!allowedStatuses.includes(this._status)) {
+      throw new Error(
+        `Cannot request refund for order in ${this._status} state. Allowed: ${allowedStatuses.join(', ')}`
+      )
+    }
+    this._status = OrderStatus.REQUESTED_REFUND
+    this._updatedAt = new Date()
+  }
+
+  /**
+   * 標記為已退款
+   */
+  markAsRefunded(): void {
+    if (this._status !== OrderStatus.REQUESTED_REFUND) {
+      throw new Error(`Invalid status transition from ${this._status} to ${OrderStatus.REFUNDED}`)
+    }
+    this._status = OrderStatus.REFUNDED
+    this._updatedAt = new Date()
+  }
+
+  /**
+   * 取消訂單（僅限 PENDING 狀態）
+   */
+  cancel(): void {
+    if (this._status !== OrderStatus.PENDING) {
+      throw new Error(`Cannot cancel order in ${this._status} state`)
+    }
+    this._status = OrderStatus.CANCELLED
+    this._updatedAt = new Date()
+  }
+
+  /**
+   * 重新計算訂單金額
+   */
   private recalculate(): void {
-    ;(this.props as any).subtotalAmount = this.props.items.reduce(
-      (sum, item) => sum + item.props.totalPrice,
-      0
+    // 計算小計
+    this._subtotal = this._items.reduce(
+      (sum, item) => sum.add(item.totalPrice),
+      Money.of(0, this._currency)
     )
-    ;(this.props as any).adjustmentAmount = this.props.adjustments.reduce(
-      (sum, adj) => sum + adj.props.amount,
-      0
+
+    // 計算調整總額
+    this._adjustmentAmount = this._adjustments.reduce(
+      (sum, adj) => sum.add(adj.amount),
+      Money.of(0, this._currency)
     )
-    ;(this.props as any).totalAmount = Math.max(
-      0,
-      this.props.subtotalAmount + this.props.adjustmentAmount
-    )
-    ;(this.props as any).updatedAt = new Date()
+
+    // 計算總額（至少為 0）
+    const total = this._subtotal.add(this._adjustmentAmount)
+    this._total = total.isGreaterThan(Money.of(0, this._currency))
+      ? total
+      : Money.of(0, this._currency)
+
+    this._updatedAt = new Date()
   }
 
-  public markAsPaid(): void {
-    if (this.props.status !== 'pending') {
-      throw new Error('Invalid status transition')
+  /**
+   * 轉換為 Props 供 Repository 保存
+   */
+  toProps(): OrderProps {
+    return {
+      memberId: this._memberId,
+      idempotencyKey: this._idempotencyKey,
+      status: this._status,
+      subtotal: this._subtotal,
+      adjustmentAmount: this._adjustmentAmount,
+      total: this._total,
+      currency: this._currency,
+      items: this._items,
+      adjustments: this._adjustments,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     }
-    ;(this.props as any).status = 'paid'
-    ;(this.props as any).updatedAt = new Date()
-  }
-
-  public requestRefund(): void {
-    const allowedStatuses = ['paid', 'processing', 'completed']
-    if (!allowedStatuses.includes(this.props.status)) {
-      throw new Error(`Refund cannot be requested for order in ${this.props.status} state`)
-    }
-    ;(this.props as any).status = 'requested_refund'
-    ;(this.props as any).updatedAt = new Date()
-  }
-
-  public markAsRefunded(): void {
-    if (this.props.status !== 'requested_refund') {
-      throw new Error('Order must be in requested_refund state')
-    }
-    ;(this.props as any).status = 'refunded'
-    ;(this.props as any).updatedAt = new Date()
   }
 }
