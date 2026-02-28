@@ -3,6 +3,7 @@ import { sign, verify } from 'hono/jwt'
 import { MembershipError } from '../../../Application/Errors/MembershipError'
 import type { IMemberRepository } from '../../../Domain/Contracts/IMemberRepository'
 import type { Member } from '../../../Domain/Entities/Member'
+import type { IJwtTokenBlacklist } from '../../../Infrastructure/TokenBlacklist'
 import type { AuthTokens, IAuthStrategy } from './IAuthStrategy'
 
 /**
@@ -10,6 +11,7 @@ import type { AuthTokens, IAuthStrategy } from './IAuthStrategy'
  * - 無狀態認證
  * - accessToken 15 分鐘有效期
  * - refreshToken 7 天有效期
+ * - 支援 token 黑名單強制撤銷
  */
 export class JwtAuthStrategy implements IAuthStrategy {
   private accessTokenExpiry = 15 * 60 // 15 minutes
@@ -17,7 +19,8 @@ export class JwtAuthStrategy implements IAuthStrategy {
 
   constructor(
     private repository: IMemberRepository,
-    private jwtSecret: string
+    private jwtSecret: string,
+    private blacklist?: IJwtTokenBlacklist
   ) {}
 
   /**
@@ -60,15 +63,42 @@ export class JwtAuthStrategy implements IAuthStrategy {
   /**
    * 撤銷 JWT token
    * JWT 是無狀態的，撤銷由前端負責（刪除 token）
-   * 可選：在後端維護黑名單實現強制撤銷
+   * 如有黑名單，將 token 加入黑名單實現強制撤銷
    */
-  async revokeCredentials(_c: GravitoContext): Promise<void> {
-    // 無狀態 JWT，撤銷由前端負責
-    // 如需強制撤銷，可在此實現 token 黑名單
+  async revokeCredentials(c: GravitoContext): Promise<void> {
+    if (!this.blacklist) {
+      return
+    }
+
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return
+    }
+
+    const token = authHeader.slice(7)
+
+    try {
+      // 驗證 token 有效性，取得過期時間
+      const payload = await verify(token, this.jwtSecret, 'HS256')
+
+      if (!payload.exp || typeof payload.exp !== 'number') {
+        return
+      }
+
+      // 計算剩餘有效期
+      const now = Math.floor(Date.now() / 1000)
+      const ttl = Math.max(0, payload.exp - now)
+
+      // 將 token 加入黑名單
+      await this.blacklist.blacklist(token, ttl)
+    } catch {
+      // token 已過期或無效，無需加入黑名單
+    }
   }
 
   /**
    * 解析並驗證 JWT token
+   * 檢查 token 是否在黑名單中
    */
   async getAuthenticatedMember(c: GravitoContext): Promise<Member | null> {
     const authHeader = c.req.header('Authorization')
@@ -79,6 +109,14 @@ export class JwtAuthStrategy implements IAuthStrategy {
     const token = authHeader.slice(7)
 
     try {
+      // 檢查黑名單
+      if (this.blacklist) {
+        const isBlacklisted = await this.blacklist.isBlacklisted(token)
+        if (isBlacklisted) {
+          return null
+        }
+      }
+
       const payload = await verify(token, this.jwtSecret, 'HS256')
 
       if (!payload.sub || typeof payload.sub !== 'string') {

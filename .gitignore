@@ -84,3 +84,4 @@ examples/**/storage/
 **/*.html
 **/views/emails/**
 \n# Gemini Managed Worktrees\n.gemini/\n
+.gemini/worktrees/

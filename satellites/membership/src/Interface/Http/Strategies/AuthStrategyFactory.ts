@@ -1,5 +1,6 @@
 import type { PlanetCore } from '@gravito/core'
 import type { IMemberRepository } from '../../../Domain/Contracts/IMemberRepository'
+import { JwtTokenBlacklist } from '../../../Infrastructure/TokenBlacklist'
 import type { IAuthStrategy } from './IAuthStrategy'
 import { JwtAuthStrategy } from './JwtAuthStrategy'
 import { SessionAuthStrategy } from './SessionAuthStrategy'
@@ -24,7 +25,8 @@ export class AuthStrategyFactory {
         if (!secret) {
           throw new Error('membership.jwt.secret not configured')
         }
-        return new JwtAuthStrategy(repository, secret)
+        const blacklist = new JwtTokenBlacklist(core)
+        return new JwtAuthStrategy(repository, secret, blacklist)
       }
 
       case 'session': {
@@ -36,7 +38,8 @@ export class AuthStrategyFactory {
         // 在 middleware 中實現雙模式邏輯
         const jwtSecret = core.config.get('membership.jwt.secret')
         if (jwtSecret) {
-          return new JwtAuthStrategy(repository, jwtSecret as string)
+          const blacklist = new JwtTokenBlacklist(core)
+          return new JwtAuthStrategy(repository, jwtSecret as string, blacklist)
         }
         return new SessionAuthStrategy(core)
       }
