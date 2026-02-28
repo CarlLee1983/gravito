@@ -2,19 +2,23 @@ import { describe, expect, it } from 'bun:test'
 import { CategoryMapper } from '../src/Application/DTOs/CategoryDTO'
 import { Category } from '../src/Domain/Entities/Category'
 import { Product, Variant } from '../src/Domain/Entities/Product'
+import { I18nText } from '../src/Domain/ValueObjects/I18nText'
+import { Money } from '../src/Domain/ValueObjects/Money'
+import { Slug } from '../src/Domain/ValueObjects/Slug'
+import { Stock } from '../src/Domain/ValueObjects/Stock'
 
 describe('Catalog Domain Entities', () => {
   describe('Category Tree Logic', () => {
     it('應該能正確計算分類路徑', () => {
-      const root = Category.create('c1', { zh: '男裝' }, 'men')
+      const root = Category.create('c1', I18nText.of({ zh: '男裝' }), Slug.of('men'))
       root.updatePath(null)
       expect(root.path).toBe('men')
 
-      const sub = Category.create('c2', { zh: '上衣' }, 'tops', root.id)
+      const sub = Category.create('c2', I18nText.of({ zh: '上衣' }), Slug.of('tops'), root.id)
       sub.updatePath(root.path)
       expect(sub.path).toBe('men/tops')
 
-      const leaf = Category.create('c3', { zh: '襯衫' }, 'shirts', sub.id)
+      const leaf = Category.create('c3', I18nText.of({ zh: '襯衫' }), Slug.of('shirts'), sub.id)
       leaf.updatePath(sub.path)
       expect(leaf.path).toBe('men/tops/shirts')
     })
@@ -43,27 +47,41 @@ describe('Catalog Domain Entities', () => {
         productId: 'p1',
         sku: 'TSHIRT-RED-L',
         name: '紅色 L 號',
-        price: 500,
-        compareAtPrice: 600,
-        stock: 10,
+        price: Money.of(500, 'TWD'),
+        compareAtPrice: Money.of(600, 'TWD'),
+        stock: Stock.of(10),
         options: { color: 'Red', size: 'L' },
         createdAt: new Date(),
         updatedAt: new Date(),
       })
 
-      variant.reduceStock(3)
-      expect(variant.stock).toBe(7)
+      const newStock = variant.reduceStock(3)
+      expect(newStock.quantity).toBe(7)
 
       expect(() => variant.reduceStock(10)).toThrow('Insufficient stock')
     })
 
     it('商品應該能正確管理變體與分類', () => {
-      const product = Product.create('p1', { zh: '極簡 T-Shirt' }, 'minimal-tshirt')
+      const product = Product.create(
+        'p1',
+        I18nText.of({ zh: '極簡 T-Shirt' }),
+        Slug.of('minimal-tshirt')
+      )
 
       product.assignToCategory('c1')
       expect(product.categoryIds).toContain('c1')
 
-      const variant = new Variant('v1', { productId: product.id } as any)
+      const variant = new Variant('v1', {
+        productId: product.id,
+        sku: 'TSHIRT-M',
+        name: '基礎款',
+        price: Money.of(500, 'TWD'),
+        compareAtPrice: null,
+        stock: Stock.of(20),
+        options: { size: 'M' },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
       product.addVariant(variant)
       expect(product.variants.length).toBe(1)
     })

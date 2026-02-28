@@ -16,8 +16,8 @@ export class CategoryMapper {
       id: category.id,
       parentId: category.parentId,
       path: category.path,
-      name: category.name,
-      slug: category.slug,
+      name: category.name.translations,
+      slug: category.slug.value,
       sortOrder: category.sortOrder,
     }
   }
