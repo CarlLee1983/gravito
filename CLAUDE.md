@@ -151,6 +151,51 @@ await buildCJSStub('dist', ['src/index.ts'], 'js')
 - [ ] 執行 `bun run build` 確認構建成功
 - [ ] 檢查 `packages/<name>/dist/index.cjs` 內容是否正確
 
+## Git Worktree 工作流程
+
+Worktree 允許在同一個 Repository 中並行開發多個分支。使用 `EnterWorktree` 命令時，所有 worktree 會自動建立在 `.worktrees/` 目錄下。
+
+```bash
+# Claude Code 內使用 EnterWorktree (推薦)
+/enter-worktree
+
+# 或手動建立 worktree (替代方案)
+git worktree add .worktrees/<branch-name> -b <feature-branch>
+cd .worktrees/<branch-name>
+
+# 清理已刪除的 worktree
+git worktree prune
+```
+
+### Worktree 最佳實踐
+
+1. **使用 EnterWorktree 命令**：Claude Code 會自動管理 worktree 生命週期
+2. **分支命名**：使用清晰的命名，如 `.worktrees/feature-catalog-refactor`
+3. **獨立開發**：每個 worktree 有完整的項目副本，可獨立進行：
+   - 執行測試：`bun test`
+   - 類型檢查：`bun run typecheck`
+   - 構建：`bun run build`
+4. **推送前驗證**：在 worktree 中完整驗證功能後再提交推送
+5. **清理**：完成後，Claude Code 會提示保留或移除 worktree；確認移除則自動清理
+
+### 常見 Worktree 場景
+
+**平行開發多個功能**：
+```bash
+# 主分支工作
+git checkout main
+
+# 在 worktree 中開發新功能
+/enter-worktree  # 新建 worktree 用於功能開發
+```
+
+**隔離大型重構**：
+```bash
+# 複雜的跨包重構，使用 worktree 避免影響主開發分支
+/enter-worktree feature-ddd-refactor
+bun run build && bun test  # 獨立驗證
+```
+
 ## 問題快速診斷
 
 | 問題 | 快速解法 | 詳細指南 |
