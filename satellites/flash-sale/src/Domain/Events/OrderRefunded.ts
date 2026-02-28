@@ -2,13 +2,19 @@
  * 訂單已退款事件
  */
 
-import { Event } from '@gravito/core'
+import { DomainEvent } from '@gravito/enterprise'
 
-export class OrderRefunded extends Event {
-  constructor(
-    public orderId: string,
-    public reason: string
-  ) {
+export class OrderRefunded extends DomainEvent {
+  public readonly orderId: string
+  public readonly reason: string
+
+  constructor(orderId: string, reason: string) {
     super()
+    this.orderId = orderId
+    this.reason = reason
+  }
+
+  get aggregateId(): string {
+    return this.orderId
   }
 }
