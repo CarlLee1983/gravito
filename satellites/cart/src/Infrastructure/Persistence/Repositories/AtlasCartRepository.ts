@@ -1,7 +1,8 @@
 import type { ConnectionContract } from '@gravito/atlas'
 import { DB } from '@gravito/atlas'
 import type { ICartRepository } from '../../../Domain/Contracts/ICartRepository'
-import { Cart, CartItem } from '../../../Domain/Entities/Cart'
+import { Cart } from '../../../Domain/Entities/Cart'
+import { CartItem } from '../../../Domain/Entities/CartItem'
 
 export class AtlasCartRepository implements ICartRepository {
   async find(id: { memberId?: string; guestId?: string }): Promise<Cart | null> {
@@ -20,20 +21,16 @@ export class AtlasCartRepository implements ICartRepository {
       return null
     }
 
-    const cart = Cart.create(rawCart.id, rawCart.member_id, rawCart.guest_id)
+    return this.hydrateCart(rawCart)
+  }
 
-    // 關鍵：使用 _hydrateItem 注入持久化數據
-    const rawItems = (await DB.table('cart_items').where('cart_id', rawCart.id).get()) as any[]
-    for (const rawItem of rawItems) {
-      cart._hydrateItem(
-        new CartItem(rawItem.id, {
-          variantId: rawItem.variant_id,
-          quantity: rawItem.quantity,
-        })
-      )
+  async findById(id: string): Promise<Cart | null> {
+    const rawCart = (await DB.table('carts').where('id', id).first()) as any
+    if (!rawCart) {
+      return null
     }
 
-    return cart
+    return this.hydrateCart(rawCart)
   }
 
   async save(cart: Cart): Promise<void> {
@@ -43,7 +40,7 @@ export class AtlasCartRepository implements ICartRepository {
       if (exists) {
         await db.table('carts').where('id', cart.id).update({
           member_id: cart.memberId,
-          guest_id: cart.guestId, // 更新時也要同步 guest_id (用於轉正)
+          guest_id: cart.guestId,
           last_activity_at: new Date(),
         })
       } else {
@@ -61,8 +58,8 @@ export class AtlasCartRepository implements ICartRepository {
         await db.table('cart_items').insert({
           id: item.id,
           cart_id: cart.id,
-          variant_id: item.props.variantId,
-          quantity: item.props.quantity,
+          variant_id: item.variantId,
+          quantity: item.quantity,
         })
       }
     })
@@ -73,5 +70,23 @@ export class AtlasCartRepository implements ICartRepository {
       await db.table('cart_items').where('cart_id', id).delete()
       await db.table('carts').where('id', id).delete()
     })
+  }
+
+  private async hydrateCart(rawCart: any): Promise<Cart> {
+    const cart = Cart.create(rawCart.id, rawCart.member_id, rawCart.guest_id)
+
+    const rawItems = (await DB.table('cart_items').where('cart_id', rawCart.id).get()) as any[]
+    const items = rawItems.map(
+      (rawItem) =>
+        new CartItem(rawItem.id, {
+          variantId: rawItem.variant_id,
+          quantity: rawItem.quantity,
+        })
+    )
+
+    // 使用受保護方法注入持久化數據
+    ;(cart as any).hydrateItems(items)
+
+    return cart
   }
 }

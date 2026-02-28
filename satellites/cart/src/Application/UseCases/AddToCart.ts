@@ -1,6 +1,6 @@
 import { UseCase } from '@gravito/enterprise'
 import type { ICartRepository } from '../../Domain/Contracts/ICartRepository'
-import { Cart } from '../../Domain/Entities/Cart'
+import { AddItemContext } from '../../Domain/DCI/Contexts'
 
 export interface AddToCartInput {
   memberId?: string
@@ -9,26 +9,19 @@ export interface AddToCartInput {
   quantity: number
 }
 
+/**
+ * 新增商品到購物車 UseCase
+ * 薄殼：委派給 AddItemContext 執行業務邏輯
+ */
 export class AddToCart extends UseCase<AddToCartInput, void> {
+  private context: AddItemContext
+
   constructor(private repository: ICartRepository) {
     super()
+    this.context = new AddItemContext(repository)
   }
 
   async execute(input: AddToCartInput): Promise<void> {
-    // 1. 尋找或建立購物車
-    let cart = await this.repository.find({
-      memberId: input.memberId,
-      guestId: input.guestId,
-    })
-
-    if (!cart) {
-      cart = Cart.create(crypto.randomUUID(), input.memberId || null, input.guestId || null)
-    }
-
-    // 2. 執行領域邏輯
-    cart.addItem(input.variantId, input.quantity)
-
-    // 3. 儲存
-    await this.repository.save(cart)
+    await this.context.execute(input)
   }
 }

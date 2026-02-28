@@ -1,34 +1,26 @@
 import { UseCase } from '@gravito/enterprise'
 import type { ICartRepository } from '../../Domain/Contracts/ICartRepository'
+import { MergeCartContext } from '../../Domain/DCI/Contexts'
 
 export interface MergeCartInput {
   memberId: string
   guestId: string
 }
 
+/**
+ * 合併購物車 UseCase
+ * 薄殼：委派給 MergeCartContext 執行業務邏輯
+ * 移除了之前的 `as any` hack，改用 DCI Context
+ */
 export class MergeCart extends UseCase<MergeCartInput, void> {
+  private context: MergeCartContext
+
   constructor(private repository: ICartRepository) {
     super()
+    this.context = new MergeCartContext(repository)
   }
 
   async execute(input: MergeCartInput): Promise<void> {
-    const guestCart = await this.repository.find({ guestId: input.guestId })
-    if (!guestCart) {
-      return
-    }
-
-    const memberCart = await this.repository.find({ memberId: input.memberId })
-
-    if (!memberCart) {
-      // 透過 (any) 完全繞過私有檢查與工具鏈衝突
-      const rawCart = guestCart as any
-      rawCart.props.memberId = input.memberId
-      rawCart.props.guestId = null
-      await this.repository.save(guestCart)
-    } else {
-      memberCart.merge(guestCart)
-      await this.repository.save(memberCart)
-      await this.repository.delete(guestCart.id)
-    }
+    await this.context.execute(input)
   }
 }

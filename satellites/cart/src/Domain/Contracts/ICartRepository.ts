@@ -7,6 +7,11 @@ export interface ICartRepository {
   find(id: { memberId?: string; guestId?: string }): Promise<Cart | null>
 
   /**
+   * 透過購物車 ID 尋找購物車
+   */
+  findById(id: string): Promise<Cart | null>
+
+  /**
    * 儲存購物車狀態
    */
   save(cart: Cart): Promise<void>
