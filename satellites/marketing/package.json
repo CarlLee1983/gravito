@@ -18,7 +18,8 @@
     "@gravito/core": "workspace:*",
     "stripe": "^20.1.0",
     "@gravito/atlas": "workspace:*",
-    "@gravito/enterprise": "workspace:*"
+    "@gravito/enterprise": "workspace:*",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/node": "^25.0.3",
