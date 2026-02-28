@@ -1,55 +1,42 @@
 /**
- * 商品 Repository 合約
+ * 商品 Repository 合約（Application 層 - 舊版，向後相容）
+ *
+ * 此介面保留用於 CacheWarmupService 等既有基礎設施服務。
+ * 新程式碼應使用 Domain/Contracts/IProductRepository。
  */
-
-import type { Product } from '../../Domain/Models'
 
 /**
- * 商品 Repository 介面
+ * 舊版 Product 介面（用於向後相容）
+ */
+export interface LegacyProduct {
+  id: string
+  name: string
+  sku: string
+  description: string
+  price: number
+  cost: number
+  stock: number
+  status: string
+  images: string[]
+  createdAt: Date
+  updatedAt: Date
+}
+
+/**
+ * 商品 Repository 介面（Application 層 - 舊版）
  */
 export interface IProductRepository {
-  /**
-   * 根據 ID 查詢商品
-   */
-  findById(id: string): Promise<Product | null>
-
-  /**
-   * 根據 SKU 查詢商品
-   */
-  findBySku(sku: string): Promise<Product | null>
-
-  /**
-   * 查詢所有商品（可選過濾）
-   */
+  findById(id: string): Promise<LegacyProduct | null>
+  findBySku(sku: string): Promise<LegacyProduct | null>
   findAll(filters?: { status?: string; page?: number; limit?: number }): Promise<{
-    items: Product[]
+    items: LegacyProduct[]
     total: number
     page: number
     limit: number
   }>
-
-  /**
-   * 建立商品
-   */
-  create(data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product>
-
-  /**
-   * 更新商品
-   */
-  update(id: string, data: Partial<Product>): Promise<Product>
-
-  /**
-   * 更新庫存
-   */
+  create(data: Omit<LegacyProduct, 'id' | 'createdAt' | 'updatedAt'>): Promise<LegacyProduct>
+  update(id: string, data: Partial<LegacyProduct>): Promise<LegacyProduct>
   updateStock(id: string, quantity: number): Promise<void>
-
-  /**
-   * 刪除商品（邏輯刪除）
-   */
   delete(id: string): Promise<void>
-
-  /**
-   * 批量查詢商品
-   */
-  findByIds(ids: string[]): Promise<Product[]>
+  findByIds(ids: string[]): Promise<LegacyProduct[]>
 }

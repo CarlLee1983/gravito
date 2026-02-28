@@ -2,14 +2,21 @@
  * 支付成功事件
  */
 
-import { Event } from '@gravito/core'
+import { DomainEvent } from '@gravito/enterprise'
 
-export class PaymentSucceeded extends Event {
-  constructor(
-    public orderId: string,
-    public paymentId: string,
-    public amount: number
-  ) {
+export class PaymentSucceeded extends DomainEvent {
+  public readonly orderId: string
+  public readonly paymentId: string
+  public readonly amount: number
+
+  constructor(orderId: string, paymentId: string, amount: number) {
     super()
+    this.orderId = orderId
+    this.paymentId = paymentId
+    this.amount = amount
+  }
+
+  get aggregateId(): string {
+    return this.orderId
   }
 }

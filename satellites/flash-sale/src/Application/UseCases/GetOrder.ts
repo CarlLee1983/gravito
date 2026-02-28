@@ -1,58 +1,42 @@
 /**
- * 查詢訂單 Use Case
+ * GetOrder UseCase（薄殼）
  *
- * 支持 Redis 快取（60 秒 TTL）
+ * 接收 orderId，委派 OrderLifecycleContext 查詢，
+ * 使用 OrderMapper 轉換結果為 OrderDTO。
  */
 
-import type { Order } from '../../Domain/Models'
-import type { CacheService } from '../../Infrastructure/Services/CacheService'
-import type { IOrderRepository } from '../Contracts/IOrderRepository'
+import type { IOrderRepository } from '../../Domain/Contracts/IOrderRepository'
+import { OrderLifecycleContext } from '../../Domain/DCI/Contexts/OrderLifecycleContext'
+import type { OrderDTO } from '../DTOs/OrderDTO'
+import { OrderMapper } from '../DTOs/OrderDTO'
 
 /**
- * GetOrder Use Case
+ * GetOrder UseCase
  *
- * 根據訂單 ID 查詢訂單詳情
- * 查詢結果在 60 秒內快取
+ * 薄殼：只負責 DTO 轉換 + 委派 OrderLifecycleContext
  */
 export class GetOrder {
-  constructor(
-    private repository: IOrderRepository,
-    private cache?: CacheService
-  ) {}
+  private readonly lifecycleContext: OrderLifecycleContext
 
-  /**
-   * 生成快取鍵
-   */
-  private getCacheKey(orderId: string): string {
-    return `order:${orderId}`
+  constructor(orderRepo: IOrderRepository) {
+    this.lifecycleContext = new OrderLifecycleContext(orderRepo)
   }
 
   /**
-   * 執行 Use Case
+   * 查詢單一訂單
+   *
+   * @param orderId - 訂單 ID
+   * @returns OrderDTO 或 null
    */
-  async execute(orderId: string): Promise<Order | null> {
-    if (!orderId?.trim()) {
-      throw new Error('Order ID is required')
+  async execute(orderId: string): Promise<OrderDTO | null> {
+    // 委派 OrderLifecycleContext 查詢
+    const order = await this.lifecycleContext.getOrder(orderId)
+
+    if (!order) {
+      return null
     }
 
-    // 嘗試從快取讀取
-    if (this.cache) {
-      const cacheKey = this.getCacheKey(orderId)
-      const cached = await this.cache.get<Order>(cacheKey)
-      if (cached) {
-        return cached
-      }
-    }
-
-    // 快取未命中，查詢數據庫
-    const order = await this.repository.findById(orderId)
-
-    // 如果訂單存在，保存到快取（60 秒）
-    if (order && this.cache) {
-      const cacheKey = this.getCacheKey(orderId)
-      await this.cache.set(cacheKey, order, 60)
-    }
-
-    return order
+    // 轉換為 DTO
+    return OrderMapper.toDTO(order)
   }
 }

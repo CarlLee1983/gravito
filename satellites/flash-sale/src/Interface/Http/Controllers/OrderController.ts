@@ -1,16 +1,19 @@
 /**
  * 訂單控制器
  *
- * 處理訂單相關的 HTTP 請求
+ * 處理訂單相關的 HTTP 請求。
+ * 使用 DCI Context（透過 UseCase 薄殼）處理業務邏輯。
+ * 使用 FlashSaleError.httpStatus 進行統一錯誤回應。
  */
 
-import type { CacheService, GravitoContext, PlanetCore } from '@gravito/core'
-import type { IOrderRepository } from '../../../Application/Contracts/IOrderRepository'
-import type { IProductRepository } from '../../../Application/Contracts/IProductRepository'
+import type { GravitoContext, PlanetCore } from '@gravito/core'
+import { FlashSaleError } from '../../../Application/Errors/FlashSaleError'
+import { ConfirmOrder } from '../../../Application/UseCases/ConfirmOrder'
 import { CreateOrder } from '../../../Application/UseCases/CreateOrder'
 import { GetOrder } from '../../../Application/UseCases/GetOrder'
 import { ListOrders } from '../../../Application/UseCases/ListOrders'
-import { CreateOrderRequest } from '../../../Domain/Models'
+import type { IOrderRepository } from '../../../Domain/Contracts/IOrderRepository'
+import type { IProductRepository } from '../../../Domain/Contracts/IProductRepository'
 
 /**
  * OrderController
@@ -25,58 +28,56 @@ export class OrderController {
    */
   async store(ctx: GravitoContext): Promise<void> {
     try {
-      // 解析請求體
-      const body = (await ctx.req.json()) as { userId: string; productId: string; quantity: number }
-      const { userId, productId, quantity } = body
+      const body = (await ctx.req.json()) as {
+        userId: string
+        productId: string
+        quantity: number
+      }
 
-      // 建立請求對象
-      const request = new CreateOrderRequest(userId, productId, quantity)
+      const productRepo = this.core.container.make<IProductRepository>('product.repository')
+      const orderRepo = this.core.container.make<IOrderRepository>('order.repository')
 
-      // 取得 Repositories 與 CacheService
-      const productRepository = this.core.container.make<IProductRepository>('product.repository')
-      const orderRepository = this.core.container.make<IOrderRepository>('order.repository')
-      const cacheService = this.core.container.make<CacheService | undefined>('cache.service')
+      const useCase = new CreateOrder(productRepo, orderRepo)
+      const result = await useCase.execute({
+        userId: body.userId,
+        productId: body.productId,
+        quantity: body.quantity,
+      })
 
-      // 執行 Use Case（支持快取）
-      const useCase = new CreateOrder(productRepository, orderRepository, cacheService)
-      const result = await useCase.execute(request)
-
-      // 回應成功
       ctx.status(201)
       ctx.json({
         success: true,
-        data: result.order,
-        message: result.message,
+        data: result,
       })
-    } catch (error: any) {
-      this.core.logger.error(`Failed to create order: ${error.message}`)
+    } catch (error) {
+      this.handleError(ctx, error, 'Failed to create order')
+    }
+  }
 
-      // 根據錯誤類型回應
-      if (error.message.includes('Validation failed')) {
+  /**
+   * PUT /api/orders/:id/confirm
+   *
+   * 確認訂單
+   */
+  async confirm(ctx: GravitoContext): Promise<void> {
+    try {
+      const id = ctx.req.param('id')
+      if (!id) {
         ctx.status(400)
-        ctx.json({
-          success: false,
-          error: error.message,
-        })
-      } else if (error.message.includes('Product not found')) {
-        ctx.status(404)
-        ctx.json({
-          success: false,
-          error: 'Product not found',
-        })
-      } else if (error.message.includes('Insufficient stock')) {
-        ctx.status(409)
-        ctx.json({
-          success: false,
-          error: error.message,
-        })
-      } else {
-        ctx.status(500)
-        ctx.json({
-          success: false,
-          error: 'Failed to create order',
-        })
+        ctx.json({ success: false, error: 'Order ID is required' })
+        return
       }
+
+      const orderRepo = this.core.container.make<IOrderRepository>('order.repository')
+      const useCase = new ConfirmOrder(orderRepo)
+      const result = await useCase.execute(id)
+
+      ctx.json({
+        success: true,
+        data: result,
+      })
+    } catch (error) {
+      this.handleError(ctx, error, 'Failed to confirm order')
     }
   }
 
@@ -88,24 +89,19 @@ export class OrderController {
   async show(ctx: GravitoContext): Promise<void> {
     try {
       const id = ctx.req.param('id')
-
       if (!id) {
         ctx.status(400)
         ctx.json({ success: false, error: 'Order ID is required' })
         return
       }
 
-      const orderRepository = this.core.container.make<IOrderRepository>('order.repository')
-
-      const useCase = new GetOrder(orderRepository)
+      const orderRepo = this.core.container.make<IOrderRepository>('order.repository')
+      const useCase = new GetOrder(orderRepo)
       const order = await useCase.execute(id)
 
       if (!order) {
         ctx.status(404)
-        ctx.json({
-          success: false,
-          error: 'Order not found',
-        })
+        ctx.json({ success: false, error: 'Order not found' })
         return
       }
 
@@ -114,27 +110,18 @@ export class OrderController {
         data: order,
       })
     } catch (error) {
-      this.core.logger.error(`Failed to get order: ${String(error)}`)
-      ctx.status(500)
-      ctx.json({
-        success: false,
-        error: 'Failed to get order',
-      })
+      this.handleError(ctx, error, 'Failed to get order')
     }
   }
 
   /**
    * GET /api/orders
    *
-   * 查詢用戶的訂單列表（支持快取）
+   * 查詢用戶的訂單列表
    */
   async list(ctx: GravitoContext): Promise<void> {
     try {
       const userId = ctx.req.query('userId')
-      const page = parseInt(ctx.req.query('page') || '1', 10)
-      const limit = parseInt(ctx.req.query('limit') || '10', 10)
-      const status = ctx.req.query('status')
-
       if (!userId) {
         ctx.status(400)
         ctx.json({
@@ -144,34 +131,39 @@ export class OrderController {
         return
       }
 
-      const orderRepository = this.core.container.make<IOrderRepository>('order.repository')
-      const cacheService = this.core.container.make<CacheService | undefined>('cache.service')
-
-      // 使用新的 ListOrders Use Case（支持快取）
-      const useCase = new ListOrders(orderRepository, cacheService)
-      const result = await useCase.execute({
-        userId,
-        page,
-        limit,
-        status: status as any, // OrderStatus 可選
-      })
+      const orderRepo = this.core.container.make<IOrderRepository>('order.repository')
+      const useCase = new ListOrders(orderRepo)
+      const result = await useCase.execute(userId)
 
       ctx.json({
         success: true,
-        data: result.items,
-        meta: {
-          total: result.total,
-          page: result.page,
-          limit: result.limit,
-          hasMore: result.hasMore,
-        },
+        data: result,
       })
     } catch (error) {
-      this.core.logger.error(`Failed to list orders: ${String(error)}`)
+      this.handleError(ctx, error, 'Failed to list orders')
+    }
+  }
+
+  /**
+   * 統一錯誤處理
+   *
+   * 使用 FlashSaleError.httpStatus 決定 HTTP 狀態碼
+   */
+  private handleError(ctx: GravitoContext, error: unknown, defaultMessage: string): void {
+    if (error instanceof FlashSaleError) {
+      this.core.logger.error(`${defaultMessage}: ${error.message}`)
+      ctx.status(error.httpStatus)
+      ctx.json({
+        success: false,
+        error: error.message,
+        code: error.code,
+      })
+    } else {
+      this.core.logger.error(`${defaultMessage}: ${String(error)}`)
       ctx.status(500)
       ctx.json({
         success: false,
-        error: 'Failed to list orders',
+        error: defaultMessage,
       })
     }
   }

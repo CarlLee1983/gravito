@@ -1,12 +1,20 @@
+/**
+ * Flash-Sale UseCases 整合測試
+ *
+ * 測試 UseCase 薄殼與 DCI Context 的整合
+ */
+
 import { describe, expect, it } from 'bun:test'
-import type { IOrderRepository } from '../src/Application/Contracts/IOrderRepository'
 import { ConfirmOrder } from '../src/Application/UseCases/ConfirmOrder'
 import { GetOrder } from '../src/Application/UseCases/GetOrder'
-import type { Order } from '../src/Domain/Models'
+import type { IOrderRepository } from '../src/Domain/Contracts/IOrderRepository'
+import { Order } from '../src/Domain/Entities/Order'
 import { OrderStatus } from '../src/Domain/Models'
+import { Money } from '../src/Domain/ValueObjects/Money'
+import { OrderItem } from '../src/Domain/ValueObjects/OrderItem'
 
 /**
- * Mock Order Repository
+ * Mock Order Repository（Domain Contract）
  */
 class MockOrderRepository implements IOrderRepository {
   private orders: Map<string, Order> = new Map()
@@ -15,20 +23,28 @@ class MockOrderRepository implements IOrderRepository {
     return this.orders.get(id) ?? null
   }
 
-  async create(order: Order): Promise<void> {
-    this.orders.set(order.id, order)
+  async save(entity: Order): Promise<void> {
+    this.orders.set(entity.id, entity)
   }
 
-  async update(id: string, order: Order): Promise<void> {
-    this.orders.set(id, order)
+  async findAll(): Promise<Order[]> {
+    return Array.from(this.orders.values())
   }
 
   async delete(id: string): Promise<void> {
     this.orders.delete(id)
   }
 
-  async listByStatus(status: OrderStatus): Promise<Order[]> {
-    return Array.from(this.orders.values()).filter((o) => o.status === status)
+  async exists(id: string): Promise<boolean> {
+    return this.orders.has(id)
+  }
+
+  async findByUserId(_userId: string): Promise<Order[]> {
+    return []
+  }
+
+  async findByDateRange(): Promise<Order[]> {
+    return []
   }
 
   setOrder(order: Order): void {
@@ -37,334 +53,168 @@ class MockOrderRepository implements IOrderRepository {
 }
 
 /**
- * Mock Cache Service
+ * 建立測試用 Order Entity
  */
-class MockCacheService {
-  private cache: Map<string, { value: any; expiresAt: number }> = new Map()
-
-  async get<T>(key: string): Promise<T | null> {
-    const item = this.cache.get(key)
-    if (!item) {
-      return null
-    }
-
-    if (Date.now() > item.expiresAt) {
-      this.cache.delete(key)
-      return null
-    }
-
-    return item.value as T
+function createTestOrder(id: string, userId: string, status = OrderStatus.PENDING): Order {
+  const item = OrderItem.create('prod-1', 'Product A', 2, Money.of(100))
+  const order = Order.create(id, userId, [item])
+  if (status === OrderStatus.CONFIRMED) {
+    order.confirm()
   }
-
-  async set(key: string, value: any, ttlSeconds: number): Promise<void> {
-    this.cache.set(key, {
-      value,
-      expiresAt: Date.now() + ttlSeconds * 1000,
-    })
-  }
-
-  async del(key: string): Promise<void> {
-    this.cache.delete(key)
-  }
-
-  clear(): void {
-    this.cache.clear()
-  }
+  return order
 }
 
 describe('Flash-Sale UseCases', () => {
   describe('GetOrder', () => {
-    it('應該能成功查詢訂單', async () => {
+    it('should return OrderDTO for existing order', async () => {
       const repository = new MockOrderRepository()
-      const order: Order = {
-        id: 'ord-1',
-        productId: 'prod-1',
-        quantity: 2,
-        unitPrice: 100,
-        totalPrice: 200,
-        status: OrderStatus.PENDING,
-        createdAt: new Date(),
-      }
-
+      const order = createTestOrder('ord-1', 'user-1')
       repository.setOrder(order)
 
       const useCase = new GetOrder(repository)
       const result = await useCase.execute('ord-1')
 
       expect(result).not.toBeNull()
-      expect(result?.id).toBe('ord-1')
-      expect(result?.status).toBe(OrderStatus.PENDING)
+      expect(result!.id).toBe('ord-1')
+      expect(result!.status).toBe(OrderStatus.PENDING)
+      expect(result!.totalAmount).toBe(200) // 2 * 100
     })
 
-    it('當訂單不存在時應返回 null', async () => {
+    it('should return null for non-existent order', async () => {
       const repository = new MockOrderRepository()
       const useCase = new GetOrder(repository)
 
       const result = await useCase.execute('nonexistent')
-
       expect(result).toBeNull()
     })
 
-    it('應該拒絕空的訂單 ID', async () => {
+    it('should return OrderDTO without cache', async () => {
       const repository = new MockOrderRepository()
+      const order = createTestOrder('ord-1', 'user-1')
+      repository.setOrder(order)
+
       const useCase = new GetOrder(repository)
-
-      try {
-        await useCase.execute('')
-        expect.unreachable('應該拋出錯誤')
-      } catch (error: any) {
-        expect(error.message).toContain('Order ID is required')
-      }
-    })
-
-    it('應該快取查詢結果 60 秒', async () => {
-      const repository = new MockOrderRepository()
-      const cache = new MockCacheService()
-      const order: Order = {
-        id: 'ord-1',
-        productId: 'prod-1',
-        quantity: 2,
-        unitPrice: 100,
-        totalPrice: 200,
-        status: OrderStatus.PENDING,
-        createdAt: new Date(),
-      }
-
-      repository.setOrder(order)
-
-      const useCase = new GetOrder(repository, cache)
-
-      // 第一次查詢，從數據庫讀取
-      const result1 = await useCase.execute('ord-1')
-      expect(result1?.id).toBe('ord-1')
-
-      // 從快取中刪除訂單
-      repository.delete('ord-1')
-
-      // 第二次查詢，應從快取讀取
-      const result2 = await useCase.execute('ord-1')
-      expect(result2?.id).toBe('ord-1')
-    })
-
-    it('當無快取服務時應直接查詢數據庫', async () => {
-      const repository = new MockOrderRepository()
-      const order: Order = {
-        id: 'ord-1',
-        productId: 'prod-1',
-        quantity: 2,
-        unitPrice: 100,
-        totalPrice: 200,
-        status: OrderStatus.PENDING,
-        createdAt: new Date(),
-      }
-
-      repository.setOrder(order)
-
-      const useCase = new GetOrder(repository) // 無快取服務
-
       const result = await useCase.execute('ord-1')
 
-      expect(result?.id).toBe('ord-1')
+      expect(result!.id).toBe('ord-1')
     })
   })
 
   describe('ConfirmOrder', () => {
-    it('應該能成功確認 PENDING 訂單', async () => {
+    it('should confirm PENDING order and return OrderDTO', async () => {
       const repository = new MockOrderRepository()
-      const order: Order = {
-        id: 'ord-1',
-        productId: 'prod-1',
-        quantity: 2,
-        unitPrice: 100,
-        totalPrice: 200,
-        status: OrderStatus.PENDING,
-        createdAt: new Date(),
-      }
-
+      const order = createTestOrder('ord-1', 'user-1')
       repository.setOrder(order)
 
       const useCase = new ConfirmOrder(repository)
-      const result = await useCase.execute({
-        orderId: 'ord-1',
-        lockId: 'lock-123',
-      })
+      const result = await useCase.execute('ord-1')
 
-      expect(result.success).toBe(true)
-      expect(result.message).toContain('confirmed successfully')
-
-      // 驗證狀態已更新
-      const updated = await repository.findById('ord-1')
-      expect(updated?.status).toBe(OrderStatus.CONFIRMED)
+      expect(result.status).toBe(OrderStatus.CONFIRMED)
+      expect(result.id).toBe('ord-1')
     })
 
-    it('當訂單不存在時應拋出錯誤', async () => {
+    it('should throw when order not found', async () => {
       const repository = new MockOrderRepository()
       const useCase = new ConfirmOrder(repository)
 
       try {
-        await useCase.execute({
-          orderId: 'nonexistent',
-          lockId: 'lock-123',
-        })
-        expect.unreachable('應該拋出錯誤')
-      } catch (error: any) {
-        expect(error.message).toContain('Order not found')
+        await useCase.execute('nonexistent')
+        expect.unreachable('Should have thrown')
+      } catch (error: unknown) {
+        expect(String(error)).toContain('Order not found')
       }
     })
 
-    it('當訂單狀態不是 PENDING 時應拋出錯誤', async () => {
+    it('should throw when order is not PENDING', async () => {
       const repository = new MockOrderRepository()
-      const order: Order = {
-        id: 'ord-1',
-        productId: 'prod-1',
-        quantity: 2,
-        unitPrice: 100,
-        totalPrice: 200,
-        status: OrderStatus.CONFIRMED,
-        createdAt: new Date(),
-      }
-
+      const order = createTestOrder('ord-1', 'user-1', OrderStatus.CONFIRMED)
       repository.setOrder(order)
 
       const useCase = new ConfirmOrder(repository)
 
       try {
-        await useCase.execute({
-          orderId: 'ord-1',
-          lockId: 'lock-123',
-        })
-        expect.unreachable('應該拋出錯誤')
-      } catch (error: any) {
-        expect(error.message).toContain('not PENDING')
+        await useCase.execute('ord-1')
+        expect.unreachable('Should have thrown')
+      } catch (error: unknown) {
+        expect(String(error)).toContain('Invalid order status')
       }
     })
 
-    it('應該設置 confirmedAt 時間戳', async () => {
+    it('should persist the confirmed state', async () => {
       const repository = new MockOrderRepository()
-      const order: Order = {
-        id: 'ord-1',
-        productId: 'prod-1',
-        quantity: 2,
-        unitPrice: 100,
-        totalPrice: 200,
-        status: OrderStatus.PENDING,
-        createdAt: new Date(),
-      }
-
+      const order = createTestOrder('ord-1', 'user-1')
       repository.setOrder(order)
 
-      const beforeTime = new Date()
       const useCase = new ConfirmOrder(repository)
-      await useCase.execute({
-        orderId: 'ord-1',
-        lockId: 'lock-123',
-      })
-      const afterTime = new Date()
+      await useCase.execute('ord-1')
 
-      const updated = await repository.findById('ord-1')
-      expect(updated).toBeDefined()
-      expect(updated?.confirmedAt).toBeDefined()
-      if (updated?.confirmedAt) {
-        expect(updated.confirmedAt.getTime()).toBeGreaterThanOrEqual(beforeTime.getTime())
-        expect(updated.confirmedAt.getTime()).toBeLessThanOrEqual(afterTime.getTime())
-      }
+      // 驗證已持久化
+      const saved = await repository.findById('ord-1')
+      expect(saved!.status).toBe(OrderStatus.CONFIRMED)
     })
 
-    it('應該能確認多個訂單', async () => {
+    it('should confirm multiple orders', async () => {
       const repository = new MockOrderRepository()
 
       for (let i = 1; i <= 3; i++) {
-        const order: Order = {
-          id: `ord-${i}`,
-          productId: 'prod-1',
-          quantity: 1,
-          unitPrice: 100,
-          totalPrice: 100,
-          status: OrderStatus.PENDING,
-          createdAt: new Date(),
-        }
+        const order = createTestOrder(`ord-${i}`, 'user-1')
         repository.setOrder(order)
       }
 
       const useCase = new ConfirmOrder(repository)
 
       for (let i = 1; i <= 3; i++) {
-        const result = await useCase.execute({
-          orderId: `ord-${i}`,
-          lockId: `lock-${i}`,
-        })
-        expect(result.success).toBe(true)
+        const result = await useCase.execute(`ord-${i}`)
+        expect(result.status).toBe(OrderStatus.CONFIRMED)
       }
 
       // 驗證所有訂單都已確認
       for (let i = 1; i <= 3; i++) {
         const order = await repository.findById(`ord-${i}`)
-        expect(order?.status).toBe(OrderStatus.CONFIRMED)
+        expect(order!.status).toBe(OrderStatus.CONFIRMED)
       }
     })
   })
 
   describe('Order Status Workflow', () => {
-    it('應該能完整流程：建立 → 查詢 → 確認', async () => {
+    it('should handle create -> query -> confirm flow', async () => {
       const repository = new MockOrderRepository()
-      const cache = new MockCacheService()
 
       // 1. 建立訂單
-      const order: Order = {
-        id: 'ord-1',
-        productId: 'prod-1',
-        quantity: 5,
-        unitPrice: 200,
-        totalPrice: 1000,
-        status: OrderStatus.PENDING,
-        createdAt: new Date(),
-      }
+      const order = createTestOrder('ord-1', 'user-1')
       repository.setOrder(order)
 
       // 2. 查詢訂單
-      const getOrderUseCase = new GetOrder(repository, cache)
+      const getOrderUseCase = new GetOrder(repository)
       const fetched = await getOrderUseCase.execute('ord-1')
-      expect(fetched?.status).toBe(OrderStatus.PENDING)
+      expect(fetched!.status).toBe(OrderStatus.PENDING)
 
       // 3. 確認訂單
       const confirmOrderUseCase = new ConfirmOrder(repository)
-      const result = await confirmOrderUseCase.execute({
-        orderId: 'ord-1',
-        lockId: 'lock-123',
-      })
-      expect(result.success).toBe(true)
+      const result = await confirmOrderUseCase.execute('ord-1')
+      expect(result.status).toBe(OrderStatus.CONFIRMED)
 
-      // 4. 驗證最終狀態（清除快取後重新查詢）
-      cache.clear()
+      // 4. 驗證最終狀態
       const verified = await getOrderUseCase.execute('ord-1')
-      expect(verified?.status).toBe(OrderStatus.CONFIRMED)
+      expect(verified!.status).toBe(OrderStatus.CONFIRMED)
     })
   })
 
   describe('Edge Cases', () => {
-    it('應該能處理大量訂單的快取', async () => {
+    it('should handle multiple orders', async () => {
       const repository = new MockOrderRepository()
-      const cache = new MockCacheService()
-      const useCase = new GetOrder(repository, cache)
+      const useCase = new GetOrder(repository)
 
       // 建立 100 個訂單
       for (let i = 1; i <= 100; i++) {
-        const order: Order = {
-          id: `ord-${i}`,
-          productId: `prod-${i}`,
-          quantity: 1,
-          unitPrice: 100,
-          totalPrice: 100,
-          status: OrderStatus.PENDING,
-          createdAt: new Date(),
-        }
+        const order = createTestOrder(`ord-${i}`, `user-${i}`)
         repository.setOrder(order)
       }
 
-      // 查詢所有訂單（應快取）
+      // 查詢所有訂單
       for (let i = 1; i <= 100; i++) {
         const result = await useCase.execute(`ord-${i}`)
-        expect(result?.id).toBe(`ord-${i}`)
+        expect(result!.id).toBe(`ord-${i}`)
       }
 
       // 刪除所有訂單
@@ -372,29 +222,22 @@ describe('Flash-Sale UseCases', () => {
         await repository.delete(`ord-${i}`)
       }
 
-      // 應仍能從快取獲取
+      // 應返回 null
       const result = await useCase.execute('ord-1')
-      expect(result?.id).toBe('ord-1')
+      expect(result).toBeNull()
     })
 
-    it('應該能處理高價值訂單', async () => {
+    it('should handle high-value orders', async () => {
       const repository = new MockOrderRepository()
-      const order: Order = {
-        id: 'ord-vip',
-        productId: 'prod-premium',
-        quantity: 1000,
-        unitPrice: 10000,
-        totalPrice: 10000000,
-        status: OrderStatus.PENDING,
-        createdAt: new Date(),
-      }
 
+      const item = OrderItem.create('prod-premium', 'Premium', 1000, Money.of(10000))
+      const order = Order.create('ord-vip', 'user-vip', [item])
       repository.setOrder(order)
 
       const useCase = new GetOrder(repository)
       const result = await useCase.execute('ord-vip')
 
-      expect(result?.totalPrice).toBe(10000000)
+      expect(result!.totalAmount).toBe(10000000) // 1000 * 10000
     })
   })
 })
