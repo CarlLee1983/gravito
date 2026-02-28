@@ -1,6 +1,8 @@
 import { UseCase } from '@gravito/enterprise'
 import type { IInvoiceRepository } from '../../Domain/Contracts/IInvoiceRepository'
-import { Invoice } from '../../Domain/Entities/Invoice'
+import type { Invoice } from '../../Domain/Entities/Invoice'
+import { InvoiceIssuanceContext } from '../Contexts/InvoiceIssuanceContext'
+import { DefaultInvoiceIssuer } from '../Roles/InvoiceIssuerRole'
 
 export interface IssueInvoiceInput {
   orderId: string
@@ -9,35 +11,20 @@ export interface IssueInvoiceInput {
   carrierId?: string
 }
 
+/**
+ * 發票開立 UseCase（薄殼委派）
+ * 委派到 InvoiceIssuanceContext 進行實際業務流程處理
+ */
 export class IssueInvoice extends UseCase<IssueInvoiceInput, Invoice> {
-  constructor(private repository: IInvoiceRepository) {
+  private context: InvoiceIssuanceContext
+
+  constructor(repository: IInvoiceRepository) {
     super()
+    const issuer = new DefaultInvoiceIssuer()
+    this.context = new InvoiceIssuanceContext(repository, issuer)
   }
 
   async execute(input: IssueInvoiceInput): Promise<Invoice> {
-    // 檢查是否已開立過
-    const existing = await this.repository.findByOrderId(input.orderId)
-    if (existing) {
-      return existing
-    }
-
-    // 模擬發票號碼產生器
-    const randomNum = Math.floor(10000000 + Math.random() * 90000000)
-    const invoiceNumber = `GX-${randomNum}`
-
-    const tax = Math.round(input.amount * 0.05)
-
-    const invoice = Invoice.create({
-      orderId: input.orderId,
-      invoiceNumber,
-      amount: input.amount,
-      tax,
-      status: 'ISSUED',
-      buyerIdentifier: input.buyerIdentifier,
-      carrierId: input.carrierId,
-    })
-
-    await this.repository.save(invoice)
-    return invoice
+    return this.context.orchestrate(input)
   }
 }
