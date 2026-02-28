@@ -30,9 +30,9 @@ export class ProductMapper {
 
     if (product.thumbnail) {
       try {
-        const storage = app().container.make('storage') as any
-        if (storage) {
-          thumbnailUrl = storage.getUrl(product.thumbnail)
+        const storage = app().container.make('storage') as unknown
+        if (storage && typeof storage === 'object' && 'getUrl' in storage) {
+          thumbnailUrl = (storage as { getUrl(key: string): string }).getUrl(product.thumbnail)
         }
       } catch (_e) {
         // Fallback to key if storage not available or core not booted
@@ -42,8 +42,8 @@ export class ProductMapper {
 
     return {
       id: product.id,
-      name: product.name,
-      slug: product.slug,
+      name: product.name.translations,
+      slug: product.slug.value,
       description: product.description,
       brand: product.brand,
       status: product.status,
@@ -59,9 +59,9 @@ export class ProductMapper {
       id: variant.id,
       sku: variant.sku,
       name: variant.name,
-      price: variant.price,
-      compareAtPrice: variant.compareAtPrice,
-      stock: variant.stock,
+      price: variant.price.value,
+      compareAtPrice: variant.compareAtPrice?.value ?? null,
+      stock: variant.stock.quantity,
       options: variant.options,
     }
   }

@@ -1,14 +1,21 @@
 import type { PlanetCore } from '@gravito/core'
 import { UseCase } from '@gravito/enterprise'
 import type { ICategoryRepository } from '../../Domain/Contracts/ICatalogRepository'
+import { CategoryManagementContext } from '../../Domain/DCI/Contexts/CategoryManagementContext'
 import { type CategoryDTO, CategoryMapper } from '../DTOs/CategoryDTO'
 
 export interface UpdateCategoryInput {
   id: string
   name?: Record<string, string>
+  description?: string
+  sortOrder?: number
   parentId?: string | null
 }
 
+/**
+ * UpdateCategory UseCase
+ * 薄殼委派模式：所有業務邏輯在 CategoryManagementContext 中
+ */
 export class UpdateCategory extends UseCase<UpdateCategoryInput, CategoryDTO> {
   constructor(
     private repository: ICategoryRepository,
@@ -18,55 +25,35 @@ export class UpdateCategory extends UseCase<UpdateCategoryInput, CategoryDTO> {
   }
 
   async execute(input: UpdateCategoryInput): Promise<CategoryDTO> {
-    const category = await this.repository.findById(input.id)
-    if (!category) {
-      throw new Error('Category not found')
-    }
+    const ctx = new CategoryManagementContext(this.repository, this.core)
 
-    const oldPath = category.path
-    const isMoving = input.parentId !== undefined && input.parentId !== category.parentId
+    // 檢查是否需要移動分類
+    if (input.parentId !== undefined) {
+      const category = await ctx.moveCategory({
+        id: input.id,
+        newParentId: input.parentId,
+      })
 
-    // 1. 更新基本屬性
-    if (input.name) {
-      // @ts-expect-error
-      category.props.name = input.name
-    }
-
-    // 2. 處理移動邏輯 (關鍵！)
-    if (isMoving) {
-      category.moveTo(input.parentId!)
-
-      // 獲取新父節點的路徑
-      const newParent = input.parentId ? await this.repository.findById(input.parentId) : null
-      const newPath = newParent ? `${newParent.path}/${category.slug}` : category.slug
-
-      // 3. 同步更新所有子孫路徑 (必須在更新自己之前，使用舊路徑查找)
-      if (oldPath) {
-        const descendants = await this.repository.findByPathPrefix(oldPath)
-        console.log(`[Debug] 找到子孫數量: ${descendants.length} (使用前綴: ${oldPath})`)
-        for (const desc of descendants) {
-          if (desc.id === category.id) {
-            continue
-          }
-
-          // 確保只替換開頭的路徑部分
-          const subPath = desc.path?.substring(oldPath.length)
-          // @ts-expect-error
-          desc.props.path = newPath + subPath
-          await this.repository.save(desc)
-        }
+      // 如果同時有其他屬性更新，需要額外更新
+      if (input.name || input.description !== undefined || input.sortOrder !== undefined) {
+        const updated = await ctx.updateCategory({
+          id: input.id,
+          name: input.name,
+          description: input.description,
+          sortOrder: input.sortOrder,
+        })
+        return CategoryMapper.toDTO(updated)
       }
 
-      // 更新自己
-      // @ts-expect-error
-      category.props.path = newPath
+      return CategoryMapper.toDTO(category)
     }
 
-    await this.repository.save(category)
-
-    await this.core.hooks.doAction('catalog:category-updated', {
-      categoryId: category.id,
-      moved: isMoving,
+    // 只更新屬性，不移動
+    const category = await ctx.updateCategory({
+      id: input.id,
+      name: input.name,
+      description: input.description,
+      sortOrder: input.sortOrder,
     })
 
     return CategoryMapper.toDTO(category)

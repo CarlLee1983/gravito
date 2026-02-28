@@ -1,79 +1,30 @@
-import { Entity } from '@gravito/enterprise'
+import type { DomainEvent } from '@gravito/enterprise'
+import { AggregateRoot } from '@gravito/enterprise'
+import type { I18nText } from '../ValueObjects/I18nText'
+import type { Slug } from '../ValueObjects/Slug'
+import type { Variant } from './Variant'
 
-export interface VariantProps {
-  productId: string
-  sku: string
-  name: string | null
-  price: number
-  compareAtPrice: number | null
-  stock: number
-  options: Record<string, string> // e.g., {"color": "Red"}
-  createdAt: Date
-  updatedAt: Date
-  metadata?: Record<string, any>
-}
-
-export class Variant extends Entity<string> {
-  constructor(
-    id: string,
-    private props: VariantProps
-  ) {
-    super(id)
-  }
-
-  // Getters
-  get sku() {
-    return this.props.sku
-  }
-  get price() {
-    return this.props.price
-  }
-  get stock() {
-    return this.props.stock
-  }
-  get options() {
-    return this.props.options
-  }
-  get metadata() {
-    return this.props.metadata || {}
-  }
-  get name() {
-    return this.props.name ?? null
-  }
-  get compareAtPrice() {
-    return this.props.compareAtPrice ?? null
-  }
-  get createdAt() {
-    return this.props.createdAt
-  }
-  get updatedAt() {
-    return this.props.updatedAt
-  }
-
-  public reduceStock(quantity: number): void {
-    if (this.props.stock < quantity) {
-      throw new Error('Insufficient stock')
-    }
-    this.props.stock -= quantity
-    this.props.updatedAt = new Date()
-  }
+export enum ProductStatus {
+  ACTIVE = 'active',
+  DRAFT = 'draft',
+  ARCHIVED = 'archived',
 }
 
 export interface ProductProps {
-  name: Record<string, string> // i18n
-  slug: string
+  name: I18nText
+  slug: Slug
   description?: string
   brand?: string
-  status: 'active' | 'draft' | 'archived'
+  status: ProductStatus
   thumbnail?: string // Storage key
   variants: Variant[]
   categoryIds: string[]
   createdAt: Date
   updatedAt: Date
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
-export class Product extends Entity<string> {
+export class Product extends AggregateRoot<string> {
   private constructor(
     id: string,
     private props: ProductProps
@@ -81,11 +32,11 @@ export class Product extends Entity<string> {
     super(id)
   }
 
-  static create(id: string, name: Record<string, string>, slug: string): Product {
+  static create(id: string, name: I18nText, slug: Slug): Product {
     return new Product(id, {
       name,
       slug,
-      status: 'active',
+      status: ProductStatus.ACTIVE,
       variants: [],
       categoryIds: [],
       createdAt: new Date(),
@@ -98,59 +49,159 @@ export class Product extends Entity<string> {
   }
 
   // Getters
-  get name() {
+  get name(): I18nText {
     return this.props.name
   }
-  get slug() {
+
+  get slug(): Slug {
     return this.props.slug
   }
-  get thumbnail() {
+
+  get thumbnail(): string | undefined {
     return this.props.thumbnail
   }
-  get variants() {
+
+  get variants(): Variant[] {
     return this.props.variants
   }
-  get categoryIds() {
+
+  get categoryIds(): string[] {
     return this.props.categoryIds
   }
-  get metadata() {
+
+  get metadata(): Record<string, unknown> {
     return this.props.metadata || {}
   }
-  get brand() {
+
+  get brand(): string | undefined {
     return this.props.brand
   }
-  get status() {
+
+  get status(): ProductStatus {
     return this.props.status
   }
-  get description() {
+
+  get description(): string | undefined {
     return this.props.description
   }
-  get createdAt() {
+
+  get createdAt(): Date {
     return this.props.createdAt
   }
-  get updatedAt() {
+
+  get updatedAt(): Date {
     return this.props.updatedAt
   }
 
+  /**
+   * 更新商品名稱
+   */
+  public updateName(name: I18nText): void {
+    this.props.name = name
+    this.props.updatedAt = new Date()
+  }
+
+  /**
+   * 更新商品 slug
+   */
+  public updateSlug(slug: Slug): void {
+    this.props.slug = slug
+    this.props.updatedAt = new Date()
+  }
+
+  /**
+   * 更新商品描述
+   */
+  public updateDescription(description: string | undefined): void {
+    this.props.description = description
+    this.props.updatedAt = new Date()
+  }
+
+  /**
+   * 設定縮圖
+   */
   public setThumbnail(key: string): void {
     this.props.thumbnail = key
     this.props.updatedAt = new Date()
   }
 
+  /**
+   * 設定品牌
+   */
   public setBrand(brand: string): void {
     this.props.brand = brand
     this.props.updatedAt = new Date()
   }
 
-  public addVariant(variant: Variant): void {
-    this.props.variants.push(variant)
+  /**
+   * 上架商品
+   */
+  public activate(): void {
+    if (this.props.status === ProductStatus.ARCHIVED) {
+      throw new Error(`Cannot activate product: cannot reactivate archived product`)
+    }
+    this.props.status = ProductStatus.ACTIVE
     this.props.updatedAt = new Date()
   }
 
+  /**
+   * 下架商品
+   */
+  public archive(): void {
+    if (this.props.status === ProductStatus.ARCHIVED) {
+      throw new Error('Product is already archived')
+    }
+    this.props.status = ProductStatus.ARCHIVED
+    this.props.updatedAt = new Date()
+  }
+
+  /**
+   * 新增商品變體
+   */
+  public addVariant(variant: Variant): void {
+    this.props.variants.push(variant)
+    this.props.updatedAt = new Date()
+    this.addDomainEvent({
+      aggregateId: this.id,
+      occurredAt: new Date(),
+      type: 'ProductVariantAdded',
+      data: { variantId: variant.id, productId: this.id },
+    } as unknown as DomainEvent)
+  }
+
+  /**
+   * 移除商品變體
+   */
+  public removeVariant(variantId: string): void {
+    this.props.variants = this.props.variants.filter((v) => v.id !== variantId)
+    this.props.updatedAt = new Date()
+  }
+
+  /**
+   * 尋找變體
+   */
+  public findVariant(variantId: string): Variant | undefined {
+    return this.props.variants.find((v) => v.id === variantId)
+  }
+
+  /**
+   * 指派到分類
+   */
   public assignToCategory(categoryId: string): void {
     if (!this.props.categoryIds.includes(categoryId)) {
       this.props.categoryIds.push(categoryId)
       this.props.updatedAt = new Date()
     }
   }
+
+  /**
+   * 從分類移除
+   */
+  public removeFromCategory(categoryId: string): void {
+    this.props.categoryIds = this.props.categoryIds.filter((id) => id !== categoryId)
+    this.props.updatedAt = new Date()
+  }
 }
+
+// Re-export Variant for convenience
+export { Variant, type VariantProps } from './Variant'
