@@ -1,6 +1,6 @@
 import type { PlanetCore } from '@gravito/core'
+import { couponsToDTO } from '../../../Application/DTOs'
 import type { AdminListCoupons } from '../../../Application/UseCases/AdminListCoupons'
-import type { Coupon } from '../../../Domain/Entities/Coupon'
 
 export class AdminMarketingController {
   constructor(private core: PlanetCore) {}
@@ -8,15 +8,10 @@ export class AdminMarketingController {
   async coupons(ctx: any) {
     try {
       const useCase = this.core.container.make<AdminListCoupons>(
-        'marketing.usecase.adminListCoupons'
+        'marketing.usecase.admin-list-coupons'
       )
       const coupons = await useCase.execute()
-      return ctx.json(
-        coupons.map((c: Coupon) => ({
-          id: c.id,
-          ...c.unpack(),
-        }))
-      )
+      return ctx.json(couponsToDTO(coupons))
     } catch (error: any) {
       return ctx.json({ message: error.message }, 500)
     }
