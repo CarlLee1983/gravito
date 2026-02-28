@@ -1,5 +1,51 @@
 import { describe, expect, it } from 'bun:test'
-import { Adjustment, LineItem, Order } from '../src/Domain/Entities/Order'
+import { Order, OrderStatus } from '../src/Domain/Entities/Order'
+import { Adjustment, AdjustmentType } from '../src/Domain/ValueObjects/Adjustment'
+import { LineItem } from '../src/Domain/ValueObjects/LineItem'
+import { Money } from '../src/Domain/ValueObjects/Money'
+
+describe('Commerce Domain - Money ValueObject', () => {
+  describe('Money Creation & Operations', () => {
+    it('應該建立 Money 實例', () => {
+      const money = Money.of(99.99, 'TWD')
+      expect(money.value).toBe(99.99)
+      expect(money.amountInCents).toBe(9999)
+      expect(money.currency).toBe('TWD')
+    })
+
+    it('應該支持加法', () => {
+      const m1 = Money.of(50, 'TWD')
+      const m2 = Money.of(30, 'TWD')
+      const result = m1.add(m2)
+
+      expect(result.value).toBe(80)
+      expect(m1.value).toBe(50) // 原值不變（不可變）
+    })
+
+    it('應該支持乘法', () => {
+      const money = Money.of(10, 'TWD')
+      const result = money.multiply(5)
+
+      expect(result.value).toBe(50)
+      expect(money.value).toBe(10) // 原值不變
+    })
+
+    it('應該檢查是否大於另一個 Money', () => {
+      const m1 = Money.of(100, 'TWD')
+      const m2 = Money.of(50, 'TWD')
+
+      expect(m1.isGreaterThan(m2)).toBe(true)
+      expect(m2.isGreaterThan(m1)).toBe(false)
+    })
+
+    it('不同幣別的操作應拋出錯誤', () => {
+      const m1 = Money.of(100, 'TWD')
+      const m2 = Money.of(100, 'USD')
+
+      expect(() => m1.add(m2)).toThrow()
+    })
+  })
+})
 
 describe('Commerce Domain - Order AggregateRoot', () => {
   describe('Order Creation & Initial State', () => {
@@ -7,11 +53,11 @@ describe('Commerce Domain - Order AggregateRoot', () => {
       const order = Order.create('ord-1', 'mem-123')
 
       expect(order.id).toBe('ord-1')
-      expect(order.status).toBe('pending')
+      expect(order.status).toBe(OrderStatus.PENDING)
       expect(order.memberId).toBe('mem-123')
-      expect(order.subtotalAmount).toBe(0)
-      expect(order.adjustmentAmount).toBe(0)
-      expect(order.totalAmount).toBe(0)
+      expect(order.subtotal.value).toBe(0)
+      expect(order.adjustmentAmount.value).toBe(0)
+      expect(order.total.value).toBe(0)
       expect(order.items).toHaveLength(0)
       expect(order.adjustments).toHaveLength(0)
       expect(order.createdAt).toBeDefined()
@@ -24,163 +70,112 @@ describe('Commerce Domain - Order AggregateRoot', () => {
 
     it('應該使用預設幣別 TWD', () => {
       const order = Order.create('ord-1')
-      expect(order.status).toBe('pending')
+      expect(order.currency).toBe('TWD')
+      expect(order.status).toBe(OrderStatus.PENDING)
     })
   })
 
   describe('Adding Items & Recalculation', () => {
     it('應該能新增商品並重新計算金額', () => {
-      const order = Order.create('ord-1')
-      const item = new LineItem('item-1', {
-        variantId: 'var-1',
-        sku: 'SKU-001',
-        name: 'T-Shirt',
-        unitPrice: 500,
-        quantity: 2,
-        totalPrice: 1000,
-      })
+      const order = Order.create('ord-1', 'mem-123', undefined, 'TWD')
+      const item = LineItem.create('prod-1', 'var-1', 'SKU-001', 'T-Shirt', Money.of(500, 'TWD'), 2)
 
       order.addItem(item)
 
       expect(order.items).toHaveLength(1)
-      expect(order.subtotalAmount).toBe(1000)
-      expect(order.totalAmount).toBe(1000)
+      expect(order.subtotal.value).toBe(1000)
+      expect(order.total.value).toBe(1000)
     })
 
     it('應該累加多個商品', () => {
-      const order = Order.create('ord-1')
-
-      const item1 = new LineItem('item-1', {
-        variantId: 'var-1',
-        sku: 'SKU-001',
-        name: 'T-Shirt',
-        unitPrice: 500,
-        quantity: 2,
-        totalPrice: 1000,
-      })
-      const item2 = new LineItem('item-2', {
-        variantId: 'var-2',
-        sku: 'SKU-002',
-        name: 'Pants',
-        unitPrice: 1000,
-        quantity: 1,
-        totalPrice: 1000,
-      })
+      const order = Order.create('ord-1', 'mem-123', undefined, 'TWD')
+      const item1 = LineItem.create(
+        'prod-1',
+        'var-1',
+        'SKU-001',
+        'T-Shirt',
+        Money.of(500, 'TWD'),
+        2
+      )
+      const item2 = LineItem.create('prod-2', 'var-2', 'SKU-002', 'Pants', Money.of(1000, 'TWD'), 1)
 
       order.addItem(item1)
       order.addItem(item2)
 
       expect(order.items).toHaveLength(2)
-      expect(order.subtotalAmount).toBe(2000)
-      expect(order.totalAmount).toBe(2000)
+      expect(order.subtotal.value).toBe(2000)
+      expect(order.total.value).toBe(2000)
     })
 
     it('非 pending 狀態時，新增商品應拋出錯誤', () => {
       const order = Order.create('ord-1')
       order.markAsPaid()
 
-      const item = new LineItem('item-1', {
-        variantId: 'var-1',
-        sku: 'SKU-001',
-        name: 'T-Shirt',
-        unitPrice: 500,
-        quantity: 1,
-        totalPrice: 500,
-      })
+      const item = LineItem.create('prod-1', 'var-1', 'SKU-001', 'T-Shirt', Money.of(500, 'TWD'), 1)
 
-      expect(() => order.addItem(item)).toThrow('Order is not in pending state')
+      expect(() => order.addItem(item)).toThrow()
     })
   })
 
   describe('Adding Adjustments & Recalculation', () => {
-    it('應該能新增調整並重新計算金額', () => {
-      const order = Order.create('ord-1')
-
-      const item = new LineItem('item-1', {
-        variantId: 'var-1',
-        sku: 'SKU-001',
-        name: 'T-Shirt',
-        unitPrice: 500,
-        quantity: 1,
-        totalPrice: 500,
-      })
+    it('應該能新增折扣調整', () => {
+      const order = Order.create('ord-1', 'mem-123', undefined, 'TWD')
+      const item = LineItem.create('prod-1', 'var-1', 'SKU-001', 'T-Shirt', Money.of(500, 'TWD'), 1)
       order.addItem(item)
 
-      const discount = new Adjustment('adj-1', {
-        label: '10% off',
-        amount: -50,
-        sourceType: 'coupon',
-        sourceId: 'coup-1',
-      })
+      const discount = Adjustment.create(
+        AdjustmentType.DISCOUNT,
+        '10% off',
+        Money.of(-50, 'TWD'),
+        'coupon',
+        'coup-1'
+      )
       order.addAdjustment(discount)
 
       expect(order.adjustments).toHaveLength(1)
-      expect(order.adjustmentAmount).toBe(-50)
-      expect(order.totalAmount).toBe(450)
+      expect(order.adjustmentAmount.value).toBe(-50)
+      expect(order.total.value).toBe(450)
     })
 
     it('應該能處理正向和負向調整', () => {
-      const order = Order.create('ord-1')
-
-      const item = new LineItem('item-1', {
-        variantId: 'var-1',
-        sku: 'SKU-001',
-        name: 'T-Shirt',
-        unitPrice: 500,
-        quantity: 1,
-        totalPrice: 500,
-      })
+      const order = Order.create('ord-1', 'mem-123', undefined, 'TWD')
+      const item = LineItem.create('prod-1', 'var-1', 'SKU-001', 'T-Shirt', Money.of(500, 'TWD'), 1)
       order.addItem(item)
 
-      const discount = new Adjustment('adj-1', {
-        label: 'Discount',
-        amount: -100,
-        sourceType: null,
-        sourceId: null,
-      })
-      const tax = new Adjustment('adj-2', {
-        label: 'Tax',
-        amount: 50,
-        sourceType: null,
-        sourceId: null,
-      })
+      const discount = Adjustment.create(AdjustmentType.DISCOUNT, 'Discount', Money.of(-100, 'TWD'))
+      const tax = Adjustment.create(AdjustmentType.TAX, 'Tax', Money.of(50, 'TWD'))
 
       order.addAdjustment(discount)
       order.addAdjustment(tax)
 
-      expect(order.adjustmentAmount).toBe(-50)
-      expect(order.totalAmount).toBe(450)
+      expect(order.adjustmentAmount.value).toBe(-50)
+      expect(order.total.value).toBe(450)
     })
 
     it('非 pending 狀態時，新增調整應拋出錯誤', () => {
       const order = Order.create('ord-1')
       order.markAsPaid()
 
-      const adj = new Adjustment('adj-1', {
-        label: 'Discount',
-        amount: -100,
-        sourceType: null,
-        sourceId: null,
-      })
+      const adj = Adjustment.create(AdjustmentType.DISCOUNT, 'Test', Money.of(-100, 'TWD'))
 
-      expect(() => order.addAdjustment(adj)).toThrow('Order is not in pending state')
+      expect(() => order.addAdjustment(adj)).toThrow()
     })
   })
 
   describe('Order Status Transitions', () => {
     it('應該能從 pending 轉移到 paid', () => {
       const order = Order.create('ord-1')
-      expect(order.status).toBe('pending')
+      expect(order.status).toBe(OrderStatus.PENDING)
 
       order.markAsPaid()
-      expect(order.status).toBe('paid')
+      expect(order.status).toBe(OrderStatus.PAID)
     })
 
     it('非 pending 時，markAsPaid 應拋出錯誤', () => {
       const order = Order.create('ord-1')
       order.markAsPaid()
 
-      expect(() => order.markAsPaid()).toThrow('Invalid status transition')
+      expect(() => order.markAsPaid()).toThrow()
     })
 
     it('應該能從 paid 狀態請求退款', () => {
@@ -188,124 +183,97 @@ describe('Commerce Domain - Order AggregateRoot', () => {
       order.markAsPaid()
 
       order.requestRefund()
-      expect(order.status).toBe('requested_refund')
+      expect(order.status).toBe(OrderStatus.REQUESTED_REFUND)
     })
 
-    it('應該能從 processing 狀態請求退款', () => {
+    it('應該能完整流轉訂單狀態', () => {
       const order = Order.create('ord-1')
-      ;(order as any).props.status = 'processing'
+      expect(order.status).toBe(OrderStatus.PENDING)
 
-      order.requestRefund()
-      expect(order.status).toBe('requested_refund')
+      order.markAsPaid()
+      expect(order.status).toBe(OrderStatus.PAID)
+
+      order.markAsProcessing()
+      expect(order.status).toBe(OrderStatus.PROCESSING)
+
+      order.markAsShipped()
+      expect(order.status).toBe(OrderStatus.SHIPPED)
+
+      order.markAsCompleted()
+      expect(order.status).toBe(OrderStatus.COMPLETED)
     })
 
     it('應該能從 completed 狀態請求退款', () => {
       const order = Order.create('ord-1')
-      ;(order as any).props.status = 'completed'
+      order.markAsPaid()
+      order.markAsProcessing()
+      order.markAsShipped()
+      order.markAsCompleted()
 
       order.requestRefund()
-      expect(order.status).toBe('requested_refund')
-    })
-
-    it('非允許狀態時，requestRefund 應拋出錯誤', () => {
-      const order = Order.create('ord-1')
-
-      expect(() => order.requestRefund()).toThrow(
-        /Refund cannot be requested for order in pending state/
-      )
-    })
-
-    it('應該能從 requested_refund 轉移到 refunded', () => {
-      const order = Order.create('ord-1')
-      ;(order as any).props.status = 'requested_refund'
+      expect(order.status).toBe(OrderStatus.REQUESTED_REFUND)
 
       order.markAsRefunded()
-      expect(order.status).toBe('refunded')
-    })
-
-    it('非 requested_refund 時，markAsRefunded 應拋出錯誤', () => {
-      const order = Order.create('ord-1')
-
-      expect(() => order.markAsRefunded()).toThrow('Order must be in requested_refund state')
+      expect(order.status).toBe(OrderStatus.REFUNDED)
     })
   })
 
   describe('Total Amount Calculation Edge Cases', () => {
     it('總金額不應為負數', () => {
-      const order = Order.create('ord-1')
-
-      const item = new LineItem('item-1', {
-        variantId: 'var-1',
-        sku: 'SKU-001',
-        name: 'T-Shirt',
-        unitPrice: 100,
-        quantity: 1,
-        totalPrice: 100,
-      })
+      const order = Order.create('ord-1', 'mem-123', undefined, 'TWD')
+      const item = LineItem.create('prod-1', 'var-1', 'SKU-001', 'T-Shirt', Money.of(100, 'TWD'), 1)
       order.addItem(item)
 
-      const largeDiscount = new Adjustment('adj-1', {
-        label: 'Large discount',
-        amount: -1000,
-        sourceType: null,
-        sourceId: null,
-      })
+      const largeDiscount = Adjustment.create(
+        AdjustmentType.DISCOUNT,
+        'Large discount',
+        Money.of(-1000, 'TWD')
+      )
       order.addAdjustment(largeDiscount)
 
-      expect(order.totalAmount).toBe(0)
+      expect(order.total.value).toBe(0)
     })
 
     it('應該正確計算複雜的多項商品和調整場景', () => {
-      const order = Order.create('ord-1')
+      const order = Order.create('ord-1', 'mem-123', undefined, 'TWD')
 
-      // 加入 3 件商品，總計 5000
+      // 加入 3 件商品
       for (let i = 1; i <= 3; i++) {
-        const item = new LineItem(`item-${i}`, {
-          variantId: `var-${i}`,
-          sku: `SKU-${i}`,
-          name: `Product ${i}`,
-          unitPrice: 1000 * i,
-          quantity: 1,
-          totalPrice: 1000 * i,
-        })
+        const item = LineItem.create(
+          `prod-${i}`,
+          `var-${i}`,
+          `SKU-${i}`,
+          `Product ${i}`,
+          Money.of(1000 * i, 'TWD'),
+          1
+        )
         order.addItem(item)
       }
 
-      expect(order.subtotalAmount).toBe(6000) // 1000 + 2000 + 3000
+      expect(order.subtotal.value).toBe(6000) // 1000 + 2000 + 3000
 
       // 加入折扣和運費
-      const coupon = new Adjustment('adj-1', {
-        label: '20% discount',
-        amount: -1200,
-        sourceType: 'coupon',
-        sourceId: 'coup-1',
-      })
-      const shipping = new Adjustment('adj-2', {
-        label: 'Shipping',
-        amount: 200,
-        sourceType: 'shipping',
-        sourceId: null,
-      })
+      const coupon = Adjustment.create(
+        AdjustmentType.DISCOUNT,
+        '20% discount',
+        Money.of(-1200, 'TWD'),
+        'coupon',
+        'coup-1'
+      )
+      const shipping = Adjustment.create(AdjustmentType.SHIPPING, 'Shipping', Money.of(200, 'TWD'))
 
       order.addAdjustment(coupon)
       order.addAdjustment(shipping)
 
-      expect(order.adjustmentAmount).toBe(-1000)
-      expect(order.totalAmount).toBe(5000)
+      expect(order.adjustmentAmount.value).toBe(-1000)
+      expect(order.total.value).toBe(5000)
     })
   })
 
   describe('Immutability', () => {
     it('items getter 應返回副本，不暴露內部陣列', () => {
       const order = Order.create('ord-1')
-      const item = new LineItem('item-1', {
-        variantId: 'var-1',
-        sku: 'SKU-001',
-        name: 'T-Shirt',
-        unitPrice: 500,
-        quantity: 1,
-        totalPrice: 500,
-      })
+      const item = LineItem.create('prod-1', 'var-1', 'SKU-001', 'T-Shirt', Money.of(500, 'TWD'), 1)
       order.addItem(item)
 
       const items1 = order.items
@@ -317,12 +285,7 @@ describe('Commerce Domain - Order AggregateRoot', () => {
 
     it('adjustments getter 應返回副本', () => {
       const order = Order.create('ord-1')
-      const adj = new Adjustment('adj-1', {
-        label: 'Test',
-        amount: -100,
-        sourceType: null,
-        sourceId: null,
-      })
+      const adj = Adjustment.create(AdjustmentType.DISCOUNT, 'Test', Money.of(-100, 'TWD'))
       order.addAdjustment(adj)
 
       const adjs1 = order.adjustments

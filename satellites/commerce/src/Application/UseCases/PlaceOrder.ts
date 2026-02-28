@@ -1,122 +1,110 @@
-import { DB } from '@gravito/atlas'
 import type { PlanetCore } from '@gravito/core'
 import { UseCase } from '@gravito/enterprise'
-import type { CacheManager } from '@gravito/stasis'
-import { LineItem, Order } from '../../Domain/Entities/Order'
-import { AdjustmentCalculator } from '../Services/AdjustmentCalculator'
-import { ProductResolver } from '../Services/ProductResolver'
+import type { IOrderRepository } from '../../Domain/Contracts/IOrderRepository'
+import type { CheckoutInput } from '../../Domain/DCI/Contexts/CheckoutContext'
+import { CheckoutContext } from '../../Domain/DCI/Contexts/CheckoutContext'
+import { OrderMapper } from '../DTOs/OrderMapper'
 
+/**
+ * PlaceOrder UseCase 輸入
+ */
 export interface PlaceOrderInput {
-  memberId: string | null
+  userId: string | null
   idempotencyKey?: string
   items: {
+    productId: string
     variantId: string
+    sku: string
+    name: string
+    unitPrice: number
     quantity: number
+    options?: Record<string, string>
   }[]
+  currency?: string
 }
 
-export class PlaceOrder extends UseCase<PlaceOrderInput, any> {
-  constructor(private core: PlanetCore) {
+/**
+ * PlaceOrder UseCase 輸出
+ */
+export interface PlaceOrderOutput {
+  orderId: string
+  status: string
+  total: number
+  currency: string
+  items: Array<{
+    name: string
+    quantity: number
+    totalPrice: number
+  }>
+}
+
+/**
+ * PlaceOrder UseCase
+ *
+ * 薄殼 UseCase，委派 CheckoutContext 完成核心邏輯
+ * 職責：
+ * 1. 驗證輸入
+ * 2. 委派給 CheckoutContext
+ * 3. 計算調整項目（如運費、稅務）
+ * 4. 轉換為 DTO 回應
+ */
+export class PlaceOrder extends UseCase<PlaceOrderInput, PlaceOrderOutput> {
+  constructor(
+    private core: PlanetCore,
+    private orderRepository: IOrderRepository,
+    private adjustmentCalculator?: any // AdjustmentCalculator 可選
+  ) {
     super()
   }
 
-  async execute(input: PlaceOrderInput): Promise<any> {
-    const adjCalculator = new AdjustmentCalculator(this.core)
-    const mode = process.env.COMMERCE_MODE || 'standard'
-    const useCache = mode === 'sport'
+  async execute(input: PlaceOrderInput): Promise<PlaceOrderOutput> {
+    const currency = input.currency || 'TWD'
 
-    const cache = this.core.container.make<CacheManager>('cache')
-    const productResolver = new ProductResolver(cache)
+    // 準備 CheckoutInput
+    const checkoutInput: CheckoutInput = {
+      userId: input.userId,
+      idempotencyKey: input.idempotencyKey,
+      items: input.items,
+      currency,
+    }
 
-    return await DB.transaction(async (db) => {
-      const order = Order.create(crypto.randomUUID(), input.memberId)
-
-      for (const reqItem of input.items) {
-        const variantInfo = await productResolver.resolve(reqItem.variantId, useCache)
-
-        const variant = (await db
-          .table('product_variants')
-          .where('id', reqItem.variantId)
-          .select('stock', 'version', 'sku', 'price')
-          .first()) as any
-
-        if (!variant) {
-          throw new Error(`Variant ${reqItem.variantId} not found`)
-        }
-        if (Number(variant.stock) < reqItem.quantity) {
-          throw new Error('Insufficient stock')
-        }
-
-        const affectedRows = await db
-          .table('product_variants')
-          .where('id', reqItem.variantId)
-          .where('version', variant.version)
-          .update({
-            stock: Number(variant.stock) - reqItem.quantity,
-            version: Number(variant.version) + 1,
-            updated_at: new Date(),
-          })
-
-        if (affectedRows === 0) {
-          throw new Error('Concurrency conflict: Please try again')
-        }
-
-        const lineItem = new LineItem(crypto.randomUUID(), {
-          variantId: variantInfo.id,
-          sku: variantInfo.sku,
-          name: variantInfo.name,
-          unitPrice: variantInfo.price,
-          quantity: reqItem.quantity,
-          totalPrice: variantInfo.price * reqItem.quantity,
-        })
-        order.addItem(lineItem)
+    // 計算調整項目（透過 Hook）
+    if (this.adjustmentCalculator) {
+      checkoutInput.adjustments = await this.adjustmentCalculator.calculate(input.items, currency)
+    } else {
+      // 透過 Hook 讓其他 Satellite 提供調整項目
+      const hookAdjustments = await this.core.hooks.applyFilters(
+        'commerce:calculate-adjustments',
+        [] as any[],
+        { items: input.items, currency }
+      )
+      if (hookAdjustments && hookAdjustments.length > 0) {
+        checkoutInput.adjustments = hookAdjustments
       }
+    }
 
-      await adjCalculator.calculate(order)
+    // 執行結帳場景
+    const context = new CheckoutContext(this.orderRepository, this.core)
+    const result = await context.execute(checkoutInput)
 
-      await db.table('orders').insert({
-        id: order.id,
-        member_id: order.memberId,
-        idempotency_key: input.idempotencyKey,
-        status: order.status,
-        subtotal_amount: order.subtotalAmount,
-        adjustment_amount: order.adjustmentAmount,
-        total_amount: order.totalAmount,
-        created_at: order.createdAt,
-      })
+    // 載入建立的訂單並轉換為 DTO
+    const order = await this.orderRepository.findById(result.orderId)
+    if (!order) {
+      throw new Error(`Order ${result.orderId} not found after creation`)
+    }
 
-      for (const item of order.items) {
-        await db.table('order_items').insert({
-          id: item.id,
-          order_id: order.id,
-          variant_id: item.props.variantId,
-          sku: item.props.sku,
-          name: item.props.name,
-          unit_price: item.props.unitPrice,
-          quantity: item.props.quantity,
-          total_price: item.props.totalPrice,
-        })
-      }
+    const dto = OrderMapper.toDTO(order)
 
-      for (const adj of order.adjustments) {
-        await db.table('order_adjustments').insert({
-          id: adj.id,
-          order_id: order.id,
-          label: adj.props.label,
-          amount: adj.props.amount,
-          source_type: adj.props.sourceType,
-          source_id: adj.props.sourceId,
-        })
-      }
-
-      await this.core.hooks.doAction('commerce:order-placed', { orderId: order.id })
-
-      return {
-        orderId: order.id,
-        status: order.status,
-        total: order.totalAmount,
-        adjustments: order.adjustments.map((a) => a.props.label),
-      }
-    })
+    return {
+      orderId: result.orderId,
+      status: result.status,
+      total: result.total,
+      currency: result.currency,
+      items: dto.items.map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+        totalPrice: item.totalPrice,
+      })),
+    }
   }
 }

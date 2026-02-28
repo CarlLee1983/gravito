@@ -7,7 +7,7 @@ export class AdminOrderController {
   async index(ctx: any) {
     try {
       const useCase = this.core.container.make<AdminListOrders>('commerce.usecase.adminListOrders')
-      const orders = await useCase.execute()
+      const orders = await useCase.execute({})
       return ctx.json(orders)
     } catch (error: any) {
       return ctx.json({ message: error.message }, 500)

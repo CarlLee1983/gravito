@@ -1,5 +1,7 @@
 import type { PlanetCore } from '@gravito/core'
-import { Adjustment, type Order } from '../../Domain/Entities/Order'
+import type { Order } from '../../Domain/Entities/Order'
+import { Adjustment, AdjustmentType } from '../../Domain/ValueObjects/Adjustment'
+import { Money } from '../../Domain/ValueObjects/Money'
 
 export class AdjustmentCalculator {
   constructor(private core: PlanetCore) {}
@@ -11,12 +13,13 @@ export class AdjustmentCalculator {
     // 1. 預設基礎調整項：固定運費 (示範)
     const baseShippingFee = 60
     order.addAdjustment(
-      new Adjustment(crypto.randomUUID(), {
-        label: 'Standard Shipping',
-        amount: baseShippingFee,
-        sourceType: 'shipping',
-        sourceId: 'standard',
-      })
+      Adjustment.create(
+        AdjustmentType.SHIPPING,
+        'Standard Shipping',
+        Money.of(baseShippingFee, order.currency),
+        'shipping',
+        'standard'
+      )
     )
 
     // 2. 關鍵：利用 Gravito Filters 讓外部插件 (如 Marketing) 注入調整項

@@ -1,34 +1,54 @@
 import { UseCase } from '@gravito/enterprise'
+import type { IOrderRepository } from '../../Domain/Contracts/IOrderRepository'
+import type { OrderDTO } from '../DTOs/OrderDTO'
+import { OrderMapper } from '../DTOs/OrderMapper'
 
-export class AdminListOrders extends UseCase<any, any[]> {
-  async execute(): Promise<any[]> {
-    // 模擬從資料庫獲取所有訂單
-    // 真實情境應注入 IOrderRepository
-    return [
-      {
-        id: 'ORD-2025122901',
-        customerName: 'Carl',
-        totalAmount: 1250,
-        paymentStatus: 'PAID',
-        shippingStatus: 'SHIPPED',
-        createdAt: new Date('2025-12-29T10:00:00Z'),
-      },
-      {
-        id: 'ORD-2025122902',
-        customerName: 'Alice',
-        totalAmount: 3200,
-        paymentStatus: 'PAID',
-        shippingStatus: 'PENDING',
-        createdAt: new Date('2025-12-29T11:30:00Z'),
-      },
-      {
-        id: 'ORD-2025122903',
-        customerName: 'Bob',
-        totalAmount: 450,
-        paymentStatus: 'UNPAID',
-        shippingStatus: 'PENDING',
-        createdAt: new Date('2025-12-29T14:20:00Z'),
-      },
-    ]
+/**
+ * AdminListOrders UseCase 輸入
+ */
+export interface AdminListOrdersInput {
+  status?: string
+  memberId?: string
+  limit?: number
+  offset?: number
+}
+
+/**
+ * AdminListOrders UseCase 輸出
+ */
+export interface AdminListOrdersOutput {
+  items: OrderDTO[]
+  total: number
+  limit: number
+  offset: number
+}
+
+/**
+ * AdminListOrders UseCase
+ *
+ * 管理後台查詢訂單列表（真實 DB 查詢）
+ */
+export class AdminListOrders extends UseCase<AdminListOrdersInput, AdminListOrdersOutput> {
+  constructor(private orderRepository: IOrderRepository) {
+    super()
+  }
+
+  async execute(input: AdminListOrdersInput): Promise<AdminListOrdersOutput> {
+    const limit = input.limit || 20
+    const offset = input.offset || 0
+
+    const { items, total } = await this.orderRepository.findAll({
+      status: input.status,
+      memberId: input.memberId,
+      limit,
+      offset,
+    })
+
+    return {
+      items: OrderMapper.toDTOList(items),
+      total,
+      limit,
+      offset,
+    }
   }
 }
