@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it, mock } from 'bun:test'
 import { DB } from '../src/DB'
+import { DatabaseError } from '../src/errors'
 
 const CONNECTION_NAME = `retry_test_${Math.random().toString(36).slice(2)}`
 
@@ -48,6 +49,26 @@ describe('DB.transactionWithRetry', () => {
     )
 
     expect(result).toBe('done')
+    expect(attempts).toBe(2)
+  })
+
+  it('should retry on DatabaseError with nested code in originalError', async () => {
+    let attempts = 0
+    const result = await DB.transactionWithRetry(
+      async (conn, attempt) => {
+        attempts = attempt
+        if (attempt < 2) {
+          const originalError = new Error('Postgres Deadlock')
+          ;(originalError as any).code = '40P01'
+          throw new DatabaseError('Database operation failed', originalError)
+        }
+        return 'pg_success'
+      },
+      CONNECTION_NAME,
+      { maxRetries: 3, baseDelay: 5 }
+    )
+
+    expect(result).toBe('pg_success')
     expect(attempts).toBe(2)
   })
 

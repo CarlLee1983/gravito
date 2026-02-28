@@ -588,10 +588,11 @@ export class DB {
           return await callback(conn, attempts)
         }, connectionName)
       } catch (error: any) {
+        const errorCode = error.code || error.originalError?.code
         const isRetryable =
           error.name === 'StaleModelError' ||
-          (error.code &&
-            ['40001', 'ER_LOCK_DEADLOCK', 'SQLITE_BUSY', '40P01'].includes(error.code)) ||
+          (errorCode &&
+            ['40001', 'ER_LOCK_DEADLOCK', 'SQLITE_BUSY', '40P01'].includes(errorCode)) ||
           options.retryableErrors?.(error)
 
         if (!isRetryable || attempts >= maxRetries) {
