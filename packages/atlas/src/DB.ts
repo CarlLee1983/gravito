@@ -561,16 +561,22 @@ export class DB {
    * @template T - Logic result type.
    * @param callback - The transactional logic. Receives the connection and current attempt.
    * @param connectionName - Optional specific connection name.
-   * @param options - Retry configuration (maxRetries, baseDelay).
+   * @param options - Retry configuration (maxRetries, baseDelay, maxDelay, retryableErrors, onRetry).
    * @returns The callback's return value.
    * @throws Rethrows the last error if max retries are exceeded.
    */
   static async transactionWithRetry<T>(
     callback: (connection: ConnectionContract, attempt: number) => Promise<T>,
     connectionName?: string,
-    options: { maxRetries?: number; baseDelay?: number } = {}
+    options: {
+      maxRetries?: number
+      baseDelay?: number
+      maxDelay?: number
+      retryableErrors?: (error: any) => boolean
+      onRetry?: (error: any, attempt: number, delay: number) => void
+    } = {}
   ): Promise<T> {
-    const { maxRetries = 5, baseDelay = 100 } = options
+    const { maxRetries = 5, baseDelay = 100, maxDelay = 30000 } = options
     let attempts = 0
 
     const delay = (ms: number) => new Promise((res) => setTimeout(res, ms))
@@ -584,16 +590,22 @@ export class DB {
       } catch (error: any) {
         const isRetryable =
           error.name === 'StaleModelError' ||
-          (error.code && ['40001', 'ER_LOCK_DEADLOCK', 'SQLITE_BUSY', '40P01'].includes(error.code))
+          (error.code &&
+            ['40001', 'ER_LOCK_DEADLOCK', 'SQLITE_BUSY', '40P01'].includes(error.code)) ||
+          options.retryableErrors?.(error)
 
         if (!isRetryable || attempts >= maxRetries) {
           throw error
         }
 
-        // Exponential Backoff with Jitter: (2^attempt * baseDelay) + random(0, baseDelay)
-        const backoff = 2 ** attempts * baseDelay
-        const jitter = Math.random() * baseDelay
-        await delay(backoff + jitter)
+        // Full Jitter: random(0, min(maxDelay, baseDelay * 2^attempt))
+        const backoff = Math.min(maxDelay, baseDelay * 2 ** attempts)
+        const jitteredDelay = Math.floor(Math.random() * backoff)
+
+        // Trigger Retry Hook
+        options.onRetry?.(error, attempts, jitteredDelay)
+
+        await delay(jitteredDelay)
       }
     }
 
