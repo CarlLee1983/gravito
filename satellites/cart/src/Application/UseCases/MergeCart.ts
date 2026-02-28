@@ -15,7 +15,7 @@ export interface MergeCartInput {
 export class MergeCart extends UseCase<MergeCartInput, void> {
   private context: MergeCartContext
 
-  constructor(private repository: ICartRepository) {
+  constructor(repository: ICartRepository) {
     super()
     this.context = new MergeCartContext(repository)
   }

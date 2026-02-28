@@ -4,7 +4,6 @@ import {
   type AddToCart,
   CartNotFoundError,
   type ClearCart,
-  cartToDTO,
   type GetCart,
   InvalidQuantityError,
   type MergeCart,

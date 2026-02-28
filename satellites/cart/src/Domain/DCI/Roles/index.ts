@@ -1,8 +1,6 @@
-export type { CartOwner }
+export type { CartOwner } from './CartOwnerRole'
 export { injectCartOwner } from './CartOwnerRole'
-
-export type { MergeDonor }
+export type { MergeDonor } from './MergeDonorRole'
 export { injectMergeDonor } from './MergeDonorRole'
-
-export type { MergeReceiver }
+export type { MergeReceiver } from './MergeReceiverRole'
 export { injectMergeReceiver } from './MergeReceiverRole'

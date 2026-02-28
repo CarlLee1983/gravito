@@ -1,5 +1,4 @@
 import type { ICartRepository } from '../../Contracts/ICartRepository'
-import { Cart } from '../../Entities/Cart'
 import { injectMergeDonor, injectMergeReceiver } from '../Roles'
 
 /**

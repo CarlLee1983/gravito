@@ -17,7 +17,7 @@ export interface UpdateCartItemInput {
 export class UpdateCartItem extends UseCase<UpdateCartItemInput, void> {
   private context: UpdateItemContext
 
-  constructor(private repository: ICartRepository) {
+  constructor(repository: ICartRepository) {
     super()
     this.context = new UpdateItemContext(repository)
   }

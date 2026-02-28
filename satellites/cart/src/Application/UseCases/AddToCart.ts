@@ -16,7 +16,7 @@ export interface AddToCartInput {
 export class AddToCart extends UseCase<AddToCartInput, void> {
   private context: AddItemContext
 
-  constructor(private repository: ICartRepository) {
+  constructor(repository: ICartRepository) {
     super()
     this.context = new AddItemContext(repository)
   }

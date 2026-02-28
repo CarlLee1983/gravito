@@ -1,3 +1,3 @@
-export * from './DTOs'
-export * from './Errors'
+export * from './DTOs/CartDTO'
+export * from './Errors/CartError'
 export * from './UseCases'

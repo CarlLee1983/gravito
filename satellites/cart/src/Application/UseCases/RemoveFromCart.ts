@@ -16,7 +16,7 @@ export interface RemoveFromCartInput {
 export class RemoveFromCart extends UseCase<RemoveFromCartInput, void> {
   private context: RemoveItemContext
 
-  constructor(private repository: ICartRepository) {
+  constructor(repository: ICartRepository) {
     super()
     this.context = new RemoveItemContext(repository)
   }
