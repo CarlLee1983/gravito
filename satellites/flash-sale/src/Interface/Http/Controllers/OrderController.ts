@@ -9,6 +9,7 @@
 import type { GravitoContext, PlanetCore } from '@gravito/core'
 import { FlashSaleError } from '../../../Application/Errors/FlashSaleError'
 import { ConfirmOrder } from '../../../Application/UseCases/ConfirmOrder'
+import { CreateBulkOrder } from '../../../Application/UseCases/CreateBulkOrder'
 import { CreateOrder } from '../../../Application/UseCases/CreateOrder'
 import { GetOrder } from '../../../Application/UseCases/GetOrder'
 import { ListOrders } from '../../../Application/UseCases/ListOrders'
@@ -51,6 +52,40 @@ export class OrderController {
       })
     } catch (error) {
       this.handleError(ctx, error, 'Failed to create order')
+    }
+  }
+
+  /**
+   * POST /api/orders/bulk
+   *
+   * 建立多商品訂單（批量搶購）
+   */
+  async storeBulk(ctx: GravitoContext): Promise<void> {
+    try {
+      const body = (await ctx.req.json()) as {
+        userId: string
+        items: Array<{
+          productId: string
+          quantity: number
+        }>
+      }
+
+      const productRepo = this.core.container.make<IProductRepository>('product.repository')
+      const orderRepo = this.core.container.make<IOrderRepository>('order.repository')
+
+      const useCase = new CreateBulkOrder(productRepo, orderRepo)
+      const result = await useCase.execute({
+        userId: body.userId,
+        items: body.items,
+      })
+
+      ctx.status(201)
+      ctx.json({
+        success: true,
+        data: result,
+      })
+    } catch (error) {
+      this.handleError(ctx, error, 'Failed to create bulk order')
     }
   }
 

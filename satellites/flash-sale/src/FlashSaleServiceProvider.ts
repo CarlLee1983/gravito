@@ -278,6 +278,7 @@ export class FlashSaleServiceProvider extends ServiceProvider {
       // 訂單管理路由
       router.get('/orders', [OrderController, 'list'])
       router.post('/orders', [OrderController, 'store'])
+      router.post('/orders/bulk', [OrderController, 'storeBulk'])
       router.get('/orders/:id', [OrderController, 'show'])
 
       // 管理員路由

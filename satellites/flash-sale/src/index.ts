@@ -14,6 +14,8 @@ export { ProductMapper } from './Application/DTOs/ProductDTO'
 // === Domain Errors ===
 export { FlashSaleError, FlashSaleErrorCode } from './Application/Errors/FlashSaleError'
 export { ConfirmOrder } from './Application/UseCases/ConfirmOrder'
+export type { CreateBulkOrderInput } from './Application/UseCases/CreateBulkOrder'
+export { CreateBulkOrder } from './Application/UseCases/CreateBulkOrder'
 export type { CreateOrderInput as CreateOrderUseCaseInput } from './Application/UseCases/CreateOrder'
 // === UseCases ===
 export { CreateOrder } from './Application/UseCases/CreateOrder'
@@ -24,6 +26,8 @@ export { ListProducts } from './Application/UseCases/ListProducts'
 // === Domain Contracts ===
 export type { IOrderRepository } from './Domain/Contracts/IOrderRepository'
 export type { IProductRepository } from './Domain/Contracts/IProductRepository'
+export type { BulkPurchaseItem as BulkPurchaseContextItem } from './Domain/DCI/Contexts/BulkPurchaseContext'
+export { BulkPurchaseContext } from './Domain/DCI/Contexts/BulkPurchaseContext'
 export { OrderLifecycleContext } from './Domain/DCI/Contexts/OrderLifecycleContext'
 export { ProductQueryContext } from './Domain/DCI/Contexts/ProductQueryContext'
 // === DCI Contexts ===
