@@ -1,16 +1,24 @@
+import type { AggregationType, ChartType } from '../Entities/AnalyticsReport'
+import type { DataPoint } from '../Entities/DataPoint'
+import type { Dimension } from '../ValueObjects/Dimension'
+import type { MetricName } from '../ValueObjects/MetricName'
+import type { TimePeriod } from '../ValueObjects/TimePeriod'
+
 export interface AnalyticsQuery {
-  metric: string
-  period: '24h' | '7d' | '30d' | '90d'
-  filters?: Record<string, any>
+  metric: MetricName
+  period: TimePeriod
+  dimensions?: Dimension[]
+  aggregation?: AggregationType
 }
 
-export interface AnalyticsResponse {
-  type: 'TIMESERIES' | 'SINGLE_VALUE' | 'PIE' | 'TABLE'
-  data: any
-  summary?: string
+export interface AnalyticsResult {
+  chartType: ChartType
+  dataPoints: DataPoint[]
+  aggregatedValue: number
+  summary: string | null
 }
 
 export interface IAnalyticsResolver {
-  metric: string
-  resolve(query: AnalyticsQuery): Promise<AnalyticsResponse>
+  metricName: MetricName
+  resolve(query: AnalyticsQuery): Promise<AnalyticsResult>
 }
