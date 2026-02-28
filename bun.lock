@@ -2088,6 +2088,7 @@
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
+        "@gravito/enterprise": "workspace:*",
         "@gravito/stasis": "workspace:*",
       },
       "devDependencies": {

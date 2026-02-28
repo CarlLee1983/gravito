@@ -1,21 +1,42 @@
 /**
- * 訂單 Repository 合約
+ * 訂單 Repository 合約（Application 層 - 舊版，向後相容）
+ *
+ * 此介面保留用於 CacheWarmupService 等既有基礎設施服務。
+ * 新程式碼應使用 Domain/Contracts/IOrderRepository。
  */
 
-import type { Order, OrderStatus } from '../../Domain/Models'
+import type { OrderStatus } from '../../Domain/Models'
 
 /**
- * 訂單 Repository 介面
+ * 舊版 Order 介面（用於向後相容）
+ */
+export interface LegacyOrder {
+  id: string
+  userId: string
+  status: OrderStatus
+  items: Array<{
+    id: string
+    orderId: string
+    productId: string
+    productName: string
+    quantity: number
+    unitPrice: number
+    totalPrice: number
+  }>
+  totalAmount: number
+  paymentMethod?: string
+  paymentId?: string
+  createdAt: Date
+  updatedAt: Date
+  paidAt?: Date
+  confirmedAt?: Date
+}
+
+/**
+ * 訂單 Repository 介面（Application 層 - 舊版）
  */
 export interface IOrderRepository {
-  /**
-   * 根據 ID 查詢訂單
-   */
-  findById(id: string): Promise<Order | null>
-
-  /**
-   * 根據用戶 ID 查詢訂單列表
-   */
+  findById(id: string): Promise<LegacyOrder | null>
   findByUserId(
     userId: string,
     options?: {
@@ -24,34 +45,14 @@ export interface IOrderRepository {
       limit?: number
     }
   ): Promise<{
-    items: Order[]
+    items: LegacyOrder[]
     total: number
     page: number
     limit: number
   }>
-
-  /**
-   * 建立訂單
-   */
-  create(data: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>): Promise<Order>
-
-  /**
-   * 更新訂單
-   */
-  update(id: string, data: Partial<Order>): Promise<Order>
-
-  /**
-   * 更新訂單狀態
-   */
-  updateStatus(id: string, status: OrderStatus): Promise<Order>
-
-  /**
-   * 刪除訂單（邏輯刪除）
-   */
+  create(data: Omit<LegacyOrder, 'id' | 'createdAt' | 'updatedAt'>): Promise<LegacyOrder>
+  update(id: string, data: Partial<LegacyOrder>): Promise<LegacyOrder>
+  updateStatus(id: string, status: OrderStatus): Promise<LegacyOrder>
   delete(id: string): Promise<void>
-
-  /**
-   * 查詢特定時間範圍內的訂單（用於分析）
-   */
-  findByDateRange(startDate: Date, endDate: Date, userId?: string): Promise<Order[]>
+  findByDateRange(startDate: Date, endDate: Date, userId?: string): Promise<LegacyOrder[]>
 }
