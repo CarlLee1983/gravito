@@ -10,6 +10,7 @@ export enum AdErrorCode {
   AD_EXPIRED = 'AD_EXPIRED',
   NO_ACTIVE_ADS = 'NO_ACTIVE_ADS',
   INVALID_URL = 'INVALID_URL',
+  INVALID_DELIVERY_COUNT = 'INVALID_DELIVERY_COUNT',
 }
 
 /**
@@ -65,5 +66,13 @@ export class AdError extends Error {
 
   static invalidUrl(url: string): AdError {
     return new AdError(`無效的網址: ${url}`, AdErrorCode.INVALID_URL, 400)
+  }
+
+  static invalidDeliveryCount(count: number, max: number): AdError {
+    return new AdError(
+      `無效的投放數量: ${count}，必須在 1-${max} 之間`,
+      AdErrorCode.INVALID_DELIVERY_COUNT,
+      400
+    )
   }
 }
