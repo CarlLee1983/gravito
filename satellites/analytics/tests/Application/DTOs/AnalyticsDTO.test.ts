@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'bun:test'
-import { AnalyticsMapper } from '../../../../../src/Application/DTOs/AnalyticsDTO.ts'
-import { AnalyticsReport } from '../../../../../src/Domain/Entities/AnalyticsReport'
-import { DataPoint } from '../../../../../src/Domain/Entities/DataPoint'
-import { DataPointValue } from '../../../../../src/Domain/ValueObjects/DataPointValue'
-import { Dimension } from '../../../../../src/Domain/ValueObjects/Dimension'
-import { MetricName } from '../../../../../src/Domain/ValueObjects/MetricName'
-import { TimePeriod } from '../../../../../src/Domain/ValueObjects/TimePeriod'
+import { AnalyticsMapper } from '../../../src/Application/DTOs/AnalyticsDTO'
+import { AnalyticsReport } from '../../../src/Domain/Entities/AnalyticsReport'
+import { DataPoint } from '../../../src/Domain/Entities/DataPoint'
+import { DataPointValue } from '../../../src/Domain/ValueObjects/DataPointValue'
+import { Dimension } from '../../../src/Domain/ValueObjects/Dimension'
+import { MetricName } from '../../../src/Domain/ValueObjects/MetricName'
+import { TimePeriod } from '../../../src/Domain/ValueObjects/TimePeriod'
 
 describe('AnalyticsMapper', () => {
   it('toDataPointDTO() 轉換 DataPoint', () => {
@@ -49,8 +49,9 @@ describe('AnalyticsMapper', () => {
     const period = TimePeriod.fromPreset('7d')
     const report = AnalyticsReport.create('report-1', metricName, period, 'SUM', 'TIMESERIES')
     const dp = DataPoint.create('dp-1', metricName, DataPointValue.of(1000), new Date(), 'event')
-    report.addDataPoint(dp)
-    report.computeSummary()
+    report.setDataPoints([dp])
+    report.setAggregatedValue(1000)
+    report.setSummary('commerce.revenue SUM = 1000')
 
     const dto = AnalyticsMapper.toReportDTO(report)
 

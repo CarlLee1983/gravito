@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'bun:test'
-import { LoadDashboard } from '../../../../../src/Application/UseCases/LoadDashboard.ts'
+import { LoadDashboard } from '../../../src/Application/UseCases/LoadDashboard'
 import type {
   IDataPointRepository,
   IReportRepository,
-} from '../../../../../src/Domain/Contracts/IAnalyticsRepository'
-import type { AnalyticsReport } from '../../../../../src/Domain/Entities/AnalyticsReport'
-import type { DataPoint } from '../../../../../src/Domain/Entities/DataPoint'
+} from '../../../src/Domain/Contracts/IAnalyticsRepository'
+import type { AnalyticsReport } from '../../../src/Domain/Entities/AnalyticsReport'
+import type { DataPoint } from '../../../src/Domain/Entities/DataPoint'
 
 class InMemoryDataPointRepository implements IDataPointRepository {
   async save() {}

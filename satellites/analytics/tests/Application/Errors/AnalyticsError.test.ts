@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { AnalyticsError } from '../../../../../src/Application/Errors/AnalyticsError'
+import { AnalyticsError } from '../../../src/Application/Errors/AnalyticsError'
 
 describe('AnalyticsError', () => {
   it('metricNotFound', () => {

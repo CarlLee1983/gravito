@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
-import { IngestData } from '../../../../../src/Application/UseCases/IngestData.ts'
-import type { IDataPointRepository } from '../../../../../src/Domain/Contracts/IAnalyticsRepository'
-import type { DataPoint } from '../../../../../src/Domain/Entities/DataPoint'
+import { IngestData } from '../../../src/Application/UseCases/IngestData'
+import type { IDataPointRepository } from '../../../src/Domain/Contracts/IAnalyticsRepository'
+import type { DataPoint } from '../../../src/Domain/Entities/DataPoint'
 
 class InMemoryDataPointRepository implements IDataPointRepository {
   private dataPoints: DataPoint[] = []

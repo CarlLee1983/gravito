@@ -1,5 +1,4 @@
 import { AggregateRoot, type DomainEvent } from '@gravito/enterprise'
-import { AnalyticsError } from '../../Application/Errors/AnalyticsError'
 import type { MetricName } from '../ValueObjects/MetricName'
 import type { TimePeriod } from '../ValueObjects/TimePeriod'
 import type { DataPoint } from './DataPoint'
@@ -15,6 +14,7 @@ export interface AnalyticsReportProps {
   dataPoints: DataPoint[]
   summary: string | null
   generatedAt: Date
+  aggregatedValue?: number
 }
 
 export class AnalyticsReportGenerated implements DomainEvent {
@@ -101,64 +101,40 @@ export class AnalyticsReport extends AggregateRoot<string> {
     return this.props.dataPoints.length === 0
   }
 
-  addDataPoint(dataPoint: DataPoint): void {
-    if (!dataPoint.metricName.equals(this.props.metricName)) {
-      throw AnalyticsError.invalidMetricName(
-        `指標不匹配：${dataPoint.metricName.fullName} vs ${this.props.metricName.fullName}`
-      )
-    }
-    this.props.dataPoints.push(dataPoint)
+  get aggregatedValue(): number {
+    return this.props.aggregatedValue ?? 0
   }
 
+  /**
+   * 批量設置資料點（預驗證）
+   *
+   * 驗證應在 Role 層面執行
+   */
   setDataPoints(dataPoints: DataPoint[]): void {
-    for (const dp of dataPoints) {
-      if (!dp.metricName.equals(this.props.metricName)) {
-        throw AnalyticsError.invalidMetricName(
-          `指標不匹配：${dp.metricName.fullName} vs ${this.props.metricName.fullName}`
-        )
-      }
-    }
     this.props.dataPoints = [...dataPoints]
   }
 
-  computeAggregatedValue(): number {
-    if (this.isEmpty) {
-      return 0
-    }
-
-    const values = this.props.dataPoints.map((dp) => dp.value.value)
-
-    switch (this.props.aggregation) {
-      case 'SUM':
-        return values.reduce((sum, v) => sum + v, 0)
-      case 'AVG':
-        return values.reduce((sum, v) => sum + v, 0) / values.length
-      case 'COUNT':
-        return values.length
-      case 'MIN':
-        return Math.min(...values)
-      case 'MAX':
-        return Math.max(...values)
-    }
+  /**
+   * 設置摘要文本（由 ReportBuilder 透過聚合計算結果產生）
+   */
+  setSummary(summary: string): void {
+    this.props.summary = summary
   }
 
-  computeSummary(): void {
-    if (this.isEmpty) {
-      this.props.summary = '無資料'
-      return
-    }
-
-    const aggregatedValue = this.computeAggregatedValue()
-    const dataPointCount = this.props.dataPoints.length
-    const metricName = this.props.metricName.fullName
-
-    this.props.summary =
-      `${metricName} 在 ${this.props.period.toString()} 的${this.props.aggregation}值為 ${aggregatedValue.toFixed(2)}` +
-      `（共 ${dataPointCount} 個資料點）`
+  /**
+   * 設置聚合值（由 ReportBuilder 計算後設置）
+   */
+  setAggregatedValue(value: number): void {
+    this.props.aggregatedValue = value
   }
 
+  /**
+   * 發佈報告生成事件
+   *
+   * 前置條件：aggregatedValue 應由 ReportBuilder 設置
+   */
   markAsGenerated(): void {
-    const aggregatedValue = this.computeAggregatedValue()
+    const aggregatedValue = this.props.aggregatedValue ?? 0
     this.addDomainEvent(
       new AnalyticsReportGenerated(
         this.id,

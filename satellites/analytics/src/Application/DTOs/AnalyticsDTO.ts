@@ -52,7 +52,7 @@ export class AnalyticsMapper {
       aggregation: report.aggregation,
       chartType: report.chartType,
       dataPoints: report.dataPoints.map((dp) => this.toDataPointDTO(dp)),
-      aggregatedValue: report.computeAggregatedValue(),
+      aggregatedValue: report.aggregatedValue,
       summary: report.summary,
       generatedAt: report.generatedAt.toISOString(),
     }

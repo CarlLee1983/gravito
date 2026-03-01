@@ -41,7 +41,7 @@ export class OrderVolumeResolver implements IAnalyticsResolver {
     return {
       chartType: report.chartType,
       dataPoints: report.dataPoints,
-      aggregatedValue: report.computeAggregatedValue(),
+      aggregatedValue: report.aggregatedValue,
       summary: report.summary,
     }
   }

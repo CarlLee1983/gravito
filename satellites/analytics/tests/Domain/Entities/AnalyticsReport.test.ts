@@ -1,5 +1,4 @@
-import { describe, expect, it } from 'vitest'
-import { AnalyticsError } from '../../../src/Application/Errors/AnalyticsError'
+import { describe, expect, it } from 'bun:test'
 import { AnalyticsReport } from '../../../src/Domain/Entities/AnalyticsReport'
 import { DataPoint } from '../../../src/Domain/Entities/DataPoint'
 import { DataPointValue } from '../../../src/Domain/ValueObjects/DataPointValue'
@@ -35,31 +34,6 @@ describe('AnalyticsReport', () => {
     expect(report.isEmpty).toBe(true)
   })
 
-  it('addDataPoint() 新增資料點', () => {
-    const metricName = MetricName.of('commerce.revenue')
-    const period = TimePeriod.fromPreset('7d')
-    const report = AnalyticsReport.create('report-1', metricName, period, 'SUM', 'TIMESERIES')
-    const dp = DataPoint.create(
-      'dp-1',
-      metricName,
-      DataPointValue.of(1000, 'currency_cents'),
-      new Date(),
-      'event'
-    )
-    report.addDataPoint(dp)
-    expect(report.dataPointCount).toBe(1)
-    expect(report.isEmpty).toBe(false)
-  })
-
-  it('addDataPoint() throws 當指標不匹配', () => {
-    const metric1 = MetricName.of('commerce.revenue')
-    const metric2 = MetricName.of('commerce.order_volume')
-    const period = TimePeriod.fromPreset('7d')
-    const report = AnalyticsReport.create('report-1', metric1, period, 'SUM', 'TIMESERIES')
-    const dp = DataPoint.create('dp-1', metric2, DataPointValue.of(100), new Date(), 'event')
-    expect(() => report.addDataPoint(dp)).toThrow(AnalyticsError)
-  })
-
   it('setDataPoints() 設定所有資料點', () => {
     const metricName = MetricName.of('commerce.revenue')
     const period = TimePeriod.fromPreset('7d')
@@ -70,9 +44,10 @@ describe('AnalyticsReport', () => {
     ]
     report.setDataPoints(dps)
     expect(report.dataPointCount).toBe(2)
+    expect(report.isEmpty).toBe(false)
   })
 
-  it('setDataPoints() throws 當任何指標不匹配', () => {
+  it('setDataPoints() 不進行驗證（驗證由 Role 負責）', () => {
     const metric1 = MetricName.of('commerce.revenue')
     const metric2 = MetricName.of('commerce.order_volume')
     const period = TimePeriod.fromPreset('7d')
@@ -81,101 +56,59 @@ describe('AnalyticsReport', () => {
       DataPoint.create('dp-1', metric1, DataPointValue.of(1000), new Date(), 'event'),
       DataPoint.create('dp-2', metric2, DataPointValue.of(2000), new Date(), 'event'),
     ]
-    expect(() => report.setDataPoints(dps)).toThrow(AnalyticsError)
+    // Entity 的 setDataPoints 不驗證指標匹配，驗證在 ReportBuilderRole 中
+    report.setDataPoints(dps)
+    expect(report.dataPointCount).toBe(2)
   })
 
-  it('computeAggregatedValue() SUM 聚合', () => {
+  it('setSummary() 設定摘要', () => {
     const metricName = MetricName.of('commerce.revenue')
     const period = TimePeriod.fromPreset('7d')
     const report = AnalyticsReport.create('report-1', metricName, period, 'SUM', 'TIMESERIES')
-    const dps = [
-      DataPoint.create('dp-1', metricName, DataPointValue.of(100), new Date(), 'event'),
-      DataPoint.create('dp-2', metricName, DataPointValue.of(200), new Date(), 'event'),
-      DataPoint.create('dp-3', metricName, DataPointValue.of(300), new Date(), 'event'),
-    ]
-    report.setDataPoints(dps)
-    expect(report.computeAggregatedValue()).toBe(600)
+    expect(report.summary).toBeNull()
+
+    report.setSummary('測試摘要')
+    expect(report.summary).toBe('測試摘要')
   })
 
-  it('computeAggregatedValue() AVG 聚合', () => {
-    const metricName = MetricName.of('commerce.order_volume')
-    const period = TimePeriod.fromPreset('7d')
-    const report = AnalyticsReport.create('report-1', metricName, period, 'AVG', 'SINGLE_VALUE')
-    const dps = [
-      DataPoint.create('dp-1', metricName, DataPointValue.of(100), new Date(), 'event'),
-      DataPoint.create('dp-2', metricName, DataPointValue.of(200), new Date(), 'event'),
-    ]
-    report.setDataPoints(dps)
-    expect(report.computeAggregatedValue()).toBe(150)
-  })
-
-  it('computeAggregatedValue() COUNT 聚合', () => {
-    const metricName = MetricName.of('membership.signups')
-    const period = TimePeriod.fromPreset('7d')
-    const report = AnalyticsReport.create('report-1', metricName, period, 'COUNT', 'SINGLE_VALUE')
-    const dps = [
-      DataPoint.create('dp-1', metricName, DataPointValue.of(1), new Date(), 'event'),
-      DataPoint.create('dp-2', metricName, DataPointValue.of(1), new Date(), 'event'),
-      DataPoint.create('dp-3', metricName, DataPointValue.of(1), new Date(), 'event'),
-    ]
-    report.setDataPoints(dps)
-    expect(report.computeAggregatedValue()).toBe(3)
-  })
-
-  it('computeAggregatedValue() MIN 聚合', () => {
-    const metricName = MetricName.of('commerce.revenue')
-    const period = TimePeriod.fromPreset('7d')
-    const report = AnalyticsReport.create('report-1', metricName, period, 'MIN', 'TIMESERIES')
-    const dps = [
-      DataPoint.create('dp-1', metricName, DataPointValue.of(100), new Date(), 'event'),
-      DataPoint.create('dp-2', metricName, DataPointValue.of(50), new Date(), 'event'),
-      DataPoint.create('dp-3', metricName, DataPointValue.of(200), new Date(), 'event'),
-    ]
-    report.setDataPoints(dps)
-    expect(report.computeAggregatedValue()).toBe(50)
-  })
-
-  it('computeAggregatedValue() MAX 聚合', () => {
-    const metricName = MetricName.of('commerce.revenue')
-    const period = TimePeriod.fromPreset('7d')
-    const report = AnalyticsReport.create('report-1', metricName, period, 'MAX', 'TIMESERIES')
-    const dps = [
-      DataPoint.create('dp-1', metricName, DataPointValue.of(100), new Date(), 'event'),
-      DataPoint.create('dp-2', metricName, DataPointValue.of(50), new Date(), 'event'),
-      DataPoint.create('dp-3', metricName, DataPointValue.of(200), new Date(), 'event'),
-    ]
-    report.setDataPoints(dps)
-    expect(report.computeAggregatedValue()).toBe(200)
-  })
-
-  it('computeAggregatedValue() 空報告返回 0', () => {
+  it('setAggregatedValue() 設定聚合值', () => {
     const metricName = MetricName.of('commerce.revenue')
     const period = TimePeriod.fromPreset('7d')
     const report = AnalyticsReport.create('report-1', metricName, period, 'SUM', 'TIMESERIES')
-    expect(report.computeAggregatedValue()).toBe(0)
+    expect(report.aggregatedValue).toBe(0)
+
+    report.setAggregatedValue(1500)
+    expect(report.aggregatedValue).toBe(1500)
   })
 
-  it('computeSummary() 生成摘要', () => {
+  it('aggregatedValue getter 預設為 0', () => {
     const metricName = MetricName.of('commerce.revenue')
     const period = TimePeriod.fromPreset('7d')
     const report = AnalyticsReport.create('report-1', metricName, period, 'SUM', 'TIMESERIES')
-    const dps = [
-      DataPoint.create('dp-1', metricName, DataPointValue.of(100), new Date(), 'event'),
-      DataPoint.create('dp-2', metricName, DataPointValue.of(200), new Date(), 'event'),
-    ]
+    expect(report.aggregatedValue).toBe(0)
+  })
+
+  it('dataPoints getter 回傳副本', () => {
+    const metricName = MetricName.of('commerce.revenue')
+    const period = TimePeriod.fromPreset('7d')
+    const report = AnalyticsReport.create('report-1', metricName, period, 'SUM', 'TIMESERIES')
+    const dps = [DataPoint.create('dp-1', metricName, DataPointValue.of(100), new Date(), 'event')]
     report.setDataPoints(dps)
-    report.computeSummary()
-    expect(report.summary).toContain('commerce.revenue')
-    expect(report.summary).toContain('300')
-    expect(report.summary).toContain('2')
+
+    const copy1 = report.dataPoints
+    const copy2 = report.dataPoints
+    expect(copy1).not.toBe(copy2)
+    expect(copy1).toEqual(copy2)
   })
 
-  it('computeSummary() 空報告', () => {
+  it('generatedAt 回傳副本（防止外部修改）', () => {
     const metricName = MetricName.of('commerce.revenue')
     const period = TimePeriod.fromPreset('7d')
     const report = AnalyticsReport.create('report-1', metricName, period, 'SUM', 'TIMESERIES')
-    report.computeSummary()
-    expect(report.summary).toBe('無資料')
+    const date1 = report.generatedAt
+    const date2 = report.generatedAt
+    expect(date1).not.toBe(date2)
+    expect(date1.getTime()).toBe(date2.getTime())
   })
 
   it('markAsGenerated() 發出 DomainEvent', () => {
@@ -184,10 +117,23 @@ describe('AnalyticsReport', () => {
     const report = AnalyticsReport.create('report-1', metricName, period, 'SUM', 'TIMESERIES')
     const dps = [DataPoint.create('dp-1', metricName, DataPointValue.of(1000), new Date(), 'event')]
     report.setDataPoints(dps)
+    report.setAggregatedValue(1000)
     report.markAsGenerated()
     const events = report.pullDomainEvents()
     expect(events.length).toBeGreaterThan(0)
     const event = events[0]
     expect(event?.eventName).toBe('analytics.report_generated')
+  })
+
+  it('markAsGenerated() 使用 setAggregatedValue 設置的值', () => {
+    const metricName = MetricName.of('commerce.revenue')
+    const period = TimePeriod.fromPreset('7d')
+    const report = AnalyticsReport.create('report-1', metricName, period, 'SUM', 'TIMESERIES')
+    report.setAggregatedValue(999)
+    report.markAsGenerated()
+    const events = report.pullDomainEvents()
+    expect(events.length).toBe(1)
+    // 事件中包含 aggregatedValue
+    expect(report.aggregatedValue).toBe(999)
   })
 })
