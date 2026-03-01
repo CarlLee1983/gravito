@@ -1,5 +1,6 @@
 import { CacheRegistry } from '../CacheRegistry'
 import { TableNotFoundError } from '../errors'
+import { COLUMN_KEY } from '../orm/model/decorators'
 import type { Model, ModelConstructor } from '../orm/model/Model'
 import type {
   BooleanOperator,
@@ -104,6 +105,11 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * replication lag issues.
    */
   protected _forceWrite = false
+
+  /**
+   * When true, includes deferred columns in the query.
+   */
+  protected _withDeferred = false
 
   /**
    * Internal helper to execute operations with automatic partition provisioning.
@@ -281,6 +287,17 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   setModel<M extends Model>(model: ModelConstructor<M>): this {
     this.ensureOwnState()
     this.modelClass = model
+    return this
+  }
+
+  /**
+   * Includes deferred columns in the query result.
+   *
+   * @param value - Whether to include deferred columns (default true).
+   */
+  withDeferred(value = true): this {
+    this.ensureOwnState()
+    this._withDeferred = value
     return this
   }
 
@@ -1473,6 +1490,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
     cloned.modelClass = this.modelClass
     cloned.isReadOnly = this.isReadOnly
+    cloned._withDeferred = this._withDeferred
     cloned.eagerLoads = new Map(this.eagerLoads)
     cloned._cache = this._cache
 
@@ -1521,15 +1539,64 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
     const unionBindings = unionCompiled.flatMap((u) => u.query.bindings)
 
+    // Handle Vertical Partitioning / Deferred Columns
+    let columns = this.selectClause.getColumns()
+    const joins = [...this.joinManager.getJoins()]
+
+    if (this.modelClass) {
+      const columnMeta = (this.modelClass as any)[COLUMN_KEY] || {}
+      const deferredColumns = Object.entries(columnMeta)
+        .filter(([_, options]: any) => options.deferred)
+        .map(([prop, options]: any) => options.name || prop)
+
+      const extensionTable = (this.modelClass as any).extensionTable
+
+      if (!this._withDeferred) {
+        // Exclude deferred columns if we are doing a SELECT *
+        if (columns.length === 0 || (columns.length === 1 && columns[0] === '*')) {
+          const allColumns = Object.entries(columnMeta).map(
+            ([prop, options]: any) => options.name || prop
+          )
+          columns = allColumns.filter((col) => !deferredColumns.includes(col))
+          // If no columns left or something went wrong, fallback to *
+          if (columns.length === 0) columns = ['*']
+        }
+      } else if (extensionTable) {
+        // Auto-join extension table if requested
+        const pk = this.modelClass.primaryKey || 'id'
+        const baseTable = this.tableName
+        joins.push({
+          type: 'left',
+          table: extensionTable,
+          first: `${baseTable}.${pk}`,
+          operator: '=',
+          second: `${extensionTable}.${pk}`,
+        })
+
+        // If selecting all, be explicit to ensure we get columns from both tables
+        if (columns.length === 0 || (columns.length === 1 && columns[0] === '*')) {
+          const mainColumns = Object.entries(columnMeta)
+            .filter(([_, options]: any) => !options.deferred)
+            .map(([prop, options]: any) => `${baseTable}.${options.name || prop}`)
+
+          const extendedColumns = Object.entries(columnMeta)
+            .filter(([_, options]: any) => options.deferred)
+            .map(([prop, options]: any) => `${extensionTable}.${options.name || prop}`)
+
+          columns = [...mainColumns, ...extendedColumns]
+        }
+      }
+    }
+
     return {
       table: this.tableName,
-      columns: this.selectClause.getColumns(),
+      columns,
       distinct: this.selectClause.isDistinct(),
       wheres: this.whereClause.getWheres(),
       orders: this.orderByClause.getOrders(),
       groups: this.groupByClause.getGroups(),
       havings: this.havingClause.getHavings(),
-      joins: this.joinManager.getJoins(),
+      joins,
       unions: unionCompiled,
       limit: this.limitClause.getLimit(),
       offset: this.limitClause.getOffset(),

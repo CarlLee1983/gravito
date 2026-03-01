@@ -1,6 +1,7 @@
 import { SchemaRegistry } from '../../schema/SchemaRegistry'
 import type { ColumnType, TableSchema } from '../../schema/types'
 import { DirtyTracker } from '../DirtyTracker'
+import { COLUMN_KEY } from '../decorators'
 import { ColumnNotFoundError, NullableConstraintError, TypeMismatchError } from '../errors'
 
 export type ModelAttributes = Record<string, unknown>
@@ -296,6 +297,16 @@ export class HasAttributes {
     const schema = await this._getSchema()
 
     const column = schema.columns.get(key)
+
+    // Handle Deferred Columns (Vertical Partitioning)
+    const columnMeta = modelCtor[COLUMN_KEY] || {}
+    const options = columnMeta[key]
+    if (options?.deferred) {
+      // For now, we skip deep schema validation for deferred columns
+      // if they aren't in the main table.
+      // Ideally we should fetch the extension table schema too.
+      return
+    }
 
     if (!column) {
       if (modelCtor.strictMode) {

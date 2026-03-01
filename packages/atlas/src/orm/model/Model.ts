@@ -44,6 +44,7 @@ export interface ModelStatic<T extends Model> {
   tableName?: string
   primaryKey: string
   connection?: string
+  extensionTable?: string
   partitionStrategy?: PartitionStrategy
   partitionTemplate?: (table: Blueprint) => void
   name: string
@@ -106,6 +107,11 @@ export abstract class Model {
    * Optional partitioning strategy for horizontal sharding by table suffix.
    */
   static partitionStrategy?: PartitionStrategy
+
+  /**
+   * Optional table for vertical partitioning (large columns).
+   */
+  static extensionTable?: string
 
   /**
    * Optional template callback for creating new partitions on the fly.
@@ -579,6 +585,14 @@ export abstract class Model {
     const schema = await this._getSchema()
 
     const column = schema.columns.get(key)
+
+    // Handle Deferred Columns (Vertical Partitioning)
+    const columnMeta = (modelCtor as any)[COLUMN_KEY] || {}
+    const options = columnMeta[key]
+    if (options?.deferred) {
+      // Skip deep schema validation for deferred columns residing in extension table
+      return
+    }
 
     if (!column) {
       if (modelCtor.strictMode) {

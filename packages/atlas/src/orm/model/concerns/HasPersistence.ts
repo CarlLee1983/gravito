@@ -107,7 +107,6 @@ export class HasPersistence {
   protected async _performInsert(): Promise<this> {
     const modelCtor = this.constructor as any
     const connection = this._getConnection()
-    const connectionName = connection.getName?.() || modelCtor.connection || 'default'
 
     // Trigger 'creating' event
     await (this as any).emit('creating')
@@ -118,91 +117,104 @@ export class HasPersistence {
       ;(this as any)._setAttribute(versionKey, 1)
     }
 
-    const result = await connection.table(modelCtor.getTable()).insert((this as any)._attributes)
+    const extensionTable = modelCtor.extensionTable
+    const columnMeta = modelCtor[COLUMN_KEY] || {}
 
-    // Set primary key from result
-    if (Array.isArray(result) && result.length > 0) {
-      const pk = result[0]
-      if (typeof pk === 'object' && pk !== null) {
-        // Merge all returned attributes (e.g. version, timestamps)
-        Object.assign((this as any)._attributes, pk)
-      } else {
-        ;(this as any)._attributes[modelCtor.primaryKey] = pk
-      }
-    } else if ((this as any)._attributes[modelCtor.primaryKey] === undefined) {
-      // Fallback: If RETURNING failed, try to fetch the inserted record
-      // For SQLite, we need to use a different approach since we can't rely on max()
-      // in concurrent test environments
-      try {
-        const driver = connection.getDriver()
-        const driverName = driver.getDriverName()
+    // Function to actually perform the insert (might be called inside or outside transaction)
+    const doInsert = async (conn: import('../../../types').ConnectionContract) => {
+      const attributes = (this as any)._attributes
+      const mainAttributes: Record<string, any> = {}
+      const extendedAttributes: Record<string, any> = {}
 
-        let lastId: number | bigint | string | undefined
-
-        // First, check if the driver already determined the insert ID
-        const queryResult = (result as any)._queryResult
-        if (queryResult?.insertId !== undefined && queryResult?.insertId !== 0) {
-          lastId = queryResult.insertId
+      if (extensionTable) {
+        for (const [prop, value] of Object.entries(attributes)) {
+          const options = columnMeta[prop]
+          if (options?.deferred) {
+            extendedAttributes[options.name || prop] = value
+          } else {
+            mainAttributes[options?.name || prop] = value
+          }
         }
+      } else {
+        Object.assign(mainAttributes, attributes)
+      }
 
-        if (lastId === undefined) {
+      const result = await conn.table(modelCtor.getTable()).insert(mainAttributes)
+
+      // Extract ID and handle fallbacks
+      let lastId: any
+      if (Array.isArray(result) && result.length > 0) {
+        const pk = result[0]
+        if (typeof pk === 'object' && pk !== null) {
+          Object.assign((this as any)._attributes, pk)
+          lastId = (pk as any)[modelCtor.primaryKey]
+        } else {
+          ;(this as any)._attributes[modelCtor.primaryKey] = pk
+          lastId = pk
+        }
+      } else {
+        // Fallback logic for drivers without RETURNING
+        const driver = conn.getDriver()
+        const driverName = driver.getDriverName()
+        const queryResult = (result as any)._queryResult
+        lastId = queryResult?.insertId
+
+        if (lastId === undefined || lastId === 0) {
           if (driverName === 'sqlite') {
-            // For SQLite, use last_insert_rowid()
-            const idRes = await connection.raw<{ id: number }>(
-              'SELECT last_insert_rowid() as id',
-              []
-            )
+            const idRes = await conn.raw<{ id: number }>('SELECT last_insert_rowid() as id', [])
             lastId = idRes.rows[0]?.id
           } else {
-            // For other databases, use max() as fallback
-            const maxResult = await connection.table(modelCtor.getTable()).max(modelCtor.primaryKey)
+            const maxResult = await conn.table(modelCtor.getTable()).max(modelCtor.primaryKey)
             lastId = maxResult ?? undefined
           }
         }
 
-        if (lastId !== null && lastId !== undefined && lastId !== 0) {
+        if (lastId) {
           ;(this as any)._attributes[modelCtor.primaryKey] = lastId
-
-          // Fetch the full record to get all attributes (timestamps, version, etc.)
-          const fullRecord = await connection
-            .table<any>(modelCtor.getTable())
-            .where(modelCtor.primaryKey, lastId)
-            .first()
-
-          if (fullRecord) {
-            Object.assign((this as any)._attributes, fullRecord)
-          } else {
-            throw new Error(
-              `Inserted record not found after insert for ${modelCtor.name} with ID ${lastId}. ` +
-                `Table: ${modelCtor.getTable()}, PK: ${modelCtor.primaryKey}`
-            )
-          }
-        } else {
-          throw new Error(
-            `Could not determine last insert ID for ${modelCtor.name}. ` +
-              `Driver: ${driverName}, ResultType: ${typeof result}`
-          )
         }
-      } catch (e) {
-        const driver = connection.getDriver()
-        const driverName = driver.getDriverName()
-        const config = connection.getConfig()
-        if (process.env.DEBUG_ATLAS || process.env.CI) {
-          console.error(
-            `[Atlas] Fallback failed for ${modelCtor.name} on connection ${connectionName} (${driverName}):`,
-            e
-          )
-          console.error(
-            `[Atlas] Connection Config:`,
-            JSON.stringify({ ...config, password: '***' })
-          )
-        }
-        throw new Error(
-          `Failed to set primary key after insert for ${modelCtor.name}. ` +
-            `Conn: ${connectionName}, Driver: ${driverName}. ` +
-            `Original error: ${e instanceof Error ? e.message : String(e)}`
-        )
       }
+
+      if (!lastId) {
+        throw new Error(`Failed to determine last insert ID for ${modelCtor.name}`)
+      }
+
+      // Handle Extension Table
+      if (extensionTable && Object.keys(extendedAttributes).length > 0) {
+        extendedAttributes[modelCtor.primaryKey] = lastId
+
+        // Apply casting to extended attributes before insert
+        const castedExtended: Record<string, any> = {}
+        for (const [key, value] of Object.entries(extendedAttributes)) {
+          if (typeof value === 'object' && value !== null && !(value instanceof Date)) {
+            // Transparently stringify objects for extension tables
+            castedExtended[key] = JSON.stringify(value)
+          } else {
+            castedExtended[key] = value
+          }
+        }
+
+        await conn.table(extensionTable).insert(castedExtended)
+      }
+
+      // Fetch the full record to sync all database-side values
+      const fullRecord = await conn
+        .table<any>(modelCtor.getTable())
+        .where(modelCtor.primaryKey, lastId)
+        .first()
+
+      if (fullRecord) {
+        Object.assign((this as any)._attributes, fullRecord)
+      }
+
+      return this
+    }
+
+    if (extensionTable) {
+      await connection.transaction(async (trx) => {
+        await doInsert(trx)
+      })
+    } else {
+      await doInsert(connection)
     }
 
     this._exists = true
@@ -230,15 +242,14 @@ export class HasPersistence {
     await (this as any).emit('updating')
 
     // Handle Timestamps
-    // Only update updated_at if timestamps is enabled and not 'created_only'
     if (modelCtor.timestamps && modelCtor.timestamps !== 'created_only') {
       ;(this as any)._setAttribute(modelCtor.updatedAtColumn, new Date())
     }
 
     // Handle @column(autoUpdate)
-    const columns = (modelCtor as any)[COLUMN_KEY]
-    if (columns) {
-      for (const [prop, options] of Object.entries(columns)) {
+    const columnsMeta = (modelCtor as any)[COLUMN_KEY]
+    if (columnsMeta) {
+      for (const [prop, options] of Object.entries(columnsMeta)) {
         if ((options as any).autoUpdate) {
           ;(this as any)._setAttribute(prop, new Date())
         }
@@ -268,25 +279,69 @@ export class HasPersistence {
       return this
     }
 
-    let query: any
-    const shardedConfig = modelCtor[SHARDED_KEY]
-    if (shardedConfig) {
-      const shardKey = (this as any)._attributes[shardedConfig.key]
-      query = modelCtor.shard(shardKey).where(modelCtor.primaryKey, (this as any).getKey())
+    const extensionTable = modelCtor.extensionTable
+    const pk = modelCtor.primaryKey || 'id'
+    const pkValue = (this as any).getKey()
+
+    const doUpdate = async (conn: import('../../../types').ConnectionContract) => {
+      const mainDirty: Record<string, any> = {}
+      const extendedDirty: Record<string, any> = {}
+
+      if (extensionTable) {
+        for (const [prop, value] of Object.entries(dirty)) {
+          const options = columnsMeta[prop]
+          if (options?.deferred) {
+            extendedDirty[options.name || prop] = value
+          } else {
+            mainDirty[options?.name || prop] = value
+          }
+        }
+      } else {
+        Object.assign(mainDirty, dirty)
+      }
+
+      // Update Main Table
+      let affected = 0
+      if (Object.keys(mainDirty).length > 0) {
+        const query = conn.table(modelCtor.getTable()).where(pk, pkValue)
+        if (versionKey && currentVersion !== undefined) {
+          query.where(versionKey, currentVersion)
+        }
+        affected = await query.update(mainDirty)
+
+        if (versionKey && affected === 0) {
+          throw new StaleModelError(modelCtor.name, pkValue)
+        }
+      }
+
+      // Update Extension Table (Upsert style)
+      if (extensionTable && Object.keys(extendedDirty).length > 0) {
+        // Apply casting to extended dirty attributes
+        const castedExtended: Record<string, any> = {}
+        for (const [key, value] of Object.entries(extendedDirty)) {
+          if (typeof value === 'object' && value !== null && !(value instanceof Date)) {
+            castedExtended[key] = JSON.stringify(value)
+          } else {
+            castedExtended[key] = value
+          }
+        }
+
+        // We use upsert to handle cases where the extension record might not exist yet
+        await conn
+          .table(extensionTable)
+          .upsert({ ...castedExtended, [pk]: pkValue }, [pk], Object.keys(castedExtended))
+      }
+
+      return true
+    }
+
+    if (extensionTable) {
+      const connection = this._getConnection()
+      await connection.transaction(async (trx) => {
+        await doUpdate(trx)
+      })
     } else {
-      query = modelCtor.query().where(modelCtor.primaryKey, (this as any).getKey())
-    }
-
-    // Add version check
-    if (versionKey && currentVersion !== undefined) {
-      query.where(versionKey, currentVersion)
-    }
-
-    const affected = await query.update(dirty)
-
-    // Check for Stale Object
-    if (versionKey && affected === 0) {
-      throw new StaleModelError(modelCtor.name, (this as any).getKey())
+      await doUpdate(this._getConnection())
     }
 
     const dirtyTracker = (this as any)._dirtyTracker
@@ -337,11 +392,25 @@ export class HasPersistence {
         await this.save()
         result = true
       } else {
-        const affected = await connection
-          .table(modelCtor.getTable())
-          .where(modelCtor.primaryKey, (this as any).getKey())
-          .delete()
-        result = affected > 0
+        const extensionTable = modelCtor.extensionTable
+        const pk = modelCtor.primaryKey || 'id'
+        const pkValue = (this as any).getKey()
+
+        const doDelete = async (conn: import('../../../types').ConnectionContract) => {
+          if (extensionTable) {
+            await conn.table(extensionTable).where(pk, pkValue).delete()
+          }
+          const affected = await conn.table(modelCtor.getTable()).where(pk, pkValue).delete()
+          return affected > 0
+        }
+
+        if (extensionTable) {
+          result = await connection.transaction(async (trx) => {
+            return await doDelete(trx)
+          })
+        } else {
+          result = await doDelete(connection)
+        }
       }
       if (result) {
         this._exists = !softDeletes
