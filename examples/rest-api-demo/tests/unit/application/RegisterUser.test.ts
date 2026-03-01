@@ -5,6 +5,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { RegisterUserUseCase } from '../../../src/application/user/RegisterUser'
 
+// Mock bcrypt
+vi.mock('bcrypt', () => ({
+  hash: vi.fn().mockResolvedValue('hashed_password'),
+  compare: vi.fn().mockResolvedValue(true),
+}))
+
 describe('RegisterUserUseCase', () => {
   let useCase: RegisterUserUseCase
   let mockUserRepository: any
