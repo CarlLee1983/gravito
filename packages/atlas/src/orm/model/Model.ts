@@ -1,10 +1,9 @@
 import { DB } from '../../DB'
 import type { PartitionStrategy } from '../../partitioning/PartitionStrategy'
 import { QueryBuilder } from '../../query/QueryBuilder'
-import { identifier } from '../../query/SafeQueryBuilder'
+import type { Blueprint } from '../../schema/Blueprint'
 import { Factory } from '../../seed/Factory'
 import type { Operator, QueryBuilderContract } from '../../types'
-import type { Blueprint } from '../schema/Blueprint'
 import { SchemaRegistry } from '../schema/SchemaRegistry'
 import type { ColumnType, TableSchema } from '../schema/types'
 import {
@@ -1137,7 +1136,7 @@ export abstract class Model {
     this: ModelConstructor<T> & typeof Model,
     partitionKey?: any | any[],
     connectionContract?: import('../../types').ConnectionContract
-  ) {
+  ): QueryBuilderContract<T> {
     if (!this.partitionStrategy) {
       throw new Error(`Model ${this.name} does not have a partitionStrategy defined.`)
     }

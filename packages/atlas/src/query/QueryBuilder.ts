@@ -121,7 +121,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     try {
       return await fn()
     } catch (error: any) {
-      if (error instanceof TableNotFoundError && this.modelClass?.partitionTemplate) {
+      if (error instanceof TableNotFoundError && (this.modelClass as any)?.partitionTemplate) {
         const { Schema } = await import('../schema/Schema')
         const connName = this.connection.getName()
 
@@ -140,7 +140,10 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
         else if (postgresMatch) targetTable = postgresMatch[1]
         else if (mysqlMatch) targetTable = mysqlMatch[1]
 
-        await Schema.connection(connName).create(targetTable, this.modelClass.partitionTemplate)
+        await Schema.connection(connName).create(
+          targetTable,
+          (this.modelClass as any).partitionTemplate
+        )
 
         // Retry the operation recursively to handle cases where multiple tables are missing
         return await this.runWithAutoProvisioning(fn)
@@ -1594,7 +1597,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
         }
       } else if (extensionTable) {
         // Auto-join extension table if requested
-        const pk = this.modelClass.primaryKey || 'id'
+        const pk = (this.modelClass as any)?.primaryKey || 'id'
         const baseTable = targetTable // Use the (possibly partitioned) table
         joins.push({
           type: 'left',
