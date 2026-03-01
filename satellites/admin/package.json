@@ -1,0 +1,35 @@
+{
+  "name": "@gravito/satellite-admin",
+  "sideEffects": false,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --clean --external @gravito/atlas --external @gravito/core --external @gravito/enterprise --external @gravito/sentinel --external @gravito/signal --external @gravito/stasis",
+    "build:dts": "tsup src/index.ts --format esm --dts --clean --external @gravito/atlas --external @gravito/core --external @gravito/enterprise --external @gravito/sentinel --external @gravito/signal --external @gravito/stasis",
+    "test": "bun test",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
+  },
+  "dependencies": {
+    "@gravito/atlas": "workspace:*",
+    "@gravito/core": "workspace:*",
+    "@gravito/enterprise": "workspace:*",
+    "@gravito/sentinel": "workspace:*",
+    "@gravito/signal": "workspace:*",
+    "@gravito/stasis": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gravito-framework/gravito.git",
+    "directory": "satellites/admin"
+  }
+}
