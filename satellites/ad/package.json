@@ -13,7 +13,8 @@
   "dependencies": {
     "@gravito/enterprise": "workspace:*",
     "@gravito/atlas": "workspace:*",
-    "@gravito/core": "workspace:*"
+    "@gravito/core": "workspace:*",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "tsup": "^8.3.5",
