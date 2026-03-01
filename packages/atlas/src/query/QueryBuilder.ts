@@ -1,4 +1,6 @@
 import { CacheRegistry } from '../CacheRegistry'
+import { TableNotFoundError } from '../errors'
+import { COLUMN_KEY } from '../orm/model/decorators'
 import type { Model, ModelConstructor } from '../orm/model/Model'
 import type {
   BooleanOperator,
@@ -88,6 +90,11 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   protected limitClause = new LimitClause()
 
   /**
+   * List of union queries.
+   */
+  protected unions: { query: QueryBuilderContract<any>; all: boolean }[] = []
+
+  /**
    * Read-only flag to bypass hydration for performance.
    */
   protected isReadOnly = false
@@ -98,6 +105,49 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * replication lag issues.
    */
   protected _forceWrite = false
+
+  /**
+   * When true, includes deferred columns in the query.
+   */
+  protected _withDeferred = false
+
+  /**
+   * Internal helper to execute operations with automatic partition provisioning.
+   *
+   * @param fn - The operation to execute.
+   * @returns The operation result.
+   */
+  protected async runWithAutoProvisioning<R>(fn: () => Promise<R>): Promise<R> {
+    try {
+      return await fn()
+    } catch (error: any) {
+      if (error instanceof TableNotFoundError && this.modelClass?.partitionTemplate) {
+        const { Schema } = await import('../schema/Schema')
+        const connName = this.connection.getName()
+
+        // Extract table name from error message if possible (dialect-specific)
+        // SQLite: "no such table: name"
+        // Postgres: "relation \"name\" does not exist"
+        // MySQL: "Table 'db.name' doesn't exist"
+        const message = error.message
+        let targetTable = this.tableName
+
+        const sqliteMatch = message.match(/no such table: ([\w_]+)/)
+        const postgresMatch = message.match(/relation "([\w_]+)" does not exist/)
+        const mysqlMatch = message.match(/Table '[\w_.]+\.([\w_]+)' doesn't exist/)
+
+        if (sqliteMatch) targetTable = sqliteMatch[1]
+        else if (postgresMatch) targetTable = postgresMatch[1]
+        else if (mysqlMatch) targetTable = mysqlMatch[1]
+
+        await Schema.connection(connName).create(targetTable, this.modelClass.partitionTemplate)
+
+        // Retry the operation recursively to handle cases where multiple tables are missing
+        return await this.runWithAutoProvisioning(fn)
+      }
+      throw error
+    }
+  }
 
   /**
    * Map of relationships to load alongside query results.
@@ -210,6 +260,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       this.havingClause = this.havingClause.clone()
       this.orderByClause = this.orderByClause.clone()
       this.limitClause = this.limitClause.clone()
+      this.unions = [...this.unions]
 
       this._isModified = true
       this._isClone = false
@@ -221,6 +272,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       this.havingClause = this.havingClause.clone()
       this.orderByClause = this.orderByClause.clone()
       this.limitClause = this.limitClause.clone()
+      this.unions = [...this.unions]
 
       this._isModified = true
       this._cloneCount = 0
@@ -239,10 +291,28 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
+   * Includes deferred columns in the query result.
+   *
+   * @param value - Whether to include deferred columns (default true).
+   */
+  withDeferred(value = true): this {
+    this.ensureOwnState()
+    this._withDeferred = value
+    return this
+  }
+
+  /**
    * Retrieves the associated Model class.
    */
   getModel<M extends Model>(): ModelConstructor<M> | undefined {
     return this.modelClass as ModelConstructor<M> | undefined
+  }
+
+  /**
+   * Returns the resolved table name, including any partition routing logic.
+   */
+  getResolvedTableName(): string {
+    return this.getRawCompiledQuery().table
   }
 
   /**
@@ -585,6 +655,26 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     return this.orWhereRaw(this.grammar.compileJsonContains(column, value), [JSON.stringify(value)])
   }
 
+  // ============================================================================
+  // UNION Methods
+  // ============================================================================
+
+  /**
+   * Combines the current query with another one using UNION.
+   */
+  union(query: QueryBuilderContract<any>, all = false): this {
+    this.ensureOwnState()
+    this.unions.push({ query, all })
+    return this
+  }
+
+  /**
+   * Combines the current query with another one using UNION ALL.
+   */
+  unionAll(query: QueryBuilderContract<any>): this {
+    return this.union(query, true)
+  }
+
   /**
    * Spatial distance filter: matches records within a given radius.
    *
@@ -844,47 +934,49 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * @internal
    */
   async getRawResults(): Promise<Record<string, unknown>[]> {
-    const tracer = this.connection.getTracer()
-    const span = tracer?.startSpan('Atlas:Select', {
-      'db.system': this.connection.getDriver().getDriverName(),
-      'db.operation': 'select',
-      'db.sql.table': this.tableName,
-    })
+    return this.runWithAutoProvisioning(async () => {
+      const tracer = this.connection.getTracer()
+      const span = tracer?.startSpan('Atlas:Select', {
+        'db.system': this.connection.getDriver().getDriverName(),
+        'db.operation': 'select',
+        'db.sql.table': this.tableName,
+      })
 
-    try {
-      const compiled = this.getCompiledQuery()
-      const sql = this.grammar.compileSelect(compiled)
-      const bindings = compiled.bindings
+      try {
+        const compiled = this.getCompiledQuery()
+        const sql = this.grammar.compileSelect(compiled)
+        const bindings = compiled.bindings
 
-      NPlusOneDetector.track(this.tableName, sql, this.grammar.getStructuralKey(compiled))
+        NPlusOneDetector.track(this.tableName, sql, this.grammar.getStructuralKey(compiled))
 
-      if (span) {
-        span.setAttribute('db.statement', sql)
-      }
-
-      const cache = CacheRegistry.getCache()
-      let cacheKey: string | undefined
-
-      if (cache && this._cache) {
-        cacheKey = this._cache.key ?? `orbit:query:${sql}:${JSON.stringify(bindings)}`
-        const cached = await cache.get<Record<string, unknown>[]>(cacheKey)
-        if (cached) {
-          span?.setAttribute('db.cache.hit', true)
-          return cached
+        if (span) {
+          span.setAttribute('db.statement', sql)
         }
-        span?.setAttribute('db.cache.hit', false)
+
+        const cache = CacheRegistry.getCache()
+        let cacheKey: string | undefined
+
+        if (cache && this._cache) {
+          cacheKey = this._cache.key ?? `orbit:query:${sql}:${JSON.stringify(bindings)}`
+          const cached = await cache.get<Record<string, unknown>[]>(cacheKey)
+          if (cached) {
+            span?.setAttribute('db.cache.hit', true)
+            return cached
+          }
+          span?.setAttribute('db.cache.hit', false)
+        }
+
+        const result = await this.connection.raw<Record<string, unknown>>(sql, bindings)
+
+        if (cache && this._cache && cacheKey) {
+          await cache.set(cacheKey, result.rows, this._cache.ttl)
+        }
+
+        return result.rows
+      } finally {
+        span?.end()
       }
-
-      const result = await this.connection.raw<Record<string, unknown>>(sql, bindings)
-
-      if (cache && this._cache && cacheKey) {
-        await cache.set(cacheKey, result.rows, this._cache.ttl)
-      }
-
-      return result.rows
-    } finally {
-      span?.end()
-    }
+    })
   }
 
   /**
@@ -1038,7 +1130,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * @internal
    */
   protected async aggregate(func: string, column: string): Promise<number | null> {
-    return this.aggregateBuilder.runAggregate(func, column)
+    return this.runWithAutoProvisioning(() => this.aggregateBuilder.runAggregate(func, column))
   }
 
   // ============================================================================
@@ -1054,7 +1146,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * @returns Array of inserted objects (with generated IDs if supported).
    */
   async insert(data: Partial<T> | Partial<T>[]): Promise<T[]> {
-    return this.mutationBuilder.insert(data)
+    return this.runWithAutoProvisioning(() => this.mutationBuilder.insert(data))
   }
 
   /**
@@ -1066,7 +1158,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * @throws {QueryBuilderError} If ID retrieval fails.
    */
   async insertGetId(data: Partial<T>, primaryKey = 'id'): Promise<number | bigint> {
-    return this.mutationBuilder.insertGetId(data, primaryKey)
+    return this.runWithAutoProvisioning(() => this.mutationBuilder.insertGetId(data, primaryKey))
   }
 
   /**
@@ -1076,14 +1168,14 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * @returns Count of affected rows.
    */
   async update(data: Partial<T>): Promise<number> {
-    return this.mutationBuilder.update(data)
+    return this.runWithAutoProvisioning(() => this.mutationBuilder.update(data))
   }
 
   /**
    * Specialized method for updating JSON fields.
    */
   async updateJson(column: string, value: unknown): Promise<number> {
-    return this.mutationBuilder.updateJson(column, value)
+    return this.runWithAutoProvisioning(() => this.mutationBuilder.updateJson(column, value))
   }
 
   /**
@@ -1092,14 +1184,14 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Note: This performs a hard delete. For soft deletes, use the Model layer.
    */
   async delete(): Promise<number> {
-    return this.mutationBuilder.delete()
+    return this.runWithAutoProvisioning(() => this.mutationBuilder.delete())
   }
 
   /**
    * Drops all records and resets auto-increment state.
    */
   async truncate(): Promise<void> {
-    return this.mutationBuilder.truncate()
+    return this.runWithAutoProvisioning(() => this.mutationBuilder.truncate())
   }
 
   // ============================================================================
@@ -1241,14 +1333,14 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Atomically increments a numeric column.
    */
   async increment(column: string, amount = 1, extra: Partial<T> = {}): Promise<number> {
-    return this.mutationBuilder.increment(column, amount, extra)
+    return this.runWithAutoProvisioning(() => this.mutationBuilder.increment(column, amount, extra))
   }
 
   /**
    * Atomically decrements a numeric column.
    */
   async decrement(column: string, amount = 1, extra: Partial<T> = {}): Promise<number> {
-    return this.mutationBuilder.decrement(column, amount, extra)
+    return this.runWithAutoProvisioning(() => this.mutationBuilder.decrement(column, amount, extra))
   }
 
   // ============================================================================
@@ -1268,7 +1360,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     uniqueBy: string | string[],
     update?: string[]
   ): Promise<number> {
-    return this.mutationBuilder.upsert(data, uniqueBy, update)
+    return this.runWithAutoProvisioning(() => this.mutationBuilder.upsert(data, uniqueBy, update))
   }
 
   // ============================================================================
@@ -1401,9 +1493,11 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     cloned.havingClause = this.havingClause
     cloned.orderByClause = this.orderByClause
     cloned.limitClause = this.limitClause
+    cloned.unions = this.unions
 
     cloned.modelClass = this.modelClass
     cloned.isReadOnly = this.isReadOnly
+    cloned._withDeferred = this._withDeferred
     cloned.eagerLoads = new Map(this.eagerLoads)
     cloned._cache = this._cache
 
@@ -1445,18 +1539,105 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     const havingBindings = this.havingClause.getBindings()
     const orderBindings = this.orderByClause.getBindings()
 
+    const unionCompiled = this.unions.map((u) => ({
+      query: u.query.getCompiledQuery(),
+      all: u.all,
+    }))
+
+    const unionBindings = unionCompiled.flatMap((u) => u.query.bindings)
+
+    // Handle Transparent Partition Routing
+    let targetTable = this.tableName
+    if (
+      this.modelClass &&
+      (this.modelClass as any).partitionStrategy &&
+      (this.modelClass as any).partitionKey
+    ) {
+      const partitionKey = (this.modelClass as any).partitionKey
+      const columnMeta = (this.modelClass as any)[COLUMN_KEY] || {}
+      const dbColumnName = columnMeta[partitionKey]?.name || partitionKey
+
+      // Look for a simple equality where clause on the partition key
+      const partitionWhere = this.whereClause
+        .getWheres()
+        .find((w) => w.type === 'basic' && w.column === dbColumnName && w.operator === '=')
+
+      if (partitionWhere && partitionWhere.value !== undefined) {
+        const suffix = (this.modelClass as any).partitionStrategy.resolveSuffix(
+          partitionWhere.value
+        )
+        targetTable = `${targetTable}_${suffix}`
+      }
+    }
+
+    // Handle Vertical Partitioning / Deferred Columns
+    let columns = this.selectClause.getColumns()
+    const joins = [...this.joinManager.getJoins()]
+
+    if (this.modelClass) {
+      const columnMeta = (this.modelClass as any)[COLUMN_KEY] || {}
+      const deferredColumns = Object.entries(columnMeta)
+        .filter(([_, options]: any) => options.deferred)
+        .map(([prop, options]: any) => options.name || prop)
+
+      const extensionTable = (this.modelClass as any).extensionTable
+
+      if (!this._withDeferred) {
+        // Exclude deferred columns if we are doing a SELECT *
+        if (columns.length === 0 || (columns.length === 1 && columns[0] === '*')) {
+          const allColumns = Object.entries(columnMeta).map(
+            ([prop, options]: any) => options.name || prop
+          )
+          columns = allColumns.filter((col) => !deferredColumns.includes(col))
+          // If no columns left or something went wrong, fallback to *
+          if (columns.length === 0) columns = ['*']
+        }
+      } else if (extensionTable) {
+        // Auto-join extension table if requested
+        const pk = this.modelClass.primaryKey || 'id'
+        const baseTable = targetTable // Use the (possibly partitioned) table
+        joins.push({
+          type: 'left',
+          table: extensionTable,
+          first: `${baseTable}.${pk}`,
+          operator: '=',
+          second: `${extensionTable}.${pk}`,
+        })
+
+        // If selecting all, be explicit to ensure we get columns from both tables
+        if (columns.length === 0 || (columns.length === 1 && columns[0] === '*')) {
+          const mainColumns = Object.entries(columnMeta)
+            .filter(([_, options]: any) => !options.deferred)
+            .map(([prop, options]: any) => `${baseTable}.${options.name || prop}`)
+
+          const extendedColumns = Object.entries(columnMeta)
+            .filter(([_, options]: any) => options.deferred)
+            .map(([prop, options]: any) => `${extensionTable}.${options.name || prop}`)
+
+          columns = [...mainColumns, ...extendedColumns]
+        }
+      }
+    }
+
     return {
-      table: this.tableName,
-      columns: this.selectClause.getColumns(),
+      table: targetTable,
+      columns,
       distinct: this.selectClause.isDistinct(),
       wheres: this.whereClause.getWheres(),
       orders: this.orderByClause.getOrders(),
       groups: this.groupByClause.getGroups(),
       havings: this.havingClause.getHavings(),
-      joins: this.joinManager.getJoins(),
+      joins,
+      unions: unionCompiled,
       limit: this.limitClause.getLimit(),
       offset: this.limitClause.getOffset(),
-      bindings: [...selectBindings, ...whereBindings, ...havingBindings, ...orderBindings],
+      bindings: [
+        ...selectBindings,
+        ...whereBindings,
+        ...havingBindings,
+        ...orderBindings,
+        ...unionBindings,
+      ],
       bindingCounts: {
         select: selectBindings.length,
         where: whereBindings.length,
@@ -1491,11 +1672,13 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Returns all bound values for the current state.
    */
   getBindings(): unknown[] {
+    const unionBindings = this.unions.flatMap((u) => u.query.getBindings())
     return [
       ...this.selectClause.getBindings(),
       ...this.whereClause.getValues(),
       ...this.havingClause.getBindings(),
       ...this.orderByClause.getBindings(),
+      ...unionBindings,
     ]
   }
 

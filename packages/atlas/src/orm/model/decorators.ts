@@ -137,6 +137,13 @@ export interface ColumnOptions {
    * Set to null to hide the column from JSON output.
    */
   serializeAs?: string | null
+
+  /**
+   * Whether the column should be loaded lazily (deferred).
+   * Typically used for vertical partitioning of large columns.
+   * @default false
+   */
+  deferred?: boolean
 }
 
 /**
@@ -202,4 +209,17 @@ export function version(options: ColumnOptions = {}): PropertyDecorator {
     // Mark this property as the version column
     ctor[VERSION_KEY] = propertyKey
   }
+}
+
+/**
+ * Deferred Decorator for Vertical Partitioning
+ *
+ * Marks a column as being deferred, meaning it won't be loaded by default.
+ * This is useful for large columns like TEXT or JSONB that should reside
+ * in an extension table or just be excluded from collection queries.
+ *
+ * @param options - Configuration for the column
+ */
+export function deferred(options: ColumnOptions = {}): PropertyDecorator {
+  return column({ ...options, deferred: true })
 }

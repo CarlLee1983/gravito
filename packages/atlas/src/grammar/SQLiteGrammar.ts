@@ -47,6 +47,31 @@ export class SQLiteGrammar extends Grammar {
     return `DELETE FROM ${this.wrapTable(query.table)}`
   }
 
+  /**
+   * Compile UPSERT statement for SQLite
+   */
+  override compileUpsert(
+    query: CompiledQuery,
+    values: Record<string, unknown>[],
+    uniqueBy: string[],
+    update: string[]
+  ): string {
+    if (values.length === 0) return ''
+
+    const columns = Object.keys(values[0] || {})
+    const columnList = columns.map((col) => this.wrapColumn(col)).join(', ')
+    const placeholders = values.map(() => `(${columns.map(() => '?').join(', ')})`).join(', ')
+
+    const conflictColumns = uniqueBy.map((col) => this.wrapColumn(col)).join(', ')
+    const updateClause = update
+      .map((col) => `${this.wrapColumn(col)} = EXCLUDED.${this.wrapColumn(col)}`)
+      .join(', ')
+
+    return `INSERT INTO ${this.wrapTable(
+      query.table
+    )} (${columnList}) VALUES ${placeholders} ON CONFLICT(${conflictColumns}) DO UPDATE SET ${updateClause}`
+  }
+
   // ============================================================================
   // JSON Compilation
   // ============================================================================

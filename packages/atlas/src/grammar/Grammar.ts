@@ -247,6 +247,34 @@ export abstract class Grammar implements GrammarContract {
       parts.push(this.compileHavings(query, currentBindingOffset))
     }
 
+    if (query.unions.length > 0) {
+      // If we have unions, we compile the base query parts first (excluding orders/limit)
+      const baseSql = parts.filter(Boolean).join(' ')
+      const unionSql = this.compileUnions(query)
+
+      // Standard UNION structure without leading parentheses for base query
+      // This is more compatible with SQLite.
+      let sql = `${baseSql} ${unionSql}`
+
+      // Add global orders/limit/offset
+      const globalParts: string[] = []
+      if (query.orders.length > 0) {
+        globalParts.push(this.compileOrders(query))
+      }
+      if (query.limit !== undefined) {
+        globalParts.push(this.compileLimit(query))
+      }
+      if (query.offset !== undefined) {
+        globalParts.push(this.compileOffset(query))
+      }
+
+      if (globalParts.length > 0) {
+        sql += ` ${globalParts.join(' ')}`
+      }
+
+      return sql
+    }
+
     if (query.orders.length > 0) {
       parts.push(this.compileOrders(query))
     }
@@ -354,6 +382,19 @@ export abstract class Grammar implements GrammarContract {
    */
   protected compileFrom(query: CompiledQuery): string {
     return `FROM ${this.wrapTable(query.table)}`
+  }
+
+  /**
+   * Compiles UNION clauses.
+   * @internal
+   */
+  protected compileUnions(query: CompiledQuery): string {
+    return query.unions
+      .map((union) => {
+        const joiner = union.all ? 'UNION ALL' : 'UNION'
+        return `${joiner} ${this.compileSelect(union.query)}`
+      })
+      .join(' ')
   }
 
   // ============================================================================

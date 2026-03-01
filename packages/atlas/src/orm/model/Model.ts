@@ -1,7 +1,10 @@
 import { DB } from '../../DB'
+import type { PartitionStrategy } from '../../partitioning/PartitionStrategy'
 import { QueryBuilder } from '../../query/QueryBuilder'
+import { identifier } from '../../query/SafeQueryBuilder'
 import { Factory } from '../../seed/Factory'
 import type { Operator, QueryBuilderContract } from '../../types'
+import type { Blueprint } from '../schema/Blueprint'
 import { SchemaRegistry } from '../schema/SchemaRegistry'
 import type { ColumnType, TableSchema } from '../schema/types'
 import {
@@ -41,6 +44,10 @@ export interface ModelStatic<T extends Model> {
   tableName?: string
   primaryKey: string
   connection?: string
+  extensionTable?: string
+  partitionStrategy?: PartitionStrategy
+  partitionKey?: string
+  partitionTemplate?: (table: Blueprint) => void
   name: string
   getTable(): string
   find(key: unknown): Promise<T | null>
@@ -48,6 +55,7 @@ export interface ModelStatic<T extends Model> {
   all(): Promise<T[]>
   create(attributes?: Partial<ModelAttributes>): Promise<T>
   query(connection?: import('../../types').ConnectionContract): QueryBuilderContract<T>
+  partition(partitionKey?: any): QueryBuilderContract<T>
   shard(key: string | number): QueryBuilderContract<T>
   where(
     column: string | Record<string, unknown>,
@@ -95,6 +103,26 @@ export abstract class Model {
    */
   static table: string
   static tableName: string
+
+  /**
+   * Optional partitioning strategy for horizontal sharding by table suffix.
+   */
+  static partitionStrategy?: PartitionStrategy
+
+  /**
+   * Attribute name to use as the partition key (e.g. 'created_at').
+   */
+  static partitionKey?: string
+
+  /**
+   * Optional table for vertical partitioning (large columns).
+   */
+  static extensionTable?: string
+
+  /**
+   * Optional template callback for creating new partitions on the fly.
+   */
+  static partitionTemplate?: (table: Blueprint) => void
 
   /**
    * Name of the primary key column.
@@ -564,6 +592,14 @@ export abstract class Model {
 
     const column = schema.columns.get(key)
 
+    // Handle Deferred Columns (Vertical Partitioning)
+    const columnMeta = (modelCtor as any)[COLUMN_KEY] || {}
+    const options = columnMeta[key]
+    if (options?.deferred) {
+      // Skip deep schema validation for deferred columns residing in extension table
+      return
+    }
+
     if (!column) {
       if (modelCtor.strictMode) {
         const availableColumns = Array.from(schema.columns.keys())
@@ -1021,13 +1057,18 @@ export abstract class Model {
 
     const originalGet = builder.get.bind(builder)
     ;(builder as unknown as { get: () => Promise<T[]> }).get = async (): Promise<T[]> => {
+      const resolvedTable = (builder as any).getResolvedTableName?.() || this.getTable()
       const rows = await originalGet()
 
       if ((builder as any).getIsReadOnly?.()) {
         return rows as unknown as T[]
       }
 
-      const models = rows.map((row) => this.hydrate<T>(row)) as unknown as T[]
+      const models = rows.map((row) => {
+        const model = this.hydrate<T>(row)
+        ;(model as any).tableName = row._tableName || resolvedTable
+        return model
+      }) as unknown as T[]
 
       const eagerLoads = (builder as any).getEagerLoads?.()
       if (eagerLoads && eagerLoads.size > 0 && models.length > 0) {
@@ -1040,6 +1081,7 @@ export abstract class Model {
     const originalFirst = builder.first.bind(builder)
     ;(builder as unknown as { first: () => Promise<T | null> }).first =
       async (): Promise<T | null> => {
+        const resolvedTable = (builder as any).getResolvedTableName?.() || this.getTable()
         const row = await originalFirst()
         if (!row) {
           return null
@@ -1049,7 +1091,130 @@ export abstract class Model {
           return row as unknown as T
         }
 
+        const model = this.hydrate<T>(row) as unknown as T
+        ;(model as any).tableName = row._tableName || resolvedTable
+
+        const eagerLoads = (builder as any).getEagerLoads?.()
+        if (eagerLoads && eagerLoads.size > 0) {
+          await relationshipResolver.eagerLoadMany([model], eagerLoads)
+        }
+
+        return model
+      }
+
+    const modelClass = this
+    const proxy = new Proxy(builder, {
+      get(target, prop: string | symbol) {
+        if (typeof prop === 'string' && !(prop in target)) {
+          const scopeMethod = `scope${prop.charAt(0).toUpperCase()}${prop.slice(1)}`
+          if (typeof (modelClass as any)[scopeMethod] === 'function') {
+            return (...args: any[]) => {
+              ;(modelClass as any)[scopeMethod](target, ...args)
+              return proxy
+            }
+          }
+        }
+
+        const value = Reflect.get(target, prop)
+        if (typeof value === 'function') {
+          return value.bind(target)
+        }
+        return value
+      },
+    })
+
+    return proxy as unknown as QueryBuilderContract<T>
+  }
+
+  /**
+   * Start a new query builder targeted at a specific partition table or multiple partitions.
+   *
+   * @param partitionKey The key (or array of keys) used by the partition strategy to determine the table suffix.
+   * @param connectionContract Optional specific database connection.
+   * @returns A QueryBuilder tied to the calculated partitioned table(s).
+   */
+  static partition<T extends Model>(
+    this: ModelConstructor<T> & typeof Model,
+    partitionKey?: any | any[],
+    connectionContract?: import('../../types').ConnectionContract
+  ) {
+    if (!this.partitionStrategy) {
+      throw new Error(`Model ${this.name} does not have a partitionStrategy defined.`)
+    }
+
+    if (Array.isArray(partitionKey)) {
+      if (partitionKey.length === 0) {
+        throw new Error('partition() expects at least one key when passed an array.')
+      }
+
+      // Create the first builder
+      const firstKey = partitionKey[0]
+      const builder = this.partition(firstKey, connectionContract)
+
+      // Union the rest
+      for (let i = 1; i < partitionKey.length; i++) {
+        const nextBuilder = this.partition(partitionKey[i], connectionContract)
+        builder.unionAll(nextBuilder)
+      }
+
+      return builder as unknown as QueryBuilderContract<T>
+    }
+
+    const suffix = this.partitionStrategy.resolveSuffix(partitionKey)
+    const baseTable = this.getTable()
+    const partitionedTableName = `${baseTable}_${suffix}`
+
+    const connection = connectionContract || DB.connection(this.connection)
+    const builder = connection.table<ModelAttributes>(partitionedTableName)
+
+    ;(builder as any).setModel(this)
+
+    const softDeletes = (this as any)[SOFT_DELETES_KEY]
+    if (softDeletes) {
+      builder.applyScope('softDeletes', (query) => {
+        query.whereNull(softDeletes.column || 'deleted_at')
+      })
+    }
+
+    const originalGet = builder.get.bind(builder)
+    ;(builder as unknown as { get: () => Promise<T[]> }).get = async (): Promise<T[]> => {
+      const resolvedTable = (builder as any).getResolvedTableName?.() || partitionedTableName
+      const rows = await originalGet()
+
+      if ((builder as any).getIsReadOnly?.()) {
+        return rows as unknown as T[]
+      }
+
+      const models = rows.map((row) => {
         const model = this.hydrate<T>(row)
+        // Ensure the hydrated model knows its physical table name
+        ;(model as any).tableName = row._tableName || resolvedTable
+        return model
+      }) as unknown as T[]
+
+      const eagerLoads = (builder as any).getEagerLoads?.()
+      if (eagerLoads && eagerLoads.size > 0 && models.length > 0) {
+        await relationshipResolver.eagerLoadMany(models, eagerLoads)
+      }
+
+      return models
+    }
+
+    const originalFirst = builder.first.bind(builder)
+    ;(builder as unknown as { first: () => Promise<T | null> }).first =
+      async (): Promise<T | null> => {
+        const resolvedTable = (builder as any).getResolvedTableName?.() || partitionedTableName
+        const row = await originalFirst()
+        if (!row) {
+          return null
+        }
+
+        if ((builder as any).getIsReadOnly?.()) {
+          return row as unknown as T
+        }
+
+        const model = this.hydrate<T>(row) as unknown as T
+        ;(model as any).tableName = row._tableName || resolvedTable
 
         const eagerLoads = (builder as any).getEagerLoads?.()
         if (eagerLoads && eagerLoads.size > 0) {

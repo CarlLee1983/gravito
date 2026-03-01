@@ -553,20 +553,32 @@ export class DB {
    * Particularly useful for high-concurrency environments utilizing optimistic locking,
    * where `StaleModelError` is thrown due to concurrent writes.
    *
+   * ### ⚠️ CONCURRENCY WARNING:
+   * 1. The `callback` MUST be idempotent. It will be re-executed on failure.
+   * 2. Avoid external side effects (Email, Slack, HTTP calls) inside the callback.
+   * 3. Do not modify external state variables that are not reset between retries.
+   *
    * @template T - Logic result type.
-   * @param callback - The transactional logic.
-   * @param connectionName - Optional specific connection.
-   * @param maxRetries - Maximum number of retries (default: 5).
+   * @param callback - The transactional logic. Receives the connection and current attempt.
+   * @param connectionName - Optional specific connection name.
+   * @param options - Retry configuration (maxRetries, baseDelay, maxDelay, retryableErrors, onRetry).
    * @returns The callback's return value.
-   * @throws Rethrows the error if max retries are exceeded.
+   * @throws Rethrows the last error if max retries are exceeded.
    */
   static async transactionWithRetry<T>(
     callback: (connection: ConnectionContract, attempt: number) => Promise<T>,
     connectionName?: string,
-    maxRetries = 5
+    options: {
+      maxRetries?: number
+      baseDelay?: number
+      maxDelay?: number
+      retryableErrors?: (error: any) => boolean
+      onRetry?: (error: any, attempt: number, delay: number) => void
+    } = {}
   ): Promise<T> {
+    const { maxRetries = 5, baseDelay = 100, maxDelay = 30000 } = options
     let attempts = 0
-    // Optional delay generator (exponential backoff with jitter)
+
     const delay = (ms: number) => new Promise((res) => setTimeout(res, ms))
 
     while (attempts < maxRetries) {
@@ -576,21 +588,28 @@ export class DB {
           return await callback(conn, attempts)
         }, connectionName)
       } catch (error: any) {
-        if (
+        const errorCode = error.code || error.originalError?.code
+        const isRetryable =
           error.name === 'StaleModelError' ||
-          (error.code && ['40001', 'ER_LOCK_DEADLOCK', 'SQLITE_BUSY'].includes(error.code))
-        ) {
-          if (attempts >= maxRetries) {
-            throw error
-          }
-          // Backoff before retry
-          await delay(Math.random() * 50 * attempts)
-          continue
+          (errorCode &&
+            ['40001', 'ER_LOCK_DEADLOCK', 'SQLITE_BUSY', '40P01'].includes(errorCode)) ||
+          options.retryableErrors?.(error)
+
+        if (!isRetryable || attempts >= maxRetries) {
+          throw error
         }
-        // If not a retryable error, rethrow immediately
-        throw error
+
+        // Full Jitter: random(0, min(maxDelay, baseDelay * 2^attempt))
+        const backoff = Math.min(maxDelay, baseDelay * 2 ** attempts)
+        const jitteredDelay = Math.floor(Math.random() * backoff)
+
+        // Trigger Retry Hook
+        options.onRetry?.(error, attempts, jitteredDelay)
+
+        await delay(jitteredDelay)
       }
     }
+
     throw new Error('Transaction failed after exceeding max retries')
   }
 

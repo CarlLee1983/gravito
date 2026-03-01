@@ -516,8 +516,9 @@ export class DocsService {
             orm_serialization: '序列化 (Serialization)',
             orm_factories: '模型工廠 (Factories)',
             orm_collections: '集合 (Collections)',
-            orm_resources: 'API 資源 (Resources)',
+            orm_resources: 'API Resources (Resources)',
             orm_usage: 'ORM 使用指南',
+            orm_partitioning: '分表策略 (Partitioning)',
 
             security: '安全機制',
             image_opt: '圖片優化',
@@ -612,6 +613,7 @@ export class DocsService {
             orm_collections: 'Collections',
             orm_resources: 'API Resources',
             orm_usage: 'ORM Usage Guide',
+            orm_partitioning: 'Table Partitioning',
 
             security: 'Security',
             image_opt: 'Image Optimization',
@@ -726,6 +728,7 @@ export class DocsService {
         path: '#',
         children: [
           { title: trans.orm_usage, path: `${prefix}/guide/database/orm-usage` },
+          { title: trans.orm_partitioning, path: `${prefix}/guide/database/atlas-partitioning` },
           { title: trans.orm_getting_started, path: `${prefix}/guide/database/orm-quick-start` },
           { title: trans.orm_relationships, path: `${prefix}/guide/database/atlas-relationships` },
           { title: trans.orm_collections, path: `${prefix}/guide/database/atlas-collections` },
