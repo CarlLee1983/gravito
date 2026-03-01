@@ -42,25 +42,28 @@ export function injectAdManagerRole(ad: Advertisement): AdManagerRole {
     },
 
     updateDetails(input: UpdateAdDetailsInput): void {
+      const updateInput: Parameters<typeof ad.updateDetails>[0] = {}
+
       if (input.title !== undefined) {
-        ad.updateTitle(input.title)
+        updateInput.title = input.title
       }
       if (input.imageUrl !== undefined) {
-        ad.updateImageUrl(input.imageUrl)
+        updateInput.imageUrl = input.imageUrl
       }
       if (input.targetUrl !== undefined) {
-        ad.updateTargetUrl(input.targetUrl)
+        updateInput.targetUrl = input.targetUrl
       }
       if (input.weight !== undefined) {
-        ad.updateWeight(AdWeight.of(input.weight))
+        updateInput.weight = AdWeight.of(input.weight)
       }
-      if (input.startsAt !== undefined && input.endsAt !== undefined) {
-        ad.updateSchedule(AdSchedule.of(input.startsAt, input.endsAt))
-      } else if (input.startsAt !== undefined) {
-        ad.updateSchedule(AdSchedule.of(input.startsAt, ad.schedule.endsAt))
-      } else if (input.endsAt !== undefined) {
-        ad.updateSchedule(AdSchedule.of(ad.schedule.startsAt, input.endsAt))
+
+      if (input.startsAt !== undefined || input.endsAt !== undefined) {
+        const startsAt = input.startsAt ?? ad.schedule.startsAt
+        const endsAt = input.endsAt ?? ad.schedule.endsAt
+        updateInput.schedule = AdSchedule.of(startsAt, endsAt)
       }
+
+      ad.updateDetails(updateInput)
     },
   }
 }

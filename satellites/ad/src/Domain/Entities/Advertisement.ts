@@ -198,54 +198,51 @@ export class Advertisement extends AggregateRoot<string> {
   // -- 編輯方法 --
 
   /**
-   * 更新標題
+   * 批量更新廣告詳細資訊
    *
-   * @throws AdError 當標題為空時
+   * @throws AdError 當任何參數驗證失敗時
    */
-  updateTitle(title: string): void {
-    if (!title || title.trim().length === 0) {
-      throw AdError.invalidTitle('廣告標題不能為空')
+  updateDetails(input: {
+    title?: string
+    imageUrl?: string
+    targetUrl?: string
+    weight?: AdWeight
+    schedule?: AdSchedule
+  }): void {
+    if (input.title !== undefined) {
+      if (!input.title || input.title.trim().length === 0) {
+        throw AdError.invalidTitle('廣告標題不能為空')
+      }
+      this._title = input.title.trim()
     }
-    this._title = title.trim()
-    this._updatedAt = new Date()
-  }
 
-  /**
-   * 更新圖片網址
-   *
-   * @throws AdError 當 URL 格式無效時
-   */
-  updateImageUrl(url: string): void {
-    Advertisement.validateUrl(url, 'imageUrl')
-    this._imageUrl = url
-    this._updatedAt = new Date()
-  }
+    if (input.imageUrl !== undefined) {
+      Advertisement.validateUrl(input.imageUrl, 'imageUrl')
+      this._imageUrl = input.imageUrl
+    }
 
-  /**
-   * 更新目標網址
-   *
-   * @throws AdError 當 URL 格式無效時
-   */
-  updateTargetUrl(url: string): void {
-    Advertisement.validateUrl(url, 'targetUrl')
-    this._targetUrl = url
-    this._updatedAt = new Date()
-  }
+    if (input.targetUrl !== undefined) {
+      Advertisement.validateUrl(input.targetUrl, 'targetUrl')
+      this._targetUrl = input.targetUrl
+    }
 
-  /**
-   * 更新權重
-   */
-  updateWeight(weight: AdWeight): void {
-    this._weight = weight
-    this._updatedAt = new Date()
-  }
+    if (input.weight !== undefined) {
+      this._weight = input.weight
+    }
 
-  /**
-   * 更新排程
-   */
-  updateSchedule(schedule: AdSchedule): void {
-    this._schedule = schedule
-    this._updatedAt = new Date()
+    if (input.schedule !== undefined) {
+      this._schedule = input.schedule
+    }
+
+    if (
+      input.title !== undefined ||
+      input.imageUrl !== undefined ||
+      input.targetUrl !== undefined ||
+      input.weight !== undefined ||
+      input.schedule !== undefined
+    ) {
+      this._updatedAt = new Date()
+    }
   }
 
   // -- 查詢方法 --
