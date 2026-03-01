@@ -1,7 +1,8 @@
 import { UseCase } from '@gravito/enterprise'
 import type { ICartRepository } from '../../Domain/Contracts/ICartRepository'
 import { RemoveItemContext } from '../../Domain/DCI/Contexts'
-import { CartNotFoundError } from '../Errors/CartError'
+import { CartError } from '../../Domain/Errors'
+import { CartItemNotFoundError, CartNotFoundError } from '../Errors/CartError'
 
 export interface RemoveFromCartInput {
   memberId?: string
@@ -12,6 +13,7 @@ export interface RemoveFromCartInput {
 /**
  * 從購物車移除商品 UseCase
  * 薄殼：委派給 RemoveItemContext 執行業務邏輯
+ * 轉換 Domain 層錯誤為應用層錯誤
  */
 export class RemoveFromCart extends UseCase<RemoveFromCartInput, void> {
   private context: RemoveItemContext
@@ -25,8 +27,13 @@ export class RemoveFromCart extends UseCase<RemoveFromCartInput, void> {
     try {
       await this.context.execute(input)
     } catch (error) {
-      if (error instanceof Error && error.message.includes('未找到')) {
-        throw new CartNotFoundError()
+      if (error instanceof CartError) {
+        if (error.code === 'CART_NOT_FOUND') {
+          throw new CartNotFoundError()
+        }
+        if (error.code === 'ITEM_NOT_FOUND') {
+          throw new CartItemNotFoundError(input.variantId)
+        }
       }
       throw error
     }

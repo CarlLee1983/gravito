@@ -1,5 +1,5 @@
 import { AggregateRoot } from '@gravito/enterprise'
-import { CartItem } from './CartItem'
+import type { CartItem } from './CartItem'
 
 export interface CartProps {
   memberId: string | null
@@ -11,11 +11,12 @@ export interface CartProps {
 /**
  * 購物車 Aggregate Root
  * 管理多個購物車項目，確保一致性和 immutability
+ * DCI 模式：Entity 只提供簡單 getter/setter，業務邏輯在 Role 層
  */
 export class Cart extends AggregateRoot<string> {
   private constructor(
     id: string,
-    private readonly props: CartProps
+    private props: CartProps
   ) {
     super(id)
   }
@@ -27,6 +28,10 @@ export class Cart extends AggregateRoot<string> {
       items: [],
       lastActivityAt: new Date(),
     })
+  }
+
+  static reconstitute(id: string, props: CartProps): Cart {
+    return new Cart(id, { ...props })
   }
 
   get memberId(): string | null {
@@ -45,57 +50,37 @@ export class Cart extends AggregateRoot<string> {
     return this.props.lastActivityAt
   }
 
-  /**
-   * 新增購物車項目或增加現有項目的數量
-   * immutable：透過建立新項目或更新現有項目
-   */
-  public addItem(variantId: string, quantity: number): void {
-    const existingIndex = this.props.items.findIndex((i) => i.variantId === variantId)
-    if (existingIndex >= 0) {
-      const existing = this.props.items[existingIndex]
-      const updated = existing.withQuantity(existing.quantity + quantity)
-      this.props.items[existingIndex] = updated
-    } else {
-      this.props.items.push(CartItem.create(crypto.randomUUID(), variantId, quantity))
-    }
-    this.updateLastActivity()
-  }
-
-  /**
-   * 移除購物車項目
-   */
-  public removeItem(variantId: string): void {
-    this.props.items = this.props.items.filter((i) => i.variantId !== variantId)
-    this.updateLastActivity()
-  }
-
-  /**
-   * 更新購物車項目的數量
-   */
-  public updateItemQuantity(variantId: string, newQuantity: number): void {
-    const existingIndex = this.props.items.findIndex((i) => i.variantId === variantId)
-    if (existingIndex >= 0) {
-      const existing = this.props.items[existingIndex]
-      const updated = existing.withQuantity(newQuantity)
-      this.props.items[existingIndex] = updated
-      this.updateLastActivity()
+  get propsObject(): CartProps {
+    return {
+      memberId: this.props.memberId,
+      guestId: this.props.guestId,
+      items: [...this.props.items],
+      lastActivityAt: this.props.lastActivityAt,
     }
   }
 
   /**
-   * 清空購物車
+   * 設置購物車項目列表
+   * Role 層使用此方法更新購物車
    */
-  public clear(): void {
-    this.props.items = []
+  public setItems(items: CartItem[]): void {
+    this.props.items = [...items]
     this.updateLastActivity()
   }
 
   /**
-   * 重新分配購物車給指定會員
+   * 設置會員 ID
    */
-  public reassignToMember(memberId: string): void {
-    ;(this.props as any).memberId = memberId
-    ;(this.props as any).guestId = null
+  public setMemberId(memberId: string | null): void {
+    this.props.memberId = memberId
+    this.updateLastActivity()
+  }
+
+  /**
+   * 設置訪客 ID
+   */
+  public setGuestId(guestId: string | null): void {
+    this.props.guestId = guestId
     this.updateLastActivity()
   }
 
@@ -107,16 +92,7 @@ export class Cart extends AggregateRoot<string> {
     this.props.items = items
   }
 
-  /**
-   * 從另一個購物車合併項目
-   */
-  public merge(other: Cart): void {
-    for (const item of other.items) {
-      this.addItem(item.variantId, item.quantity)
-    }
-  }
-
   private updateLastActivity(): void {
-    ;(this.props as any).lastActivityAt = new Date()
+    this.props.lastActivityAt = new Date()
   }
 }

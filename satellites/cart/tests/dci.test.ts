@@ -1,6 +1,8 @@
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import { injectCartOwner, injectMergeDonor, injectMergeReceiver } from '../src/Domain/DCI/Roles'
 import { Cart } from '../src/Domain/Entities/Cart'
+import { CartItem } from '../src/Domain/Entities/CartItem'
+import { CartError } from '../src/Domain/Errors'
 
 describe('DCI - Roles & Contexts', () => {
   describe('CartOwnerRole', () => {
@@ -15,7 +17,7 @@ describe('DCI - Roles & Contexts', () => {
       expect(typeof owner.clear).toBe('function')
     })
 
-    it('CartOwner.addItem 應該委派到 Cart.addItem', () => {
+    it('CartOwner.addItem 應該新增商品到購物車', () => {
       const cart = Cart.create('cart-1')
       const owner = injectCartOwner(cart)
 
@@ -26,7 +28,18 @@ describe('DCI - Roles & Contexts', () => {
       expect(cart.items[0].quantity).toBe(5)
     })
 
-    it('CartOwner.removeItem 應該委派到 Cart.removeItem', () => {
+    it('CartOwner.addItem 應該累加相同變體的數量', () => {
+      const cart = Cart.create('cart-1')
+      const owner = injectCartOwner(cart)
+
+      owner.addItem('var-1', 2)
+      owner.addItem('var-1', 3)
+
+      expect(cart.items.length).toBe(1)
+      expect(cart.items[0].quantity).toBe(5)
+    })
+
+    it('CartOwner.removeItem 應該移除商品', () => {
       const cart = Cart.create('cart-1')
       const owner = injectCartOwner(cart)
 
@@ -39,7 +52,7 @@ describe('DCI - Roles & Contexts', () => {
       expect(cart.items[0].variantId).toBe('var-2')
     })
 
-    it('CartOwner.updateItemQuantity 應該委派到 Cart.updateItemQuantity', () => {
+    it('CartOwner.updateItemQuantity 應該更新數量', () => {
       const cart = Cart.create('cart-1')
       const owner = injectCartOwner(cart)
 
@@ -49,7 +62,16 @@ describe('DCI - Roles & Contexts', () => {
       expect(cart.items[0].quantity).toBe(10)
     })
 
-    it('CartOwner.clear 應該委派到 Cart.clear', () => {
+    it('CartOwner.updateItemQuantity 應拋出錯誤如果項目不存在', () => {
+      const cart = Cart.create('cart-1')
+      const owner = injectCartOwner(cart)
+
+      owner.addItem('var-1', 5)
+
+      expect(() => owner.updateItemQuantity('var-nonexistent', 10)).toThrow(CartError)
+    })
+
+    it('CartOwner.clear 應清空購物車', () => {
       const cart = Cart.create('cart-1')
       const owner = injectCartOwner(cart)
 
@@ -73,10 +95,11 @@ describe('DCI - Roles & Contexts', () => {
 
     it('MergeDonor.getItemsForMerge 應該回傳購物車項目', () => {
       const cart = Cart.create('cart-1')
+      const owner = injectCartOwner(cart)
       const donor = injectMergeDonor(cart)
 
-      cart.addItem('var-1', 5)
-      cart.addItem('var-2', 3)
+      owner.addItem('var-1', 5)
+      owner.addItem('var-2', 3)
 
       const items = donor.getItemsForMerge()
       expect(items.length).toBe(2)
@@ -86,9 +109,10 @@ describe('DCI - Roles & Contexts', () => {
 
     it('MergeDonor.getItemsForMerge 應該回傳副本', () => {
       const cart = Cart.create('cart-1')
+      const owner = injectCartOwner(cart)
       const donor = injectMergeDonor(cart)
 
-      cart.addItem('var-1', 5)
+      owner.addItem('var-1', 5)
       const items1 = donor.getItemsForMerge()
       const items2 = donor.getItemsForMerge()
 
@@ -106,16 +130,16 @@ describe('DCI - Roles & Contexts', () => {
       expect(typeof receiver.receiveItems).toBe('function')
     })
 
-    it('MergeReceiver.receiveItems 應該委派到 Cart.addItem', () => {
+    it('MergeReceiver.receiveItems 應該接收並新增商品', () => {
       const receiverCart = Cart.create('cart-1')
       const receiver = injectMergeReceiver(receiverCart)
 
-      const donorCart = Cart.create('cart-2')
-      donorCart.addItem('var-1', 5)
-      donorCart.addItem('var-2', 3)
+      const donorItems = [
+        CartItem.create('item-1', 'var-1', 5),
+        CartItem.create('item-2', 'var-2', 3),
+      ]
 
-      const itemsToMerge = donorCart.items
-      receiver.receiveItems(itemsToMerge)
+      receiver.receiveItems(donorItems)
 
       expect(receiverCart.items.length).toBe(2)
       expect(receiverCart.items[0].variantId).toBe('var-1')
@@ -125,29 +149,75 @@ describe('DCI - Roles & Contexts', () => {
     it('MergeReceiver.receiveItems 應該累加相同變體', () => {
       const receiverCart = Cart.create('cart-1')
       const receiver = injectMergeReceiver(receiverCart)
+      const ownerReceiver = injectCartOwner(receiverCart)
 
-      receiverCart.addItem('var-1', 2)
+      ownerReceiver.addItem('var-1', 2)
 
-      const donorCart = Cart.create('cart-2')
-      donorCart.addItem('var-1', 3)
-
-      receiver.receiveItems(donorCart.items)
+      const donorItems = [CartItem.create('item-1', 'var-1', 3)]
+      receiver.receiveItems(donorItems)
 
       expect(receiverCart.items.length).toBe(1)
       expect(receiverCart.items[0].quantity).toBe(5)
     })
+
+    it('MergeReceiver.receiveItems 應該混合新舊商品', () => {
+      const receiverCart = Cart.create('cart-1')
+      const receiver = injectMergeReceiver(receiverCart)
+      const ownerReceiver = injectCartOwner(receiverCart)
+
+      ownerReceiver.addItem('var-1', 2)
+      ownerReceiver.addItem('var-3', 5)
+
+      const donorItems = [
+        CartItem.create('item-1', 'var-1', 3),
+        CartItem.create('item-2', 'var-2', 1),
+      ]
+      receiver.receiveItems(donorItems)
+
+      expect(receiverCart.items.length).toBe(3)
+      const var1 = receiverCart.items.find((i) => i.variantId === 'var-1')
+      expect(var1?.quantity).toBe(5)
+      const var2 = receiverCart.items.find((i) => i.variantId === 'var-2')
+      expect(var2?.quantity).toBe(1)
+      const var3 = receiverCart.items.find((i) => i.variantId === 'var-3')
+      expect(var3?.quantity).toBe(5)
+    })
   })
 
-  describe('DCI Coordination Example', () => {
+  describe('DCI Coordination - Multiple Roles', () => {
+    it('應該能協調 CartOwner 角色進行多個操作', () => {
+      const cart = Cart.create('cart-1', 'mem-123')
+      const owner = injectCartOwner(cart)
+
+      owner.addItem('var-1', 2)
+      owner.addItem('var-2', 1)
+      owner.addItem('var-3', 5)
+      expect(cart.items.length).toBe(3)
+
+      owner.updateItemQuantity('var-2', 3)
+      expect(cart.items.find((i) => i.variantId === 'var-2')?.quantity).toBe(3)
+
+      owner.removeItem('var-1')
+      expect(cart.items.length).toBe(2)
+
+      owner.clear()
+      expect(cart.items.length).toBe(0)
+    })
+
     it('應該能協調 MergeDonor 與 MergeReceiver 完成合併', () => {
       const donorCart = Cart.create('donor-cart', null, 'guest-123')
       const receiverCart = Cart.create('receiver-cart', 'mem-456')
 
-      donorCart.addItem('var-1', 2)
-      donorCart.addItem('var-2', 1)
+      const donorOwner = injectCartOwner(donorCart)
+      const receiverOwner = injectCartOwner(receiverCart)
 
-      receiverCart.addItem('var-1', 1)
-      receiverCart.addItem('var-3', 5)
+      // 設置 Donor 購物車
+      donorOwner.addItem('var-1', 2)
+      donorOwner.addItem('var-2', 1)
+
+      // 設置 Receiver 購物車
+      receiverOwner.addItem('var-1', 1)
+      receiverOwner.addItem('var-3', 5)
 
       // 協調
       const donor = injectMergeDonor(donorCart)

@@ -1,15 +1,14 @@
 import type { ICartRepository } from '../../Contracts/ICartRepository'
+import { CartError } from '../../Errors'
 import { injectCartOwner } from '../Roles/CartOwnerRole'
 
 /**
  * 更新商品數量的上下文
+ * DCI Context：協調 CartOwner Role 與 Repository
  */
 export class UpdateItemContext {
   constructor(private repository: ICartRepository) {}
 
-  /**
-   * 執行更新數量流程
-   */
   async execute(input: {
     memberId?: string
     guestId?: string
@@ -23,16 +22,14 @@ export class UpdateItemContext {
     })
 
     if (!cart) {
-      throw new Error('購物車未找到')
+      throw CartError.cartNotFound()
     }
 
-    // 2. 注入 CartOwner 角色
+    // 2. 注入 CartOwner 角色並執行更新
     const owner = injectCartOwner(cart)
-
-    // 3. 執行更新
     owner.updateItemQuantity(input.variantId, input.quantity)
 
-    // 4. 持久化
+    // 3. 持久化
     await this.repository.save(cart)
   }
 }
