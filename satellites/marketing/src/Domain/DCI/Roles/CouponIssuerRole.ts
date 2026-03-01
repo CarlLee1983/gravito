@@ -6,40 +6,33 @@ import type { DiscountType } from '../../ValueObjects'
  * 負責發行與建立新優惠券
  */
 export interface CouponIssuer {
-  issueCoupon(
-    name: string,
-    code: string,
-    discountType: DiscountType,
-    discountAmount: number,
-    minPurchase: number,
-    startsAt: Date,
-    expiresAt: Date,
+  issueCoupon(input: {
+    code: string
+    name: string
+    type: DiscountType
+    value: number
+    minPurchase: number
+    startsAt: Date
+    expiresAt: Date
+    status?: string
     usageLimit?: number
-  ): Coupon
+  }): Coupon
 }
 
 export function injectCouponIssuer(): CouponIssuer {
   return {
-    issueCoupon(
-      name: string,
-      code: string,
-      discountType: DiscountType,
-      discountAmount: number,
-      minPurchase: number,
-      startsAt: Date,
-      expiresAt: Date,
-      usageLimit?: number
-    ): Coupon {
-      return Coupon.create(
-        name,
-        code,
-        discountType,
-        discountAmount,
-        minPurchase,
-        startsAt,
-        expiresAt,
-        usageLimit
-      )
+    issueCoupon(input): Coupon {
+      return Coupon.create({
+        code: input.code,
+        name: input.name,
+        type: input.type,
+        value: input.value,
+        minPurchase: input.minPurchase,
+        startsAt: input.startsAt,
+        expiresAt: input.expiresAt,
+        status: input.status ?? 'ACTIVE',
+        usageLimit: input.usageLimit,
+      })
     },
   }
 }

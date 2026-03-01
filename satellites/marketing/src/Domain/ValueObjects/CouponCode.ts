@@ -12,11 +12,11 @@ export class CouponCode {
   static create(code: string): CouponCode {
     const trimmed = code.trim().toUpperCase()
 
-    if (trimmed.length < 6 || trimmed.length > 20) {
+    if (!trimmed || trimmed.length < 4 || trimmed.length > 20) {
       throw new Error('coupon_code_invalid_length')
     }
 
-    if (!/^[A-Z0-9]+$/.test(trimmed)) {
+    if (!/^[A-Z0-9\-_]+$/.test(trimmed)) {
       throw new Error('coupon_code_invalid_format')
     }
 

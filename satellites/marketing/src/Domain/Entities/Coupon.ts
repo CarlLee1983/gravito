@@ -1,6 +1,19 @@
 import { Entity } from '@gravito/enterprise'
 import { CouponCode, CouponStatus, type DiscountType, DiscountValue } from '../ValueObjects'
 
+export interface CouponCreateInput {
+  code: string
+  name: string
+  type: DiscountType
+  value: number
+  minPurchase: number
+  startsAt: Date
+  expiresAt: Date
+  status?: string
+  usageLimit?: number
+  usedCount?: number
+}
+
 export interface CouponProps {
   code: string
   name: string
@@ -17,17 +30,17 @@ export interface CouponProps {
 }
 
 export class Coupon extends Entity<string> {
-  private code: CouponCode
-  private name: string
-  private discount: DiscountValue
-  private minPurchase: number
-  private startsAt: Date
-  private expiresAt: Date
-  private usageLimit: number | null
-  private usedCount: number
-  private status: CouponStatus
-  private createdAt: Date
-  private updatedAt: Date
+  private _code: CouponCode
+  private _name: string
+  private _discount: DiscountValue
+  private _minPurchase: number
+  private _startsAt: Date
+  private _expiresAt: Date
+  private _usageLimit: number | null
+  private _usedCount: number
+  private _status: CouponStatus
+  private _createdAt: Date
+  private _updatedAt: Date
 
   private constructor(
     id: string,
@@ -44,100 +57,98 @@ export class Coupon extends Entity<string> {
     usedCount?: number
   ) {
     super(id)
-    this.code = code
-    this.name = name
-    this.discount = discount
-    this.minPurchase = minPurchase
-    this.startsAt = startsAt
-    this.expiresAt = expiresAt
-    this.status = status
-    this.createdAt = createdAt
-    this.updatedAt = updatedAt
-    this.usageLimit = usageLimit ?? null
-    this.usedCount = usedCount ?? 0
+    this._code = code
+    this._name = name
+    this._discount = discount
+    this._minPurchase = minPurchase
+    this._startsAt = startsAt
+    this._expiresAt = expiresAt
+    this._status = status
+    this._createdAt = createdAt
+    this._updatedAt = updatedAt
+    this._usageLimit = usageLimit ?? null
+    this._usedCount = usedCount ?? 0
   }
 
-  static create(
-    name: string,
-    code: string,
-    discountType: DiscountType,
-    discountAmount: number,
-    minPurchase: number,
-    startsAt: Date,
-    expiresAt: Date,
-    usageLimit?: number,
-    id?: string
-  ): Coupon {
-    const couponCode = CouponCode.create(code)
-    const discount = DiscountValue.create(discountType, discountAmount)
-    const status = CouponStatus.active()
+  static create(input: CouponCreateInput, id?: string): Coupon {
+    const couponCode = CouponCode.create(input.code)
+    const discount = DiscountValue.create(input.type, input.value)
+    const status = CouponStatus.create(input.status ?? 'ACTIVE')
     const now = new Date()
 
     return new Coupon(
       id || crypto.randomUUID(),
       couponCode,
-      name,
+      input.name,
       discount,
-      minPurchase,
-      startsAt,
-      expiresAt,
+      input.minPurchase,
+      input.startsAt,
+      input.expiresAt,
       status,
       now,
       now,
-      usageLimit,
-      0
+      input.usageLimit,
+      input.usedCount ?? 0
     )
   }
 
+  get code(): string {
+    return this._code.value
+  }
+
   getCode(): string {
-    return this.code.value
+    return this._code.value
+  }
+
+  get status(): string {
+    return this._status.value
   }
 
   getName(): string {
-    return this.name
+    return this._name
   }
 
   getDiscount(): { type: DiscountType; amount: number } {
-    return this.discount.toJSON()
+    return this._discount.toJSON()
   }
 
   getMinPurchase(): number {
-    return this.minPurchase
+    return this._minPurchase
   }
 
   getStartsAt(): Date {
-    return this.startsAt
+    return this._startsAt
   }
 
   getExpiresAt(): Date {
-    return this.expiresAt
+    return this._expiresAt
   }
 
   getUsageLimit(): number | null {
-    return this.usageLimit
+    return this._usageLimit
   }
 
   getUsedCount(): number {
-    return this.usedCount
+    return this._usedCount
   }
 
   getStatus(): string {
-    return this.status.value
+    return this._status.value
   }
 
   getCreatedAt(): Date {
-    return this.createdAt
+    return this._createdAt
   }
 
   getUpdatedAt(): Date {
-    return this.updatedAt
+    return this._updatedAt
   }
 
   /**
    * 檢查優惠券是否過期
    */
   isExpired(): boolean {
-    return new Date() > this.expiresAt
+    return new Date() > this._expiresAt
   }
 
   /**
@@ -145,14 +156,14 @@ export class Coupon extends Entity<string> {
    */
   isWithinValidPeriod(): boolean {
     const now = new Date()
-    return now >= this.startsAt && now <= this.expiresAt
+    return now >= this._startsAt && now <= this._expiresAt
   }
 
   /**
    * 檢查優惠券是否可使用
    */
   canUse(orderAmount: number): { canUse: boolean; reason?: string } {
-    if (!this.status.isActive()) {
+    if (!this._status.isActive()) {
       return { canUse: false, reason: 'coupon_not_active' }
     }
 
@@ -164,14 +175,14 @@ export class Coupon extends Entity<string> {
       return { canUse: false, reason: 'coupon_not_started' }
     }
 
-    if (orderAmount < this.minPurchase) {
+    if (orderAmount < this._minPurchase) {
       return {
         canUse: false,
-        reason: `coupon_min_purchase_not_met:${this.minPurchase}`,
+        reason: `coupon_min_purchase_not_met:${this._minPurchase}`,
       }
     }
 
-    if (this.usageLimit !== null && this.usedCount >= this.usageLimit) {
+    if (this._usageLimit !== null && this._usedCount >= this._usageLimit) {
       return { canUse: false, reason: 'coupon_usage_limit_exceeded' }
     }
 
@@ -187,18 +198,18 @@ export class Coupon extends Entity<string> {
       return 0
     }
 
-    return this.discount.calculate(orderAmount)
+    return this._discount.calculate(orderAmount)
   }
 
   /**
    * 獲取剩餘使用次數
    */
   getRemainingUsage(): number | null {
-    if (this.usageLimit === null) {
+    if (this._usageLimit === null) {
       return null
     }
 
-    return Math.max(0, this.usageLimit - this.usedCount)
+    return Math.max(0, this._usageLimit - this._usedCount)
   }
 
   /**
@@ -206,23 +217,23 @@ export class Coupon extends Entity<string> {
    * 返回新的 Coupon 物件（immutable）
    */
   use(): Coupon {
-    if (this.usageLimit !== null && this.usedCount >= this.usageLimit) {
+    if (this._usageLimit !== null && this._usedCount >= this._usageLimit) {
       throw new Error('coupon_usage_limit_exceeded')
     }
 
     return new Coupon(
       this.id,
-      this.code,
-      this.name,
-      this.discount,
-      this.minPurchase,
-      this.startsAt,
-      this.expiresAt,
-      this.status,
-      this.createdAt,
+      this._code,
+      this._name,
+      this._discount,
+      this._minPurchase,
+      this._startsAt,
+      this._expiresAt,
+      this._status,
+      this._createdAt,
       new Date(),
-      this.usageLimit,
-      this.usedCount + 1
+      this._usageLimit,
+      this._usedCount + 1
     )
   }
 
@@ -233,17 +244,17 @@ export class Coupon extends Entity<string> {
   activate(): Coupon {
     return new Coupon(
       this.id,
-      this.code,
-      this.name,
-      this.discount,
-      this.minPurchase,
-      this.startsAt,
-      this.expiresAt,
+      this._code,
+      this._name,
+      this._discount,
+      this._minPurchase,
+      this._startsAt,
+      this._expiresAt,
       CouponStatus.active(),
-      this.createdAt,
+      this._createdAt,
       new Date(),
-      this.usageLimit,
-      this.usedCount
+      this._usageLimit,
+      this._usedCount
     )
   }
 
@@ -254,17 +265,17 @@ export class Coupon extends Entity<string> {
   disable(): Coupon {
     return new Coupon(
       this.id,
-      this.code,
-      this.name,
-      this.discount,
-      this.minPurchase,
-      this.startsAt,
-      this.expiresAt,
+      this._code,
+      this._name,
+      this._discount,
+      this._minPurchase,
+      this._startsAt,
+      this._expiresAt,
       CouponStatus.disabled(),
-      this.createdAt,
+      this._createdAt,
       new Date(),
-      this.usageLimit,
-      this.usedCount
+      this._usageLimit,
+      this._usedCount
     )
   }
 
@@ -275,17 +286,17 @@ export class Coupon extends Entity<string> {
   markAsExpired(): Coupon {
     return new Coupon(
       this.id,
-      this.code,
-      this.name,
-      this.discount,
-      this.minPurchase,
-      this.startsAt,
-      this.expiresAt,
+      this._code,
+      this._name,
+      this._discount,
+      this._minPurchase,
+      this._startsAt,
+      this._expiresAt,
       CouponStatus.expired(),
-      this.createdAt,
+      this._createdAt,
       new Date(),
-      this.usageLimit,
-      this.usedCount
+      this._usageLimit,
+      this._usedCount
     )
   }
 
@@ -294,18 +305,18 @@ export class Coupon extends Entity<string> {
    */
   unpack(): CouponProps {
     return {
-      code: this.code.value,
-      name: this.name,
-      type: this.discount.type,
-      value: this.discount.amount,
-      minPurchase: this.minPurchase,
-      startsAt: this.startsAt,
-      expiresAt: this.expiresAt,
-      usageLimit: this.usageLimit ?? undefined,
-      usedCount: this.usedCount,
-      status: this.status.value,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
+      code: this._code.value,
+      name: this._name,
+      type: this._discount.type,
+      value: this._discount.amount,
+      minPurchase: this._minPurchase,
+      startsAt: this._startsAt,
+      expiresAt: this._expiresAt,
+      usageLimit: this._usageLimit ?? undefined,
+      usedCount: this._usedCount,
+      status: this._status.value,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     }
   }
 

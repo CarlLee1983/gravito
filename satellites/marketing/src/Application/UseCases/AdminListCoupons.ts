@@ -5,25 +5,27 @@ export class AdminListCoupons extends UseCase<void, Coupon[]> {
   async execute(): Promise<Coupon[]> {
     // 模擬從資料庫讀取優惠券
     return [
-      Coupon.create(
-        '新年歡迎禮',
-        'WELCOME2025',
-        'PERCENTAGE',
-        10,
-        0,
-        new Date('2025-01-01'),
-        new Date('2025-12-31'),
-        1000
-      ),
-      Coupon.create(
-        '滿額折抵',
-        'SAVE500',
-        'FIXED',
-        500,
-        5000,
-        new Date('2025-01-01'),
-        new Date('2025-06-30')
-      ),
+      Coupon.create({
+        code: 'WELCOME2025',
+        name: '新年歡迎禮',
+        type: 'PERCENTAGE',
+        value: 10,
+        minPurchase: 0,
+        startsAt: new Date('2025-01-01'),
+        expiresAt: new Date('2025-12-31'),
+        status: 'ACTIVE',
+        usageLimit: 1000,
+      }),
+      Coupon.create({
+        code: 'SAVE500',
+        name: '滿額折抵',
+        type: 'FIXED',
+        value: 500,
+        minPurchase: 5000,
+        startsAt: new Date('2025-01-01'),
+        expiresAt: new Date('2025-06-30'),
+        status: 'ACTIVE',
+      }),
     ]
   }
 }

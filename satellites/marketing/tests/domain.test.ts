@@ -33,16 +33,17 @@ describe('Domain - ValueObjects', () => {
 
 describe('Domain - Coupon Entity', () => {
   it('should create coupon with valid data', () => {
-    const coupon = Coupon.create(
-      '新年優惠',
-      'NEWYEAR25',
-      'PERCENTAGE',
-      10,
-      0,
-      new Date('2025-01-01'),
-      new Date('2025-12-31'),
-      100
-    )
+    const coupon = Coupon.create({
+      name: '新年優惠',
+      code: 'NEWYEAR25',
+      type: 'PERCENTAGE',
+      value: 10,
+      minPurchase: 0,
+      startsAt: new Date('2025-01-01'),
+      expiresAt: new Date('2025-12-31'),
+      status: 'ACTIVE',
+      usageLimit: 100,
+    })
 
     expect(coupon.getName()).toBe('新年優惠')
     expect(coupon.getCode()).toBe('NEWYEAR25')
@@ -50,16 +51,17 @@ describe('Domain - Coupon Entity', () => {
   })
 
   it('should use coupon and return new instance', () => {
-    const coupon = Coupon.create(
-      '優惠',
-      'TEST',
-      'FIXED',
-      100,
-      0,
-      new Date(),
-      new Date(Date.now() + 86400000),
-      2
-    )
+    const coupon = Coupon.create({
+      name: '優惠',
+      code: 'TEST',
+      type: 'FIXED',
+      value: 100,
+      minPurchase: 0,
+      startsAt: new Date(),
+      expiresAt: new Date(Date.now() + 86400000),
+      status: 'ACTIVE',
+      usageLimit: 2,
+    })
 
     const used = coupon.use()
     expect(coupon.getUsedCount()).toBe(0)
@@ -67,15 +69,16 @@ describe('Domain - Coupon Entity', () => {
   })
 
   it('should check if coupon can be used', () => {
-    const coupon = Coupon.create(
-      '優惠',
-      'TEST',
-      'FIXED',
-      100,
-      0,
-      new Date(),
-      new Date(Date.now() + 86400000)
-    )
+    const coupon = Coupon.create({
+      name: '優惠',
+      code: 'TEST',
+      type: 'FIXED',
+      value: 100,
+      minPurchase: 0,
+      startsAt: new Date(),
+      expiresAt: new Date(Date.now() + 86400000),
+      status: 'ACTIVE',
+    })
 
     const { canUse } = coupon.canUse(1000)
     expect(canUse).toBe(true)
