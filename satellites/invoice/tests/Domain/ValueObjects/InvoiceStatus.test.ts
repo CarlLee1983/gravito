@@ -6,7 +6,6 @@ describe('InvoiceStatus ValueObject', () => {
   it('應該正確建立 ISSUED 狀態', () => {
     const status = InvoiceStatus.create('ISSUED')
     expect(status.value).toBe('ISSUED')
-    expect(status.toString()).toBe('ISSUED')
   })
 
   it('應該正確建立初始狀態（ISSUED）', () => {

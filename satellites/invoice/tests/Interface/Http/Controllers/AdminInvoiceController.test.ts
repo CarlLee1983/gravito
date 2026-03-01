@@ -65,10 +65,13 @@ class MockIssueUseCase {
   constructor(private repository: MockRepository) {}
 
   async execute(input: any) {
-    const invoiceNumber = InvoiceNumber.generate()
-    const amount = InvoiceAmount.create(input.amount, 'TWD')
-    const tax = InvoiceTax.calculate(input.amount, 0.05)
-    const invoice = Invoice.create(input.orderId, invoiceNumber, amount, tax)
+    const invoice = Invoice.create({
+      orderId: input.orderId,
+      invoiceNumber: InvoiceNumber.generate().value,
+      amount: input.amount,
+      tax: input.amount * 0.05,
+      status: 'ISSUED',
+    })
     await this.repository.save(invoice)
     return invoice
   }
@@ -86,7 +89,7 @@ class MockCancelUseCase {
     await this.repository.save(cancelled)
     return {
       id: cancelled.id,
-      invoiceNumber: cancelled.invoiceNumber.value,
+      invoiceNumber: cancelled.invoiceNumber,
       previousStatus: 'ISSUED',
       newStatus: 'CANCELLED',
       cancelledAt: new Date(),
@@ -104,10 +107,10 @@ class MockQueryUseCase {
     }
     return {
       id: invoice.id,
-      invoiceNumber: invoice.invoiceNumber.value,
+      invoiceNumber: invoice.invoiceNumber,
       orderId: invoice.orderId,
-      status: invoice.status.value,
-      amount: invoice.amount.value,
+      status: invoice.status,
+      amount: invoice.amount,
       createdAt: invoice.createdAt,
     }
   }
@@ -125,17 +128,17 @@ class MockReportUseCase {
       period: { startDate: input.startDate, endDate: input.endDate },
       summary: {
         total: inRange.length,
-        issued: inRange.filter((inv) => inv.status.isIssued()).length,
-        cancelled: inRange.filter((inv) => inv.status.isCancelled()).length,
-        returned: inRange.filter((inv) => inv.status.isReturned()).length,
-        totalAmount: inRange.reduce((sum, inv) => sum + inv.amount.value, 0),
+        issued: inRange.filter((inv) => inv.statusObject.isIssued()).length,
+        cancelled: inRange.filter((inv) => inv.statusObject.isCancelled()).length,
+        returned: inRange.filter((inv) => inv.statusObject.isReturned()).length,
+        totalAmount: inRange.reduce((sum, inv) => sum + inv.amount, 0),
       },
       invoices: inRange.map((inv) => ({
         id: inv.id,
-        number: inv.invoiceNumber.value,
+        number: inv.invoiceNumber,
         orderId: inv.orderId,
-        amount: inv.amount.value,
-        status: inv.status.value,
+        amount: inv.amount,
+        status: inv.status,
         createdAt: inv.createdAt,
       })),
     }
@@ -202,10 +205,13 @@ describe('AdminInvoiceController', () => {
     const mockRepo = new MockRepository()
 
     // 建立測試發票
-    const invoiceNumber = InvoiceNumber.generate()
-    const amount = InvoiceAmount.create(1000, 'TWD')
-    const tax = InvoiceTax.calculate(1000, 0.05)
-    const invoice = Invoice.create('order-1', invoiceNumber, amount, tax)
+    const invoice = Invoice.create({
+      orderId: 'order-1',
+      invoiceNumber: InvoiceNumber.generate().value,
+      amount: 1000,
+      tax: 50,
+      status: 'ISSUED',
+    })
     await mockRepo.save(invoice)
 
     const response = await controller.index(ctx as any)

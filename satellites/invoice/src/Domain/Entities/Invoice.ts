@@ -8,7 +8,9 @@ export interface InvoiceCreateInput {
   orderId: string
   invoiceNumber: string
   amount: number
+  currency?: string
   tax: number
+  taxRate?: number
   status?: string
   buyerIdentifier?: string
   carrierId?: string
@@ -72,6 +74,10 @@ export class Invoice extends Entity<string> {
     return this.props.amount
   }
 
+  get currency(): string {
+    return this.props.amount.currency
+  }
+
   get tax(): number {
     return this.props.tax.amount
   }
@@ -105,8 +111,8 @@ export class Invoice extends Entity<string> {
    */
   static create(input: InvoiceCreateInput, id?: string): Invoice {
     const invoiceNumber = InvoiceNumber.create(input.invoiceNumber)
-    const amount = InvoiceAmount.create(input.amount)
-    const tax = InvoiceTax.create(input.tax, 0)
+    const amount = InvoiceAmount.create(input.amount, input.currency ?? 'TWD')
+    const tax = InvoiceTax.create(input.tax, input.taxRate ?? 0)
     const status = InvoiceStatus.create(input.status ?? 'ISSUED')
 
     return new Invoice(

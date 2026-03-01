@@ -4,9 +4,7 @@ import { DefaultInvoiceTracker } from '../../../src/Application/Roles/InvoiceTra
 import type { IInvoiceRepository } from '../../../src/Domain/Contracts/IInvoiceRepository'
 import { Invoice } from '../../../src/Domain/Entities/Invoice'
 import { InvoiceNotFoundError } from '../../../src/Domain/Errors/InvoiceError'
-import { InvoiceAmount } from '../../../src/Domain/ValueObjects/InvoiceAmount'
 import { InvoiceNumber } from '../../../src/Domain/ValueObjects/InvoiceNumber'
-import { InvoiceTax } from '../../../src/Domain/ValueObjects/InvoiceTax'
 
 // Mock Repository
 class MockRepository implements IInvoiceRepository {
@@ -32,6 +30,25 @@ class MockRepository implements IInvoiceRepository {
   async findAll(): Promise<Invoice[]> {
     return Array.from(this.invoices.values())
   }
+
+  async findByInvoiceNumber(invoiceNumber: string): Promise<Invoice | null> {
+    for (const invoice of this.invoices.values()) {
+      if (invoice.invoiceNumber === invoiceNumber) {
+        return invoice
+      }
+    }
+    return null
+  }
+
+  async findByStatus(status: string): Promise<Invoice[]> {
+    return Array.from(this.invoices.values()).filter((inv) => inv.status === status)
+  }
+
+  async findByDateRange(startDate: Date, endDate: Date): Promise<Invoice[]> {
+    return Array.from(this.invoices.values()).filter(
+      (inv) => inv.createdAt >= startDate && inv.createdAt <= endDate
+    )
+  }
 }
 
 describe('InvoiceAuditContext', () => {
@@ -46,16 +63,14 @@ describe('InvoiceAuditContext', () => {
   })
 
   it('應該查詢發票狀態', async () => {
-    const invoiceNumber = InvoiceNumber.create('GX-12345678')
-    const amount = InvoiceAmount.create(1000, 'TWD')
-    const tax = InvoiceTax.create(50, 0.05)
     const invoice = Invoice.create(
-      'order-123',
-      invoiceNumber,
-      amount,
-      tax,
-      undefined,
-      undefined,
+      {
+        orderId: 'order-123',
+        invoiceNumber: 'GX-12345678',
+        amount: 1000,
+        tax: 50,
+        status: 'ISSUED',
+      },
       'inv-123'
     )
     await repository.save(invoice)
@@ -81,16 +96,14 @@ describe('InvoiceAuditContext', () => {
   })
 
   it('應該取得審計追蹤', async () => {
-    const invoiceNumber = InvoiceNumber.create('GX-12345678')
-    const amount = InvoiceAmount.create(1000, 'TWD')
-    const tax = InvoiceTax.create(50, 0.05)
     const invoice = Invoice.create(
-      'order-123',
-      invoiceNumber,
-      amount,
-      tax,
-      undefined,
-      undefined,
+      {
+        orderId: 'order-123',
+        invoiceNumber: 'GX-12345678',
+        amount: 1000,
+        tax: 50,
+        status: 'ISSUED',
+      },
       'inv-123'
     )
     await repository.save(invoice)
@@ -122,10 +135,13 @@ describe('InvoiceAuditContext', () => {
   it('應該生成期間報告', async () => {
     // 建立多張發票
     for (let i = 0; i < 3; i++) {
-      const invoiceNumber = InvoiceNumber.generate()
-      const amount = InvoiceAmount.create(1000 * (i + 1), 'TWD')
-      const tax = InvoiceTax.create(50 * (i + 1), 0.05)
-      const invoice = Invoice.create(`order-${i}`, invoiceNumber, amount, tax)
+      const invoice = Invoice.create({
+        orderId: `order-${i}`,
+        invoiceNumber: InvoiceNumber.generate().value,
+        amount: 1000 * (i + 1),
+        tax: 50 * (i + 1),
+        status: 'ISSUED',
+      })
       await repository.save(invoice)
       tracker.trackInvoice(invoice)
     }
@@ -157,10 +173,13 @@ describe('InvoiceAuditContext', () => {
   })
 
   it('應該在報告中包含正確的發票詳情', async () => {
-    const invoiceNumber = InvoiceNumber.create('GX-12345678')
-    const amount = InvoiceAmount.create(5000, 'TWD')
-    const tax = InvoiceTax.create(250, 0.05)
-    const invoice = Invoice.create('order-123', invoiceNumber, amount, tax)
+    const invoice = Invoice.create({
+      orderId: 'order-123',
+      invoiceNumber: 'GX-12345678',
+      amount: 5000,
+      tax: 250,
+      status: 'ISSUED',
+    })
     await repository.save(invoice)
     tracker.trackInvoice(invoice)
 

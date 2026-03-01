@@ -4,17 +4,17 @@ import {
   injectInvoiceCanceller,
 } from '../../../src/Application/Roles/InvoiceCancellerRole'
 import { Invoice } from '../../../src/Domain/Entities/Invoice'
-import { InvoiceAmount } from '../../../src/Domain/ValueObjects/InvoiceAmount'
-import { InvoiceNumber } from '../../../src/Domain/ValueObjects/InvoiceNumber'
-import { InvoiceTax } from '../../../src/Domain/ValueObjects/InvoiceTax'
 
 describe('InvoiceCancellerRole', () => {
   it('應該驗證 ISSUED 狀態的發票可被取消', () => {
     const canceller = new DefaultInvoiceCanceller()
-    const invoiceNumber = InvoiceNumber.create('GX-12345678')
-    const amount = InvoiceAmount.create(1000, 'TWD')
-    const tax = InvoiceTax.create(50, 0.05)
-    const invoice = Invoice.create('order-123', invoiceNumber, amount, tax)
+    const invoice = Invoice.create({
+      orderId: 'order-123',
+      invoiceNumber: 'GX-12345678',
+      amount: 1000,
+      tax: 50,
+      status: 'ISSUED',
+    })
 
     const canCancel = canceller.validateCancellationEligibility(invoice)
 
@@ -23,10 +23,13 @@ describe('InvoiceCancellerRole', () => {
 
   it('應該驗證 CANCELLED 狀態的發票不可被取消', () => {
     const canceller = new DefaultInvoiceCanceller()
-    const invoiceNumber = InvoiceNumber.create('GX-12345678')
-    const amount = InvoiceAmount.create(1000, 'TWD')
-    const tax = InvoiceTax.create(50, 0.05)
-    const invoice = Invoice.create('order-123', invoiceNumber, amount, tax)
+    const invoice = Invoice.create({
+      orderId: 'order-123',
+      invoiceNumber: 'GX-12345678',
+      amount: 1000,
+      tax: 50,
+      status: 'ISSUED',
+    })
     const cancelledInvoice = invoice.cancel()
 
     const canCancel = canceller.validateCancellationEligibility(cancelledInvoice)

@@ -6,6 +6,7 @@ import type { InvoiceIssuerRole } from '../Roles/InvoiceIssuerRole'
 export interface IssueInvoiceInput {
   orderId: string
   amount: number
+  currency?: string
   buyerIdentifier?: string
   carrierId?: string
 }
@@ -28,7 +29,10 @@ export class InvoiceIssuanceContext {
     }
 
     // 2. 生成新發票
-    const invoice = await this.issuer.issueInvoice(input)
+    const invoice = await this.issuer.issueInvoice({
+      ...input,
+      currency: input.currency ?? 'TWD',
+    })
 
     // 3. 保存發票
     await this.repository.save(invoice)

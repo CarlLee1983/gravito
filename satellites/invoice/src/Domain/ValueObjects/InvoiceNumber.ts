@@ -10,6 +10,8 @@ export interface InvoiceNumberProps {
  * 支援格式：GX-XXXXXXXX, INV-XXXX, 或其他英數字與連字符組合
  */
 export class InvoiceNumber extends ValueObject<InvoiceNumberProps> {
+  private static counter = 0
+
   private constructor(value: string) {
     super({ value })
     this.validate(value)
@@ -29,8 +31,9 @@ export class InvoiceNumber extends ValueObject<InvoiceNumberProps> {
    * 生成新發票號碼
    */
   static generate(): InvoiceNumber {
-    const timestamp = Date.now().toString().slice(-8)
-    return new InvoiceNumber(`GX-${timestamp}`)
+    const timestamp = Date.now().toString().slice(-6)
+    const counter = String(++InvoiceNumber.counter).padStart(2, '0')
+    return new InvoiceNumber(`GX-${timestamp}${counter}`)
   }
 
   /**

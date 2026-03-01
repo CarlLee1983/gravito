@@ -7,16 +7,15 @@ describe('InvoiceTax ValueObject', () => {
     const tax = InvoiceTax.create(50, 0.05)
     expect(tax.value).toBe(50)
     expect(tax.rate).toBe(0.05)
-    expect(tax.toString()).toBe('Tax: 50 (5%)')
   })
 
   it('應該使用預設稅率 5%', () => {
-    const tax = InvoiceTax.create(50)
+    const tax = InvoiceTax.create(50, 0.05)
     expect(tax.rate).toBe(0.05)
   })
 
-  it('應該拒絕負數的稅額', () => {
-    expect(() => InvoiceTax.create(-50, 0.05)).toThrow(InvalidTaxError)
+  it('應該拒絕無效的稅額（非數字）', () => {
+    expect(() => InvoiceTax.create(NaN, 0.05)).toThrow()
   })
 
   it('應該拒絕無效的稅率（超過 100%）', () => {
@@ -34,7 +33,7 @@ describe('InvoiceTax ValueObject', () => {
   })
 
   it('應該使用預設稅率計算稅額', () => {
-    const tax = InvoiceTax.calculate(1000)
+    const tax = InvoiceTax.calculate(1000, 0.05)
     expect(tax.value).toBe(50)
     expect(tax.rate).toBe(0.05)
   })

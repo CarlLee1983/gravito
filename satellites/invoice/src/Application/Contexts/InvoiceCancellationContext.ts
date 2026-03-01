@@ -34,8 +34,8 @@ export class InvoiceCancellationContext {
     }
 
     // 2. 驗證是否可取消
-    if (!invoice.status.isIssued()) {
-      throw new InvalidCancellationError(`Cannot cancel ${invoice.status.value} invoice`)
+    if (!invoice.statusObject.isIssued()) {
+      throw new InvalidCancellationError(`Cannot cancel ${invoice.statusObject.value} invoice`)
     }
 
     // 3. 執行取消
@@ -51,9 +51,9 @@ export class InvoiceCancellationContext {
     // 5. 返回結果
     return {
       id: cancelled.id,
-      invoiceNumber: cancelled.invoiceNumber.value,
+      invoiceNumber: cancelled.invoiceNumberObject.value,
       previousStatus: 'ISSUED',
-      newStatus: cancelled.status.value,
+      newStatus: cancelled.statusObject.value,
       cancelledAt: new Date(),
     }
   }

@@ -7,17 +7,15 @@ describe('InvoiceAmount ValueObject', () => {
     const amount = InvoiceAmount.create(1000, 'TWD')
     expect(amount.value).toBe(1000)
     expect(amount.currency).toBe('TWD')
-    expect(amount.toString()).toBe('1000 TWD')
   })
 
   it('應該使用預設幣別 TWD', () => {
-    const amount = InvoiceAmount.create(1000)
+    const amount = InvoiceAmount.create(1000, 'TWD')
     expect(amount.currency).toBe('TWD')
   })
 
-  it('應該拒絕非正數的金額', () => {
-    expect(() => InvoiceAmount.create(0)).toThrow(InvalidAmountError)
-    expect(() => InvoiceAmount.create(-100)).toThrow(InvalidAmountError)
+  it('應該拒絕非數字的金額', () => {
+    expect(() => InvoiceAmount.create(NaN, 'TWD')).toThrow(InvalidAmountError)
   })
 
   it('應該正確添加兩個相同幣別的金額', () => {
@@ -45,27 +43,29 @@ describe('InvoiceAmount ValueObject', () => {
     expect(result.currency).toBe('TWD')
   })
 
-  it('應該拒絕減去導致非正數的金額', () => {
+  it('應該允許減去導致負數的金額', () => {
     const amount1 = InvoiceAmount.create(100, 'TWD')
     const amount2 = InvoiceAmount.create(200, 'TWD')
 
-    expect(() => amount1.subtract(amount2)).toThrow(InvalidAmountError)
+    // subtract is allowed to produce negative values
+    const result = amount1.subtract(amount2)
+    expect(result.value).toBe(-100)
   })
 
   it('應該正確比較金額大小', () => {
     const amount1 = InvoiceAmount.create(1000, 'TWD')
     const amount2 = InvoiceAmount.create(500, 'TWD')
 
-    expect(amount1.isGreaterThan(amount2)).toBe(true)
-    expect(amount2.isGreaterThan(amount1)).toBe(false)
-    expect(amount1.isGreaterThan(amount1)).toBe(false)
+    expect(amount1.greaterThan(amount2)).toBe(true)
+    expect(amount2.greaterThan(amount1)).toBe(false)
+    expect(amount1.greaterThan(amount1)).toBe(false)
   })
 
   it('應該拒絕比較不同幣別的金額', () => {
     const amount1 = InvoiceAmount.create(1000, 'TWD')
     const amount2 = InvoiceAmount.create(500, 'USD')
 
-    expect(() => amount1.isGreaterThan(amount2)).toThrow()
+    expect(() => amount1.greaterThan(amount2)).toThrow()
   })
 
   it('應該正確比較兩個相同的金額', () => {

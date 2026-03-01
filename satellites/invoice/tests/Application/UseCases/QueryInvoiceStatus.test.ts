@@ -6,9 +6,7 @@ import {
 import type { IInvoiceRepository } from '../../../src/Domain/Contracts/IInvoiceRepository'
 import { Invoice } from '../../../src/Domain/Entities/Invoice'
 import { InvoiceNotFoundError } from '../../../src/Domain/Errors/InvoiceError'
-import { InvoiceAmount } from '../../../src/Domain/ValueObjects/InvoiceAmount'
 import { InvoiceNumber } from '../../../src/Domain/ValueObjects/InvoiceNumber'
-import { InvoiceTax } from '../../../src/Domain/ValueObjects/InvoiceTax'
 
 // Mock Repository
 class MockRepository implements IInvoiceRepository {
@@ -34,6 +32,25 @@ class MockRepository implements IInvoiceRepository {
   async findAll(): Promise<Invoice[]> {
     return Array.from(this.invoices.values())
   }
+
+  async findByInvoiceNumber(invoiceNumber: string): Promise<Invoice | null> {
+    for (const invoice of this.invoices.values()) {
+      if (invoice.invoiceNumber === invoiceNumber) {
+        return invoice
+      }
+    }
+    return null
+  }
+
+  async findByStatus(status: string): Promise<Invoice[]> {
+    return Array.from(this.invoices.values()).filter((inv) => inv.status === status)
+  }
+
+  async findByDateRange(startDate: Date, endDate: Date): Promise<Invoice[]> {
+    return Array.from(this.invoices.values()).filter(
+      (inv) => inv.createdAt >= startDate && inv.createdAt <= endDate
+    )
+  }
 }
 
 describe('QueryInvoiceStatus UseCase', () => {
@@ -46,16 +63,14 @@ describe('QueryInvoiceStatus UseCase', () => {
   })
 
   it('應該查詢發票狀態', async () => {
-    const invoiceNumber = InvoiceNumber.create('GX-12345678')
-    const amount = InvoiceAmount.create(1000, 'TWD')
-    const tax = InvoiceTax.create(50, 0.05)
     const invoice = Invoice.create(
-      'order-123',
-      invoiceNumber,
-      amount,
-      tax,
-      undefined,
-      undefined,
+      {
+        orderId: 'order-123',
+        invoiceNumber: 'GX-12345678',
+        amount: 1000,
+        tax: 50,
+        status: 'ISSUED',
+      },
       'inv-123'
     )
     await repository.save(invoice)
@@ -79,16 +94,14 @@ describe('QueryInvoiceStatus UseCase', () => {
   })
 
   it('應該查詢取消的發票狀態', async () => {
-    const invoiceNumber = InvoiceNumber.create('GX-12345678')
-    const amount = InvoiceAmount.create(1000, 'TWD')
-    const tax = InvoiceTax.create(50, 0.05)
     const invoice = Invoice.create(
-      'order-123',
-      invoiceNumber,
-      amount,
-      tax,
-      undefined,
-      undefined,
+      {
+        orderId: 'order-123',
+        invoiceNumber: 'GX-12345678',
+        amount: 1000,
+        tax: 50,
+        status: 'ISSUED',
+      },
       'inv-123'
     )
     const cancelledInvoice = invoice.cancel()
@@ -112,10 +125,13 @@ describe('GenerateInvoiceReport UseCase', () => {
   it('應該生成發票報告', async () => {
     // 建立多張發票
     for (let i = 0; i < 3; i++) {
-      const invoiceNumber = InvoiceNumber.generate()
-      const amount = InvoiceAmount.create(1000 * (i + 1), 'TWD')
-      const tax = InvoiceTax.create(50 * (i + 1), 0.05)
-      const invoice = Invoice.create(`order-${i}`, invoiceNumber, amount, tax)
+      const invoice = Invoice.create({
+        orderId: `order-${i}`,
+        invoiceNumber: InvoiceNumber.generate().value,
+        amount: 1000 * (i + 1),
+        tax: 50 * (i + 1),
+        status: 'ISSUED',
+      })
       await repository.save(invoice)
     }
 
@@ -143,16 +159,22 @@ describe('GenerateInvoiceReport UseCase', () => {
   })
 
   it('應該統計已取消的發票', async () => {
-    const invoiceNumber1 = InvoiceNumber.generate()
-    const amount1 = InvoiceAmount.create(1000, 'TWD')
-    const tax1 = InvoiceTax.create(50, 0.05)
-    const invoice1 = Invoice.create('order-1', invoiceNumber1, amount1, tax1)
+    const invoice1 = Invoice.create({
+      orderId: 'order-1',
+      invoiceNumber: InvoiceNumber.generate().value,
+      amount: 1000,
+      tax: 50,
+      status: 'ISSUED',
+    })
     await repository.save(invoice1)
 
-    const invoiceNumber2 = InvoiceNumber.generate()
-    const amount2 = InvoiceAmount.create(2000, 'TWD')
-    const tax2 = InvoiceTax.create(100, 0.05)
-    const invoice2 = Invoice.create('order-2', invoiceNumber2, amount2, tax2)
+    const invoice2 = Invoice.create({
+      orderId: 'order-2',
+      invoiceNumber: InvoiceNumber.generate().value,
+      amount: 2000,
+      tax: 100,
+      status: 'ISSUED',
+    })
     const cancelledInvoice2 = invoice2.cancel()
     await repository.save(cancelledInvoice2)
 

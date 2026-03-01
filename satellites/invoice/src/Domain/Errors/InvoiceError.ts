@@ -77,3 +77,13 @@ export class InvalidCancellationError extends InvoiceError {
     this.name = 'InvalidCancellationError'
   }
 }
+
+/**
+ * 無效訂單 ID 錯誤
+ */
+export class InvalidOrderIdError extends InvoiceError {
+  constructor(orderId: string) {
+    super(`Invalid order ID: ${orderId}`)
+    this.name = 'InvalidOrderIdError'
+  }
+}

@@ -6,9 +6,7 @@ import {
   InvalidCancellationError,
   InvoiceNotFoundError,
 } from '../../../src/Domain/Errors/InvoiceError'
-import { InvoiceAmount } from '../../../src/Domain/ValueObjects/InvoiceAmount'
 import { InvoiceNumber } from '../../../src/Domain/ValueObjects/InvoiceNumber'
-import { InvoiceTax } from '../../../src/Domain/ValueObjects/InvoiceTax'
 
 // Mock Repository
 class MockRepository implements IInvoiceRepository {
@@ -34,6 +32,25 @@ class MockRepository implements IInvoiceRepository {
   async findAll(): Promise<Invoice[]> {
     return Array.from(this.invoices.values())
   }
+
+  async findByInvoiceNumber(invoiceNumber: string): Promise<Invoice | null> {
+    for (const invoice of this.invoices.values()) {
+      if (invoice.invoiceNumber === invoiceNumber) {
+        return invoice
+      }
+    }
+    return null
+  }
+
+  async findByStatus(status: string): Promise<Invoice[]> {
+    return Array.from(this.invoices.values()).filter((inv) => inv.status === status)
+  }
+
+  async findByDateRange(startDate: Date, endDate: Date): Promise<Invoice[]> {
+    return Array.from(this.invoices.values()).filter(
+      (inv) => inv.createdAt >= startDate && inv.createdAt <= endDate
+    )
+  }
 }
 
 describe('CancelInvoice UseCase', () => {
@@ -46,16 +63,14 @@ describe('CancelInvoice UseCase', () => {
   })
 
   it('應該成功取消發票', async () => {
-    const invoiceNumber = InvoiceNumber.create('GX-12345678')
-    const amount = InvoiceAmount.create(1000, 'TWD')
-    const tax = InvoiceTax.create(50, 0.05)
     const invoice = Invoice.create(
-      'order-123',
-      invoiceNumber,
-      amount,
-      tax,
-      undefined,
-      undefined,
+      {
+        orderId: 'order-123',
+        invoiceNumber: 'GX-12345678',
+        amount: 1000,
+        tax: 50,
+        status: 'ISSUED',
+      },
       'inv-123'
     )
     await repository.save(invoice)
@@ -81,10 +96,13 @@ describe('CancelInvoice UseCase', () => {
     ] as const
 
     for (const reason of reasons) {
-      const invoiceNumber = InvoiceNumber.generate()
-      const amount = InvoiceAmount.create(1000, 'TWD')
-      const tax = InvoiceTax.create(50, 0.05)
-      const invoice = Invoice.create(`order-${reason}`, invoiceNumber, amount, tax)
+      const invoice = Invoice.create({
+        orderId: `order-${reason}`,
+        invoiceNumber: InvoiceNumber.generate().value,
+        amount: 1000,
+        tax: 50,
+        status: 'ISSUED',
+      })
       await repository.save(invoice)
 
       const result = await useCase.execute({
@@ -109,16 +127,14 @@ describe('CancelInvoice UseCase', () => {
   })
 
   it('應該拒絕取消已取消的發票', async () => {
-    const invoiceNumber = InvoiceNumber.create('GX-12345678')
-    const amount = InvoiceAmount.create(1000, 'TWD')
-    const tax = InvoiceTax.create(50, 0.05)
     const invoice = Invoice.create(
-      'order-123',
-      invoiceNumber,
-      amount,
-      tax,
-      undefined,
-      undefined,
+      {
+        orderId: 'order-123',
+        invoiceNumber: 'GX-12345678',
+        amount: 1000,
+        tax: 50,
+        status: 'ISSUED',
+      },
       'inv-123'
     )
     const cancelledInvoice = invoice.cancel()
@@ -136,16 +152,14 @@ describe('CancelInvoice UseCase', () => {
   })
 
   it('應該更新發票狀態在 Repository 中', async () => {
-    const invoiceNumber = InvoiceNumber.create('GX-12345678')
-    const amount = InvoiceAmount.create(1000, 'TWD')
-    const tax = InvoiceTax.create(50, 0.05)
     const invoice = Invoice.create(
-      'order-123',
-      invoiceNumber,
-      amount,
-      tax,
-      undefined,
-      undefined,
+      {
+        orderId: 'order-123',
+        invoiceNumber: 'GX-12345678',
+        amount: 1000,
+        tax: 50,
+        status: 'ISSUED',
+      },
       'inv-123'
     )
     await repository.save(invoice)
@@ -156,6 +170,6 @@ describe('CancelInvoice UseCase', () => {
     })
 
     const updated = await repository.findById('inv-123')
-    expect(updated?.status.value).toBe('CANCELLED')
+    expect(updated?.status).toBe('CANCELLED')
   })
 })

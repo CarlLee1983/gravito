@@ -28,6 +28,25 @@ class MockRepository implements IInvoiceRepository {
   async findAll(): Promise<any[]> {
     return Array.from(this.invoices.values())
   }
+
+  async findByInvoiceNumber(invoiceNumber: string): Promise<any> {
+    for (const invoice of this.invoices.values()) {
+      if (invoice.invoiceNumber === invoiceNumber) {
+        return invoice
+      }
+    }
+    return null
+  }
+
+  async findByStatus(status: string): Promise<any[]> {
+    return Array.from(this.invoices.values()).filter((inv) => inv.status === status)
+  }
+
+  async findByDateRange(startDate: Date, endDate: Date): Promise<any[]> {
+    return Array.from(this.invoices.values()).filter(
+      (inv) => inv.createdAt >= startDate && inv.createdAt <= endDate
+    )
+  }
 }
 
 describe('InvoiceIssuanceContext', () => {
@@ -89,7 +108,7 @@ describe('InvoiceIssuanceContext', () => {
     expect(result.amount).toBe(1000)
     // 稅額應該是 50 (5% of 1000)
     const saved = await repository.findById(result.id)
-    expect(saved.tax.value).toBe(50)
+    expect(saved.tax).toBe(50)
   })
 
   it('應該拒絕重複的訂單 ID', async () => {

@@ -4,24 +4,25 @@ import {
   injectInvoiceTracker,
 } from '../../../src/Application/Roles/InvoiceTrackerRole'
 import { Invoice } from '../../../src/Domain/Entities/Invoice'
-import { InvoiceAmount } from '../../../src/Domain/ValueObjects/InvoiceAmount'
 import { InvoiceNumber } from '../../../src/Domain/ValueObjects/InvoiceNumber'
-import { InvoiceTax } from '../../../src/Domain/ValueObjects/InvoiceTax'
 
 describe('InvoiceTrackerRole', () => {
   it('應該追蹤現存的發票狀態', async () => {
     const tracker = new DefaultInvoiceTracker()
-    const invoiceNumber = InvoiceNumber.create('GX-12345678')
-    const amount = InvoiceAmount.create(1000, 'TWD')
-    const tax = InvoiceTax.create(50, 0.05)
-    const invoice = Invoice.create('order-123', invoiceNumber, amount, tax)
+    const invoice = Invoice.create({
+      orderId: 'order-123',
+      invoiceNumber: 'GX-12345678',
+      amount: 1000,
+      tax: 50,
+      status: 'ISSUED',
+    })
 
     tracker.trackInvoice(invoice)
 
     const status = await tracker.trackInvoiceStatus(invoice.id)
 
     expect(status).toBeDefined()
-    expect(status?.value).toBe('ISSUED')
+    expect(status).toBe('ISSUED')
   })
 
   it('應該在發票不存在時返回 null', async () => {
@@ -34,10 +35,13 @@ describe('InvoiceTrackerRole', () => {
 
   it('應該取得審計日誌', async () => {
     const tracker = new DefaultInvoiceTracker()
-    const invoiceNumber = InvoiceNumber.create('GX-12345678')
-    const amount = InvoiceAmount.create(1000, 'TWD')
-    const tax = InvoiceTax.create(50, 0.05)
-    const invoice = Invoice.create('order-123', invoiceNumber, amount, tax)
+    const invoice = Invoice.create({
+      orderId: 'order-123',
+      invoiceNumber: 'GX-12345678',
+      amount: 1000,
+      tax: 50,
+      status: 'ISSUED',
+    })
 
     tracker.trackInvoice(invoice)
     tracker.recordAuditLog({
@@ -66,10 +70,13 @@ describe('InvoiceTrackerRole', () => {
 
     // 建立多張發票
     for (let i = 0; i < 3; i++) {
-      const invoiceNumber = InvoiceNumber.create(`GX-${String(i).padStart(8, '0')}`)
-      const amount = InvoiceAmount.create(1000 * (i + 1), 'TWD')
-      const tax = InvoiceTax.create(50 * (i + 1), 0.05)
-      const invoice = Invoice.create(`order-${i}`, invoiceNumber, amount, tax)
+      const invoice = Invoice.create({
+        orderId: `order-${i}`,
+        invoiceNumber: `GX-${String(i).padStart(8, '0')}`,
+        amount: 1000 * (i + 1),
+        tax: 50 * (i + 1),
+        status: 'ISSUED',
+      })
       tracker.trackInvoice(invoice)
     }
 
@@ -89,10 +96,13 @@ describe('InvoiceTrackerRole', () => {
 
   it('應該在日期範圍外篩選發票', async () => {
     const tracker = new DefaultInvoiceTracker()
-    const invoiceNumber = InvoiceNumber.create('GX-12345678')
-    const amount = InvoiceAmount.create(1000, 'TWD')
-    const tax = InvoiceTax.create(50, 0.05)
-    const invoice = Invoice.create('order-123', invoiceNumber, amount, tax)
+    const invoice = Invoice.create({
+      orderId: 'order-123',
+      invoiceNumber: 'GX-12345678',
+      amount: 1000,
+      tax: 50,
+      status: 'ISSUED',
+    })
     tracker.trackInvoice(invoice)
 
     // 查詢過去時間範圍（發票在未來）

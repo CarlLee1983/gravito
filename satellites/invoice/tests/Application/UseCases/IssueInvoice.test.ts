@@ -28,6 +28,25 @@ class MockRepository implements IInvoiceRepository {
   async findAll(): Promise<Invoice[]> {
     return Array.from(this.invoices.values())
   }
+
+  async findByInvoiceNumber(invoiceNumber: string): Promise<Invoice | null> {
+    for (const invoice of this.invoices.values()) {
+      if (invoice.invoiceNumber === invoiceNumber) {
+        return invoice
+      }
+    }
+    return null
+  }
+
+  async findByStatus(status: string): Promise<Invoice[]> {
+    return Array.from(this.invoices.values()).filter((inv) => inv.status === status)
+  }
+
+  async findByDateRange(startDate: Date, endDate: Date): Promise<Invoice[]> {
+    return Array.from(this.invoices.values()).filter(
+      (inv) => inv.createdAt >= startDate && inv.createdAt <= endDate
+    )
+  }
 }
 
 describe('IssueInvoice UseCase (薄殼委派)', () => {
@@ -47,9 +66,9 @@ describe('IssueInvoice UseCase (薄殼委派)', () => {
 
     expect(result.id).toBeDefined()
     expect(result.orderId).toBe('order-123')
-    expect(result.invoiceNumber.value).toMatch(/^GX-\d{8}$/)
-    expect(result.amount.value).toBe(1000)
-    expect(result.status.value).toBe('ISSUED')
+    expect(result.invoiceNumber).toMatch(/^GX-\d{8}$/)
+    expect(result.amount).toBe(1000)
+    expect(result.status).toBe('ISSUED')
   })
 
   it('應該帶著買方和運送商識別碼開立發票', async () => {
@@ -112,8 +131,8 @@ describe('IssueInvoice UseCase (薄殼委派)', () => {
       amount: 1000,
     })
 
-    expect(result.tax.value).toBe(50)
-    expect(result.tax.rate).toBe(0.05)
+    expect(result.tax).toBe(50)
+    expect(result.taxObject.rate).toBe(0.05)
   })
 
   it('應該生成不同的發票號碼', async () => {
@@ -127,7 +146,7 @@ describe('IssueInvoice UseCase (薄殼委派)', () => {
       amount: 1000,
     })
 
-    expect(result1.invoiceNumber.value).not.toBe(result2.invoiceNumber.value)
+    expect(result1.invoiceNumber).not.toBe(result2.invoiceNumber)
   })
 
   it('應該通過 Context 委派進行完整流程', async () => {
