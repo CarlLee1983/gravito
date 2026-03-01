@@ -15,10 +15,14 @@ describe('RoleManagerRole', () => {
     const managerRole = new RoleManagerRole({ isSuper: true })
     const normalManagerRole = new RoleManagerRole({ isSuper: false })
 
-    const systemRole = Role.create('role-sys', 'system_admin', 'System Admin', {
+    const systemRole = Role.create('role-sys', {
+      name: 'system_admin',
+      displayName: 'System Admin',
       isSystem: true,
     })
-    const customRole = Role.create('role-custom', 'editor', 'Editor', {
+    const customRole = Role.create('role-custom', {
+      name: 'editor',
+      displayName: 'Editor',
       isSystem: false,
     })
 
@@ -34,10 +38,14 @@ describe('RoleManagerRole', () => {
     const managerRole = new RoleManagerRole({ isSuper: true })
     const normalManagerRole = new RoleManagerRole({ isSuper: false })
 
-    const systemRole = Role.create('role-sys', 'system_admin', 'System Admin', {
+    const systemRole = Role.create('role-sys', {
+      name: 'system_admin',
+      displayName: 'System Admin',
       isSystem: true,
     })
-    const customRole = Role.create('role-custom', 'editor', 'Editor', {
+    const customRole = Role.create('role-custom', {
+      name: 'editor',
+      displayName: 'Editor',
       isSystem: false,
     })
 

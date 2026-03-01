@@ -79,7 +79,10 @@ describe('AssignRoleToAdminUseCase', () => {
   })
 
   it('成功指派角色給管理員', async () => {
-    const role = Role.create('assign-role', 'editor', 'Editor')
+    const role = Role.create('assign-role', {
+      name: 'editor',
+      displayName: 'Editor',
+    })
     repo.seed(role)
 
     await useCase.execute('admin-1', 'assign-role')

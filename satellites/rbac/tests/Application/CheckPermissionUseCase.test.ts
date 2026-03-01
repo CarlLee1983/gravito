@@ -156,12 +156,16 @@ describe('CheckPermissionUseCase', () => {
     )
 
     // 建立角色並附加權限
-    const editorRole = Role.create('role-editor', 'editor', 'Editor', {
+    const editorRole = Role.create('role-editor', {
+      name: 'editor',
+      displayName: 'Editor',
       permissionIds: ['perm-1', 'perm-2'],
     })
     roleRepo.seed(editorRole)
 
-    const viewerRole = Role.create('role-viewer', 'viewer', 'Viewer', {
+    const viewerRole = Role.create('role-viewer', {
+      name: 'viewer',
+      displayName: 'Viewer',
       permissionIds: ['perm-3'],
     })
     roleRepo.seed(viewerRole)
@@ -211,7 +215,9 @@ describe('CheckPermissionUseCase', () => {
     )
     permissionRepo.seed(wildcardPerm)
 
-    const managerRole = Role.create('role-manager', 'manager', 'Manager', {
+    const managerRole = Role.create('role-manager', {
+      name: 'manager',
+      displayName: 'Manager',
       permissionIds: ['perm-star'],
     })
     roleRepo.seed(managerRole)

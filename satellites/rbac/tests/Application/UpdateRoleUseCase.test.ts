@@ -79,7 +79,9 @@ describe('UpdateRoleUseCase', () => {
   })
 
   it('成功更新角色的顯示名稱和描述', async () => {
-    const role = Role.create('update-role', 'editor', 'Old Editor', {
+    const role = Role.create('update-role', {
+      name: 'editor',
+      displayName: 'Old Editor',
       description: 'Old description',
     })
     repo.seed(role)

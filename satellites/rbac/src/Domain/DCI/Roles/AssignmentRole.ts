@@ -10,14 +10,14 @@ export class AssignmentRole {
   /**
    * 檢查是否可以為管理員指派角色
    */
-  canAssignRole(role: Role): boolean {
+  canAssignRole(): boolean {
     return this.requestingAdmin.isSuper
   }
 
   /**
    * 檢查是否可以從管理員撤銷角色
    */
-  canRevokeRole(role: Role): boolean {
+  canRevokeRole(): boolean {
     return this.requestingAdmin.isSuper
   }
 

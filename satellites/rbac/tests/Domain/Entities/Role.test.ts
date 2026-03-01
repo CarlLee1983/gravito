@@ -4,7 +4,10 @@ import { Role } from '../../../src/Domain/Entities/Role'
 describe('Role Entity', () => {
   describe('create() static factory', () => {
     it('should create role with empty permissions by default', () => {
-      const role = Role.create('role-1', 'editor', 'Editor')
+      const role = Role.create('role-1', {
+        name: 'editor',
+        displayName: 'Editor',
+      })
 
       expect(role.id).toBe('role-1')
       expect(role.name).toBe('editor')
@@ -43,112 +46,97 @@ describe('Role Entity', () => {
     })
   })
 
-  describe('grantPermission()', () => {
-    it('should add new permission', () => {
-      const role = Role.create('role-1', 'editor', 'Editor')
+  describe('setPermissionIds()', () => {
+    it('should set permissions', () => {
+      const role = Role.create('role-1', {
+        name: 'editor',
+        displayName: 'Editor',
+      })
 
-      role.grantPermission('perm-1')
+      role.setPermissionIds(['perm-1'])
 
       expect(role.permissionIds).toEqual(['perm-1'])
       expect(role.updatedAt).toBeInstanceOf(Date)
     })
 
-    it('should skip duplicate permission (idempotent)', () => {
-      const role = Role.create('role-1', 'editor', 'Editor')
-
-      role.grantPermission('perm-1')
-      const firstUpdatedAt = role.updatedAt
-
-      role.grantPermission('perm-1')
-
-      expect(role.permissionIds).toEqual(['perm-1'])
-      // updatedAt 不應被更新（因為未變更）
-      expect(role.updatedAt).toBe(firstUpdatedAt)
-    })
-  })
-
-  describe('revokePermission()', () => {
-    it('should remove existing permission', () => {
-      const role = Role.create('role-1', 'editor', 'Editor', {
-        permissionIds: ['perm-1', 'perm-2', 'perm-3'],
-      })
-
-      role.revokePermission('perm-2')
-
-      expect(role.permissionIds).toEqual(['perm-1', 'perm-3'])
-      expect(role.updatedAt).toBeInstanceOf(Date)
-    })
-
-    it('should do nothing when revoking non-existent permission', () => {
-      const role = Role.create('role-1', 'editor', 'Editor', {
-        permissionIds: ['perm-1'],
-      })
-
-      role.revokePermission('perm-999')
-
-      expect(role.permissionIds).toEqual(['perm-1'])
-    })
-  })
-
-  describe('syncPermissions()', () => {
-    it('should replace all permissions', () => {
-      const role = Role.create('role-1', 'editor', 'Editor', {
+    it('should replace permissions entirely', () => {
+      const role = Role.create('role-1', {
+        name: 'editor',
+        displayName: 'Editor',
         permissionIds: ['perm-1', 'perm-2'],
       })
 
-      role.syncPermissions(['perm-3', 'perm-4', 'perm-5'])
+      role.setPermissionIds(['perm-3', 'perm-4'])
 
-      expect(role.permissionIds).toEqual(['perm-3', 'perm-4', 'perm-5'])
+      expect(role.permissionIds).toEqual(['perm-3', 'perm-4'])
       expect(role.updatedAt).toBeInstanceOf(Date)
     })
   })
 
-  describe('hasPermission()', () => {
-    it('should check if role has a single permission', () => {
-      const role = Role.create('role-1', 'editor', 'Editor', {
-        permissionIds: ['perm-1', 'perm-2'],
+  describe('setDisplayName()', () => {
+    it('should update display name', () => {
+      const role = Role.create('role-1', {
+        name: 'editor',
+        displayName: 'Editor',
       })
 
-      expect(role.hasPermission('perm-1')).toBe(true)
-      expect(role.hasPermission('perm-2')).toBe(true)
-      expect(role.hasPermission('perm-3')).toBe(false)
-    })
-  })
-
-  describe('hasAllPermissions()', () => {
-    it('should check if role has all specified permissions', () => {
-      const role = Role.create('role-1', 'editor', 'Editor', {
-        permissionIds: ['perm-1', 'perm-2', 'perm-3'],
-      })
-
-      expect(role.hasAllPermissions(['perm-1', 'perm-2'])).toBe(true)
-      expect(role.hasAllPermissions(['perm-1', 'perm-2', 'perm-3'])).toBe(true)
-      expect(role.hasAllPermissions(['perm-1', 'perm-4'])).toBe(false)
-      expect(role.hasAllPermissions([])).toBe(true)
-    })
-  })
-
-  describe('update()', () => {
-    it('should modify display name and description', () => {
-      const role = Role.create('role-1', 'editor', 'Editor')
-
-      role.update('Senior Editor', 'Experienced content editor')
+      role.setDisplayName('Senior Editor')
 
       expect(role.displayName).toBe('Senior Editor')
+      expect(role.updatedAt).toBeInstanceOf(Date)
+    })
+  })
+
+  describe('setDescription()', () => {
+    it('should update description', () => {
+      const role = Role.create('role-1', {
+        name: 'editor',
+        displayName: 'Editor',
+        description: 'Original description',
+      })
+
+      role.setDescription('Experienced content editor')
+
       expect(role.description).toBe('Experienced content editor')
       expect(role.updatedAt).toBeInstanceOf(Date)
     })
 
-    it('should update display name only when description is undefined', () => {
-      const role = Role.create('role-1', 'editor', 'Editor', {
+    it('should clear description when set to undefined', () => {
+      const role = Role.create('role-1', {
+        name: 'editor',
+        displayName: 'Editor',
         description: 'Original description',
       })
 
-      role.update('Updated Editor')
+      role.setDescription(undefined)
 
-      expect(role.displayName).toBe('Updated Editor')
-      // description 保持不變（undefined 不覆蓋）
-      expect(role.description).toBe('Original description')
+      expect(role.description).toBeUndefined()
+      expect(role.updatedAt).toBeInstanceOf(Date)
+    })
+  })
+
+  describe('propsObject getter', () => {
+    it('should return a copy of props', () => {
+      const role = Role.create('role-1', {
+        name: 'editor',
+        displayName: 'Editor',
+        description: 'Test role',
+        isSystem: false,
+        permissionIds: ['perm-1'],
+      })
+
+      const props = role.propsObject
+
+      expect(props.name).toBe('editor')
+      expect(props.displayName).toBe('Editor')
+      expect(props.description).toBe('Test role')
+      expect(props.isSystem).toBe(false)
+      expect(props.permissionIds).toEqual(['perm-1'])
+      expect(props.createdAt).toBeInstanceOf(Date)
+
+      // Verify it's a copy
+      props.permissionIds.push('perm-2')
+      expect(role.permissionIds).toEqual(['perm-1'])
     })
   })
 })

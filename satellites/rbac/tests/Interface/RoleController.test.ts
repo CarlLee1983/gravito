@@ -93,8 +93,14 @@ describe('RoleController', () => {
 
   it('index() 回傳分頁角色列表', async () => {
     // 建立測試角色
-    const role1 = Role.create('role-1', 'admin', 'Administrator')
-    const role2 = Role.create('role-2', 'editor', 'Editor')
+    const role1 = Role.create('role-1', {
+      name: 'admin',
+      displayName: 'Administrator',
+    })
+    const role2 = Role.create('role-2', {
+      name: 'editor',
+      displayName: 'Editor',
+    })
     await roleRepo.save(role1)
     await roleRepo.save(role2)
 
@@ -116,7 +122,9 @@ describe('RoleController', () => {
   })
 
   it('show() 回傳單一角色', async () => {
-    const role = Role.create('show-role', 'viewer', 'Viewer', {
+    const role = Role.create('show-role', {
+      name: 'viewer',
+      displayName: 'Viewer',
       description: 'Read-only viewer role',
     })
     await roleRepo.save(role)
@@ -164,7 +172,7 @@ describe('RoleController', () => {
   })
 
   it('update() 修改角色', async () => {
-    const role = Role.create('update-role', 'editor', 'Editor')
+    const role = Role.create('update-role', { name: 'editor', displayName: 'Editor' })
     await roleRepo.save(role)
 
     const { ctx, getJsonResponse } = createMockContext({
@@ -184,7 +192,7 @@ describe('RoleController', () => {
   })
 
   it('destroy() 刪除角色', async () => {
-    const role = Role.create('delete-role', 'temp', 'Temporary')
+    const role = Role.create('delete-role', { name: 'temp', displayName: 'Temporary' })
     await roleRepo.save(role)
 
     const superAdmin = { isSuper: true }
@@ -207,7 +215,7 @@ describe('RoleController', () => {
   })
 
   it('syncPermissions() 更新角色權限', async () => {
-    const role = Role.create('sync-role', 'editor', 'Editor')
+    const role = Role.create('sync-role', { name: 'editor', displayName: 'Editor' })
     await roleRepo.save(role)
 
     const { ctx, getJsonResponse } = createMockContext({

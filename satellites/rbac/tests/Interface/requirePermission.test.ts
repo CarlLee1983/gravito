@@ -71,8 +71,11 @@ describe('requirePermission', () => {
     await permissionRepo.save(permission)
 
     // 建立角色並授予權限
-    const role = Role.create('role-1', 'moderator', 'Moderator')
-    role.grantPermission('perm-1')
+    const role = Role.create('role-1', {
+      name: 'moderator',
+      displayName: 'Moderator',
+      permissionIds: ['perm-1'],
+    })
     await roleRepo.save(role)
 
     // 指派角色給 admin

@@ -64,7 +64,9 @@ describe('SyncRolePermissionsUseCase', () => {
   })
 
   it('同步替換角色的權限', async () => {
-    const role = Role.create('sync-role', 'editor', 'Editor', {
+    const role = Role.create('sync-role', {
+      name: 'editor',
+      displayName: 'Editor',
       permissionIds: ['old-perm-1', 'old-perm-2'],
     })
     repo.seed(role)

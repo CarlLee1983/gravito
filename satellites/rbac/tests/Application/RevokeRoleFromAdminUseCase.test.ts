@@ -82,7 +82,10 @@ describe('RevokeRoleFromAdminUseCase', () => {
   })
 
   it('成功撤銷管理員的角色', async () => {
-    const role = Role.create('revoke-role', 'editor', 'Editor')
+    const role = Role.create('revoke-role', {
+      name: 'editor',
+      displayName: 'Editor',
+    })
     repo.seed(role)
     repo.assignRoleSync('admin-1', 'revoke-role')
 

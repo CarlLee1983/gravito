@@ -11,7 +11,7 @@ export class SyncRolePermissionsUseCase {
       throw RbacErrorFactory.roleNotFound(roleId)
     }
 
-    role.syncPermissions(permissionIds)
+    role.setPermissionIds(permissionIds)
     await this.roleRepo.save(role)
 
     return RoleMapper.toDTO(role)

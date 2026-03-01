@@ -64,7 +64,9 @@ describe('GetRoleUseCase', () => {
   })
 
   it('依 ID 回傳角色 DTO', async () => {
-    const role = Role.create('get-role-1', 'editor', 'Editor', {
+    const role = Role.create('get-role-1', {
+      name: 'editor',
+      displayName: 'Editor',
       description: 'Content editor role',
       isSystem: false,
       permissionIds: ['perm-1', 'perm-2'],

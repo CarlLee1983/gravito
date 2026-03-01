@@ -11,7 +11,9 @@ describe('InMemoryRoleRepository', () => {
 
   it('should save and retrieve role by ID', async () => {
     // Arrange
-    const role = Role.create('role-1', 'editor', 'Editor', {
+    const role = Role.create('role-1', {
+      name: 'editor',
+      displayName: 'Editor',
       description: 'Content editor',
     })
 
@@ -33,8 +35,14 @@ describe('InMemoryRoleRepository', () => {
 
   it('should find role by name via findByName()', async () => {
     // Arrange
-    const role1 = Role.create('role-1', 'editor', 'Editor')
-    const role2 = Role.create('role-2', 'admin', 'Administrator')
+    const role1 = Role.create('role-1', {
+      name: 'editor',
+      displayName: 'Editor',
+    })
+    const role2 = Role.create('role-2', {
+      name: 'admin',
+      displayName: 'Administrator',
+    })
     await repo.save(role1)
     await repo.save(role2)
 
@@ -53,8 +61,8 @@ describe('InMemoryRoleRepository', () => {
 
   it('should manage admin_roles via assignRole() and revokeRole()', async () => {
     // Arrange
-    const role1 = Role.create('role-1', 'editor', 'Editor')
-    const role2 = Role.create('role-2', 'reviewer', 'Reviewer')
+    const role1 = Role.create('role-1', { name: 'editor', displayName: 'Editor' })
+    const role2 = Role.create('role-2', { name: 'reviewer', displayName: 'Reviewer' })
     await repo.save(role1)
     await repo.save(role2)
 

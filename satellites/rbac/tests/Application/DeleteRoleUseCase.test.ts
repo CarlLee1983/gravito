@@ -80,7 +80,9 @@ describe('DeleteRoleUseCase', () => {
 
   it('成功刪除角色（阻止刪除系統角色）', async () => {
     // 建立一般角色
-    const normalRole = Role.create('del-role', 'custom_role', 'Custom Role', {
+    const normalRole = Role.create('del-role', {
+      name: 'custom_role',
+      displayName: 'Custom Role',
       isSystem: false,
     })
     repo.seed(normalRole)
@@ -97,7 +99,9 @@ describe('DeleteRoleUseCase', () => {
     expect(after).toBeNull()
 
     // 嘗試刪除系統角色應失敗
-    const systemRole = Role.create('sys-role', 'super_admin', 'Super Admin', {
+    const systemRole = Role.create('sys-role', {
+      name: 'super_admin',
+      displayName: 'Super Admin',
       isSystem: true,
     })
     repo.seed(systemRole)

@@ -39,7 +39,7 @@ export class RoleManagerRole {
   /**
    * 檢查是否可以管理角色的權限
    */
-  canManagePermissions(role: Role): boolean {
+  canManagePermissions(): boolean {
     return this.requestingAdmin.isSuper
   }
 

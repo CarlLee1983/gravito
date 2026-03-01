@@ -264,7 +264,10 @@ describe('RbacServiceProvider', () => {
       getAdminRoleIds: (adminId: string) => Promise<string[]>
     }
 
-    const role = Role.create('cleanup-role', 'temp', 'Temporary')
+    const role = Role.create('cleanup-role', {
+      name: 'temp',
+      displayName: 'Temporary',
+    })
     await roleRepo.save(role)
     await roleRepo.assignRole('admin-to-delete', 'cleanup-role')
 

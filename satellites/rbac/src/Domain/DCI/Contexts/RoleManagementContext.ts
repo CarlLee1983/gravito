@@ -41,7 +41,9 @@ export class RoleManagementContext {
 
     // 建立角色
     const id = crypto.randomUUID()
-    const role = Role.create(id, name, displayName, {
+    const role = Role.create(id, {
+      name,
+      displayName,
       description,
       isSystem: false,
     })
@@ -82,7 +84,10 @@ export class RoleManagementContext {
     }
 
     // 更新
-    role.update(displayName, description)
+    role.setDisplayName(displayName)
+    if (description !== undefined) {
+      role.setDescription(description)
+    }
     await this.roleRepo.save(role)
 
     return role

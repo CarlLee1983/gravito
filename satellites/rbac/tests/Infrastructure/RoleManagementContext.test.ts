@@ -64,7 +64,9 @@ describe('RoleManagementContext', () => {
   it('should prevent deleting system roles', async () => {
     // Arrange
     const superAdmin: RequestingAdmin = { isSuper: true }
-    const systemRole = Role.create('sys-role-1', 'system_admin', 'System Admin', {
+    const systemRole = Role.create('sys-role-1', {
+      name: 'system_admin',
+      displayName: 'System Admin',
       isSystem: true,
     })
     await roleRepo.save(systemRole)

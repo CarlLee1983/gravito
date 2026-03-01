@@ -1,6 +1,14 @@
 import type { DomainEvent } from '@gravito/enterprise'
 import { AggregateRoot } from '@gravito/enterprise'
 
+export interface RoleCreateInput {
+  name: string
+  displayName: string
+  description?: string
+  isSystem?: boolean
+  permissionIds?: string[]
+}
+
 export interface RoleProps {
   name: string
   displayName: string
@@ -19,22 +27,13 @@ export class Role extends AggregateRoot<string> {
     super(id)
   }
 
-  static create(
-    id: string,
-    name: string,
-    displayName: string,
-    options: {
-      description?: string
-      isSystem?: boolean
-      permissionIds?: string[]
-    } = {}
-  ): Role {
+  static create(id: string, input: RoleCreateInput): Role {
     return new Role(id, {
-      name,
-      displayName,
-      description: options.description,
-      isSystem: options.isSystem ?? false,
-      permissionIds: options.permissionIds ?? [],
+      name: input.name,
+      displayName: input.displayName,
+      description: input.description,
+      isSystem: input.isSystem ?? false,
+      permissionIds: input.permissionIds ?? [],
       createdAt: new Date(),
     })
   }
@@ -72,40 +71,34 @@ export class Role extends AggregateRoot<string> {
     return this.props.updatedAt
   }
 
-  // Business methods
-  grantPermission(permissionId: string): void {
-    if (!this.props.permissionIds.includes(permissionId)) {
-      this.props.permissionIds.push(permissionId)
-      this.props.updatedAt = new Date()
+  get propsObject(): RoleProps {
+    return {
+      name: this.props.name,
+      displayName: this.props.displayName,
+      description: this.props.description,
+      isSystem: this.props.isSystem,
+      permissionIds: [...this.props.permissionIds],
+      createdAt: this.props.createdAt,
+      updatedAt: this.props.updatedAt,
     }
   }
 
-  revokePermission(permissionId: string): void {
-    const index = this.props.permissionIds.indexOf(permissionId)
-    if (index >= 0) {
-      this.props.permissionIds.splice(index, 1)
-      this.props.updatedAt = new Date()
-    }
+  // Setters
+  setDisplayName(displayName: string): this {
+    this.props.displayName = displayName
+    this.props.updatedAt = new Date()
+    return this
   }
 
-  syncPermissions(permissionIds: string[]): void {
+  setDescription(description: string | undefined): this {
+    this.props.description = description
+    this.props.updatedAt = new Date()
+    return this
+  }
+
+  setPermissionIds(permissionIds: string[]): this {
     this.props.permissionIds = [...permissionIds]
     this.props.updatedAt = new Date()
-  }
-
-  hasPermission(permissionId: string): boolean {
-    return this.props.permissionIds.includes(permissionId)
-  }
-
-  hasAllPermissions(permissionIds: string[]): boolean {
-    return permissionIds.every((id) => this.props.permissionIds.includes(id))
-  }
-
-  update(displayName: string, description?: string): void {
-    this.props.displayName = displayName
-    if (description !== undefined) {
-      this.props.description = description
-    }
-    this.props.updatedAt = new Date()
+    return this
   }
 }

@@ -64,7 +64,9 @@ describe('AuthorizationContext', () => {
     await permissionRepo.save(perm)
 
     // 建立角色並授予權限
-    const role = Role.create('role-1', 'editor', 'Editor', {
+    const role = Role.create('role-1', {
+      name: 'editor',
+      displayName: 'Editor',
       permissionIds: ['perm-1'],
     })
     await roleRepo.save(role)
@@ -93,7 +95,9 @@ describe('AuthorizationContext', () => {
     await permissionRepo.save(wildcardPerm)
 
     // 建立角色，授予 products:read 權限
-    const role = Role.create('role-wild', 'product_viewer', 'Product Viewer', {
+    const role = Role.create('role-wild', {
+      name: 'product_viewer',
+      displayName: 'Product Viewer',
       permissionIds: ['perm-wild'],
     })
     await roleRepo.save(role)
@@ -122,7 +126,9 @@ describe('AuthorizationContext', () => {
     )
     await permissionRepo.save(wildcardGroupPerm)
 
-    const roleWithWild = Role.create('role-grpwild', 'order_manager', 'Order Manager', {
+    const roleWithWild = Role.create('role-grpwild', {
+      name: 'order_manager',
+      displayName: 'Order Manager',
       permissionIds: ['perm-group-wild'],
     })
     await roleRepo.save(roleWithWild)
@@ -151,7 +157,9 @@ describe('AuthorizationContext', () => {
     )
     await permissionRepo.save(fieldPerm)
 
-    const role = Role.create('role-field', 'price_editor', 'Price Editor', {
+    const role = Role.create('role-field', {
+      name: 'price_editor',
+      displayName: 'Price Editor',
       permissionIds: ['perm-field'],
     })
     await roleRepo.save(role)
@@ -186,7 +194,9 @@ describe('AuthorizationContext', () => {
     await permissionRepo.save(perm1)
     await permissionRepo.save(perm2)
 
-    const role = Role.create('role-exact', 'user_reader', 'User Reader', {
+    const role = Role.create('role-exact', {
+      name: 'user_reader',
+      displayName: 'User Reader',
       permissionIds: ['perm-exact-1'],
     })
     await roleRepo.save(role)
