@@ -4,6 +4,17 @@ import { InvoiceNumber } from '../ValueObjects/InvoiceNumber'
 import { InvoiceStatus } from '../ValueObjects/InvoiceStatus'
 import { InvoiceTax } from '../ValueObjects/InvoiceTax'
 
+export interface InvoiceCreateInput {
+  orderId: string
+  invoiceNumber: string
+  amount: number
+  tax: number
+  status?: string
+  buyerIdentifier?: string
+  carrierId?: string
+  createdAt?: Date
+}
+
 export interface InvoiceProps {
   orderId: string
   invoiceNumber: InvoiceNumber
@@ -45,19 +56,35 @@ export class Invoice extends Entity<string> {
     return this.props.orderId
   }
 
-  get invoiceNumber(): InvoiceNumber {
+  get invoiceNumber(): string {
+    return this.props.invoiceNumber.value
+  }
+
+  get invoiceNumberObject(): InvoiceNumber {
     return this.props.invoiceNumber
   }
 
-  get amount(): InvoiceAmount {
+  get amount(): number {
+    return this.props.amount.value
+  }
+
+  get amountObject(): InvoiceAmount {
     return this.props.amount
   }
 
-  get tax(): InvoiceTax {
+  get tax(): number {
+    return this.props.tax.amount
+  }
+
+  get taxObject(): InvoiceTax {
     return this.props.tax
   }
 
-  get status(): InvoiceStatus {
+  get status(): string {
+    return this.props.status.value
+  }
+
+  get statusObject(): InvoiceStatus {
     return this.props.status
   }
 
@@ -76,24 +103,25 @@ export class Invoice extends Entity<string> {
   /**
    * 建立新發票
    */
-  static create(
-    orderId: string,
-    invoiceNumber: InvoiceNumber,
-    amount: InvoiceAmount,
-    tax: InvoiceTax,
-    buyerIdentifier?: string,
-    carrierId?: string
-  ): Invoice {
-    return new Invoice({
-      orderId,
-      invoiceNumber,
-      amount,
-      tax,
-      status: InvoiceStatus.issued(),
-      buyerIdentifier,
-      carrierId,
-      createdAt: new Date(),
-    })
+  static create(input: InvoiceCreateInput, id?: string): Invoice {
+    const invoiceNumber = InvoiceNumber.create(input.invoiceNumber)
+    const amount = InvoiceAmount.create(input.amount)
+    const tax = InvoiceTax.create(input.tax, 0)
+    const status = InvoiceStatus.create(input.status ?? 'ISSUED')
+
+    return new Invoice(
+      {
+        orderId: input.orderId,
+        invoiceNumber,
+        amount,
+        tax,
+        status,
+        buyerIdentifier: input.buyerIdentifier,
+        carrierId: input.carrierId,
+        createdAt: input.createdAt ?? new Date(),
+      },
+      id
+    )
   }
 
   /**
@@ -122,12 +150,12 @@ export class Invoice extends Entity<string> {
     return {
       id: this.id,
       orderId: this.orderId,
-      invoiceNumber: this.invoiceNumber.value,
-      amount: this.amount.value,
-      amountCurrency: this.amount.currency,
-      tax: this.tax.amount,
-      taxRate: this.tax.rate,
-      status: this.status.value,
+      invoiceNumber: this.invoiceNumber,
+      amount: this.amount,
+      amountCurrency: this.amountObject.currency,
+      tax: this.tax,
+      taxRate: this.taxObject.rate,
+      status: this.status,
       buyerIdentifier: this.buyerIdentifier,
       carrierId: this.carrierId,
       createdAt: this.createdAt,
@@ -141,10 +169,10 @@ export class Invoice extends Entity<string> {
     return {
       id: this.id,
       orderId: this.orderId,
-      invoiceNumber: this.invoiceNumber.value,
-      amount: this.amount.value,
-      tax: this.tax.amount,
-      status: this.status.value,
+      invoiceNumber: this.invoiceNumber,
+      amount: this.amount,
+      tax: this.tax,
+      status: this.status,
       buyerIdentifier: this.buyerIdentifier,
       carrierId: this.carrierId,
       createdAt: this.createdAt,
@@ -154,28 +182,24 @@ export class Invoice extends Entity<string> {
   /**
    * 取消發票
    */
-  cancel(): Invoice {
-    const newStatus = this.status.toCancelled()
-    return new Invoice(
-      {
-        ...this.props,
-        status: newStatus,
-      },
-      this.id
-    )
+  cancel(): this {
+    const newStatus = this.statusObject.toCancelled()
+    this.props = {
+      ...this.props,
+      status: newStatus,
+    }
+    return this
   }
 
   /**
    * 退回發票
    */
-  return(): Invoice {
-    const newStatus = this.status.toReturned()
-    return new Invoice(
-      {
-        ...this.props,
-        status: newStatus,
-      },
-      this.id
-    )
+  return(): this {
+    const newStatus = this.statusObject.toReturned()
+    this.props = {
+      ...this.props,
+      status: newStatus,
+    }
+    return this
   }
 }

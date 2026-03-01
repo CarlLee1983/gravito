@@ -7,7 +7,7 @@ export interface InvoiceNumberProps {
 
 /**
  * 發票號碼 ValueObject
- * 格式：GX-XXXXXXXX (GX前綴 + 8位數字)
+ * 支援格式：GX-XXXXXXXX, INV-XXXX, 或其他英數字與連字符組合
  */
 export class InvoiceNumber extends ValueObject<InvoiceNumberProps> {
   private constructor(value: string) {
@@ -20,7 +20,7 @@ export class InvoiceNumber extends ValueObject<InvoiceNumberProps> {
   }
 
   private validate(value: string): void {
-    if (!value || !/^GX-\d{8}$/.test(value)) {
+    if (!value || !/^[A-Z0-9-]{3,}$/.test(value)) {
       throw new InvalidInvoiceNumberError(value)
     }
   }
