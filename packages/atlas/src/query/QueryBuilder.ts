@@ -309,6 +309,13 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
+   * Returns the resolved table name, including any partition routing logic.
+   */
+  getResolvedTableName(): string {
+    return this.getRawCompiledQuery().table
+  }
+
+  /**
    * Accesses raw WHERE conditions.
    * @internal
    */
@@ -1539,6 +1546,30 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
     const unionBindings = unionCompiled.flatMap((u) => u.query.bindings)
 
+    // Handle Transparent Partition Routing
+    let targetTable = this.tableName
+    if (
+      this.modelClass &&
+      (this.modelClass as any).partitionStrategy &&
+      (this.modelClass as any).partitionKey
+    ) {
+      const partitionKey = (this.modelClass as any).partitionKey
+      const columnMeta = (this.modelClass as any)[COLUMN_KEY] || {}
+      const dbColumnName = columnMeta[partitionKey]?.name || partitionKey
+
+      // Look for a simple equality where clause on the partition key
+      const partitionWhere = this.whereClause
+        .getWheres()
+        .find((w) => w.type === 'basic' && w.column === dbColumnName && w.operator === '=')
+
+      if (partitionWhere && partitionWhere.value !== undefined) {
+        const suffix = (this.modelClass as any).partitionStrategy.resolveSuffix(
+          partitionWhere.value
+        )
+        targetTable = `${targetTable}_${suffix}`
+      }
+    }
+
     // Handle Vertical Partitioning / Deferred Columns
     let columns = this.selectClause.getColumns()
     const joins = [...this.joinManager.getJoins()]
@@ -1564,7 +1595,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       } else if (extensionTable) {
         // Auto-join extension table if requested
         const pk = this.modelClass.primaryKey || 'id'
-        const baseTable = this.tableName
+        const baseTable = targetTable // Use the (possibly partitioned) table
         joins.push({
           type: 'left',
           table: extensionTable,
@@ -1589,7 +1620,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     }
 
     return {
-      table: this.tableName,
+      table: targetTable,
       columns,
       distinct: this.selectClause.isDistinct(),
       wheres: this.whereClause.getWheres(),

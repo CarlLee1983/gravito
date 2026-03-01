@@ -46,6 +46,7 @@ export interface ModelStatic<T extends Model> {
   connection?: string
   extensionTable?: string
   partitionStrategy?: PartitionStrategy
+  partitionKey?: string
   partitionTemplate?: (table: Blueprint) => void
   name: string
   getTable(): string
@@ -107,6 +108,11 @@ export abstract class Model {
    * Optional partitioning strategy for horizontal sharding by table suffix.
    */
   static partitionStrategy?: PartitionStrategy
+
+  /**
+   * Attribute name to use as the partition key (e.g. 'created_at').
+   */
+  static partitionKey?: string
 
   /**
    * Optional table for vertical partitioning (large columns).
@@ -1051,13 +1057,18 @@ export abstract class Model {
 
     const originalGet = builder.get.bind(builder)
     ;(builder as unknown as { get: () => Promise<T[]> }).get = async (): Promise<T[]> => {
+      const resolvedTable = (builder as any).getResolvedTableName?.() || this.getTable()
       const rows = await originalGet()
 
       if ((builder as any).getIsReadOnly?.()) {
         return rows as unknown as T[]
       }
 
-      const models = rows.map((row) => this.hydrate<T>(row)) as unknown as T[]
+      const models = rows.map((row) => {
+        const model = this.hydrate<T>(row)
+        ;(model as any).tableName = row._tableName || resolvedTable
+        return model
+      }) as unknown as T[]
 
       const eagerLoads = (builder as any).getEagerLoads?.()
       if (eagerLoads && eagerLoads.size > 0 && models.length > 0) {
@@ -1070,6 +1081,7 @@ export abstract class Model {
     const originalFirst = builder.first.bind(builder)
     ;(builder as unknown as { first: () => Promise<T | null> }).first =
       async (): Promise<T | null> => {
+        const resolvedTable = (builder as any).getResolvedTableName?.() || this.getTable()
         const row = await originalFirst()
         if (!row) {
           return null
@@ -1079,7 +1091,8 @@ export abstract class Model {
           return row as unknown as T
         }
 
-        const model = this.hydrate<T>(row)
+        const model = this.hydrate<T>(row) as unknown as T
+        ;(model as any).tableName = row._tableName || resolvedTable
 
         const eagerLoads = (builder as any).getEagerLoads?.()
         if (eagerLoads && eagerLoads.size > 0) {
@@ -1165,6 +1178,7 @@ export abstract class Model {
 
     const originalGet = builder.get.bind(builder)
     ;(builder as unknown as { get: () => Promise<T[]> }).get = async (): Promise<T[]> => {
+      const resolvedTable = (builder as any).getResolvedTableName?.() || partitionedTableName
       const rows = await originalGet()
 
       if ((builder as any).getIsReadOnly?.()) {
@@ -1173,8 +1187,8 @@ export abstract class Model {
 
       const models = rows.map((row) => {
         const model = this.hydrate<T>(row)
-        // Ensure the hydrated model knows its partitioned table name
-        ;(model as any).tableName = row._tableName || partitionedTableName
+        // Ensure the hydrated model knows its physical table name
+        ;(model as any).tableName = row._tableName || resolvedTable
         return model
       }) as unknown as T[]
 
@@ -1189,6 +1203,7 @@ export abstract class Model {
     const originalFirst = builder.first.bind(builder)
     ;(builder as unknown as { first: () => Promise<T | null> }).first =
       async (): Promise<T | null> => {
+        const resolvedTable = (builder as any).getResolvedTableName?.() || partitionedTableName
         const row = await originalFirst()
         if (!row) {
           return null
@@ -1199,7 +1214,7 @@ export abstract class Model {
         }
 
         const model = this.hydrate<T>(row) as unknown as T
-        ;(model as any).tableName = row._tableName || partitionedTableName
+        ;(model as any).tableName = row._tableName || resolvedTable
 
         const eagerLoads = (builder as any).getEagerLoads?.()
         if (eagerLoads && eagerLoads.size > 0) {

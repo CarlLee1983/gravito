@@ -44,6 +44,26 @@ export class HasPersistence {
   }
 
   /**
+   * Internal helper to resolve the target table for write operations.
+   * Supports transparent partition routing.
+   * @internal
+   */
+  protected _resolveWriteTable(): string {
+    const modelCtor = this.constructor as any
+    const baseTable = modelCtor.getTable()
+
+    if (modelCtor.partitionStrategy && modelCtor.partitionKey) {
+      const partitionValue = (this as any)._attributes[modelCtor.partitionKey]
+      if (partitionValue !== undefined && partitionValue !== null) {
+        const suffix = modelCtor.partitionStrategy.resolveSuffix(partitionValue)
+        return `${baseTable}_${suffix}`
+      }
+    }
+
+    return baseTable
+  }
+
+  /**
    * Save the model instance to the database (insert or update).
    *
    * @returns A promise that resolves to the model instance
@@ -56,13 +76,14 @@ export class HasPersistence {
   async save(): Promise<this> {
     const modelCtor = this.constructor as any
     const connection = this._getConnection()
+    const targetTable = this._resolveWriteTable()
     const tracer = connection.getTracer()
     const span = tracer?.startSpan(
       `Atlas:${this._exists ? 'Update' : 'Insert'}:${modelCtor.name}`,
       {
         'db.system': connection.getDriver().getDriverName(),
         'db.operation': this._exists ? 'update' : 'insert',
-        'db.sql.table': modelCtor.getTable(),
+        'db.sql.table': targetTable,
       }
     )
 
@@ -107,6 +128,7 @@ export class HasPersistence {
   protected async _performInsert(): Promise<this> {
     const modelCtor = this.constructor as any
     const connection = this._getConnection()
+    const targetTable = this._resolveWriteTable()
 
     // Trigger 'creating' event
     await (this as any).emit('creating')
@@ -139,7 +161,7 @@ export class HasPersistence {
         Object.assign(mainAttributes, attributes)
       }
 
-      const result = await conn.table(modelCtor.getTable()).insert(mainAttributes)
+      const result = await conn.table(targetTable).setModel(modelCtor).insert(mainAttributes)
 
       // Extract ID and handle fallbacks
       let lastId: any
@@ -164,7 +186,10 @@ export class HasPersistence {
             const idRes = await conn.raw<{ id: number }>('SELECT last_insert_rowid() as id', [])
             lastId = idRes.rows[0]?.id
           } else {
-            const maxResult = await conn.table(modelCtor.getTable()).max(modelCtor.primaryKey)
+            const maxResult = await conn
+              .table(targetTable)
+              .setModel(modelCtor)
+              .max(modelCtor.primaryKey)
             lastId = maxResult ?? undefined
           }
         }
@@ -198,7 +223,8 @@ export class HasPersistence {
 
       // Fetch the full record to sync all database-side values
       const fullRecord = await conn
-        .table<any>(modelCtor.getTable())
+        .table<any>(targetTable)
+        .setModel(modelCtor)
         .where(modelCtor.primaryKey, lastId)
         .first()
 
@@ -280,6 +306,7 @@ export class HasPersistence {
     }
 
     const extensionTable = modelCtor.extensionTable
+    const targetTable = this._resolveWriteTable()
     const pk = modelCtor.primaryKey || 'id'
     const pkValue = (this as any).getKey()
 
@@ -300,10 +327,10 @@ export class HasPersistence {
         Object.assign(mainDirty, dirty)
       }
 
-      // Update Main Table
+      // Update Main Table (Target Table might be a partition)
       let affected = 0
       if (Object.keys(mainDirty).length > 0) {
-        const query = conn.table(modelCtor.getTable()).where(pk, pkValue)
+        const query = conn.table(targetTable).setModel(modelCtor).where(pk, pkValue)
         if (versionKey && currentVersion !== undefined) {
           query.where(versionKey, currentVersion)
         }
@@ -373,11 +400,12 @@ export class HasPersistence {
 
     const modelCtor = this.constructor as any
     const connection = this._getConnection()
+    const targetTable = this._resolveWriteTable()
     const tracer = connection.getTracer()
     const span = tracer?.startSpan(`Atlas:Delete:${modelCtor.name}`, {
       'db.system': connection.getDriver().getDriverName(),
       'db.operation': 'delete',
-      'db.sql.table': modelCtor.getTable(),
+      'db.sql.table': targetTable,
     })
 
     try {
@@ -400,7 +428,11 @@ export class HasPersistence {
           if (extensionTable) {
             await conn.table(extensionTable).where(pk, pkValue).delete()
           }
-          const affected = await conn.table(modelCtor.getTable()).where(pk, pkValue).delete()
+          const affected = await conn
+            .table(targetTable)
+            .setModel(modelCtor)
+            .where(pk, pkValue)
+            .delete()
           return affected > 0
         }
 
