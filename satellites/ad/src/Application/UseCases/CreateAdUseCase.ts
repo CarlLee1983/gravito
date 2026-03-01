@@ -2,7 +2,6 @@ import type { PlanetCore } from '@gravito/core'
 import { UseCase } from '@gravito/enterprise'
 import type { IAdRepository } from '../../Domain/Contracts/IAdRepository'
 import { AdCreationContext } from '../../Domain/DCI/Contexts/AdCreationContext'
-import { AdError } from '../../Domain/Errors/AdError'
 import type { AdDTO } from '../DTOs/AdDTO'
 import { AdMapper } from '../DTOs/AdMapper'
 

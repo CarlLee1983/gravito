@@ -6,7 +6,7 @@ export interface HonoContext {
     json(): Promise<unknown>
     param(name: string): string | undefined
     query(name: string): string | undefined
-    queries?(): Record<string, string>
+    queries?(): Record<string, string | string[]>
   }
   json(data: unknown, status?: number): unknown
 }

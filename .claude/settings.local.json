@@ -71,7 +71,8 @@
       "Bash(cd:*)",
       "Bash(echo:*)",
       "Bash(pkill:*)",
-      "Bash(bun test 2>&1 | tail -30)"
+      "Bash(bun test 2>&1 | tail -30)",
+      "Bash(bun run typecheck 2>&1)"
     ]
   },
   "enabledMcpjsonServers": [

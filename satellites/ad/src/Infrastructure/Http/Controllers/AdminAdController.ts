@@ -5,6 +5,7 @@ import type { ListAdsUseCase } from '../../../Application/UseCases/ListAdsUseCas
 import type { ToggleAdStatusUseCase } from '../../../Application/UseCases/ToggleAdStatusUseCase'
 import type { UpdateAdUseCase } from '../../../Application/UseCases/UpdateAdUseCase'
 import type { IAdRepository } from '../../../Domain/Contracts/IAdRepository'
+import type { AdStatus } from '../../../Domain/Entities/Advertisement'
 import { AdError } from '../../../Domain/Errors/AdError'
 import { failure, formatZodErrors, type HonoContext, success } from '../Shared/responseHelpers'
 import {
@@ -59,11 +60,12 @@ export class AdminAdController {
    */
   async list(ctx: HonoContext): Promise<unknown> {
     try {
-      const rawParams = ctx.req.queries()
+      const rawParams = ctx.req.queries?.() ?? {}
       // 將陣列值取第一個元素，確保單值
       const queryParams: Record<string, string> = {}
       for (const [key, val] of Object.entries(rawParams)) {
-        queryParams[key] = Array.isArray(val) ? (val[0] ?? '') : val
+        const value = Array.isArray(val) ? (val[0] ?? '') : val
+        queryParams[key] = value ?? ''
       }
       const parsed = ListAdsQuerySchema.safeParse(queryParams)
 
@@ -71,7 +73,12 @@ export class AdminAdController {
         return ctx.json(failure('VALIDATION_ERROR', formatZodErrors(parsed.error)), 400)
       }
 
-      const result = await this.listAdsUseCase.execute(parsed.data)
+      // 轉換 status 值為 AdStatus 枚舉
+      const data = {
+        ...parsed.data,
+        status: parsed.data.status ? (parsed.data.status as AdStatus) : undefined,
+      }
+      const result = await this.listAdsUseCase.execute(data)
       return ctx.json(success(result), 200)
     } catch (error) {
       return this.handleError(ctx, error)
