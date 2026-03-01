@@ -1,16 +1,12 @@
-import type { ServiceProvider } from '@gravito/core'
-import type { Router } from 'hono'
 import { CreateAdminUseCase } from './Application/UseCases/CreateAdmin'
 import { DeleteAdminUseCase } from './Application/UseCases/DeleteAdmin'
 import { GetAdminUseCase } from './Application/UseCases/GetAdmin'
 import { ListAdminsUseCase } from './Application/UseCases/ListAdmins'
-// UseCases
 import { LoginAdminUseCase } from './Application/UseCases/LoginAdmin'
 import { LogoutAdminUseCase } from './Application/UseCases/LogoutAdmin'
 import { RefreshAdminTokenUseCase } from './Application/UseCases/RefreshAdminToken'
 import { UpdateAdminUseCase } from './Application/UseCases/UpdateAdmin'
-// Domain
-import { Admin, AdminStatus } from './Domain/Entities/Admin'
+import { Admin } from './Domain/Entities/Admin'
 import { AdminEmail } from './Domain/ValueObjects/AdminEmail'
 import { InMemoryAdminRepository } from './Infrastructure/Persistence/AtlasAdminRepository'
 import { AdminTokenBlacklist } from './Infrastructure/TokenBlacklist/AdminTokenBlacklist'
@@ -23,27 +19,29 @@ import { JwtAdminAuthStrategy } from './Interface/Http/Strategies/JwtAdminAuthSt
  * Admin Service Provider
  * 後台管理員系統服務提供者
  */
-export class AdminServiceProvider implements ServiceProvider {
-  constructor(private readonly core: any) {}
+export class AdminServiceProvider {
+  constructor(private core: any) {}
 
   register(): void {
+    const container = this.core.container
+
     // Repository
-    this.core.container.singleton('admin.repository', () => {
+    container.singleton('admin.repository', () => {
       return new InMemoryAdminRepository()
     })
 
     // Token Blacklist
-    this.core.container.singleton('admin.tokenBlacklist', () => {
+    container.singleton('admin.tokenBlacklist', () => {
       return new AdminTokenBlacklist()
     })
 
     // JWT Strategy
-    this.core.container.singleton('admin.jwtStrategy', () => {
+    container.singleton('admin.jwtStrategy', () => {
       return new JwtAdminAuthStrategy()
     })
 
     // UseCases
-    this.core.container.factory('admin.loginUseCase', (container: any) => {
+    container.factory('admin.loginUseCase', () => {
       return new LoginAdminUseCase(
         container.make('admin.repository'),
         container.make('admin.jwtStrategy'),
@@ -51,39 +49,39 @@ export class AdminServiceProvider implements ServiceProvider {
       )
     })
 
-    this.core.container.factory('admin.refreshUseCase', (container: any) => {
+    container.factory('admin.refreshUseCase', () => {
       return new RefreshAdminTokenUseCase(container.make('admin.jwtStrategy'))
     })
 
-    this.core.container.factory('admin.logoutUseCase', (container: any) => {
+    container.factory('admin.logoutUseCase', () => {
       return new LogoutAdminUseCase(
         container.make('admin.tokenBlacklist'),
         container.make('admin.jwtStrategy')
       )
     })
 
-    this.core.container.factory('admin.listUseCase', (container: any) => {
+    container.factory('admin.listUseCase', () => {
       return new ListAdminsUseCase(container.make('admin.repository'))
     })
 
-    this.core.container.factory('admin.getUseCase', (container: any) => {
+    container.factory('admin.getUseCase', () => {
       return new GetAdminUseCase(container.make('admin.repository'))
     })
 
-    this.core.container.factory('admin.createUseCase', (container: any) => {
+    container.factory('admin.createUseCase', () => {
       return new CreateAdminUseCase(container.make('admin.repository'), this.core)
     })
 
-    this.core.container.factory('admin.updateUseCase', (container: any) => {
+    container.factory('admin.updateUseCase', () => {
       return new UpdateAdminUseCase(container.make('admin.repository'), this.core)
     })
 
-    this.core.container.factory('admin.deleteUseCase', (container: any) => {
+    container.factory('admin.deleteUseCase', () => {
       return new DeleteAdminUseCase(container.make('admin.repository'), this.core)
     })
 
     // Controllers
-    this.core.container.factory('admin.authController', (container: any) => {
+    container.singleton('admin.authController', () => {
       return new AdminAuthController(
         container.make('admin.loginUseCase'),
         container.make('admin.refreshUseCase'),
@@ -91,7 +89,7 @@ export class AdminServiceProvider implements ServiceProvider {
       )
     })
 
-    this.core.container.factory('admin.controller', (container: any) => {
+    container.singleton('admin.controller', () => {
       return new AdminController(
         container.make('admin.listUseCase'),
         container.make('admin.getUseCase'),
@@ -103,40 +101,43 @@ export class AdminServiceProvider implements ServiceProvider {
   }
 
   async boot(): Promise<void> {
-    // 取得 router 和 repository
-    const router = this.core.container.make('router') as Router
-    const adminRepo = this.core.container.make('admin.repository')
-    const jwtStrategy = this.core.container.make('admin.jwtStrategy')
+    const core = this.core
+    if (!core) {
+      return
+    }
 
-    // 建立 middleware
-    const authMiddleware = adminAuthMiddleware(this.core, jwtStrategy, adminRepo)
-
-    // 掛載路由
-    const authController = this.core.container.make('admin.authController')
-    const adminController = this.core.container.make('admin.controller')
+    const router = core.container.make('router') ?? core.router
+    const adminRepo = core.container.make('admin.repository')
+    const jwtStrategy = core.container.make('admin.jwtStrategy')
+    const authMiddleware = adminAuthMiddleware(core, jwtStrategy, adminRepo)
+    const authController = core.container.make<AdminAuthController>('admin.authController')
+    const adminController = core.container.make<AdminController>('admin.controller')
 
     // 認證路由（無需認證）
-    router.post('/api/admin/auth/login', (ctx) => authController.login(ctx))
-    router.post('/api/admin/auth/refresh', (ctx) => authController.refresh(ctx))
+    router.post('/api/admin/auth/login', (ctx: any) => authController.login(ctx))
+    router.post('/api/admin/auth/refresh', (ctx: any) => authController.refresh(ctx))
 
     // 需要認證的路由
-    router.post('/api/admin/auth/logout', authMiddleware, (ctx) => authController.logout(ctx))
-    router.get('/api/admin/auth/me', authMiddleware, (ctx) => authController.me(ctx))
+    router.post('/api/admin/auth/logout', authMiddleware, (ctx: any) => authController.logout(ctx))
+    router.get('/api/admin/auth/me', authMiddleware, (ctx: any) => authController.me(ctx))
 
     // Admin CRUD 路由
-    router.get('/api/admin/v1/admins', authMiddleware, (ctx) => adminController.index(ctx))
-    router.get('/api/admin/v1/admins/:id', authMiddleware, (ctx) => adminController.show(ctx))
-    router.post('/api/admin/v1/admins', authMiddleware, (ctx) => adminController.store(ctx))
-    router.patch('/api/admin/v1/admins/:id', authMiddleware, (ctx) => adminController.update(ctx))
-    router.delete('/api/admin/v1/admins/:id', authMiddleware, (ctx) => adminController.destroy(ctx))
+    router.get('/api/admin/v1/admins', authMiddleware, (ctx: any) => adminController.index(ctx))
+    router.get('/api/admin/v1/admins/:id', authMiddleware, (ctx: any) => adminController.show(ctx))
+    router.post('/api/admin/v1/admins', authMiddleware, (ctx: any) => adminController.store(ctx))
+    router.patch('/api/admin/v1/admins/:id', authMiddleware, (ctx: any) =>
+      adminController.update(ctx)
+    )
+    router.delete('/api/admin/v1/admins/:id', authMiddleware, (ctx: any) =>
+      adminController.destroy(ctx)
+    )
 
     // Bootstrap super admin
     await this.bootstrapSuperAdmin(adminRepo)
 
     // 監聽 admin 刪除事件
-    this.core.hooks.addAction('admin:deleted', async (data: any) => {
-      // 清除關聯的 admin_roles（由 rbac satellite 處理）
-      await this.core.hooks.doAction('admin:deleted-cascade', data)
+    core.hooks.addAction('admin:deleted', (data: any) => {
+      core.hooks.doAction('admin:deleted-cascade', data)
     })
   }
 
@@ -145,18 +146,18 @@ export class AdminServiceProvider implements ServiceProvider {
     const password = process.env.ADMIN_PASSWORD || 'password'
     const name = process.env.ADMIN_NAME || '系統管理員'
 
-    // 檢查是否已存在
-    const existing = await adminRepo.findByEmail(email)
-    if (existing) {
-      return
+    try {
+      const existing = await adminRepo.findByEmail(email)
+      if (existing) {
+        return
+      }
+
+      const adminEmail = AdminEmail.create(email)
+      const admin = Admin.createSuper(crypto.randomUUID(), adminEmail, name, password)
+      await adminRepo.save(admin)
+    } catch {
+      // Bootstrap error, continue anyway
     }
-
-    // 建立 super admin
-    const adminEmail = AdminEmail.create(email)
-    const admin = Admin.createSuper(crypto.randomUUID(), adminEmail, name, password)
-
-    await adminRepo.save(admin)
-    console.log(`✅ Bootstrap super admin: ${email}`)
   }
 }
 

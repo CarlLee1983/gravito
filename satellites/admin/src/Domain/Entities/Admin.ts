@@ -1,4 +1,3 @@
-import type { DomainEvent } from '@gravito/enterprise'
 import { AggregateRoot } from '@gravito/enterprise'
 import type { AdminEmail } from '../ValueObjects/AdminEmail'
 

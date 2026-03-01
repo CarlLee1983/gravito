@@ -1,7 +1,7 @@
 import type { PlanetCore } from '@gravito/core'
 import { AdminErrorFactory } from '../../../Application/Errors/AdminError'
 import type { IAdminRepository } from '../../Contracts/IAdminRepository'
-import { Admin, AdminStatus } from '../../Entities/Admin'
+import { Admin } from '../../Entities/Admin'
 import type { AdminEmail } from '../../ValueObjects/AdminEmail'
 import { AdminManagerRole } from '../Roles/AdminManagerRole'
 
