@@ -10,6 +10,7 @@ import { UpdateCategory } from './Application/UseCases/UpdateCategory'
 import { UpdateProduct } from './Application/UseCases/UpdateProduct'
 import { AtlasCategoryRepository } from './Infrastructure/Persistence/AtlasCategoryRepository'
 import { AtlasProductRepository } from './Infrastructure/Persistence/AtlasProductRepository'
+import { AdminCategoryController } from './Interface/Http/Controllers/AdminCategoryController'
 import { AdminProductController } from './Interface/Http/Controllers/AdminProductController'
 
 export class CatalogServiceProvider extends ServiceProvider {
@@ -51,7 +52,12 @@ export class CatalogServiceProvider extends ServiceProvider {
     )
     container.bind(
       'catalog.usecase.deleteCategory',
-      () => new DeleteCategory(container.make('catalog.repository.category'), this.core!)
+      () =>
+        new DeleteCategory(
+          container.make('catalog.repository.category'),
+          container.make('catalog.repository.product'),
+          this.core!
+        )
     )
 
     // Stock Management
@@ -64,6 +70,10 @@ export class CatalogServiceProvider extends ServiceProvider {
     container.singleton(
       'catalog.controller.adminProduct',
       () => new AdminProductController(this.core!)
+    )
+    container.singleton(
+      'catalog.controller.adminCategory',
+      () => new AdminCategoryController(this.core!)
     )
   }
 
@@ -78,14 +88,24 @@ export class CatalogServiceProvider extends ServiceProvider {
     const adminProductCtrl = core.container.make<AdminProductController>(
       'catalog.controller.adminProduct'
     )
+    const adminCategoryCtrl = core.container.make<AdminCategoryController>(
+      'catalog.controller.adminCategory'
+    )
 
     // 管理端 API
-    core.router.prefix('/api/admin/v1/catalog').group((router) => {
-      router.get('/products', (ctx) => adminProductCtrl.index(ctx))
-      router.get('/products/:id', (ctx) => adminProductCtrl.show(ctx))
-      router.post('/products', (ctx) => adminProductCtrl.store(ctx))
-      router.patch('/products/:id', (ctx) => adminProductCtrl.update(ctx))
-      router.delete('/products/:id', (ctx) => adminProductCtrl.destroy(ctx))
+    core.router.prefix('/api/admin/v1/catalog').group((router: any) => {
+      // Product routes
+      router.get('/products', (ctx: any) => adminProductCtrl.index(ctx))
+      router.get('/products/:id', (ctx: any) => adminProductCtrl.show(ctx))
+      router.post('/products', (ctx: any) => adminProductCtrl.store(ctx))
+      router.patch('/products/:id', (ctx: any) => adminProductCtrl.update(ctx))
+      router.delete('/products/:id', (ctx: any) => adminProductCtrl.destroy(ctx))
+
+      // Category routes
+      router.get('/categories', (ctx: any) => adminCategoryCtrl.index(ctx))
+      router.post('/categories', (ctx: any) => adminCategoryCtrl.store(ctx))
+      router.patch('/categories/:id', (ctx: any) => adminCategoryCtrl.update(ctx))
+      router.delete('/categories/:id', (ctx: any) => adminCategoryCtrl.destroy(ctx))
     })
 
     /**

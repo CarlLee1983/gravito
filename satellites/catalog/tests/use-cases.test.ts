@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'bun:test'
+import { CatalogError } from '../src/Application/Errors/CatalogError'
 import { AdminListProducts } from '../src/Application/UseCases/AdminListProducts'
 import { CreateProduct } from '../src/Application/UseCases/CreateProduct'
+import { DeleteCategory } from '../src/Application/UseCases/DeleteCategory'
 import type {
   ICategoryRepository,
   IProductRepository,
@@ -22,12 +24,53 @@ class InMemoryProductRepository implements IProductRepository {
     return this.products.get(id) ?? null
   }
 
-  async findAll(_filters?: any): Promise<Product[]> {
-    return Array.from(this.products.values())
+  async findAll(filters?: any): Promise<Product[]> {
+    const products = Array.from(this.products.values())
+    // Support categoryId filter
+    if (filters?.categoryId) {
+      return products.filter((p) => p.categoryIds?.includes(filters.categoryId))
+    }
+    return products
   }
 
   async delete(id: string): Promise<void> {
     this.products.delete(id)
+  }
+}
+
+/**
+ * InMemoryCategoryRepository - Mock 實作
+ */
+class InMemoryCategoryRepository implements ICategoryRepository {
+  private categories: Map<string, Category> = new Map()
+
+  async save(category: Category): Promise<void> {
+    this.categories.set(category.id, category)
+  }
+
+  async findById(id: string): Promise<Category | null> {
+    return this.categories.get(id) ?? null
+  }
+
+  async findAll(): Promise<Category[]> {
+    return Array.from(this.categories.values())
+  }
+
+  async findBySlug(slug: string): Promise<Category | null> {
+    for (const cat of this.categories.values()) {
+      if (cat.slug.value === slug) {
+        return cat
+      }
+    }
+    return null
+  }
+
+  async findByPathPrefix(prefix: string): Promise<Category[]> {
+    return Array.from(this.categories.values()).filter((cat) => cat.path?.startsWith(prefix))
+  }
+
+  async delete(id: string): Promise<void> {
+    this.categories.delete(id)
   }
 }
 
@@ -171,6 +214,68 @@ describe('Catalog UseCases', () => {
       expect(product.description).toBe('Test description')
       expect(product.createdAt).toBe(now)
       expect(product.updatedAt).toBe(now)
+    })
+  })
+
+  describe('DeleteCategory', () => {
+    it('分類下無商品時應該成功刪除', async () => {
+      const categoryRepo = new InMemoryCategoryRepository()
+      const productRepo = new InMemoryProductRepository()
+      const core = new MockPlanetCore()
+
+      // 建立並儲存分類
+      const category = Category.create('c1', { zh: '電子產品' }, 'electronics')
+      await categoryRepo.save(category)
+
+      const useCase = new DeleteCategory(categoryRepo, productRepo, core as any)
+      await useCase.execute({ id: 'c1' })
+
+      // 驗證分類已被刪除
+      const found = await categoryRepo.findById('c1')
+      expect(found).toBeNull()
+    })
+
+    it('分類下有商品時應該丟出 CATEGORY_HAS_PRODUCTS 錯誤', async () => {
+      const categoryRepo = new InMemoryCategoryRepository()
+      const productRepo = new InMemoryProductRepository()
+      const core = new MockPlanetCore()
+
+      // 建立並儲存分類
+      const category = Category.create('c1', { zh: '電子產品' }, 'electronics')
+      await categoryRepo.save(category)
+
+      // 建立並儲存帶有該分類的商品
+      const product = Product.create('p1', { zh: 'Laptop' }, 'laptop')
+      product.assignToCategory('c1')
+      await productRepo.save(product)
+
+      const useCase = new DeleteCategory(categoryRepo, productRepo, core as any)
+
+      try {
+        await useCase.execute({ id: 'c1' })
+        expect.unreachable('Should have thrown CatalogError')
+      } catch (error) {
+        expect(error).toBeInstanceOf(CatalogError)
+        expect((error as CatalogError).code).toBe('CATEGORY_HAS_PRODUCTS')
+        expect((error as CatalogError).statusCode).toBe(400)
+      }
+    })
+
+    it('分類不存在時應該丟出 CATEGORY_NOT_FOUND 錯誤', async () => {
+      const categoryRepo = new InMemoryCategoryRepository()
+      const productRepo = new InMemoryProductRepository()
+      const core = new MockPlanetCore()
+
+      const useCase = new DeleteCategory(categoryRepo, productRepo, core as any)
+
+      try {
+        await useCase.execute({ id: 'non-existent' })
+        expect.unreachable('Should have thrown CatalogError')
+      } catch (error) {
+        expect(error).toBeInstanceOf(CatalogError)
+        expect((error as CatalogError).code).toBe('CATEGORY_NOT_FOUND')
+        expect((error as CatalogError).statusCode).toBe(404)
+      }
     })
   })
 

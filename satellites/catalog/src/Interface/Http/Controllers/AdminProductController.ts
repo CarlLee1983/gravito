@@ -1,6 +1,6 @@
 import type { PlanetCore } from '@gravito/core'
 import type { Context } from '@gravito/photon'
-import { CatalogErrorFactory } from '../../../Application/Errors/CatalogError'
+import { CatalogError } from '../../../Application/Errors/CatalogError'
 import type { AdminListProducts } from '../../../Application/UseCases/AdminListProducts'
 import type { CreateProduct } from '../../../Application/UseCases/CreateProduct'
 import type { DeleteProduct } from '../../../Application/UseCases/DeleteProduct'
@@ -21,8 +21,12 @@ export class AdminProductController {
       )
       const products = await useCase.execute()
       return ctx.json({ success: true, data: products })
-    } catch (error: any) {
-      return ctx.json({ success: false, message: error.message }, 500)
+    } catch (error: unknown) {
+      if (error instanceof CatalogError) {
+        return ctx.json({ success: false, message: error.message }, error.statusCode as any)
+      }
+      const message = error instanceof Error ? error.message : 'Internal server error'
+      return ctx.json({ success: false, message }, 500 as any)
     }
   }
 
@@ -36,11 +40,12 @@ export class AdminProductController {
       const useCase = this.core.container.make<GetProduct>('catalog.usecase.getProduct')
       const product = await useCase.execute({ id })
       return ctx.json({ success: true, data: product })
-    } catch (error: any) {
-      if (error.message.includes('not found')) {
-        return ctx.json({ success: false, message: error.message }, 404)
+    } catch (error: unknown) {
+      if (error instanceof CatalogError) {
+        return ctx.json({ success: false, message: error.message }, error.statusCode as any)
       }
-      return ctx.json({ success: false, message: error.message }, 500)
+      const message = error instanceof Error ? error.message : 'Internal server error'
+      return ctx.json({ success: false, message }, 500 as any)
     }
   }
 
@@ -54,8 +59,12 @@ export class AdminProductController {
       const useCase = this.core.container.make<CreateProduct>('catalog.usecase.createProduct')
       const product = await useCase.execute(body)
       return ctx.json({ success: true, data: product }, 201)
-    } catch (error: any) {
-      return ctx.json({ success: false, message: error.message }, 500)
+    } catch (error: unknown) {
+      if (error instanceof CatalogError) {
+        return ctx.json({ success: false, message: error.message }, error.statusCode as any)
+      }
+      const message = error instanceof Error ? error.message : 'Internal server error'
+      return ctx.json({ success: false, message }, 500 as any)
     }
   }
 
@@ -70,11 +79,12 @@ export class AdminProductController {
       const useCase = this.core.container.make<UpdateProduct>('catalog.usecase.updateProduct')
       const product = await useCase.execute({ id, ...body })
       return ctx.json({ success: true, data: product })
-    } catch (error: any) {
-      if (error.message.includes('not found')) {
-        return ctx.json({ success: false, message: error.message }, 404)
+    } catch (error: unknown) {
+      if (error instanceof CatalogError) {
+        return ctx.json({ success: false, message: error.message }, error.statusCode as any)
       }
-      return ctx.json({ success: false, message: error.message }, 500)
+      const message = error instanceof Error ? error.message : 'Internal server error'
+      return ctx.json({ success: false, message }, 500 as any)
     }
   }
 
@@ -88,11 +98,12 @@ export class AdminProductController {
       const useCase = this.core.container.make<DeleteProduct>('catalog.usecase.deleteProduct')
       await useCase.execute({ id })
       return ctx.json({ success: true, message: 'Product deleted successfully' })
-    } catch (error: any) {
-      if (error.message.includes('not found')) {
-        return ctx.json({ success: false, message: error.message }, 404)
+    } catch (error: unknown) {
+      if (error instanceof CatalogError) {
+        return ctx.json({ success: false, message: error.message }, error.statusCode as any)
       }
-      return ctx.json({ success: false, message: error.message }, 500)
+      const message = error instanceof Error ? error.message : 'Internal server error'
+      return ctx.json({ success: false, message }, 500 as any)
     }
   }
 }
