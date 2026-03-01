@@ -83,30 +83,30 @@ describe('Order', () => {
     })
   })
 
-  describe('confirm (狀態機)', () => {
-    it('應從 PENDING 轉為 CONFIRMED', () => {
+  describe('transitionToConfirmed (狀態轉換)', () => {
+    it('應轉換為 CONFIRMED 狀態', () => {
       const items = createItems()
       const order = Order.create('order-1', 'user-1', items)
       order.pullDomainEvents() // 清除 OrderCreated event
 
-      order.confirm()
+      order.transitionToConfirmed()
 
       expect(order.status).toBe(OrderStatus.CONFIRMED)
     })
 
-    it('確認時應添加 OrderConfirmed Domain Event', () => {
+    it('轉換時應添加 OrderConfirmed Domain Event', () => {
       const items = createItems()
       const order = Order.create('order-1', 'user-1', items)
       order.pullDomainEvents() // 清除 OrderCreated event
 
-      order.confirm()
+      order.transitionToConfirmed()
       const events = order.pullDomainEvents()
 
       expect(events).toHaveLength(1)
       expect(events[0]).toBeInstanceOf(OrderConfirmed)
     })
 
-    it('非 PENDING 狀態不能確認，應拋出 INVALID_ORDER_STATUS', () => {
+    it('無論當前狀態如何，都應該能轉換（驗證由 Role 層負責）', () => {
       const items = createItems()
       const order = Order.reconstitute('order-1', {
         userId: 'user-1',
@@ -116,84 +116,72 @@ describe('Order', () => {
         createdAt: new Date(),
       })
 
-      try {
-        order.confirm()
-        expect(true).toBe(false)
-      } catch (error: unknown) {
-        const flashError = error as { code: string }
-        expect(flashError.code).toBe(FlashSaleErrorCode.INVALID_ORDER_STATUS)
-      }
+      // DCI 設計：Entity 層不驗證，簡單地轉換
+      order.transitionToConfirmed()
+      expect(order.status).toBe(OrderStatus.CONFIRMED)
     })
   })
 
-  describe('markAsPaid (狀態機)', () => {
-    it('應從 CONFIRMED 轉為 PAID', () => {
+  describe('transitionToPaid (狀態轉換)', () => {
+    it('應轉換為 PAID 狀態', () => {
       const items = createItems()
       const order = Order.create('order-1', 'user-1', items)
-      order.confirm()
+      order.transitionToConfirmed()
 
-      order.markAsPaid()
+      order.transitionToPaid()
 
       expect(order.status).toBe(OrderStatus.PAID)
     })
 
-    it('非 CONFIRMED 狀態不能付款，應拋出 INVALID_ORDER_STATUS', () => {
+    it('無論當前狀態如何，都應該能轉換（驗證由 Role 層負責）', () => {
       const items = createItems()
       const order = Order.create('order-1', 'user-1', items)
 
-      try {
-        order.markAsPaid() // 目前是 PENDING，不能直接付款
-        expect(true).toBe(false)
-      } catch (error: unknown) {
-        const flashError = error as { code: string }
-        expect(flashError.code).toBe(FlashSaleErrorCode.INVALID_ORDER_STATUS)
-      }
+      // DCI 設計：Entity 層不驗證，簡單地轉換
+      order.transitionToPaid()
+      expect(order.status).toBe(OrderStatus.PAID)
     })
   })
 
-  describe('cancel (狀態機)', () => {
-    it('應從 PENDING 取消', () => {
+  describe('transitionToCancelled (狀態轉換)', () => {
+    it('應從 PENDING 轉換為 CANCELLED', () => {
       const items = createItems()
       const order = Order.create('order-1', 'user-1', items)
 
-      order.cancel()
+      order.transitionToCancelled()
 
       expect(order.status).toBe(OrderStatus.CANCELLED)
     })
 
-    it('應從 CONFIRMED 取消', () => {
+    it('應從 CONFIRMED 轉換為 CANCELLED', () => {
       const items = createItems()
       const order = Order.create('order-1', 'user-1', items)
-      order.confirm()
+      order.transitionToConfirmed()
 
-      order.cancel()
+      order.transitionToCancelled()
 
       expect(order.status).toBe(OrderStatus.CANCELLED)
     })
 
-    it('應從 PAID 取消', () => {
+    it('應從 PAID 轉換為 CANCELLED', () => {
       const items = createItems()
       const order = Order.create('order-1', 'user-1', items)
-      order.confirm()
-      order.markAsPaid()
+      order.transitionToConfirmed()
+      order.transitionToPaid()
 
-      order.cancel()
+      order.transitionToCancelled()
 
       expect(order.status).toBe(OrderStatus.CANCELLED)
     })
 
-    it('已取消的訂單不能再次取消', () => {
+    it('無論當前狀態如何，都應該能轉換（驗證由 Role 層負責）', () => {
       const items = createItems()
       const order = Order.create('order-1', 'user-1', items)
-      order.cancel()
+      order.transitionToCancelled()
 
-      try {
-        order.cancel()
-        expect(true).toBe(false)
-      } catch (error: unknown) {
-        const flashError = error as { code: string }
-        expect(flashError.code).toBe(FlashSaleErrorCode.INVALID_ORDER_STATUS)
-      }
+      // DCI 設計：Entity 層不驗證，簡單地轉換
+      order.transitionToCancelled()
+      expect(order.status).toBe(OrderStatus.CANCELLED)
     })
   })
 

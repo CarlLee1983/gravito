@@ -148,8 +148,8 @@ describe('Product', () => {
     })
   })
 
-  describe('deactivate', () => {
-    it('應將狀態改為 INACTIVE', () => {
+  describe('transitionToInactive (狀態轉換)', () => {
+    it('應轉換為 INACTIVE 狀態', () => {
       const product = Product.create(
         'prod-1',
         'Test',
@@ -163,9 +163,32 @@ describe('Product', () => {
 
       expect(product.status).toBe(ProductStatus.ACTIVE)
 
-      product.deactivate()
+      product.transitionToInactive()
 
       expect(product.status).toBe(ProductStatus.INACTIVE)
+    })
+  })
+
+  describe('transitionToActive (狀態轉換)', () => {
+    it('應轉換為 ACTIVE 狀態', () => {
+      const product = Product.reconstitute('prod-1', {
+        name: 'Test',
+        sku: 'SKU',
+        description: 'Desc',
+        price: defaultPrice,
+        cost: defaultCost,
+        stock: defaultStock,
+        images: [],
+        status: ProductStatus.INACTIVE,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+
+      expect(product.status).toBe(ProductStatus.INACTIVE)
+
+      product.transitionToActive()
+
+      expect(product.status).toBe(ProductStatus.ACTIVE)
     })
   })
 

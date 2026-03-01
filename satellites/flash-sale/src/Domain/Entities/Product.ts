@@ -87,10 +87,12 @@ export class Product extends Entity<string> {
   }
 
   /**
-   * 扣減庫存
+   * 轉換為扣減庫存狀態
    *
-   * @param n - 扣減數量
-   * @throws FlashSaleError 若庫存不足
+   * DCI 設計：委派給 Stock ValueObject 進行驗證
+   *
+   * @param n - 扣減數量（Stock.deduct 會驗證有效性）
+   * @throws FlashSaleError 若數量無效或庫存不足（由 Stock.deduct 拋出）
    */
   deductStock(n: number): void {
     this._stock = this._stock.deduct(n)
@@ -98,9 +100,12 @@ export class Product extends Entity<string> {
   }
 
   /**
-   * 補充庫存
+   * 轉換為補充庫存狀態
    *
-   * @param n - 補充數量
+   * DCI 設計：委派給 Stock ValueObject 進行驗證
+   *
+   * @param n - 補充數量（Stock.add 會驗證有效性）
+   * @throws FlashSaleError 若數量無效（由 Stock.add 拋出）
    */
   replenishStock(n: number): void {
     this._stock = this._stock.add(n)
@@ -108,21 +113,21 @@ export class Product extends Entity<string> {
   }
 
   /**
-   * 啟用商品
+   * 轉換為啟用狀態
    *
-   * 狀態機：INACTIVE -> ACTIVE
+   * DCI 設計：簡單的狀態轉換，驗證由 Role 層負責
    */
-  activate(): void {
+  transitionToActive(): void {
     this._status = ProductStatus.ACTIVE
     this._updatedAt = new Date()
   }
 
   /**
-   * 停用商品
+   * 轉換為停用狀態
    *
-   * 狀態機：ACTIVE -> INACTIVE
+   * DCI 設計：簡單的狀態轉換，驗證由 Role 層負責
    */
-  deactivate(): void {
+  transitionToInactive(): void {
     this._status = ProductStatus.INACTIVE
     this._updatedAt = new Date()
   }

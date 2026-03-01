@@ -9,8 +9,10 @@
  * 使用 Closures Pattern：注入 Order entity + IOrderRepository
  */
 
+import { FlashSaleError } from '../../../Application/Errors/FlashSaleError'
 import type { IOrderRepository } from '../../Contracts/IOrderRepository'
 import type { Order } from '../../Entities/Order'
+import { OrderStatus } from '../../Models'
 
 /**
  * OrderOwnerRole 回傳的行為介面
@@ -32,14 +34,20 @@ export interface OrderOwner {
 export function injectOrderOwner(order: Order, repository: IOrderRepository): OrderOwner {
   return {
     async confirm(): Promise<void> {
-      // confirm() 內部會驗證狀態機（必須為 PENDING）
-      order.confirm()
+      // DCI 設計：Role 層負責驗證狀態機，Entity 只做狀態轉換
+      if (order.status !== OrderStatus.PENDING) {
+        throw FlashSaleError.invalidOrderStatus(order.status, OrderStatus.CONFIRMED)
+      }
+      order.transitionToConfirmed()
       await repository.save(order)
     },
 
     async cancel(): Promise<void> {
-      // cancel() 內部會驗證狀態機（不能為 CANCELLED）
-      order.cancel()
+      // DCI 設計：Role 層負責驗證狀態機，Entity 只做狀態轉換
+      if (order.status === OrderStatus.CANCELLED) {
+        throw FlashSaleError.invalidOrderStatus(order.status, OrderStatus.CANCELLED)
+      }
+      order.transitionToCancelled()
       await repository.save(order)
     },
   }

@@ -82,45 +82,30 @@ export class Order extends AggregateRoot<string> {
   }
 
   /**
-   * 確認訂單
+   * 轉換為已確認狀態
    *
-   * 狀態機：PENDING -> CONFIRMED
-   *
-   * @throws FlashSaleError 若當前狀態非 PENDING
+   * DCI 設計：簡單的狀態轉換，驗證由 Role 層負責
    */
-  confirm(): void {
-    if (this._status !== OrderStatus.PENDING) {
-      throw FlashSaleError.invalidOrderStatus(this._status, OrderStatus.CONFIRMED)
-    }
+  transitionToConfirmed(): void {
     this._status = OrderStatus.CONFIRMED
     this.addDomainEvent(new OrderConfirmed(this._id))
   }
 
   /**
-   * 標記為已付款
+   * 轉換為已付款狀態
    *
-   * 狀態機：CONFIRMED -> PAID
-   *
-   * @throws FlashSaleError 若當前狀態非 CONFIRMED
+   * DCI 設計：簡單的狀態轉換，驗證由 Role 層負責
    */
-  markAsPaid(): void {
-    if (this._status !== OrderStatus.CONFIRMED) {
-      throw FlashSaleError.invalidOrderStatus(this._status, OrderStatus.PAID)
-    }
+  transitionToPaid(): void {
     this._status = OrderStatus.PAID
   }
 
   /**
-   * 取消訂單
+   * 轉換為已取消狀態
    *
-   * 狀態機：任何非 CANCELLED 狀態 -> CANCELLED
-   *
-   * @throws FlashSaleError 若已取消
+   * DCI 設計：簡單的狀態轉換，驗證由 Role 層負責
    */
-  cancel(): void {
-    if (this._status === OrderStatus.CANCELLED) {
-      throw FlashSaleError.invalidOrderStatus(this._status, OrderStatus.CANCELLED)
-    }
+  transitionToCancelled(): void {
     this._status = OrderStatus.CANCELLED
   }
 

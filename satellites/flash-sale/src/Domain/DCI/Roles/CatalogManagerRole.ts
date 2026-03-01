@@ -45,7 +45,7 @@ export function injectCatalogManager(
           409
         )
       }
-      product.activate()
+      product.transitionToActive()
       await repository.save(product)
     },
 
@@ -58,7 +58,7 @@ export function injectCatalogManager(
           409
         )
       }
-      product.deactivate()
+      product.transitionToInactive()
       await repository.save(product)
     },
   }

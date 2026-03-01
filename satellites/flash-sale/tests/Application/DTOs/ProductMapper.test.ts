@@ -92,7 +92,7 @@ describe('ProductMapper', () => {
 
     it('should handle inactive product', () => {
       const product = createTestProduct()
-      product.deactivate()
+      product.transitionToInactive()
       const dto = ProductMapper.toDTO(product)
 
       expect(dto.status).toBe(ProductStatus.INACTIVE)

@@ -90,7 +90,7 @@ describe('OrderOwnerRole', () => {
 
     it('CONFIRMED 訂單應成功取消', async () => {
       const order = Order.create('order-1', 'user-1', createItems())
-      order.confirm()
+      order.transitionToConfirmed()
       const repo = createMockRepo()
       const owner = injectOrderOwner(order, repo)
 

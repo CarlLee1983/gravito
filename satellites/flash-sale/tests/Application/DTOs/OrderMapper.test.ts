@@ -65,7 +65,7 @@ describe('OrderMapper', () => {
 
     it('should handle confirmed order status', () => {
       const order = createTestOrder()
-      order.confirm()
+      order.transitionToConfirmed()
       const dto = OrderMapper.toDTO(order)
 
       expect(dto.status).toBe(OrderStatus.CONFIRMED)

@@ -59,7 +59,7 @@ function createTestOrder(id: string, userId: string, status = OrderStatus.PENDIN
   const item = OrderItem.create('prod-1', 'Product A', 2, Money.of(100))
   const order = Order.create(id, userId, [item])
   if (status === OrderStatus.CONFIRMED) {
-    order.confirm()
+    order.transitionToConfirmed()
   }
   return order
 }
