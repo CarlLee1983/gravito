@@ -72,10 +72,10 @@ export class AdminInvoiceController {
         success: true,
         data: {
           id: invoice.id,
-          invoiceNumber: invoice.invoiceNumber.value,
+          invoiceNumber: invoice.invoiceNumber,
           orderId: invoice.orderId,
-          amount: invoice.amount.value,
-          status: invoice.status.value,
+          amount: invoice.amount,
+          status: invoice.status,
           createdAt: invoice.createdAt,
         },
       })

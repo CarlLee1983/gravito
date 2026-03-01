@@ -28,6 +28,13 @@ export class InvoiceStatus extends ValueObject<InvoiceStatusProps> {
   }
 
   /**
+   * 建立初始狀態（別名）
+   */
+  static initial(): InvoiceStatus {
+    return new InvoiceStatus('ISSUED')
+  }
+
+  /**
    * 建立狀態
    */
   static create(value: InvoiceStatusType): InvoiceStatus {
@@ -56,6 +63,25 @@ export class InvoiceStatus extends ValueObject<InvoiceStatusProps> {
   }
 
   /**
+   * 轉移到指定狀態
+   */
+  transitionTo(newStatus: InvoiceStatusType): InvoiceStatus {
+    if (newStatus === this.value) {
+      return new InvoiceStatus(newStatus)
+    }
+
+    if (newStatus === 'CANCELLED') {
+      return this.toCancelled()
+    }
+
+    if (newStatus === 'RETURNED') {
+      return this.toReturned()
+    }
+
+    throw new InvalidTransitionError(this.value, newStatus)
+  }
+
+  /**
    * 轉移到取消狀態
    */
   toCancelled(): InvoiceStatus {
@@ -73,6 +99,27 @@ export class InvoiceStatus extends ValueObject<InvoiceStatusProps> {
       throw new InvalidTransitionError(this.value, 'RETURNED')
     }
     return new InvoiceStatus('RETURNED')
+  }
+
+  /**
+   * 檢查是否可被取消
+   */
+  canBeCancelled(): boolean {
+    return this.isIssued()
+  }
+
+  /**
+   * 檢查是否可被退回
+   */
+  canBeReturned(): boolean {
+    return this.isIssued()
+  }
+
+  /**
+   * 轉為字符串
+   */
+  toString(): string {
+    return this.value
   }
 
   /**

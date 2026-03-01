@@ -16,6 +16,10 @@ export class InvoiceTax extends ValueObject<InvoiceTaxProps> {
     this.validate(amount, rate)
   }
 
+  get value(): number {
+    return this.props.amount
+  }
+
   get amount(): number {
     return this.props.amount
   }
@@ -49,6 +53,13 @@ export class InvoiceTax extends ValueObject<InvoiceTaxProps> {
     }
     const taxAmount = baseAmount * rate
     return new InvoiceTax(taxAmount, rate)
+  }
+
+  /**
+   * 計算稅後金額
+   */
+  calculateGrossAmount(netAmount: number): number {
+    return netAmount + this.amount
   }
 
   /**
