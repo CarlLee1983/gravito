@@ -6,6 +6,7 @@ import {
   ConnectionError,
   DatabaseError,
   ForeignKeyConstraintError,
+  TableNotFoundError,
   UniqueConstraintError,
 } from '../errors'
 import type {
@@ -336,6 +337,9 @@ export class BunSQLDriver implements DriverContract {
     }
     if (m.includes('foreign key')) {
       return new ForeignKeyConstraintError(error.message, error, sql, bindings)
+    }
+    if (m.includes('no such table')) {
+      return new TableNotFoundError(error.message, error, sql, bindings)
     }
     return new DatabaseError(error.message, error, sql, bindings)
   }

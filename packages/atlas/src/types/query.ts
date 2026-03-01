@@ -165,6 +165,7 @@ export interface CompiledQuery {
   groups: string[]
   havings: HavingClause[]
   joins: JoinClause[]
+  unions: { query: CompiledQuery; all: boolean }[]
   limit?: number | undefined
   offset?: number | undefined
   bindings: unknown[]
@@ -569,9 +570,20 @@ export interface QueryBuilderContract<T = Record<string, unknown>> {
   whereJsonContains(column: string, value: unknown): this
 
   /**
-   * 添加 "or where json contains" 子句
+   * 添加 JSON 欄位的 "or where json contains" 子句
    */
   orWhereJsonContains(column: string, value: unknown): this
+
+  // UNION
+  /**
+   * 合併另一個查詢結果
+   */
+  union(query: QueryBuilderContract<any>, all?: boolean): this
+
+  /**
+   * 使用 UNION ALL 合併另一個查詢結果
+   */
+  unionAll(query: QueryBuilderContract<any>): this
 
   // JOIN
   /**

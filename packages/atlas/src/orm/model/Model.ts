@@ -4,6 +4,7 @@ import { QueryBuilder } from '../../query/QueryBuilder'
 import { identifier } from '../../query/SafeQueryBuilder'
 import { Factory } from '../../seed/Factory'
 import type { Operator, QueryBuilderContract } from '../../types'
+import type { Blueprint } from '../schema/Blueprint'
 import { SchemaRegistry } from '../schema/SchemaRegistry'
 import type { ColumnType, TableSchema } from '../schema/types'
 import {
@@ -44,6 +45,7 @@ export interface ModelStatic<T extends Model> {
   primaryKey: string
   connection?: string
   partitionStrategy?: PartitionStrategy
+  partitionTemplate?: (table: Blueprint) => void
   name: string
   getTable(): string
   find(key: unknown): Promise<T | null>
@@ -104,6 +106,11 @@ export abstract class Model {
    * Optional partitioning strategy for horizontal sharding by table suffix.
    */
   static partitionStrategy?: PartitionStrategy
+
+  /**
+   * Optional template callback for creating new partitions on the fly.
+   */
+  static partitionTemplate?: (table: Blueprint) => void
 
   /**
    * Name of the primary key column.
@@ -1093,19 +1100,37 @@ export abstract class Model {
   }
 
   /**
-   * Start a new query builder targeted at a specific partition table.
+   * Start a new query builder targeted at a specific partition table or multiple partitions.
    *
-   * @param partitionKey The key used by the partition strategy to determine the table suffix.
+   * @param partitionKey The key (or array of keys) used by the partition strategy to determine the table suffix.
    * @param connectionContract Optional specific database connection.
-   * @returns A QueryBuilder tied to the calculated partitioned table.
+   * @returns A QueryBuilder tied to the calculated partitioned table(s).
    */
   static partition<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
-    partitionKey?: any,
+    partitionKey?: any | any[],
     connectionContract?: import('../../types').ConnectionContract
   ) {
     if (!this.partitionStrategy) {
       throw new Error(`Model ${this.name} does not have a partitionStrategy defined.`)
+    }
+
+    if (Array.isArray(partitionKey)) {
+      if (partitionKey.length === 0) {
+        throw new Error('partition() expects at least one key when passed an array.')
+      }
+
+      // Create the first builder
+      const firstKey = partitionKey[0]
+      const builder = this.partition(firstKey, connectionContract)
+
+      // Union the rest
+      for (let i = 1; i < partitionKey.length; i++) {
+        const nextBuilder = this.partition(partitionKey[i], connectionContract)
+        builder.unionAll(nextBuilder)
+      }
+
+      return builder as unknown as QueryBuilderContract<T>
     }
 
     const suffix = this.partitionStrategy.resolveSuffix(partitionKey)
@@ -1134,8 +1159,8 @@ export abstract class Model {
 
       const models = rows.map((row) => {
         const model = this.hydrate<T>(row)
-        // Ensure the hydrated model knows its partitioned table name for future saves
-        ;(model as any).tableName = partitionedTableName
+        // Ensure the hydrated model knows its partitioned table name
+        ;(model as any).tableName = row._tableName || partitionedTableName
         return model
       }) as unknown as T[]
 
@@ -1160,7 +1185,7 @@ export abstract class Model {
         }
 
         const model = this.hydrate<T>(row) as unknown as T
-        ;(model as any).tableName = partitionedTableName
+        ;(model as any).tableName = row._tableName || partitionedTableName
 
         const eagerLoads = (builder as any).getEagerLoads?.()
         if (eagerLoads && eagerLoads.size > 0) {
