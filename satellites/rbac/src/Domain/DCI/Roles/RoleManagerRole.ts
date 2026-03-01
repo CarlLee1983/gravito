@@ -35,19 +35,4 @@ export class RoleManagerRole {
     // 系統角色不能刪除
     return !role.isSystem
   }
-
-  /**
-   * 檢查是否可以管理角色的權限
-   */
-  canManagePermissions(): boolean {
-    return this.requestingAdmin.isSuper
-  }
-
-  /**
-   * 檢查是否可以查看角色詳情
-   */
-  canView(): boolean {
-    // 所有人都可以查看角色（在授權中間件層面可再限制）
-    return true
-  }
 }
