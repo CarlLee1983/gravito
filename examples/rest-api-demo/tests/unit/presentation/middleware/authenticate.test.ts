@@ -57,6 +57,21 @@ describe('authenticate middleware', () => {
         if (key === 'auth') {
           return mockAuth
         }
+        if (key === 'core') {
+          return {
+            container: {
+              make: vi.fn((serviceKey: string) => {
+                if (serviceKey === 'TokenService') {
+                  return mockTokenService
+                }
+                if (serviceKey === 'TokenBlacklist') {
+                  return mockTokenBlacklist
+                }
+                return undefined
+              }),
+            },
+          }
+        }
         return undefined
       }),
       set: vi.fn(),

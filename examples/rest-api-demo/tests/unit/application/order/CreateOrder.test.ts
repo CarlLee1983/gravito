@@ -7,6 +7,25 @@
 import { CreateOrderUseCase } from '@application/order/CreateOrder'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+// 建立完整的訂單 mock 對象
+function createOrderMock(overrides: any = {}) {
+  return {
+    id: 'order-1',
+    orderNumber: 'ORD-ABC123',
+    userId: 'user-1',
+    items: [],
+    status: 'pending',
+    subtotal: 0,
+    shippingCost: 0,
+    tax: 0,
+    total: 0,
+    shippingAddress: {},
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  }
+}
+
 describe('CreateOrderUseCase', () => {
   let useCase: CreateOrderUseCase
   let mockOrderRepository: any
@@ -101,10 +120,13 @@ describe('CreateOrderUseCase', () => {
         stock: 10,
       })
 
-      mockOrderRepository.create.mockResolvedValue({
-        id: 'order-1',
-        total: 11000, // 10000 (subtotal) + 1000 (shipping) + tax
-      })
+      mockOrderRepository.create.mockResolvedValue(
+        createOrderMock({
+          id: 'order-1',
+          items: request.items,
+          total: 11000, // 10000 (subtotal) + 1000 (shipping) + tax
+        })
+      )
 
       await useCase.execute(request)
 
@@ -281,9 +303,12 @@ describe('CreateOrderUseCase', () => {
         stock: 10,
       })
 
-      mockOrderRepository.create.mockResolvedValue({
-        id: 'order-1',
-      })
+      mockOrderRepository.create.mockResolvedValue(
+        createOrderMock({
+          id: 'order-1',
+          items: request.items,
+        })
+      )
 
       await useCase.execute(request)
 
@@ -315,9 +340,12 @@ describe('CreateOrderUseCase', () => {
         stock: 10,
       })
 
-      mockOrderRepository.create.mockResolvedValue({
-        id: 'order-1',
-      })
+      mockOrderRepository.create.mockResolvedValue(
+        createOrderMock({
+          id: 'order-1',
+          items: request.items,
+        })
+      )
 
       await useCase.execute(request)
 
@@ -392,9 +420,12 @@ describe('CreateOrderUseCase', () => {
         stock: 10,
       })
 
-      mockOrderRepository.create.mockResolvedValue({
-        id: 'order-1',
-      })
+      mockOrderRepository.create.mockResolvedValue(
+        createOrderMock({
+          id: 'order-1',
+          items: request.items,
+        })
+      )
 
       await useCase.execute(request)
 
@@ -424,9 +455,12 @@ describe('CreateOrderUseCase', () => {
         .mockResolvedValueOnce({ id: 'prod-1', sku: 'SKU001', price: 5000, stock: 10 })
         .mockResolvedValueOnce({ id: 'prod-2', sku: 'SKU002', price: 3000, stock: 5 })
 
-      mockOrderRepository.create.mockResolvedValue({
-        id: 'order-1',
-      })
+      mockOrderRepository.create.mockResolvedValue(
+        createOrderMock({
+          id: 'order-1',
+          items: request.items,
+        })
+      )
 
       await useCase.execute(request)
 

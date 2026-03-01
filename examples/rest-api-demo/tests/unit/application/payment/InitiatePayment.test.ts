@@ -54,34 +54,16 @@ describe('InitiatePaymentUseCase', () => {
     })
 
     it('應支持多種支付方式', async () => {
-      const methods = ['credit_card', 'paypal', 'bank_transfer'] as const
+      const testCases = [
+        { method: 'credit_card' as const, gateway: 'stripe' as const },
+        { method: 'paypal' as const, gateway: 'paypal' as const },
+        { method: 'debit_card' as const, gateway: 'square' as const },
+      ]
 
-      for (const method of methods) {
+      for (const { method, gateway } of testCases) {
         mockPaymentRepository.create.mockResolvedValue({
           id: `payment-${method}`,
           method,
-        })
-
-        const request = {
-          orderId: 'order-1',
-          userId: 'user-1',
-          amount: 5000,
-          currency: 'USD',
-          method,
-          gateway: 'stripe' as const,
-        }
-
-        const result = await useCase.execute(request)
-        expect(result.method).toBe(method)
-      }
-    })
-
-    it('應支持多種支付網關', async () => {
-      const gateways = ['stripe', 'paypal', 'square'] as const
-
-      for (const gateway of gateways) {
-        mockPaymentRepository.create.mockResolvedValue({
-          id: `payment-${gateway}`,
           gateway,
         })
 
@@ -90,7 +72,35 @@ describe('InitiatePaymentUseCase', () => {
           userId: 'user-1',
           amount: 5000,
           currency: 'USD',
-          method: 'credit_card' as const,
+          method,
+          gateway,
+        }
+
+        const result = await useCase.execute(request)
+        expect(result.method).toBe(method)
+      }
+    })
+
+    it('應支持多種支付網關', async () => {
+      const testCases = [
+        { gateway: 'stripe' as const, method: 'credit_card' as const },
+        { gateway: 'paypal' as const, method: 'paypal' as const },
+        { gateway: 'square' as const, method: 'debit_card' as const },
+      ]
+
+      for (const { gateway, method } of testCases) {
+        mockPaymentRepository.create.mockResolvedValue({
+          id: `payment-${gateway}`,
+          gateway,
+          method,
+        })
+
+        const request = {
+          orderId: 'order-1',
+          userId: 'user-1',
+          amount: 5000,
+          currency: 'USD',
+          method,
           gateway,
         }
 

@@ -19,6 +19,7 @@ describe('csrf middleware', () => {
         method: 'GET',
         url: '/api/test',
         header: vi.fn(),
+        query: vi.fn(() => null),
         socket: {
           remoteAddress: '127.0.0.1',
         },
@@ -111,7 +112,7 @@ describe('csrf middleware', () => {
     it('應在 POST 請求時檢查 token', async () => {
       ctx.req.method = 'POST'
       ctx.req.header.mockReturnValue(null)
-      ctx.req.query = undefined
+      ctx.req.query = vi.fn(() => null)
 
       const middleware = csrf()
 
@@ -154,7 +155,7 @@ describe('csrf middleware', () => {
     it('應拒絕沒有 token 的 DELETE 請求', async () => {
       ctx.req.method = 'DELETE'
       ctx.req.header.mockReturnValue(null)
-      ctx.req.query = undefined
+      ctx.req.query = vi.fn(() => null)
 
       const middleware = csrf()
 
@@ -164,7 +165,7 @@ describe('csrf middleware', () => {
     it('應拒絕沒有 token 的 PATCH 請求', async () => {
       ctx.req.method = 'PATCH'
       ctx.req.header.mockReturnValue(null)
-      ctx.req.query = undefined
+      ctx.req.query = vi.fn(() => null)
 
       const middleware = csrf()
 

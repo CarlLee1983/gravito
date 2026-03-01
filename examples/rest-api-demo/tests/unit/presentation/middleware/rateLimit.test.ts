@@ -17,13 +17,15 @@ describe('rateLimit middleware', () => {
   let next: any
 
   beforeEach(() => {
+    // 使用隨機 IP 地址以避免測試之間的衝突
+    const randomIP = `192.168.1.${Math.floor(Math.random() * 256)}`
     ctx = {
       req: {
         method: 'GET',
         url: '/api/test',
         header: vi.fn(),
         socket: {
-          remoteAddress: '192.168.1.1',
+          remoteAddress: randomIP,
         },
       },
       header: vi.fn(),
@@ -78,11 +80,7 @@ describe('rateLimit middleware', () => {
 
       await middleware(ctx, next)
 
-      try {
-        await middleware(ctx, next)
-      } catch (error: any) {
-        expect(error.message).toContain('Custom')
-      }
+      await expect(middleware(ctx, next)).rejects.toThrow(customMessage)
     })
 
     it('應使用自定義狀態碼', async () => {
@@ -94,11 +92,15 @@ describe('rateLimit middleware', () => {
 
       await middleware(ctx, next)
 
+      let error: any
       try {
         await middleware(ctx, next)
-      } catch (error: any) {
-        expect(error.status).toBe(503)
+      } catch (e) {
+        error = e
       }
+
+      expect(error).toBeDefined()
+      expect(error.status || error.code).toBe(503)
     })
   })
 

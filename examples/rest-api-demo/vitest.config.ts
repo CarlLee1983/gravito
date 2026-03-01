@@ -11,6 +11,9 @@ export default defineConfig({
     // 測試環境
     environment: 'node',
 
+    // 全局設置檔案
+    setupFiles: ['./tests/setup.ts'],
+
     // 測試匹配模式
     include: ['tests/**/*.test.ts'],
     exclude: ['node_modules', '.idea', 'dist', 'build'],

@@ -82,7 +82,7 @@ export function csrf(config: CsrfConfig = {}) {
     }
 
     // 添加 CSRF Token 到響應頭
-    ctx.header('X-CSRF-Token', tokenData.token)
+    ctx.header(headerName, tokenData.token)
 
     return await next()
   }
