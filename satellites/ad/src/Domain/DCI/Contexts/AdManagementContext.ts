@@ -1,5 +1,6 @@
 import type { PlanetCore } from '@gravito/core'
 import type { IAdRepository } from '../../Contracts/IAdRepository'
+import type { Advertisement } from '../../Entities/Advertisement'
 import { AdError } from '../../Errors/AdError'
 import { injectAdManagerRole } from '../Roles/AdManagerRole'
 
@@ -20,16 +21,6 @@ export interface AdManagementInput {
 }
 
 /**
- * 廣告管理輸出
- */
-export interface AdManagementOutput {
-  id: string
-  status: string
-  action: string
-  message: string
-}
-
-/**
  * 廣告管理上下文協調器
  *
  * 協調廣告編輯、上下架、刪除等操作。
@@ -45,7 +36,7 @@ export class AdManagementContext {
     private readonly core: PlanetCore
   ) {}
 
-  async execute(input: AdManagementInput): Promise<AdManagementOutput> {
+  async execute(input: AdManagementInput): Promise<Advertisement | null> {
     // 1. 查詢廣告
     const ad = await this.adRepository.findById(input.adId)
     if (!ad) {
@@ -59,12 +50,7 @@ export class AdManagementContext {
         manager.activate()
         await this.adRepository.save(ad)
         await this.core.hooks.doAction('ad:activated', { adId: ad.id })
-        return {
-          id: ad.id,
-          status: ad.status,
-          action: 'activate',
-          message: `廣告 ${ad.id} 已啟用`,
-        }
+        return ad
       }
 
       case 'pause': {
@@ -72,12 +58,7 @@ export class AdManagementContext {
         manager.pause()
         await this.adRepository.save(ad)
         await this.core.hooks.doAction('ad:paused', { adId: ad.id })
-        return {
-          id: ad.id,
-          status: ad.status,
-          action: 'pause',
-          message: `廣告 ${ad.id} 已暫停`,
-        }
+        return ad
       }
 
       case 'update': {
@@ -87,23 +68,13 @@ export class AdManagementContext {
         }
         await this.adRepository.save(ad)
         await this.core.hooks.doAction('ad:updated', { adId: ad.id })
-        return {
-          id: ad.id,
-          status: ad.status,
-          action: 'update',
-          message: `廣告 ${ad.id} 已更新`,
-        }
+        return ad
       }
 
       case 'delete': {
         await this.adRepository.delete(ad.id)
         await this.core.hooks.doAction('ad:deleted', { adId: ad.id })
-        return {
-          id: ad.id,
-          status: ad.status,
-          action: 'delete',
-          message: `廣告 ${ad.id} 已刪除`,
-        }
+        return null
       }
 
       default: {

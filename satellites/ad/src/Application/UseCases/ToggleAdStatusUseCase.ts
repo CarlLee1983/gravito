@@ -20,7 +20,7 @@ export interface ToggleAdStatusInput {
  * 薄殼 UseCase，委派 AdManagementContext 完成狀態切換。
  * 職責：
  * 1. 委派給 AdManagementContext (action: 'activate' | 'pause')
- * 2. 從 Repository 重新載入 Entity 並轉為 DTO
+ * 2. 將返回的 Entity 轉為 DTO
  */
 export class ToggleAdStatusUseCase extends UseCase<ToggleAdStatusInput, AdDTO> {
   constructor(
@@ -33,13 +33,11 @@ export class ToggleAdStatusUseCase extends UseCase<ToggleAdStatusInput, AdDTO> {
   async execute(input: ToggleAdStatusInput): Promise<AdDTO> {
     const context = new AdManagementContext(this.adRepository, this.core)
 
-    await context.execute({
+    const ad = await context.execute({
       adId: input.adId,
       action: input.action,
     })
 
-    // 從 Repository 重新載入完整 Entity
-    const ad = await this.adRepository.findById(input.adId)
     if (!ad) {
       throw AdError.adNotFound(input.adId)
     }

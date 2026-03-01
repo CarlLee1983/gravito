@@ -107,11 +107,21 @@ export class AtlasAdRepository implements IAdRepository {
   /**
    * 依版位查詢活躍中的廣告
    *
-   * 先從 DB 取出該版位所有廣告，再在記憶體中篩選可投放的。
+   * 在 DB 層級過濾狀態為 ACTIVE 的廣告，減少記憶體消耗。
+   * 排程驗證（是否在活躍期間內）仍在記憶體中進行，因為需要 AdSchedule 物件。
    */
   async findActiveBySlot(slotSlug: string, now?: Date): Promise<Advertisement[]> {
-    const allAds = await this.findBySlot(slotSlug)
-    return allAds.filter((ad) => ad.isDeliverable(now))
+    const rows = await this.db
+      .table(this.tableName)
+      .where('slot_slug', slotSlug)
+      .where('status', 'active')
+      .get()
+
+    const ads = rows
+      .filter((row): row is AdvertisementRow => isAdvertisementRow(row))
+      .map(reconstituteAdvertisement)
+
+    return ads.filter((ad) => ad.isDeliverable(now))
   }
 
   /**

@@ -82,7 +82,7 @@ export class Advertisement extends AggregateRoot<string> {
   ): Advertisement {
     // 驗證字串欄位
     if (!title || title.trim().length === 0) {
-      throw AdError.invalidSchedule('廣告標題不能為空')
+      throw AdError.invalidTitle('廣告標題不能為空')
     }
     Advertisement.validateUrl(imageUrl, 'imageUrl')
     Advertisement.validateUrl(targetUrl, 'targetUrl')
@@ -204,7 +204,7 @@ export class Advertisement extends AggregateRoot<string> {
    */
   updateTitle(title: string): void {
     if (!title || title.trim().length === 0) {
-      throw AdError.invalidSchedule('廣告標題不能為空')
+      throw AdError.invalidTitle('廣告標題不能為空')
     }
     this._title = title.trim()
     this._updatedAt = new Date()
