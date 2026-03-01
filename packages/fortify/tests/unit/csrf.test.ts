@@ -3,7 +3,7 @@ import type { GravitoContext } from '@gravito/core'
 
 let getCsrfTokenCalls: Array<{ context: any; options: any }> = []
 
-mock.module('@gravito/core', () => ({
+mock.module('@gravito/photon', () => ({
   getCsrfToken: (c: any, options: any) => {
     getCsrfTokenCalls.push({ context: c, options })
     return 'mock-csrf-token'
@@ -51,7 +51,8 @@ describe('csrf.ts', () => {
 
   describe('ensureCsrfToken', () => {
     it('should return null when csrf is disabled', () => {
-      const context = {} as GravitoContext
+      const nativeContext = { mockData: 'test' }
+      const context = { native: nativeContext } as GravitoContext
       const config = { csrf: false } as any
 
       const result = ensureCsrfToken(context, config)
@@ -61,19 +62,21 @@ describe('csrf.ts', () => {
     })
 
     it('should call getCsrfToken with empty options when csrf is true', () => {
-      const context = {} as GravitoContext
+      const nativeContext = { mockData: 'test' }
+      const context = { native: nativeContext } as GravitoContext
       const config = { csrf: true } as any
 
       const result = ensureCsrfToken(context, config)
 
       expect(result).toBe('mock-csrf-token')
       expect(getCsrfTokenCalls.length).toBe(1)
-      expect(getCsrfTokenCalls[0].context).toBe(context)
+      expect(getCsrfTokenCalls[0].context).toBe(nativeContext)
       expect(getCsrfTokenCalls[0].options).toEqual({})
     })
 
     it('should call getCsrfToken with custom options when object is provided', () => {
-      const context = {} as GravitoContext
+      const nativeContext = { mockData: 'test' }
+      const context = { native: nativeContext } as GravitoContext
       const customOptions = {
         cookieName: 'custom-csrf',
         headerName: 'X-Custom-CSRF',
@@ -84,12 +87,13 @@ describe('csrf.ts', () => {
 
       expect(result).toBe('mock-csrf-token')
       expect(getCsrfTokenCalls.length).toBe(1)
-      expect(getCsrfTokenCalls[0].context).toBe(context)
+      expect(getCsrfTokenCalls[0].context).toBe(nativeContext)
       expect(getCsrfTokenCalls[0].options).toEqual(customOptions)
     })
 
     it('should handle undefined csrf config (default to enabled)', () => {
-      const context = {} as GravitoContext
+      const nativeContext = { mockData: 'test' }
+      const context = { native: nativeContext } as GravitoContext
       const config = {} as any
 
       const result = ensureCsrfToken(context, config)
@@ -100,12 +104,13 @@ describe('csrf.ts', () => {
     })
 
     it('should preserve context reference when calling getCsrfToken', () => {
-      const context = { mockData: 'test' } as any
+      const nativeContext = { mockData: 'test' }
+      const context = { native: nativeContext } as any
       const config = { csrf: true } as any
 
       ensureCsrfToken(context, config)
 
-      expect(getCsrfTokenCalls[0].context).toBe(context)
+      expect(getCsrfTokenCalls[0].context).toBe(nativeContext)
       expect(getCsrfTokenCalls[0].context.mockData).toBe('test')
     })
   })

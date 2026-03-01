@@ -47,10 +47,10 @@ mock.module('@gravito/sentinel', () => ({
   EmailVerificationService,
 }))
 
-mock.module('@gravito/core', () => ({
+mock.module('@gravito/photon', () => ({
+  getCsrfToken: () => 'csrf-token',
   csrfProtection: () => async (_c: any, next?: () => Promise<unknown>) =>
     next ? next() : undefined,
-  getCsrfToken: () => 'csrf-token',
 }))
 
 const { definefortifyConfig } = await import('../src/config')
