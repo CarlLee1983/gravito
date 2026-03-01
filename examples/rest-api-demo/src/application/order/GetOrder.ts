@@ -31,3 +31,6 @@ export class GetOrderUseCase {
     return order
   }
 }
+
+// Export alias for compatibility
+export { GetOrderUseCase as GetOrder }

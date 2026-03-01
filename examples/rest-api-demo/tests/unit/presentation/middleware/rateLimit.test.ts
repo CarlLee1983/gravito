@@ -9,6 +9,7 @@ import {
   rateLimit,
   rateLimitByEndpoint,
   rateLimitByIp,
+  resetMemoryStore,
 } from '@presentation/http/middleware/rateLimit'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -36,6 +37,7 @@ describe('rateLimit middleware', () => {
 
   afterEach(() => {
     vi.clearAllMocks()
+    resetMemoryStore()
   })
 
   describe('rateLimit - 全局速率限制', () => {

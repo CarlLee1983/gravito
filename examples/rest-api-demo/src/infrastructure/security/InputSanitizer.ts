@@ -243,6 +243,22 @@ export function normalizeWhitespace(input: string): string {
 }
 
 /**
+ * 記錄日誌的清理函數
+ */
+export function escapeForLogging(input: string): string {
+  if (!input || typeof input !== 'string') {
+    return ''
+  }
+
+  return input
+    .replace(/"/g, '\\"') // 轉義雙引號
+    .replace(/\n/g, '\\n') // 轉義換行符
+    .replace(/\r/g, '\\r') // 轉義回車符
+    .replace(/\t/g, '\\t') // 轉義制表符
+    .slice(0, 500) // 限制長度
+}
+
+/**
  * 驗證電子郵件地址格式
  */
 export function isValidEmail(email: string): boolean {

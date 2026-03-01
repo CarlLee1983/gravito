@@ -35,3 +35,6 @@ export class SearchProductsUseCase {
     return this.productRepository.search(request.query.trim(), request.page, request.limit)
   }
 }
+
+// Export alias for compatibility
+export { SearchProductsUseCase as SearchProducts }

@@ -74,3 +74,6 @@ export class GetProductUseCase {
     }
   }
 }
+
+// Export alias for compatibility
+export { GetProductUseCase as GetProduct }

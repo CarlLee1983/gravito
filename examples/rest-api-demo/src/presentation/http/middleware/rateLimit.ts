@@ -26,6 +26,15 @@ interface RateLimitStore {
 const memoryStore: RateLimitStore = {}
 
 /**
+ * 重設內存存儲（用於測試）
+ */
+export function resetMemoryStore() {
+  for (const key in memoryStore) {
+    delete memoryStore[key]
+  }
+}
+
+/**
  * 全局速率限制中間件
  *
  * 限制所有請求的總速率
@@ -203,8 +212,9 @@ function getClientIp(ctx: GravitoContext): string {
     return xRealIp
   }
 
-  // 使用遠程地址
-  return '127.0.0.1'
+  // 使用遠程地址（支援測試環境的 socket）
+  const reqAny = ctx.req as any
+  return reqAny?.socket?.remoteAddress || '127.0.0.1'
 }
 
 export default {

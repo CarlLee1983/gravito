@@ -136,3 +136,6 @@ export class ListProductsUseCase {
     }
   }
 }
+
+// Export alias for compatibility
+export { ListProductsUseCase as ListProducts }

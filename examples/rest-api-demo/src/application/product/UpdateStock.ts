@@ -64,3 +64,6 @@ export class UpdateStockUseCase {
     }
   }
 }
+
+// Export alias for compatibility
+export { UpdateStockUseCase as UpdateStock }

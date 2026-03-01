@@ -54,3 +54,6 @@ export class UpdateOrderStatusUseCase {
     return updatedOrder
   }
 }
+
+// Export alias for compatibility
+export { UpdateOrderStatusUseCase as UpdateOrderStatus }
