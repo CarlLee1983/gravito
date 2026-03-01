@@ -136,33 +136,37 @@ export class JwtAuthStrategy implements IAuthStrategy {
    * 使用有效的 refreshToken 獲得新的 accessToken
    */
   async refreshAccessToken(refreshToken: string): Promise<string> {
+    let payload: any
     try {
-      const payload = await verify(refreshToken, this.jwtSecret, 'HS256')
-
-      if (payload.type !== 'refresh' || !payload.sub) {
-        throw new MembershipError('TOKEN_EXPIRED', 'Invalid refresh token')
-      }
-
-      const member = await this.repository.findById(payload.sub as string)
-      if (!member) {
-        throw new MembershipError('MEMBER_NOT_FOUND', 'Member not found')
-      }
-
-      const now = Math.floor(Date.now() / 1000)
-      const newAccessToken = await sign(
-        {
-          sub: member.id,
-          email: member.email,
-          iat: now,
-          exp: now + this.accessTokenExpiry,
-        },
-        this.jwtSecret,
-        'HS256'
-      )
-
-      return newAccessToken
+      payload = await verify(refreshToken, this.jwtSecret, 'HS256')
     } catch (_error) {
       throw new MembershipError('TOKEN_EXPIRED', 'Invalid or expired refresh token')
     }
+
+    if (payload.type !== 'refresh' || !payload.sub) {
+      throw new MembershipError('TOKEN_EXPIRED', 'Invalid refresh token')
+    }
+
+    const member = await this.repository.findById(payload.sub as string)
+    if (!member) {
+      throw new MembershipError('MEMBER_NOT_FOUND', 'Member not found')
+    }
+
+    // Use payload.iat + 1 to ensure new token differs from original
+    // This avoids issuing identical tokens in the same second
+    const now = Math.floor(Date.now() / 1000)
+    const iat = Math.max(payload.iat + 1, now)
+    const newAccessToken = await sign(
+      {
+        sub: member.id,
+        email: member.email,
+        iat,
+        exp: iat + this.accessTokenExpiry,
+      },
+      this.jwtSecret,
+      'HS256'
+    )
+
+    return newAccessToken
   }
 }

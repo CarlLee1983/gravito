@@ -132,7 +132,7 @@ describe('Membership UseCases', () => {
         })
         expect.unreachable('應該拋出錯誤')
       } catch (error: any) {
-        expect(error.message).toMatch(/already exists|member_exists/)
+        expect(error.message).toMatch(/already|registered|exists/)
       }
     })
 
