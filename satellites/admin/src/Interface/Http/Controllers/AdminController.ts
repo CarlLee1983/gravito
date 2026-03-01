@@ -60,8 +60,9 @@ export class AdminController {
   async update(ctx: Context) {
     const id = ctx.req.param('id')
     const { name, metadata } = await ctx.req.json()
+    const requestingAdmin = ctx.get('admin')
 
-    const result = await this.updateUseCase.execute(id, name, metadata)
+    const result = await this.updateUseCase.execute(id, name, requestingAdmin, metadata)
     return ctx.json(result, 200)
   }
 

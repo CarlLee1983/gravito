@@ -118,9 +118,6 @@ export class Admin extends AggregateRoot<string> {
 
   // Business methods
   suspend(): void {
-    if (this.props.isSuper) {
-      throw new Error('Cannot suspend super admin')
-    }
     this.props.status = AdminStatus.SUSPENDED
     this.props.updatedAt = new Date()
   }

@@ -3,7 +3,7 @@ import { AdminErrorFactory } from '../../../Application/Errors/AdminError'
 import type { IAdminRepository } from '../../Contracts/IAdminRepository'
 import { Admin } from '../../Entities/Admin'
 import type { AdminEmail } from '../../ValueObjects/AdminEmail'
-import { AdminManagerRole } from '../Roles/AdminManagerRole'
+import { injectAdminManagerRole } from '../Roles/AdminManagerRole'
 
 /**
  * 管理員管理上下文協調器
@@ -25,11 +25,10 @@ export class AdminManagementContext {
     requestingAdmin: Admin,
     options: { isSuper?: boolean } = {}
   ): Promise<Admin> {
-    // 檢查權限
-    const managerRole = new AdminManagerRole(requestingAdmin)
-    if (!managerRole.canCreate()) {
-      throw AdminErrorFactory.forbidden('Only super admin can create admins')
-    }
+    // 注入 AdminManagerRole 並檢查權限
+    // 業務規則在 Role 中：無權限時 throw
+    const managerRole = injectAdminManagerRole(requestingAdmin)
+    managerRole.assertCanCreate()
 
     // 檢查重複
     const exists = await this.adminRepo.exists(email.value)
@@ -62,21 +61,18 @@ export class AdminManagementContext {
    * 停用管理員
    */
   async suspendAdmin(adminId: string, requestingAdmin: Admin): Promise<Admin> {
-    // 檢查權限
-    const managerRole = new AdminManagerRole(requestingAdmin)
-
     // 取得目標 admin
     const admin = await this.adminRepo.findById(adminId)
     if (!admin) {
       throw AdminErrorFactory.adminNotFound(adminId)
     }
 
-    // 檢查權限
-    if (!managerRole.canSuspend(admin)) {
-      throw AdminErrorFactory.forbidden('Cannot suspend this admin')
-    }
+    // 注入 AdminManagerRole 並檢查權限
+    // 業務規則在 Role 中：無法停用超級管理員或無權限時 throw
+    const managerRole = injectAdminManagerRole(requestingAdmin)
+    managerRole.assertCanSuspend(admin)
 
-    // 執行停用
+    // 執行停用（Entity 內只是原子 setter，無業務規則）
     admin.suspend()
     await this.adminRepo.save(admin)
 
@@ -92,11 +88,16 @@ export class AdminManagementContext {
   /**
    * 啟用管理員
    */
-  async activateAdmin(adminId: string): Promise<Admin> {
+  async activateAdmin(adminId: string, requestingAdmin: Admin): Promise<Admin> {
     const admin = await this.adminRepo.findById(adminId)
     if (!admin) {
       throw AdminErrorFactory.adminNotFound(adminId)
     }
+
+    // 注入 AdminManagerRole 並檢查權限
+    // 業務規則在 Role 中：無權限時 throw
+    const managerRole = injectAdminManagerRole(requestingAdmin)
+    managerRole.assertCanManage(admin)
 
     admin.activate()
     await this.adminRepo.save(admin)
@@ -110,12 +111,18 @@ export class AdminManagementContext {
   async updateProfile(
     adminId: string,
     name: string,
+    requestingAdmin: Admin,
     metadata?: Record<string, unknown>
   ): Promise<Admin> {
     const admin = await this.adminRepo.findById(adminId)
     if (!admin) {
       throw AdminErrorFactory.adminNotFound(adminId)
     }
+
+    // 注入 AdminManagerRole 並檢查權限
+    // 業務規則在 Role 中：非超級管理員無法更新他人時 throw
+    const managerRole = injectAdminManagerRole(requestingAdmin)
+    managerRole.assertCanUpdate(admin)
 
     admin.updateProfile(name, metadata)
     await this.adminRepo.save(admin)
@@ -127,19 +134,16 @@ export class AdminManagementContext {
    * 刪除管理員
    */
   async deleteAdmin(adminId: string, requestingAdmin: Admin): Promise<void> {
-    // 檢查權限
-    const managerRole = new AdminManagerRole(requestingAdmin)
-
     // 取得目標 admin
     const admin = await this.adminRepo.findById(adminId)
     if (!admin) {
       throw AdminErrorFactory.adminNotFound(adminId)
     }
 
-    // 檢查權限
-    if (!managerRole.canDelete(admin)) {
-      throw AdminErrorFactory.forbidden('Cannot delete this admin')
-    }
+    // 注入 AdminManagerRole 並檢查權限
+    // 業務規則在 Role 中：無法刪除超級管理員或無權限時 throw
+    const managerRole = injectAdminManagerRole(requestingAdmin)
+    managerRole.assertCanDelete(admin)
 
     // 執行刪除
     await this.adminRepo.delete(adminId)

@@ -253,6 +253,13 @@ describe('AdminController', () => {
   })
 
   it('update() 修改管理員資料', async () => {
+    const superAdmin = createTestAdmin({
+      id: 'super-update',
+      email: 'super-update@test.com',
+      isSuper: true,
+    })
+    repo.seed(superAdmin)
+
     repo.seed(
       createTestAdmin({
         id: 'update-1',
@@ -264,6 +271,7 @@ describe('AdminController', () => {
     const { ctx, getJsonResponse } = createMockContext({
       params: { id: 'update-1' },
       json: { name: 'Updated Name', metadata: { department: 'engineering' } },
+      contextValues: { admin: superAdmin },
     })
 
     await controller.update(ctx)

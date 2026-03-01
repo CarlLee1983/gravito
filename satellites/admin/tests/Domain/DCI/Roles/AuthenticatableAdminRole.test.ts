@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'bun:test'
-import { AuthenticatableAdminRole } from '../../../../src/Domain/DCI/Roles/AuthenticatableAdminRole'
+import { AdminErrorFactory } from '../../../../src/Application/Errors/AdminError'
+import type { IAdminRepository } from '../../../../src/Domain/Contracts/IAdminRepository'
+import {
+  type AuthenticatableAdminRole,
+  injectAuthenticatableAdminRole,
+} from '../../../../src/Domain/DCI/Roles/AuthenticatableAdminRole'
 import { Admin, AdminStatus } from '../../../../src/Domain/Entities/Admin'
 import { AdminEmail } from '../../../../src/Domain/ValueObjects/AdminEmail'
 
@@ -24,36 +29,111 @@ function createTestAdmin(overrides?: {
   return admin
 }
 
-describe('AuthenticatableAdminRole', () => {
-  it('should return correct active status', () => {
-    const activeAdmin = createTestAdmin()
-    const activeRole = new AuthenticatableAdminRole(activeAdmin)
-    expect(activeRole.isActive()).toBe(true)
+// Mock IAdminRepository
+class MockAdminRepository implements IAdminRepository {
+  private saveCount = 0
 
-    const suspendedAdmin = createTestAdmin({ status: AdminStatus.SUSPENDED })
-    const suspendedRole = new AuthenticatableAdminRole(suspendedAdmin)
-    expect(suspendedRole.isActive()).toBe(false)
-  })
+  async save(): Promise<void> {
+    this.saveCount++
+  }
 
-  it('should verify password asynchronously', async () => {
+  async findByEmail(): Promise<Admin | null> {
+    return null
+  }
+
+  async findById(): Promise<Admin | null> {
+    return null
+  }
+
+  async exists(): Promise<boolean> {
+    return false
+  }
+
+  async delete(): Promise<void> {}
+
+  async list(): Promise<Admin[]> {
+    return []
+  }
+
+  getSaveCount(): number {
+    return this.saveCount
+  }
+}
+
+describe('AuthenticatableAdminRole (inject function)', () => {
+  it('should verify password and return true on match', () => {
     const admin = createTestAdmin({ passwordHash: 'correct-hash' })
-    const role = new AuthenticatableAdminRole(admin)
+    const repo = new MockAdminRepository()
+    const role = injectAuthenticatableAdminRole(admin, repo)
 
-    const matchResult = await role.verifyPassword('correct-hash')
-    expect(matchResult).toBe(true)
-
-    const noMatchResult = await role.verifyPassword('wrong-hash')
-    expect(noMatchResult).toBe(false)
+    // Password matches
+    const result = role.verifyPassword('correct-hash')
+    expect(result).toBe(true)
   })
 
-  it('should delegate recordLogin to admin entity', () => {
+  it('should throw InvalidCredentialsError on password mismatch', () => {
+    const admin = createTestAdmin({ passwordHash: 'correct-hash' })
+    const repo = new MockAdminRepository()
+    const role = injectAuthenticatableAdminRole(admin, repo)
+
+    // Password doesn't match
+    expect(() => role.verifyPassword('wrong-hash')).toThrow()
+  })
+
+  it('should return true for active admin status', () => {
+    const admin = createTestAdmin({ status: AdminStatus.ACTIVE })
+    const repo = new MockAdminRepository()
+    const role = injectAuthenticatableAdminRole(admin, repo)
+
+    const result = role.isActive()
+    expect(result).toBe(true)
+  })
+
+  it('should throw AdminInactiveError for suspended admin', () => {
+    const admin = createTestAdmin({ status: AdminStatus.SUSPENDED })
+    const repo = new MockAdminRepository()
+    const role = injectAuthenticatableAdminRole(admin, repo)
+
+    expect(() => role.isActive()).toThrow()
+  })
+
+  it('should throw AdminInactiveError for inactive admin', () => {
     const admin = createTestAdmin()
-    const role = new AuthenticatableAdminRole(admin)
+    admin.deactivate()
+    const repo = new MockAdminRepository()
+    const role = injectAuthenticatableAdminRole(admin, repo)
+
+    expect(() => role.isActive()).toThrow()
+  })
+
+  it('should record login and persist to repository', async () => {
+    const admin = createTestAdmin()
+    const repo = new MockAdminRepository()
+    const role = injectAuthenticatableAdminRole(admin, repo)
 
     expect(admin.lastLoginAt).toBeUndefined()
 
-    role.recordLogin()
+    await role.recordLogin(repo)
 
     expect(admin.lastLoginAt).toBeInstanceOf(Date)
+    expect(repo.getSaveCount()).toBe(1)
+  })
+
+  it('should work complete auth flow: verify -> check active -> record login', async () => {
+    const admin = createTestAdmin({ passwordHash: 'secret' })
+    const repo = new MockAdminRepository()
+    const role = injectAuthenticatableAdminRole(admin, repo)
+
+    // 1. Verify password
+    role.verifyPassword('secret')
+
+    // 2. Check status
+    role.isActive()
+
+    // 3. Record login
+    await role.recordLogin(repo)
+
+    expect(admin.lastLoginAt).toBeInstanceOf(Date)
+    expect(repo.getSaveCount()).toBe(1)
   })
 })

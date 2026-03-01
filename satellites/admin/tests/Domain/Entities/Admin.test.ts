@@ -109,7 +109,7 @@ describe('Admin Entity', () => {
   })
 
   describe('suspend()', () => {
-    it('should suspend a normal admin', () => {
+    it('should suspend any admin (no business rules in Entity)', () => {
       const admin = createTestAdmin()
 
       admin.suspend()
@@ -119,10 +119,16 @@ describe('Admin Entity', () => {
       expect(admin.updatedAt).toBeInstanceOf(Date)
     })
 
-    it('should throw when suspending super admin', () => {
+    it('should suspend super admin (business rules enforced in Role, not Entity)', () => {
       const admin = createTestAdmin({ isSuper: true })
 
-      expect(() => admin.suspend()).toThrow('Cannot suspend super admin')
+      // Entity 只是原子 setter，不含業務規則
+      // 業務規則「不可停用超級管理員」在 AdminManagerRole 中執行
+      admin.suspend()
+
+      expect(admin.status).toBe(AdminStatus.SUSPENDED)
+      expect(admin.isActive).toBe(false)
+      expect(admin.updatedAt).toBeInstanceOf(Date)
     })
   })
 

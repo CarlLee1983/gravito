@@ -3,7 +3,7 @@ import { AdminErrorFactory } from '../../../Application/Errors/AdminError'
 import type { IAdminRepository } from '../../Contracts/IAdminRepository'
 import type { Admin } from '../../Entities/Admin'
 import { AdminEmail } from '../../ValueObjects/AdminEmail'
-import { AuthenticatableAdminRole } from '../Roles/AuthenticatableAdminRole'
+import { injectAuthenticatableAdminRole } from '../Roles/AuthenticatableAdminRole'
 
 export interface AdminAuthResult {
   admin: Admin
@@ -32,23 +32,17 @@ export class AdminAuthContext {
       throw AdminErrorFactory.invalidCredentials()
     }
 
-    // 2. 使用 Role 驗證密碼
-    const authRole = new AuthenticatableAdminRole(admin)
-
-    // 簡化密碼驗證（實際應使用 bcrypt）
-    const isPasswordValid = admin.passwordHash === password
-    if (!isPasswordValid) {
-      throw AdminErrorFactory.invalidCredentials()
-    }
+    // 2. 注入 AuthenticatableAdminRole 並驗證密碼
+    // 業務規則在 Role 中：密碼不符時 throw InvalidCredentialsError
+    const authRole = injectAuthenticatableAdminRole(admin, this.adminRepo)
+    authRole.verifyPassword(password) // throw on invalid
 
     // 3. 檢查帳號狀態
-    if (!authRole.isActive()) {
-      throw AdminErrorFactory.adminInactive(adminEmail.value)
-    }
+    // 業務規則在 Role 中：非 ACTIVE 時 throw AdminInactiveError
+    authRole.isActive()
 
-    // 4. 記錄登入時間
-    authRole.recordLogin()
-    await this.adminRepo.save(admin)
+    // 4. 記錄登入時間（包含持久化）
+    await authRole.recordLogin(this.adminRepo)
 
     // 5. 發出 Hook 通知
     await this.core.hooks.doAction('admin:authenticated', {

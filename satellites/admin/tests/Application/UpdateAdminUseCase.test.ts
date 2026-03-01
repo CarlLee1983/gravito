@@ -79,12 +79,16 @@ describe('UpdateAdminUseCase', () => {
     useCase = new UpdateAdminUseCase(repo, core)
   })
 
-  it('成功更新管理員資料', async () => {
-    const email = AdminEmail.create('update@test.com')
-    const admin = Admin.create('update-admin', email, 'Old Name', 'hashed-pw')
-    repo.seed(admin)
+  it('super admin 可以更新任何管理員資料', async () => {
+    const superEmail = AdminEmail.create('super@test.com')
+    const requestingAdmin = Admin.createSuper('super-1', superEmail, 'Super Admin', 'hash')
+    repo.seed(requestingAdmin)
 
-    const result = await useCase.execute('update-admin', 'New Name', {
+    const targetEmail = AdminEmail.create('update@test.com')
+    const targetAdmin = Admin.create('update-admin', targetEmail, 'Old Name', 'hashed-pw')
+    repo.seed(targetAdmin)
+
+    const result = await useCase.execute('update-admin', 'New Name', requestingAdmin, {
       department: 'Engineering',
     })
 
@@ -92,5 +96,35 @@ describe('UpdateAdminUseCase', () => {
     expect(result.name).toBe('New Name')
     expect(result.email).toBe('update@test.com')
     expect(result.updatedAt).toBeDefined()
+  })
+
+  it('normal admin 可以更新自己的資料', async () => {
+    const email = AdminEmail.create('update@test.com')
+    const admin = Admin.create('update-admin', email, 'Old Name', 'hashed-pw')
+    repo.seed(admin)
+
+    const result = await useCase.execute('update-admin', 'New Name', admin, {
+      department: 'Engineering',
+    })
+
+    expect(result.id).toBe('update-admin')
+    expect(result.name).toBe('New Name')
+    expect(result.email).toBe('update@test.com')
+    expect(result.updatedAt).toBeDefined()
+  })
+
+  it('normal admin 無法更新他人的資料', async () => {
+    const normalEmail = AdminEmail.create('normal@test.com')
+    const requestingAdmin = Admin.create('normal-1', normalEmail, 'Normal Admin', 'hash')
+    repo.seed(requestingAdmin)
+
+    const targetEmail = AdminEmail.create('update@test.com')
+    const targetAdmin = Admin.create('update-admin', targetEmail, 'Old Name', 'hashed-pw')
+    repo.seed(targetAdmin)
+
+    // 應該 throw
+    expect(async () => {
+      await useCase.execute('update-admin', 'New Name', requestingAdmin)
+    }).toThrow()
   })
 })

@@ -127,8 +127,14 @@ describe('AdminManagementContext', () => {
   })
 
   describe('activateAdmin()', () => {
-    it('should restore admin to active status', async () => {
+    it('should restore admin to active status by super admin', async () => {
       // Arrange
+      const superAdmin = createTestAdmin({
+        id: 'super-1',
+        email: 'super@test.com',
+        isSuper: true,
+      })
+
       const targetAdmin = createTestAdmin({
         id: 'target-2',
         email: 'target2@test.com',
@@ -139,7 +145,7 @@ describe('AdminManagementContext', () => {
       expect(targetAdmin.status).toBe(AdminStatus.SUSPENDED)
 
       // Act
-      const activated = await mgmtContext.activateAdmin('target-2')
+      const activated = await mgmtContext.activateAdmin('target-2', superAdmin)
 
       // Assert
       expect(activated.status).toBe(AdminStatus.ACTIVE)
@@ -148,6 +154,32 @@ describe('AdminManagementContext', () => {
       // 驗證持久化
       const saved = await adminRepo.findById('target-2')
       expect(saved!.status).toBe(AdminStatus.ACTIVE)
+    })
+
+    it('should fail when non-super admin tries to activate another admin', async () => {
+      // Arrange
+      const normalAdmin = createTestAdmin({
+        id: 'normal-1',
+        email: 'normal@test.com',
+        isSuper: false,
+      })
+
+      const targetAdmin = createTestAdmin({
+        id: 'target-3',
+        email: 'target3@test.com',
+        isSuper: false,
+      })
+      targetAdmin.suspend()
+      await adminRepo.save(targetAdmin)
+
+      // Act & Assert
+      try {
+        await mgmtContext.activateAdmin('target-3', normalAdmin)
+        expect(true).toBe(false) // 不應走到這裡
+      } catch (error) {
+        expect(error).toBeInstanceOf(AdminError)
+        expect((error as AdminError).code).toBe('FORBIDDEN')
+      }
     })
   })
 
