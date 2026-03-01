@@ -29,23 +29,23 @@ describe('StockManagerRole', () => {
       updatedAt: new Date(),
     })
 
-    product.addVariant(variant)
+    product.setVariants([variant])
     return product
   }
 
   it('should deduct stock from variant', async () => {
     const product = createProduct()
-    const manager = injectStockManager(product, null as any)
+    const manager = injectStockManager(product)
 
     await manager.deductStock('var-1', 30)
 
-    const variant = product.findVariant('var-1')
+    const variant = product.variants.find((v) => v.id === 'var-1')
     expect(variant?.stock.quantity).toBe(70)
   })
 
   it('should throw error when deducting from non-existent variant', async () => {
     const product = createProduct()
-    const manager = injectStockManager(product, null as any)
+    const manager = injectStockManager(product)
 
     try {
       await manager.deductStock('var-999', 10)
@@ -59,7 +59,7 @@ describe('StockManagerRole', () => {
 
   it('should throw error when deducting more than available', async () => {
     const product = createProduct()
-    const manager = injectStockManager(product, null as any)
+    const manager = injectStockManager(product)
 
     try {
       await manager.deductStock('var-1', 101)
@@ -73,18 +73,18 @@ describe('StockManagerRole', () => {
 
   it('should recover stock for variant', async () => {
     const product = createProduct()
-    const manager = injectStockManager(product, null as any)
+    const manager = injectStockManager(product)
 
     await manager.deductStock('var-1', 30)
     await manager.recoverStock('var-1', 30)
 
-    const variant = product.findVariant('var-1')
+    const variant = product.variants.find((v) => v.id === 'var-1')
     expect(variant?.stock.quantity).toBe(100)
   })
 
   it('should check availability correctly', () => {
     const product = createProduct()
-    const manager = injectStockManager(product, null as any)
+    const manager = injectStockManager(product)
 
     expect(manager.checkAvailability('var-1', 50)).toBe(true)
     expect(manager.checkAvailability('var-1', 100)).toBe(true)
@@ -93,7 +93,7 @@ describe('StockManagerRole', () => {
 
   it('should throw error checking availability for non-existent variant', () => {
     const product = createProduct()
-    const manager = injectStockManager(product, null as any)
+    const manager = injectStockManager(product)
 
     try {
       manager.checkAvailability('var-999', 10)

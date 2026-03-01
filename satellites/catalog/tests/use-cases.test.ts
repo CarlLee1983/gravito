@@ -246,7 +246,7 @@ describe('Catalog UseCases', () => {
 
       // 建立並儲存帶有該分類的商品
       const product = Product.create('p1', { zh: 'Laptop' }, 'laptop')
-      product.assignToCategory('c1')
+      product.setCategoryIds(['c1'])
       await productRepo.save(product)
 
       const useCase = new DeleteCategory(categoryRepo, productRepo, core as any)

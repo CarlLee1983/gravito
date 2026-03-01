@@ -74,7 +74,7 @@ describe('CategoryManagerRole', () => {
       Slug.of('category'),
       'parent-1'
     )
-    category.updatePath('parent-path')
+    category.setPath('parent-path')
 
     const manager = injectCategoryManager(category)
     manager.moveToParent(null, null)

@@ -34,37 +34,53 @@ describe('Variant Entity', () => {
     expect(variant.options.color).toBe('red')
   })
 
-  it('should reduce stock and return new stock instance', () => {
+  it('should set stock', () => {
     const props = createVariantProps()
     const variant = new Variant('var-1', props)
     const oldStock = variant.stock
-    const newStock = variant.reduceStock(30)
-    expect(newStock.quantity).toBe(70)
+    const newStock = Stock.of(70)
+    variant.setStock(newStock)
     expect(variant.stock.quantity).toBe(70)
-    expect(oldStock).not.toBe(newStock)
+    expect(oldStock).not.toBe(variant.stock)
   })
 
-  it('should throw error when reducing more stock than available', () => {
+  it('should set price', () => {
     const props = createVariantProps()
     const variant = new Variant('var-1', props)
-    expect(() => variant.reduceStock(101)).toThrow()
+    const newPrice = Money.of(79.99)
+    variant.setPrice(newPrice)
+    expect(variant.price.value).toBe(79.99)
   })
 
-  it('should add stock and return new stock instance', () => {
+  it('should set compare at price', () => {
     const props = createVariantProps()
     const variant = new Variant('var-1', props)
-    const newStock = variant.addStock(50)
-    expect(newStock.quantity).toBe(150)
-    expect(variant.stock.quantity).toBe(150)
+    const newPrice = Money.of(199.99)
+    variant.setCompareAtPrice(newPrice)
+    expect(variant.compareAtPrice?.value).toBe(199.99)
   })
 
-  it('should update updatedAt when reducing stock', () => {
+  it('should set name', () => {
     const props = createVariantProps()
-    const _oldDate = props.updatedAt
     const variant = new Variant('var-1', props)
-    const dateBeforeReduce = variant.updatedAt
-    variant.reduceStock(10)
-    expect(variant.updatedAt.getTime()).toBeGreaterThanOrEqual(dateBeforeReduce.getTime())
+    variant.setName('New Name')
+    expect(variant.name).toBe('New Name')
+  })
+
+  it('should set options', () => {
+    const props = createVariantProps()
+    const variant = new Variant('var-1', props)
+    variant.setOptions({ color: 'blue', size: 'L' })
+    expect(variant.options.color).toBe('blue')
+    expect(variant.options.size).toBe('L')
+  })
+
+  it('should update updatedAt when setting stock', () => {
+    const props = createVariantProps()
+    const variant = new Variant('var-1', props)
+    const dateBeforeUpdate = variant.updatedAt
+    variant.setStock(Stock.of(50))
+    expect(variant.updatedAt.getTime()).toBeGreaterThanOrEqual(dateBeforeUpdate.getTime())
   })
 
   it('should handle variant without compareAtPrice', () => {

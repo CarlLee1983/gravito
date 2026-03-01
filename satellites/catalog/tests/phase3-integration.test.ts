@@ -78,7 +78,7 @@ describe('Phase 3 - UseCase 整合測試', () => {
         updatedAt: new Date(),
       })
 
-      product.addVariant(variant)
+      product.setVariants([variant])
       const dto = ProductMapper.toDTO(product)
 
       expect(dto.id).toBe('p1')
@@ -98,7 +98,7 @@ describe('Phase 3 - UseCase 整合測試', () => {
         I18nText.of({ zh: '分類名稱', en: 'Category Name' }),
         Slug.of('category-slug')
       )
-      category.updatePath(null)
+      category.setPath('category-slug')
 
       const dto = CategoryMapper.toDTO(category)
 

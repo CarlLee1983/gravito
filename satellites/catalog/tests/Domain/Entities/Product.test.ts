@@ -33,20 +33,20 @@ describe('Product AggregateRoot', () => {
     const name = I18nText.of({ en: 'Original' })
     const product = Product.create('prod-1', name, Slug.of('product'))
     const newName = I18nText.of({ en: 'Updated' })
-    product.updateName(newName)
+    product.setName(newName)
     expect(product.name.getText('en')).toBe('Updated')
   })
 
   it('should update product slug', () => {
     const product = Product.create('prod-1', I18nText.of({ en: 'Product' }), Slug.of('product'))
     const newSlug = Slug.of('new-product')
-    product.updateSlug(newSlug)
+    product.setSlug(newSlug)
     expect(product.slug.value).toBe('new-product')
   })
 
   it('should update product description', () => {
     const product = Product.create('prod-1', I18nText.of({ en: 'Product' }), Slug.of('product'))
-    product.updateDescription('New description')
+    product.setDescription('New description')
     expect(product.description).toBe('New description')
   })
 
@@ -62,79 +62,65 @@ describe('Product AggregateRoot', () => {
     expect(product.brand).toBe('My Brand')
   })
 
-  it('should add variant to product', () => {
+  it('should set product variants', () => {
     const product = Product.create('prod-1', I18nText.of({ en: 'Product' }), Slug.of('product'))
     const variant = createVariant('var-1', 'SKU-001')
-    product.addVariant(variant)
+    product.setVariants([variant])
     expect(product.variants.length).toBe(1)
     expect(product.variants[0].id).toBe('var-1')
   })
 
-  it('should generate domain event when adding variant', () => {
+  it('should set product status', () => {
     const product = Product.create('prod-1', I18nText.of({ en: 'Product' }), Slug.of('product'))
-    const variant = createVariant('var-1', 'SKU-001')
-    product.addVariant(variant)
-    const events = product.pullDomainEvents()
-    expect(events.length).toBe(1)
-    expect(events[0].type).toBe('ProductVariantAdded')
+    expect(product.status).toBe(ProductStatus.ACTIVE)
+    product.setStatus(ProductStatus.ARCHIVED)
+    expect(product.status).toBe(ProductStatus.ARCHIVED)
   })
 
-  it('should remove variant from product', () => {
+  it('should find variant by id in variants list', () => {
     const product = Product.create('prod-1', I18nText.of({ en: 'Product' }), Slug.of('product'))
     const variant = createVariant('var-1', 'SKU-001')
-    product.addVariant(variant)
-    product.removeVariant('var-1')
-    expect(product.variants.length).toBe(0)
-  })
-
-  it('should find variant by id', () => {
-    const product = Product.create('prod-1', I18nText.of({ en: 'Product' }), Slug.of('product'))
-    const variant = createVariant('var-1', 'SKU-001')
-    product.addVariant(variant)
-    const found = product.findVariant('var-1')
+    product.setVariants([variant])
+    const found = product.variants.find((v) => v.id === 'var-1')
     expect(found?.id).toBe('var-1')
   })
 
   it('should return undefined when variant not found', () => {
     const product = Product.create('prod-1', I18nText.of({ en: 'Product' }), Slug.of('product'))
-    const found = product.findVariant('var-999')
+    const found = product.variants.find((v) => v.id === 'var-999')
     expect(found).toBeUndefined()
   })
 
-  it('should assign product to category', () => {
+  it('should set category ids', () => {
     const product = Product.create('prod-1', I18nText.of({ en: 'Product' }), Slug.of('product'))
-    product.assignToCategory('cat-1')
+    product.setCategoryIds(['cat-1', 'cat-2'])
     expect(product.categoryIds).toContain('cat-1')
+    expect(product.categoryIds).toContain('cat-2')
+    expect(product.categoryIds.length).toBe(2)
   })
 
-  it('should not duplicate category assignment', () => {
+  it('should replace category ids when setting', () => {
     const product = Product.create('prod-1', I18nText.of({ en: 'Product' }), Slug.of('product'))
-    product.assignToCategory('cat-1')
-    product.assignToCategory('cat-1')
-    expect(product.categoryIds.length).toBe(1)
-  })
-
-  it('should remove product from category', () => {
-    const product = Product.create('prod-1', I18nText.of({ en: 'Product' }), Slug.of('product'))
-    product.assignToCategory('cat-1')
-    product.assignToCategory('cat-2')
-    product.removeFromCategory('cat-1')
+    product.setCategoryIds(['cat-1'])
+    product.setCategoryIds(['cat-2', 'cat-3'])
     expect(product.categoryIds).not.toContain('cat-1')
     expect(product.categoryIds).toContain('cat-2')
+    expect(product.categoryIds).toContain('cat-3')
   })
 
-  it('should archive product', () => {
+  it('should update updatedAt when properties change', () => {
     const product = Product.create('prod-1', I18nText.of({ en: 'Product' }), Slug.of('product'))
-    expect(product.status).toBe(ProductStatus.ACTIVE)
-    product.archive()
-    expect(product.status).toBe(ProductStatus.ARCHIVED)
+    const originalUpdatedAt = product.updatedAt.getTime()
+    product.setName(I18nText.of({ en: 'Updated' }))
+    expect(product.updatedAt.getTime()).toBeGreaterThanOrEqual(originalUpdatedAt)
   })
 
-  it('should clear domain events after pulling', () => {
+  it('should track createdAt and updatedAt', () => {
+    const before = new Date()
     const product = Product.create('prod-1', I18nText.of({ en: 'Product' }), Slug.of('product'))
-    const variant = createVariant('var-1', 'SKU-001')
-    product.addVariant(variant)
-    product.pullDomainEvents()
-    expect(product.pullDomainEvents().length).toBe(0)
+    const after = new Date()
+    expect(product.createdAt.getTime()).toBeGreaterThanOrEqual(before.getTime())
+    expect(product.createdAt.getTime()).toBeLessThanOrEqual(after.getTime())
+    expect(product.updatedAt.getTime()).toBeGreaterThanOrEqual(product.createdAt.getTime())
   })
 })

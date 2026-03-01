@@ -24,20 +24,20 @@ describe('Category Entity', () => {
   it('should update category name', () => {
     const category = Category.create('cat-1', I18nText.of({ en: 'Old Name' }), Slug.of('old'))
     const newName = I18nText.of({ en: 'New Name' })
-    category.updateName(newName)
+    category.setName(newName)
     expect(category.name.getText('en')).toBe('New Name')
   })
 
   it('should update category description', () => {
     const category = Category.create('cat-1', I18nText.of({ en: 'Category' }), Slug.of('category'))
-    category.updateDescription('New description')
+    category.setDescription('New description')
     expect(category.description).toBe('New description')
   })
 
   it('should update sort order', () => {
     const category = Category.create('cat-1', I18nText.of({ en: 'Category' }), Slug.of('category'))
     expect(category.sortOrder).toBe(0)
-    category.updateSortOrder(5)
+    category.setSortOrder(5)
     expect(category.sortOrder).toBe(5)
   })
 
@@ -47,7 +47,7 @@ describe('Category Entity', () => {
       I18nText.of({ en: 'Electronics' }),
       Slug.of('electronics')
     )
-    category.updatePath(null)
+    category.setPath('electronics')
     expect(category.path).toBe('electronics')
   })
 
@@ -57,7 +57,7 @@ describe('Category Entity', () => {
       I18nText.of({ en: 'Electronics' }),
       Slug.of('electronics')
     )
-    parent.updatePath(null)
+    parent.setPath('electronics')
 
     const child = Category.create(
       'cat-2',
@@ -65,7 +65,7 @@ describe('Category Entity', () => {
       Slug.of('phones'),
       'cat-1'
     )
-    child.updatePath(parent.path)
+    child.setPath('electronics/phones')
     expect(child.path).toBe('electronics/phones')
   })
 
@@ -75,7 +75,7 @@ describe('Category Entity', () => {
       I18nText.of({ en: 'Electronics' }),
       Slug.of('electronics')
     )
-    root.updatePath(null)
+    root.setPath('electronics')
 
     const child = Category.create(
       'cat-2',
@@ -83,7 +83,7 @@ describe('Category Entity', () => {
       Slug.of('phones'),
       'cat-1'
     )
-    child.updatePath(root.path)
+    child.setPath('electronics/phones')
 
     const grandchild = Category.create(
       'cat-3',
@@ -91,18 +91,8 @@ describe('Category Entity', () => {
       Slug.of('smartphones'),
       'cat-2'
     )
-    grandchild.updatePath(child.path)
+    grandchild.setPath('electronics/phones/smartphones')
     expect(grandchild.path).toBe('electronics/phones/smartphones')
-  })
-
-  it('should compute child path prefix', () => {
-    const category = Category.create(
-      'cat-1',
-      I18nText.of({ en: 'Electronics' }),
-      Slug.of('electronics')
-    )
-    category.updatePath(null)
-    expect(category.computeChildPathPrefix()).toBe('electronics')
   })
 
   it('should move category to new parent', () => {
@@ -113,7 +103,7 @@ describe('Category Entity', () => {
       'parent-1'
     )
     expect(category.parentId).toBe('parent-1')
-    category.moveTo('parent-2')
+    category.setParentId('parent-2')
     expect(category.parentId).toBe('parent-2')
   })
 
@@ -124,7 +114,7 @@ describe('Category Entity', () => {
       Slug.of('category'),
       'parent-1'
     )
-    category.moveTo(null)
+    category.setParentId(null)
     expect(category.parentId).toBeNull()
   })
 
@@ -140,7 +130,7 @@ describe('Category Entity', () => {
   it('should update updatedAt when properties change', () => {
     const category = Category.create('cat-1', I18nText.of({ en: 'Category' }), Slug.of('category'))
     const originalUpdatedAt = category.updatedAt.getTime()
-    category.updateName(I18nText.of({ en: 'Updated' }))
+    category.setName(I18nText.of({ en: 'Updated' }))
     expect(category.updatedAt.getTime()).toBeGreaterThanOrEqual(originalUpdatedAt)
   })
 

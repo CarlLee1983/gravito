@@ -17,7 +17,7 @@ describe('CatalogEditorRole', () => {
 
   it('should update product name', () => {
     const product = createProduct()
-    const editor = injectCatalogEditor(product, null as any)
+    const editor = injectCatalogEditor(product)
 
     const newName = I18nText.of({ en: 'New Name' })
     editor.updateProductInfo({ name: newName })
@@ -27,7 +27,7 @@ describe('CatalogEditorRole', () => {
 
   it('should update product slug', () => {
     const product = createProduct()
-    const editor = injectCatalogEditor(product, null as any)
+    const editor = injectCatalogEditor(product)
 
     const newSlug = Slug.of('new-slug')
     editor.updateProductInfo({ slug: newSlug })
@@ -37,7 +37,7 @@ describe('CatalogEditorRole', () => {
 
   it('should update product description', () => {
     const product = createProduct()
-    const editor = injectCatalogEditor(product, null as any)
+    const editor = injectCatalogEditor(product)
 
     editor.updateProductInfo({ description: 'New description' })
 
@@ -46,7 +46,7 @@ describe('CatalogEditorRole', () => {
 
   it('should update product brand', () => {
     const product = createProduct()
-    const editor = injectCatalogEditor(product, null as any)
+    const editor = injectCatalogEditor(product)
 
     editor.updateProductInfo({ brand: 'My Brand' })
 
@@ -55,7 +55,7 @@ describe('CatalogEditorRole', () => {
 
   it('should update multiple fields at once', () => {
     const product = createProduct()
-    const editor = injectCatalogEditor(product, null as any)
+    const editor = injectCatalogEditor(product)
 
     editor.updateProductInfo({
       name: I18nText.of({ en: 'New Name' }),
@@ -70,7 +70,7 @@ describe('CatalogEditorRole', () => {
 
   it('should assign categories', () => {
     const product = createProduct()
-    const editor = injectCatalogEditor(product, null as any)
+    const editor = injectCatalogEditor(product)
 
     editor.updateProductInfo({ categoryIds: ['cat-1', 'cat-2'] })
 
@@ -80,8 +80,8 @@ describe('CatalogEditorRole', () => {
 
   it('should replace categories when updating', () => {
     const product = createProduct()
-    product.assignToCategory('cat-1')
-    const editor = injectCatalogEditor(product, null as any)
+    product.setCategoryIds(['cat-1'])
+    const editor = injectCatalogEditor(product)
 
     editor.updateProductInfo({ categoryIds: ['cat-2', 'cat-3'] })
 
@@ -93,14 +93,14 @@ describe('CatalogEditorRole', () => {
   it('should activate product', () => {
     const product = createProduct()
     expect(product.status).toBe(ProductStatus.ACTIVE)
-    const editor = injectCatalogEditor(product, null as any)
+    const editor = injectCatalogEditor(product)
     editor.activateProduct()
     expect(product.status).toBe(ProductStatus.ACTIVE)
   })
 
   it('should archive product', () => {
     const product = createProduct()
-    const editor = injectCatalogEditor(product, null as any)
+    const editor = injectCatalogEditor(product)
 
     editor.archiveProduct()
 
@@ -109,7 +109,7 @@ describe('CatalogEditorRole', () => {
 
   it('should add variant', () => {
     const product = createProduct()
-    const editor = injectCatalogEditor(product, null as any)
+    const editor = injectCatalogEditor(product)
 
     const variant = new Variant('var-1', {
       productId: 'prod-1',
@@ -126,12 +126,12 @@ describe('CatalogEditorRole', () => {
     editor.addVariant(variant)
 
     expect(product.variants.length).toBe(1)
-    expect(product.findVariant('var-1')).toBeDefined()
+    expect(product.variants.find((v) => v.id === 'var-1')).toBeDefined()
   })
 
   it('should throw error adding variant from different product', () => {
     const product = createProduct()
-    const editor = injectCatalogEditor(product, null as any)
+    const editor = injectCatalogEditor(product)
 
     const variant = new Variant('var-1', {
       productId: 'prod-999',
@@ -157,7 +157,7 @@ describe('CatalogEditorRole', () => {
 
   it('should remove variant', () => {
     const product = createProduct()
-    const editor = injectCatalogEditor(product, null as any)
+    const editor = injectCatalogEditor(product)
 
     const variant = new Variant('var-1', {
       productId: 'prod-1',

@@ -55,7 +55,7 @@ describe('InventoryManagementContext', () => {
       updatedAt: new Date(),
     })
 
-    product.addVariant(variant)
+    product.setVariants([variant])
   })
 
   it('should deduct stock from inventory', async () => {
@@ -65,7 +65,7 @@ describe('InventoryManagementContext', () => {
     await ctx.deductStock('prod-1', 'var-1', 30)
 
     const updated = await repo.findById('prod-1')
-    const variant = updated!.findVariant('var-1')
+    const variant = updated!.variants.find((v) => v.id === 'var-1')
     expect(variant?.stock.quantity).toBe(70)
   })
 
@@ -104,7 +104,7 @@ describe('InventoryManagementContext', () => {
     await ctx.recoverStock('prod-1', 'var-1', 30)
 
     const updated = await repo.findById('prod-1')
-    const variant = updated!.findVariant('var-1')
+    const variant = updated!.variants.find((v) => v.id === 'var-1')
     expect(variant?.stock.quantity).toBe(100)
   })
 
@@ -120,7 +120,7 @@ describe('InventoryManagementContext', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     })
-    product.addVariant(variant2)
+    product.setVariants([...product.variants, variant2])
     await repo.save(product)
 
     const ctx = new InventoryManagementContext(repo)
@@ -133,8 +133,8 @@ describe('InventoryManagementContext', () => {
     ])
 
     const updated = await repo.findById('prod-1')
-    expect(updated!.findVariant('var-1')?.stock.quantity).toBe(100)
-    expect(updated!.findVariant('var-2')?.stock.quantity).toBe(50)
+    expect(updated!.variants.find((v) => v.id === 'var-1')?.stock.quantity).toBe(100)
+    expect(updated!.variants.find((v) => v.id === 'var-2')?.stock.quantity).toBe(50)
   })
 
   it('should check availability', async () => {

@@ -72,7 +72,7 @@ describe('ProductQueryContext', () => {
       updatedAt: new Date(),
     })
 
-    product.addVariant(variant)
+    product.setVariants([variant])
     await repo.save(product)
   })
 

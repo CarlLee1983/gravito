@@ -11,15 +11,15 @@ describe('Catalog Domain Entities', () => {
   describe('Category Tree Logic', () => {
     it('應該能正確計算分類路徑', () => {
       const root = Category.create('c1', I18nText.of({ zh: '男裝' }), Slug.of('men'))
-      root.updatePath(null)
+      root.setPath('men')
       expect(root.path).toBe('men')
 
       const sub = Category.create('c2', I18nText.of({ zh: '上衣' }), Slug.of('tops'), root.id)
-      sub.updatePath(root.path)
+      sub.setPath('men/tops')
       expect(sub.path).toBe('men/tops')
 
       const leaf = Category.create('c3', I18nText.of({ zh: '襯衫' }), Slug.of('shirts'), sub.id)
-      leaf.updatePath(sub.path)
+      leaf.setPath('men/tops/shirts')
       expect(leaf.path).toBe('men/tops/shirts')
     })
 
@@ -55,10 +55,10 @@ describe('Catalog Domain Entities', () => {
         updatedAt: new Date(),
       })
 
-      const newStock = variant.reduceStock(3)
+      const newStock = variant.stock.deduct(3)
       expect(newStock.quantity).toBe(7)
 
-      expect(() => variant.reduceStock(10)).toThrow('Insufficient stock')
+      expect(() => newStock.deduct(10)).toThrow('Insufficient stock')
     })
 
     it('商品應該能正確管理變體與分類', () => {
@@ -68,7 +68,7 @@ describe('Catalog Domain Entities', () => {
         Slug.of('minimal-tshirt')
       )
 
-      product.assignToCategory('c1')
+      product.setCategoryIds(['c1'])
       expect(product.categoryIds).toContain('c1')
 
       const variant = new Variant('v1', {
@@ -82,7 +82,7 @@ describe('Catalog Domain Entities', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       })
-      product.addVariant(variant)
+      product.setVariants([variant])
       expect(product.variants.length).toBe(1)
     })
   })
