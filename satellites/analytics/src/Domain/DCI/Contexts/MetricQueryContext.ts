@@ -4,6 +4,7 @@ import {
   AnalyticsReport,
   type ChartType,
 } from '../../Entities/AnalyticsReport'
+import type { DataPoint } from '../../Entities/DataPoint'
 import { Dimension } from '../../ValueObjects/Dimension'
 import { MetricName } from '../../ValueObjects/MetricName'
 import { type PeriodPreset, TimePeriod } from '../../ValueObjects/TimePeriod'
