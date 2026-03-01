@@ -181,9 +181,13 @@ export class Member extends Entity<string> {
    * Merges new metadata into existing metadata
    */
   public updateMetadata(data: Record<string, any>): void {
+    const { status, ...rest } = data
     this.props.metadata = {
       ...(this.props.metadata || {}),
-      ...data,
+      ...rest,
+    }
+    if (status && Object.values(MemberStatus).includes(status)) {
+      this.props.status = status
     }
     this.props.updatedAt = new Date()
   }
@@ -195,6 +199,14 @@ export class Member extends Entity<string> {
     this.props.emailVerifiedAt = new Date()
     this.props.status = MemberStatus.ACTIVE
     this.props.verificationToken = undefined
+    this.props.updatedAt = new Date()
+  }
+
+  /**
+   * Suspend member account
+   */
+  public suspend(): void {
+    this.props.status = MemberStatus.SUSPENDED
     this.props.updatedAt = new Date()
   }
 

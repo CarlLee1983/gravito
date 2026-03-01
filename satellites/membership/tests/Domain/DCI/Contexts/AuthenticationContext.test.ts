@@ -29,6 +29,9 @@ describe('AuthenticationContext', () => {
       hooks: {
         doAction: mock(async () => {}),
       },
+      container: {
+        make: mock(() => ({ id: mock(() => 'session-123') })),
+      },
     }
 
     context = new AuthenticationContext(mockRepository, mockCore as PlanetCore)

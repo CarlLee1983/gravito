@@ -17,7 +17,7 @@ export class AuthStrategyFactory {
    * @returns 對應的認證策略實例
    */
   static create(core: PlanetCore, repository: IMemberRepository): IAuthStrategy {
-    const mode = core.config.get('membership.auth.mode', 'session') as string
+    const mode = (core.config.get('membership.auth.mode') ?? 'session') as string
 
     switch (mode) {
       case 'jwt': {
