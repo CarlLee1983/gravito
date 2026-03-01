@@ -3,6 +3,7 @@
  */
 export enum AdErrorCode {
   INVALID_WEIGHT = 'INVALID_WEIGHT',
+  INVALID_TITLE = 'INVALID_TITLE',
   INVALID_SCHEDULE = 'INVALID_SCHEDULE',
   INVALID_SLOT = 'INVALID_SLOT',
   AD_NOT_FOUND = 'AD_NOT_FOUND',
@@ -34,6 +35,10 @@ export class AdError extends Error {
       AdErrorCode.INVALID_WEIGHT,
       400
     )
+  }
+
+  static invalidTitle(reason: string): AdError {
+    return new AdError(`無效的廣告標題: ${reason}`, AdErrorCode.INVALID_TITLE, 400)
   }
 
   static invalidSchedule(reason: string): AdError {

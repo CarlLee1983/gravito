@@ -57,6 +57,11 @@ export class AdDeliveryContext {
     const slotSlug = SlotSlug.of(input.slotSlug)
     const count = input.count ?? 1
 
+    // 驗證 count 是整數
+    if (!Number.isInteger(count)) {
+      throw AdError.invalidDeliveryCount(count, MAX_COUNT)
+    }
+
     if (count <= 0 || count > MAX_COUNT) {
       throw AdError.invalidDeliveryCount(count, MAX_COUNT)
     }

@@ -26,7 +26,7 @@ export interface UpdateAdInput {
  * 職責：
  * 1. 將 ISO 8601 日期字串轉為 Date
  * 2. 委派給 AdManagementContext (action: 'update')
- * 3. 從 Repository 重新載入 Entity 並轉為 DTO
+ * 3. 將返回的 Entity 轉為 DTO
  */
 export class UpdateAdUseCase extends UseCase<UpdateAdInput, AdDTO> {
   constructor(
@@ -39,7 +39,7 @@ export class UpdateAdUseCase extends UseCase<UpdateAdInput, AdDTO> {
   async execute(input: UpdateAdInput): Promise<AdDTO> {
     const context = new AdManagementContext(this.adRepository, this.core)
 
-    await context.execute({
+    const ad = await context.execute({
       adId: input.adId,
       action: 'update',
       updateData: {
@@ -52,8 +52,6 @@ export class UpdateAdUseCase extends UseCase<UpdateAdInput, AdDTO> {
       },
     })
 
-    // 從 Repository 重新載入完整 Entity
-    const ad = await this.adRepository.findById(input.adId)
     if (!ad) {
       throw AdError.adNotFound(input.adId)
     }

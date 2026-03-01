@@ -13,7 +13,7 @@ const MAX_LIMIT = 100
  * ListAdsUseCase 輸入
  */
 export interface ListAdsInput {
-  status?: 'draft' | 'active' | 'paused'
+  status?: AdStatus
   slotSlug?: string
   limit?: number
   offset?: number
@@ -45,7 +45,7 @@ export class ListAdsUseCase extends UseCase<ListAdsInput, ListAdsOutput> {
     const offset = Math.max(input.offset ?? 0, 0)
 
     const { items, total } = await this.adRepository.findAll({
-      status: input.status as AdStatus | undefined,
+      status: input.status,
       slotSlug: input.slotSlug,
       limit,
       offset,

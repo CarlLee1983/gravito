@@ -22,16 +22,6 @@ export interface AdCreationInput {
 }
 
 /**
- * 廣告建立輸出
- */
-export interface AdCreationOutput {
-  id: string
-  status: string
-  title: string
-  createdAt: string
-}
-
-/**
  * 廣告建立上下文協調器
  *
  * 統整廣告建立的完整流程，使用 DCI 角色注入。
@@ -48,7 +38,7 @@ export class AdCreationContext {
     private readonly core: PlanetCore
   ) {}
 
-  async execute(input: AdCreationInput): Promise<AdCreationOutput> {
+  async execute(input: AdCreationInput): Promise<Advertisement> {
     // 1. 建立 ValueObject（會自動驗證）
     const slotSlug = SlotSlug.of(input.slotSlug)
     const weight = AdWeight.of(input.weight)
@@ -88,11 +78,6 @@ export class AdCreationContext {
       })
     }
 
-    return {
-      id: ad.id,
-      status: ad.status,
-      title: ad.title,
-      createdAt: ad.createdAt.toISOString(),
-    }
+    return ad
   }
 }

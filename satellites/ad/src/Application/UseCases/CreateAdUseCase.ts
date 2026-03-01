@@ -28,7 +28,7 @@ export interface CreateAdInput {
  * 職責：
  * 1. 將 ISO 8601 字串轉為 Date
  * 2. 委派給 AdCreationContext
- * 3. 從 Repository 重新載入 Entity 並轉為 DTO
+ * 3. 將返回的 Entity 轉為 DTO
  */
 export class CreateAdUseCase extends UseCase<CreateAdInput, AdDTO> {
   constructor(
@@ -41,7 +41,7 @@ export class CreateAdUseCase extends UseCase<CreateAdInput, AdDTO> {
   async execute(input: CreateAdInput): Promise<AdDTO> {
     const context = new AdCreationContext(this.adRepository, this.core)
 
-    const result = await context.execute({
+    const ad = await context.execute({
       slotSlug: input.slotSlug,
       title: input.title,
       imageUrl: input.imageUrl,
@@ -52,12 +52,6 @@ export class CreateAdUseCase extends UseCase<CreateAdInput, AdDTO> {
       activateImmediately: input.activateImmediately,
       metadata: input.metadata,
     })
-
-    // 從 Repository 重新載入完整 Entity
-    const ad = await this.adRepository.findById(result.id)
-    if (!ad) {
-      throw AdError.adNotFound(result.id)
-    }
 
     return AdMapper.toDTO(ad)
   }

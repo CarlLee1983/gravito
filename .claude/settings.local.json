@@ -70,7 +70,8 @@
       "Bash(echo === 版本更新分析文檔總結 ===:*)",
       "Bash(cd:*)",
       "Bash(echo:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(bun test 2>&1 | tail -30)"
     ]
   },
   "enabledMcpjsonServers": [

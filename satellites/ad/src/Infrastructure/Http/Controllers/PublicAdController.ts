@@ -1,32 +1,7 @@
 import type { DeliverAdUseCase } from '../../../Application/UseCases/DeliverAdUseCase'
 import { AdError } from '../../../Domain/Errors/AdError'
+import { failure, formatZodErrors, type HonoContext, success } from '../Shared/responseHelpers'
 import { DeliverAdSchema } from '../Validation/AdRequestSchemas'
-
-/**
- * Hono Context 最小介面
- */
-interface HonoContext {
-  req: {
-    json(): Promise<unknown>
-    param(name: string): string | undefined
-    query(name: string): string | undefined
-  }
-  json(data: unknown, status?: number): unknown
-}
-
-/**
- * 成功回應格式
- */
-function success<T>(data: T) {
-  return { success: true as const, data }
-}
-
-/**
- * 錯誤回應格式
- */
-function failure(code: string, message: string) {
-  return { success: false as const, error: { code, message } }
-}
 
 /**
  * 公開廣告投放控制器
@@ -98,21 +73,4 @@ export class PublicAdController {
     const message = error instanceof Error ? error.message : '未知錯誤'
     return ctx.json(failure('INTERNAL_ERROR', message), 500)
   }
-}
-
-/**
- * 格式化 Zod 驗證錯誤訊息
- */
-function formatZodErrors(error: {
-  issues?: Array<{ message: string; path?: PropertyKey[] }>
-}): string {
-  if (!error.issues || error.issues.length === 0) {
-    return '驗證失敗'
-  }
-  return error.issues
-    .map((issue) => {
-      const path = issue.path?.map(String).join('.') ?? ''
-      return path ? `${path}: ${issue.message}` : issue.message
-    })
-    .join('; ')
 }
