@@ -46,7 +46,7 @@ export class ProductQueryContext {
       throw CatalogErrorFactory.productNotFound(productId)
     }
 
-    const variant = product.findVariant(variantId)
+    const variant = product.variants.find((v) => v.id === variantId)
     if (!variant) {
       throw CatalogErrorFactory.variantNotFound(variantId)
     }

@@ -54,10 +54,10 @@ export class CategoryManagementContext {
     const category = Category.create(crypto.randomUUID(), name, slug, input.parentId || null)
 
     if (input.description) {
-      category.updateDescription(input.description)
+      category.setDescription(input.description)
     }
     if (input.sortOrder !== undefined) {
-      category.updateSortOrder(input.sortOrder)
+      category.setSortOrder(input.sortOrder)
     }
 
     // 計算路徑
@@ -66,9 +66,12 @@ export class CategoryManagementContext {
       if (!parent) {
         throw CatalogErrorFactory.categoryNotFound(input.parentId)
       }
-      category.updatePath(parent.path)
+      const computedPath = parent.path
+        ? `${parent.path}/${category.slug.value}`
+        : category.slug.value
+      category.setPath(computedPath)
     } else {
-      category.updatePath(null)
+      category.setPath(category.slug.value)
     }
 
     await this.categoryRepo.save(category)
@@ -149,7 +152,7 @@ export class CategoryManagementContext {
         if (descendant.path?.startsWith(oldPath + '/')) {
           const suffix = descendant.path.substring(oldPath.length)
           const newPath = category.path + suffix
-          descendant.setPathDirect(newPath)
+          descendant.setPath(newPath)
           await this.categoryRepo.save(descendant)
         }
       }

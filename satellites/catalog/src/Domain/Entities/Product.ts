@@ -1,4 +1,3 @@
-import type { DomainEvent } from '@gravito/enterprise'
 import { AggregateRoot } from '@gravito/enterprise'
 import type { I18nText } from '../ValueObjects/I18nText'
 import type { Slug } from '../ValueObjects/Slug'
@@ -94,112 +93,78 @@ export class Product extends AggregateRoot<string> {
   }
 
   /**
-   * 更新商品名稱
+   * 設置商品名稱
+   * DCI 模式：Role 層負責驗證和業務規則
    */
-  public updateName(name: I18nText): void {
+  public setName(name: I18nText): void {
     this.props.name = name
     this.props.updatedAt = new Date()
   }
 
   /**
-   * 更新商品 slug
+   * 設置商品 slug
    */
-  public updateSlug(slug: Slug): void {
+  public setSlug(slug: Slug): void {
     this.props.slug = slug
     this.props.updatedAt = new Date()
   }
 
   /**
-   * 更新商品描述
+   * 設置商品描述
    */
-  public updateDescription(description: string | undefined): void {
+  public setDescription(description: string | undefined): void {
     this.props.description = description
     this.props.updatedAt = new Date()
   }
 
   /**
-   * 設定縮圖
+   * 設置縮圖
    */
-  public setThumbnail(key: string): void {
+  public setThumbnail(key: string | undefined): void {
     this.props.thumbnail = key
     this.props.updatedAt = new Date()
   }
 
   /**
-   * 設定品牌
+   * 設置品牌
    */
-  public setBrand(brand: string): void {
+  public setBrand(brand: string | undefined): void {
     this.props.brand = brand
     this.props.updatedAt = new Date()
   }
 
   /**
-   * 上架商品
+   * 設置商品狀態
+   * 狀態機邏輯應在 Role 層進行
    */
-  public activate(): void {
-    if (this.props.status === ProductStatus.ARCHIVED) {
-      throw new Error(`Cannot activate product: cannot reactivate archived product`)
-    }
-    this.props.status = ProductStatus.ACTIVE
+  public setStatus(status: ProductStatus): void {
+    this.props.status = status
     this.props.updatedAt = new Date()
   }
 
   /**
-   * 下架商品
+   * 設置商品變體列表
+   * 變體管理邏輯應在 Role 層進行
    */
-  public archive(): void {
-    if (this.props.status === ProductStatus.ARCHIVED) {
-      throw new Error('Product is already archived')
-    }
-    this.props.status = ProductStatus.ARCHIVED
+  public setVariants(variants: Variant[]): void {
+    this.props.variants = variants
     this.props.updatedAt = new Date()
   }
 
   /**
-   * 新增商品變體
+   * 設置分類 ID 列表
+   * 分類邏輯應在 Role 層進行
    */
-  public addVariant(variant: Variant): void {
-    this.props.variants.push(variant)
-    this.props.updatedAt = new Date()
-    this.addDomainEvent({
-      aggregateId: this.id,
-      occurredAt: new Date(),
-      type: 'ProductVariantAdded',
-      data: { variantId: variant.id, productId: this.id },
-    } as unknown as DomainEvent)
-  }
-
-  /**
-   * 移除商品變體
-   */
-  public removeVariant(variantId: string): void {
-    this.props.variants = this.props.variants.filter((v) => v.id !== variantId)
+  public setCategoryIds(categoryIds: string[]): void {
+    this.props.categoryIds = categoryIds
     this.props.updatedAt = new Date()
   }
 
   /**
-   * 尋找變體
+   * 取得完整的 props 物件（用於 Repository）
    */
-  public findVariant(variantId: string): Variant | undefined {
-    return this.props.variants.find((v) => v.id === variantId)
-  }
-
-  /**
-   * 指派到分類
-   */
-  public assignToCategory(categoryId: string): void {
-    if (!this.props.categoryIds.includes(categoryId)) {
-      this.props.categoryIds.push(categoryId)
-      this.props.updatedAt = new Date()
-    }
-  }
-
-  /**
-   * 從分類移除
-   */
-  public removeFromCategory(categoryId: string): void {
-    this.props.categoryIds = this.props.categoryIds.filter((id) => id !== categoryId)
-    this.props.updatedAt = new Date()
+  get propsObject(): ProductProps {
+    return { ...this.props }
   }
 }
 

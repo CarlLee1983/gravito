@@ -65,22 +65,50 @@ export class Variant extends Entity<string> {
   }
 
   /**
-   * 扣減庫存，返回新的 Stock 實例（不可變）
+   * 設置庫存
+   * 庫存邏輯應在 Role 層進行
    */
-  public reduceStock(quantity: number): Stock {
-    const newStock = this.props.stock.deduct(quantity)
-    this.props.stock = newStock
+  public setStock(stock: Stock): void {
+    this.props.stock = stock
     this.props.updatedAt = new Date()
-    return newStock
   }
 
   /**
-   * 補充庫存，返回新的 Stock 實例（不可變）
+   * 設置價格
    */
-  public addStock(quantity: number): Stock {
-    const newStock = this.props.stock.add(quantity)
-    this.props.stock = newStock
+  public setPrice(price: Money): void {
+    this.props.price = price
     this.props.updatedAt = new Date()
-    return newStock
+  }
+
+  /**
+   * 設置比較價格
+   */
+  public setCompareAtPrice(compareAtPrice: Money | null): void {
+    this.props.compareAtPrice = compareAtPrice
+    this.props.updatedAt = new Date()
+  }
+
+  /**
+   * 設置變體名稱
+   */
+  public setName(name: string | null): void {
+    this.props.name = name
+    this.props.updatedAt = new Date()
+  }
+
+  /**
+   * 設置選項
+   */
+  public setOptions(options: Record<string, string>): void {
+    this.props.options = options
+    this.props.updatedAt = new Date()
+  }
+
+  /**
+   * 取得完整的 props 物件（用於 Repository）
+   */
+  get propsObject(): VariantProps {
+    return { ...this.props }
   }
 }

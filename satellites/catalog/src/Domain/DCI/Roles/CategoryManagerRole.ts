@@ -12,7 +12,7 @@ export interface UpdateCategoryData {
 
 /**
  * 分類管理者角色
- * 提供分類資訊編輯、移動、路徑計算的行為契約
+ * DCI 模式：包含分類編輯、移動、路徑計算的業務邏輯
  */
 export interface CategoryManager {
   /**
@@ -21,40 +21,46 @@ export interface CategoryManager {
   updateInfo(data: UpdateCategoryData): void
 
   /**
-   * 移動分類到新的父節點
+   * 移動分類到新的父節點（自動計算路徑）
    */
   moveToParent(newParentId: string | null, parentPath: string | null): void
 
   /**
-   * 計算並設定路徑
+   * 計算並設定路徑（基於父分類的路徑和自己的 slug）
    */
   computeAndSetPath(parentPath: string | null): void
 }
 
 /**
  * 將分類管理者角色注入到 Category 實體中
+ * DCI 模式：Role 包含業務邏輯，Entity 只提供 setter
  */
 export function injectCategoryManager(category: Category): CategoryManager {
   return {
     updateInfo(data: UpdateCategoryData): void {
       if (data.name) {
-        category.updateName(data.name)
+        category.setName(data.name)
       }
       if (data.description !== undefined) {
-        category.updateDescription(data.description)
+        category.setDescription(data.description)
       }
       if (data.sortOrder !== undefined) {
-        category.updateSortOrder(data.sortOrder)
+        category.setSortOrder(data.sortOrder)
       }
     },
 
     moveToParent(newParentId: string | null, parentPath: string | null): void {
-      category.moveTo(newParentId)
-      category.updatePath(parentPath)
+      // 變更父分類
+      category.setParentId(newParentId)
+      // 計算並設定新路徑
+      const computedPath = parentPath ? `${parentPath}/${category.slug.value}` : category.slug.value
+      category.setPath(computedPath)
     },
 
     computeAndSetPath(parentPath: string | null): void {
-      category.updatePath(parentPath)
+      // 基於父分類路徑和自己的 slug 計算路徑
+      const computedPath = parentPath ? `${parentPath}/${category.slug.value}` : category.slug.value
+      category.setPath(computedPath)
     },
   }
 }

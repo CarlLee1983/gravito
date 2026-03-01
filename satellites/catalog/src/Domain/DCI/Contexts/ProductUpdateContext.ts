@@ -33,7 +33,7 @@ export class ProductUpdateContext {
       throw CatalogErrorFactory.productNotFound(input.id)
     }
 
-    const editor = injectCatalogEditor(product, this.productRepo)
+    const editor = injectCatalogEditor(product)
 
     const updateData: UpdateProductData = {}
     if (input.name) {
@@ -67,7 +67,7 @@ export class ProductUpdateContext {
       throw CatalogErrorFactory.productNotFound(productId)
     }
 
-    const editor = injectCatalogEditor(product, this.productRepo)
+    const editor = injectCatalogEditor(product)
     editor.activateProduct()
     await this.productRepo.save(product)
 
@@ -83,7 +83,7 @@ export class ProductUpdateContext {
       throw CatalogErrorFactory.productNotFound(productId)
     }
 
-    const editor = injectCatalogEditor(product, this.productRepo)
+    const editor = injectCatalogEditor(product)
     editor.archiveProduct()
     await this.productRepo.save(product)
 

@@ -77,60 +77,52 @@ export class Category extends Entity<string> {
   }
 
   /**
-   * 更新分類名稱
+   * 設置分類名稱
+   * DCI 模式：Role 層負責驗證和業務規則
    */
-  public updateName(name: I18nText): void {
+  public setName(name: I18nText): void {
     this.props.name = name
     this.props.updatedAt = new Date()
   }
 
   /**
-   * 更新分類描述
+   * 設置分類描述
    */
-  public updateDescription(description: string | undefined): void {
+  public setDescription(description: string | undefined): void {
     this.props.description = description
     this.props.updatedAt = new Date()
   }
 
   /**
-   * 更新排序順序
+   * 設置排序順序
    */
-  public updateSortOrder(sortOrder: number): void {
+  public setSortOrder(sortOrder: number): void {
     this.props.sortOrder = sortOrder
     this.props.updatedAt = new Date()
   }
 
   /**
-   * 計算並設定路徑
-   * 基於 parent 的路徑和自己的 slug
+   * 設置分類路徑
+   * 路徑計算邏輯應在 Role 層進行
    */
-  public updatePath(parentPath: string | null): void {
-    const parentPathValue = parentPath ? `${parentPath}/` : ''
-    this.props.path = `${parentPathValue}${this.props.slug.value}`
-    this.props.updatedAt = new Date()
-  }
-
-  /**
-   * 計算子分類應有的路徑前綴
-   */
-  public computeChildPathPrefix(): string {
-    return this.props.path || ''
-  }
-
-  /**
-   * 直接設定路徑（用於路徑同步，不重新計算 slug）
-   * @internal
-   */
-  public setPathDirect(path: string | null): void {
+  public setPath(path: string | null): void {
     this.props.path = path
     this.props.updatedAt = new Date()
   }
 
   /**
-   * 變更父分類
+   * 設置父分類 ID
+   * 路徑更新邏輯應在 Role 層進行
    */
-  public moveTo(newParentId: string | null): void {
-    this.props.parentId = newParentId
+  public setParentId(parentId: string | null): void {
+    this.props.parentId = parentId
     this.props.updatedAt = new Date()
+  }
+
+  /**
+   * 取得完整的 props 物件（用於 Repository）
+   */
+  get propsObject(): CategoryProps {
+    return { ...this.props }
   }
 }

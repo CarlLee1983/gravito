@@ -57,18 +57,16 @@ export class ProductCreationContext {
       product.setBrand(input.brand)
     }
     if (input.description) {
-      product.updateDescription(input.description)
+      product.setDescription(input.description)
     }
 
     // 4. 指派分類
     if (input.categoryIds) {
-      input.categoryIds.forEach((cid) => {
-        product.assignToCategory(cid)
-      })
+      product.setCategoryIds(input.categoryIds)
     }
 
     // 5. 注入編輯者角色，建立變體
-    const editor = injectCatalogEditor(product, this.productRepo)
+    const editor = injectCatalogEditor(product)
     for (const variantInput of input.variants) {
       const variant = new Variant(crypto.randomUUID(), {
         productId: product.id,

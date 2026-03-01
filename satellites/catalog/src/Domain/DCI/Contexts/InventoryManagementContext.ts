@@ -27,8 +27,8 @@ export class InventoryManagementContext {
       throw CatalogErrorFactory.productNotFound(productId)
     }
 
-    const stockManager = injectStockManager(product, this.productRepo)
-    await stockManager.deductStock(variantId, quantity)
+    const stockManager = injectStockManager(product)
+    stockManager.deductStock(variantId, quantity)
     await this.productRepo.save(product)
   }
 
@@ -41,8 +41,8 @@ export class InventoryManagementContext {
       throw CatalogErrorFactory.productNotFound(productId)
     }
 
-    const stockManager = injectStockManager(product, this.productRepo)
-    await stockManager.recoverStock(variantId, quantity)
+    const stockManager = injectStockManager(product)
+    stockManager.recoverStock(variantId, quantity)
     await this.productRepo.save(product)
   }
 
@@ -68,7 +68,7 @@ export class InventoryManagementContext {
       throw CatalogErrorFactory.productNotFound(productId)
     }
 
-    const stockManager = injectStockManager(product, this.productRepo)
+    const stockManager = injectStockManager(product)
     return stockManager.checkAvailability(variantId, quantity)
   }
 }
