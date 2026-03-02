@@ -8,9 +8,21 @@
  * @since 1.0.0
  */
 
+import { createRequire } from 'node:module'
+
 import type { GravitoContext, GravitoMiddleware } from '@gravito/core'
 import type { MiddlewareHandler } from 'hono'
 import { asHonoMiddleware } from '../middleware-adapter'
+
+// Runtime module loader (avoid static dependency)
+const createRequireLoader = () => {
+  try {
+    return createRequire(import.meta.url)
+  } catch {
+    // Fallback for environments that don't support import.meta.url
+    return null
+  }
+}
 
 // Type alias for convenience
 type Context = GravitoContext
@@ -129,9 +141,12 @@ function loadOtelApi(): OtelApi {
   apiLoaded = true
 
   try {
-    // 使用動態 require 避免靜態依賴
-    // biome-ignore lint/security/noGlobalEval: 動態載入可選依賴
-    const api = eval('require')('@opentelemetry/api') as OtelApi
+    const require = createRequireLoader()
+    if (!require) {
+      throw new Error('createRequire not available')
+    }
+    // Use createRequire for safe dynamic loading (no eval)
+    const api = require('@opentelemetry/api') as OtelApi
     cachedApi = api
     return api
   } catch {

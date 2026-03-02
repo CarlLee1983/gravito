@@ -133,7 +133,8 @@ export class CircuitBreaker {
 
   /**
    * 判斷請求是否可以通過熔斷器
-   * @returns true 表示允許通過，false 表示拒絕（熔斷器開路）
+   * 這個方法已被棄用，改用 tryRequest() 以避免競爭條件
+   * @deprecated Use tryRequest() instead
    */
   canRequest(): boolean {
     if (this.state === 'CLOSED') {
@@ -145,22 +146,53 @@ export class CircuitBreaker {
       const now = Date.now()
       if (now - this.lastFailureTime >= this.resetTimeoutMs) {
         this.transitionToHalfOpen()
-        return this.halfOpenRequests < this.halfOpenMaxRequests
       }
-      return false
+      return false // 實際判斷在 tryRequest() 中
     }
 
-    // HALF_OPEN 狀態：只允許有限數量的探測請求
-    return this.halfOpenRequests < this.halfOpenMaxRequests
+    // HALF_OPEN 狀態
+    return false // 實際判斷在 tryRequest() 中
   }
 
   /**
-   * 記錄請求開始（HALF_OPEN 狀態下增加計數器）
+   * 嘗試執行請求（原子化操作）
+   *
+   * 將檢查和遞增操作合併為原子操作，以防止競爭條件。
+   * 在 HALF_OPEN 狀態下，多個並發請求同時通過 canRequest() 檢查時，
+   * 仍需確保 halfOpenRequests 計數器不會超過限制。
+   *
+   * @returns 新的請求計數，如果被拒絕返回 -1
+   */
+  tryRequest(): number {
+    if (this.state === 'CLOSED') {
+      return 0 // CLOSED 狀態下無需計數
+    }
+
+    if (this.state === 'OPEN') {
+      const now = Date.now()
+      if (now - this.lastFailureTime >= this.resetTimeoutMs) {
+        this.transitionToHalfOpen()
+        // Fall through to HALF_OPEN check below
+      } else {
+        return -1 // 拒絕：熔斷器開路
+      }
+    }
+
+    // HALF_OPEN 狀態：原子化檢查並遞增
+    if (this.halfOpenRequests < this.halfOpenMaxRequests) {
+      this.halfOpenRequests++
+      return this.halfOpenRequests
+    }
+
+    return -1 // 拒絕：超過探測請求限制
+  }
+
+  /**
+   * 記錄請求開始（不再使用，改用 tryRequest()）
+   * @deprecated Use tryRequest() instead
    */
   onRequestStart(): void {
-    if (this.state === 'HALF_OPEN') {
-      this.halfOpenRequests++
-    }
+    // No-op, kept for backward compatibility
   }
 
   /**

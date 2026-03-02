@@ -1,6 +1,41 @@
 import type { RateLimitState, RateLimitStore } from './ratelimit'
 
 /**
+ * Interface for Redis client compatibility.
+ * Supports both ioredis and node-redis style clients.
+ */
+interface RedisLikeClient {
+  /**
+   * Execute Lua script (ioredis and node-redis compatible)
+   */
+  eval(script: string, numKeys: number, ...args: (string | number)[]): Promise<unknown[]>
+
+  /**
+   * Delete key(s)
+   */
+  del(key: string): Promise<number>
+
+  /**
+   * Get string value
+   */
+  get(key: string): Promise<string | null>
+
+  /**
+   * Get TTL in milliseconds
+   */
+  pttl(key: string): Promise<number>
+
+  /**
+   * Pipeline support (optional, for optimization)
+   */
+  pipeline?(): {
+    get(key: string): any
+    pttl(key: string): any
+    exec(): Promise<[Error | null, unknown][]>
+  }
+}
+
+/**
  * Redis-based storage for Rate Limiting.
  *
  * Implements atomic rate limiting using Lua scripts to prevent race conditions
@@ -31,17 +66,26 @@ export class RedisStore implements RateLimitStore {
   /**
    * Create a new RedisStore.
    *
-   * @param client - Redis client instance (must support .eval())
+   * @param client - Redis client instance (must support .eval(), compatible with ioredis or node-redis)
    * @param config - Rate limit configuration
+   * @throws {Error} If client does not support required Redis operations
    */
   constructor(
-    private client: any,
+    private client: RedisLikeClient,
     private config: {
       maxRequests: number
       windowMs: number
       prefix?: string
     }
-  ) {}
+  ) {
+    // Validate client has required methods
+    if (typeof client.eval !== 'function') {
+      throw new Error('Redis client must support eval() method')
+    }
+    if (typeof client.del !== 'function' || typeof client.get !== 'function') {
+      throw new Error('Redis client must support del() and get() methods')
+    }
+  }
 
   private get prefix(): string {
     return this.config.prefix ?? 'rl:'
