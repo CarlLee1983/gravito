@@ -27,8 +27,8 @@
     // TYPE CHECKING & SAFETY
     // ========================================================================
     "strict": true,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "declaration": true,
