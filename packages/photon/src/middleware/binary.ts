@@ -1,5 +1,7 @@
+import type { GravitoMiddleware } from '@gravito/core'
 import { encode } from 'cborg'
-import type { MiddlewareHandler } from 'hono' // Direct import to avoid circular dependency
+import type { MiddlewareHandler } from 'hono'
+import { asHonoMiddleware } from '../middleware-adapter'
 
 /**
  * Binary Middleware for Photon.
@@ -12,7 +14,9 @@ import type { MiddlewareHandler } from 'hono' // Direct import to avoid circular
  * and serialization speed are critical. It leverages the `cborg` library for
  * efficient binary encoding.
  *
- * @returns A Hono middleware handler that intercepts JSON responses.
+ * Implemented with Gravito types, exported as Hono-compatible middleware.
+ *
+ * @returns A middleware handler that intercepts JSON responses.
  *
  * @example
  * ```typescript
@@ -31,26 +35,26 @@ import type { MiddlewareHandler } from 'hono' // Direct import to avoid circular
  * - Optimized to read body directly without clone(), saving ~30% overhead.
  */
 export const binaryMiddleware = (): MiddlewareHandler => {
-  return async (c, next) => {
+  const middleware: GravitoMiddleware = async (c, next) => {
     await next()
 
     const accept = c.req.header('Accept')
     if (accept === 'application/cbor') {
-      const contentType = c.res.headers.get('Content-Type')
+      const contentType = c.res?.headers.get('Content-Type')
       if (contentType?.includes('application/json')) {
         try {
           // Optimized: Read body directly without clone() - saves ~30% overhead
-          const body = await c.res.json()
+          const body = await c.res!.json()
           const encoded = encode(body)
 
           // Create new Headers instance to avoid Immutable Headers errors
-          const headers = new Headers(c.res.headers)
+          const headers = new Headers(c.res!.headers)
           headers.set('Content-Type', 'application/cbor')
 
           const buffer = new Uint8Array(encoded).buffer
 
           c.res = new Response(buffer, {
-            status: c.res.status,
+            status: c.res!.status,
             headers,
           })
         } catch {
@@ -60,4 +64,6 @@ export const binaryMiddleware = (): MiddlewareHandler => {
       }
     }
   }
+
+  return asHonoMiddleware(middleware)
 }

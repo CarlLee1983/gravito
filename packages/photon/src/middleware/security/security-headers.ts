@@ -8,7 +8,11 @@
  * @since 1.1.0
  */
 
-import type { Context, MiddlewareHandler, Next } from 'hono'
+import type {
+  GravitoContext as Context,
+  GravitoMiddleware as MiddlewareHandler,
+  GravitoNext as Next,
+} from '@gravito/core'
 
 /**
  * HSTS Configuration

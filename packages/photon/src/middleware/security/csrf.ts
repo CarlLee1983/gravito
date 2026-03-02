@@ -11,7 +11,11 @@
  */
 
 import crypto from 'node:crypto'
-import type { Context, MiddlewareHandler, Next } from 'hono'
+import type {
+  GravitoContext as Context,
+  GravitoMiddleware as MiddlewareHandler,
+  GravitoNext as Next,
+} from '@gravito/core'
 
 /**
  * Cookie 設定選項（從 @gravito/core CookieOptions 提取，避免循環依賴）
@@ -154,7 +158,7 @@ export function csrfProtection(options: CsrfOptions = {}): MiddlewareHandler {
       contentType.includes('application/x-www-form-urlencoded') ||
       contentType.includes('multipart/form-data')
     ) {
-      const body = (await c.req.parseBody()) || {}
+      const body = ((await c.req.parseBody()) || {}) as Record<string, unknown>
       const raw = body[formFieldName]
       if (typeof raw === 'string') {
         bodyToken = raw

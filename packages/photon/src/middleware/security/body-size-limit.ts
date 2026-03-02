@@ -8,7 +8,7 @@
  * @since 1.1.0
  */
 
-import type { MiddlewareHandler } from 'hono'
+import type { GravitoMiddleware as MiddlewareHandler } from '@gravito/core'
 
 /**
  * Options for body size limiting

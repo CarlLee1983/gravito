@@ -14,7 +14,12 @@
  * @since 1.0.0
  */
 
-import type { Context, MiddlewareHandler, Next } from '@gravito/photon'
+import type { GravitoContext, GravitoMiddleware } from '@gravito/core'
+import type { MiddlewareHandler } from 'hono'
+import { asHonoMiddleware } from '../middleware-adapter'
+
+// Type alias for convenience
+type Context = GravitoContext
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -269,7 +274,7 @@ export function circuitBreaker(config: CircuitBreakerConfig): MiddlewareHandler 
 
   const breaker = new CircuitBreaker(config)
 
-  return async (c: Context, next: Next): Promise<Response | undefined> => {
+  const middleware: GravitoMiddleware = async (c, next) => {
     // 檢查熔斷器是否允許請求通過
     if (!breaker.canRequest()) {
       return await onOpen(c, breaker.getState())
@@ -294,6 +299,8 @@ export function circuitBreaker(config: CircuitBreakerConfig): MiddlewareHandler 
       throw error
     }
   }
+
+  return asHonoMiddleware(middleware)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

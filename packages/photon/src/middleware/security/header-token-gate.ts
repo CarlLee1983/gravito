@@ -8,7 +8,10 @@
  * @since 1.1.0
  */
 
-import type { Context, MiddlewareHandler } from 'hono'
+import type {
+  GravitoContext as Context,
+  GravitoMiddleware as MiddlewareHandler,
+} from '@gravito/core'
 
 /**
  * Options for header token gate

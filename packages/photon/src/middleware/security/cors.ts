@@ -8,7 +8,9 @@
  * @since 1.1.0
  */
 
-import type { Context, MiddlewareHandler, Next } from 'hono'
+import type { GravitoMiddleware } from '@gravito/core'
+import type { MiddlewareHandler } from 'hono'
+import { asHonoMiddleware } from '../../middleware-adapter'
 
 /**
  * Allowed origin(s) configuration.
@@ -60,7 +62,7 @@ export function cors(options: CorsOptions = {}): MiddlewareHandler {
   const maxAge = options.maxAge
   const optionsStatus = options.optionsSuccessStatus ?? 204
 
-  return async (c: Context, next: Next) => {
+  const middleware: GravitoMiddleware = async (c, next) => {
     const requestOrigin = c.req.header('Origin')
     const allowOrigin = resolveOrigin(options.origin, requestOrigin)
 
@@ -97,6 +99,7 @@ export function cors(options: CorsOptions = {}): MiddlewareHandler {
     }
 
     await next()
-    return undefined
   }
+
+  return asHonoMiddleware(middleware)
 }

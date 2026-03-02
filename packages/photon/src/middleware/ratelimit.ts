@@ -8,7 +8,12 @@
  * @since 1.0.0
  */
 
-import type { Context, MiddlewareHandler, Next } from '@gravito/photon'
+import type { GravitoContext, GravitoMiddleware } from '@gravito/core'
+import type { MiddlewareHandler } from 'hono'
+import { asHonoMiddleware } from '../middleware-adapter'
+
+// Type alias for convenience (used in config types)
+type Context = GravitoContext
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -304,7 +309,7 @@ export function rateLimit(config: RateLimitConfig): MiddlewareHandler {
     draftHeaders = false,
   } = config
 
-  return async (c: Context, next: Next): Promise<Response | undefined> => {
+  const middleware: GravitoMiddleware = async (c, next) => {
     if (skip && (await skip(c))) {
       await next()
       return undefined
@@ -334,8 +339,9 @@ export function rateLimit(config: RateLimitConfig): MiddlewareHandler {
     }
 
     await next()
-    return undefined
   }
+
+  return asHonoMiddleware(middleware)
 }
 
 /**

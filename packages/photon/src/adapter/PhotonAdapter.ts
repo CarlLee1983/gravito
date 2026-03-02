@@ -180,6 +180,14 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
     return this._req
   }
 
+  get res(): Response | undefined {
+    return this.photonCtx.res
+  }
+
+  set res(response: Response | undefined) {
+    this.photonCtx.res = response
+  }
+
   // ─────────────────────────────────────────────────────────────────────────────
   // Common Variable Getters (Performance Optimized)
   // ─────────────────────────────────────────────────────────────────────────────
