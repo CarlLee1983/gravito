@@ -77,15 +77,24 @@ app.get('/api/ai/chat', stream((c) => {
 }))
 ```
 
-## 4. Key Performance Differences
+## 4. Streaming Lifecycle (Native Engine)
 
-| Protocol | Strategy | Best For |
-|----------|----------|----------|
-| **SSE** | HTTP One-way | Dashboards, Notifications |
-| **WS** | Full-duplex | Chat, Gaming, Real-time Collab |
-| **Stream** | Progressive | AI Responses, Large Logs |
+When using **Native Mode (`NativePhoton`)**, the engine implements a **Deferred Release** mechanism to ensure memory safety and resource integrity:
 
-## 5. Middleware & Security
+- **Resource Cleanup**: Photon guarantees that `requestScope().cleanup()` (from `@gravito/core`) is only executed **after** the stream is fully closed or the client disconnects.
+- **IoC Integrity**: Scoped services (like database transactions) remain active and valid throughout the entire duration of the stream.
+- **Zero-Copy**: The engine uses Bun's `direct` stream type to bypass internal queuing, piping data directly from your generator/handler to the network socket.
+
+## 5. Key Performance Differences
+
+| Protocol | Strategy | Runtime Path | Best For |
+|----------|----------|--------------|----------|
+| **SSE** | HTTP One-way | Native Stream | Dashboards, Notifications |
+| **WS** | Full-duplex | Bun Upgrade | Chat, Gaming, Real-time Collab |
+| **Stream** | Progressive | Direct Socket | AI Responses, Large Logs |
+
+## 6. Middleware & Security
 
 - **Rate Limiting**: Can be applied to SSE/WS upgrade routes.
 - **Authentication**: Always use `@gravito/photon/middleware/security/header-token-gate` for secure streaming endpoints.
+- **Native Offloading**: Streaming routes are fully compatible with `serveConfig()` and benefit from SIMD routing.

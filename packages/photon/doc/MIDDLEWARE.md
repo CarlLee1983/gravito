@@ -65,18 +65,43 @@ app.use(logger())
 
 ---
 
+## AOT Middleware Injection (Native Mode)
+
+When running in **Native Mode (`NativePhoton`)**, middleware is handled via **Ahead-of-Time (AOT) Injection**.
+
+### How it Works
+Traditional frameworks traverse a middleware tree for **every single request**. In Native Mode:
+1.  **Flattening**: During server startup (`serveConfig`), Photon collects all applicable middleware for every static route.
+2.  **Compilation**: It pre-compiles these chains into a single optimized function.
+3.  **Kernel Injection**: This function is injected directly into Bun's native router.
+
+### Benefits
+-   **Zero Routing Overhead**: Static routes with middleware execute at the same speed as pure `Bun.serve` handlers.
+-   **Microtask Elimination**: Synchronous middleware chains run as a single call stack, bypassing the event loop queue.
+-   **Predictable Performance**: Execution time is constant, regardless of routing complexity.
+
+---
+
 ## Writing Custom Middleware
-
-Photon middleware follows the classic `(context, next)` pattern.
-
+...
 ```typescript
 app.use(async (c, next) => {
-  console.log(`Before: ${c.req.url}`)
+  const start = performance.now()
   await next()
-  console.log(`After: ${c.res.status}`)
+  const end = performance.now()
+  console.log(`${c.req.method} ${c.req.path} - ${end - start}ms`)
 })
 ```
 
----
+### Pro-Tip: Native Sync Middleware
+For maximum performance in Native Mode, avoid `async/await` if your middleware is purely synchronous. NativePhoton will detect this and eliminate microtask overhead.
+
+```typescript
+app.use((c, next) => {
+  c.set('isAuthorized', true)
+  return next() // No 'await' needed for sync logic
+})
+```
+...
 
 [← Back to README](../README.md)
