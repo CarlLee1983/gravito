@@ -32,6 +32,10 @@ import type {
   RouteMetadata,
 } from './types'
 
+// Bun runtime optimization: cache frequently used functions
+const bunPeek = require('bun').peek
+const bunFile = require('bun').file
+
 /**
  * Precompile middleware chain into a single function
  */
@@ -75,7 +79,7 @@ function compileMiddlewareChain(middleware: Middleware[], handler: Handler): Com
 
       // Optimization: Bun.peek lets us skip 'await' for already resolved promises
       // eliminating extraneous microticks in the event loop.
-      const peeked = require('bun').peek(result)
+      const peeked = bunPeek(result)
       const finalResult = peeked === result ? await result : peeked
 
       if (finalResult instanceof Response) {
@@ -84,7 +88,7 @@ function compileMiddlewareChain(middleware: Middleware[], handler: Handler): Com
 
       if (nextCalled) {
         const nextResult = nextHandler(ctx)
-        const peekedNext = require('bun').peek(nextResult)
+        const peekedNext = bunPeek(nextResult)
         return peekedNext === nextResult ? await nextResult : peekedNext
       }
 
@@ -180,7 +184,7 @@ export class Gravito {
   }
 
   /**
-   * Register a PDF route
+   * Register a PATCH route
    */
   patch(path: string, ...handlers: Handler[]): this {
     return this.addRoute('patch', path, handlers)
@@ -306,7 +310,7 @@ export class Gravito {
    * Bun.serve(app.serveConfig({ port: 3000 }))
    * ```
    */
-  serveConfig(baseConfig: any = {}): any {
+  serveConfig(baseConfig: Record<string, unknown> = {}): Record<string, unknown> {
     // 1. Extract native routes from AOT router
     const nativeRoutes = this.router.getNativeRoutes((handler, path) => {
       // Create a native request handler that uses our pooling
@@ -323,6 +327,11 @@ export class Gravito {
         } catch (error) {
           return this.handleErrorSync(error as Error, req, path)
         } finally {
+          try {
+            await ctx.requestScope().cleanup()
+          } catch (cleanupError) {
+            console.error('RequestScope cleanup failed:', cleanupError)
+          }
           this.contextPool.release(ctx)
         }
       }
@@ -334,8 +343,14 @@ export class Gravito {
       fetch: this.fetch, // Fallback for dynamic routes and middleware
       // Optimize TLS if provided in baseConfig
       tls: baseConfig.tls ? this.optimizeTLS(baseConfig.tls) : undefined,
-      error: (request: Request, error: Error) => {
-        return this.handleErrorSync(error, request, extractPath(request.url))
+      error: (error: Error) => {
+        // For native routes errors, we can only use the error itself
+        // Request context is not available in Bun's native error handler
+        console.error('Native route error:', error)
+        return new Response(CACHED_RESPONSES.INTERNAL_ERROR, {
+          status: 500,
+          headers: HEADERS.JSON,
+        })
       },
     }
   }
@@ -353,11 +368,11 @@ export class Gravito {
     const optimizeEntry = (entry: any) => {
       const optimized = { ...entry }
       // Zero-copy loading for key and cert
-      if (typeof optimized.key === 'string' && optimized.key.includes('/')) {
-        optimized.key = require('bun').file(optimized.key)
+      if (typeof optimized.key === 'string' && !optimized.key.startsWith('-----BEGIN')) {
+        optimized.key = bunFile(optimized.key)
       }
-      if (typeof optimized.cert === 'string' && optimized.cert.includes('/')) {
-        optimized.cert = require('bun').file(optimized.cert)
+      if (typeof optimized.cert === 'string' && !optimized.cert.startsWith('-----BEGIN')) {
+        optimized.cert = bunFile(optimized.cert)
       }
       // Production defaults
       if (isProd && optimized.lowMemoryMode === undefined) {

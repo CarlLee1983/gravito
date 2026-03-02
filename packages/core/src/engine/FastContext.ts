@@ -10,6 +10,9 @@
 import { RequestScopeManager } from '../Container/RequestScopeManager'
 import type { FastRequest, FastContext as IFastContext } from './types'
 
+// Bun runtime optimization: cache frequently used functions
+const bunEscapeHTML = require('bun').escapeHTML
+
 /**
  * Lazy-parsed request wrapper
  *
@@ -31,6 +34,7 @@ class FastRequestImpl implements FastRequest {
   private _cachedFormData: FormData | undefined = undefined
   private _formDataParsed = false
   private _cachedQueries: Record<string, string | string[]> | null = null
+  private _cachedCookies: Record<string, string> | null = null
   // Back-reference for release check optimization
   private _ctx: FastContext
 
@@ -61,6 +65,7 @@ class FastRequestImpl implements FastRequest {
     this._cachedFormData = undefined
     this._formDataParsed = false
     this._cachedQueries = null
+    this._cachedCookies = null
     return this
   }
 
@@ -81,6 +86,7 @@ class FastRequestImpl implements FastRequest {
     this._cachedFormData = undefined
     this._formDataParsed = false
     this._cachedQueries = null
+    this._cachedCookies = null
   }
 
   private checkReleased(): void {
@@ -180,28 +186,44 @@ class FastRequestImpl implements FastRequest {
 
   get cookies(): Record<string, string> {
     this.checkReleased()
+    // Return cached cookies if available
+    if (this._cachedCookies !== null) {
+      return this._cachedCookies
+    }
+
     // 1. Try Bun Native CookieMap (Injected in Bun.serve routes API)
     const nativeCookies = (this._request as any).cookies
     if (nativeCookies) {
+      this._cachedCookies = nativeCookies
       return nativeCookies
     }
 
     // 2. Fallback: Parse from Header manually (Lazy Parsed)
     const cookieHeader = this._request.headers.get('cookie')
     if (!cookieHeader) {
+      this._cachedCookies = {}
       return {}
     }
 
     // Manual parse implementation (optimized for speed)
+    // Handles URL-encoded values and flexible separators ('; ' or ';')
     const cookies: Record<string, string> = {}
-    const pairs = cookieHeader.split('; ')
+    const pairs = cookieHeader.split(/;\s*/)
     for (let i = 0; i < pairs.length; i++) {
       const pair = pairs[i]!
       const idx = pair.indexOf('=')
       if (idx > 0) {
-        cookies[pair.substring(0, idx)] = pair.substring(idx + 1)
+        const name = pair.substring(0, idx)
+        const value = pair.substring(idx + 1)
+        // Decode value if URL-encoded, fallback to raw value on decode error
+        try {
+          cookies[name] = decodeURIComponent(value)
+        } catch {
+          cookies[name] = value
+        }
       }
     }
+    this._cachedCookies = cookies
     return cookies
   }
 
@@ -285,6 +307,7 @@ export class FastContext implements IFastContext {
     // We don't clear _headers here because init() will create a new one.
     // If we wanted to reuse, we would clear it here.
     this._store.clear()
+    this._requestScope = null // Release reference for GC
   }
 
   /**
@@ -304,37 +327,33 @@ export class FastContext implements IFastContext {
 
   json<T>(data: T, status = 200): Response {
     this.checkReleased()
-    // Optimization: Native Response.json() is implemented in C++/Zig
-    // and is faster than JSON.stringify() + new Response().
-    return Response.json(data, {
-      status,
-      headers: { 'Content-Type': 'application/json; charset=utf-8' },
-    })
+    // Merge custom headers with Content-Type
+    const headers = new Headers(this._headers)
+    headers.set('Content-Type', 'application/json; charset=utf-8')
+    return Response.json(data, { status, headers })
   }
 
   text(text: string, status = 200): Response {
     this.checkReleased()
-    return new Response(text, {
-      status,
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-    })
+    // Merge custom headers with Content-Type
+    const headers = new Headers(this._headers)
+    headers.set('Content-Type', 'text/plain; charset=utf-8')
+    return new Response(text, { status, headers })
   }
 
   html(html: string, status = 200): Response {
     this.checkReleased()
-    // Optimization: Directly creating a Response with static headers is
-    // often faster than manipulating this._headers (native Response caching).
-    return new Response(html, {
-      status,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
-    })
+    // Merge custom headers with Content-Type
+    const headers = new Headers(this._headers)
+    headers.set('Content-Type', 'text/html; charset=utf-8')
+    return new Response(html, { status, headers })
   }
 
   /**
    * Escape HTML using Bun's SIMD-accelerated native implementation
    */
   escape(html: string): string {
-    return require('bun').escapeHTML(html)
+    return bunEscapeHTML(html)
   }
 
   redirect(url: string, status: 301 | 302 | 303 | 307 | 308 = 302): Response {
@@ -416,9 +435,16 @@ export class FastContext implements IFastContext {
     return this.req.header(name)
   }
 
+  /**
+   * Status code setter (no-op)
+   *
+   * Note: Since all response helpers accept a `status` parameter,
+   * this method is not actively used. Status should be set directly
+   * in the response helper call (e.g., `ctx.json({}, 201)`).
+   */
   status(_code: number): void {
     this.checkReleased()
-    // this._statusCode = code
+    // Status is set per-response, not stored on context
   }
 
   // ─────────────────────────────────────────────────────────────────────────

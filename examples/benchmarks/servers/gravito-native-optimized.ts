@@ -20,7 +20,7 @@ app.get(
     const start = performance.now()
     const res = await next()
     const end = performance.now()
-    console.log(`Request took ${end - start}ms`)
+    c.header('X-Response-Time', `${(end - start).toFixed(2)}ms`)
     return res
   },
   (c) => {
@@ -34,12 +34,12 @@ app.get('/users/:id', (c) => {
 })
 
 // Use the new optimized serveConfig
-const server = Bun.serve(
-  app.serveConfig({
-    port: 3001,
-    hostname: '0.0.0.0',
-  })
-)
+const config = app.serveConfig({
+  port: 3001,
+  hostname: '0.0.0.0',
+})
 
-console.log(`🚀 Gravito Native Optimized running on http://${server.hostname}:${server.port}`)
-console.log(`Native routes offloaded: ${Object.keys(app.serveConfig().routes).length}`)
+const server = Bun.serve(config)
+
+console.log(`Gravito Native Optimized running on http://${server.hostname}:${server.port}`)
+console.log(`Native routes offloaded: ${Object.keys(config.routes).length}`)

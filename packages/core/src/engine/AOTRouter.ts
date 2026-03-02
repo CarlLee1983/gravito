@@ -115,10 +115,12 @@ export class AOTRouter {
       this.usePattern(wildcard, ...other.globalMiddleware)
     }
 
-    // 2. Transfer pattern-based middleware
+    // 2. Transfer pattern-based middleware (only user-defined patterns, not route-specific)
     for (const [pattern, mws] of other.pathMiddleware) {
-      // Skip internal dynamic route entries (contain ':')
-      if (pattern.includes(':')) {
+      // Skip route-specific middleware entries (they have method prefix like "get:/path/:id")
+      // These are stored by add() with format "method:path"
+      const hasMethodPrefix = /^(get|post|put|delete|patch|options|head):/.test(pattern)
+      if (hasMethodPrefix) {
         continue
       }
 

@@ -32,6 +32,7 @@ export interface FastContext {
   unauthorized(message?: string): Response
   badRequest(message?: string): Response
   forward(target: string, options?: any): Promise<Response>
+  escape(html: string): string
 
   /** Header management */
   header(name: string): string | undefined
