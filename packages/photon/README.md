@@ -24,7 +24,8 @@
 
 ## ✨ Features
 
-- 🚀 **Ultra-Fast Performance**: Built for maximum throughput on Bun runtime, outperforming standard Node.js engines.
+- 🚀 **Extreme Native Performance**: Custom engine optimized for Bun 1.39+, featuring SIMD-accelerated routing and zero-allocation context pooling.
+- 🏎️ **Native Offloading**: Automatically offloads static routes and pre-compiled middleware chains to Bun's internal C++/Zig router.
 - 🎯 **Type-Safe Routing**: Full TypeScript support with intelligent type inference for parameters, query, and body.
 - 🌌 **Galaxy-Ready**: Designed as the "Sensing Layer" to host Satellites (domains) and Orbits (infrastructure).
 - 🔌 **Plug & Play Middleware**: Composable middleware for auth, validation, security, and protocol handling (HTMX/CBOR).
@@ -51,6 +52,7 @@ graph LR
 
 ## 🚀 Quick Start
 
+### Standard Mode (Hono-compatible)
 ```typescript
 import { Photon } from '@gravito/photon'
 const app = new Photon()
@@ -58,6 +60,38 @@ const app = new Photon()
 app.get('/', (c) => c.text('Hello from Photon!'))
 export default app
 ```
+
+### Extreme Native Mode (Bun 1.39+)
+For maximum throughput, use the **Native Engine** which bypasses JS routing overhead.
+
+```typescript
+import { NativePhoton } from '@gravito/photon/native'
+
+const app = new NativePhoton()
+
+// High-performance static route (Native offloaded)
+app.get('/health', (c) => c.json({ status: 'ok' }))
+
+// Dynamic route (AOT optimized)
+app.get('/users/:id', (c) => c.json({ id: c.req.param('id') }))
+
+// Launch with native SIMD router
+export default app.serveConfig({
+  port: 3000
+})
+```
+
+---
+
+## 🏎️ Native Engine Optimizations
+
+The `@gravito/photon/native` engine leverages the latest Bun 1.39 features to achieve record-breaking performance:
+
+- **AOT Middleware Injection**: Pre-compiles middleware chains into a single function and injects them directly into Bun's native router.
+- **Zero-Microtask Dispatch**: Uses `Bun.peek()` to eliminate event loop overhead for synchronous handlers.
+- **Object Pooling**: Recycles request context objects to eliminate Garbage Collection pauses during high traffic.
+- **Zero-Copy Streaming**: Integrated with Bun's `direct` streams for kernel-level socket transfers.
+- **Binary-First**: Native support for `c.binary()` with optimized buffer management.
 
 ---
 
