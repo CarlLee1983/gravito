@@ -17,13 +17,13 @@ export type {
   GravitoMiddleware,
   GravitoNext,
 } from '@gravito/core/http'
-export type { SSEConfig, SSEEvent, SSEHandler, SSEMessage } from './middleware/sse'
+export type { SSEConfig, SSEEvent, SSEHandler, SSEMessage } from './middleware/sse-native'
 // Re-export all native SSE implementations
 export {
   createSSEResponse,
   NativeSSEStreamingApi as SSEStreamingApi,
-} from './middleware/sse'
-export type { StreamHandler, StreamJSONLinesOptions } from './middleware/streaming'
+} from './middleware/sse-native'
+export type { StreamHandler, StreamJSONLinesOptions } from './middleware/streaming-native'
 // Re-export all native streaming implementations
 export {
   NativeStreamingApi as StreamingApi,
@@ -31,7 +31,7 @@ export {
   streamJSONLines,
   streamText,
   streamWithHandler,
-} from './middleware/streaming'
+} from './middleware/streaming-native'
 
 // Re-export all native WebSocket implementations
 export {

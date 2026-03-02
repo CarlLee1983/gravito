@@ -76,7 +76,7 @@ describe('RedisStore (Rate Limiting)', () => {
   })
 
   it('should throw if client does not support eval', async () => {
-    const invalidStore = new RedisStore({}, { maxRequests: 5, windowMs: 1000 })
+    const invalidStore = new RedisStore({} as any, { maxRequests: 5, windowMs: 1000 })
     await expect(invalidStore.increment('key')).rejects.toThrow(
       'Redis client does not support eval()'
     )

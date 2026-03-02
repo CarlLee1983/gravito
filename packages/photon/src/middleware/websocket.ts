@@ -34,7 +34,7 @@ export type { WSEvents, WSMessageReceive, WSReadyState } from 'hono/ws'
 // Hono Adapter - Convert Hono WSContext to NativeWSContext
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { NativeWSContext, NativeWSEvents } from './websocket-native'
+import type { NativeWSContext } from './websocket-native'
 
 /**
  * Adapt Hono's WSContext to our generic NativeWSContext interface
@@ -67,7 +67,7 @@ export function adaptHonoWSContext(honoWs: WSContext): NativeWSContext {
  *
  * @internal
  */
-export function adaptHonoMessageEvent(honoEvent: { data: string | ArrayBuffer }): {
+export function adaptHonoMessageEvent(honoEvent: any): {
   data: string | ArrayBuffer | Uint8Array
   lastMessageInBatch?: boolean
 } {

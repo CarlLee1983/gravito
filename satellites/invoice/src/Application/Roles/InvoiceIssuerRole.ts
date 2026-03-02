@@ -1,6 +1,5 @@
 import { Invoice } from '../../Domain/Entities/Invoice'
 import { InvalidOrderIdError } from '../../Domain/Errors/InvoiceError'
-import { InvoiceAmount } from '../../Domain/ValueObjects/InvoiceAmount'
 import { InvoiceNumber } from '../../Domain/ValueObjects/InvoiceNumber'
 import { InvoiceTax } from '../../Domain/ValueObjects/InvoiceTax'
 

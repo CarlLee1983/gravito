@@ -54,10 +54,11 @@ export class AdminAsAuthorizationSubjectRole {
 
       const permissionIds = role.permissionIds
       if (permissionIds.length > 0) {
-        const perms = await this.permissionRepo.findByIds?.(permissionIds)
-        if (perms) {
-          allPermissions = allPermissions.concat(perms.map((p) => ({ id: p.id, key: p.key.value })))
-        }
+        const perms = await Promise.all(permissionIds.map((id) => this.permissionRepo.findById(id)))
+        const validPerms = perms.filter((p): p is NonNullable<typeof p> => p !== null)
+        allPermissions = allPermissions.concat(
+          validPerms.map((p) => ({ id: p.id, key: p.key.value }))
+        )
       }
     }
 

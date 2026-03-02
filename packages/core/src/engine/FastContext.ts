@@ -378,7 +378,8 @@ export class FastContext implements IFastContext {
    */
   binary(data: Uint8Array | ArrayBuffer, status = 200): Response {
     this.checkReleased()
-    return new Response(data, {
+    const body = data instanceof ArrayBuffer ? new Uint8Array(data) : data
+    return new Response(body as any, {
       status,
       headers: { 'Content-Type': 'application/octet-stream' },
     })

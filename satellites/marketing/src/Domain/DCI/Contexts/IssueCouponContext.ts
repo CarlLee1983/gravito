@@ -32,16 +32,16 @@ export class IssueCouponContext {
     const issuer = injectCouponIssuer()
 
     // 3. 使用 issuer 建立新優惠券
-    const coupon = issuer.issueCoupon(
-      input.name,
-      input.code,
-      input.discountType,
-      input.discountAmount,
-      input.minPurchase,
-      input.startsAt,
-      input.expiresAt,
-      input.usageLimit
-    )
+    const coupon = issuer.issueCoupon({
+      name: input.name,
+      code: input.code,
+      type: input.discountType,
+      value: input.discountAmount,
+      minPurchase: input.minPurchase,
+      startsAt: input.startsAt,
+      expiresAt: input.expiresAt,
+      usageLimit: input.usageLimit,
+    })
 
     // 4. 持久化到數據庫
     const saved = await this.couponRepository.create(coupon)

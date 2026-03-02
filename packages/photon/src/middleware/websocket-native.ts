@@ -227,7 +227,7 @@ export function defineWSHandler<TIn = unknown, TOut = unknown>(
 
   return () => {
     const wsEvents: NativeWSEvents = {
-      async onOpen(event, rawWs) {
+      async onOpen(_event, rawWs) {
         if (!handler.onOpen) {
           return
         }

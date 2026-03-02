@@ -94,12 +94,12 @@ export class InvoiceServiceProvider extends ServiceProvider {
         const issueUseCase = core.container.make<IssueInvoice>('invoice.usecase.issue')
 
         try {
-          const invoice = await issueUseCase.execute({
+          const invoice = (await issueUseCase.execute({
             orderId: payload.orderId,
             amount: payload.amount,
             buyerIdentifier: payload.buyer?.identifier,
             carrierId: payload.buyer?.carrierId,
-          })
+          })) as any
           core.logger.info(`[Invoice] Automatically issued: ${invoice.invoiceNumber.value}`)
         } catch (error: any) {
           core.logger.error(`[Invoice] Auto-issue failed: ${error.message}`)

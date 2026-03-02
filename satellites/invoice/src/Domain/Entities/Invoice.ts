@@ -113,7 +113,7 @@ export class Invoice extends Entity<string> {
     const invoiceNumber = InvoiceNumber.create(input.invoiceNumber)
     const amount = InvoiceAmount.create(input.amount, input.currency ?? 'TWD')
     const tax = InvoiceTax.create(input.tax, input.taxRate ?? 0)
-    const status = InvoiceStatus.create(input.status ?? 'ISSUED')
+    const status = InvoiceStatus.create((input.status ?? 'ISSUED') as any)
 
     return new Invoice(
       {

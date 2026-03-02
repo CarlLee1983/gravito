@@ -157,8 +157,8 @@ export function csrfProtection(options: CsrfOptions = {}): MiddlewareHandler {
       contentType.includes('multipart/form-data')
     ) {
       try {
-        const body = (await c.req.parseBody()) || {}
-        const raw = body[formFieldName]
+        const body = (await c.req.parseBody()) as Record<string, any> | null
+        const raw = body?.[formFieldName]
         if (typeof raw === 'string') {
           bodyToken = raw
         }

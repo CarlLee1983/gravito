@@ -1,5 +1,6 @@
-import type { Env, Photon, Schema } from '@gravito/photon'
+import type { Env, Schema } from '@gravito/photon'
 import { hc as beamClient } from '@gravito/photon/client'
+import type { Hono } from 'hono'
 import { BeamError, BeamNetworkError } from './errors'
 import { ConnectionPool } from './pool'
 import type { BeamOptions } from './types'
@@ -46,7 +47,7 @@ import {
  *
  * @public
  */
-export function createBeam<T extends Photon<Env, Schema, string>>(
+export function createBeam<T extends Hono<Env, Schema, string>>(
   baseUrl: string,
   options?: BeamOptions
 ): ReturnType<typeof beamClient<T>> {

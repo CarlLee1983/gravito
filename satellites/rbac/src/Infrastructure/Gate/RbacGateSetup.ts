@@ -17,11 +17,11 @@ export class RbacGateSetup {
   private authContext: AuthorizationContext
 
   constructor(
-    private readonly roleRepo: IRoleRepository,
-    private readonly permissionRepo: IPermissionRepository,
+    private readonly _roleRepo: IRoleRepository,
+    private readonly _permissionRepo: IPermissionRepository,
     private readonly core: PlanetCore
   ) {
-    this.authContext = new AuthorizationContext(roleRepo, permissionRepo)
+    this.authContext = new AuthorizationContext(_roleRepo, _permissionRepo)
   }
 
   /**
@@ -29,24 +29,28 @@ export class RbacGateSetup {
    */
   setupGate(): void {
     // 取得 Sentinel Gate
-    const gate = this.core.container.make('sentinel.gate')
+    const gate = this.core.container.make('sentinel.gate') as any
 
     // 1. before hook - Super admin 快速通過
-    gate?.before?.((admin: AdminForGate) => {
-      if (admin?.isSuper) {
-        return true
-      }
-    })
+    if (gate?.before) {
+      gate.before((admin: AdminForGate) => {
+        if (admin?.isSuper) {
+          return true
+        }
+      })
+    }
 
     // 2. 動態定義權限檢查
-    gate?.define?.('*', async (admin: AdminForGate, permissionKey: string) => {
-      try {
-        const key = PermissionKey.create(permissionKey)
-        return await this.authContext.checkAdminPermission(admin, key)
-      } catch {
-        return false
-      }
-    })
+    if (gate?.define) {
+      gate.define('*', async (admin: AdminForGate, permissionKey: string) => {
+        try {
+          const key = PermissionKey.create(permissionKey)
+          return await this.authContext.checkAdminPermission(admin, key)
+        } catch {
+          return false
+        }
+      })
+    }
   }
 
   /**

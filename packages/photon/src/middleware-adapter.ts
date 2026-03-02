@@ -65,6 +65,9 @@ type _MiddlewareTypeCheck = GravitoMiddleware extends MiddlewareHandler
     : false
   : false
 
+// Re-export unused type to satisfy TypeScript strict mode
+export type { _MiddlewareTypeCheck as MiddlewareTypeCheck }
+
 /**
  * Type assertion helper for middleware.
  *
