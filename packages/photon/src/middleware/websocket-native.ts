@@ -227,16 +227,20 @@ export function defineWSHandler<TIn = unknown, TOut = unknown>(
 
   return () => {
     const wsEvents: NativeWSEvents = {
-      onOpen(event, rawWs) {
+      async onOpen(event, rawWs) {
         if (!handler.onOpen) {
           return
         }
 
         const typedWs = createTypedWSContext<TOut>(rawWs)
-        void handler.onOpen(typedWs)
+        try {
+          await handler.onOpen(typedWs)
+        } catch (err) {
+          console.error('[WebSocket] onOpen handler error:', err)
+        }
       },
 
-      onMessage(event, rawWs) {
+      async onMessage(event, rawWs) {
         if (!handler.onMessage) {
           return
         }
@@ -276,25 +280,37 @@ export function defineWSHandler<TIn = unknown, TOut = unknown>(
           }
         }
 
-        void handler.onMessage(parsedData, typedWs)
+        try {
+          await handler.onMessage(parsedData, typedWs)
+        } catch (err) {
+          console.error('[WebSocket] onMessage handler error:', err)
+        }
       },
 
-      onClose(event, rawWs) {
+      async onClose(event, rawWs) {
         if (!handler.onClose) {
           return
         }
 
         const typedWs = createTypedWSContext<TOut>(rawWs)
-        void handler.onClose(event.code ?? 1000, event.reason ?? '', typedWs)
+        try {
+          await handler.onClose(event.code ?? 1000, event.reason ?? '', typedWs)
+        } catch (err) {
+          console.error('[WebSocket] onClose handler error:', err)
+        }
       },
 
-      onError(event, rawWs) {
+      async onError(event, rawWs) {
         if (!handler.onError) {
           return
         }
 
         const typedWs = createTypedWSContext<TOut>(rawWs)
-        void handler.onError(event, typedWs)
+        try {
+          await handler.onError(event, typedWs)
+        } catch (err) {
+          console.error('[WebSocket] onError handler error:', err)
+        }
       },
     }
 

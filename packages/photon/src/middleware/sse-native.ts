@@ -217,8 +217,9 @@ export class NativeSSEStreamingApi {
     }
 
     this.isWriting = true
+    const writer = this.writable.getWriter()
+
     try {
-      const writer = this.writable.getWriter()
       while (this.writeQueue.length > 0) {
         const msg = this.writeQueue.shift()!
         try {
@@ -231,8 +232,13 @@ export class NativeSSEStreamingApi {
           break
         }
       }
-      writer.releaseLock()
     } finally {
+      // Always release lock to prevent stream deadlock (critical!)
+      try {
+        writer.releaseLock()
+      } catch {
+        // Already released or invalid
+      }
       this.isWriting = false
     }
   }
