@@ -80,7 +80,7 @@ export function requireHeaderToken(options: RequireHeaderTokenOptions = {}): Mid
 
   const middleware: GravitoMiddleware = async (c, next) => {
     if (!(await gate(c))) {
-      return c.text(message, status as any)
+      return c.text(message, status)
     }
     await next()
   }

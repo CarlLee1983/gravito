@@ -84,10 +84,18 @@ export class NativeStreamingApi {
   async close(): Promise<void> {
     if (!this.isClosed) {
       this.isClosed = true
+      const writer = this.writable.getWriter()
       try {
-        await this.writable.getWriter().close()
+        await writer.close()
       } catch {
         // Already closed or errored
+      } finally {
+        // Always release lock to prevent stream deadlock (critical!)
+        try {
+          writer.releaseLock()
+        } catch {
+          // Already released or invalid
+        }
       }
     }
   }
