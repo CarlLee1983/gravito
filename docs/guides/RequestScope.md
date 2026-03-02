@@ -378,7 +378,15 @@ const sharedScope = ctx.requestScope() // ❌ 在下一個請求時過期
 3. 在 `contextPool.release()` 前執行清理
 4. FastContext 物件重新進入對象池
 
-結果：零內存洩漏（受益於對象池機制）
+### ⚠️ Streaming（串流）場景下的特殊處理
+
+在處理 SSE、WebSocket 或大型文件下載時，傳統框架往往會在 Controller 返回 Response 後立即執行 Cleanup。**Gravito 原生引擎（Native Mode）** 實作了延遲清理機制：
+
+- **延遲釋放**：RequestScope 會一直保持活躍，直到串流完全結束或客戶端中斷連線。
+- **事務安全**：如果您在 RequestScope 中管理資料庫事務，該事務將在整個串流期間有效，直到數據傳輸完畢才進行 Commit/Rollback。
+- **對象池同步**：FastContext 僅在 CleanUp 完成後才會歸還到池中，徹底杜絕了競態條件引起的數據污染。
+
+結果：零內存洩漏，且具備業界領先的資源安全性。
 
 ### Q3：cleanup 失敗會如何？
 
