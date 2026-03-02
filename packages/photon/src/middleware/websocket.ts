@@ -1,112 +1,86 @@
 /**
- * @fileoverview WebSocket 中間件 for Photon
+ * @fileoverview WebSocket Middleware for Photon
  *
- * 提供 Type-Safe 的 WebSocket handler 工廠，基於 Hono 的 WebSocket helper。
- * 支援泛型 <TIn, TOut> 以確保訊息格式的類型安全。
+ * Provides type-safe WebSocket handler factory using native Web Streams API.
+ * Works with any runtime (Bun, Node.js, browsers) without Hono dependency.
  *
  * @module @gravito/photon/middleware/websocket
- * @since 1.0.0
+ * @since 2.0.0
  */
 
 import type { WSEvents } from 'hono/ws'
 import { defineWebSocketHelper, WSContext } from 'hono/ws'
 
-// Re-export Hono 的 WebSocket 相關類型與函式
+// Re-export native WebSocket implementation (zero Hono type dependency for handler logic)
+export {
+  defineWSHandler,
+  type NativeWSCloseEvent,
+  type NativeWSContext,
+  type NativeWSEvents,
+  type NativeWSMessageEvent,
+  type TypedWSContext,
+  type TypedWSHandler,
+  type WSHandlerConfig,
+} from './websocket-native'
+
+// Import for adapter function
+import { defineWSHandler } from './websocket-native'
+
+// Backward compatibility: re-export Hono's types and helper
 export { WSContext, defineWebSocketHelper }
 export type { WSEvents, WSMessageReceive, WSReadyState } from 'hono/ws'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Types
+// Hono Adapter - Convert Hono WSContext to NativeWSContext
 // ─────────────────────────────────────────────────────────────────────────────
 
+import type { NativeWSContext, NativeWSEvents } from './websocket-native'
+
 /**
- * 型別安全的 WebSocket 訊息處理函式
+ * Adapt Hono's WSContext to our generic NativeWSContext interface
+ * for use with defineWSHandler
  *
- * @template TIn  接收訊息的型別
- * @template TOut 發送訊息的型別
+ * @internal
  */
-export interface TypedWSHandler<TIn = unknown, TOut = unknown> {
-  /**
-   * 連線建立時的回調
-   */
-  onOpen?: (ws: TypedWSContext<TOut>) => void | Promise<void>
+export function adaptHonoWSContext(honoWs: WSContext): NativeWSContext {
+  return {
+    send(data: string): void {
+      honoWs.send(data)
+    },
 
-  /**
-   * 接收訊息時的回調（自動解析 JSON 或回傳原始字串）
-   */
-  onMessage?: (data: TIn, ws: TypedWSContext<TOut>) => void | Promise<void>
+    close(code?: number, reason?: string): void {
+      honoWs.close(code, reason)
+    },
 
-  /**
-   * 連線關閉時的回調
-   */
-  onClose?: (code: number, reason: string, ws: TypedWSContext<TOut>) => void | Promise<void>
+    get readyState() {
+      return honoWs.readyState
+    },
 
-  /**
-   * 發生錯誤時的回調
-   */
-  onError?: (event: Event, ws: TypedWSContext<TOut>) => void | Promise<void>
+    get url() {
+      return honoWs.url
+    },
+  }
 }
 
 /**
- * 型別安全的 WebSocket Context
+ * Adapt Hono's message event to NativeWSMessageEvent
  *
- * 封裝 Hono 的 WSContext，提供型別化的 send 方法
+ * @internal
  */
-export interface TypedWSContext<TOut = unknown> {
-  /**
-   * 發送訊息（自動 JSON 序列化非字串類型）
-   */
-  send(data: TOut): void
-
-  /**
-   * 關閉連線
-   */
-  close(code?: number, reason?: string): void
-
-  /**
-   * WebSocket 連線狀態 (0=CONNECTING, 1=OPEN, 2=CLOSING, 3=CLOSED)
-   */
-  readyState: 0 | 1 | 2 | 3
-
-  /**
-   * 連線 URL
-   */
-  url: URL | null
-
-  /**
-   * 底層的 WSContext
-   */
-  raw: WSContext
+export function adaptHonoMessageEvent(honoEvent: { data: string | ArrayBuffer }): {
+  data: string | ArrayBuffer | Uint8Array
+  lastMessageInBatch?: boolean
+} {
+  return {
+    data: honoEvent.data,
+  }
 }
-
-export interface WSHandlerConfig {
-  /**
-   * 訊息解析模式
-   * - 'json': 嘗試 JSON 解析，失敗時回傳原始字串
-   * - 'text': 永遠回傳字串
-   * - 'raw': 回傳原始 MessageEvent
-   * @default 'json'
-   */
-  parseMode?: 'json' | 'text' | 'raw'
-
-  /**
-   * JSON 解析失敗時的處理方式
-   * - 'fallback': 回傳原始字串（預設）
-   * - 'throw': 拋出錯誤
-   * @default 'fallback'
-   */
-  parseErrorBehavior?: 'fallback' | 'throw'
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// defineWSHandler
-// ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * 建立型別安全的 WebSocket handler 工廠
+ * Wrap defineWSHandler to work with Hono's WSEvents
  *
- * @template TIn  接收訊息的型別（預設 unknown）
- * @template TOut 發送訊息的型別（預設 unknown）
+ * Provides backward compatibility by adapting our native handler
+ * to Hono's WSContext and WSEvents types.
  *
  * @example
  * ```typescript
@@ -119,14 +93,12 @@ export interface WSHandlerConfig {
  *
  * const app = new Photon()
  *
- * // 型別安全的 WebSocket handler
  * app.get('/ws/chat', upgradeWebSocket(
  *   defineWSHandler<ChatMessage, ServerMessage>({
  *     onOpen(ws) {
  *       ws.send({ event: 'connected', payload: { status: 'ok' } })
  *     },
  *     onMessage(msg, ws) {
- *       // msg 已自動解析為 ChatMessage
  *       console.log(`${msg.user}: ${msg.text}`)
  *       ws.send({ event: 'echo', payload: msg })
  *     },
@@ -136,108 +108,46 @@ export interface WSHandlerConfig {
  *   })
  * ))
  * ```
+ *
+ * @param handler - WebSocket handler definition
+ * @param config - Handler configuration
+ * @returns Hono WSEvents handler
+ * @public
  */
-export function defineWSHandler<TIn = unknown, TOut = unknown>(
-  handler: TypedWSHandler<TIn, TOut>,
-  config: WSHandlerConfig = {}
+export function defineHonoWSHandler<TIn = unknown, TOut = unknown>(
+  handler: Parameters<typeof defineWSHandler<TIn, TOut>>[0],
+  config?: Parameters<typeof defineWSHandler<TIn, TOut>>[1]
 ): (c: unknown) => WSEvents {
-  const { parseMode = 'json', parseErrorBehavior = 'fallback' } = config
+  const nativeHandlerFactory = defineWSHandler(handler, config)
 
-  return () => {
-    const wsEvents: WSEvents = {
-      onOpen(_event, rawWs) {
-        if (!handler.onOpen) {
-          return
-        }
+  return (c: unknown) => {
+    const nativeEvents = nativeHandlerFactory(c)
 
-        const typedWs = createTypedWSContext<TOut>(rawWs)
-        void handler.onOpen(typedWs)
+    // Adapt native events to Hono's WSEvents
+    const honoEvents: WSEvents = {
+      onOpen(event, honoWs) {
+        const nativeWs = adaptHonoWSContext(honoWs)
+        return nativeEvents.onOpen?.(event, nativeWs)
       },
 
-      onMessage(event, rawWs) {
-        if (!handler.onMessage) {
-          return
-        }
-
-        const typedWs = createTypedWSContext<TOut>(rawWs)
-        const rawData = event.data
-
-        let parsedData: TIn
-
-        if (parseMode === 'raw') {
-          parsedData = rawData as TIn
-        } else if (parseMode === 'text') {
-          parsedData = (typeof rawData === 'string' ? rawData : String(rawData)) as TIn
-        } else {
-          // parseMode === 'json'
-          if (typeof rawData === 'string') {
-            try {
-              parsedData = JSON.parse(rawData) as TIn
-            } catch {
-              if (parseErrorBehavior === 'throw') {
-                throw new Error(`WebSocket JSON parse error: ${rawData}`)
-              }
-              parsedData = rawData as unknown as TIn
-            }
-          } else {
-            parsedData = rawData as unknown as TIn
-          }
-        }
-
-        void handler.onMessage(parsedData, typedWs)
+      onMessage(event, honoWs) {
+        const nativeWs = adaptHonoWSContext(honoWs)
+        const nativeEvent = adaptHonoMessageEvent(event)
+        return nativeEvents.onMessage?.(nativeEvent, nativeWs)
       },
 
-      onClose(event, rawWs) {
-        if (!handler.onClose) {
-          return
-        }
-
-        const typedWs = createTypedWSContext<TOut>(rawWs)
-        void handler.onClose(event.code ?? 1000, event.reason ?? '', typedWs)
+      onClose(event, honoWs) {
+        const nativeWs = adaptHonoWSContext(honoWs)
+        const nativeEvent = { code: event.code, reason: event.reason }
+        return nativeEvents.onClose?.(nativeEvent, nativeWs)
       },
 
-      onError(event, rawWs) {
-        if (!handler.onError) {
-          return
-        }
-
-        const typedWs = createTypedWSContext<TOut>(rawWs)
-        void handler.onError(event, typedWs)
+      onError(event, honoWs) {
+        const nativeWs = adaptHonoWSContext(honoWs)
+        return nativeEvents.onError?.(event, nativeWs)
       },
     }
 
-    return wsEvents
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Internal Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * 建立型別化的 WSContext 包裝器
- */
-function createTypedWSContext<TOut>(rawWs: WSContext): TypedWSContext<TOut> {
-  return {
-    send(data: TOut): void {
-      const serialized = typeof data === 'string' ? data : JSON.stringify(data)
-      rawWs.send(serialized)
-    },
-
-    close(code?: number, reason?: string): void {
-      rawWs.close(code, reason)
-    },
-
-    get readyState() {
-      return rawWs.readyState
-    },
-
-    get url() {
-      return rawWs.url
-    },
-
-    get raw() {
-      return rawWs
-    },
+    return honoEvents
   }
 }
