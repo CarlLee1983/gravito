@@ -34,7 +34,6 @@ import type {
 
 // Bun runtime optimization: cache frequently used functions
 const bunPeek = require('bun').peek
-const bunFile = require('bun').file
 
 /**
  * Precompile middleware chain into a single function
@@ -50,15 +49,31 @@ function compileMiddlewareChain(middleware: Middleware[], handler: Handler): Com
     const mw = middleware[0]!
     return async (ctx) => {
       let nextCalled = false
-      const result = await mw(ctx, async () => {
+      const result = mw(ctx, async () => {
         nextCalled = true
         return undefined
       })
-      if (result instanceof Response) {
-        return result
+
+      // Optimization: Only use peek/await if result is truly a Promise
+      let finalResult: any
+      if (result instanceof Promise) {
+        const peeked = bunPeek(result)
+        finalResult = peeked === result ? await result : peeked
+      } else {
+        finalResult = result
       }
+
+      if (finalResult instanceof Response) {
+        return finalResult
+      }
+
       if (nextCalled) {
-        return await handler(ctx)
+        const hResult = handler(ctx)
+        if (hResult instanceof Promise) {
+          const p = bunPeek(hResult)
+          return p === hResult ? await hResult : p
+        }
+        return hResult
       }
       return ctx.json({ error: 'Middleware did not call next or return response' }, 500)
     }
@@ -77,10 +92,14 @@ function compileMiddlewareChain(middleware: Middleware[], handler: Handler): Com
         return undefined
       })
 
-      // Optimization: Bun.peek lets us skip 'await' for already resolved promises
-      // eliminating extraneous microticks in the event loop.
-      const peeked = bunPeek(result)
-      const finalResult = peeked === result ? await result : peeked
+      // Optimization: Only use peek/await if result is truly a Promise
+      let finalResult: any
+      if (result instanceof Promise) {
+        const peeked = bunPeek(result)
+        finalResult = peeked === result ? await result : peeked
+      } else {
+        finalResult = result
+      }
 
       if (finalResult instanceof Response) {
         return finalResult
@@ -88,8 +107,11 @@ function compileMiddlewareChain(middleware: Middleware[], handler: Handler): Com
 
       if (nextCalled) {
         const nextResult = nextHandler(ctx)
-        const peekedNext = bunPeek(nextResult)
-        return peekedNext === nextResult ? await nextResult : peekedNext
+        if (nextResult instanceof Promise) {
+          const p = bunPeek(nextResult)
+          return p === nextResult ? await nextResult : p
+        }
+        return nextResult
       }
 
       return ctx.json({ error: 'Middleware did not call next or return response' }, 500)
@@ -153,10 +175,6 @@ export class Gravito {
 
   /**
    * Register a GET route
-   *
-   * @param path - Route path (e.g., '/users/:id')
-   * @param handlers - Handler and optional middleware
-   * @returns This instance for chaining
    */
   get(path: string, ...handlers: Handler[]): this {
     return this.addRoute('get', path, handlers)
@@ -301,38 +319,43 @@ export class Gravito {
   /**
    * Generate Native Bun.serve Configuration
    *
-   * Offloads pure static routes to Bun's SIMD-accelerated native router.
-   * This is the recommended way to run Gravito in production (Bun 1.39+).
-   *
-   * @example
-   * ```typescript
-   * const app = new Gravito()
-   * Bun.serve(app.serveConfig({ port: 3000 }))
-   * ```
+   * Offloads static routes to Bun's SIMD-accelerated native router.
+   * Supports pre-compiled middleware chains for zero runtime lookup.
    */
   serveConfig(baseConfig: Record<string, unknown> = {}): Record<string, unknown> {
-    // 1. Extract native routes from AOT router
-    const nativeRoutes = this.router.getNativeRoutes((handler, path) => {
+    // 1. Extract and pre-compile routes for Bun's native router
+    const nativeRoutes = this.router.getNativeRoutes((handler, middleware, path) => {
+      // Pre-compile the middleware chain for this specific static route
+      const compiled = compileMiddlewareChain(middleware, handler)
+
       // Create a native request handler that uses our pooling
       return async (req: Request) => {
         const ctx = this.contextPool.acquire()
         ctx.init(req, {}, path, path)
 
         try {
-          const result = handler(ctx)
-          if (result instanceof Response) {
-            return result
+          const result = compiled(ctx)
+
+          // Pro-level optimization: skip await if synchronous
+          let response: Response
+          if (result instanceof Promise) {
+            const peeked = bunPeek(result)
+            response = peeked === result ? await result : peeked
+          } else {
+            response = result
           }
-          return await result
-        } catch (error) {
-          return this.handleErrorSync(error as Error, req, path)
-        } finally {
-          try {
-            await ctx.requestScope().cleanup()
-          } catch (cleanupError) {
-            console.error('RequestScope cleanup failed:', cleanupError)
+
+          // Handle Streaming Response: Delay pool release until body is consumed
+          if (response.body instanceof ReadableStream) {
+            this.handleStreamingRelease(response, ctx)
+            return response
           }
+
           this.contextPool.release(ctx)
+          return response
+        } catch (error) {
+          this.contextPool.release(ctx)
+          return this.handleErrorSync(error as Error, req, path)
         }
       }
     })
@@ -340,12 +363,10 @@ export class Gravito {
     return {
       ...baseConfig,
       routes: nativeRoutes,
-      fetch: this.fetch, // Fallback for dynamic routes and middleware
+      fetch: this.fetch, // Fallback for dynamic routes
       // Optimize TLS if provided in baseConfig
       tls: baseConfig.tls ? this.optimizeTLS(baseConfig.tls) : undefined,
       error: (error: Error) => {
-        // For native routes errors, we can only use the error itself
-        // Request context is not available in Bun's native error handler
         console.error('Native route error:', error)
         return new Response(CACHED_RESPONSES.INTERNAL_ERROR, {
           status: 500,
@@ -356,11 +377,42 @@ export class Gravito {
   }
 
   /**
-   * Optimize TLS Configuration for Bun 1.39+
+   * Deferred Release Mechanism for Streaming Responses
    *
-   * 1. Uses Bun.file() for keys/certs to enable zero-copy loading.
-   * 2. Enables lowMemoryMode in production to reduce per-connection overhead.
-   * 3. Supports SNI arrays for multi-tenant deployments.
+   * Intercepts stream completion to safely release FastContext back to the pool.
+   */
+  private handleStreamingRelease(response: Response, ctx: FastContextImpl): void {
+    const originalBody = response.body!
+    const pool = this.contextPool
+
+    // We replace the body with a direct proxy that releases context on closure
+    // Utilizing Bun's high-performance native stream interception
+    const newBody = new ReadableStream({
+      async pull(controller) {
+        try {
+          const { value, done } = await (originalBody as any).getReader().read()
+          if (done) {
+            pool.release(ctx)
+            controller.close()
+          } else {
+            controller.enqueue(value)
+          }
+        } catch (err) {
+          pool.release(ctx)
+          controller.error(err)
+        }
+      },
+      cancel() {
+        pool.release(ctx)
+      },
+    })
+
+    // In-place replacement of the response body reference
+    Object.defineProperty(response, 'body', { value: newBody, configurable: true })
+  }
+
+  /**
+   * Optimize TLS Configuration for Bun 1.39+
    */
   private optimizeTLS(tls: any): any {
     const isProd = process.env.NODE_ENV === 'production'
@@ -369,10 +421,10 @@ export class Gravito {
       const optimized = { ...entry }
       // Zero-copy loading for key and cert
       if (typeof optimized.key === 'string' && !optimized.key.startsWith('-----BEGIN')) {
-        optimized.key = bunFile(optimized.key)
+        optimized.key = require('bun').file(optimized.key)
       }
       if (typeof optimized.cert === 'string' && !optimized.cert.startsWith('-----BEGIN')) {
-        optimized.cert = bunFile(optimized.cert)
+        optimized.cert = require('bun').file(optimized.cert)
       }
       // Production defaults
       if (isProd && optimized.lowMemoryMode === undefined) {
@@ -400,24 +452,34 @@ export class Gravito {
     const staticRoute = this.staticRoutes.get(staticKey)
 
     if (staticRoute) {
-      if (staticRoute.useMinimal) {
-        // Ultra-fast path: no middleware, minimal context
-        const ctx = new MinimalContext(request, {}, path, path) // Static routes: routePattern === path
+      const ctx = this.contextPool.acquire()
+      ctx.init(request, {}, path, path)
 
-        try {
-          const result = staticRoute.handler(ctx)
+      try {
+        const compiled =
+          staticRoute.compiled ||
+          compileMiddlewareChain(staticRoute.middleware, staticRoute.handler)
+        const result = compiled(ctx)
 
-          if (result instanceof Response) {
-            return result
-          }
-          return await result
-        } catch (error) {
-          return this.handleErrorSync(error as Error, request, path)
+        let response: Response
+        if (result instanceof Promise) {
+          const peeked = bunPeek(result)
+          response = peeked === result ? await result : peeked
+        } else {
+          response = result
         }
-      }
 
-      // Has middleware, or needs FastContext: use pooled context
-      return await this.handleWithMiddleware(request, path, staticRoute)
+        if (response.body instanceof ReadableStream) {
+          this.handleStreamingRelease(response, ctx)
+          return response
+        }
+
+        this.contextPool.release(ctx)
+        return response
+      } catch (error) {
+        this.contextPool.release(ctx)
+        return this.handleErrorSync(error as Error, request, path)
+      }
     }
 
     // Dynamic route: use Radix Tree
@@ -425,88 +487,55 @@ export class Gravito {
   }
 
   /**
-   * Handle routes with middleware (async path)
+   * Handle dynamic routes with Radix Tree
    */
-  private async handleWithMiddleware(
-    request: Request,
-    path: string,
-    route: RouteMetadata
-  ): Promise<Response> {
-    const ctx = this.contextPool.acquire()
-
-    try {
-      ctx.init(request, {}, path, path) // Static routes: routePattern === path
-
-      if (route.compiled) {
-        return await route.compiled(ctx)
-      }
-
-      // Fallback
-      const middleware = this.collectMiddlewareForPath(path, route.middleware)
-      if (middleware.length === 0) {
-        return await route.handler(ctx)
-      }
-
-      return await this.executeMiddleware(ctx, middleware, route.handler)
-    } catch (error) {
-      return await this.handleError(error as Error, ctx)
-    } finally {
-      try {
-        await ctx.requestScope().cleanup()
-      } catch (cleanupError) {
-        console.error('RequestScope cleanup failed:', cleanupError)
-      }
-      this.contextPool.release(ctx)
-    }
-  }
-
-  /**
-   * Handle dynamic routes (Radix Tree lookup)
-   */
-  private handleDynamicRoute(
+  private async handleDynamicRoute(
     request: Request,
     method: string,
     path: string
-  ): Response | Promise<Response> {
-    const match = this.router.match(method.toUpperCase(), path)
+  ): Promise<Response> {
+    const match = this.router.match(method, path)
 
-    if (!match.handler) {
-      return this.handleNotFoundSync(request, path)
-    }
+    if (match.handler) {
+      const ctx = this.contextPool.acquire()
+      ctx.init(request, match.params, path, match.routePattern)
 
-    const cacheKey = `${method}:${match.routePattern ?? path}`
-    let entry = this.compiledDynamicRoutes.get(cacheKey)
-
-    if (!entry || entry.version !== this.router.version) {
-      const compiled = compileMiddlewareChain(match.middleware, match.handler)
-      // Simple cache management: clear if too large
-      if (this.compiledDynamicRoutes.size > 1000) {
-        this.compiledDynamicRoutes.clear()
-      }
-      entry = { compiled, version: this.router.version }
-      this.compiledDynamicRoutes.set(cacheKey, entry)
-    }
-
-    // Dynamic routes always use pooled context (need params)
-    const ctx = this.contextPool.acquire()
-
-    const execute = async (): Promise<Response> => {
       try {
-        ctx.init(request, match.params, path, match.routePattern)
-        return await entry?.compiled(ctx)
-      } catch (error) {
-        return await this.handleError(error as Error, ctx)
-      } finally {
-        try {
-          await ctx.requestScope().cleanup()
-        } catch (cleanupError) {
-          console.error('RequestScope cleanup failed:', cleanupError)
+        // Use cached compilation if available
+        const routeKey = `${method}:${match.routePattern}`
+        let compiledObj = this.compiledDynamicRoutes.get(routeKey)
+
+        if (!compiledObj || compiledObj.version !== this.router.version) {
+          const compiled = compileMiddlewareChain(match.middleware, match.handler)
+          compiledObj = { compiled, version: this.router.version }
+          this.compiledDynamicRoutes.set(routeKey, compiledObj)
         }
+
+        const result = compiledObj.compiled(ctx)
+
+        let response: Response
+        if (result instanceof Promise) {
+          const peeked = bunPeek(result)
+          response = peeked === result ? await result : peeked
+        } else {
+          response = result
+        }
+
+        if (response.body instanceof ReadableStream) {
+          this.handleStreamingRelease(response, ctx)
+          return response
+        }
+
         this.contextPool.release(ctx)
+        return response
+      } catch (error) {
+        this.contextPool.release(ctx)
+        return this.handleErrorSync(error as Error, request, path)
       }
     }
 
-    return execute()
+    // 404
+    return this.handleNotFoundSync(request, path)
   }
 
   /**
@@ -601,7 +630,7 @@ export class Gravito {
   /**
    * Add a route to the router
    */
-  private addRoute(method: HttpMethod, path: string, handlers: Handler[]): this {
+  private addRoute(method: string, path: string, handlers: Handler[]): this {
     if (handlers.length === 0) {
       throw new Error(`No handler provided for ${method.toUpperCase()} ${path}`)
     }
@@ -609,55 +638,11 @@ export class Gravito {
     const handler = handlers[handlers.length - 1]!
     const middleware = handlers.slice(0, -1) as unknown as Middleware[]
 
-    this.router.add(method, path, handler, middleware)
+    this.router.add(method as HttpMethod, path, handler, middleware)
 
     // Re-compile routes when new ones are added
     this.compileRoutes()
 
     return this
-  }
-
-  /**
-   * Execute middleware chain followed by handler
-   */
-  private async executeMiddleware(
-    ctx: FastContext,
-    middleware: Middleware[],
-    handler: Handler
-  ): Promise<Response> {
-    let index = 0
-
-    const next = async (): Promise<Response | undefined> => {
-      if (index < middleware.length) {
-        const mw = middleware[index++]!
-        return await mw(ctx, next)
-      }
-      return undefined
-    }
-
-    const result = await next()
-    if (result instanceof Response) {
-      return result
-    }
-
-    return await handler(ctx)
-  }
-
-  /**
-   * Handle errors (Async version for dynamic/middleware paths)
-   */
-  private async handleError(error: Error, ctx: FastContext): Promise<Response> {
-    if (this.errorHandler) {
-      return await this.errorHandler(error, ctx)
-    }
-
-    console.error('Unhandled error:', error)
-    return ctx.json(
-      {
-        error: 'Internal Server Error',
-        message: error.message,
-      },
-      500
-    )
   }
 }

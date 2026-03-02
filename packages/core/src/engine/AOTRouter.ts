@@ -311,21 +311,22 @@ export class AOTRouter {
   }
 
   /**
-   * Get all "pure" static routes that have no middleware (including global)
-   * These can be offloaded to Bun's native router for maximum performance.
+   * Get all static routes optimized for Bun's native router.
    *
+   * Unlike basic offloading, this version supports routes with middleware
+   * by pre-compiling the middleware chain into a single native handler.
+   *
+   * @param onMatch - Factory to wrap handler and middleware into a Bun-compatible function
    * @returns Record of path -> Handler (Bun-compatible)
    */
   getNativeRoutes(
-    onMatch: (handler: Handler, path: string) => (req: Request) => Response | Promise<Response>
+    onMatch: (
+      handler: Handler,
+      middleware: Middleware[],
+      path: string
+    ) => (req: Request) => Response | Promise<Response>
   ): Record<string, any> {
     const routes: Record<string, any> = {}
-
-    // Only allow native offloading if there are NO global or pattern middleware
-    // because Bun's native routes bypass our fetch() logic entirely.
-    if (this.globalMiddleware.length > 0 || this.pathMiddleware.size > 0) {
-      return routes
-    }
 
     for (const [key, metadata] of this.staticRoutes) {
       const [method, path] = key.split(':')
@@ -333,14 +334,12 @@ export class AOTRouter {
         continue // Bun's native routes primarily focus on GET for Response objects
       }
 
-      // If route has specific middleware, it's not pure
-      if (metadata.middleware.length > 0) {
-        continue
-      }
+      // Collect all applicable middleware (Global + Pattern + Route-specific)
+      const allMiddleware = this.collectMiddleware(path!, metadata.middleware)
 
       // Map to Bun's native router format
-      // We wrap it to provide a Request -> Response function that Bun expects
-      routes[path!] = onMatch(metadata.handler, path!)
+      // The middleware chain is compiled and wrapped by the caller (Gravito)
+      routes[path!] = onMatch(metadata.handler, allMiddleware, path!)
     }
 
     return routes
