@@ -1,4 +1,4 @@
-import type { Context, Next } from 'hono'
+import type { GravitoContext } from '@gravito/core'
 import type { CheckPermissionUseCase } from '../../../Application/UseCases/CheckPermission'
 
 /**
@@ -6,8 +6,8 @@ import type { CheckPermissionUseCase } from '../../../Application/UseCases/Check
  * 用於保護需要特定權限的路由
  */
 export function requirePermission(permissionKey: string, checkUseCase: CheckPermissionUseCase) {
-  return async (ctx: Context, next: Next) => {
-    const admin = ctx.get('admin')
+  return async (ctx: GravitoContext, next: () => Promise<void>) => {
+    const admin = ctx.get('admin') as { id: string; isSuper: boolean } | undefined
 
     if (!admin) {
       return ctx.json({ error: 'Unauthorized' }, 401)

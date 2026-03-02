@@ -1,5 +1,4 @@
-import type { PlanetCore } from '@gravito/core'
-import type { Context } from '@gravito/photon'
+import type { GravitoContext, PlanetCore } from '@gravito/core'
 import { CategoryMapper } from '../../../Application/DTOs/CategoryDTO'
 import { CatalogError } from '../../../Application/Errors/CatalogError'
 import type { CreateCategory } from '../../../Application/UseCases/CreateCategory'
@@ -13,7 +12,7 @@ export class AdminCategoryController {
    * GET /api/admin/v1/catalog/categories
    * 取得所有分類（樹狀結構）
    */
-  async index(ctx: Context) {
+  async index(ctx: GravitoContext) {
     try {
       const repository = this.core.container.make<any>('catalog.repository.category')
       const categories = await repository.findAll()
@@ -33,7 +32,7 @@ export class AdminCategoryController {
    * POST /api/admin/v1/catalog/categories
    * 建立分類
    */
-  async store(ctx: Context) {
+  async store(ctx: GravitoContext) {
     try {
       const body = await ctx.req.json()
       const useCase = this.core.container.make<CreateCategory>('catalog.usecase.createCategory')
@@ -55,7 +54,7 @@ export class AdminCategoryController {
    * PATCH /api/admin/v1/catalog/categories/:id
    * 更新分類資訊
    */
-  async update(ctx: Context) {
+  async update(ctx: GravitoContext) {
     try {
       const id = ctx.req.param('id')
       const body = await ctx.req.json()
@@ -75,7 +74,7 @@ export class AdminCategoryController {
    * DELETE /api/admin/v1/catalog/categories/:id
    * 刪除分類
    */
-  async destroy(ctx: Context) {
+  async destroy(ctx: GravitoContext) {
     try {
       const id = ctx.req.param('id')
       const useCase = this.core.container.make<DeleteCategory>('catalog.usecase.deleteCategory')

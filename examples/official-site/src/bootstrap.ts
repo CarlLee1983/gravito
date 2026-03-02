@@ -3,7 +3,6 @@ import { defineConfig, GravitoEngineAdapter as GravitoAdapter, PlanetCore } from
 import { OrbitIon } from '@gravito/ion'
 import { OrbitPrism } from '@gravito/prism'
 import { OrbitCache } from '@gravito/stasis'
-import type { Context, Next } from 'hono'
 // Import Controllers
 import { ApiController } from './controllers/ApiController'
 import { DocsController } from './controllers/DocsController'

@@ -1,6 +1,5 @@
-import { PlanetCore } from '@gravito/core'
+import { GravitoEngineAdapter, PlanetCore } from '@gravito/core'
 import { OrbitMonolith } from '@gravito/monolith'
-import { PhotonAdapter } from '@gravito/photon/adapter'
 import config from '../config/gravito.config'
 
 /**
@@ -19,7 +18,7 @@ const SATELLITE_MAP: Record<string, any> = {
 
 export class MonolithLauncher {
   private core = new PlanetCore({
-    adapter: new PhotonAdapter(),
+    adapter: new GravitoEngineAdapter(),
   })
 
   async ignite() {

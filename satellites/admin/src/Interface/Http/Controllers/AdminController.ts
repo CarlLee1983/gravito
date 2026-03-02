@@ -1,4 +1,4 @@
-import type { Context } from 'hono'
+import type { GravitoContext } from '@gravito/core'
 import type { CreateAdminUseCase } from '../../../Application/UseCases/CreateAdmin'
 import type { DeleteAdminUseCase } from '../../../Application/UseCases/DeleteAdmin'
 import type { GetAdminUseCase } from '../../../Application/UseCases/GetAdmin'
@@ -20,7 +20,7 @@ export class AdminController {
   /**
    * GET /api/admin/v1/admins
    */
-  async index(ctx: Context) {
+  async index(ctx: GravitoContext) {
     const page = parseInt(ctx.req.query('page') || '1')
     const limit = parseInt(ctx.req.query('limit') || '10')
     const search = ctx.req.query('search')
@@ -34,7 +34,7 @@ export class AdminController {
   /**
    * GET /api/admin/v1/admins/:id
    */
-  async show(ctx: Context) {
+  async show(ctx: GravitoContext) {
     const id = ctx.req.param('id')
     const result = await this.getUseCase.execute(id)
     return ctx.json(result, 200)
@@ -43,7 +43,7 @@ export class AdminController {
   /**
    * POST /api/admin/v1/admins
    */
-  async store(ctx: Context) {
+  async store(ctx: GravitoContext) {
     const { email, name, password, isSuper } = await ctx.req.json()
     const requestingAdmin = ctx.get('admin')
 
@@ -57,7 +57,7 @@ export class AdminController {
   /**
    * PATCH /api/admin/v1/admins/:id
    */
-  async update(ctx: Context) {
+  async update(ctx: GravitoContext) {
     const id = ctx.req.param('id')
     const { name, metadata } = await ctx.req.json()
     const requestingAdmin = ctx.get('admin')
@@ -69,7 +69,7 @@ export class AdminController {
   /**
    * DELETE /api/admin/v1/admins/:id
    */
-  async destroy(ctx: Context) {
+  async destroy(ctx: GravitoContext) {
     const id = ctx.req.param('id')
     const requestingAdmin = ctx.get('admin')
 

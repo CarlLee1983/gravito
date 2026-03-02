@@ -1,4 +1,4 @@
-import type { Context } from 'hono'
+import type { GravitoContext } from '@gravito/core'
 import type { ListPermissionsUseCase } from '../../../Application/UseCases/ListPermissions'
 
 /**
@@ -10,7 +10,7 @@ export class PermissionController {
   /**
    * GET /api/admin/v1/rbac/permissions
    */
-  async index(ctx: Context) {
+  async index(ctx: GravitoContext) {
     const page = parseInt(ctx.req.query('page') || '1')
     const limit = parseInt(ctx.req.query('limit') || '10')
     const groupName = ctx.req.query('groupName')

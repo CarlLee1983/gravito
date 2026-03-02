@@ -1,5 +1,4 @@
-import type { PlanetCore } from '@gravito/core'
-import type { Context, Next } from 'hono'
+import type { GravitoContext, PlanetCore } from '@gravito/core'
 import { AdminErrorFactory } from '../../../Application/Errors/AdminError'
 import type { IAdminRepository } from '../../../Domain/Contracts/IAdminRepository'
 import type { JwtAdminAuthStrategy } from '../Strategies/JwtAdminAuthStrategy'
@@ -13,7 +12,7 @@ export function adminAuthMiddleware(
   jwtStrategy: JwtAdminAuthStrategy,
   adminRepo: IAdminRepository
 ) {
-  return async (ctx: Context, next: Next) => {
+  return async (ctx: GravitoContext, next: () => Promise<void>) => {
     try {
       // 從 Authorization header 取得 token
       const authHeader = ctx.req.header('Authorization')

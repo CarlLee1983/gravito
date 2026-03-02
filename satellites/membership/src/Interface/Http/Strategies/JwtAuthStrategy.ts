@@ -1,8 +1,8 @@
 import type { GravitoContext } from '@gravito/core'
-import { sign, verify } from 'hono/jwt'
 import { MembershipError } from '../../../Application/Errors/MembershipError'
 import type { IMemberRepository } from '../../../Domain/Contracts/IMemberRepository'
 import type { Member } from '../../../Domain/Entities/Member'
+import { signJWT, verifyJWT } from '../../../Infrastructure/Jwt/BunJwt'
 import type { IJwtTokenBlacklist } from '../../../Infrastructure/TokenBlacklist'
 import type { AuthTokens, IAuthStrategy } from './IAuthStrategy'
 
@@ -30,27 +30,25 @@ export class JwtAuthStrategy implements IAuthStrategy {
     const now = Math.floor(Date.now() / 1000)
 
     // 簽發 accessToken
-    const accessToken = await sign(
+    const accessToken = await signJWT(
       {
         sub: member.id,
         email: member.email,
         iat: now,
         exp: now + this.accessTokenExpiry,
       },
-      this.jwtSecret,
-      'HS256'
+      this.jwtSecret
     )
 
     // 簽發 refreshToken（可選，用於更新 accessToken）
-    const refreshToken = await sign(
+    const refreshToken = await signJWT(
       {
         sub: member.id,
         type: 'refresh',
         iat: now,
         exp: now + this.refreshTokenExpiry,
       },
-      this.jwtSecret,
-      'HS256'
+      this.jwtSecret
     )
 
     return {
@@ -79,7 +77,7 @@ export class JwtAuthStrategy implements IAuthStrategy {
 
     try {
       // 驗證 token 有效性，取得過期時間
-      const payload = await verify(token, this.jwtSecret, 'HS256')
+      const payload = await verifyJWT(token, this.jwtSecret)
 
       if (!payload.exp || typeof payload.exp !== 'number') {
         return
@@ -117,7 +115,7 @@ export class JwtAuthStrategy implements IAuthStrategy {
         }
       }
 
-      const payload = await verify(token, this.jwtSecret, 'HS256')
+      const payload = await verifyJWT(token, this.jwtSecret)
 
       if (!payload.sub || typeof payload.sub !== 'string') {
         return null
@@ -138,7 +136,7 @@ export class JwtAuthStrategy implements IAuthStrategy {
   async refreshAccessToken(refreshToken: string): Promise<string> {
     let payload: any
     try {
-      payload = await verify(refreshToken, this.jwtSecret, 'HS256')
+      payload = await verifyJWT(refreshToken, this.jwtSecret)
     } catch (_error) {
       throw new MembershipError('TOKEN_EXPIRED', 'Invalid or expired refresh token')
     }
@@ -156,15 +154,14 @@ export class JwtAuthStrategy implements IAuthStrategy {
     // This avoids issuing identical tokens in the same second
     const now = Math.floor(Date.now() / 1000)
     const iat = Math.max(payload.iat + 1, now)
-    const newAccessToken = await sign(
+    const newAccessToken = await signJWT(
       {
         sub: member.id,
         email: member.email,
         iat,
         exp: iat + this.accessTokenExpiry,
       },
-      this.jwtSecret,
-      'HS256'
+      this.jwtSecret
     )
 
     return newAccessToken

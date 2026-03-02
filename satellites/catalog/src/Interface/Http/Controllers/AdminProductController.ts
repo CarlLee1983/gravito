@@ -1,5 +1,4 @@
-import type { PlanetCore } from '@gravito/core'
-import type { Context } from '@gravito/photon'
+import type { GravitoContext, PlanetCore } from '@gravito/core'
 import { CatalogError } from '../../../Application/Errors/CatalogError'
 import type { AdminListProducts } from '../../../Application/UseCases/AdminListProducts'
 import type { CreateProduct } from '../../../Application/UseCases/CreateProduct'
@@ -14,7 +13,7 @@ export class AdminProductController {
    * GET /api/admin/v1/catalog/products
    * 取得所有商品列表
    */
-  async index(ctx: Context) {
+  async index(ctx: GravitoContext) {
     try {
       const useCase = this.core.container.make<AdminListProducts>(
         'catalog.usecase.adminListProducts'
@@ -34,7 +33,7 @@ export class AdminProductController {
    * GET /api/admin/v1/catalog/products/:id
    * 取得單一商品
    */
-  async show(ctx: Context) {
+  async show(ctx: GravitoContext) {
     try {
       const id = ctx.req.param('id')
       const useCase = this.core.container.make<GetProduct>('catalog.usecase.getProduct')
@@ -53,7 +52,7 @@ export class AdminProductController {
    * POST /api/admin/v1/catalog/products
    * 建立商品
    */
-  async store(ctx: Context) {
+  async store(ctx: GravitoContext) {
     try {
       const body = await ctx.req.json()
       const useCase = this.core.container.make<CreateProduct>('catalog.usecase.createProduct')
@@ -72,7 +71,7 @@ export class AdminProductController {
    * PATCH /api/admin/v1/catalog/products/:id
    * 更新商品
    */
-  async update(ctx: Context) {
+  async update(ctx: GravitoContext) {
     try {
       const id = ctx.req.param('id')
       const body = await ctx.req.json()
@@ -92,7 +91,7 @@ export class AdminProductController {
    * DELETE /api/admin/v1/catalog/products/:id
    * 刪除商品
    */
-  async destroy(ctx: Context) {
+  async destroy(ctx: GravitoContext) {
     try {
       const id = ctx.req.param('id')
       const useCase = this.core.container.make<DeleteProduct>('catalog.usecase.deleteProduct')
