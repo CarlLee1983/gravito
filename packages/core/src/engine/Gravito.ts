@@ -345,15 +345,20 @@ export class Gravito {
             response = result
           }
 
-          // Handle Streaming Response: Delay pool release until body is consumed
+          // Handle Streaming Response: Delay pool release and cleanup until body is consumed
           if (response.body instanceof ReadableStream) {
-            this.handleStreamingRelease(response, ctx)
-            return response
+            return this.handleStreamingRelease(response, ctx)
           }
 
+          // Normal path: cleanup and release
+          const cleanup = ctx.requestScope().cleanup()
+          if (cleanup instanceof Promise) await cleanup
           this.contextPool.release(ctx)
           return response
         } catch (error) {
+          // Cleanup even on error
+          const cleanup = ctx.requestScope().cleanup()
+          if (cleanup instanceof Promise) await cleanup
           this.contextPool.release(ctx)
           return this.handleErrorSync(error as Error, req, path)
         }
@@ -380,35 +385,44 @@ export class Gravito {
    * Deferred Release Mechanism for Streaming Responses
    *
    * Intercepts stream completion to safely release FastContext back to the pool.
+   * Returns a NEW Response object to ensure Bun internal optimizations.
    */
-  private handleStreamingRelease(response: Response, ctx: FastContextImpl): void {
+  private handleStreamingRelease(response: Response, ctx: FastContextImpl): Response {
     const originalBody = response.body!
     const pool = this.contextPool
 
-    // We replace the body with a direct proxy that releases context on closure
-    // Utilizing Bun's high-performance native stream interception
     const newBody = new ReadableStream({
+      type: 'direct', // Extreme optimization: direct socket transfer
       async pull(controller) {
         try {
           const { value, done } = await (originalBody as any).getReader().read()
           if (done) {
+            const cleanup = ctx.requestScope().cleanup()
+            if (cleanup instanceof Promise) await cleanup
             pool.release(ctx)
             controller.close()
           } else {
-            controller.enqueue(value)
+            controller.write(value)
           }
         } catch (err) {
+          const cleanup = ctx.requestScope().cleanup()
+          if (cleanup instanceof Promise) await cleanup
           pool.release(ctx)
           controller.error(err)
         }
       },
       cancel() {
-        pool.release(ctx)
+        const cleanup = ctx.requestScope().cleanup()
+        if (cleanup instanceof Promise) {
+          cleanup.then(() => pool.release(ctx)).catch(() => pool.release(ctx))
+        } else {
+          pool.release(ctx)
+        }
       },
     })
 
-    // In-place replacement of the response body reference
-    Object.defineProperty(response, 'body', { value: newBody, configurable: true })
+    // Create a new Response object to maintain Bun internal optimizations
+    return new Response(newBody, response)
   }
 
   /**
@@ -419,24 +433,19 @@ export class Gravito {
 
     const optimizeEntry = (entry: any) => {
       const optimized = { ...entry }
-      // Zero-copy loading for key and cert
       if (typeof optimized.key === 'string' && !optimized.key.startsWith('-----BEGIN')) {
         optimized.key = require('bun').file(optimized.key)
       }
       if (typeof optimized.cert === 'string' && !optimized.cert.startsWith('-----BEGIN')) {
         optimized.cert = require('bun').file(optimized.cert)
       }
-      // Production defaults
       if (isProd && optimized.lowMemoryMode === undefined) {
         optimized.lowMemoryMode = true
       }
       return optimized
     }
 
-    if (Array.isArray(tls)) {
-      return tls.map(optimizeEntry)
-    }
-    return optimizeEntry(tls)
+    return Array.isArray(tls) ? tls.map(optimizeEntry) : optimizeEntry(tls)
   }
 
   /**
@@ -470,13 +479,16 @@ export class Gravito {
         }
 
         if (response.body instanceof ReadableStream) {
-          this.handleStreamingRelease(response, ctx)
-          return response
+          return this.handleStreamingRelease(response, ctx)
         }
 
+        const cleanup = ctx.requestScope().cleanup()
+        if (cleanup instanceof Promise) await cleanup
         this.contextPool.release(ctx)
         return response
       } catch (error) {
+        const cleanup = ctx.requestScope().cleanup()
+        if (cleanup instanceof Promise) await cleanup
         this.contextPool.release(ctx)
         return this.handleErrorSync(error as Error, request, path)
       }
@@ -522,13 +534,16 @@ export class Gravito {
         }
 
         if (response.body instanceof ReadableStream) {
-          this.handleStreamingRelease(response, ctx)
-          return response
+          return this.handleStreamingRelease(response, ctx)
         }
 
+        const cleanup = ctx.requestScope().cleanup()
+        if (cleanup instanceof Promise) await cleanup
         this.contextPool.release(ctx)
         return response
       } catch (error) {
+        const cleanup = ctx.requestScope().cleanup()
+        if (cleanup instanceof Promise) await cleanup
         this.contextPool.release(ctx)
         return this.handleErrorSync(error as Error, request, path)
       }

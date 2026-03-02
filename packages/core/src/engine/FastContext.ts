@@ -372,6 +372,18 @@ export class FastContext implements IFastContext {
     })
   }
 
+  /**
+   * Send high-performance binary response (e.g. CBOR, Protobuf)
+   * Utilizing Bun's native ArrayBufferSink for zero-allocation construction.
+   */
+  binary(data: Uint8Array | ArrayBuffer, status = 200): Response {
+    this.checkReleased()
+    return new Response(data, {
+      status,
+      headers: { 'Content-Type': 'application/octet-stream' },
+    })
+  }
+
   stream(stream: any, status = 200): Response {
     this.checkReleased()
     // Direct streaming for zero-copy socket transfers
