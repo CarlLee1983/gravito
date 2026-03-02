@@ -271,4 +271,194 @@ describe('Gravito Engine', () => {
       expect(res.headers.get('X-Custom')).toBe('value')
     })
   })
+
+  describe('compileMiddlewareChain 行為', () => {
+    it('should execute handler directly when no middleware', async () => {
+      const app = new Gravito()
+      app.get('/', (c) => c.json({ direct: true }))
+
+      const req = new Request('http://localhost/')
+      const res = await app.fetch(req)
+      const data = await res.json()
+
+      expect(data).toEqual({ direct: true })
+    })
+
+    it('should not execute handler if middleware returns early', async () => {
+      const app = new Gravito()
+      const calls: string[] = []
+
+      app.use(async (_c, next) => {
+        calls.push('middleware')
+        // Return without calling next()
+        return new Response(JSON.stringify({ early: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      })
+
+      app.get('/', (c) => {
+        calls.push('handler')
+        return c.json({ handler: true })
+      })
+
+      const req = new Request('http://localhost/')
+      const res = await app.fetch(req)
+      const data = await res.json()
+
+      expect(data).toEqual({ early: true })
+      expect(calls).toEqual(['middleware'])
+    })
+
+    it('should chain multiple middleware and execute handler', async () => {
+      const app = new Gravito()
+      const calls: string[] = []
+
+      app.use(async (_c, next) => {
+        calls.push('middleware1')
+        const res = await next()
+        return res
+      })
+
+      app.use(async (_c, next) => {
+        calls.push('middleware2')
+        const res = await next()
+        return res
+      })
+
+      app.get('/', (c) => {
+        calls.push('handler')
+        return c.json({ ok: true })
+      })
+
+      const req = new Request('http://localhost/')
+      const res = await app.fetch(req)
+
+      expect(res.status).toBe(200)
+      // All middleware and handler should be executed
+      expect(calls).toContain('middleware1')
+      expect(calls).toContain('middleware2')
+      expect(calls).toContain('handler')
+    })
+
+    it('should handle async middleware correctly', async () => {
+      const app = new Gravito()
+      let asyncExecuted = false
+
+      app.use(async (_c, next) => {
+        await new Promise((resolve) => setTimeout(resolve, 0))
+        asyncExecuted = true
+        return await next()
+      })
+
+      app.get('/', (c) => c.json({ ok: true }))
+
+      const req = new Request('http://localhost/')
+      const res = await app.fetch(req)
+
+      expect(res.status).toBe(200)
+      expect(asyncExecuted).toBe(true)
+    })
+  })
+
+  describe('route() sub-app mounting', () => {
+    it('should expose sub-app static routes at parent prefix', async () => {
+      const sub = new Gravito()
+      sub.get('/users', (c) => c.json({ users: [] }))
+
+      const app = new Gravito()
+      app.route('/api', sub)
+
+      const req = new Request('http://localhost/api/users')
+      const res = await app.fetch(req)
+      const data = await res.json()
+
+      expect(res.status).toBe(200)
+      expect(data).toEqual({ users: [] })
+    })
+
+    it('should extract route parameters in mounted sub-apps', async () => {
+      const sub = new Gravito()
+      sub.get('/items/:id', (c) => {
+        const id = c.req.param('id')
+        return c.json({ id })
+      })
+
+      const app = new Gravito()
+      app.route('/shop', sub)
+
+      const req = new Request('http://localhost/shop/items/42')
+      const res = await app.fetch(req)
+      const data = await res.json()
+
+      expect(data).toEqual({ id: '42' })
+    })
+  })
+
+  describe('Context Variables', () => {
+    it('should share context variables within same request', async () => {
+      const app = new Gravito()
+
+      app.use(async (c, next) => {
+        c.set('requestId', '123')
+        return await next()
+      })
+
+      app.get('/', (c) => {
+        const requestId = c.get('requestId')
+        return c.json({ requestId })
+      })
+
+      const req = new Request('http://localhost/')
+      const res = await app.fetch(req)
+      const data = await res.json()
+
+      expect(data).toEqual({ requestId: '123' })
+    })
+
+    it('should not leak context between requests', async () => {
+      const app = new Gravito()
+
+      app.use(async (c, next) => {
+        const current = c.get('counter') || 0
+        c.set('counter', current + 1)
+        return await next()
+      })
+
+      app.get('/', (c) => {
+        const counter = c.get('counter')
+        return c.json({ counter })
+      })
+
+      // First request
+      const req1 = new Request('http://localhost/')
+      const res1 = await app.fetch(req1)
+      const data1 = await res1.json()
+
+      // Second request
+      const req2 = new Request('http://localhost/')
+      const res2 = await app.fetch(req2)
+      const data2 = await res2.json()
+
+      expect(data1).toEqual({ counter: 1 })
+      expect(data2).toEqual({ counter: 1 })
+    })
+  })
+
+  describe('HTTP Method Handling', () => {
+    it('should support all() to match any HTTP method', async () => {
+      const app = new Gravito()
+
+      app.all('/universal', (c) => c.json({ method: c.req.method }))
+
+      const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
+
+      for (const method of methods) {
+        const req = new Request('http://localhost/universal', { method })
+        const res = await app.fetch(req)
+        const data = await res.json()
+        expect(data.method).toBe(method)
+      }
+    })
+  })
 })
