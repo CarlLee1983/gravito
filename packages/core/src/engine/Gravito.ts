@@ -25,7 +25,6 @@ import type {
   CompiledHandler,
   EngineOptions,
   ErrorHandler,
-  FastContext,
   Handler,
   Middleware,
   NotFoundHandler,
@@ -345,12 +344,7 @@ export class Gravito {
             response = result
           }
 
-          // Handle Streaming Response: Delay pool release and cleanup until body is consumed
-          if (response.body instanceof ReadableStream) {
-            return this.handleStreamingRelease(response, ctx)
-          }
-
-          // Normal path: cleanup and release
+          // Cleanup and release
           const cleanup = ctx.requestScope().cleanup()
           if (cleanup instanceof Promise) await cleanup
           this.contextPool.release(ctx)
@@ -379,50 +373,6 @@ export class Gravito {
         })
       },
     }
-  }
-
-  /**
-   * Deferred Release Mechanism for Streaming Responses
-   *
-   * Intercepts stream completion to safely release FastContext back to the pool.
-   * Returns a NEW Response object to ensure Bun internal optimizations.
-   */
-  private handleStreamingRelease(response: Response, ctx: FastContextImpl): Response {
-    const originalBody = response.body!
-    const pool = this.contextPool
-
-    const newBody = new ReadableStream({
-      type: 'direct', // Extreme optimization: direct socket transfer
-      async pull(controller) {
-        try {
-          const { value, done } = await (originalBody as any).getReader().read()
-          if (done) {
-            const cleanup = ctx.requestScope().cleanup()
-            if (cleanup instanceof Promise) await cleanup
-            pool.release(ctx)
-            controller.close()
-          } else {
-            controller.write(value)
-          }
-        } catch (err) {
-          const cleanup = ctx.requestScope().cleanup()
-          if (cleanup instanceof Promise) await cleanup
-          pool.release(ctx)
-          controller.error(err)
-        }
-      },
-      cancel() {
-        const cleanup = ctx.requestScope().cleanup()
-        if (cleanup instanceof Promise) {
-          cleanup.then(() => pool.release(ctx)).catch(() => pool.release(ctx))
-        } else {
-          pool.release(ctx)
-        }
-      },
-    })
-
-    // Create a new Response object to maintain Bun internal optimizations
-    return new Response(newBody, response)
   }
 
   /**
@@ -478,10 +428,6 @@ export class Gravito {
           response = result
         }
 
-        if (response.body instanceof ReadableStream) {
-          return this.handleStreamingRelease(response, ctx)
-        }
-
         const cleanup = ctx.requestScope().cleanup()
         if (cleanup instanceof Promise) await cleanup
         this.contextPool.release(ctx)
@@ -531,10 +477,6 @@ export class Gravito {
           response = peeked === result ? await result : peeked
         } else {
           response = result
-        }
-
-        if (response.body instanceof ReadableStream) {
-          return this.handleStreamingRelease(response, ctx)
         }
 
         const cleanup = ctx.requestScope().cleanup()
