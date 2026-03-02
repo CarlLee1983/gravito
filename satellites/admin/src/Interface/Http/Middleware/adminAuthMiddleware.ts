@@ -8,7 +8,7 @@ import type { JwtAdminAuthStrategy } from '../Strategies/JwtAdminAuthStrategy'
  * 驗證 Bearer token 並將 admin 設定到 context
  */
 export function adminAuthMiddleware(
-  core: PlanetCore,
+  _core: PlanetCore,
   jwtStrategy: JwtAdminAuthStrategy,
   adminRepo: IAdminRepository
 ) {

@@ -5,7 +5,6 @@ import type {
 } from '../../Domain/Contracts/IPermissionRegistry'
 import type { IPermissionRepository } from '../../Domain/Contracts/IPermissionRepository'
 import { PermissionManagementContext } from '../../Domain/DCI/Contexts/PermissionManagementContext'
-import { PermissionKey } from '../../Domain/ValueObjects/PermissionKey'
 
 /**
  * 權限註冊系統
@@ -16,7 +15,7 @@ export class PermissionRegistry implements IPermissionRegistry {
 
   constructor(
     private readonly permissionRepo: IPermissionRepository,
-    private readonly core: PlanetCore
+    core: PlanetCore
   ) {
     this.context = new PermissionManagementContext(permissionRepo, core)
   }

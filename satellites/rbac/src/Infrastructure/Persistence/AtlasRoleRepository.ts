@@ -119,22 +119,20 @@ export class InMemoryRoleRepository implements IRoleRepository {
  * 實際的 Atlas ORM 實作佔位符
  */
 export class AtlasRoleRepository implements IRoleRepository {
-  constructor(private readonly db: any) {}
-
-  async save(role: Role): Promise<void> {
+  async save(_role: Role): Promise<void> {
     // 實際實作應使用 Atlas
   }
 
-  async findById(id: string): Promise<Role | null> {
+  async findById(_id: string): Promise<Role | null> {
     return null
   }
 
-  async findByName(name: string): Promise<Role | null> {
+  async findByName(_name: string): Promise<Role | null> {
     return null
   }
 
   async findWithPagination(
-    filters: RoleFilters,
+    _filters: RoleFilters,
     options: PaginationOptions
   ): Promise<PaginatedResult<Role>> {
     return {

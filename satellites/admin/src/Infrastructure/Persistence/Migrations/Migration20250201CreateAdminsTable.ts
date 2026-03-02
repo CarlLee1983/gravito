@@ -9,9 +9,9 @@ export const migration20250201CreateAdminsTable = {
   /**
    * UP：建立表格
    */
-  async up(db: any): Promise<void> {
+  async up(_db: any): Promise<void> {
     // 實際實作應使用 @gravito/atlas 的 schema builder
-    // await db.schema.createTable('admins', (table) => {
+    // await _db.schema.createTable('admins', (table) => {
     //   table.string('id').primary()
     //   table.string('email').unique().notNullable()
     //   table.string('name').notNullable()
@@ -22,7 +22,7 @@ export const migration20250201CreateAdminsTable = {
     //   table.string('password_reset_token').nullable()
     //   table.datetime('password_reset_expires_at').nullable()
     //   table.string('created_by').nullable()
-    //   table.datetime('created_at').defaultTo(db.fn.now())
+    //   table.datetime('created_at').defaultTo(_db.fn.now())
     //   table.datetime('updated_at').nullable()
     //   table.json('metadata').nullable()
     //   table.index(['email'])
@@ -33,8 +33,8 @@ export const migration20250201CreateAdminsTable = {
   /**
    * DOWN：刪除表格
    */
-  async down(db: any): Promise<void> {
-    // await db.schema.dropTable('admins')
+  async down(_db: any): Promise<void> {
+    // await _db.schema.dropTable('admins')
   },
 }
 

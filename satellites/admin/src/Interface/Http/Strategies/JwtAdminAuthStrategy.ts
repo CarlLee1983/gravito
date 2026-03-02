@@ -23,7 +23,8 @@ export interface TokenPair {
 export class JwtAdminAuthStrategy {
   private readonly accessTokenExpiry = 15 * 60 // 15 分鐘
   private readonly refreshTokenExpiry = 7 * 24 * 60 * 60 // 7 天
-  private readonly secret = process.env.JWT_SECRET || 'dev-secret-key'
+  // @ts-expect-error TS6133 - 用於未來實作
+  private readonly _secret = process.env.JWT_SECRET || 'dev-secret-key'
 
   /**
    * 簽發 access token 和 refresh token
@@ -113,9 +114,9 @@ export class JwtAdminAuthStrategy {
   /**
    * 撤銷 token（加入黑名單）
    */
-  revokeToken(token: string): void {
+  revokeToken(_token: string): void {
     // 實際實作應將 token 加入黑名單
-    // this.tokenBlacklist.addToBlacklist(token, expiryTime)
+    // this.tokenBlacklist.addToBlacklist(_token, expiryTime)
   }
 
   /**

@@ -36,6 +36,10 @@ export class AdminController {
    */
   async show(ctx: GravitoContext) {
     const id = ctx.req.param('id')
+    if (!id) {
+      return ctx.json({ error: 'ID is required' }, 400)
+    }
+
     const result = await this.getUseCase.execute(id)
     return ctx.json(result, 200)
   }
@@ -44,10 +48,14 @@ export class AdminController {
    * POST /api/admin/v1/admins
    */
   async store(ctx: GravitoContext) {
-    const { email, name, password, isSuper } = await ctx.req.json()
-    const requestingAdmin = ctx.get('admin')
+    const data = (await ctx.req.json()) as Record<string, unknown>
+    const email = data.email as string
+    const name = data.name as string
+    const password = data.password as string
+    const isSuper = data.isSuper as boolean
+    const requestingAdmin = ctx.get('admin') as unknown
 
-    const result = await this.createUseCase.execute(email, name, password, requestingAdmin, {
+    const result = await this.createUseCase.execute(email, name, password, requestingAdmin as any, {
       isSuper,
     })
 
@@ -59,10 +67,16 @@ export class AdminController {
    */
   async update(ctx: GravitoContext) {
     const id = ctx.req.param('id')
-    const { name, metadata } = await ctx.req.json()
-    const requestingAdmin = ctx.get('admin')
+    if (!id) {
+      return ctx.json({ error: 'ID is required' }, 400)
+    }
 
-    const result = await this.updateUseCase.execute(id, name, requestingAdmin, metadata)
+    const data = (await ctx.req.json()) as Record<string, unknown>
+    const name = data.name as string
+    const metadata = data.metadata as Record<string, unknown>
+    const requestingAdmin = ctx.get('admin') as unknown
+
+    const result = await this.updateUseCase.execute(id, name, requestingAdmin as any, metadata)
     return ctx.json(result, 200)
   }
 
@@ -71,9 +85,13 @@ export class AdminController {
    */
   async destroy(ctx: GravitoContext) {
     const id = ctx.req.param('id')
-    const requestingAdmin = ctx.get('admin')
+    if (!id) {
+      return ctx.json({ error: 'ID is required' }, 400)
+    }
 
-    await this.deleteUseCase.execute(id, requestingAdmin)
+    const requestingAdmin = ctx.get('admin') as unknown
+
+    await this.deleteUseCase.execute(id, requestingAdmin as any)
     return ctx.json({ success: true }, 200)
   }
 }

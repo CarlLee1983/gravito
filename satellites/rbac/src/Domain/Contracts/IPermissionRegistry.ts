@@ -1,5 +1,3 @@
-import type { PermissionKey } from '../ValueObjects/PermissionKey'
-
 export interface PermissionRegistryInput {
   key: string
   label: string

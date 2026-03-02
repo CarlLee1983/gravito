@@ -110,8 +110,8 @@ export class AdminServiceProvider {
     const adminRepo = core.container.make('admin.repository')
     const jwtStrategy = core.container.make('admin.jwtStrategy')
     const authMiddleware = adminAuthMiddleware(core, jwtStrategy, adminRepo)
-    const authController = core.container.make<AdminAuthController>('admin.authController')
-    const adminController = core.container.make<AdminController>('admin.controller')
+    const authController = core.container.make('admin.authController') as AdminAuthController
+    const adminController = core.container.make('admin.controller') as AdminController
 
     // 認證路由（無需認證）
     router.post('/api/admin/auth/login', (ctx: any) => authController.login(ctx))

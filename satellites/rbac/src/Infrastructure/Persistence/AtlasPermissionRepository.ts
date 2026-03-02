@@ -112,32 +112,30 @@ export class InMemoryPermissionRepository implements IPermissionRepository {
  * 實際的 Atlas ORM 實作佔位符
  */
 export class AtlasPermissionRepository implements IPermissionRepository {
-  constructor(private readonly db: any) {}
+  async save(_permission: Permission): Promise<void> {}
 
-  async save(permission: Permission): Promise<void> {}
-
-  async findById(id: string): Promise<Permission | null> {
+  async findById(_id: string): Promise<Permission | null> {
     return null
   }
 
-  async findByKey(key: PermissionKey): Promise<Permission | null> {
+  async findByKey(_key: PermissionKey): Promise<Permission | null> {
     return null
   }
 
-  async findByKeys(keys: PermissionKey[]): Promise<Permission[]> {
+  async findByKeys(_keys: PermissionKey[]): Promise<Permission[]> {
     return []
   }
 
-  async findByIds(ids: string[]): Promise<Permission[]> {
+  async findByIds(_ids: string[]): Promise<Permission[]> {
     return []
   }
 
-  async findByGroup(groupName: string): Promise<Permission[]> {
+  async findByGroup(_groupName: string): Promise<Permission[]> {
     return []
   }
 
   async findWithPagination(
-    filters: PermissionFilters,
+    _filters: PermissionFilters,
     options: PaginationOptions
   ): Promise<PaginatedResult<Permission>> {
     return {
@@ -152,9 +150,9 @@ export class AtlasPermissionRepository implements IPermissionRepository {
     return []
   }
 
-  async delete(id: string): Promise<void> {}
+  async delete(_id: string): Promise<void> {}
 
-  async exists(key: PermissionKey): Promise<boolean> {
+  async exists(_key: PermissionKey): Promise<boolean> {
     return false
   }
 }

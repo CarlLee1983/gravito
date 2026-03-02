@@ -1,4 +1,4 @@
-import type { ServiceProvider } from '@gravito/core'
+import { ServiceProvider } from '@gravito/core'
 import { PermissionRegistry } from './Application/Registry/PermissionRegistry'
 import { AssignRoleToAdminUseCase } from './Application/UseCases/AssignRoleToAdmin'
 import { CheckPermissionUseCase } from './Application/UseCases/CheckPermission'
@@ -24,190 +24,195 @@ import { requirePermission } from './Interface/Http/Middleware/requirePermission
  * RBAC Service Provider
  * 角色與權限管理系統服務提供者
  */
-export class RbacServiceProvider implements ServiceProvider {
-  constructor(private readonly core: any) {}
-
-  register(): void {
+export class RbacServiceProvider extends ServiceProvider {
+  override register(container: any): void {
     // Repositories
-    this.core.container.singleton('rbac.roleRepository', () => {
+    container.singleton('rbac.roleRepository', () => {
       return new InMemoryRoleRepository()
     })
 
-    this.core.container.singleton('rbac.permissionRepository', () => {
+    container.singleton('rbac.permissionRepository', () => {
       return new InMemoryPermissionRepository()
     })
 
     // Permission Registry
-    this.core.container.singleton('rbac.registry', (container: any) => {
-      return new PermissionRegistry(container.make('rbac.permissionRepository'), this.core)
+    container.singleton('rbac.registry', (c: any) => {
+      return new PermissionRegistry(c.make('rbac.permissionRepository'), this.core!)
     })
 
     // UseCases
-    this.core.container.factory('rbac.listRolesUseCase', (container: any) => {
-      return new ListRolesUseCase(container.make('rbac.roleRepository'))
+    container.bind('rbac.listRolesUseCase', (c: any) => {
+      return new ListRolesUseCase(c.make('rbac.roleRepository'))
     })
 
-    this.core.container.factory('rbac.getRoleUseCase', (container: any) => {
-      return new GetRoleUseCase(container.make('rbac.roleRepository'))
+    container.bind('rbac.getRoleUseCase', (c: any) => {
+      return new GetRoleUseCase(c.make('rbac.roleRepository'))
     })
 
-    this.core.container.factory('rbac.createRoleUseCase', (container: any) => {
-      return new CreateRoleUseCase(container.make('rbac.roleRepository'), this.core)
+    container.bind('rbac.createRoleUseCase', (c: any) => {
+      return new CreateRoleUseCase(c.make('rbac.roleRepository'), this.core!)
     })
 
-    this.core.container.factory('rbac.updateRoleUseCase', (container: any) => {
-      return new UpdateRoleUseCase(container.make('rbac.roleRepository'), this.core)
+    container.bind('rbac.updateRoleUseCase', (c: any) => {
+      return new UpdateRoleUseCase(c.make('rbac.roleRepository'), this.core!)
     })
 
-    this.core.container.factory('rbac.deleteRoleUseCase', (container: any) => {
-      return new DeleteRoleUseCase(container.make('rbac.roleRepository'), this.core)
+    container.bind('rbac.deleteRoleUseCase', (c: any) => {
+      return new DeleteRoleUseCase(c.make('rbac.roleRepository'), this.core!)
     })
 
-    this.core.container.factory('rbac.listPermissionsUseCase', (container: any) => {
-      return new ListPermissionsUseCase(container.make('rbac.permissionRepository'))
+    container.bind('rbac.listPermissionsUseCase', (c: any) => {
+      return new ListPermissionsUseCase(c.make('rbac.permissionRepository'))
     })
 
-    this.core.container.factory('rbac.syncPermissionsUseCase', (container: any) => {
-      return new SyncRolePermissionsUseCase(container.make('rbac.roleRepository'))
+    container.bind('rbac.syncPermissionsUseCase', (c: any) => {
+      return new SyncRolePermissionsUseCase(c.make('rbac.roleRepository'))
     })
 
-    this.core.container.factory('rbac.assignRoleUseCase', (container: any) => {
-      return new AssignRoleToAdminUseCase(container.make('rbac.roleRepository'))
+    container.bind('rbac.assignRoleUseCase', (c: any) => {
+      return new AssignRoleToAdminUseCase(c.make('rbac.roleRepository'))
     })
 
-    this.core.container.factory('rbac.revokeRoleUseCase', (container: any) => {
-      return new RevokeRoleFromAdminUseCase(container.make('rbac.roleRepository'))
+    container.bind('rbac.revokeRoleUseCase', (c: any) => {
+      return new RevokeRoleFromAdminUseCase(c.make('rbac.roleRepository'))
     })
 
-    this.core.container.factory('rbac.checkPermissionUseCase', (container: any) => {
+    container.bind('rbac.checkPermissionUseCase', (c: any) => {
       return new CheckPermissionUseCase(
-        container.make('rbac.roleRepository'),
-        container.make('rbac.permissionRepository')
+        c.make('rbac.roleRepository'),
+        c.make('rbac.permissionRepository')
       )
     })
 
     // Controllers
-    this.core.container.factory('rbac.roleController', (container: any) => {
+    container.bind('rbac.roleController', (c: any) => {
       return new RoleController(
-        container.make('rbac.listRolesUseCase'),
-        container.make('rbac.getRoleUseCase'),
-        container.make('rbac.createRoleUseCase'),
-        container.make('rbac.updateRoleUseCase'),
-        container.make('rbac.deleteRoleUseCase'),
-        container.make('rbac.syncPermissionsUseCase'),
-        container.make('rbac.assignRoleUseCase'),
-        container.make('rbac.revokeRoleUseCase')
+        c.make('rbac.listRolesUseCase'),
+        c.make('rbac.getRoleUseCase'),
+        c.make('rbac.createRoleUseCase'),
+        c.make('rbac.updateRoleUseCase'),
+        c.make('rbac.deleteRoleUseCase'),
+        c.make('rbac.syncPermissionsUseCase'),
+        c.make('rbac.assignRoleUseCase'),
+        c.make('rbac.revokeRoleUseCase')
       )
     })
 
-    this.core.container.factory('rbac.permissionController', (container: any) => {
-      return new PermissionController(container.make('rbac.listPermissionsUseCase'))
+    container.bind('rbac.permissionController', (c: any) => {
+      return new PermissionController(c.make('rbac.listPermissionsUseCase'))
     })
   }
 
-  async boot(): Promise<void> {
+  override async boot(): Promise<void> {
+    const core = this.core
+    if (!core) {
+      return
+    }
+
     // 取得依賴
-    const checkPermissionUseCase = this.core.container.make('rbac.checkPermissionUseCase')
-    const registry = this.core.container.make('rbac.registry') as PermissionRegistry
-    const permissionRepo = this.core.container.make('rbac.permissionRepository')
-    const roleRepo = this.core.container.make('rbac.roleRepository')
+    const checkPermissionUseCase = core.container.make(
+      'rbac.checkPermissionUseCase'
+    ) as CheckPermissionUseCase
+    const registry = core.container.make('rbac.registry') as PermissionRegistry
+    const permissionRepo = core.container.make('rbac.permissionRepository') as any
+    const roleRepo = core.container.make('rbac.roleRepository') as any
 
     // 取得 admin middleware（由 admin satellite 提供）
-    const adminAuthMiddleware = this.core.container.make('admin.authMiddleware')
+    const adminAuthMiddleware = core.container.make('admin.authMiddleware') as any
 
     // Seed 系統權限
     await this.seedSystemPermissions(registry)
 
     // 設定 Gate
-    const gateSetup = new RbacGateSetup(roleRepo, permissionRepo, this.core)
+    const gateSetup = new RbacGateSetup(roleRepo, permissionRepo, core)
     gateSetup.setupGate()
 
     // Controllers
-    const roleController = this.core.container.make('rbac.roleController')
-    const permissionController = this.core.container.make('rbac.permissionController')
+    const roleController = core.container.make('rbac.roleController') as any
+    const permissionController = core.container.make('rbac.permissionController') as any
 
     // 掛載路由
-    const permissionMiddleware = requirePermission('rbac:read', checkPermissionUseCase)
-    const manageMiddleware = requirePermission('rbac:manage', checkPermissionUseCase)
+    const permissionMiddleware = requirePermission('rbac:read', checkPermissionUseCase) as any
+    const manageMiddleware = requirePermission('rbac:manage', checkPermissionUseCase) as any
 
     // 角色路由
-    this.core.adapter.route(
+    core.adapter.route(
       'get',
       '/api/admin/v1/rbac/roles',
-      adminAuthMiddleware,
+      adminAuthMiddleware as any,
       permissionMiddleware,
       (ctx: any) => roleController.index(ctx)
     )
-    this.core.adapter.route(
+    core.adapter.route(
       'get',
       '/api/admin/v1/rbac/roles/:id',
-      adminAuthMiddleware,
+      adminAuthMiddleware as any,
       permissionMiddleware,
       (ctx: any) => roleController.show(ctx)
     )
-    this.core.adapter.route(
+    core.adapter.route(
       'post',
       '/api/admin/v1/rbac/roles',
-      adminAuthMiddleware,
+      adminAuthMiddleware as any,
       manageMiddleware,
       (ctx: any) => roleController.store(ctx)
     )
-    this.core.adapter.route(
+    core.adapter.route(
       'patch',
       '/api/admin/v1/rbac/roles/:id',
-      adminAuthMiddleware,
+      adminAuthMiddleware as any,
       manageMiddleware,
       (ctx: any) => roleController.update(ctx)
     )
-    this.core.adapter.route(
+    core.adapter.route(
       'delete',
       '/api/admin/v1/rbac/roles/:id',
-      adminAuthMiddleware,
+      adminAuthMiddleware as any,
       manageMiddleware,
       (ctx: any) => roleController.destroy(ctx)
     )
-    this.core.adapter.route(
+    core.adapter.route(
       'put',
       '/api/admin/v1/rbac/roles/:id/permissions',
-      adminAuthMiddleware,
+      adminAuthMiddleware as any,
       manageMiddleware,
       (ctx: any) => roleController.syncPermissions(ctx)
     )
 
     // 權限路由
-    this.core.adapter.route(
+    core.adapter.route(
       'get',
       '/api/admin/v1/rbac/permissions',
-      adminAuthMiddleware,
+      adminAuthMiddleware as any,
       permissionMiddleware,
       (ctx: any) => permissionController.index(ctx)
     )
 
     // 管理員角色指派路由
-    this.core.adapter.route(
+    core.adapter.route(
       'post',
       '/api/admin/v1/rbac/admins/:adminId/roles',
-      adminAuthMiddleware,
+      adminAuthMiddleware as any,
       manageMiddleware,
       (ctx: any) => roleController.assignRole(ctx)
     )
-    this.core.adapter.route(
+    core.adapter.route(
       'delete',
       '/api/admin/v1/rbac/admins/:adminId/roles/:roleId',
-      adminAuthMiddleware,
+      adminAuthMiddleware as any,
       manageMiddleware,
       (ctx: any) => roleController.revokeRole(ctx)
     )
 
     // 監聽 admin:deleted 事件
-    this.core.hooks.addAction('admin:deleted', async (data: any) => {
+    core.hooks.addAction('admin:deleted', async (data: any) => {
       if (data.adminId) {
         await (roleRepo as any).removeAllRolesFromAdmin(data.adminId)
       }
     })
 
     // 支援動態權限註冊
-    this.core.hooks.addAction('rbac:register-permissions', async (permissions: any[]) => {
+    core.hooks.addAction('rbac:register-permissions', async (permissions: any[]) => {
       await registry.registerMany(permissions)
     })
 

@@ -5,8 +5,6 @@ import type {
   PaginationOptions,
 } from '../../Domain/Contracts/IAdminRepository'
 import type { Admin } from '../../Domain/Entities/Admin'
-import { AdminStatus } from '../../Domain/Entities/Admin'
-import { AdminEmail } from '../../Domain/ValueObjects/AdminEmail'
 
 /**
  * Admin 的 InMemory 實作（用於測試和開發）
@@ -95,31 +93,32 @@ export class InMemoryAdminRepository implements IAdminRepository {
  */
 export class AtlasAdminRepository implements IAdminRepository {
   constructor(
-    private readonly db: any // @gravito/atlas Database instance
+    // @ts-expect-error TS6138
+    private readonly _db: any // @gravito/atlas Database instance
   ) {}
 
-  async save(admin: Admin): Promise<void> {
+  async save(_admin: Admin): Promise<void> {
     // 實際實作應使用 Atlas query builder
-    // await this.db.table('admins').upsert({ ... })
+    // await this._db.table('admins').upsert({ ... })
   }
 
-  async findById(id: string): Promise<Admin | null> {
+  async findById(_id: string): Promise<Admin | null> {
     // 實際實作
     return null
   }
 
-  async findByEmail(email: string): Promise<Admin | null> {
+  async findByEmail(_email: string): Promise<Admin | null> {
     // 實際實作
     return null
   }
 
-  async findByPasswordResetToken(token: string): Promise<Admin | null> {
+  async findByPasswordResetToken(_token: string): Promise<Admin | null> {
     // 實際實作
     return null
   }
 
   async findWithPagination(
-    filters: AdminFilters,
+    _filters: AdminFilters,
     options: PaginationOptions
   ): Promise<PaginatedResult<Admin>> {
     // 實際實作
@@ -131,11 +130,11 @@ export class AtlasAdminRepository implements IAdminRepository {
     }
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(_id: string): Promise<void> {
     // 實際實作
   }
 
-  async exists(email: string): Promise<boolean> {
+  async exists(_email: string): Promise<boolean> {
     // 實際實作
     return false
   }

@@ -1,6 +1,5 @@
 import type { PlanetCore } from '@gravito/core'
 import { RbacErrorFactory } from '../../../Application/Errors/RbacError'
-import type { IPermissionRegistry } from '../../Contracts/IPermissionRegistry'
 import type { IPermissionRepository } from '../../Contracts/IPermissionRepository'
 import { Permission } from '../../Entities/Permission'
 import { PermissionKey } from '../../ValueObjects/PermissionKey'

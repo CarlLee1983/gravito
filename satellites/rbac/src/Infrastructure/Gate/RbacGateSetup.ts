@@ -17,11 +17,11 @@ export class RbacGateSetup {
   private authContext: AuthorizationContext
 
   constructor(
-    private readonly _roleRepo: IRoleRepository,
-    private readonly _permissionRepo: IPermissionRepository,
+    roleRepo: IRoleRepository,
+    permissionRepo: IPermissionRepository,
     private readonly core: PlanetCore
   ) {
-    this.authContext = new AuthorizationContext(_roleRepo, _permissionRepo)
+    this.authContext = new AuthorizationContext(roleRepo, permissionRepo)
   }
 
   /**
