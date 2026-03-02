@@ -23,20 +23,55 @@
 
 ## ✨ 特色
 
-- 🚀 **極速效能**：專為 Bun 運行時打造，實現最大吞吐量。
-- 🎯 **型別安全路由**：完整的 TypeScript 支援，智慧型別推論。
-- 🔌 **中介軟體系統**：可組合的中介軟體，用於認證、驗證等。
-- 📡 **RPC 支援**：為 `@gravito/beam` 提供型別安全的客戶端-伺服器通訊。
+- 🚀 **極致原生效能**：專為 Bun 1.39+ 優化的自定義引擎，具備 SIMD 加速路由與零分配 Context 池化。
+- 🏎️ **原生路由卸載 (Native Offloading)**：自動將靜態路由與預編譯中介軟體鏈注入 Bun 的 C++/Zig 內核路由器。
+- 🎯 **型別安全路由**：完整的 TypeScript 支援，針對參數、查詢與 Body 的智慧型別推論。
+- 🔌 **中介軟體系統**：可組合的中介軟體，用於認證、驗證、安全與協議處理 (HTMX/CBOR)。
+- 📡 **RPC 支援**：為 `@gravito/beam` 提供端到端型別安全的客戶端-伺服器通訊。
+- 🛡️ **企業級安全**：內建 CORS、CSRF、HSTS、速率限制 (Rate Limiting) 與 Body 大小限制。
 
 ## 🚀 快速開始
 
+### 標準模式 (Hono 相容)
 ```typescript
 import { Photon } from '@gravito/photon'
 const app = new Photon()
 
-app.get('/', (c) => c.text('Hello from Photon!'))
+app.get('/', (c) => c.text('來自 Photon 的問候！'))
 export default app
 ```
+
+### 極限原生模式 (Bun 1.39+)
+若要獲得最大吞吐量，請使用 **原生引擎**，它能完全跳過 JS 路由開銷。
+
+```typescript
+import { NativePhoton } from '@gravito/photon/native'
+
+const app = new NativePhoton()
+
+// 高效能靜態路由 (原生卸載)
+app.get('/health', (c) => c.json({ status: 'ok' }))
+
+// 動態路由 (AOT 優化)
+app.get('/users/:id', (c) => c.json({ id: c.req.param('id') }))
+
+// 使用原生 SIMD 路由器啟動
+export default app.serveConfig({
+  port: 3000
+})
+```
+
+---
+
+## 🏎️ 原生引擎優化 (Native Engine)
+
+`@gravito/photon/native` 引擎利用最新的 Bun 1.39 特性實現了突破性的效能：
+
+- **AOT 中介軟體注入**：將中介軟體鏈預編譯為單一函數，並直接注入 Bun 的原生路由器。
+- **零微任務調度**：利用 `Bun.peek()` 消除同步處理器在事件循環中的等待開銷。
+- **物件池化 (Object Pooling)**：循環利用請求 Context 物件，消除高流量下的 GC 停頓。
+- **零拷貝串流**：整合 Bun 的 `direct` streams，實現內核級別的 Socket 數據傳輸。
+- **二進位優先**：原生支援 `c.binary()` 並具備優化的緩衝區管理。
 
 ---
 

@@ -227,9 +227,11 @@ await kernel.handle(process.argv.slice(2));
 
 ## ⚡ 原生加速器（Native Accelerators）
 
-Gravito Core 利用 FFI (Foreign Function Interface) 使用高效能的 C 語言實作來處理關鍵任務：
+Gravito Core 深度利用 Bun 的原生特性與 FFI (Foreign Function Interface) 來處理關鍵任務，實現極限效能：
 
-- **CBOR**: 高效的二進位序列化。
+- **原生 Web 引擎 (Bun 1.39+)**: 專為 Bun 優化的獨立 HTTP 引擎，支援 SIMD 加速路由、中介軟體預編譯與 AOT 卸載。
+- **物件池化 (Object Pooling)**: 透過 `FastContext` 回收機制，達成請求處理過程中的「零 JS 堆分配」，極大化吞吐量。
+- **FFI 加速**: 高效能的二進位序列化 (CBOR) 與雜湊計算。
 - **雜湊（Hashing）**: 使用 Bun 原生指令集加速的 SHA-256 與 HMAC 計算。
 
 ## 🛡️ 安全中介軟體遷移
