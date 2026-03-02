@@ -149,16 +149,16 @@ export class AtlasRoleRepository implements IRoleRepository {
     return []
   }
 
-  async delete(id: string): Promise<void> {}
-  async exists(name: string): Promise<boolean> {
+  async delete(_id: string): Promise<void> {}
+  async exists(_name: string): Promise<boolean> {
     return false
   }
 
-  async getAdminRoleIds(adminId: string): Promise<string[]> {
+  async getAdminRoleIds(_adminId: string): Promise<string[]> {
     return []
   }
 
-  async assignRole(adminId: string, roleId: string): Promise<void> {}
-  async revokeRole(adminId: string, roleId: string): Promise<void> {}
-  async removeAllRolesFromAdmin(adminId: string): Promise<void> {}
+  async assignRole(_adminId: string, _roleId: string): Promise<void> {}
+  async revokeRole(_adminId: string, _roleId: string): Promise<void> {}
+  async removeAllRolesFromAdmin(_adminId: string): Promise<void> {}
 }

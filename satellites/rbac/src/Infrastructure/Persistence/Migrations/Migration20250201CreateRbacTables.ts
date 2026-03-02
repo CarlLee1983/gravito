@@ -9,7 +9,7 @@ export const migration20250201CreateRbacTables = {
   /**
    * UP：建立所有表格
    */
-  async up(db: any): Promise<void> {
+  async up(_db: any): Promise<void> {
     // 實際實作應使用 @gravito/atlas 的 schema builder
     // 1. Create roles table
     // 2. Create permissions table
@@ -20,7 +20,7 @@ export const migration20250201CreateRbacTables = {
   /**
    * DOWN：刪除所有表格
    */
-  async down(db: any): Promise<void> {
+  async down(_db: any): Promise<void> {
     // 刪除順序：admin_roles -> role_permissions -> roles -> permissions
   },
 }
