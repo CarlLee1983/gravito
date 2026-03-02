@@ -11,11 +11,9 @@
  */
 
 import crypto from 'node:crypto'
-import type {
-  GravitoContext as Context,
-  GravitoMiddleware as MiddlewareHandler,
-  GravitoNext as Next,
-} from '@gravito/core'
+import type { GravitoContext as Context, GravitoMiddleware } from '@gravito/core'
+import type { MiddlewareHandler } from 'hono'
+import { asHonoMiddleware } from '../../middleware-adapter'
 
 /**
  * Cookie 設定選項（從 @gravito/core CookieOptions 提取，避免循環依賴）
@@ -140,7 +138,7 @@ export function csrfProtection(options: CsrfOptions = {}): MiddlewareHandler {
   const formFieldName = options.formFieldName ?? '_token'
   const safeMethods = (options.safeMethods ?? defaultSafeMethods).map((m) => m.toUpperCase())
 
-  return async (c: Context, next: Next) => {
+  const middleware: GravitoMiddleware = async (c, next) => {
     const method = c.req.method.toUpperCase()
     const cookieHeader = c.req.header('Cookie') || ''
     const cookies = parseCookies(cookieHeader)
@@ -148,7 +146,7 @@ export function csrfProtection(options: CsrfOptions = {}): MiddlewareHandler {
 
     if (safeMethods.includes(method)) {
       await next()
-      return undefined
+      return
     }
 
     const headerToken = c.req.header(headerName) || c.req.header(headerName.toLowerCase())
@@ -171,6 +169,7 @@ export function csrfProtection(options: CsrfOptions = {}): MiddlewareHandler {
     }
 
     await next()
-    return undefined
   }
+
+  return asHonoMiddleware(middleware)
 }

@@ -8,10 +8,9 @@
  * @since 1.1.0
  */
 
-import type {
-  GravitoContext as Context,
-  GravitoMiddleware as MiddlewareHandler,
-} from '@gravito/core'
+import type { GravitoContext as Context, GravitoMiddleware } from '@gravito/core'
+import type { MiddlewareHandler } from 'hono'
+import { asHonoMiddleware } from '../../middleware-adapter'
 
 /**
  * Options for header token gate
@@ -60,11 +59,12 @@ export function requireHeaderToken(options: RequireHeaderTokenOptions = {}): Mid
   const status = options.status ?? 403
   const message = options.message ?? 'Unauthorized'
 
-  return async (c, next) => {
+  const middleware: GravitoMiddleware = async (c, next) => {
     if (!(await gate(c))) {
       return c.text(message, status as any)
     }
     await next()
-    return undefined
   }
+
+  return asHonoMiddleware(middleware)
 }

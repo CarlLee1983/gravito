@@ -13,11 +13,9 @@
  * @since 1.1.0
  */
 
-import type {
-  GravitoContext as Context,
-  GravitoMiddleware as MiddlewareHandler,
-  GravitoNext as Next,
-} from '@gravito/core'
+import type { GravitoMiddleware } from '@gravito/core'
+import type { MiddlewareHandler } from 'hono'
+import { asHonoMiddleware } from '../../middleware-adapter'
 
 type RateLimiterLike = {
   attempt: (
@@ -77,13 +75,13 @@ export function throttleRequests(options: ThrottleRequestsOptions = {}): Middlew
   // keyCache：WeakMap 以 Request 為鍵，避免重複解析相同請求的 IP
   const keyCache = new WeakMap<Request, string>()
 
-  return async (c: Context, next: Next) => {
+  const middleware: GravitoMiddleware = async (c, next) => {
     const cache = c.get('cache') as CacheLike | undefined
     if (!cache) {
       // 若 cache 服務不可用，略過限速並記錄警告
       onMissingCache('RateLimiter: OrbitCache not found. Skipping rate limiting.')
       await next()
-      return undefined
+      return
     }
 
     // 解析客戶端 IP（利用 WeakMap 快取避免重複計算）
@@ -118,6 +116,7 @@ export function throttleRequests(options: ThrottleRequestsOptions = {}): Middlew
     }
 
     await next()
-    return undefined
   }
+
+  return asHonoMiddleware(middleware)
 }

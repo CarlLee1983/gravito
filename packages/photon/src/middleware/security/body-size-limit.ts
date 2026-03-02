@@ -8,7 +8,9 @@
  * @since 1.1.0
  */
 
-import type { GravitoMiddleware as MiddlewareHandler } from '@gravito/core'
+import type { GravitoMiddleware } from '@gravito/core'
+import type { MiddlewareHandler } from 'hono'
+import { asHonoMiddleware } from '../../middleware-adapter'
 
 /**
  * Options for body size limiting
@@ -33,11 +35,11 @@ export function bodySizeLimit(
 ): MiddlewareHandler {
   const allowedMethods = (options.methods ?? defaultMethods).map((m) => m.toUpperCase())
 
-  return async (c, next) => {
+  const middleware: GravitoMiddleware = async (c, next) => {
     const method = c.req.method.toUpperCase()
     if (!allowedMethods.includes(method)) {
       await next()
-      return undefined
+      return
     }
 
     const lengthHeader = c.req.header('Content-Length')
@@ -46,7 +48,7 @@ export function bodySizeLimit(
         return c.text('Length Required', 411)
       }
       await next()
-      return undefined
+      return
     }
 
     const length = Number(lengthHeader)
@@ -55,7 +57,7 @@ export function bodySizeLimit(
         return c.text('Invalid Content-Length', 400)
       }
       await next()
-      return undefined
+      return
     }
 
     if (length > maxBytes) {
@@ -63,6 +65,7 @@ export function bodySizeLimit(
     }
 
     await next()
-    return undefined
   }
+
+  return asHonoMiddleware(middleware)
 }

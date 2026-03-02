@@ -8,11 +8,9 @@
  * @since 1.1.0
  */
 
-import type {
-  GravitoContext as Context,
-  GravitoMiddleware as MiddlewareHandler,
-  GravitoNext as Next,
-} from '@gravito/core'
+import type { GravitoContext as Context, GravitoMiddleware } from '@gravito/core'
+import type { MiddlewareHandler } from 'hono'
+import { asHonoMiddleware } from '../../middleware-adapter'
 
 /**
  * HSTS Configuration
@@ -69,7 +67,7 @@ export function securityHeaders(options: SecurityHeadersOptions = {}): Middlewar
     ...options,
   }
 
-  return async (c: Context, next: Next) => {
+  const middleware: GravitoMiddleware = async (c, next) => {
     if (merged.noSniff) {
       c.header('X-Content-Type-Options', 'nosniff')
     }
@@ -100,6 +98,7 @@ export function securityHeaders(options: SecurityHeadersOptions = {}): Middlewar
     }
 
     await next()
-    return undefined
   }
+
+  return asHonoMiddleware(middleware)
 }
