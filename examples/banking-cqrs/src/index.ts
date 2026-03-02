@@ -1,5 +1,4 @@
-import { defineConfig, PlanetCore } from '@gravito/core'
-import { PhotonAdapter } from '@gravito/photon/adapter'
+import { defineConfig, GravitoEngineAdapter, PlanetCore } from '@gravito/core'
 import { bootstrapDatabase } from './bootstrap'
 
 /**
@@ -9,23 +8,23 @@ import { bootstrapDatabase } from './bootstrap'
  * banking application using the CQRS architectural pattern.
  *
  * **Initialization Steps:**
- * 1. Create PlanetCore with PhotonAdapter (HTTP engine)
+ * 1. Create PlanetCore with GravitoEngineAdapter (HTTP engine)
  * 2. Run async bootstrap for DI, migrations, routes
  * 3. Start HTTP server on specified port
  * 4. Export server instance for hosting
  *
  * **Architecture:**
  * - **PlanetCore:** Framework's microkernel with hooks and DI container
- * - **PhotonAdapter:** HTTP server built on Hono framework
+ * - **GravitoEngineAdapter:** Native HTTP engine (Bun-optimized)
  * - **CQRS Pattern:** Separate command (write) and query (read) handlers
  *
  * **Configuration:**
- * - Adapter: PhotonAdapter (Hono-based HTTP engine)
+ * - Adapter: GravitoEngineAdapter (Native HTTP engine)
  * - Port: From PORT env var (default: 3000)
  * - Database: Configured in CqrsProvider (SQLite for dev, PostgreSQL for prod)
  *
  * **Execution Flow:**
- * 1. Import and create core with Photon adapter
+ * 1. Import and create core with GravitoEngineAdapter
  * 2. Resolve port from environment
  * 3. Async bootstrap (provider registration, migrations, routes)
  * 4. Start server via core.liftoff(port)
@@ -54,7 +53,7 @@ import { bootstrapDatabase } from './bootstrap'
  */
 
 /**
- * Create PlanetCore with Photon HTTP adapter
+ * Create PlanetCore with GravitoEngineAdapter
  *
  * PlanetCore is the framework's microkernel that provides:
  * - Dependency injection container
@@ -62,11 +61,11 @@ import { bootstrapDatabase } from './bootstrap'
  * - Lifecycle management
  * - Service provider registration
  *
- * PhotonAdapter provides HTTP server capabilities via Hono framework.
+ * GravitoEngineAdapter provides native HTTP server capabilities optimized for Bun.
  */
 const core = new PlanetCore(
   defineConfig({
-    adapter: new PhotonAdapter(),
+    adapter: new GravitoEngineAdapter(),
   })
 )
 

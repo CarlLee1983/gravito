@@ -13,7 +13,9 @@
  * @since 1.1.0
  */
 
-import type { Context, MiddlewareHandler, Next } from 'hono'
+import type { GravitoMiddleware } from '@gravito/core'
+import type { MiddlewareHandler } from 'hono'
+import { asHonoMiddleware } from '../../middleware-adapter'
 
 type RateLimiterLike = {
   attempt: (
@@ -73,13 +75,13 @@ export function throttleRequests(options: ThrottleRequestsOptions = {}): Middlew
   // keyCache：WeakMap 以 Request 為鍵，避免重複解析相同請求的 IP
   const keyCache = new WeakMap<Request, string>()
 
-  return async (c: Context, next: Next) => {
+  const middleware: GravitoMiddleware = async (c, next) => {
     const cache = c.get('cache') as CacheLike | undefined
     if (!cache) {
       // 若 cache 服務不可用，略過限速並記錄警告
       onMissingCache('RateLimiter: OrbitCache not found. Skipping rate limiting.')
       await next()
-      return undefined
+      return
     }
 
     // 解析客戶端 IP（利用 WeakMap 快取避免重複計算）
@@ -87,9 +89,21 @@ export function throttleRequests(options: ThrottleRequestsOptions = {}): Middlew
     let key = raw && typeof raw === 'object' ? keyCache.get(raw) : undefined
 
     if (!key) {
-      const forwardedFor = c.req.header('x-forwarded-for') || ''
-      const forwardedIp = forwardedFor.split(',')[0]?.trim()
-      const ip = trustProxy ? forwardedIp || '127.0.0.1' : '127.0.0.1'
+      let ip = '127.0.0.1'
+
+      // Determine IP based on trustProxy setting
+      if (trustProxy) {
+        // When trustProxy is true, prefer x-forwarded-for (first IP in chain)
+        const forwardedFor = c.req.header('x-forwarded-for') || ''
+        const forwardedIp = forwardedFor.split(',')[0]?.trim()
+        ip = forwardedIp || '127.0.0.1'
+      } else {
+        // When trustProxy is false, use x-real-ip only if available, or fall back to localhost
+        // Note: In a real app behind a proxy, you'd need better IP extraction from request socket
+        const realIp = c.req.header('x-real-ip')
+        ip = realIp || '127.0.0.1'
+      }
+
       key = `throttle:${ip}:${c.req.path}`
 
       if (raw && typeof raw === 'object') {
@@ -114,6 +128,7 @@ export function throttleRequests(options: ThrottleRequestsOptions = {}): Middlew
     }
 
     await next()
-    return undefined
   }
+
+  return asHonoMiddleware(middleware)
 }

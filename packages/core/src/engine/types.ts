@@ -32,6 +32,7 @@ export interface FastContext {
   unauthorized(message?: string): Response
   badRequest(message?: string): Response
   forward(target: string, options?: any): Promise<Response>
+  escape(html: string): string
 
   /** Header management */
   header(name: string): string | undefined
@@ -98,6 +99,9 @@ export interface FastRequest {
 
   /** Get all headers */
   headers(): Record<string, string>
+
+  /** Get all cookies (Native Bun 1.39+ / Lazy Parsed) */
+  readonly cookies: Record<string, string>
 
   /** Parse JSON body */
   json<T = unknown>(): Promise<T>

@@ -8,7 +8,12 @@
  * @since 1.0.0
  */
 
-import type { Context, MiddlewareHandler, Next } from '@gravito/photon'
+import type { GravitoContext, GravitoMiddleware } from '@gravito/core'
+import type { MiddlewareHandler } from 'hono'
+import { asHonoMiddleware } from '../middleware-adapter'
+
+// Type alias for convenience (used in config types)
+type Context = GravitoContext
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -121,7 +126,7 @@ export class MemoryStore implements RateLimitStore {
   private store = new Map<string, { count: number; resetTime: number; node: ExpiryNode }>()
   private head?: ExpiryNode
   private tail?: ExpiryNode
-  private cleanupInterval: any = null
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null
 
   constructor(
     private config: { maxRequests: number; windowMs: number },
@@ -197,6 +202,9 @@ export class MemoryStore implements RateLimitStore {
     }
 
     // Increment existing window
+    // Performance: Direct mutation is intentional to avoid object allocation
+    // on every request in this hot path. Rate limiting must handle thousands of
+    // requests per second, so object allocation overhead is unacceptable.
     existing.count++
     // We don't update node's resetTime because it's a fixed window
     return {
@@ -249,9 +257,29 @@ export class MemoryStore implements RateLimitStore {
 
 /**
  * Default key generator: use client IP
+ *
+ * SECURITY WARNING: This relies on x-forwarded-for and x-real-ip headers which can be
+ * spoofed by clients. In production environments:
+ * 1. Deploy behind a trusted reverse proxy (nginx, CloudFlare, etc.)
+ * 2. Configure the proxy to overwrite these headers (don't trust client values)
+ * 3. Use a custom keyGenerator that validates against your infrastructure
+ *
+ * Example custom key generator for trusted proxy:
+ * ```
+ * keyGenerator: (c) => {
+ *   // Assuming nginx sets x-real-ip and overrides x-forwarded-for
+ *   return c.req.header('x-real-ip') || c.req.header('x-forwarded-for') || 'unknown'
+ * }
+ * ```
  */
 const defaultKeyGenerator = (c: Context): string => {
-  return c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'unknown'
+  // Extract first IP from x-forwarded-for (closest to client in chain)
+  const forwarded = c.req.header('x-forwarded-for')
+  if (forwarded) {
+    return forwarded.split(',')[0]!.trim()
+  }
+  // Fallback to x-real-ip if available
+  return c.req.header('x-real-ip') || 'global-fallback'
 }
 
 /**
@@ -304,7 +332,7 @@ export function rateLimit(config: RateLimitConfig): MiddlewareHandler {
     draftHeaders = false,
   } = config
 
-  return async (c: Context, next: Next): Promise<Response | undefined> => {
+  const middleware: GravitoMiddleware = async (c, next) => {
     if (skip && (await skip(c))) {
       await next()
       return undefined
@@ -334,8 +362,9 @@ export function rateLimit(config: RateLimitConfig): MiddlewareHandler {
     }
 
     await next()
-    return undefined
   }
+
+  return asHonoMiddleware(middleware)
 }
 
 /**

@@ -47,28 +47,12 @@ class MockContainer {
   }
 }
 
-// 模擬 Router
-class MockRouter {
+// 模擬 Adapter
+class MockAdapter {
   private routes: Array<{ method: string; path: string }> = []
 
-  get(path: string, ...handlers: Function[]): void {
-    this.routes.push({ method: 'GET', path })
-  }
-
-  post(path: string, ...handlers: Function[]): void {
-    this.routes.push({ method: 'POST', path })
-  }
-
-  patch(path: string, ...handlers: Function[]): void {
-    this.routes.push({ method: 'PATCH', path })
-  }
-
-  put(path: string, ...handlers: Function[]): void {
-    this.routes.push({ method: 'PUT', path })
-  }
-
-  delete(path: string, ...handlers: Function[]): void {
-    this.routes.push({ method: 'DELETE', path })
+  route(method: string, path: string, ...handlers: Function[]): void {
+    this.routes.push({ method: method.toUpperCase(), path })
   }
 
   getRoutes(): Array<{ method: string; path: string }> {
@@ -110,12 +94,11 @@ function createMockCore(): {
   }
 } {
   const container = new MockContainer()
-  const router = new MockRouter()
+  const adapter = new MockAdapter()
   const gate = new MockGate()
   const actions = new Map<string, Function[]>()
 
   // 註冊外部依賴
-  container.setInstance('router', router)
   container.setInstance('sentinel.gate', gate)
 
   // 模擬 admin.authMiddleware（由 admin satellite 提供）
@@ -124,6 +107,7 @@ function createMockCore(): {
 
   return {
     container,
+    adapter,
     hooks: {
       doAction: async (tag: string, data: unknown) => {
         const handlers = actions.get(tag) ?? []
@@ -184,8 +168,7 @@ describe('RbacServiceProvider', () => {
     provider.register()
     await provider.boot()
 
-    const router = core.container.make('router') as MockRouter
-    const routes = router.getRoutes()
+    const routes = core.adapter.getRoutes()
     const routePaths = routes.map((r) => `${r.method} ${r.path}`)
 
     // 角色路由

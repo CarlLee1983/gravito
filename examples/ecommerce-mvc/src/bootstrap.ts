@@ -13,8 +13,7 @@
  * @module bootstrap
  */
 
-import { defineConfig, PlanetCore } from '@gravito/core'
-import { PhotonAdapter } from '@gravito/photon/adapter'
+import { defineConfig, GravitoEngineAdapter, PlanetCore } from '@gravito/core'
 import { type AppConfig, appConfig } from '../config/app'
 import { databaseConfig } from '../config/database'
 import { orbits } from '../config/orbits'
@@ -45,7 +44,7 @@ export async function bootstrap(options: AppConfig = {}) {
   // 1. Configure
   // ─────────────────────────────────────────────────────────────
   const config = defineConfig({
-    adapter: new PhotonAdapter(),
+    adapter: new GravitoEngineAdapter(),
     config: {
       ...appConfig(options),
       database: databaseConfig,

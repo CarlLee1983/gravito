@@ -1,4 +1,4 @@
-import type { Context } from 'hono'
+import type { GravitoContext } from '@gravito/core'
 import { AdminMapper } from '../../../Application/DTOs/AdminDTO'
 import type { LoginAdminUseCase } from '../../../Application/UseCases/LoginAdmin'
 import type { LogoutAdminUseCase } from '../../../Application/UseCases/LogoutAdmin'
@@ -17,7 +17,7 @@ export class AdminAuthController {
   /**
    * POST /api/admin/auth/login
    */
-  async login(ctx: Context) {
+  async login(ctx: GravitoContext) {
     const { email, password } = await ctx.req.json()
 
     const result = await this.loginUseCase.execute(email, password)
@@ -27,7 +27,7 @@ export class AdminAuthController {
   /**
    * POST /api/admin/auth/refresh
    */
-  async refresh(ctx: Context) {
+  async refresh(ctx: GravitoContext) {
     const { refreshToken } = await ctx.req.json()
 
     const result = await this.refreshUseCase.execute(refreshToken)
@@ -37,7 +37,7 @@ export class AdminAuthController {
   /**
    * POST /api/admin/auth/logout
    */
-  async logout(ctx: Context) {
+  async logout(ctx: GravitoContext) {
     const token = ctx.get('adminToken')
     if (token) {
       await this.logoutUseCase.execute(token)
@@ -49,7 +49,7 @@ export class AdminAuthController {
   /**
    * GET /api/admin/auth/me
    */
-  async me(ctx: Context) {
+  async me(ctx: GravitoContext) {
     const admin = ctx.get('admin')
     if (!admin) {
       return ctx.json({ error: 'Unauthorized' }, 401)

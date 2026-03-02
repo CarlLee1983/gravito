@@ -1,4 +1,6 @@
-import type { MiddlewareHandler } from 'hono' // Direct import to avoid circular dependency
+import type { GravitoMiddleware } from '@gravito/core'
+import type { MiddlewareHandler } from 'hono'
+import { asHonoMiddleware } from '../middleware-adapter'
 
 /**
  * HTMX Middleware for Photon.
@@ -11,7 +13,9 @@ import type { MiddlewareHandler } from 'hono' // Direct import to avoid circular
  * support for HTMX. It allows handlers to easily distinguish between
  * full-page loads and partial updates.
  *
- * @returns A Hono middleware handler that populates HTMX context variables.
+ * Implemented with Gravito types, exported as Hono-compatible middleware.
+ *
+ * @returns A middleware handler that populates HTMX context variables.
  *
  * @example
  * ```typescript
@@ -38,7 +42,7 @@ import type { MiddlewareHandler } from 'hono' // Direct import to avoid circular
  * - `htmx.trigger`: The ID of the trigger element.
  */
 export const htmxMiddleware = (): MiddlewareHandler => {
-  return async (c, next) => {
+  const middleware: GravitoMiddleware = async (c, next) => {
     // Check for HTMX request header
     const isHtmx = c.req.header('HX-Request') === 'true'
 
@@ -59,4 +63,6 @@ export const htmxMiddleware = (): MiddlewareHandler => {
 
     await next()
   }
+
+  return asHonoMiddleware(middleware)
 }

@@ -4,17 +4,14 @@
  * 提供連接池狀態查詢和調整歷史接口
  */
 
-import type { Hono } from '@gravito/photon'
 import { getCore } from '../app'
 
-export function registerPoolMonitoringRoutes(app: any): void {
-  const photonApp = app as Hono
-
+export function registerPoolMonitoringRoutes(app: { get: (...args: any[]) => any }): void {
   /**
    * GET /api/admin/pool/metrics
    * 獲取當前連接池指標
    */
-  photonApp.get('/api/admin/pool/metrics', (c) => {
+  app.get('/api/admin/pool/metrics', (c: any) => {
     try {
       // 獲取應用實例以檢查連接池可用性
       getCore()
@@ -43,7 +40,7 @@ export function registerPoolMonitoringRoutes(app: any): void {
    * GET /api/admin/pool/health
    * 檢查連接池健康狀態
    */
-  photonApp.get('/api/admin/pool/health', (c) => {
+  app.get('/api/admin/pool/health', (c) => {
     try {
       const core = getCore()
       const db = (core as any).database

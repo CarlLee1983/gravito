@@ -1,5 +1,4 @@
 import type { ServiceProvider } from '@gravito/core'
-import type { Router } from 'hono'
 import { PermissionRegistry } from './Application/Registry/PermissionRegistry'
 import { AssignRoleToAdminUseCase } from './Application/UseCases/AssignRoleToAdmin'
 import { CheckPermissionUseCase } from './Application/UseCases/CheckPermission'
@@ -108,7 +107,6 @@ export class RbacServiceProvider implements ServiceProvider {
 
   async boot(): Promise<void> {
     // 取得依賴
-    const router = this.core.container.make('router') as Router
     const checkPermissionUseCase = this.core.container.make('rbac.checkPermissionUseCase')
     const registry = this.core.container.make('rbac.registry') as PermissionRegistry
     const permissionRepo = this.core.container.make('rbac.permissionRepository')
@@ -133,45 +131,72 @@ export class RbacServiceProvider implements ServiceProvider {
     const manageMiddleware = requirePermission('rbac:manage', checkPermissionUseCase)
 
     // 角色路由
-    router.get('/api/admin/v1/rbac/roles', adminAuthMiddleware, permissionMiddleware, (ctx) =>
-      roleController.index(ctx)
+    this.core.adapter.route(
+      'get',
+      '/api/admin/v1/rbac/roles',
+      adminAuthMiddleware,
+      permissionMiddleware,
+      (ctx: any) => roleController.index(ctx)
     )
-    router.get('/api/admin/v1/rbac/roles/:id', adminAuthMiddleware, permissionMiddleware, (ctx) =>
-      roleController.show(ctx)
+    this.core.adapter.route(
+      'get',
+      '/api/admin/v1/rbac/roles/:id',
+      adminAuthMiddleware,
+      permissionMiddleware,
+      (ctx: any) => roleController.show(ctx)
     )
-    router.post('/api/admin/v1/rbac/roles', adminAuthMiddleware, manageMiddleware, (ctx) =>
-      roleController.store(ctx)
+    this.core.adapter.route(
+      'post',
+      '/api/admin/v1/rbac/roles',
+      adminAuthMiddleware,
+      manageMiddleware,
+      (ctx: any) => roleController.store(ctx)
     )
-    router.patch('/api/admin/v1/rbac/roles/:id', adminAuthMiddleware, manageMiddleware, (ctx) =>
-      roleController.update(ctx)
+    this.core.adapter.route(
+      'patch',
+      '/api/admin/v1/rbac/roles/:id',
+      adminAuthMiddleware,
+      manageMiddleware,
+      (ctx: any) => roleController.update(ctx)
     )
-    router.delete('/api/admin/v1/rbac/roles/:id', adminAuthMiddleware, manageMiddleware, (ctx) =>
-      roleController.destroy(ctx)
+    this.core.adapter.route(
+      'delete',
+      '/api/admin/v1/rbac/roles/:id',
+      adminAuthMiddleware,
+      manageMiddleware,
+      (ctx: any) => roleController.destroy(ctx)
     )
-    router.put(
+    this.core.adapter.route(
+      'put',
       '/api/admin/v1/rbac/roles/:id/permissions',
       adminAuthMiddleware,
       manageMiddleware,
-      (ctx) => roleController.syncPermissions(ctx)
+      (ctx: any) => roleController.syncPermissions(ctx)
     )
 
     // 權限路由
-    router.get('/api/admin/v1/rbac/permissions', adminAuthMiddleware, permissionMiddleware, (ctx) =>
-      permissionController.index(ctx)
+    this.core.adapter.route(
+      'get',
+      '/api/admin/v1/rbac/permissions',
+      adminAuthMiddleware,
+      permissionMiddleware,
+      (ctx: any) => permissionController.index(ctx)
     )
 
     // 管理員角色指派路由
-    router.post(
+    this.core.adapter.route(
+      'post',
       '/api/admin/v1/rbac/admins/:adminId/roles',
       adminAuthMiddleware,
       manageMiddleware,
-      (ctx) => roleController.assignRole(ctx)
+      (ctx: any) => roleController.assignRole(ctx)
     )
-    router.delete(
+    this.core.adapter.route(
+      'delete',
       '/api/admin/v1/rbac/admins/:adminId/roles/:roleId',
       adminAuthMiddleware,
       manageMiddleware,
-      (ctx) => roleController.revokeRole(ctx)
+      (ctx: any) => roleController.revokeRole(ctx)
     )
 
     // 監聽 admin:deleted 事件

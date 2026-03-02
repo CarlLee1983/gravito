@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
-import type { PlanetCore } from '@gravito/core'
-import type { Context, Next } from 'hono'
+import type { GravitoContext, PlanetCore } from '@gravito/core'
 import type {
   AdminFilters,
   IAdminRepository,
@@ -99,7 +98,7 @@ function createTestAdmin(overrides?: {
 
 // Mock Hono Context
 function createMockContext(options?: { headers?: Record<string, string> }): {
-  ctx: Context
+  ctx: GravitoContext
   contextStore: Map<string, unknown>
   getJsonResponse: () => { data: unknown; status: number } | null
 } {
@@ -125,7 +124,7 @@ describe('adminAuthMiddleware', () => {
   let repo: InMemoryAdminRepository
   let jwtStrategy: JwtAdminAuthStrategy
   let core: PlanetCore
-  let middleware: (ctx: Context, next: Next) => Promise<Response | void>
+  let middleware: (ctx: GravitoContext, next: () => Promise<void>) => Promise<Response | void>
 
   beforeEach(() => {
     repo = new InMemoryAdminRepository()
@@ -145,7 +144,7 @@ describe('adminAuthMiddleware', () => {
     })
 
     let nextCalled = false
-    const next: Next = async () => {
+    const next: () => Promise<void> = async () => {
       nextCalled = true
     }
 
@@ -160,7 +159,7 @@ describe('adminAuthMiddleware', () => {
     const { ctx, getJsonResponse } = createMockContext({ headers: {} })
 
     let nextCalled = false
-    const next: Next = async () => {
+    const next: () => Promise<void> = async () => {
       nextCalled = true
     }
 
@@ -179,7 +178,7 @@ describe('adminAuthMiddleware', () => {
     })
 
     let nextCalled = false
-    const next: Next = async () => {
+    const next: () => Promise<void> = async () => {
       nextCalled = true
     }
 
@@ -205,7 +204,7 @@ describe('adminAuthMiddleware', () => {
       headers: { Authorization: `Bearer ${tokens.accessToken}` },
     })
 
-    const next: Next = async () => {}
+    const next: () => Promise<void> = async () => {}
     await middleware(ctx, next)
 
     const storedAdmin = contextStore.get('admin') as Admin

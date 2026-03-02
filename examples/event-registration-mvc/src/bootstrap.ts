@@ -1,5 +1,4 @@
-import { defineConfig, PlanetCore } from '@gravito/core'
-import { PhotonAdapter } from '@gravito/photon/adapter'
+import { defineConfig, GravitoEngineAdapter, PlanetCore } from '@gravito/core'
 import appConfig from '../config/app'
 import databaseConfig from '../config/database'
 import mailConfig from '../config/mail'
@@ -14,7 +13,7 @@ import {
 export async function bootstrap(): Promise<PlanetCore> {
   // Configure
   const config = defineConfig({
-    adapter: new PhotonAdapter(),
+    adapter: new GravitoEngineAdapter(),
     config: {
       ...appConfig,
       database: databaseConfig,

@@ -115,10 +115,12 @@ export class AOTRouter {
       this.usePattern(wildcard, ...other.globalMiddleware)
     }
 
-    // 2. Transfer pattern-based middleware
+    // 2. Transfer pattern-based middleware (only user-defined patterns, not route-specific)
     for (const [pattern, mws] of other.pathMiddleware) {
-      // Skip internal dynamic route entries (contain ':')
-      if (pattern.includes(':')) {
+      // Skip route-specific middleware entries (they have method prefix like "get:/path/:id")
+      // These are stored by add() with format "method:path"
+      const hasMethodPrefix = /^(get|post|put|delete|patch|options|head):/.test(pattern)
+      if (hasMethodPrefix) {
         continue
       }
 
@@ -306,6 +308,41 @@ export class AOTRouter {
     }
 
     return middleware
+  }
+
+  /**
+   * Get all static routes optimized for Bun's native router.
+   *
+   * Unlike basic offloading, this version supports routes with middleware
+   * by pre-compiling the middleware chain into a single native handler.
+   *
+   * @param onMatch - Factory to wrap handler and middleware into a Bun-compatible function
+   * @returns Record of path -> Handler (Bun-compatible)
+   */
+  getNativeRoutes(
+    onMatch: (
+      handler: Handler,
+      middleware: Middleware[],
+      path: string
+    ) => (req: Request) => Response | Promise<Response>
+  ): Record<string, any> {
+    const routes: Record<string, any> = {}
+
+    for (const [key, metadata] of this.staticRoutes) {
+      const [method, path] = key.split(':')
+      if (method !== 'get') {
+        continue // Bun's native routes primarily focus on GET for Response objects
+      }
+
+      // Collect all applicable middleware (Global + Pattern + Route-specific)
+      const allMiddleware = this.collectMiddleware(path!, metadata.middleware)
+
+      // Map to Bun's native router format
+      // The middleware chain is compiled and wrapped by the caller (Gravito)
+      routes[path!] = onMatch(metadata.handler, allMiddleware, path!)
+    }
+
+    return routes
   }
 
   /**

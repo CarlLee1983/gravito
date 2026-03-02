@@ -24,35 +24,6 @@
  */
 
 export * from 'hono'
-
-/**
- * The primary application class for Photon.
- *
- * An alias for `Hono`, providing the core routing and middleware capabilities.
- * Use this to define your API structure and mount domain-specific Satellites.
- *
- * @remarks
- * Photon extends Hono's capabilities with Gravito-specific optimizations.
- * It serves as the entry point for defining routes, applying middleware,
- * and handling the request-response lifecycle.
- *
- * @example
- * ```typescript
- * const app = new Photon()
- *
- * // Basic routing
- * app.get('/api/health', (c) => c.json({ status: 'ok' }))
- *
- * // Middleware integration
- * app.use('/api/*', myMiddleware)
- *
- * // Mounting sub-routers
- * app.route('/v1', v1Router)
- * ```
- * @public
- */
-export { Hono as Photon } from 'hono'
-
 /**
  * Binary-related middleware for Photon.
  *
@@ -62,7 +33,6 @@ export { Hono as Photon } from 'hono'
  * @public
  */
 export * from './middleware/binary'
-
 /**
  * HTMX-related middleware for Photon.
  *
@@ -72,7 +42,6 @@ export * from './middleware/binary'
  * @public
  */
 export * from './middleware/htmx'
-
 /**
  * Rate limiting middleware for Photon.
  *
@@ -82,7 +51,6 @@ export * from './middleware/htmx'
  * @public
  */
 export * from './middleware/ratelimit'
-
 /**
  * Redis-based rate limiting storage.
  * @public
@@ -98,8 +66,44 @@ export * from './middleware/ratelimit-redis'
  * @public
  */
 export * from './middleware/security'
+export * from './middleware-adapter'
 /**
  * OpenAPI utilities
  * @public
  */
 export * from './openapi'
+export * from './photon'
+/**
+ * The primary application class for Photon.
+ *
+ * Enhanced Hono with native Gravito middleware support.
+ * Automatically adapts both Hono and Gravito-typed middleware.
+ *
+ * Use this to define your API structure and mount domain-specific Satellites.
+ *
+ * @remarks
+ * Photon extends Hono's capabilities with:
+ * - Native support for Gravito-typed middleware (no adapters needed)
+ * - Full Hono middleware compatibility (existing code works as-is)
+ * - Type-safe routing and middleware integration
+ * - Gravito-specific optimizations for Satellite integration
+ *
+ * @example
+ * ```typescript
+ * import { Photon } from '@gravito/photon'
+ *
+ * const app = new Photon()
+ *
+ * // Basic routing
+ * app.get('/api/health', (c) => c.json({ status: 'ok' }))
+ *
+ * // Works with both Hono and Gravito middleware
+ * app.use('/api/*', honoMiddleware)        // Traditional Hono
+ * app.use('/api/*', gravitoMiddleware)    // Gravito-typed
+ *
+ * // Mounting sub-routers
+ * app.route('/v1', v1Router)
+ * ```
+ * @public
+ */
+export { PhotonWithGravitoSupport as Photon } from './photon'

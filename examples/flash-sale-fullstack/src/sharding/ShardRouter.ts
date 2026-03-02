@@ -9,7 +9,7 @@
  * 4. 支持自動分片路由和手動控制
  */
 
-import type { Context } from 'hono'
+import type { GravitoContext } from '@gravito/core'
 import type { ShardingManager } from './ShardingManager'
 
 export interface ShardContext {
@@ -41,10 +41,10 @@ export class ShardRouter {
   }
 
   /**
-   * Hono 中間件實現
+   * Gravito 中間件實現
    */
   middleware() {
-    return async (ctx: Context, next: () => Promise<void>) => {
+    return async (ctx: GravitoContext, next: () => Promise<void>) => {
       try {
         const shardContext = this.extractShardContext(ctx)
         if (shardContext) {
@@ -62,7 +62,7 @@ export class ShardRouter {
   /**
    * 從請求中提取分片上下文
    */
-  private extractShardContext(ctx: Context): ShardContext | null {
+  private extractShardContext(ctx: GravitoContext): ShardContext | null {
     // 優先級：
     // 1. HTTP 請求頭
     // 2. 查詢參數
@@ -135,23 +135,23 @@ export class ShardRouter {
 }
 
 /**
- * 幫助函數：從 Hono Context 獲取分片上下文
+ * 幫助函數：從 GravitoContext 獲取分片上下文
  */
-export function getShardContext(ctx: Context): ShardContext | undefined {
+export function getShardContext(ctx: GravitoContext): ShardContext | undefined {
   return (ctx as any).shardContext
 }
 
 /**
  * 幫助函數：檢查是否有分片上下文
  */
-export function hasShardContext(ctx: Context): boolean {
+export function hasShardContext(ctx: GravitoContext): boolean {
   return (ctx as any).shardContext !== undefined
 }
 
 /**
  * 幫助函數：要求分片上下文存在
  */
-export function requireShardContext(ctx: Context): ShardContext {
+export function requireShardContext(ctx: GravitoContext): ShardContext {
   const shardContext = (ctx as any).shardContext
   if (!shardContext) {
     throw new Error('Shard context is required but not found in request')

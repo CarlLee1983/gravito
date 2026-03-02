@@ -1,12 +1,15 @@
 /**
  * HTTP Tracing Middleware
  *
- * Hono/Photon 中間件，自動為所有 HTTP 請求建立 Span
+ * Gravito 中間件，自動為所有 HTTP 請求建立 Span
  */
-import { SpanKind, SpanStatusCode, trace } from '@opentelemetry/api'
-import type { MiddlewareHandler } from 'hono'
 
-export function httpTracingMiddleware(): MiddlewareHandler {
+import type { GravitoContext } from '@gravito/core'
+import { SpanKind, SpanStatusCode, trace } from '@opentelemetry/api'
+
+type MiddlewareFn = (c: GravitoContext, next: () => Promise<void>) => Promise<void>
+
+export function httpTracingMiddleware(): MiddlewareFn {
   const tracer = trace.getTracer('flash-sale-http')
 
   return async (c, next) => {

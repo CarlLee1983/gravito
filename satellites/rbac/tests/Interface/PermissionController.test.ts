@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
-import type { Context } from 'hono'
+import type { GravitoContext } from '@gravito/core'
 import { ListPermissionsUseCase } from '../../src/Application/UseCases/ListPermissions'
 import { Permission } from '../../src/Domain/Entities/Permission'
 import { PermissionKey } from '../../src/Domain/ValueObjects/PermissionKey'
 import { InMemoryPermissionRepository } from '../../src/Infrastructure/Persistence/AtlasPermissionRepository'
 import { PermissionController } from '../../src/Interface/Http/Controllers/PermissionController'
 
-// Mock Hono Context
+// Mock GravitoContext
 function createMockContext(options?: { query?: Record<string, string> }): {
-  ctx: Context
+  ctx: GravitoContext
   getJsonResponse: () => { data: unknown; status: number } | null
 } {
   let jsonResponse: { data: unknown; status: number } | null = null
@@ -21,7 +21,7 @@ function createMockContext(options?: { query?: Record<string, string> }): {
       jsonResponse = { data, status }
       return new Response(JSON.stringify(data), { status })
     },
-  } as unknown as Context
+  } as unknown as GravitoContext
 
   return { ctx, getJsonResponse: () => jsonResponse }
 }

@@ -13,10 +13,10 @@ last_updated: 2026-01-29
 **PlanetCore** (`@gravito/core`) 是 Gravito 框架的微內核（Micro-kernel），負責管理應用程式的生命週期、依賴注入（IoC）、鉤子（Hooks）系統以及高效能的路由分發。其設計核心是 **「嚴謹核心，靈活周邊」**。
 
 ### 核心職責
-- **IoC Container**: 現代化的依賴注入容器，支援懶加載與單例管理。
-- **Lifecycle Management**: 嚴謹的啟動與關閉序列，確保 Orbit 與 Satellite 安全載入。
+- **IoC Container**: 現代化的依賴注入容器，支援懶加載、單例及 Scoped 作用域管理。
+- **Lifecycle Management**: 嚴謹的啟動與關閉序列，確保資源在串流（Streaming）結束後仍能精準回收。
+- **Native Web Engine**: 專為 Bun 1.39+ 打造的高效能核心，支持 AOT 中介軟體注入與 SIMD 原生路由。
 - **Hook System**: 核心級別的事件總線，允許插件攔截框架行為。
-- **High-Performance Routing**: 基於 Hono 優化的路由引擎，支持毫秒級請求分發。
 
 ## 快速開始
 
@@ -124,9 +124,9 @@ sequenceDiagram
 **決策**：區分 `PlanetCore` (底層引擎) 與 `Application` (面向開發者的門面)。
 **原因**：保持內核的純粹性，使其可以在不同環境（如 CLI, Edge, Server）下重用，而不強制綁定 HTTP 邏輯。
 
-### 3.2 內建 Bun 優化引擎
-**決策**：在 `Router` 中優先檢測 Bun 原生 API。
-**原因**：利用 Bun 內建的 `Bun.serve` 與 `HTTP` 快取，效能比純 Node.js 快 2 倍以上。
+### 3.2 內建 Bun 原生極限優化
+**決策**：棄用傳統的運行時路由匹配，改用 AOT 預編譯。
+**原因**：透過在啟動階段將中介軟體與 Handler 拍平並注入 Bun 內核，可消除 JS 層面的所有分發開銷。配合 `ObjectPool` 與 `Bun.peek`，可實現毫秒級別的同步與異步調度。
 
 ---
 

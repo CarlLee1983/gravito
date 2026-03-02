@@ -8,7 +8,24 @@
  * @since 1.0.0
  */
 
-import type { Context, MiddlewareHandler, Next } from '@gravito/photon'
+import { createRequire } from 'node:module'
+
+import type { GravitoContext, GravitoMiddleware } from '@gravito/core'
+import type { MiddlewareHandler } from 'hono'
+import { asHonoMiddleware } from '../middleware-adapter'
+
+// Runtime module loader (avoid static dependency)
+const createRequireLoader = () => {
+  try {
+    return createRequire(import.meta.url)
+  } catch {
+    // Fallback for environments that don't support import.meta.url
+    return null
+  }
+}
+
+// Type alias for convenience
+type Context = GravitoContext
 
 // ─────────────────────────────────────────────────────────────────────────────
 // OpenTelemetry API 類型定義（避免硬依賴）
@@ -124,9 +141,12 @@ function loadOtelApi(): OtelApi {
   apiLoaded = true
 
   try {
-    // 使用動態 require 避免靜態依賴
-    // biome-ignore lint/security/noGlobalEval: 動態載入可選依賴
-    const api = eval('require')('@opentelemetry/api') as OtelApi
+    const require = createRequireLoader()
+    if (!require) {
+      throw new Error('createRequire not available')
+    }
+    // Use createRequire for safe dynamic loading (no eval)
+    const api = require('@opentelemetry/api') as OtelApi
     cachedApi = api
     return api
   } catch {
@@ -203,7 +223,7 @@ export function otelMiddleware(config: OtelMiddlewareConfig = {}): MiddlewareHan
   const otelApi = loadOtelApi()
   const tracer = otelApi.trace.getTracer(serviceName, serviceVersion)
 
-  return async (c: Context, next: Next): Promise<Response | undefined> => {
+  const middleware: GravitoMiddleware = async (c, next) => {
     const path = new URL(c.req.url).pathname
 
     // 排除特定路徑
@@ -240,9 +260,11 @@ export function otelMiddleware(config: OtelMiddlewareConfig = {}): MiddlewareHan
       await next()
 
       // 設定 HTTP 回應屬性
-      const statusCode = c.res.status
-      span.setAttribute('http.status_code', statusCode)
-      span.setStatus(getSpanStatusCode(statusCode, otelApi))
+      if (c.res) {
+        const statusCode = c.res.status
+        span.setAttribute('http.status_code', statusCode)
+        span.setStatus(getSpanStatusCode(statusCode, otelApi))
+      }
 
       // 確保 trace id 在回應 header 中
       if (propagateTraceId && traceId) {
@@ -264,4 +286,6 @@ export function otelMiddleware(config: OtelMiddlewareConfig = {}): MiddlewareHan
       span.end()
     }
   }
+
+  return asHonoMiddleware(middleware)
 }

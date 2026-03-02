@@ -10,28 +10,23 @@ Universal frameworks sacrifice 20% of potential performance for cross-platform c
 
 ### Performance Optimizations
 
-1. **Object Pooling**: Zero-allocation request handling through context reuse
-2. **AOT Router**: O(1) static route lookup, optimized Radix Tree for dynamic routes
-3. **Lazy Parsing**: Only parse request data when accessed
-4. **Bun-Native**: Direct integration with `Bun.serve` without wrapper layers
+1. **Native Offloading (Bun 1.39+)**: Automatically offloads static routes and pre-compiled middleware to Bun's SIMD-accelerated C++/Zig router.
+2. **AOT Middleware Injection**: Pre-compiles middleware chains into single functions to eliminate runtime traversal and microtask overhead.
+3. **Object Pooling**: Zero-allocation request handling through `FastContext` reuse.
+4. **Microtask Elimination**: Uses `Bun.peek()` to execute synchronous handlers without event loop overhead.
+5. **Deferred Stream Release**: Guaranteed IoC resource cleanup and pool safety for Streaming responses (SSE/WebSocket).
 
 ## 📊 Observability & Monitoring
 
-### Route Pattern Support (v1.6.0+)
+### Route Pattern Support (v2.0.0+)
 
-To prevent high cardinality in Prometheus metrics caused by dynamic paths (e.g., `/users/123`, `/users/456`), Gravito Engine automatically detects the `routePattern`:
-
-- **Path**: `/users/123`
-- **Pattern**: `/users/:id`
-
-The `routePattern` is available on the `FastRequest` object (`c.req.routePattern`) and should be used as the label for HTTP request metrics.
+To prevent high cardinality in Prometheus metrics, Gravito Engine automatically detects the `routePattern` and exposes it via `c.req.routePattern`.
 
 ### Benchmark Goals
 
-- **Static routes**: 20%+ faster than Hono
-- **Dynamic routes**: 15%+ faster than Hono
-- **Memory per request**: < 1KB allocation
-- **Package size**: < 10KB minified
+- **Static routes**: Bypasses JS entry point (Native SIMD speed)
+- **Dynamic routes**: 25%+ faster than Hono
+- **Memory per request**: Zero JS heap allocation (via pooling)
 
 ## Installation
 
@@ -46,133 +41,60 @@ import { Gravito } from '@gravito/core/engine'
 
 const app = new Gravito()
 
-// Simple routes
-app.get('/', (c) => {
-  return c.json({ message: 'Hello, World!' })
-})
+// Static route (Automatically offloaded to Native Router)
+app.get('/', (c) => c.json({ message: 'Hello, World!' }))
 
-app.get('/users/:id', (c) => {
-  const id = c.req.param('id')
-  return c.json({ userId: id })
-})
+// Dynamic route (AOT compiled)
+app.get('/users/:id', (c) => c.json({ userId: c.req.param('id') }))
 
-// Middleware
-app.use(async (c, next) => {
-  console.log(`${c.req.method} ${c.req.path}`)
-  await next()
-})
-
-// Start server
-export default app
-```
-
-### Predictive Route Warming (New in v1.1)
-
-For ultra-low latency from the very first request, use `warmup()` to pre-trigger JIT optimization:
-
-```typescript
-// Warm up hot paths before starting the server
-await app.warmup(['/api/users', '/health'])
-
-export default app
-```
-
-Run with:
-```bash
-bun run server.ts
-```
-
-## API Reference
-
-### Creating an App
-
-```typescript
-import { Gravito } from '@gravito/core/engine'
-
-const app = new Gravito({
-  poolSize: 256,        // Context pool size (default: 256)
-  enableAOT: true,      // Enable AOT router (default: true)
-})
-```
-
-### HTTP Methods
-
-```typescript
-app.get('/path', handler)
-app.post('/path', handler)
-app.put('/path', handler)
-app.delete('/path', handler)
-app.patch('/path', handler)
-app.options('/path', handler)
-app.head('/path', handler)
-app.all('/path', handler)  // All methods
-```
-
-### Route Parameters
-
-```typescript
-app.get('/users/:id', (c) => {
-  const id = c.req.param('id')
-  return c.json({ id })
-})
-
-app.get('/posts/:postId/comments/:commentId', (c) => {
-  const postId = c.req.param('postId')
-  const commentId = c.req.param('commentId')
-  return c.json({ postId, commentId })
-})
-```
-
-### Query Parameters
-
-```typescript
-app.get('/search', (c) => {
-  const query = c.req.query('q')
-  const page = c.req.query('page')
-  return c.json({ query, page })
-})
-```
-
-### Request Body
-
-```typescript
-// JSON
-app.post('/users', async (c) => {
-  const body = await c.req.json()
-  return c.json({ created: body }, 201)
-})
-
-// Text
-app.post('/text', async (c) => {
-  const text = await c.req.text()
-  return c.text(`You sent: ${text}`)
-})
-
-// Form Data
-app.post('/upload', async (c) => {
-  const formData = await c.req.formData()
-  const file = formData.get('file')
-  return c.json({ uploaded: true })
+// Start server with optimized native configuration
+export default app.serveConfig({
+  port: 3000
 })
 ```
 
 ### Response Helpers
 
 ```typescript
-// JSON
+// JSON (Uses native Response.json() optimization)
 c.json({ message: 'Hello' }, 200)
 
-// Text
-c.text('Hello, World!', 200)
+// Binary (Optimized for CBOR/Protobuf via Bun.ArrayBufferSink)
+c.binary(new Uint8Array([...]), 200)
 
-// HTML
+// HTML (SIMD-accelerated escape available via c.escape())
 c.html('<h1>Hello</h1>', 200)
 
-// Redirect
-c.redirect('/new-path', 302)
+// Streaming (Zero-copy kernel transfer via direct streams)
+c.stream(readableStream, 200)
+```
 
-// Custom body
-c.body('Custom content', 200)
+## Advanced Usage
+
+### Optimized TLS (Bun 1.39+)
+
+Gravito automatically optimizes TLS by using `Bun.file()` for zero-copy certificate loading and enabling `lowMemoryMode` in production.
+
+```typescript
+export default app.serveConfig({
+  port: 443,
+  tls: {
+    key: "./key.pem",
+    cert: "./cert.pem"
+  }
+})
+```
+
+### Deferred Pooling & IoC Cleanup
+
+Gravito guarantees 100% resource cleanup even for streaming responses. The context is only returned to the pool after the stream is fully consumed or the client disconnects.
+
+```typescript
+app.get('/events', (c) => {
+  const stream = new ReadableStream({ ... })
+  // IoC resources (scoped services) are cleaned up AFTER stream ends
+  return c.stream(stream)
+})
 ```
 
 ### Middleware

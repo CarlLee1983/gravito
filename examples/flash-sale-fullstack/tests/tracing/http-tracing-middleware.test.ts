@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'bun:test'
-import { Hono } from 'hono'
+import { Hono } from '@gravito/photon'
 import { httpTracingMiddleware } from '../../src/tracing/http-tracing-middleware'
 
 describe('HTTP Tracing 中間件', () => {

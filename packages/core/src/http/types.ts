@@ -154,6 +154,12 @@ export interface GravitoRequest {
    */
   readonly routePattern?: string
 
+  /**
+   * Alias for routePattern (for Hono/Express compatibility)
+   * @deprecated Use `routePattern` instead
+   */
+  readonly routePath?: string
+
   // ─────────────────────────────────────────────
   // Parameter Access
   // ─────────────────────────────────────────────
@@ -276,11 +282,23 @@ export interface ProxyOptions {
  */
 export interface GravitoContext<V extends GravitoVariables = GravitoVariables> {
   // ─────────────────────────────────────────────
-  // Request
+  // Request & Response
   // ─────────────────────────────────────────────
 
   /** The incoming request */
   readonly req: GravitoRequest
+
+  /**
+   * The response object (for middleware introspection).
+   * Middleware can read response headers and status, or mutate the response.
+   *
+   * @remarks
+   * This property is mutable, allowing middleware to replace the response object.
+   * Example: `c.res = new Response(...)`
+   *
+   * May be undefined until a handler creates a response.
+   */
+  res?: Response
 
   // ─────────────────────────────────────────────
   // Response Builders
@@ -466,7 +484,7 @@ export interface GravitoContext<V extends GravitoVariables = GravitoVariables> {
 /**
  * Next function for middleware chain
  */
-export type GravitoNext = () => Promise<Response | undefined>
+export type GravitoNext = () => Promise<Response | void>
 
 /**
  * GravitoHandler - Standard route handler type
@@ -494,14 +512,13 @@ export type GravitoHandler<V extends GravitoVariables = GravitoVariables> = (
  * const logger: GravitoMiddleware = async (ctx, next) => {
  *   console.log(`${ctx.req.method} ${ctx.req.path}`)
  *   await next()
- *   return undefined
  * }
  * ```
  */
 export type GravitoMiddleware<V extends GravitoVariables = GravitoVariables> = (
   ctx: GravitoContext<V>,
   next: GravitoNext
-) => Response | undefined | Promise<Response | undefined | undefined>
+) => Response | void | Promise<Response | void>
 
 /**
  * Error handler type

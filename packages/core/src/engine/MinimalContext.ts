@@ -15,6 +15,9 @@
 import { RequestScopeManager } from '../Container/RequestScopeManager'
 import type { FastRequest, FastContext as IFastContext } from './types'
 
+// Bun runtime optimization: cache frequently used functions
+const bunEscapeHTML = require('bun').escapeHTML
+
 /**
  * Minimal request wrapper
  */
@@ -138,6 +141,40 @@ class MinimalRequest implements FastRequest {
     return this._cachedFormDataPromise
   }
 
+  get cookies(): Record<string, string> {
+    // 1. Try Bun Native CookieMap (Injected in Bun.serve routes API)
+    const nativeCookies = (this._request as any).cookies
+    if (nativeCookies) {
+      return nativeCookies
+    }
+
+    // 2. Fallback: Parse from Header manually
+    const cookieHeader = this._request.headers.get('cookie')
+    if (!cookieHeader) {
+      return {}
+    }
+
+    // Manual parse implementation (optimized for speed)
+    // Handles URL-encoded values and flexible separators ('; ' or ';')
+    const cookies: Record<string, string> = {}
+    const pairs = cookieHeader.split(/;\s*/)
+    for (let i = 0; i < pairs.length; i++) {
+      const pair = pairs[i]!
+      const idx = pair.indexOf('=')
+      if (idx > 0) {
+        const name = pair.substring(0, idx)
+        const value = pair.substring(idx + 1)
+        // Decode value if URL-encoded, fallback to raw value on decode error
+        try {
+          cookies[name] = decodeURIComponent(value)
+        } catch {
+          cookies[name] = value
+        }
+      }
+    }
+    return cookies
+  }
+
   get raw(): Request {
     return this._request
   }
@@ -259,6 +296,10 @@ export class MinimalContext implements IFastContext {
       method: this.req.method,
       headers: this.req.raw.headers,
     })
+  }
+
+  escape(html: string): string {
+    return bunEscapeHTML(html)
   }
 
   get<T>(_key: string): T {

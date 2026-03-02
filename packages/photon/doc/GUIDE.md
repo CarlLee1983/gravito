@@ -13,12 +13,28 @@ This guide provides a detailed reference for building applications with the @gra
 
 ## The Photon Instance
 
-The `Photon` class is the main entry point. It extends the foundational routing capabilities of Hono but is optimized for the Gravito Galaxy Architecture.
+Photon provides two engine modes:
 
+1.  **Standard Mode (`Photon`)**: Fully compatible with the Hono ecosystem.
+2.  **Native Mode (`NativePhoton`)**: High-performance engine optimized for Bun 1.39+.
+
+### Standard Mode
 ```typescript
 import { Photon } from '@gravito/photon'
-
 const app = new Photon()
+```
+
+### Native Mode (High Performance)
+Use `NativePhoton` to leverage SIMD-accelerated routing and zero-allocation context pooling.
+
+```typescript
+import { NativePhoton } from '@gravito/photon/native'
+const app = new NativePhoton()
+
+// Launch with optimized native configuration
+export default app.serveConfig({
+  port: 3000
+})
 ```
 
 ### Methods
@@ -69,9 +85,11 @@ The `Context` object is the heart of every handler. It contains the request, res
 - `c.req.valid(type)`: Access validated data (when using validation middleware).
 
 ### Response
-- `c.json(data, status?)`: Send a JSON response.
+- `c.json(data, status?)`: Send a JSON response (optimized with native `Response.json()`).
+- `c.binary(data, status?)`: **NEW**: Send binary data (CBOR/Protobuf) with optimized buffer management.
 - `c.text(text, status?)`: Send a plain text response.
-- `c.html(html, status?)`: Send an HTML response.
+- `c.html(html, status?)`: Send an HTML response (SIMD-accelerated escaping available via `c.escape()`).
+- `c.stream(stream, status?)`: **NEW**: Stream data directly to the socket with kernel-level zero-copy.
 - `c.redirect(url, status?)`: Perform a redirect.
 - `c.notFound()`: Send a 404 response.
 

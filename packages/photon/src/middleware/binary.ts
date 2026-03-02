@@ -1,5 +1,7 @@
+import type { GravitoMiddleware } from '@gravito/core'
 import { encode } from 'cborg'
-import type { MiddlewareHandler } from 'hono' // Direct import to avoid circular dependency
+import type { MiddlewareHandler } from 'hono'
+import { asHonoMiddleware } from '../middleware-adapter'
 
 /**
  * Binary Middleware for Photon.
@@ -12,7 +14,9 @@ import type { MiddlewareHandler } from 'hono' // Direct import to avoid circular
  * and serialization speed are critical. It leverages the `cborg` library for
  * efficient binary encoding.
  *
- * @returns A Hono middleware handler that intercepts JSON responses.
+ * Implemented with Gravito types, exported as Hono-compatible middleware.
+ *
+ * @returns A middleware handler that intercepts JSON responses.
  *
  * @example
  * ```typescript
@@ -31,11 +35,14 @@ import type { MiddlewareHandler } from 'hono' // Direct import to avoid circular
  * - Optimized to read body directly without clone(), saving ~30% overhead.
  */
 export const binaryMiddleware = (): MiddlewareHandler => {
-  return async (c, next) => {
+  const middleware: GravitoMiddleware = async (c, next) => {
     await next()
 
     const accept = c.req.header('Accept')
     if (accept === 'application/cbor') {
+      // Guard: check if response exists and has JSON content type
+      if (!c.res) return
+
       const contentType = c.res.headers.get('Content-Type')
       if (contentType?.includes('application/json')) {
         try {
@@ -53,11 +60,20 @@ export const binaryMiddleware = (): MiddlewareHandler => {
             status: c.res.status,
             headers,
           })
-        } catch {
-          // JSON parsing failed, likely not a valid JSON response body.
-          // In this case, we skip the CBOR conversion.
+        } catch (error) {
+          // JSON parsing failed (e.g., response body already consumed, invalid JSON)
+          // Log for debugging but don't break the response
+          if (error instanceof SyntaxError) {
+            console.debug(
+              '[binaryMiddleware] JSON parse failed, skipping CBOR conversion:',
+              error.message
+            )
+          }
+          // Fall through: return original response as-is
         }
       }
     }
   }
+
+  return asHonoMiddleware(middleware)
 }

@@ -1,6 +1,6 @@
 import type { GravitoContext } from '@gravito/core'
-import { verify } from 'hono/jwt'
 import type { IMemberRepository } from '../../../Domain/Contracts/IMemberRepository'
+import { verifyJWT } from '../../../Infrastructure/Jwt/BunJwt'
 
 /**
  * 會員認證中間件
@@ -23,7 +23,7 @@ export function memberAuthMiddleware(
       if (authHeader?.startsWith('Bearer ')) {
         const token = authHeader.slice(7)
         try {
-          const payload = await verify(token, jwtSecret, 'HS256')
+          const payload = await verifyJWT(token, jwtSecret)
           if (payload.sub && typeof payload.sub === 'string') {
             authenticatedMember = await repository.findById(payload.sub)
           }

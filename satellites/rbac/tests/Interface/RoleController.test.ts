@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
-import type { PlanetCore } from '@gravito/core'
-import type { Context } from 'hono'
+import type { GravitoContext, PlanetCore } from '@gravito/core'
 import { AssignRoleToAdminUseCase } from '../../src/Application/UseCases/AssignRoleToAdmin'
 import { CreateRoleUseCase } from '../../src/Application/UseCases/CreateRole'
 import { DeleteRoleUseCase } from '../../src/Application/UseCases/DeleteRole'
@@ -25,14 +24,14 @@ function createMockCore(): PlanetCore {
   } as unknown as PlanetCore
 }
 
-// Mock Hono Context
+// Mock GravitoContext
 function createMockContext(options?: {
   params?: Record<string, string>
   query?: Record<string, string>
   json?: unknown
   contextValues?: Record<string, unknown>
 }): {
-  ctx: Context
+  ctx: GravitoContext
   getJsonResponse: () => { data: unknown; status: number } | null
 } {
   const contextStore = new Map<string, unknown>()
@@ -56,7 +55,7 @@ function createMockContext(options?: {
     },
     get: (key: string) => contextStore.get(key),
     set: (key: string, value: unknown) => contextStore.set(key, value),
-  } as unknown as Context
+  } as unknown as GravitoContext
 
   return { ctx, getJsonResponse: () => jsonResponse }
 }

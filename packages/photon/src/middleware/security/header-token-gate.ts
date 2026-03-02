@@ -8,7 +8,27 @@
  * @since 1.1.0
  */
 
-import type { Context, MiddlewareHandler } from 'hono'
+import crypto from 'node:crypto'
+
+import type { GravitoContext as Context, GravitoMiddleware } from '@gravito/core'
+import type { MiddlewareHandler } from 'hono'
+import { asHonoMiddleware } from '../../middleware-adapter'
+
+/**
+ * Timing-safe string comparison to prevent timing attacks
+ */
+function timingSafeCompare(a: string, b: string): boolean {
+  try {
+    const bufA = Buffer.from(a)
+    const bufB = Buffer.from(b)
+    if (bufA.length !== bufB.length) {
+      return false
+    }
+    return crypto.timingSafeEqual(bufA, bufB)
+  } catch {
+    return false
+  }
+}
 
 /**
  * Options for header token gate
@@ -30,6 +50,7 @@ export type RequireHeaderTokenOptions = HeaderTokenGateOptions & {
 
 /**
  * Create a simple gate function to check a header token.
+ * Uses timing-safe comparison to prevent timing attacks.
  * @public
  */
 export function createHeaderGate(options: HeaderTokenGateOptions = {}) {
@@ -43,7 +64,7 @@ export function createHeaderGate(options: HeaderTokenGateOptions = {}) {
       return false
     }
     const provided = c.req.header(headerName)
-    return provided === expected
+    return timingSafeCompare(provided ?? '', expected)
   }
 }
 
@@ -57,11 +78,12 @@ export function requireHeaderToken(options: RequireHeaderTokenOptions = {}): Mid
   const status = options.status ?? 403
   const message = options.message ?? 'Unauthorized'
 
-  return async (c, next) => {
+  const middleware: GravitoMiddleware = async (c, next) => {
     if (!(await gate(c))) {
-      return c.text(message, status as any)
+      return c.text(message, status)
     }
     await next()
-    return undefined
   }
+
+  return asHonoMiddleware(middleware)
 }

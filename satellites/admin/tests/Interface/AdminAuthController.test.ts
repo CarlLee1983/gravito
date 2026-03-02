@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
-import type { PlanetCore } from '@gravito/core'
-import type { Context } from 'hono'
+import type { GravitoContext, PlanetCore } from '@gravito/core'
 import { LoginAdminUseCase } from '../../src/Application/UseCases/LoginAdmin'
 import { LogoutAdminUseCase } from '../../src/Application/UseCases/LogoutAdmin'
 import { RefreshAdminTokenUseCase } from '../../src/Application/UseCases/RefreshAdminToken'
@@ -94,7 +93,7 @@ function createTestAdmin(overrides?: {
 
 // Mock Hono Context
 function createMockContext(options?: { json?: unknown; contextValues?: Record<string, unknown> }): {
-  ctx: Context
+  ctx: GravitoContext
   getJsonResponse: () => { data: unknown; status: number } | null
 } {
   const contextStore = new Map<string, unknown>()

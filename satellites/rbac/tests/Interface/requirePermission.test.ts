@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
-import type { Context, Next } from 'hono'
+import type { GravitoContext } from '@gravito/core'
 import { CheckPermissionUseCase } from '../../src/Application/UseCases/CheckPermission'
 import { Permission } from '../../src/Domain/Entities/Permission'
 import { Role } from '../../src/Domain/Entities/Role'
@@ -8,9 +8,9 @@ import { InMemoryPermissionRepository } from '../../src/Infrastructure/Persisten
 import { InMemoryRoleRepository } from '../../src/Infrastructure/Persistence/AtlasRoleRepository'
 import { requirePermission } from '../../src/Interface/Http/Middleware/requirePermission'
 
-// Mock Hono Context
+// Mock GravitoContext
 function createMockContext(options?: { contextValues?: Record<string, unknown> }): {
-  ctx: Context
+  ctx: GravitoContext
   getJsonResponse: () => { data: unknown; status: number } | null
 } {
   const contextStore = new Map<string, unknown>()
@@ -30,7 +30,7 @@ function createMockContext(options?: { contextValues?: Record<string, unknown> }
     },
     get: (key: string) => contextStore.get(key),
     set: (key: string, value: unknown) => contextStore.set(key, value),
-  } as unknown as Context
+  } as unknown as GravitoContext
 
   return { ctx, getJsonResponse: () => jsonResponse }
 }
@@ -55,7 +55,7 @@ describe('requirePermission', () => {
     })
 
     let nextCalled = false
-    const next: Next = async () => {
+    const next = async () => {
       nextCalled = true
     }
 
@@ -89,7 +89,7 @@ describe('requirePermission', () => {
     })
 
     let nextCalled = false
-    const next: Next = async () => {
+    const next = async () => {
       nextCalled = true
     }
 
@@ -107,7 +107,7 @@ describe('requirePermission', () => {
     })
 
     let nextCalled = false
-    const next: Next = async () => {
+    const next = async () => {
       nextCalled = true
     }
 
@@ -128,7 +128,7 @@ describe('requirePermission', () => {
     })
 
     let nextCalled = false
-    const next: Next = async () => {
+    const next = async () => {
       nextCalled = true
     }
 

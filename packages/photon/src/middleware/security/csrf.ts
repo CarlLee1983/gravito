@@ -11,7 +11,9 @@
  */
 
 import crypto from 'node:crypto'
-import type { Context, MiddlewareHandler, Next } from 'hono'
+import type { GravitoContext as Context, GravitoMiddleware } from '@gravito/core'
+import type { MiddlewareHandler } from 'hono'
+import { asHonoMiddleware } from '../../middleware-adapter'
 
 /**
  * Cookie 設定選項（從 @gravito/core CookieOptions 提取，避免循環依賴）
@@ -136,7 +138,7 @@ export function csrfProtection(options: CsrfOptions = {}): MiddlewareHandler {
   const formFieldName = options.formFieldName ?? '_token'
   const safeMethods = (options.safeMethods ?? defaultSafeMethods).map((m) => m.toUpperCase())
 
-  return async (c: Context, next: Next) => {
+  const middleware: GravitoMiddleware = async (c, next) => {
     const method = c.req.method.toUpperCase()
     const cookieHeader = c.req.header('Cookie') || ''
     const cookies = parseCookies(cookieHeader)
@@ -144,7 +146,7 @@ export function csrfProtection(options: CsrfOptions = {}): MiddlewareHandler {
 
     if (safeMethods.includes(method)) {
       await next()
-      return undefined
+      return
     }
 
     const headerToken = c.req.header(headerName) || c.req.header(headerName.toLowerCase())
@@ -154,19 +156,26 @@ export function csrfProtection(options: CsrfOptions = {}): MiddlewareHandler {
       contentType.includes('application/x-www-form-urlencoded') ||
       contentType.includes('multipart/form-data')
     ) {
-      const body = (await c.req.parseBody()) || {}
-      const raw = body[formFieldName]
-      if (typeof raw === 'string') {
-        bodyToken = raw
+      try {
+        const body = (await c.req.parseBody()) || {}
+        const raw = body[formFieldName]
+        if (typeof raw === 'string') {
+          bodyToken = raw
+        }
+      } catch (_error) {
+        // Body parsing failed, skip form token validation
       }
     }
 
     const requestToken = headerToken || bodyToken
     if (!requestToken || !timingSafeEqual(token, requestToken)) {
-      return c.text('Invalid CSRF token', 419 as any)
+      // HTTP 419: I'm a teapot (custom error code for CSRF failures)
+      // Standard practice: use 403 Forbidden for token validation failures
+      return c.text('Invalid CSRF token', 403)
     }
 
     await next()
-    return undefined
   }
+
+  return asHonoMiddleware(middleware)
 }

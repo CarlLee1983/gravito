@@ -10,43 +10,53 @@ Photon is designed to be the high-performance HTTP engine of the Gravito Galaxy 
 
 ## Relationship with Hono
 
-Photon is built on top of [Hono](https://hono.dev/).
-- **Why Hono?**: Hono is the fastest cross-runtime framework with the best TypeScript support.
-- **Why Photon?**: Photon adds Gravito-specific optimizations, domain-specific middleware (like HTMX and Binary/CBOR), and deep integration with the `@gravito/core` lifecycle and IoC container.
+Photon implements a **Dual-Stack Architecture**, allowing developers to choose the engine that best fits their deployment strategy:
 
-## Stack Diagram
+1.  **Hono-Based (Standard)**: Built on top of Hono, the fastest cross-runtime framework. This provides 100% compatibility with the Hono ecosystem.
+2.  **Native-Engine (Performance)**: A custom engine implemented directly in `@gravito/core/engine`, optimized for Bun 1.39+. It bypasses Hono entirely for static routes and uses AOT (Ahead-of-Time) compilation for middleware.
+
+## Stack Diagram (Native Mode)
 
 ```mermaid
 graph TD
     User([User Request]) --> B(Bun Runtime)
-    B --> P(Photon Engine)
-    subgraph Photon Layer
-        P --> R(Router)
-        R --> M(Middleware Pipeline)
-        M --> H(Hander)
+    B --> SIMD[Bun SIMD Router]
+    subgraph Native Engine Layer
+        SIMD --> AOT[Pre-compiled Handler]
+        AOT --> Pool[FastContext Pool]
+        Pool --> Handler[Domain Handler]
     end
-    H --> C(Gravito Core / Orbits)
+    Handler --> C(Gravito Core / Orbits)
+    C -.-> IoC[(PlanetCore IoC)]
 ```
 
 ## 🏗️ Architecture Deep Dive
 
-### 1. IoC Bridge (Container Integration)
+### 1. AOT Middleware Injection
 
-Photon is designed to be the "entry point" to the Gravito Galaxy's IoC container. Every request handled by Photon can optionally access the global or satellite-specific container via middleware.
+In traditional frameworks, middleware is executed as a chain of functions at runtime. Photon's Native Engine uses **AOT (Ahead-of-Time) Injection**:
 
-- **Request Context Enrichment**: We provide a standard middleware that injects the `GravitoContainer` instance into the Hono Context (`c.get('container')`).
-- **Scoped Injection**: For complex Satellite logic, Photon supports scoped containers that are created per-request and disposed of after the response is sent.
+- During `serveConfig()`, Photon analyzes all registered middleware (Global, Path-based, and Route-specific).
+- It "flattens" the middleware chain into a single optimized function.
+- This function is injected directly into Bun's native `routes` dictionary.
+- Result: **Zero JS routing overhead** for static paths, even those with complex security middleware.
 
-### 2. Lifecycle Synchronization
+### 2. IoC Bridge & Lifecycle Management
 
-The startup sequence of Photon is tightly coupled with `@gravito/core`'s lifecycle events:
+Photon is designed to be the "entry point" to the Gravito Galaxy's IoC container. 
 
-1. **`PRE_BOOT`**: Photon initializes its router and loads environment configurations.
-2. **`BOOT`**: Satellites and Orbits register their routes and middleware into Photon.
-3. **`POST_BOOT`**: Photon starts the actual HTTP server (via Bun.serve) and signals the "Ready" state to the Galaxy.
-4. **`SHUTDOWN`**: Photon gracefully closes active connections and waits for pending requests to complete before exiting.
+- **Resource Cleanup**: Photon guarantees 100% resource cleanup via `requestScope().cleanup()`. In Native Mode, this is synchronized with Bun's native request lifecycle.
+- **Streaming Safety**: For Streaming responses (SSE/WebSocket), Photon implements a **Deferred Release** mechanism. The `FastContext` and its associated IoC resources are only released once the stream is fully consumed or terminated.
 
-### 3. Adapter Strategy (Cross-Runtime)
+### 3. FastContext & Object Pooling
+
+To minimize Garbage Collection (GC) pauses under high load, Photon utilizes **Object Pooling**:
+
+- **Lazy Parsing**: Request body and headers are only parsed when accessed.
+- **Zero Allocation**: Context objects are recycled from a pre-warmed pool.
+- **Microtask Elimination**: Uses `Bun.peek()` to execute synchronous handlers without event loop overhead.
+
+### 4. Adapter Strategy (Cross-Runtime)
 
 Photon utilizes a sophisticated **Adapter Pattern** to maintain consistent behavior across different runtimes while leveraging native performance:
 
