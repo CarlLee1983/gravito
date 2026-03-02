@@ -2,15 +2,20 @@ import type { PlanetCore } from '@gravito/core'
 import { RbacErrorFactory } from '../../../Application/Errors/RbacError'
 import type { IRoleRepository } from '../../Contracts/IRoleRepository'
 import { Role } from '../../Entities/Role'
-import { RoleManagerRole } from '../Roles/RoleManagerRole'
+import { AdminAsRoleManagerRole } from '../Roles/RoleManagerRole'
 
 export interface RequestingAdmin {
   isSuper: boolean
 }
 
 /**
- * 角色管理上下文協調器
- * 協調角色的 CRUD 操作
+ * DCI Context: 角色管理場景
+ *
+ * 職責：協調角色的 CRUD 操作
+ * 交互流程：
+ * 1. RequestingAdmin 扮演 AdminAsRoleManagerRole
+ * 2. Role 接受 CRUD 操作
+ * 3. Context 協調整個流程
  */
 export class RoleManagementContext {
   constructor(
@@ -20,6 +25,7 @@ export class RoleManagementContext {
 
   /**
    * 建立角色
+   * 交互：Admin 作為 RoleManager 驗證權限，Context 執行建立
    */
   async createRole(
     name: string,
@@ -27,10 +33,14 @@ export class RoleManagementContext {
     description: string | undefined,
     requestingAdmin: RequestingAdmin
   ): Promise<Role> {
-    // 檢查權限
-    const managerRole = new RoleManagerRole(requestingAdmin)
-    if (!managerRole.canCreate()) {
-      throw RbacErrorFactory.permissionDenied('Only super admin can create roles')
+    // Admin 扮演 RoleManager 角色，驗證自己的責任
+    const roleManager = new AdminAsRoleManagerRole(requestingAdmin)
+    try {
+      roleManager.assertCanCreateRole()
+    } catch (error) {
+      throw RbacErrorFactory.permissionDenied(
+        error instanceof Error ? error.message : 'Only super admin can create roles'
+      )
     }
 
     // 檢查重複
@@ -62,6 +72,7 @@ export class RoleManagementContext {
 
   /**
    * 更新角色
+   * 交互：Admin 作為 RoleManager 驗證權限，Context 執行更新
    */
   async updateRole(
     roleId: string,
@@ -77,9 +88,13 @@ export class RoleManagementContext {
 
     // 檢查權限
     if (requestingAdmin) {
-      const managerRole = new RoleManagerRole(requestingAdmin)
-      if (!managerRole.canUpdate(role)) {
-        throw RbacErrorFactory.permissionDenied('Cannot update system role')
+      const roleManager = new AdminAsRoleManagerRole(requestingAdmin)
+      try {
+        roleManager.assertCanUpdateRole(role)
+      } catch (error) {
+        throw RbacErrorFactory.permissionDenied(
+          error instanceof Error ? error.message : 'Cannot update system role'
+        )
       }
     }
 
@@ -95,6 +110,7 @@ export class RoleManagementContext {
 
   /**
    * 刪除角色
+   * 交互：Admin 作為 RoleManager 驗證權限，Context 執行刪除
    */
   async deleteRole(roleId: string, requestingAdmin: RequestingAdmin): Promise<void> {
     // 取得角色
@@ -103,10 +119,14 @@ export class RoleManagementContext {
       throw RbacErrorFactory.roleNotFound(roleId)
     }
 
-    // 檢查權限
-    const managerRole = new RoleManagerRole(requestingAdmin)
-    if (!managerRole.canDelete(role)) {
-      throw RbacErrorFactory.permissionDenied('Cannot delete system role')
+    // Admin 扮演 RoleManager 角色，驗證自己的責任
+    const roleManager = new AdminAsRoleManagerRole(requestingAdmin)
+    try {
+      roleManager.assertCanDeleteRole(role)
+    } catch (error) {
+      throw RbacErrorFactory.permissionDenied(
+        error instanceof Error ? error.message : 'Cannot delete system role'
+      )
     }
 
     // 刪除
