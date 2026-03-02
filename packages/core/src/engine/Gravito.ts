@@ -68,16 +68,26 @@ function compileMiddlewareChain(middleware: Middleware[], handler: Handler): Com
     const nextHandler = compiled
     compiled = async (ctx) => {
       let nextCalled = false
-      const result = await mw(ctx, async () => {
+      const result = mw(ctx, async () => {
         nextCalled = true
         return undefined
       })
-      if (result instanceof Response) {
-        return result
+
+      // Optimization: Bun.peek lets us skip 'await' for already resolved promises
+      // eliminating extraneous microticks in the event loop.
+      const peeked = require('bun').peek(result)
+      const finalResult = peeked === result ? await result : peeked
+
+      if (finalResult instanceof Response) {
+        return finalResult
       }
+
       if (nextCalled) {
-        return await nextHandler(ctx)
+        const nextResult = nextHandler(ctx)
+        const peekedNext = require('bun').peek(nextResult)
+        return peekedNext === nextResult ? await nextResult : peekedNext
       }
+
       return ctx.json({ error: 'Middleware did not call next or return response' }, 500)
     }
   }
@@ -282,6 +292,84 @@ export class Gravito {
       const req = new Request(`http://localhost${path}`, dummyReqOpts)
       await this.fetch(req)
     }
+  }
+
+  /**
+   * Generate Native Bun.serve Configuration
+   *
+   * Offloads pure static routes to Bun's SIMD-accelerated native router.
+   * This is the recommended way to run Gravito in production (Bun 1.39+).
+   *
+   * @example
+   * ```typescript
+   * const app = new Gravito()
+   * Bun.serve(app.serveConfig({ port: 3000 }))
+   * ```
+   */
+  serveConfig(baseConfig: any = {}): any {
+    // 1. Extract native routes from AOT router
+    const nativeRoutes = this.router.getNativeRoutes((handler, path) => {
+      // Create a native request handler that uses our pooling
+      return async (req: Request) => {
+        const ctx = this.contextPool.acquire()
+        ctx.init(req, {}, path, path)
+
+        try {
+          const result = handler(ctx)
+          if (result instanceof Response) {
+            return result
+          }
+          return await result
+        } catch (error) {
+          return this.handleErrorSync(error as Error, req, path)
+        } finally {
+          this.contextPool.release(ctx)
+        }
+      }
+    })
+
+    return {
+      ...baseConfig,
+      routes: nativeRoutes,
+      fetch: this.fetch, // Fallback for dynamic routes and middleware
+      // Optimize TLS if provided in baseConfig
+      tls: baseConfig.tls ? this.optimizeTLS(baseConfig.tls) : undefined,
+      error: (request: Request, error: Error) => {
+        return this.handleErrorSync(error, request, extractPath(request.url))
+      },
+    }
+  }
+
+  /**
+   * Optimize TLS Configuration for Bun 1.39+
+   *
+   * 1. Uses Bun.file() for keys/certs to enable zero-copy loading.
+   * 2. Enables lowMemoryMode in production to reduce per-connection overhead.
+   * 3. Supports SNI arrays for multi-tenant deployments.
+   */
+  private optimizeTLS(tls: any): any {
+    const isProd = process.env.NODE_ENV === 'production'
+
+    const optimizeEntry = (entry: any) => {
+      const optimized = { ...entry }
+      // Zero-copy loading for key and cert
+      if (typeof optimized.key === 'string' && optimized.key.includes('/')) {
+        optimized.key = require('bun').file(optimized.key)
+      }
+      if (typeof optimized.cert === 'string' && optimized.cert.includes('/')) {
+        optimized.cert = require('bun').file(optimized.cert)
+      }
+      // Production defaults
+      if (isProd && optimized.lowMemoryMode === undefined) {
+        optimized.lowMemoryMode = true
+      }
+      return optimized
+    }
+
+    if (Array.isArray(tls)) {
+      return tls.map(optimizeEntry)
+    }
+    return optimizeEntry(tls)
   }
 
   /**

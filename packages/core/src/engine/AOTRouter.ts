@@ -309,6 +309,42 @@ export class AOTRouter {
   }
 
   /**
+   * Get all "pure" static routes that have no middleware (including global)
+   * These can be offloaded to Bun's native router for maximum performance.
+   *
+   * @returns Record of path -> Handler (Bun-compatible)
+   */
+  getNativeRoutes(
+    onMatch: (handler: Handler, path: string) => (req: Request) => Response | Promise<Response>
+  ): Record<string, any> {
+    const routes: Record<string, any> = {}
+
+    // Only allow native offloading if there are NO global or pattern middleware
+    // because Bun's native routes bypass our fetch() logic entirely.
+    if (this.globalMiddleware.length > 0 || this.pathMiddleware.size > 0) {
+      return routes
+    }
+
+    for (const [key, metadata] of this.staticRoutes) {
+      const [method, path] = key.split(':')
+      if (method !== 'get') {
+        continue // Bun's native routes primarily focus on GET for Response objects
+      }
+
+      // If route has specific middleware, it's not pure
+      if (metadata.middleware.length > 0) {
+        continue
+      }
+
+      // Map to Bun's native router format
+      // We wrap it to provide a Request -> Response function that Bun expects
+      routes[path!] = onMatch(metadata.handler, path!)
+    }
+
+    return routes
+  }
+
+  /**
    * Check if a path is static (no parameters or wildcards)
    */
   private isStaticPath(path: string): boolean {

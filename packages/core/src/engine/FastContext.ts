@@ -178,6 +178,33 @@ class FastRequestImpl implements FastRequest {
     return { ...this._headers }
   }
 
+  get cookies(): Record<string, string> {
+    this.checkReleased()
+    // 1. Try Bun Native CookieMap (Injected in Bun.serve routes API)
+    const nativeCookies = (this._request as any).cookies
+    if (nativeCookies) {
+      return nativeCookies
+    }
+
+    // 2. Fallback: Parse from Header manually (Lazy Parsed)
+    const cookieHeader = this._request.headers.get('cookie')
+    if (!cookieHeader) {
+      return {}
+    }
+
+    // Manual parse implementation (optimized for speed)
+    const cookies: Record<string, string> = {}
+    const pairs = cookieHeader.split('; ')
+    for (let i = 0; i < pairs.length; i++) {
+      const pair = pairs[i]!
+      const idx = pair.indexOf('=')
+      if (idx > 0) {
+        cookies[pair.substring(0, idx)] = pair.substring(idx + 1)
+      }
+    }
+    return cookies
+  }
+
   async json<T = unknown>(): Promise<T> {
     this.checkReleased()
     if (!this._jsonParsed) {
@@ -277,37 +304,44 @@ export class FastContext implements IFastContext {
 
   json<T>(data: T, status = 200): Response {
     this.checkReleased()
-    this._headers.set('Content-Type', 'application/json; charset=utf-8')
-    return new Response(JSON.stringify(data), {
+    // Optimization: Native Response.json() is implemented in C++/Zig
+    // and is faster than JSON.stringify() + new Response().
+    return Response.json(data, {
       status,
-      headers: this._headers,
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
     })
   }
 
   text(text: string, status = 200): Response {
     this.checkReleased()
-    this._headers.set('Content-Type', 'text/plain; charset=utf-8')
     return new Response(text, {
       status,
-      headers: this._headers,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
     })
   }
 
   html(html: string, status = 200): Response {
     this.checkReleased()
-    this._headers.set('Content-Type', 'text/html; charset=utf-8')
+    // Optimization: Directly creating a Response with static headers is
+    // often faster than manipulating this._headers (native Response caching).
     return new Response(html, {
       status,
-      headers: this._headers,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
     })
+  }
+
+  /**
+   * Escape HTML using Bun's SIMD-accelerated native implementation
+   */
+  escape(html: string): string {
+    return require('bun').escapeHTML(html)
   }
 
   redirect(url: string, status: 301 | 302 | 303 | 307 | 308 = 302): Response {
     this.checkReleased()
-    this._headers.set('Location', url)
     return new Response(null, {
       status,
-      headers: this._headers,
+      headers: { Location: url },
     })
   }
 
@@ -319,12 +353,12 @@ export class FastContext implements IFastContext {
     })
   }
 
-  stream(stream: ReadableStream, status = 200): Response {
+  stream(stream: any, status = 200): Response {
     this.checkReleased()
-    this._headers.set('Content-Type', 'application/octet-stream')
+    // Direct streaming for zero-copy socket transfers
     return new Response(stream, {
       status,
-      headers: this._headers,
+      headers: { 'Content-Type': 'application/octet-stream' },
     })
   }
 

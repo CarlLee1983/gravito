@@ -99,6 +99,9 @@ export interface FastRequest {
   /** Get all headers */
   headers(): Record<string, string>
 
+  /** Get all cookies (Native Bun 1.39+ / Lazy Parsed) */
+  readonly cookies: Record<string, string>
+
   /** Parse JSON body */
   json<T = unknown>(): Promise<T>
 
