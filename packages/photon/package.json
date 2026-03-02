@@ -12,6 +12,11 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./native": {
+      "bun": "./src/native.ts",
+      "types": "./dist/native.d.ts",
+      "default": "./dist/native.js"
+    },
     "./adapter": {
       "bun": "./src/adapter/index.ts",
       "types": "./dist/adapter/index.d.ts",
