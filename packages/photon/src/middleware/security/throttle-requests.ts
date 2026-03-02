@@ -89,9 +89,21 @@ export function throttleRequests(options: ThrottleRequestsOptions = {}): Middlew
     let key = raw && typeof raw === 'object' ? keyCache.get(raw) : undefined
 
     if (!key) {
-      const forwardedFor = c.req.header('x-forwarded-for') || ''
-      const forwardedIp = forwardedFor.split(',')[0]?.trim()
-      const ip = trustProxy ? forwardedIp || '127.0.0.1' : '127.0.0.1'
+      let ip = '127.0.0.1'
+
+      // Determine IP based on trustProxy setting
+      if (trustProxy) {
+        // When trustProxy is true, prefer x-forwarded-for (first IP in chain)
+        const forwardedFor = c.req.header('x-forwarded-for') || ''
+        const forwardedIp = forwardedFor.split(',')[0]?.trim()
+        ip = forwardedIp || '127.0.0.1'
+      } else {
+        // When trustProxy is false, use x-real-ip only if available, or fall back to localhost
+        // Note: In a real app behind a proxy, you'd need better IP extraction from request socket
+        const realIp = c.req.header('x-real-ip')
+        ip = realIp || '127.0.0.1'
+      }
+
       key = `throttle:${ip}:${c.req.path}`
 
       if (raw && typeof raw === 'object') {

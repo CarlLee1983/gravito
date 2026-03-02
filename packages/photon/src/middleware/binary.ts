@@ -40,26 +40,36 @@ export const binaryMiddleware = (): MiddlewareHandler => {
 
     const accept = c.req.header('Accept')
     if (accept === 'application/cbor') {
-      const contentType = c.res?.headers.get('Content-Type')
+      // Guard: check if response exists and has JSON content type
+      if (!c.res) return
+
+      const contentType = c.res.headers.get('Content-Type')
       if (contentType?.includes('application/json')) {
         try {
           // Optimized: Read body directly without clone() - saves ~30% overhead
-          const body = await c.res!.json()
+          const body = await c.res.json()
           const encoded = encode(body)
 
           // Create new Headers instance to avoid Immutable Headers errors
-          const headers = new Headers(c.res!.headers)
+          const headers = new Headers(c.res.headers)
           headers.set('Content-Type', 'application/cbor')
 
           const buffer = new Uint8Array(encoded).buffer
 
           c.res = new Response(buffer, {
-            status: c.res!.status,
+            status: c.res.status,
             headers,
           })
-        } catch {
-          // JSON parsing failed, likely not a valid JSON response body.
-          // In this case, we skip the CBOR conversion.
+        } catch (error) {
+          // JSON parsing failed (e.g., response body already consumed, invalid JSON)
+          // Log for debugging but don't break the response
+          if (error instanceof SyntaxError) {
+            console.debug(
+              '[binaryMiddleware] JSON parse failed, skipping CBOR conversion:',
+              error.message
+            )
+          }
+          // Fall through: return original response as-is
         }
       }
     }

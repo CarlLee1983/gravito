@@ -57,14 +57,17 @@ export class NativeStreamingApi {
       throw new Error('Stream is closed')
     }
 
+    const bytes = typeof data === 'string' ? this.encoder.encode(data) : data
+    const writer = this.writable.getWriter()
+
     try {
-      const bytes = typeof data === 'string' ? this.encoder.encode(data) : data
-      const writer = this.writable.getWriter()
       await writer.write(bytes)
-      writer.releaseLock()
     } catch (err) {
       this.isClosed = true
       throw err
+    } finally {
+      // Always release lock to prevent stream deadlock (critical!)
+      writer.releaseLock()
     }
   }
 

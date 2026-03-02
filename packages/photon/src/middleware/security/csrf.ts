@@ -156,16 +156,22 @@ export function csrfProtection(options: CsrfOptions = {}): MiddlewareHandler {
       contentType.includes('application/x-www-form-urlencoded') ||
       contentType.includes('multipart/form-data')
     ) {
-      const body = ((await c.req.parseBody()) || {}) as Record<string, unknown>
-      const raw = body[formFieldName]
-      if (typeof raw === 'string') {
-        bodyToken = raw
+      try {
+        const body = (await c.req.parseBody()) || {}
+        const raw = body[formFieldName]
+        if (typeof raw === 'string') {
+          bodyToken = raw
+        }
+      } catch (_error) {
+        // Body parsing failed, skip form token validation
       }
     }
 
     const requestToken = headerToken || bodyToken
     if (!requestToken || !timingSafeEqual(token, requestToken)) {
-      return c.text('Invalid CSRF token', 419 as any)
+      // HTTP 419: I'm a teapot (custom error code for CSRF failures)
+      // Standard practice: use 403 Forbidden for token validation failures
+      return c.text('Invalid CSRF token', 403)
     }
 
     await next()

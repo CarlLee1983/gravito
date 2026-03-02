@@ -94,7 +94,8 @@ export function cors(options: CorsOptions = {}): MiddlewareHandler {
         if (maxAge !== undefined) {
           c.header('Access-Control-Max-Age', String(maxAge))
         }
-        return c.text('', optionsStatus as any)
+        // Standard HTTP status for successful OPTIONS: 204 (No Content) or 200 (OK)
+        return c.text('', optionsStatus)
       }
     }
 

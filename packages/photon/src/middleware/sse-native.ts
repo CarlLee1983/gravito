@@ -157,14 +157,16 @@ export class NativeSSEStreamingApi {
     }
 
     const text = typeof data === 'string' ? data : new TextDecoder().decode(data)
+    const writer = this.writable.getWriter()
 
     try {
-      const writer = this.writable.getWriter()
       await writer.write(text)
-      writer.releaseLock()
     } catch (err) {
       this.isClosed = true
       throw err
+    } finally {
+      // Always release lock to prevent stream deadlock (critical!)
+      writer.releaseLock()
     }
   }
 
@@ -175,10 +177,18 @@ export class NativeSSEStreamingApi {
     if (!this.isClosed) {
       this.isClosed = true
       await this.flushQueue()
+      const writer = this.writable.getWriter()
       try {
-        await this.writable.getWriter().close()
+        await writer.close()
       } catch {
         // Already closed or errored
+      } finally {
+        // Release lock even on error to prevent deadlock
+        try {
+          writer.releaseLock()
+        } catch {
+          // Already released or invalid
+        }
       }
     }
   }
