@@ -44,6 +44,7 @@ packages/*/src/**/*.d.ts
 packages/*/src/**/*.d.ts.map
 packages/*/src/**/*.js
 packages/*/src/**/*.js.map
+**/.tsc-temp/
 
 # Luminosity Artifacts
 .luminosity/
