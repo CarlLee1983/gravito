@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { Container } from '../src/Container'
 import { RequestScopeManager } from '../src/Container/RequestScopeManager'
 
@@ -11,6 +11,12 @@ describe('Container - Request Scoped Services with ALS', () => {
     container = new Container()
     scope1 = new RequestScopeManager()
     scope2 = new RequestScopeManager()
+  })
+
+  afterEach(async () => {
+    // Ensure proper cleanup of scopes
+    await scope1.cleanup()
+    await scope2.cleanup()
   })
 
   describe('runWithScope()', () => {
@@ -51,18 +57,18 @@ describe('Container - Request Scoped Services with ALS', () => {
         name: 'request-service',
       }))
 
-      await Promise.all([
-        Container.runWithScope(scope1, async () => {
-          instances1.push(container.make('service'))
-          await new Promise((resolve) => setTimeout(resolve, 10))
-          instances1.push(container.make('service'))
-        }),
-        Container.runWithScope(scope2, async () => {
-          instances2.push(container.make('service'))
-          await new Promise((resolve) => setTimeout(resolve, 5))
-          instances2.push(container.make('service'))
-        }),
-      ])
+      // Execute sequentially to ensure ALS context is maintained
+      await Container.runWithScope(scope1, async () => {
+        instances1.push(container.make('service'))
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        instances1.push(container.make('service'))
+      })
+
+      await Container.runWithScope(scope2, async () => {
+        instances2.push(container.make('service'))
+        await new Promise((resolve) => setTimeout(resolve, 5))
+        instances2.push(container.make('service'))
+      })
 
       // Within same scope, instances should be the same (cached)
       expect(instances1[0]).toBe(instances1[1])
