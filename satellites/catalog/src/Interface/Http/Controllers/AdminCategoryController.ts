@@ -34,9 +34,15 @@ export class AdminCategoryController {
    */
   async store(ctx: GravitoContext) {
     try {
-      const body = await ctx.req.json()
+      const body = (await ctx.req.json()) as Record<string, unknown>
       const useCase = this.core.container.make<CreateCategory>('catalog.usecase.createCategory')
-      const category = await useCase.execute(body)
+      const category = await useCase.execute({
+        name: body.name as Record<string, string>,
+        slug: body.slug as string,
+        parentId: body.parentId as string | null | undefined,
+        description: body.description as string | undefined,
+        sortOrder: body.sortOrder as number | undefined,
+      })
       return ctx.json(
         { success: true, data: CategoryMapper.toDTO(category as any) } as any,
         201 as any
@@ -57,9 +63,18 @@ export class AdminCategoryController {
   async update(ctx: GravitoContext) {
     try {
       const id = ctx.req.param('id')
-      const body = await ctx.req.json()
+      if (!id) {
+        return ctx.json({ success: false, message: 'Category ID is required' }, 400 as any)
+      }
+      const body = (await ctx.req.json()) as Record<string, unknown>
       const useCase = this.core.container.make<UpdateCategory>('catalog.usecase.updateCategory')
-      const category = await useCase.execute({ id, ...body })
+      const category = await useCase.execute({
+        id,
+        name: body.name as Record<string, string> | undefined,
+        parentId: body.parentId as string | null | undefined,
+        description: body.description as string | undefined,
+        sortOrder: body.sortOrder as number | undefined,
+      })
       return ctx.json({ success: true, data: CategoryMapper.toDTO(category as any) } as any)
     } catch (error: unknown) {
       if (error instanceof CatalogError) {
@@ -77,6 +92,9 @@ export class AdminCategoryController {
   async destroy(ctx: GravitoContext) {
     try {
       const id = ctx.req.param('id')
+      if (!id) {
+        return ctx.json({ success: false, message: 'Category ID is required' }, 400 as any)
+      }
       const useCase = this.core.container.make<DeleteCategory>('catalog.usecase.deleteCategory')
       await useCase.execute({ id })
       return ctx.json({ success: true, message: 'Category deleted successfully' })

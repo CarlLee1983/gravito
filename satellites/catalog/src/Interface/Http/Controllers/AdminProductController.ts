@@ -36,6 +36,9 @@ export class AdminProductController {
   async show(ctx: GravitoContext) {
     try {
       const id = ctx.req.param('id')
+      if (!id) {
+        return ctx.json({ success: false, message: 'Product ID is required' }, 400 as any)
+      }
       const useCase = this.core.container.make<GetProduct>('catalog.usecase.getProduct')
       const product = await useCase.execute({ id })
       return ctx.json({ success: true, data: product })
@@ -54,9 +57,23 @@ export class AdminProductController {
    */
   async store(ctx: GravitoContext) {
     try {
-      const body = await ctx.req.json()
+      const body = (await ctx.req.json()) as Record<string, unknown>
       const useCase = this.core.container.make<CreateProduct>('catalog.usecase.createProduct')
-      const product = await useCase.execute(body)
+      const product = await useCase.execute({
+        name: body.name as Record<string, string>,
+        slug: body.slug as string,
+        brand: body.brand as string | undefined,
+        description: body.description as string | undefined,
+        categoryIds: body.categoryIds as string[] | undefined,
+        variants: body.variants as Array<{
+          sku: string
+          name?: string
+          price: number
+          compareAtPrice?: number
+          stock: number
+          options: Record<string, string>
+        }>,
+      })
       return ctx.json({ success: true, data: product }, 201)
     } catch (error: unknown) {
       if (error instanceof CatalogError) {
@@ -74,9 +91,19 @@ export class AdminProductController {
   async update(ctx: GravitoContext) {
     try {
       const id = ctx.req.param('id')
-      const body = await ctx.req.json()
+      if (!id) {
+        return ctx.json({ success: false, message: 'Product ID is required' }, 400 as any)
+      }
+      const body = (await ctx.req.json()) as Record<string, unknown>
       const useCase = this.core.container.make<UpdateProduct>('catalog.usecase.updateProduct')
-      const product = await useCase.execute({ id, ...body })
+      const product = await useCase.execute({
+        id,
+        name: body.name as Record<string, string> | undefined,
+        slug: body.slug as string | undefined,
+        description: body.description as string | undefined,
+        brand: body.brand as string | undefined,
+        categoryIds: body.categoryIds as string[] | undefined,
+      })
       return ctx.json({ success: true, data: product })
     } catch (error: unknown) {
       if (error instanceof CatalogError) {
@@ -94,6 +121,9 @@ export class AdminProductController {
   async destroy(ctx: GravitoContext) {
     try {
       const id = ctx.req.param('id')
+      if (!id) {
+        return ctx.json({ success: false, message: 'Product ID is required' }, 400 as any)
+      }
       const useCase = this.core.container.make<DeleteProduct>('catalog.usecase.deleteProduct')
       await useCase.execute({ id })
       return ctx.json({ success: true, message: 'Product deleted successfully' })

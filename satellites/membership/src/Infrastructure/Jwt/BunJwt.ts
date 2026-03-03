@@ -77,7 +77,12 @@ export async function verifyJWT(token: string, secret: string): Promise<Record<s
   const signingInput = `${headerStr}.${payloadStr}`
   const key = await getSigningKey(secret)
   const signature = base64urlDecode(signatureStr)
-  const isValid = await crypto.subtle.verify('HMAC', key, signature, encoder.encode(signingInput))
+  const isValid = await crypto.subtle.verify(
+    'HMAC',
+    key,
+    signature as BufferSource,
+    encoder.encode(signingInput) as BufferSource
+  )
 
   if (!isValid) {
     throw new Error('Invalid JWT: signature verification failed')
