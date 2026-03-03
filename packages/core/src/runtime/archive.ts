@@ -190,6 +190,14 @@ export async function archiveFromDirectory(
   archivePath: string,
   options: ArchiveFromDirectoryOptions = {}
 ): Promise<Uint8Array> {
+  // Validate archivePath
+  if (!archivePath) {
+    throw new Error('archivePath cannot be empty')
+  }
+  if (!archivePath.endsWith('.tar.gz') && !archivePath.endsWith('.tgz')) {
+    throw new Error('archivePath must end with .tar.gz or .tgz')
+  }
+
   const kind = getRuntimeKind()
   const createOptions: ArchiveCreateOptions = {
     compress: options.compress === 'gzip' ? 'gzip' : undefined,
