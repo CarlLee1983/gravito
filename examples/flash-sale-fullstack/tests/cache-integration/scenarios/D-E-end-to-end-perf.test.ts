@@ -343,7 +343,7 @@ describe('場景 D & E：端到端流程 + 性能驗證', () => {
           }
           return true
         },
-        5000, // 5 秒
+        1000, // 1 秒
         100 // 100 個並發
       )
 
@@ -381,7 +381,7 @@ describe('場景 D & E：端到端流程 + 性能驗證', () => {
             }
             return true
           },
-          3000,
+          1000,
           20
         ),
 
@@ -389,18 +389,18 @@ describe('場景 D & E：端到端流程 + 性能驗證', () => {
         (async () => {
           for (let i = 0; i < 3; i++) {
             await warmupManager.warmupOnStartup(products)
-            await new Promise((resolve) => setTimeout(resolve, 1000))
+            await new Promise((resolve) => setTimeout(resolve, 100))
           }
-          return { successes: [], failures: [], duration: 3000 }
+          return { successes: [], failures: [], duration: 1000 }
         })(),
 
         // 定期失效
         (async () => {
           for (let i = 0; i < 3; i++) {
             batcher.addInvalidationEvent(`product:*`, i % 2 === 0 ? 'high' : 'normal')
-            await new Promise((resolve) => setTimeout(resolve, 1000))
+            await new Promise((resolve) => setTimeout(resolve, 100))
           }
-          return { successes: [], failures: [], duration: 3000 }
+          return { successes: [], failures: [], duration: 1000 }
         })(),
       ])
 

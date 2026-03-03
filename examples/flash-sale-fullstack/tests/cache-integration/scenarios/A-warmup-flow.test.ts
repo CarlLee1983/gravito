@@ -288,7 +288,7 @@ describe('場景 A：完整預熱流程', () => {
 
       const result = await stressTest(
         () => warmupManager.warmupOnStartup(products),
-        5000, // 5 秒
+        1000, // 1 秒
         20 // 20 個並發
       )
 

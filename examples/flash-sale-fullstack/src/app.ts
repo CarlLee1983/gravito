@@ -23,7 +23,10 @@ import { registerAllHealthChecks } from './monitoring/health-checks'
 import { registerBusinessMetrics } from './monitoring/metrics-integration'
 import { getMonitorConfig } from './monitoring/monitor-config'
 import { initializeQueueManager } from './queue'
+import { ReportingController } from './reporting/ReportingController'
 import { initializeResilience, shutdownResilience } from './resilience/config'
+
+import { registerPoolMonitoringRoutes } from './routes/pool-monitoring'
 import { httpTracingMiddleware } from './tracing/http-tracing-middleware'
 
 // import { initializeTracing } from './tracing/setup' // TODO: 遷移到 @gravito/monitor
@@ -223,6 +226,18 @@ async function bootstrap(): Promise<void> {
   const honoApp = app.core.app as any
   honoApp.use('*', httpTracingMiddleware())
   app.core.logger.info('[Tracing] HTTP tracing middleware registered')
+
+  // 註冊連接池監控路由
+  registerPoolMonitoringRoutes(app.core.app as any)
+
+  // 註冊報表系統路由
+  app.core.router.prefix('/api').group((router) => {
+    router.get('/reports', [ReportingController, 'index'])
+    router.get('/reports/:id', [ReportingController, 'show'])
+    router.post('/reports/generate', [ReportingController, 'generate'])
+    router.get('/reports/status/:jobId', [ReportingController, 'jobStatus'])
+    router.get('/reports/stats', [ReportingController, 'stats'])
+  })
 
   // 啟動 HTTP 伺服器
   const liftoffConfig = app.core.liftoff()

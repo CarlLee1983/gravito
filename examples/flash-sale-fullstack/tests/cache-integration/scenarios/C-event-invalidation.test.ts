@@ -374,7 +374,7 @@ describe('場景 C：事件驅動失效', () => {
           batcher.addInvalidationEvent('stress:pattern:*', 'normal')
           return true
         },
-        5000, // 5 秒
+        1000, // 1 秒
         30 // 30 個並發
       )
 

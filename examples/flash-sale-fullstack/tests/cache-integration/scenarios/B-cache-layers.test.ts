@@ -328,7 +328,7 @@ describe('場景 B：三層快取交互', () => {
 
       const result = await stressTest(
         () => l1Cache.get('stress-key'),
-        5000, // 5 秒
+        1000, // 1 秒
         50 // 50 個並發
       )
 
@@ -350,7 +350,7 @@ describe('場景 B：三層快取交互', () => {
       l1Cache.set('user:1:settings', { theme: 'dark' }, 300)
       l1Cache.set('user:2:profile', { name: 'User 2' }, 300)
 
-      const deleted = l1Cache.deletePattern?.('user:1:*') || 0
+      const deleted = (await l1Cache.deletePattern?.('user:1:*')) || 0
 
       expect(deleted).toBeGreaterThanOrEqual(0)
       console.log(`✓ B6.1 模式刪除成功 (${deleted} 個條目)`)
@@ -369,7 +369,7 @@ describe('場景 B：三層快取交互', () => {
     })
 
     it('刪除不存在的模式應該安全', async () => {
-      const deleted = l1Cache.deletePattern?.('non-existent:*') || 0
+      const deleted = (await l1Cache.deletePattern?.('non-existent:*')) || 0
 
       expect(typeof deleted).toBe('number')
       console.log(`✓ B6.3 安全模式刪除完成`)

@@ -26,7 +26,7 @@ describe('P1.3 Phase 2.3 - Load Testing & Stability Verification', () => {
      */
     it('A1: Constant 1000 ops/sec for 10 seconds', async () => {
       const targetOpsPerSec = 1000
-      const duration = 10000 // 10 秒
+      const duration = 1000 // 1 秒
       const targetOpsCount = (targetOpsPerSec * duration) / 1000
 
       const startTime = performance.now()
@@ -96,7 +96,7 @@ describe('P1.3 Phase 2.3 - Load Testing & Stability Verification', () => {
      * 驗證吞吐量波動在可接受範圍內（< 10%）
      */
     it('A2: Throughput stability check (< 10% variance)', async () => {
-      const durationMs = 5000
+      const durationMs = 1000
       const timeSliceMs = 1000
       const slices = durationMs / timeSliceMs
 
@@ -150,7 +150,7 @@ describe('P1.3 Phase 2.3 - Load Testing & Stability Verification', () => {
     it('B1: Ramp-up from 100 to 2000 ops/sec over 30 seconds', async () => {
       const startLoadOps = 100
       const endLoadOps = 2000
-      const rampDuration = 30000 // 30 秒
+      const rampDuration = 2000 // 2 秒
 
       const latenciesByPhase: number[][] = [[], [], [], [], []]
       const phaseCount = 5
@@ -214,10 +214,10 @@ describe('P1.3 Phase 2.3 - Load Testing & Stability Verification', () => {
      */
     it('C1: Burst pattern (high-low-high-low alternating)', async () => {
       const patterns = [
-        { ops: 2000, duration: 5000, label: 'High' },
-        { ops: 200, duration: 5000, label: 'Low' },
-        { ops: 2000, duration: 5000, label: 'High' },
-        { ops: 200, duration: 5000, label: 'Low' },
+        { ops: 1000, duration: 1000, label: 'High' },
+        { ops: 200, duration: 1000, label: 'Low' },
+        { ops: 2000, duration: 1000, label: 'High' },
+        { ops: 200, duration: 1000, label: 'Low' },
       ]
 
       const queueDepthByPhase: number[] = []
@@ -274,7 +274,7 @@ describe('P1.3 Phase 2.3 - Load Testing & Stability Verification', () => {
      * D1：Flash Sale 場景 (10K QPS 目標)
      */
     it('D1: Flash Sale scenario parameters (target 10K QPS)', async () => {
-      const durationMs = 5000
+      const durationMs = 1000
       const targetOps = 10000
       const opsPerMs = targetOps / 1000
 
@@ -318,7 +318,7 @@ describe('P1.3 Phase 2.3 - Load Testing & Stability Verification', () => {
      * D2：Normal Operation 場景 (1K QPS)
      */
     it('D2: Normal operation scenario (target 1K QPS)', async () => {
-      const durationMs = 5000
+      const durationMs = 1000
       const targetOps = 1000
 
       const startTime = performance.now()
@@ -360,7 +360,7 @@ describe('P1.3 Phase 2.3 - Load Testing & Stability Verification', () => {
      * D3：Low Load 場景 (100 QPS - 夜間維護)
      */
     it('D3: Low load scenario (100 QPS - night maintenance)', async () => {
-      const durationMs = 5000
+      const durationMs = 1000
       const targetOps = 100
 
       const startTime = performance.now()

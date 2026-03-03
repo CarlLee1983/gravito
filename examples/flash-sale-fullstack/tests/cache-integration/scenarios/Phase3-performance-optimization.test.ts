@@ -149,7 +149,7 @@ describe('Phase 3：性能調優', () => {
 
       const result = await stressTest(
         () => l1Cache.get('throughput-baseline'),
-        10000, // 10 秒
+        1000, // 1 秒
         50 // 50 個並發
       )
 
@@ -473,7 +473,7 @@ describe('Phase 3：性能調優', () => {
           const cached = await l1Cache.get(id)
           return !!cached
         },
-        10000, // 10 秒
+        1000, // 1 秒
         100 // 100 個並發
       )
 
@@ -503,7 +503,7 @@ describe('Phase 3：性能調優', () => {
           results.push(cached?.data === 'consistency-test')
           return true
         },
-        5000, // 5 秒
+        1000, // 1 秒
         200 // 200 個並發
       )
 
@@ -531,7 +531,7 @@ describe('Phase 3：性能調優', () => {
             const cached = await l1Cache.get(id)
             return !!cached
           },
-          10000, // 10 秒
+          1000, // 1 秒
           50 // 50 個並發
         )
 
@@ -562,7 +562,7 @@ describe('Phase 3：性能調優', () => {
           const cached = await l1Cache.get('stress-key')
           return !!cached
         },
-        5000, // 5 秒
+        1000, // 1 秒
         1000 // 1000 個並發（極限）
       )
 

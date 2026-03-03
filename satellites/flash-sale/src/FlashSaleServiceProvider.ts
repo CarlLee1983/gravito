@@ -280,6 +280,7 @@ export class FlashSaleServiceProvider extends ServiceProvider {
       router.post('/orders', [OrderController, 'store'])
       router.post('/orders/bulk', [OrderController, 'storeBulk'])
       router.get('/orders/:id', [OrderController, 'show'])
+      router.put('/orders/:id/confirm', [OrderController, 'confirm'])
 
       // 管理員路由
       router.post('/admin/cache/flush', [AdminController, 'flushCache'])
