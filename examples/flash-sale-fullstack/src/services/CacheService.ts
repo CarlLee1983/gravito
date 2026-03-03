@@ -1,11 +1,11 @@
 /**
  * Cache Service
  *
- * 統一的快取管理服務，基於 Redis
+ * 統一的快取管理服務，基於 Gravito Redis
  * 支持多級快取策略與自動失效
  */
 
-import type Redis from 'ioredis'
+import { Redis } from '@gravito/plasma'
 
 export interface CacheOptions {
   ttl?: number // 秒，默認 300s (5分鐘)
@@ -16,11 +16,9 @@ export interface CacheOptions {
  * 快取服務
  */
 export class CacheService {
-  private redis: Redis
   private readonly namespace: string = 'cache'
 
-  constructor(redisClient: Redis, namespace?: string) {
-    this.redis = redisClient
+  constructor(namespace?: string) {
     if (namespace) {
       this.namespace = namespace
     }
@@ -38,7 +36,7 @@ export class CacheService {
    */
   async get<T>(key: string): Promise<T | null> {
     try {
-      const value = await this.redis.get(this.getKey(key))
+      const value = await Redis.get(this.getKey(key))
       if (!value) {
         return null
       }
@@ -60,10 +58,10 @@ export class CacheService {
       const serialized = JSON.stringify(value)
 
       if (ttl > 0) {
-        await this.redis.setex(cacheKey, ttl, serialized)
+        await Redis.set(cacheKey, serialized, { ex: ttl })
       } else {
         // TTL <= 0 表示永不過期
-        await this.redis.set(cacheKey, serialized)
+        await Redis.set(cacheKey, serialized)
       }
     } catch (error) {
       console.error(`[CacheService] 快取設置失敗: ${key}`, error)
@@ -75,7 +73,7 @@ export class CacheService {
    */
   async delete(key: string): Promise<void> {
     try {
-      await this.redis.del(this.getKey(key))
+      await Redis.del(this.getKey(key))
     } catch (error) {
       console.error(`[CacheService] 快取刪除失敗: ${key}`, error)
     }
@@ -90,7 +88,7 @@ export class CacheService {
     }
     try {
       const cacheKeys = keys.map((k) => this.getKey(k))
-      await this.redis.del(...cacheKeys)
+      await Redis.del(...cacheKeys)
     } catch (error) {
       console.error(`[CacheService] 批量刪除快取失敗`, error)
     }
@@ -104,9 +102,9 @@ export class CacheService {
   async deletePattern(pattern: string): Promise<void> {
     try {
       const fullPattern = this.getKey(pattern)
-      const keys = await this.redis.keys(fullPattern)
+      const keys = await Redis.keys(fullPattern)
       if (keys.length > 0) {
-        await this.redis.del(...keys)
+        await Redis.del(...keys)
       }
     } catch (error) {
       console.error(`[CacheService] 模式刪除快取失敗: ${pattern}`, error)
@@ -137,7 +135,7 @@ export class CacheService {
    */
   async has(key: string): Promise<boolean> {
     try {
-      const exists = await this.redis.exists(this.getKey(key))
+      const exists = await Redis.exists(this.getKey(key))
       return exists === 1
     } catch (error) {
       console.error(`[CacheService] 檢查快取失敗: ${key}`, error)
@@ -150,7 +148,7 @@ export class CacheService {
    */
   async increment(key: string, delta = 1): Promise<number> {
     try {
-      return await this.redis.incrby(this.getKey(key), delta)
+      return await Redis.incrby(this.getKey(key), delta)
     } catch (error) {
       console.error(`[CacheService] 遞增快取失敗: ${key}`, error)
       return 0
@@ -163,9 +161,9 @@ export class CacheService {
   async flush(): Promise<void> {
     try {
       const pattern = this.getKey('*')
-      const keys = await this.redis.keys(pattern)
+      const keys = await Redis.keys(pattern)
       if (keys.length > 0) {
-        await this.redis.del(...keys)
+        await Redis.del(...keys)
       }
     } catch (error) {
       console.error(`[CacheService] 清空快取失敗`, error)

@@ -19,6 +19,7 @@
     "@gravito/signal": "workspace:*",
     "@gravito/stream": "workspace:*",
     "@gravito/resilience": "workspace:*",
+    "@gravito/plasma": "workspace:*",
     "@gravito/stasis": "workspace:*",
     "@gravito/monitor": "workspace:*",
     "@gravito/satellite-flash-sale": "workspace:*",
