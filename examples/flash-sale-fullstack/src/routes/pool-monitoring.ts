@@ -4,20 +4,15 @@
  * 提供連接池狀態查詢和調整歷史接口
  */
 
-import { getCore } from '../app'
+import type { PlanetCore, Router } from '@gravito/core'
 
-export function registerPoolMonitoringRoutes(app: { get: (...args: any[]) => any }): void {
+export function registerPoolMonitoringRoutes(router: Router): void {
   /**
    * GET /api/admin/pool/metrics
    * 獲取當前連接池指標
    */
-  app.get('/api/admin/pool/metrics', (c: any) => {
+  router.get('/api/admin/pool/metrics', (c: any) => {
     try {
-      // 獲取應用實例以檢查連接池可用性
-      getCore()
-      // 這裡需要全局訪問 poolManager
-      // 為了簡化，我們直接從應用日誌輸出
-
       return c.json({
         success: true,
         data: {
@@ -40,9 +35,9 @@ export function registerPoolMonitoringRoutes(app: { get: (...args: any[]) => any
    * GET /api/admin/pool/health
    * 檢查連接池健康狀態
    */
-  app.get('/api/admin/pool/health', (c) => {
+  router.get('/api/admin/pool/health', (c) => {
     try {
-      const core = getCore()
+      const core = c.get('core') as PlanetCore
       const db = (core as any).database
       const pool = (db as any).client?.pool
 

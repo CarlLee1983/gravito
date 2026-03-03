@@ -35,12 +35,12 @@ export function httpTracingMiddleware(): MiddlewareFn {
     try {
       await next()
 
-      const statusCode = c.res.status
+      const statusCode = c.res?.status ?? 200
       const duration = (performance.now() - startTime) / 1000
 
       span.setAttributes({
         'http.status_code': statusCode,
-        'http.response_content_length': parseInt(c.res.headers.get('content-length') ?? '0', 10),
+        'http.response_content_length': parseInt(c.res?.headers.get('content-length') ?? '0', 10),
         'http.duration_seconds': duration,
       })
 

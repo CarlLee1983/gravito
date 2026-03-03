@@ -1,45 +1,30 @@
 /**
  * Flash Sale System - Main Application Entry Point
  *
- * 搶購系統主應用入口
+ * 搶購系統主應用入口 (Refactored)
  */
 
 import { Application } from '@gravito/core'
-import { MonitorOrbit, type MonitorService } from '@gravito/monitor'
+import type { MonitorService } from '@gravito/monitor'
 import { FlashSaleServiceProvider } from '@gravito/satellite-flash-sale'
+// @ts-expect-error - Local satellite package may not have declaration files
 import { InventoryLockServiceProvider } from '@gravito/satellite-inventory-lock'
+// @ts-expect-error - Local satellite package may not have declaration files
 import { PaymentServiceProvider } from '@gravito/satellite-payment'
 import type { QueueManager } from '@gravito/stream'
-import { AsyncInvalidationEngine, EventPriority } from './cache/async'
-import { EventAggregator } from './cache/events'
-import { DynamicPoolManager } from './database/DynamicPoolManager'
+import { bootstrapMonitor } from './bootstrap/monitor'
+import { bootstrapResilience } from './bootstrap/resilience'
+import type { AsyncInvalidationEngine } from './cache/async/AsyncInvalidationEngine'
+import type { EventAggregator } from './cache/events/EventAggregator'
 import { GravitoConfig } from './gravito.config'
-import { setupCacheIntegration } from './integrations/cache-integration'
-import { setupMonitoringIntegration } from './integrations/monitor-integration'
-import { setupOrderQueueIntegration } from './integrations/order-queue-handler'
-import { setupPaymentQueueIntegration } from './integrations/payment-queue-handler'
-import { setupResilienceIntegration } from './integrations/resilience-integration'
-import { registerAllHealthChecks } from './monitoring/health-checks'
-import { registerBusinessMetrics } from './monitoring/metrics-integration'
-import { getMonitorConfig } from './monitoring/monitor-config'
+import { AppServiceProvider } from './providers/AppServiceProvider'
 import { initializeQueueManager } from './queue'
-import { ReportingController } from './reporting/ReportingController'
-import { initializeResilience, shutdownResilience } from './resilience/config'
-
-import { registerPoolMonitoringRoutes } from './routes/pool-monitoring'
 import { httpTracingMiddleware } from './tracing/http-tracing-middleware'
 
-// import { initializeTracing } from './tracing/setup' // TODO: 遷移到 @gravito/monitor
-
 let globalApp: Application | null = null
-let globalQueueManager: QueueManager | null = null
-let globalPoolManager: DynamicPoolManager | null = null
-let globalEventAggregator: EventAggregator | null = null
-let globalAsyncInvalidationEngine: AsyncInvalidationEngine | null = null
-let globalMonitorService: MonitorService | null = null
 
 /**
- * 取得全局 Core 實例（供 Job 和其他異步代碼使用）
+ * 取得全局 Core 實例
  */
 export function getCore() {
   if (!globalApp) {
@@ -49,252 +34,110 @@ export function getCore() {
 }
 
 /**
+ * 從容器取得服務的通用方法
+ */
+function getFromContainer<T>(key: string): T {
+  const core = getCore()
+  return core.container.make(key) as T
+}
+
+/**
  * 取得全局 QueueManager 實例
  */
 export function getQueueManager(): QueueManager {
-  if (!globalQueueManager) {
-    throw new Error('QueueManager not initialized. Call bootstrap() first.')
-  }
-  return globalQueueManager
+  return getFromContainer<QueueManager>('queueManager')
 }
 
 /**
  * 取得全局 EventAggregator 實例
  */
 export function getEventAggregator(): EventAggregator {
-  if (!globalEventAggregator) {
-    throw new Error('EventAggregator not initialized. Call bootstrap() first.')
-  }
-  return globalEventAggregator
+  return getFromContainer<EventAggregator>('eventAggregator')
 }
 
 /**
  * 取得全局 AsyncInvalidationEngine 實例
  */
 export function getAsyncInvalidationEngine(): AsyncInvalidationEngine {
-  if (!globalAsyncInvalidationEngine) {
-    throw new Error('AsyncInvalidationEngine not initialized. Call bootstrap() first.')
-  }
-  return globalAsyncInvalidationEngine
+  return getFromContainer<AsyncInvalidationEngine>('invalidationEngine')
 }
 
 /**
  * 取得全局 Monitor 實例
  */
 export function getMonitorService(): MonitorService {
-  if (!globalMonitorService) {
-    throw new Error('MonitorService not initialized. Call bootstrap() first.')
-  }
-  return globalMonitorService
+  return getFromContainer<MonitorService>('monitor')
 }
 
 /**
  * 初始化並啟動應用
  */
 async function bootstrap(): Promise<void> {
-  const _env = (process.env.NODE_ENV || 'development') as 'development' | 'production' | 'testing'
+  // 1. 建立 Application 實例
+  globalApp = new Application(GravitoConfig)
 
-  // 1. 初始化 OpenTelemetry（必須在任何其他初始化之前）
-  // TODO: 使用 @gravito/monitor 進行 OpenTelemetry 配置
-  // const otelSdk = await initializeTracing(GravitoConfig.openTelemetry)
-  // if (otelSdk) {
-  //   console.log('[Tracing] OpenTelemetry SDK initialized successfully')
-  // }
+  const core = globalApp.core
 
-  // Create Application with proper configuration structure
-  const p1 = new FlashSaleServiceProvider()
-  const p2 = new InventoryLockServiceProvider()
-  const p3 = new PaymentServiceProvider()
+  // 2. 初始化基礎設施 (P0)
 
-  const providers = [p1, p2, p3]
+  // P0.1：監控系統
+  await bootstrapMonitor(core)
 
-  console.log('Provider 1:', {
-    name: p1.constructor.name,
-    type: typeof p1,
-    hasRegister: typeof (p1 as any).register,
-    hasBoot: typeof (p1 as any).boot,
-  })
+  // P0.2：容錯機制
+  await bootstrapResilience(core)
 
-  const app = new Application({
-    basePath: process.cwd(),
-    config: GravitoConfig,
-    env: _env,
-    // Register satellite providers directly
-    providers,
-  } as any)
+  // 3. 註冊服務提供者 (P1)
 
-  // 啟動應用
-  await app.boot()
+  // 應用核心服務 (管理 PoolManager, EventAggregator, InvalidationEngine, Routes)
+  core.register(new AppServiceProvider())
 
-  // 初始化隊列系統
-  globalQueueManager = await initializeQueueManager()
+  // 業務 Satellite 服務
+  // 注意：某些 Provider 可能已經被打包，這裡手動註冊實例
+  core.register(new FlashSaleServiceProvider())
 
-  // 保存全局應用實例
-  globalApp = app
-
-  // P0.1：初始化監控和可觀測性（Monitor）
-  // 提供健康檢查、指標收集和分布式追蹤
-  const monitorConfig = getMonitorConfig(_env)
-  const monitorOrbit = new MonitorOrbit(monitorConfig)
-  await monitorOrbit.install(app.core)
-
-  // 從容器取得 Monitor 服務
-  globalMonitorService = app.core.container.make('monitor') as MonitorService
-
-  // 註冊健康檢查
-  registerAllHealthChecks(globalMonitorService.health, app.core.logger)
-
-  // 註冊業務指標
-  const businessMetrics = registerBusinessMetrics(globalMonitorService.metrics, app.core.logger)
-
-  // P0.2：初始化容錯機制（Resilience）
-  await initializeResilience(app.core)
-
-  // P0.2.1：初始化快取層（Stasis）
-  // 使用分層快取策略：本地 + Redis
-  try {
-    app.core.logger.info('[Stasis] Cache layer initialized with tiered strategy')
-    app.core.logger.info('[Stasis] - L1 (Local): Memory cache (max 1000 items)')
-    app.core.logger.info('[Stasis] - L2 (Remote): Redis cache')
-    app.core.logger.info('[Stasis] - Default TTL: 5 minutes')
-  } catch (error) {
-    app.core.logger.warn('[Stasis] Cache initialization skipped (dev mode)', error)
+  // 使用 type-safe 的方式註冊其餘 Provider
+  if (InventoryLockServiceProvider) {
+    core.register(new (InventoryLockServiceProvider as any)())
+  }
+  if (PaymentServiceProvider) {
+    core.register(new (PaymentServiceProvider as any)())
   }
 
-  // P0.3：初始化動態連接池管理器
-  globalPoolManager = new DynamicPoolManager(
-    {
-      minPoolSize: 2,
-      maxPoolSize: 50,
-      checkInterval: 30000,
-      changeThreshold: 60000,
-      expandThreshold: 0.8,
-      shrinkThreshold: 0.2,
-    },
-    app.core.logger
-  )
-  globalPoolManager.startMonitoring(app.core)
-  app.core.logger.info('[PoolManager] 動態連接池已初始化')
+  // 4. 初始化外部資源
 
-  // P1.3：初始化事件驅動快取系統
-  globalEventAggregator = new EventAggregator({
-    maxQueueDepth: 5000,
-    deduplicationEnabled: true,
-    backgroundFlushIntervalMs: 1000,
-  })
-  globalEventAggregator.start()
-  app.core.logger.info('[EventAggregator] 事件聚合器已初始化')
+  // 初始化隊列管理器並註冊到容器
+  const queueManager = await initializeQueueManager()
+  core.container.instance('queueManager', queueManager)
 
-  // 初始化異步失效引擎
-  globalAsyncInvalidationEngine = new AsyncInvalidationEngine()
+  // 5. 啟動應用 (在 Gravito 2.0+ 中使用 boot)
+  await globalApp.boot()
 
-  // 註冊失效處理器（針對不同優先級）
-  globalAsyncInvalidationEngine.registerHandler(EventPriority.CRITICAL, async (pattern: string) => {
-    app.core.logger.debug(`[AsyncInvalidation] 執行 CRITICAL 失效: ${pattern}`)
-    // 實現失效邏輯
-  })
-
-  globalAsyncInvalidationEngine.registerHandler(EventPriority.HIGH, async (pattern: string) => {
-    app.core.logger.debug(`[AsyncInvalidation] 執行 HIGH 失效: ${pattern}`)
-  })
-
-  globalAsyncInvalidationEngine.registerHandler(EventPriority.NORMAL, async (pattern: string) => {
-    app.core.logger.debug(`[AsyncInvalidation] 執行 NORMAL 失效: ${pattern}`)
-  })
-
-  globalAsyncInvalidationEngine.registerHandler(EventPriority.LOW, async (pattern: string) => {
-    app.core.logger.debug(`[AsyncInvalidation] 執行 LOW 失效: ${pattern}`)
-  })
-
-  globalAsyncInvalidationEngine.start()
-  app.core.logger.info('[AsyncInvalidationEngine] 異步失效引擎已初始化')
-
-  // 設置 Resilience 整合（容錯機制）
-  setupResilienceIntegration(app.core)
-
-  // 設置快取層整合（Stasis）
-  setupCacheIntegration(app.core)
-
-  // 設置監控整合（Monitor）
-  setupMonitoringIntegration(app.core, businessMetrics)
-
-  // 設置 Satellites 與隊列系統的整合
-  setupOrderQueueIntegration(app.core)
-  setupPaymentQueueIntegration(app.core)
-
-  // 掛載 HTTP tracing 中間件（全局）
-  const honoApp = app.core.app as any
-  honoApp.use('*', httpTracingMiddleware())
-  app.core.logger.info('[Tracing] HTTP tracing middleware registered')
-
-  // 註冊連接池監控路由
-  registerPoolMonitoringRoutes(app.core.app as any)
-
-  // 註冊報表系統路由
-  app.core.router.prefix('/api').group((router) => {
-    router.get('/reports', [ReportingController, 'index'])
-    router.get('/reports/:id', [ReportingController, 'show'])
-    router.post('/reports/generate', [ReportingController, 'generate'])
-    router.get('/reports/status/:jobId', [ReportingController, 'jobStatus'])
-    router.get('/reports/stats', [ReportingController, 'stats'])
-  })
-
-  // 啟動 HTTP 伺服器
-  const liftoffConfig = app.core.liftoff()
-
-  // 記錄啟動訊息
-  app.core.logger.info('🚀 Flash Sale System started')
-  app.core.logger.info(`📍 Environment: ${app.env}`)
-  app.core.logger.info(`🌐 Listen on: http://localhost:${liftoffConfig.port}`)
-  app.core.logger.info('📦 Queue Manager initialized')
-  app.core.logger.info('🔗 Satellites integrations configured')
-  app.core.logger.info('📊 Observability endpoints:')
-  app.core.logger.info('   - Health: /health, /ready, /live')
-  app.core.logger.info('   - Metrics: /metrics (Prometheus format)')
-
-  // 啟動 Bun 服務器
-  if (typeof Bun !== 'undefined') {
-    Bun.serve(liftoffConfig as any)
-    app.core.logger.info('✅ HTTP Server is running')
+  // 6. 註冊全局中間件 (Hono)
+  // 取得 Hono 實例
+  const app = core.adapter.native as any
+  if (app && typeof app.use === 'function') {
+    app.use('*', httpTracingMiddleware)
   }
 
-  // 註冊 shutdown hook - 確保所有服務都正確關閉
-  const shutdown = async () => {
-    app.core.logger.info('Shutting down gracefully...')
-    // 停止容錯機制
-    await shutdownResilience()
-    // 停止動態連接池監控
-    if (globalPoolManager) {
-      globalPoolManager.stopMonitoring()
-    }
-    // 停止事件驅動系統
-    if (globalEventAggregator) {
-      await globalEventAggregator.stop()
-    }
-    if (globalAsyncInvalidationEngine) {
-      await globalAsyncInvalidationEngine.stop()
-    }
-    // 關閉監控 Orbit（包含 OpenTelemetry shutdown）
-    if (globalMonitorService) {
-      await monitorOrbit.shutdown()
-    }
+  core.logger.info('🚀 Flash Sale System is running on port 3000')
+}
+
+/**
+ * 關閉應用
+ */
+async function shutdown(): Promise<void> {
+  if (globalApp) {
+    await globalApp.core.shutdown()
+    globalApp = null
   }
+}
 
-  process.on('SIGTERM', async () => {
-    app.core.logger.info('SIGTERM received, shutting down gracefully...')
-    await shutdown()
-    process.exit(0)
-  })
-
-  process.on('SIGINT', async () => {
-    app.core.logger.info('SIGINT received, shutting down gracefully...')
-    await shutdown()
-    process.exit(0)
+// 執行啟動
+if (import.meta.path === Bun.main) {
+  bootstrap().catch((err) => {
+    console.error('Fatal error during bootstrap:', err)
+    process.exit(1)
   })
 }
 
-// 啟動應用
-bootstrap().catch((error) => {
-  console.error('❌ Failed to start application:', error)
-  process.exit(1)
-})
+export { bootstrap, shutdown }

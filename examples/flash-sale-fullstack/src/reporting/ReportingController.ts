@@ -78,6 +78,11 @@ export class ReportingController {
   async show(ctx: GravitoContext): Promise<void> {
     try {
       const id = ctx.req.param('id')
+      if (!id) {
+        ctx.status(400)
+        ctx.json({ success: false, error: 'Report ID is required' })
+        return
+      }
       const report = await this.uiManager.getReportDetails(id)
       if (!report) {
         ctx.status(404)
@@ -124,6 +129,11 @@ export class ReportingController {
   async jobStatus(ctx: GravitoContext): Promise<void> {
     try {
       const jobId = ctx.req.param('jobId')
+      if (!jobId) {
+        ctx.status(400)
+        ctx.json({ success: false, error: 'Job ID is required' })
+        return
+      }
       const job = this.queueManager.getJobStatus(jobId)
       if (!job) {
         ctx.status(404)
