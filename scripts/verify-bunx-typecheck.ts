@@ -10,7 +10,6 @@ import { join } from 'node:path'
 import { $ } from 'bun'
 
 const PACKAGES_DIR = join(process.cwd(), 'packages')
-const SATELLITES_DIR = join(process.cwd(), 'satellites')
 
 interface PackageInfo {
   name: string
@@ -45,32 +44,6 @@ async function findPackagesWithTypecheck(): Promise<PackageInfo[]> {
     }
   } catch (error) {
     console.error(`❌ 無法讀取 packages 目錄: ${error}`)
-  }
-
-  // 檢查 satellites 目錄
-  try {
-    const satelliteDirs = await readdir(SATELLITES_DIR, { withFileTypes: true })
-    for (const dir of satelliteDirs) {
-      if (dir.isDirectory()) {
-        const packagePath = join(SATELLITES_DIR, dir.name)
-        const pkgJsonPath = join(packagePath, 'package.json')
-        try {
-          const pkgContent = await readFile(pkgJsonPath, 'utf-8')
-          const pkg = JSON.parse(pkgContent)
-          if (pkg.scripts?.typecheck) {
-            packages.push({
-              name: `@gravito/satellite-${dir.name}`,
-              path: packagePath,
-              typecheckScript: pkg.scripts.typecheck,
-            })
-          }
-        } catch {
-          // 忽略無法讀取的 package.json
-        }
-      }
-    }
-  } catch (error) {
-    console.error(`❌ 無法讀取 satellites 目錄: ${error}`)
   }
 
   return packages

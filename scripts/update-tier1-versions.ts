@@ -75,7 +75,6 @@ function updatePackageJson(filePath: string): { updated: boolean; changes: numbe
 
 function updateAllPackages() {
   const packagesDir = join(process.cwd(), 'packages')
-  const satellitesDir = join(process.cwd(), 'satellites')
 
   const updatedFiles: string[] = []
   let totalChanges = 0
@@ -87,17 +86,6 @@ function updateAllPackages() {
     const result = updatePackageJson(packageJsonPath)
     if (result.updated) {
       updatedFiles.push(`packages/${dir}`)
-      totalChanges += result.changes
-    }
-  }
-
-  // Update satellites
-  const satelliteDirs = readdirSync(satellitesDir).filter((dir) => !dir.startsWith('.'))
-  for (const dir of satelliteDirs) {
-    const packageJsonPath = join(satellitesDir, dir, 'package.json')
-    const result = updatePackageJson(packageJsonPath)
-    if (result.updated) {
-      updatedFiles.push(`satellites/${dir}`)
       totalChanges += result.changes
     }
   }

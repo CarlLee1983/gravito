@@ -23,7 +23,6 @@ import { join } from 'node:path'
 import { $ } from 'bun'
 
 const PACKAGES_DIR = join(process.cwd(), 'packages')
-const SATELLITES_DIR = join(process.cwd(), 'satellites')
 const DRY_RUN = process.argv.includes('--dry-run')
 const SKIP_BUILD = process.argv.includes('--skip-build')
 const SKIP_TEST = process.argv.includes('--skip-test')
@@ -67,9 +66,7 @@ async function getPackagesInDir(dirPath: string): Promise<PackageInfo[]> {
 
 async function getAllPackages(): Promise<PackageInfo[]> {
   const corePackages = await getPackagesInDir(PACKAGES_DIR)
-  const satellitePackages = await getPackagesInDir(SATELLITES_DIR)
-
-  return [...corePackages, ...satellitePackages]
+  return corePackages
 }
 
 async function checkNpmAuth(): Promise<boolean> {

@@ -90,7 +90,6 @@ function updatePackageJson(filePath: string): {
 
 function updateAllPackages() {
   const packagesDir = join(process.cwd(), 'packages')
-  const satellitesDir = join(process.cwd(), 'satellites')
 
   const updatedFiles: string[] = []
   let totalChanges = 0
@@ -112,20 +111,6 @@ function updateAllPackages() {
     }
     if (result.errors.length > 0) {
       errorLog.push(`packages/${dir}: ${result.errors.join(', ')}`)
-    }
-  }
-
-  // Update satellites
-  const satelliteDirs = readdirSync(satellitesDir).filter((dir) => !dir.startsWith('.'))
-  for (const dir of satelliteDirs) {
-    const packageJsonPath = join(satellitesDir, dir, 'package.json')
-    const result = updatePackageJson(packageJsonPath)
-    if (result.updated) {
-      updatedFiles.push(`satellites/${dir}`)
-      totalChanges += result.changes
-    }
-    if (result.errors.length > 0) {
-      errorLog.push(`satellites/${dir}: ${result.errors.join(', ')}`)
     }
   }
 
