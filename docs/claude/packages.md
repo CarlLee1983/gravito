@@ -162,6 +162,8 @@ Satellites (業務領域)
 
 ## Admin UI Components（後台管理 UI）
 
+**位置**：Admin 相關包已抽離至 **gravito-dev-env/gravito-admin**，主框架 repo 不再包含。使用時需在 gravito-dev-env 下透過 workspace 引用，或依賴日後發佈的 npm 版本。
+
 | 包名 | 用途 | 依賴 | 何時使用 |
 |---|---|---|---|
 | **@gravito/admin-ui-dashboard** | 儀表板 UI | admin-sdk | 主頁面 |
@@ -182,8 +184,8 @@ Satellites (業務領域)
 
 | 包名 | 用途 | 何時使用 |
 |---|---|---|
-| **@gravito/admin-sdk** | 後台管理 SDK | 後台開發 |
-| **@gravito/admin-shell-react** | React 後台框架 | React 後台 |
+| **@gravito/admin-sdk** | 後台管理 SDK（見 gravito-admin） | 後台開發 |
+| **@gravito/admin-shell-react** | React 後台框架（見 gravito-admin） | React 後台 |
 | **create-gravito-app** | 專案腳手架 | 新項目初始化 |
 | **@gravito/cli** (@gravito/pulse) | 官方 CLI | 項目管理 |
 | **@gravito/luminosity-cli** | SmartMap CLI | 地圖配置 |

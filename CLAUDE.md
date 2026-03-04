@@ -27,7 +27,7 @@ bun run check:fix      # 自動修復 lint 和格式化問題
 
 ```
 gravito-core-dx/
-├── packages/              # 核心框架包（64 個）
+├── packages/              # 核心框架包（約 50 個；admin-* 已抽離至 gravito-dev-env/gravito-admin）
 │   ├── core/              # PlanetCore（微核心、hooks、container）
 │   ├── photon/            # HTTP 引擎（基於 Hono）
 │   ├── atlas/             # ORM（資料庫、遷移）
@@ -40,7 +40,7 @@ gravito-core-dx/
 │   ├── commerce/          # 訂單管理
 │   └── ...
 ├── templates/             # 專案模板
-├── examples/              # 使用範例
+├── examples/              # 使用範例（依賴 admin 時需在 gravito-dev-env 下安裝）
 └── scripts/               # 工具腳本
 ```
 
