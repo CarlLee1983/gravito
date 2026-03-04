@@ -34,14 +34,11 @@ gravito-core-dx/
 │   ├── signal/            # 事件總線
 │   ├── stream/            # 流處理
 │   └── ...
-├── satellites/            # 業務領域外掛（15 個）
-│   ├── catalog/           # 商品管理
-│   ├── membership/        # 用戶與認證
-│   ├── commerce/          # 訂單管理
-│   └── ...
 ├── templates/             # 專案模板
-├── examples/              # 使用範例（依賴 admin 時需在 gravito-dev-env 下安裝）
+├── examples/              # 使用範例
 └── scripts/               # 工具腳本
+
+說明：Satellites（業務領域外掛）已抽離至 gravito-dev-env/gravito-satellites
 ```
 
 → **包功能速查表**：[docs/claude/packages.md](docs/claude/packages.md)

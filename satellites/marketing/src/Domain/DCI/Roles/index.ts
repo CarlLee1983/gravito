@@ -1,8 +1,0 @@
-export type { CouponIssuer } from './CouponIssuerRole'
-export { injectCouponIssuer } from './CouponIssuerRole'
-export type { CouponRedeemer } from './CouponRedeemRole'
-export { injectCouponRedeemer } from './CouponRedeemRole'
-export type { CouponValidator } from './CouponValidatorRole'
-export { injectCouponValidator } from './CouponValidatorRole'
-export type { MarketingAdjustment, PromotionApplier } from './PromotionApplierRole'
-export { injectPromotionApplier } from './PromotionApplierRole'

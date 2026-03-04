@@ -1,9 +1,0 @@
-{
-  "name": "membership",
-  "id": "membership",
-  "version": "0.1.0",
-  "description": "A Gravito Satellite",
-  "capabilities": ["create-membership"],
-  "requirements": ["cache"],
-  "hooks": ["membership:created"]
-}

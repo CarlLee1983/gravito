@@ -194,7 +194,7 @@ Satellites (業務領域)
 
 ## Satellites（業務領域外掛）
 
-所有 satellite 都位於 `satellites/` 目錄，不透過 npm 發佈（workspace 依賴）。
+**位置**：Satellites 已抽離至 **gravito-dev-env/gravito-satellites**，主框架 repo 不再包含。使用時需在 gravito-dev-env 下透過 workspace 引用。
 
 | Satellite | 用途 | 依賴 |
 |---|---|---|
