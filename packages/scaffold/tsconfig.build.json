@@ -15,7 +15,7 @@
       "bun-types"
     ],
     "paths": {
-      "@gravito/stream": [
+      "@gravito/scaffold": [
         "./src/index.ts"
       ],
       "@gravito/core": [

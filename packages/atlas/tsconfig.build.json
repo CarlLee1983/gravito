@@ -8,15 +8,36 @@
     "declaration": true,
     "declarationMap": false,
     "outDir": "./dist",
+    "rootDir": "src",
     "skipLibCheck": true,
-    "noCheck": true,
-    "types": ["bun-types"],
+    "baseUrl": ".",
+    "types": [
+      "bun-types"
+    ],
     "paths": {
-      "@gravito/atlas": ["./src/index.ts"],
-      "@gravito/core": ["../core/src/index.ts"],
-      "@gravito/*": ["../*/src/index.ts"]
+      "@gravito/atlas": [
+        "./src/index.ts"
+      ],
+      "@gravito/core": [
+        "../../packages/core/dist/index.d.ts"
+      ],
+      "@gravito/core/*": [
+        "../../packages/core/dist/*"
+      ],
+      "@gravito/*": [
+        "../../packages/*/dist/index.d.ts"
+      ]
     }
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "tests", "**/*.test.ts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
 }

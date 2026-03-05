@@ -15,7 +15,7 @@
       "bun-types"
     ],
     "paths": {
-      "@gravito/stream": [
+      "@gravito/dark-matter": [
         "./src/index.ts"
       ],
       "@gravito/core": [

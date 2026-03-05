@@ -14,6 +14,8 @@ if (!isDtsOnly) {
 
 // External dependencies（DB 驅動程式為 optional peer deps）
 const externalDeps = [
+  '@gravito/core',
+  'bun',
   'pg',
   'mysql2',
   'better-sqlite3',
@@ -26,11 +28,9 @@ const externalDeps = [
 
 async function buildInParallel() {
   const tasks: Promise<number>[] = []
-  const tempDir = isDtsOnly ? 'dist' : '.tsc-temp'
+  const tempDir = 'dist'
 
   if (!isDtsOnly) {
-    await rm(tempDir, { recursive: true, force: true })
-
     // Task 1: bun build ESM（atlas 只有 ESM exports）
     const esmPromise = (async () => {
       const buildResult = await build({
@@ -71,40 +71,6 @@ async function buildInParallel() {
   }
 }
 
-// 遞迴複製 .d.ts 檔案
-async function copyDtsFiles(src: string, dest: string) {
-  let entries: Dirent[]
-  try {
-    entries = await readdir(src, { withFileTypes: true })
-  } catch (_e) {
-    return
-  }
-
-  for (const entry of entries) {
-    const srcPath = `${src}/${entry.name}`
-    const destPath = `${dest}/${entry.name}`
-
-    if (entry.isDirectory()) {
-      await mkdir(destPath, { recursive: true }).catch(() => {})
-      await copyDtsFiles(srcPath, destPath)
-    } else if (entry.isFile() && entry.name.endsWith('.d.ts')) {
-      await cp(srcPath, destPath)
-    }
-  }
-}
-
 await buildInParallel()
-
-// 後處理：tsc 輸出到 .tsc-temp/{pkgName}/src/，需要移到 dist/
-const tempDir = isDtsOnly ? 'dist' : '.tsc-temp'
-if (!isDtsOnly) {
-  try {
-    const dtsSourceDir = `${tempDir}/${pkgName}/src`
-    await copyDtsFiles(dtsSourceDir, 'dist')
-    await rm(tempDir, { recursive: true, force: true })
-  } catch (e) {
-    console.warn('⚠️  Warning: Failed to copy type declarations:', e)
-  }
-}
 
 console.log('✅ @gravito/atlas build completed')

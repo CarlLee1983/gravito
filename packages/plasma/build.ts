@@ -1,6 +1,4 @@
 import { $ } from 'bun'
-import { existsSync } from 'fs'
-import { cp, mkdir } from 'fs/promises'
 
 const isDtsOnly = process.argv.includes('--dts-only')
 
@@ -20,15 +18,7 @@ try {
 
   if (isDtsOnly) {
     console.log('Generating Types...')
-    await $`bunx tsc --emitDeclarationOnly --declaration --outDir dist`
-
-    // Fix incorrect directory structure from tsconfig
-    // TypeScript outputs to dist/plasma/src/... but we need dist/...
-    if (existsSync('dist/plasma')) {
-      await mkdir('dist', { recursive: true })
-      await cp('dist/plasma/src', 'dist', { recursive: true })
-      await $`rm -rf dist/plasma dist/core`
-    }
+    await $`bunx tsc -p tsconfig.build.json --emitDeclarationOnly --declaration --outDir dist`
   }
 
   console.log('✅ Build complete!')

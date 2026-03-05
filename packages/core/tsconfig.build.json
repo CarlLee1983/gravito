@@ -8,9 +8,8 @@
     "declaration": true,
     "declarationMap": false,
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "src",
     "skipLibCheck": true,
-    "noCheck": true,
     "types": ["bun-types"],
     "paths": {
       "@gravito/core": ["./src/index.ts"],

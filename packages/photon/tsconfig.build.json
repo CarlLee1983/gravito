@@ -3,20 +3,41 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "baseUrl": ".",
-    "outDir": "./dist",
-    "declaration": true,
+    "noEmit": false,
     "emitDeclarationOnly": true,
+    "declaration": true,
+    "declarationMap": false,
+    "outDir": "./dist",
+    "rootDir": "src",
     "skipLibCheck": true,
-    "types": ["bun-types"],
+    "baseUrl": ".",
+    "types": [
+      "bun-types"
+    ],
     "paths": {
-      "@gravito/core": ["../core/src/index.ts"],
-      "@gravito/core/*": ["../core/src/*"],
-      "@gravito/photon": ["./src/index.ts"],
-      "@gravito/photon/*": ["./src/*"],
-      "hono/*": ["../../node_modules/hono/dist/types/*"]
+      "@gravito/photon": [
+        "./src/index.ts"
+      ],
+      "@gravito/core": [
+        "../../packages/core/dist/index.d.ts"
+      ],
+      "@gravito/core/*": [
+        "../../packages/core/dist/*"
+      ],
+      "@gravito/*": [
+        "../../packages/*/dist/index.d.ts"
+      ]
     }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
 }

@@ -15,7 +15,7 @@
       "bun-types"
     ],
     "paths": {
-      "@gravito/stream": [
+      "@gravito/ether": [
         "./src/index.ts"
       ],
       "@gravito/core": [

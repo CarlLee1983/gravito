@@ -94,7 +94,11 @@ async function getAllPackages(): Promise<Map<string, PackageInfo>> {
  */
 async function getChangedPackages(allPackages: Map<string, PackageInfo>): Promise<string[]> {
   try {
-    const { stdout } = await $`git diff --name-only ${BASE_REF} HEAD`.quiet()
+    const { stdout, exitCode } = await $`git diff --name-only ${BASE_REF} HEAD`.quiet().nothrow()
+    if (exitCode !== 0) {
+      console.warn(`⚠️  git diff failed with exit code ${exitCode}. BASE_REF=${BASE_REF}`)
+      return []
+    }
     const changedFiles = stdout.toString().trim().split('\n').filter(Boolean)
 
     const changedPackages = new Set<string>()

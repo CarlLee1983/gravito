@@ -68,7 +68,14 @@ function isDocOnlyPath(filePath: string): boolean {
 async function main() {
   try {
     // 取得 git diff
-    const { stdout } = await $`git diff --name-only ${BASE_REF} HEAD`.quiet()
+    const { stdout, exitCode } = await $`git diff --name-only ${BASE_REF} HEAD`.quiet().nothrow()
+    
+    if (exitCode !== 0) {
+      console.warn(`⚠️  git diff failed with exit code ${exitCode}. BASE_REF=${BASE_REF}`)
+      // In case of git error, assume it's NOT docs-only to be safe
+      process.exit(1)
+    }
+
     const changedFiles = stdout.toString().trim().split('\n').filter(Boolean)
 
     if (changedFiles.length === 0) {
