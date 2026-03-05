@@ -56,7 +56,9 @@ export class SQLiteGrammar extends Grammar {
     uniqueBy: string[],
     update: string[]
   ): string {
-    if (values.length === 0) return ''
+    if (values.length === 0) {
+      return ''
+    }
 
     const columns = Object.keys(values[0] || {})
     const columnList = columns.map((col) => this.wrapColumn(col)).join(', ')

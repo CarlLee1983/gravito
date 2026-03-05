@@ -346,13 +346,17 @@ export class Gravito {
 
           // Cleanup and release
           const cleanup = ctx.requestScope().cleanup()
-          if (cleanup instanceof Promise) await cleanup
+          if (cleanup instanceof Promise) {
+            await cleanup
+          }
           this.contextPool.release(ctx)
           return response
         } catch (error) {
           // Cleanup even on error
           const cleanup = ctx.requestScope().cleanup()
-          if (cleanup instanceof Promise) await cleanup
+          if (cleanup instanceof Promise) {
+            await cleanup
+          }
           this.contextPool.release(ctx)
           return this.handleErrorSync(error as Error, req, path)
         }
@@ -429,12 +433,16 @@ export class Gravito {
         }
 
         const cleanup = ctx.requestScope().cleanup()
-        if (cleanup instanceof Promise) await cleanup
+        if (cleanup instanceof Promise) {
+          await cleanup
+        }
         this.contextPool.release(ctx)
         return response
       } catch (error) {
         const cleanup = ctx.requestScope().cleanup()
-        if (cleanup instanceof Promise) await cleanup
+        if (cleanup instanceof Promise) {
+          await cleanup
+        }
         this.contextPool.release(ctx)
         return this.handleErrorSync(error as Error, request, path)
       }
@@ -480,12 +488,16 @@ export class Gravito {
         }
 
         const cleanup = ctx.requestScope().cleanup()
-        if (cleanup instanceof Promise) await cleanup
+        if (cleanup instanceof Promise) {
+          await cleanup
+        }
         this.contextPool.release(ctx)
         return response
       } catch (error) {
         const cleanup = ctx.requestScope().cleanup()
-        if (cleanup instanceof Promise) await cleanup
+        if (cleanup instanceof Promise) {
+          await cleanup
+        }
         this.contextPool.release(ctx)
         return this.handleErrorSync(error as Error, request, path)
       }

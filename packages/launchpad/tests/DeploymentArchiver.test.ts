@@ -7,7 +7,8 @@
  * T3: packageRelease - 排除 node_modules
  */
 
-import { afterEach, beforeEach, describe, expect, it, jest, mock } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test'
+import { DeploymentArchiver } from '../src/Application/DeploymentArchiver'
 
 // ============ Mock 設定 ============
 
@@ -25,18 +26,19 @@ const mockReadFile = jest.fn(async (filePath: string): Promise<Uint8Array> => {
   return new TextEncoder().encode('mock-archive-data')
 })
 
-mock.module('@gravito/core', () => ({
-  getArchiveAdapter: () => ({
-    create: mockArchiveCreate,
-    extract: mockArchiveExtract,
-    list: jest.fn(async () => new Map()),
-    readFile: jest.fn(async () => null),
-  }),
-  getRuntimeAdapter: () => ({
-    writeFile: mockWriteFile,
-    readFile: mockReadFile,
-  }),
-}))
+const mockArchiveAdapter = {
+  create: mockArchiveCreate,
+  extract: mockArchiveExtract,
+  list: jest.fn(async () => new Map()),
+  readFile: jest.fn(async () => null),
+}
+
+const mockRuntimeAdapter = {
+  writeFile: mockWriteFile,
+  readFile: mockReadFile,
+  spawn: jest.fn(),
+  spawnAndCollect: jest.fn(),
+}
 
 // 模擬 Docker adapter
 // biome-ignore lint/suspicious/noExplicitAny: 測試使用簡化的 mock 物件
@@ -90,10 +92,7 @@ const mockRocketRepo: any = {
 // ============ 測試主體 ============
 
 describe('DeploymentArchiver', () => {
-  let DeploymentArchiver: typeof import('../src/Application/DeploymentArchiver').DeploymentArchiver
-
   beforeEach(async () => {
-    ;({ DeploymentArchiver } = await import('../src/Application/DeploymentArchiver'))
     jest.clearAllMocks()
   })
 
@@ -103,7 +102,12 @@ describe('DeploymentArchiver', () => {
 
   describe('T1: backupDeployment() - 正常備份', () => {
     it('應列出容器檔案並打包為 tar.gz', async () => {
-      const archiver = new DeploymentArchiver(mockDocker, mockRocketRepo)
+      const archiver = new DeploymentArchiver(
+        mockDocker,
+        mockRocketRepo,
+        mockRuntimeAdapter,
+        mockArchiveAdapter as any
+      )
       const outputPath = '/tmp/backups/rocket-001.tar.gz'
 
       await archiver.backupDeployment('rocket-001', outputPath)
@@ -135,7 +139,12 @@ describe('DeploymentArchiver', () => {
     })
 
     it('Rocket 不存在時應拋出錯誤', async () => {
-      const archiver = new DeploymentArchiver(mockDocker, mockRocketRepo)
+      const archiver = new DeploymentArchiver(
+        mockDocker,
+        mockRocketRepo,
+        mockRuntimeAdapter,
+        mockArchiveAdapter as any
+      )
 
       await expect(
         archiver.backupDeployment('nonexistent-rocket', '/tmp/output.tar.gz')
@@ -145,12 +154,17 @@ describe('DeploymentArchiver', () => {
 
   describe('T2: restoreDeployment() - 正常還原', () => {
     it('應讀取備份並複製檔案回容器', async () => {
-      const archiver = new DeploymentArchiver(mockDocker, mockRocketRepo)
+      const archiver = new DeploymentArchiver(
+        mockDocker,
+        mockRocketRepo,
+        mockRuntimeAdapter,
+        mockArchiveAdapter as any
+      )
       const backupPath = '/tmp/backups/rocket-001.tar.gz'
 
       await archiver.restoreDeployment('rocket-001', backupPath)
 
-      // 驗證讀取備份檔案
+      // 驗證讀取備份資料
       expect(mockReadFile).toHaveBeenCalledWith(backupPath)
 
       // 驗證解壓縮到臨時目錄
@@ -174,7 +188,12 @@ describe('DeploymentArchiver', () => {
     })
 
     it('備份檔案不存在時應拋出錯誤', async () => {
-      const archiver = new DeploymentArchiver(mockDocker, mockRocketRepo)
+      const archiver = new DeploymentArchiver(
+        mockDocker,
+        mockRocketRepo,
+        mockRuntimeAdapter,
+        mockArchiveAdapter as any
+      )
 
       await expect(
         archiver.restoreDeployment('rocket-001', '/tmp/nonexistent/backup.tar.gz')
@@ -184,14 +203,19 @@ describe('DeploymentArchiver', () => {
 
   describe('T3: packageRelease() - 排除 node_modules', () => {
     it('預設應排除 node_modules 目錄', async () => {
-      const archiver = new DeploymentArchiver(mockDocker, mockRocketRepo)
+      const archiver = new DeploymentArchiver(
+        mockDocker,
+        mockRocketRepo,
+        mockRuntimeAdapter,
+        mockArchiveAdapter as any
+      )
       const outputPath = '/tmp/releases/v1.0.0.tar.gz'
 
       await archiver.packageRelease('rocket-001', 'v1.0.0', outputPath)
 
       // 驗證 find 命令包含 node_modules 排除
       const findCalls = mockDocker.executeCommand.mock.calls.filter(
-        (call: string[][]) => call[1] && call[1][0] === 'find'
+        (call: any[]) => call[1] && call[1][0] === 'find'
       )
       expect(findCalls.length).toBeGreaterThan(0)
       // find 命令參數應包含 node_modules 排除
@@ -214,7 +238,12 @@ describe('DeploymentArchiver', () => {
     })
 
     it('includeNodeModules:true 時應包含 node_modules', async () => {
-      const archiver = new DeploymentArchiver(mockDocker, mockRocketRepo)
+      const archiver = new DeploymentArchiver(
+        mockDocker,
+        mockRocketRepo,
+        mockRuntimeAdapter,
+        mockArchiveAdapter as any
+      )
       const outputPath = '/tmp/releases/v1.0.0-full.tar.gz'
 
       await archiver.packageRelease('rocket-001', 'v1.0.0', outputPath, {

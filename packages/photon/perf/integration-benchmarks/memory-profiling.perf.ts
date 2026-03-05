@@ -49,7 +49,9 @@ async function runMemoryBenchmarks() {
     await simpleApp.fetch(new Request('http://localhost/'))
   }
 
-  if (globalThis.gc) globalThis.gc()
+  if (globalThis.gc) {
+    globalThis.gc()
+  }
 
   const memAfter1 = getMemoryUsage()
 
@@ -70,7 +72,9 @@ async function runMemoryBenchmarks() {
     await jsonApp.fetch(new Request('http://localhost/'))
   }
 
-  if (globalThis.gc) globalThis.gc()
+  if (globalThis.gc) {
+    globalThis.gc()
+  }
 
   const memAfter2 = getMemoryUsage()
 
@@ -103,7 +107,9 @@ async function runMemoryBenchmarks() {
     await largeApp.fetch(new Request('http://localhost/'))
   }
 
-  if (globalThis.gc) globalThis.gc()
+  if (globalThis.gc) {
+    globalThis.gc()
+  }
 
   const memAfter3 = getMemoryUsage()
 
@@ -163,7 +169,9 @@ async function runMemoryBenchmarks() {
     }
   }
 
-  if (globalThis.gc) globalThis.gc()
+  if (globalThis.gc) {
+    globalThis.gc()
+  }
 
   const memAfter4 = getMemoryUsage()
 

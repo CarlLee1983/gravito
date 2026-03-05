@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import type { EventOptions } from '@gravito/core'
 import {
   DeadLetterQueue,
@@ -54,11 +54,11 @@ describe('DeadLetterQueue', () => {
       const entry = dlq.get(id)
 
       expect(entry).toBeDefined()
-      expect(entry!.id).toBe(id)
-      expect(entry!.eventName).toBe('test.event')
-      expect(entry!.payload).toEqual({ data: 'payload' })
-      expect(entry!.retryCount).toBe(3)
-      expect(entry!.source).toBe('retry_exhausted')
+      expect(entry?.id).toBe(id)
+      expect(entry?.eventName).toBe('test.event')
+      expect(entry?.payload).toEqual({ data: 'payload' })
+      expect(entry?.retryCount).toBe(3)
+      expect(entry?.source).toBe('retry_exhausted')
     })
 
     it('should serialize the Error into error.message and error.stack', () => {
@@ -302,7 +302,7 @@ describe('DeadLetterQueue', () => {
       await delay(5)
       addEntry(dlq, 'newest')
 
-      expect(dlq.getOldestEntry()!.eventName).toBe('oldest')
+      expect(dlq.getOldestEntry()?.eventName).toBe('oldest')
     })
 
     it('should return the entry with largest failedAt as newest', async () => {
@@ -312,7 +312,7 @@ describe('DeadLetterQueue', () => {
       await delay(5)
       addEntry(dlq, 'newest')
 
-      expect(dlq.getNewestEntry()!.eventName).toBe('newest')
+      expect(dlq.getNewestEntry()?.eventName).toBe('newest')
     })
   })
 

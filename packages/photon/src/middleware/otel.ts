@@ -235,8 +235,7 @@ export function otelMiddleware(config: OtelMiddlewareConfig = {}): MiddlewareHan
 
     // 排除特定路徑
     if (shouldExcludePath(path, excludePaths)) {
-      await next()
-      return
+      return await next()
     }
 
     // 解析 span 名稱
@@ -264,7 +263,7 @@ export function otelMiddleware(config: OtelMiddlewareConfig = {}): MiddlewareHan
     }
 
     try {
-      await next()
+      const res = await next()
 
       // 設定 HTTP 回應屬性
       if (c.res) {
@@ -281,6 +280,8 @@ export function otelMiddleware(config: OtelMiddlewareConfig = {}): MiddlewareHan
       if (spanId) {
         c.header('X-Span-Id', spanId)
       }
+
+      return res
     } catch (error) {
       // 設定錯誤狀態
       span.setStatus({

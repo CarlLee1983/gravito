@@ -27,13 +27,21 @@ export function createNodeAdapter(): RuntimeAdapter {
       const stream = require('node:stream')
 
       const stdioMap = (value: RuntimeSpawnOptions['stdout']) => {
-        if (value === 'inherit') return 'inherit'
-        if (value === 'ignore') return 'ignore'
+        if (value === 'inherit') {
+          return 'inherit'
+        }
+        if (value === 'ignore') {
+          return 'ignore'
+        }
         return 'pipe'
       }
       const stdinMap = (value: RuntimeSpawnOptions['stdin']) => {
-        if (value === 'inherit') return 'inherit'
-        if (value === 'ignore') return 'ignore'
+        if (value === 'inherit') {
+          return 'inherit'
+        }
+        if (value === 'ignore') {
+          return 'ignore'
+        }
         return 'pipe'
       }
 
@@ -44,9 +52,13 @@ export function createNodeAdapter(): RuntimeAdapter {
       }) as import('node:child_process').ChildProcess
 
       const toWeb = (streamReadable: NodeJS.ReadableStream | null) => {
-        if (!streamReadable) return null
+        if (!streamReadable) {
+          return null
+        }
         const maybeWeb = streamReadable as unknown as ReadableStream<Uint8Array>
-        if (typeof (maybeWeb as any).getReader === 'function') return maybeWeb
+        if (typeof (maybeWeb as any).getReader === 'function') {
+          return maybeWeb
+        }
         return stream.Readable.toWeb(streamReadable as any) as unknown as ReadableStream<Uint8Array>
       }
 
@@ -71,9 +83,12 @@ export function createNodeAdapter(): RuntimeAdapter {
 
         child.on('error', reject)
         child.on('exit', (code) => {
-          if (timeoutHandle) clearTimeout(timeoutHandle)
-          if (abortListener && options.signal)
+          if (timeoutHandle) {
+            clearTimeout(timeoutHandle)
+          }
+          if (abortListener && options.signal) {
             options.signal.removeEventListener('abort', abortListener)
+          }
           resolve(code ?? 0)
         })
       })
@@ -89,7 +104,9 @@ export function createNodeAdapter(): RuntimeAdapter {
         resourceUsage: async () => {
           try {
             const usage = (child as any).resourceUsage?.()
-            if (!usage) return undefined
+            if (!usage) {
+              return undefined
+            }
             return {
               cpuTime:
                 usage.user && usage.system ? { user: usage.user, system: usage.system } : undefined,
@@ -103,7 +120,9 @@ export function createNodeAdapter(): RuntimeAdapter {
     },
     async spawnAndCollect(command, options = {}) {
       const [cmd, ...args] = command
-      if (!cmd) throw new Error('[RuntimeAdapter] spawn() requires a command')
+      if (!cmd) {
+        throw new Error('[RuntimeAdapter] spawn() requires a command')
+      }
 
       // biome-ignore lint: node context
       const childProcess = require('node:child_process')
@@ -141,9 +160,12 @@ export function createNodeAdapter(): RuntimeAdapter {
 
         child.on('error', reject)
         child.on('exit', (code) => {
-          if (timeoutHandle) clearTimeout(timeoutHandle)
-          if (abortListener && options.signal)
+          if (timeoutHandle) {
+            clearTimeout(timeoutHandle)
+          }
+          if (abortListener && options.signal) {
             options.signal.removeEventListener('abort', abortListener)
+          }
 
           const stdout = Buffer.concat(stdoutChunks).toString('utf-8')
           const stderr = Buffer.concat(stderrChunks).toString('utf-8')
@@ -160,7 +182,9 @@ export function createNodeAdapter(): RuntimeAdapter {
     },
     spawnSync(command, options = {}) {
       const [cmd, ...args] = command
-      if (!cmd) throw new Error('[RuntimeAdapter] spawn() requires a command')
+      if (!cmd) {
+        throw new Error('[RuntimeAdapter] spawn() requires a command')
+      }
 
       // biome-ignore lint: node context
       const childProcess = require('node:child_process')

@@ -13,7 +13,11 @@ import type { IDockerAdapter } from '../../Domain/Interfaces'
  */
 export class DockerAdapter implements IDockerAdapter {
   private baseImage = 'oven/bun:1.0-slim'
-  private runtime = getRuntimeAdapter()
+  private runtime: any
+
+  constructor(runtime?: any) {
+    this.runtime = runtime || getRuntimeAdapter()
+  }
 
   // 快取目錄配置
   private readonly cacheConfig = {

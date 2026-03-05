@@ -5,9 +5,8 @@
  * with optimized static route offloading and context pooling.
  */
 
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import { Gravito } from '../Gravito'
-import type { Handler } from '../types'
 
 describe('serveConfig()', () => {
   describe('基本結構', () => {
@@ -124,7 +123,7 @@ describe('serveConfig()', () => {
       // routes 應該包含靜態 GET 路由
       expect(config.routes).toHaveProperty('/')
       expect(config.routes).toHaveProperty('/api/users')
-      expect(typeof config.routes!['/'] === 'function').toBe(true)
+      expect(typeof config.routes?.['/'] === 'function').toBe(true)
     })
 
     it('應該在 routes 中包含 middleware 編譯後的處理器', () => {
@@ -140,7 +139,7 @@ describe('serveConfig()', () => {
 
       // routes 應該包含已編譯的 middleware 處理器
       expect(config.routes).toHaveProperty('/')
-      expect(typeof config.routes!['/'] === 'function').toBe(true)
+      expect(typeof config.routes?.['/'] === 'function').toBe(true)
     })
 
     it('應該只為 GET 靜態路由生成 routes 記錄', () => {
@@ -227,7 +226,7 @@ describe('serveConfig()', () => {
     it('應該支援 streaming response', async () => {
       const app = new Gravito()
 
-      app.get('/stream', (c) => {
+      app.get('/stream', (_c) => {
         const stream = new ReadableStream({
           start(controller) {
             controller.enqueue(new TextEncoder().encode('Hello'))

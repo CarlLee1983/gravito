@@ -276,7 +276,7 @@ const defaultKeyGenerator = (c: Context): string => {
   // Extract first IP from x-forwarded-for (closest to client in chain)
   const forwarded = c.req.header('x-forwarded-for')
   if (forwarded) {
-    return forwarded.split(',')[0]!.trim()
+    return forwarded.split(',')[0]?.trim()
   }
   // Fallback to x-real-ip if available
   return c.req.header('x-real-ip') || 'global-fallback'

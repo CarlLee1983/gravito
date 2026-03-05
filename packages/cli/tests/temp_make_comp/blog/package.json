@@ -1,0 +1,27 @@
+{
+  "name": "gravito-satellite-blog",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "test": "bun test",
+    "typecheck": "bun tsc --noEmit"
+  },
+  "dependencies": {
+    "@gravito/core": "^1.0.0-beta.1",
+    "@gravito/enterprise": "^1.0.0-beta.1",
+    "@gravito/atlas": "^1.0.0-beta.1",
+    "@gravito/stasis": "^1.0.0-beta.1"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.9.3",
+    "tsup": "^8.0.0"
+  },
+  "peerDependencies": {
+    "@gravito/core": ">=1.0.0"
+  }
+}

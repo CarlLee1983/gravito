@@ -75,7 +75,7 @@ describe('AOTRouter', () => {
       router.add('post', '/api/users', handler)
       router.add('get', '/users/:id', handler)
 
-      const nativeRoutes = router.getNativeRoutes((h, m, p) => async (req: Request) => {
+      const nativeRoutes = router.getNativeRoutes((_h, _m, _p) => async (_req: Request) => {
         return new Response('{}')
       })
 
@@ -90,9 +90,9 @@ describe('AOTRouter', () => {
       router.add('get', '/test/path', handler)
 
       let receivedPath: string | null = null
-      router.getNativeRoutes((h, m, p) => {
+      router.getNativeRoutes((_h, _m, p) => {
         receivedPath = p
-        return async (req: Request) => new Response('{}')
+        return async (_req: Request) => new Response('{}')
       })
 
       expect(receivedPath).toBe('/test/path')
@@ -101,16 +101,16 @@ describe('AOTRouter', () => {
     it('應該在 onMatch callback 中包含全局 middleware', () => {
       const router = new AOTRouter()
       const handler: Handler = (c) => c.json({ ok: true })
-      const mw1: Middleware = (c, next) => next()
-      const mw2: Middleware = (c, next) => next()
+      const mw1: Middleware = (_c, next) => next()
+      const mw2: Middleware = (_c, next) => next()
 
       router.use(mw1, mw2)
       router.add('get', '/test', handler)
 
       let receivedMiddleware: Middleware[] | null = null
-      router.getNativeRoutes((h, m, p) => {
+      router.getNativeRoutes((_h, m, _p) => {
         receivedMiddleware = m
-        return async (req: Request) => new Response('{}')
+        return async (_req: Request) => new Response('{}')
       })
 
       expect(receivedMiddleware).toContain(mw1)
@@ -120,15 +120,15 @@ describe('AOTRouter', () => {
     it('應該在 onMatch callback 中包含路徑 pattern middleware', () => {
       const router = new AOTRouter()
       const handler: Handler = (c) => c.json({ ok: true })
-      const pathMw: Middleware = (c, next) => next()
+      const pathMw: Middleware = (_c, next) => next()
 
       router.usePattern('/test', pathMw)
       router.add('get', '/test', handler)
 
       let receivedMiddleware: Middleware[] | null = null
-      router.getNativeRoutes((h, m, p) => {
+      router.getNativeRoutes((_h, m, _p) => {
         receivedMiddleware = m
-        return async (req: Request) => new Response('{}')
+        return async (_req: Request) => new Response('{}')
       })
 
       expect(receivedMiddleware).toContain(pathMw)
@@ -140,7 +140,7 @@ describe('AOTRouter', () => {
 
       router.add('get', '/users/:id', handler)
 
-      const nativeRoutes = router.getNativeRoutes((h, m, p) => async (req: Request) => {
+      const nativeRoutes = router.getNativeRoutes((_h, _m, _p) => async (_req: Request) => {
         return new Response('{}')
       })
 
@@ -177,7 +177,7 @@ describe('AOTRouter', () => {
       const parent = new AOTRouter()
       const child = new AOTRouter()
       const handler: Handler = (c) => c.json({ ok: true })
-      const globalMw: Middleware = (c, next) => next()
+      const globalMw: Middleware = (_c, next) => next()
 
       child.use(globalMw)
       child.add('get', '/health', handler)
@@ -212,7 +212,7 @@ describe('AOTRouter', () => {
 
     it('use() 應該增加 version', () => {
       const router = new AOTRouter()
-      const mw: Middleware = (c, next) => next()
+      const mw: Middleware = (_c, next) => next()
 
       const initialVersion = router.version
       router.use(mw)
@@ -222,7 +222,7 @@ describe('AOTRouter', () => {
 
     it('usePattern() 應該增加 version', () => {
       const router = new AOTRouter()
-      const mw: Middleware = (c, next) => next()
+      const mw: Middleware = (_c, next) => next()
 
       const initialVersion = router.version
       router.usePattern('/test', mw)

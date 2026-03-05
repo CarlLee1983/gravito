@@ -14,7 +14,7 @@
 import { Hono } from 'hono'
 import { rateLimit } from '../../src/middleware/ratelimit'
 import { cors } from '../../src/middleware/security'
-import { formatTime, generateReport, measure } from '../utils'
+import { formatTime } from '../utils'
 
 /**
  * 計算延遲百分位數

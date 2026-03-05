@@ -83,7 +83,9 @@ export function bodySizeLimit(
         try {
           while (true) {
             const { done, value } = await reader.read()
-            if (done) break
+            if (done) {
+              break
+            }
 
             totalSize += value.byteLength
             if (totalSize > maxBytes) {

@@ -14,7 +14,7 @@ if (!isDtsOnly) {
   await rm('dist', { recursive: true, force: true })
 }
 
-// External dependencies（peer deps + framework 包）
+// External dependencies（peer deps + framework 包 + 會產生無效 ESM 的 transitive）
 const externalDeps = [
   '@gravito/core',
   '@gravito/stream',
@@ -25,6 +25,7 @@ const externalDeps = [
   '@vue/server-renderer',
   'nodemailer',
   '@aws-sdk/client-ses',
+  'uglify-js', // CJS 內 conditional export 被 bundle 成無效 ESM，改為 external
 ]
 
 async function buildInParallel() {

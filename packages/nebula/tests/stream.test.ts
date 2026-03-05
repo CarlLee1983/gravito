@@ -199,8 +199,8 @@ describe('MemoryStore - Stream Operations', () => {
     const reader = resultStream?.getReader()
     const chunks: Uint8Array[] = []
 
-    while (true) {
-      const { done, value } = await reader!.read()
+    while (reader) {
+      const { done, value } = await reader.read()
       if (done) {
         break
       }

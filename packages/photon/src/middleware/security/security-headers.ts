@@ -97,7 +97,7 @@ export function securityHeaders(options: SecurityHeadersOptions = {}): Middlewar
       c.header('Strict-Transport-Security', buildHstsHeader(merged.hsts))
     }
 
-    await next()
+    return await next()
   }
 
   return asHonoMiddleware(middleware)

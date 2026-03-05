@@ -75,7 +75,7 @@ export class NativeStreamingApi {
    * Write a line of text (appends \n automatically)
    */
   async writeln(data: string): Promise<void> {
-    await this.write(data + '\n')
+    await this.write(`${data}\n`)
   }
 
   /**
@@ -303,7 +303,7 @@ export function streamJSONLines<T>(
 
             if (batch.length >= batchSize) {
               // Batch reached limit, serialize and write all items at once
-              const lines = batch.map((i) => JSON.stringify(i)).join('\n') + '\n'
+              const lines = `${batch.map((i) => JSON.stringify(i)).join('\n')}\n`
               await stream.write(lines)
               batch.length = 0
             }
@@ -311,7 +311,7 @@ export function streamJSONLines<T>(
 
           // Flush remaining items (< batchSize)
           if (batch.length > 0 && !stream.aborted) {
-            const lines = batch.map((i) => JSON.stringify(i)).join('\n') + '\n'
+            const lines = `${batch.map((i) => JSON.stringify(i)).join('\n')}\n`
             await stream.write(lines)
           }
         } else {

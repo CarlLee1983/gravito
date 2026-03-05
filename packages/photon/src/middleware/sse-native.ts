@@ -339,7 +339,9 @@ export function createSSEResponse<TData = string>(
         try {
           await stream.writeSSE({ data: '' })
         } catch (err) {
-          if (onError) onError(err as Error)
+          if (onError) {
+            onError(err as Error)
+          }
           controller.close()
           return
         }
@@ -357,7 +359,9 @@ export function createSSEResponse<TData = string>(
             retry: event.retry,
           })
         } catch (err) {
-          if (onError) onError(err as Error)
+          if (onError) {
+            onError(err as Error)
+          }
           throw err
         }
       }
@@ -366,8 +370,11 @@ export function createSSEResponse<TData = string>(
       try {
         await handler(stream, send)
       } catch (err) {
-        if (onError) onError(err as Error)
-        else console.error('SSE handler error:', err)
+        if (onError) {
+          onError(err as Error)
+        } else {
+          console.error('SSE handler error:', err)
+        }
       } finally {
         await stream.close()
       }

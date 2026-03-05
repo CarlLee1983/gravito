@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it, mock } from 'bun:test'
+import { beforeAll, describe, expect, it } from 'bun:test'
 import { DB } from '../src/DB'
 import { DatabaseError } from '../src/errors'
 
@@ -15,7 +15,7 @@ describe('DB.transactionWithRetry', () => {
   it('should retry on StaleModelError and eventually succeed', async () => {
     let attempts = 0
     const result = await DB.transactionWithRetry(
-      async (conn, attempt) => {
+      async (_conn, attempt) => {
         attempts = attempt
         if (attempt < 3) {
           const error = new Error('Model is stale')
@@ -35,7 +35,7 @@ describe('DB.transactionWithRetry', () => {
   it('should retry on database deadlock code and eventually succeed', async () => {
     let attempts = 0
     const result = await DB.transactionWithRetry(
-      async (conn, attempt) => {
+      async (_conn, attempt) => {
         attempts = attempt
         if (attempt < 2) {
           const error = new Error('Deadlock detected')
@@ -55,7 +55,7 @@ describe('DB.transactionWithRetry', () => {
   it('should retry on DatabaseError with nested code in originalError', async () => {
     let attempts = 0
     const result = await DB.transactionWithRetry(
-      async (conn, attempt) => {
+      async (_conn, attempt) => {
         attempts = attempt
         if (attempt < 2) {
           const originalError = new Error('Postgres Deadlock')
@@ -76,7 +76,7 @@ describe('DB.transactionWithRetry', () => {
     let attempts = 0
     try {
       await DB.transactionWithRetry(
-        async (conn, attempt) => {
+        async (_conn, attempt) => {
           attempts = attempt
           const error = new Error('Persistent deadlock')
           ;(error as any).code = 'ER_LOCK_DEADLOCK'
@@ -96,7 +96,7 @@ describe('DB.transactionWithRetry', () => {
     let attempts = 0
     try {
       await DB.transactionWithRetry(
-        async (conn, attempt) => {
+        async (_conn, attempt) => {
           attempts = attempt
           throw new Error('Normal business error')
         },
@@ -113,7 +113,7 @@ describe('DB.transactionWithRetry', () => {
   it('should retry on custom retryable errors', async () => {
     let attempts = 0
     const result = await DB.transactionWithRetry(
-      async (conn, attempt) => {
+      async (_conn, attempt) => {
         attempts = attempt
         if (attempt < 2) {
           throw new Error('CUSTOM_ERROR')
@@ -137,7 +137,7 @@ describe('DB.transactionWithRetry', () => {
     // but we can ensure it doesn't crash and completes.
     let attempts = 0
     await DB.transactionWithRetry(
-      async (conn, attempt) => {
+      async (_conn, attempt) => {
         attempts = attempt
         if (attempt < 2) {
           const error = new Error('Model is stale')
@@ -157,7 +157,7 @@ describe('DB.transactionWithRetry', () => {
   it('should trigger onRetry hook', async () => {
     const retryCalls: Array<{ error: any; attempt: number; delay: number }> = []
     await DB.transactionWithRetry(
-      async (conn, attempt) => {
+      async (_conn, attempt) => {
         if (attempt < 2) {
           const error = new Error('Retry me')
           error.name = 'StaleModelError'

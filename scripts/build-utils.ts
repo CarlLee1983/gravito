@@ -171,7 +171,9 @@ async function collectDtsFiles(dir: string): Promise<string[]> {
  * 例如：'[name].mjs' → 'mjs'，'[name].js' → 'js'
  */
 function extractEsmExt(esmNaming?: string): 'js' | 'mjs' | 'cjs' {
-  if (!esmNaming) return 'js'
+  if (!esmNaming) {
+    return 'js'
+  }
 
   const match = esmNaming.match(/\[name\]\.(\w+)/)
   if (match?.[1]) {

@@ -136,9 +136,13 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
         const postgresMatch = message.match(/relation "([\w_]+)" does not exist/)
         const mysqlMatch = message.match(/Table '[\w_.]+\.([\w_]+)' doesn't exist/)
 
-        if (sqliteMatch) targetTable = sqliteMatch[1]
-        else if (postgresMatch) targetTable = postgresMatch[1]
-        else if (mysqlMatch) targetTable = mysqlMatch[1]
+        if (sqliteMatch) {
+          targetTable = sqliteMatch[1]
+        } else if (postgresMatch) {
+          targetTable = postgresMatch[1]
+        } else if (mysqlMatch) {
+          targetTable = mysqlMatch[1]
+        }
 
         await Schema.connection(connName).create(
           targetTable,
@@ -1593,7 +1597,9 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
           )
           columns = allColumns.filter((col) => !deferredColumns.includes(col))
           // If no columns left or something went wrong, fallback to *
-          if (columns.length === 0) columns = ['*']
+          if (columns.length === 0) {
+            columns = ['*']
+          }
         }
       } else if (extensionTable) {
         // Auto-join extension table if requested

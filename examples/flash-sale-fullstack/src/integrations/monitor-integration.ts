@@ -29,7 +29,7 @@ export function setupMonitoringIntegration(core: PlanetCore, metrics: BusinessMe
       // 記錄訂單創建指標
       metrics.ordersCreated.inc()
       // 增加活躍訂單計數
-      const currentActive = parseInt((metrics.activeOrders as any).value || '0')
+      const currentActive = parseInt((metrics.activeOrders as any).value || '0', 10)
       ;(metrics.activeOrders as any).set(currentActive + 1)
     } catch (error) {
       logger.error('[Monitor] Error recording order creation metric', error)
@@ -44,7 +44,7 @@ export function setupMonitoringIntegration(core: PlanetCore, metrics: BusinessMe
       logger.debug(`[Monitor] Order completed: ${payload.orderId}`)
       metrics.ordersCompleted.inc()
       // 減少活躍訂單計數
-      const currentActive = parseInt((metrics.activeOrders as any).value || '0')
+      const currentActive = parseInt((metrics.activeOrders as any).value || '0', 10)
       ;(metrics.activeOrders as any).set(Math.max(0, currentActive - 1))
     } catch (error) {
       logger.error('[Monitor] Error recording order completion metric', error)
@@ -59,7 +59,7 @@ export function setupMonitoringIntegration(core: PlanetCore, metrics: BusinessMe
       logger.debug(`[Monitor] Order failed: ${payload.orderId}`)
       metrics.ordersFailed.inc()
       // 減少活躍訂單計數
-      const currentActive = parseInt((metrics.activeOrders as any).value || '0')
+      const currentActive = parseInt((metrics.activeOrders as any).value || '0', 10)
       ;(metrics.activeOrders as any).set(Math.max(0, currentActive - 1))
     } catch (error) {
       logger.error('[Monitor] Error recording order failure metric', error)
@@ -163,10 +163,10 @@ export function setupMonitoringIntegration(core: PlanetCore, metrics: BusinessMe
 
       if (status === 'active') {
         // 更新活躍快閃活動數量
-        const currentActive = parseInt((metrics.flashSalesActive as any).value || '0')
+        const currentActive = parseInt((metrics.flashSalesActive as any).value || '0', 10)
         ;(metrics.flashSalesActive as any).set(currentActive + 1)
       } else if (status === 'ended') {
-        const currentActive = parseInt((metrics.flashSalesActive as any).value || '0')
+        const currentActive = parseInt((metrics.flashSalesActive as any).value || '0', 10)
         ;(metrics.flashSalesActive as any).set(Math.max(0, currentActive - 1))
       }
     } catch (error) {

@@ -1,4 +1,4 @@
-import { cp, type Dirent, mkdir, readdir, rm } from 'node:fs/promises'
+import { rm } from 'node:fs/promises'
 import { basename } from 'node:path'
 import { build } from 'bun'
 

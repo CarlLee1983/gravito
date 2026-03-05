@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
-import type {
-  CircuitBreakerMetricsRecorder,
-  CircuitBreakerOptions,
-} from '../../src/circuit-breaker/CircuitBreaker'
+import type { CircuitBreakerMetricsRecorder } from '../../src/circuit-breaker/CircuitBreaker'
 import { CircuitBreaker, CircuitBreakerState } from '../../src/circuit-breaker/CircuitBreaker'
 import { delay } from '../helpers'
 
@@ -523,8 +520,8 @@ describe('CircuitBreaker', () => {
 
       const m = cb.getMetrics()
       expect(m.lastFailureAt).toBeDefined()
-      expect(m.lastFailureAt!.getTime()).toBeGreaterThanOrEqual(before.getTime())
-      expect(m.lastFailureAt!.getTime()).toBeLessThanOrEqual(after.getTime())
+      expect(m.lastFailureAt?.getTime()).toBeGreaterThanOrEqual(before.getTime())
+      expect(m.lastFailureAt?.getTime()).toBeLessThanOrEqual(after.getTime())
       expect(m.openedAt).toBeDefined()
       expect(m.state).toBe(CircuitBreakerState.OPEN)
     })

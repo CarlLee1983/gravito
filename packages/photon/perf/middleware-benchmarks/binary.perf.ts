@@ -252,7 +252,7 @@ async function runBinaryBenchmarks() {
   const testTypes = {
     string: 'This is a test string',
     number: 123456,
-    float: 3.14159,
+    float: Math.PI,
     boolean: true,
     null: null,
     array: [1, 2, 3, 4, 5],

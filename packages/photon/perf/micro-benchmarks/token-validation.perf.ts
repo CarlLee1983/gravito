@@ -56,7 +56,7 @@ function parseJWT(token: string): {
  */
 function verifyHMAC(data: string, signature: string, secret: string): boolean {
   // 模擬 HMAC 計算（實際應用中會使用 crypto.createHmac）
-  const crypto = require('crypto')
+  const crypto = require('node:crypto')
   const expectedSig = crypto.createHmac('sha256', secret).update(data).digest('base64url')
   return timeSafeCompare(expectedSig, signature)
 }

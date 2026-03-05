@@ -123,7 +123,9 @@ export function getResilienceContext(): ResilienceContext {
  * 清理 Resilience 資源
  */
 export async function shutdownResilience(): Promise<void> {
-  if (!resilienceContext) return
+  if (!resilienceContext) {
+    return
+  }
 
   // 重設 Circuit Breaker（重置狀態）
   resilienceContext.circuitBreakers.payment.reset()

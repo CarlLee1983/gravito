@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
+import { existsSync } from 'node:fs'
+import { cp, mkdir } from 'node:fs/promises'
 import { $ } from 'bun'
-import { existsSync } from 'fs'
-import { cp, mkdir } from 'fs/promises'
 
 const isDtsOnly = process.argv.includes('--dts-only')
 

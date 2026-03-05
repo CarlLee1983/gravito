@@ -11,7 +11,6 @@
  * @module photon/perf/security-middleware
  */
 
-import type { Context } from 'hono'
 import { Hono } from 'hono'
 import {
   bodySizeLimit,

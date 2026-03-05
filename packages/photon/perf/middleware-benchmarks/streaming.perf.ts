@@ -26,7 +26,7 @@ async function* _simpleGenerator() {
  */
 async function* _jsonLinesGenerator() {
   for (let i = 0; i < 100; i++) {
-    yield JSON.stringify({ id: i, value: Math.random() }) + '\n'
+    yield `${JSON.stringify({ id: i, value: Math.random() })}\n`
   }
 }
 
@@ -58,7 +58,7 @@ async function runStreamingBenchmarks() {
   // 1. 簡單流式響應
   console.log('📊 Testing Simple Streaming Response...')
   const simpleStreamApp = new Hono()
-  simpleStreamApp.get('/stream', async (c) => {
+  simpleStreamApp.get('/stream', async (_c) => {
     return new Response(
       new ReadableStream({
         async start(controller) {
@@ -89,12 +89,12 @@ async function runStreamingBenchmarks() {
   // 2. 大量塊流式響應
   console.log('📊 Testing Large Chunked Streaming (100 chunks)...')
   const largeStreamApp = new Hono()
-  largeStreamApp.get('/stream', async (c) => {
+  largeStreamApp.get('/stream', async (_c) => {
     return new Response(
       new ReadableStream({
         async start(controller) {
           for (let i = 0; i < 100; i++) {
-            controller.enqueue(JSON.stringify({ id: i, value: Math.random() }) + '\n')
+            controller.enqueue(`${JSON.stringify({ id: i, value: Math.random() })}\n`)
           }
           controller.close()
         },
@@ -194,7 +194,7 @@ async function runStreamingBenchmarks() {
           id: i,
           data: 'x'.repeat(10000), // 10KB 每條消息
         })
-        await stream.write(largeData + '\n')
+        await stream.write(`${largeData}\n`)
       }
     })
   })
@@ -244,7 +244,7 @@ async function runStreamingBenchmarks() {
   jsonLinesApp.get('/jsonlines', (c) => {
     return c.streaming(async (stream) => {
       for (let i = 0; i < 100; i++) {
-        await stream.write(JSON.stringify({ id: i, value: Math.random() }) + '\n')
+        await stream.write(`${JSON.stringify({ id: i, value: Math.random() })}\n`)
       }
     })
   })

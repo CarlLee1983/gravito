@@ -81,9 +81,17 @@ export function getEscapeHtml() {
 export async function toUint8Array(
   data: Blob | string | ArrayBuffer | Uint8Array
 ): Promise<Uint8Array> {
-  if (data instanceof Uint8Array) return data
-  if (typeof data === 'string') return new TextEncoder().encode(data)
-  if (data instanceof ArrayBuffer) return new Uint8Array(data)
-  if (data instanceof Blob) return new Uint8Array(await data.arrayBuffer())
+  if (data instanceof Uint8Array) {
+    return data
+  }
+  if (typeof data === 'string') {
+    return new TextEncoder().encode(data)
+  }
+  if (data instanceof ArrayBuffer) {
+    return new Uint8Array(data)
+  }
+  if (data instanceof Blob) {
+    return new Uint8Array(await data.arrayBuffer())
+  }
   return new Uint8Array()
 }

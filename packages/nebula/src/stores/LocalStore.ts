@@ -137,31 +137,35 @@ export class LocalStore implements StorageStore {
       await archiveAdapter.extract(archiveData, tempDir, {})
       await this.clearDirectory(rootDir)
       const copyDir = async (src: string, dst: string): Promise<void> => {
-        const items = await runtime.readDir!(src)
-        for (const item of items) {
-          const srcPath = join(src, item.name)
-          const dstPath = join(dst, item.name)
-          if (item.isDirectory) {
-            await runtimeMkdir(runtime, dstPath, { recursive: true })
-            await copyDir(srcPath, dstPath)
-          } else {
-            const content = await runtime.readFile(srcPath)
-            await runtime.writeFile(dstPath, content)
+        const items = await runtime.readDir?.(src)
+        if (items) {
+          for (const item of items) {
+            const srcPath = join(src, item.name)
+            const dstPath = join(dst, item.name)
+            if (item.isDirectory) {
+              await runtimeMkdir(runtime, dstPath, { recursive: true })
+              await copyDir(srcPath, dstPath)
+            } else {
+              const content = await runtime.readFile(srcPath)
+              await runtime.writeFile(dstPath, content)
+            }
           }
         }
       }
       await copyDir(tempDir, rootDir)
     } finally {
       try {
-        await runtime.removeRecursive!(tempDir)
+        await runtime.removeRecursive?.(tempDir)
       } catch {}
     }
   }
 
   private async clearDirectory(dir: string): Promise<void> {
     try {
-      const items = await this.runtime.readDir!(dir)
-      await Promise.all(items.map((item) => this.runtime.removeRecursive!(join(dir, item.name))))
+      const items = await this.runtime.readDir?.(dir)
+      if (items) {
+        await Promise.all(items.map((item) => this.runtime.removeRecursive?.(join(dir, item.name))))
+      }
     } catch {}
   }
 

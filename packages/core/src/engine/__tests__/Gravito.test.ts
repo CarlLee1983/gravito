@@ -288,7 +288,7 @@ describe('Gravito Engine', () => {
       const app = new Gravito()
       const calls: string[] = []
 
-      app.use(async (_c, next) => {
+      app.use(async (_c, _next) => {
         calls.push('middleware')
         // Return without calling next()
         return new Response(JSON.stringify({ early: true }), {

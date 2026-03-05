@@ -36,12 +36,14 @@ import { asHonoMiddleware } from '../middleware-adapter'
  */
 export const binaryMiddleware = (): MiddlewareHandler => {
   const middleware: GravitoMiddleware = async (c, next) => {
-    await next()
+    const res = await next()
 
     const accept = c.req.header('Accept')
     if (accept === 'application/cbor') {
       // Guard: check if response exists and has JSON content type
-      if (!c.res) return
+      if (!c.res) {
+        return res
+      }
 
       const contentType = c.res.headers.get('Content-Type')
       if (contentType?.includes('application/json')) {
@@ -73,6 +75,8 @@ export const binaryMiddleware = (): MiddlewareHandler => {
         }
       }
     }
+
+    return res
   }
 
   return asHonoMiddleware(middleware)

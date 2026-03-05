@@ -61,7 +61,7 @@ export const htmxMiddleware = (): MiddlewareHandler => {
       c.set('htmx.triggerName', c.req.header('HX-Trigger-Name') || null)
     }
 
-    await next()
+    return await next()
   }
 
   return asHonoMiddleware(middleware)

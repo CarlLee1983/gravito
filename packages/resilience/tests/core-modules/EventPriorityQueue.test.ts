@@ -308,7 +308,7 @@ describe('EventPriorityQueue', () => {
 
       const breaker = queue.getCircuitBreaker('evt-exec')
       expect(breaker).toBeDefined()
-      expect(breaker!.getState()).toBe('CLOSED')
+      expect(breaker?.getState()).toBe('CLOSED')
     })
 
     it('reuses existing circuit breaker for the same hook', async () => {
@@ -419,7 +419,7 @@ describe('EventPriorityQueue', () => {
       })
       const bpm = q.getBackpressureManager()
       expect(bpm).toBeDefined()
-      expect(bpm!.getState()).toBeDefined()
+      expect(bpm?.getState()).toBeDefined()
     })
   })
 
@@ -460,7 +460,7 @@ describe('EventPriorityQueue', () => {
       expect(result).toBe(true)
 
       // 驗證重置後斷路器狀態為 CLOSED
-      expect(breaker!.getState()).toBe('CLOSED')
+      expect(breaker?.getState()).toBe('CLOSED')
     })
   })
 

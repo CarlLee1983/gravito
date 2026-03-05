@@ -64,13 +64,16 @@ export interface PackageReleaseOptions {
  */
 export class DeploymentArchiver {
   private readonly archive: RuntimeArchiveAdapter
-  private readonly runtime = getRuntimeAdapter()
+  private readonly runtime: any
 
   constructor(
     private readonly docker: IDockerAdapter,
-    private readonly rocketRepo: IRocketRepository
+    private readonly rocketRepo: IRocketRepository,
+    runtime?: any,
+    archive?: RuntimeArchiveAdapter
   ) {
-    this.archive = getArchiveAdapter()
+    this.runtime = runtime || getRuntimeAdapter()
+    this.archive = archive || getArchiveAdapter()
   }
 
   /**

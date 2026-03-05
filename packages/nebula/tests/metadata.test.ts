@@ -215,6 +215,7 @@ describe('MemoryStore - Metadata Enhancement', () => {
     const secondModified = meta2?.lastModified
 
     expect(secondModified).toBeInstanceOf(Date)
+    expect(firstModified).toBeInstanceOf(Date)
     expect(secondModified!.getTime()).toBeGreaterThan(firstModified!.getTime())
   })
 

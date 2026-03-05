@@ -23,8 +23,12 @@ function createBunArchiveAdapter(): RuntimeArchiveAdapter {
     async create(entries, _options = {}) {
       // Use globalThis to avoid Vite import errors
       const B = (globalThis as any).Bun
-      if (!B) throw new Error('[RuntimeArchiveAdapter] Bun global not found')
-      if (!B.Tar) throw new Error('[RuntimeArchiveAdapter] Bun.Tarball is not available')
+      if (!B) {
+        throw new Error('[RuntimeArchiveAdapter] Bun global not found')
+      }
+      if (!B.Tar) {
+        throw new Error('[RuntimeArchiveAdapter] Bun.Tarball is not available')
+      }
 
       const tar = new B.Tar()
       for (const [path, data] of Object.entries(entries)) {
@@ -48,19 +52,25 @@ function createBunArchiveAdapter(): RuntimeArchiveAdapter {
 
     async extract(_data, _targetDir, _options = {}) {
       const B = (globalThis as any).Bun
-      if (!B?.Tar) throw new Error('[RuntimeArchiveAdapter] Bun.Tarball is not available')
+      if (!B?.Tar) {
+        throw new Error('[RuntimeArchiveAdapter] Bun.Tarball is not available')
+      }
       throw new Error('[RuntimeArchiveAdapter] Tar extraction not yet implemented via Bun.Tar')
     },
 
     async list(_data, _glob?) {
       const B = (globalThis as any).Bun
-      if (!B?.Tar) throw new Error('[RuntimeArchiveAdapter] Bun.Tarball is not available')
+      if (!B?.Tar) {
+        throw new Error('[RuntimeArchiveAdapter] Bun.Tarball is not available')
+      }
       throw new Error('[RuntimeArchiveAdapter] Tar listing not yet implemented via Bun.Tar')
     },
 
     async readFile(_data, _filePath) {
       const B = (globalThis as any).Bun
-      if (!B?.Tar) throw new Error('[RuntimeArchiveAdapter] Bun.Tarball is not available')
+      if (!B?.Tar) {
+        throw new Error('[RuntimeArchiveAdapter] Bun.Tarball is not available')
+      }
       throw new Error('[RuntimeArchiveAdapter] Tar readFile not yet implemented via Bun.Tar')
     },
   }

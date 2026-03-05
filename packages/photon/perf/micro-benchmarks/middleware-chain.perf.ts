@@ -21,7 +21,7 @@ async function runMiddlewareChainBenchmarks() {
   const results = []
 
   // 簡單中間件（無操作）
-  const noop = async (c: Context, next: () => Promise<void>) => {
+  const noop = async (_c: Context, next: () => Promise<void>) => {
     await next()
   }
 
