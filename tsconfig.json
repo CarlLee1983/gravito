@@ -137,9 +137,7 @@
       "@gravito/support-chat-widget": ["packages/support-chat-widget/src/index.ts"],
       "@gravito/support-chat-widget/*": ["packages/support-chat-widget/src/*"],
       "@gravito/zenith": ["packages/zenith/src/index.ts"],
-      "@gravito/zenith/*": ["packages/zenith/src/*"],
-      "hono": ["node_modules/hono/dist/types/index.d.ts"],
-      "hono/*": ["node_modules/hono/dist/types/*"]
+      "@gravito/zenith/*": ["packages/zenith/src/*"]
     }
   },
   "exclude": ["node_modules", "**/dist/**"]

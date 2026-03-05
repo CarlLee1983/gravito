@@ -1,10 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { resolve, basename } from 'node:path'
 
 const lcovPath = process.argv[2] ?? 'coverage/lcov.info'
 const threshold = Number.parseFloat(process.env.COVERAGE_THRESHOLD ?? '75')
 
 const root = resolve(process.cwd())
+const pkgName = basename(root)
 const srcRoot = `${resolve(root, 'src')}/`
 
 // 檢查 lcov.info 是否存在
@@ -56,9 +57,9 @@ const rounded = Math.round(percent * 100) / 100
 
 if (rounded < threshold) {
   console.error(
-    `photon coverage ${rounded}% is below threshold ${threshold}%. Covered lines: ${hit}/${total}.`
+    `${pkgName} coverage ${rounded}% is below threshold ${threshold}%. Covered lines: ${hit}/${total}.`
   )
   process.exit(1)
 }
 
-console.log(`photon coverage ${rounded}% (${hit}/${total}) meets threshold ${threshold}%.`)
+console.log(`${pkgName} coverage ${rounded}% (${hit}/${total}) meets threshold ${threshold}%.`)
