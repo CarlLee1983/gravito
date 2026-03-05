@@ -1,4 +1,6 @@
 import { spawn } from 'bun'
+import { existsSync } from 'fs'
+import { cp, mkdir } from 'fs/promises'
 
 const isDtsOnly = process.argv.includes('--dts-only')
 
@@ -30,6 +32,14 @@ const tsc = spawn(
 const code = await tsc.exited
 if (code !== 0) {
   console.warn('⚠️  Type generation had warnings, but continuing...')
+}
+
+// Fix incorrect directory structure from tsconfig
+// TypeScript outputs to dist/mass/src/... but we need dist/...
+if (existsSync('dist/mass')) {
+  await mkdir('dist', { recursive: true })
+  await cp('dist/mass/src', 'dist', { recursive: true })
+  await Bun.$`rm -rf dist/mass dist/photon`
 }
 
 console.log('✅ Build complete!')

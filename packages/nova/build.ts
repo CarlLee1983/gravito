@@ -1,4 +1,6 @@
 import { $ } from 'bun'
+import { existsSync } from 'fs'
+import { cp, mkdir } from 'fs/promises'
 
 const isDtsOnly = process.argv.includes('--dts-only')
 
@@ -14,9 +16,15 @@ try {
     await $`npx tsup src/index.ts --format esm,cjs --outDir dist --external @gravito/core,bun`
   }
 
-  if (isDtsOnly) {
-    console.log('Generating Types...')
-    await $`npx tsc --emitDeclarationOnly --declaration --outDir dist`
+  console.log('Generating Types...')
+  await $`npx tsc --emitDeclarationOnly --declaration --outDir dist`
+
+  // Fix incorrect directory structure from tsconfig
+  // TypeScript outputs to dist/nova/src/... but we need dist/...
+  if (existsSync('dist/nova')) {
+    await mkdir('dist', { recursive: true })
+    await cp('dist/nova/src', 'dist', { recursive: true })
+    await $`rm -rf dist/nova`
   }
 
   console.log('✅ Build complete!')

@@ -1,5 +1,6 @@
 import { execSync } from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs'
+import { cp, mkdir, rm } from 'node:fs/promises'
 
 const isDtsOnly = process.argv.includes('--dts-only')
 
@@ -48,6 +49,14 @@ try {
   execSync('bunx tsc --project tsconfig.json --emitDeclarationOnly --declaration --outDir ./dist', {
     stdio: 'inherit',
   })
+
+  // Fix incorrect directory structure from tsconfig
+  // TypeScript outputs to dist/ripple/src/... but we need dist/...
+  if (existsSync('dist/ripple/src')) {
+    await mkdir('dist', { recursive: true })
+    await cp('dist/ripple/src', 'dist', { recursive: true })
+    await rm('dist/ripple', { recursive: true, force: true })
+  }
 } catch (_error) {
   console.error('❌ TypeScript declaration generation failed')
   process.exit(1)

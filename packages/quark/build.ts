@@ -1,4 +1,6 @@
 import { execSync } from 'node:child_process'
+import { existsSync } from 'node:fs'
+import { cp, mkdir, rm } from 'node:fs/promises'
 
 const isDtsOnly = process.argv.includes('--dts-only')
 
@@ -27,6 +29,14 @@ try {
   execSync('bun tsc --declaration --emitDeclarationOnly --outDir ./dist --skipLibCheck', {
     stdio: 'inherit',
   })
+
+  // Fix incorrect directory structure from tsconfig (which has rootDir: ../../)
+  // TypeScript outputs to dist/packages/quark/src/... but we need dist/...
+  if (existsSync('dist/packages/quark/src')) {
+    await mkdir('dist', { recursive: true })
+    await cp('dist/packages/quark/src', 'dist', { recursive: true })
+    await rm('dist/packages', { recursive: true, force: true })
+  }
 } catch {
   // Generate a basic declaration file if tsc fails due to missing dependencies
   console.warn('⚠️  tsc declaration generation failed, creating basic index.d.ts')

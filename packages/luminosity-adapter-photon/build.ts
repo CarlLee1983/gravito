@@ -1,4 +1,6 @@
 import { build } from 'bun'
+import { existsSync } from 'fs'
+import { cp, mkdir } from 'fs/promises'
 
 const isDtsOnly = process.argv.includes('--dts-only')
 
@@ -59,6 +61,15 @@ async function buildInParallel() {
 
 // Execute parallel build
 await buildInParallel()
+
+// Fix incorrect directory structure from tsconfig
+// TypeScript may output to dist/core/src/... but we need dist/...
+// Only move luminosity-adapter-photon files, keep other dependencies
+if (existsSync('dist/luminosity-adapter-photon/src')) {
+  await mkdir('dist', { recursive: true })
+  await cp('dist/luminosity-adapter-photon/src', 'dist', { recursive: true })
+  await Bun.$`rm -rf dist/luminosity-adapter-photon`
+}
 
 console.log('✅ Build completed')
 process.exit(0)
