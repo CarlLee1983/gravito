@@ -845,9 +845,10 @@ export abstract class Grammar implements GrammarContract {
    * @param column - The column identifier.
    */
   wrapColumn(column: string): string {
-    if (typeof column === 'object' && column !== null && 'getValue' in column) {
-      return (column as Expression).getValue()
+    if (typeof column === 'object' && column !== null && 'getValue' in (column as any)) {
+      return (column as any).getValue()
     }
+
 
     if (column === '*') {
       return '*'

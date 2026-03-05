@@ -432,20 +432,25 @@ export class RedisDriver implements QueueDriver {
       return
     }
 
-    const payload = serialized.payload
+    let payload: string | Buffer
+    if ((serialized as any).isBinary) {
+      payload = (serialized as any).buffer
+    } else {
+      payload = (serialized as any).payload
+    }
 
     // For delayed jobs, prefer Sorted Sets (ZADD) when supported
     if (job.delaySeconds && job.delaySeconds > 0) {
       const delayKey = `${key}:delayed`
       const score = Date.now() + job.delaySeconds * 1000
       if (typeof this.client.zadd === 'function') {
-        await this.client.zadd(delayKey, score, payload)
+        await this.client.zadd(delayKey, score, payload as any)
       } else {
         // Fallback: push directly (no delay support)
-        await this.client.lpush(key, payload)
+        await this.client.lpush(key, payload as any)
       }
     } else {
-      await this.client.lpush(key, payload)
+      await this.client.lpush(key, payload as any)
     }
   }
 
@@ -660,7 +665,7 @@ export class RedisDriver implements QueueDriver {
     } else {
       // Legacy path
       const payload = JSON.stringify(failedJob)
-      await this.client.lpush(key, payload)
+      await this.client.lpush(key, payload as any)
     }
 
     // Optional: Keep DLQ capped at 1000 items to avoid bloat

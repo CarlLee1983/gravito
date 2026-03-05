@@ -11,6 +11,9 @@
     "rootDir": "src",
     "skipLibCheck": true,
     "baseUrl": ".",
+    "jsx": "react-jsx",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "types": [
       "bun-types"
     ],

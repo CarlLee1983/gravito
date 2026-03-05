@@ -435,7 +435,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       finalValue = value
     }
 
-    this.whereClause.add(column, operator, finalValue, 'and')
+    this.whereClause.add(column as string, operator, finalValue, 'and')
     return this
   }
 
