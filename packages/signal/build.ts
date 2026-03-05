@@ -9,8 +9,10 @@ console.log(
   isDtsOnly ? 'Building @gravito/signal DTS...' : 'Building @gravito/signal in parallel...'
 )
 
-// Clean dist
-await rm('dist', { recursive: true, force: true })
+// Clean dist only if not DTS-only to avoid race conditions with parallel builds
+if (!isDtsOnly) {
+  await rm('dist', { recursive: true, force: true })
+}
 
 // External dependencies（peer deps + framework 包）
 const externalDeps = [

@@ -6,19 +6,21 @@ const isDtsOnly = process.argv.includes('--dts-only')
 
 console.log(isDtsOnly ? 'Building @gravito/plasma DTS...' : 'Building @gravito/plasma...')
 
-// Clean dist
-await $`rm -rf dist`
+// Clean dist only if not DTS-only to avoid race conditions with parallel builds
+if (!isDtsOnly) {
+  await $`rm -rf dist`
+}
 
 try {
   if (!isDtsOnly) {
     console.log('Building ESM/CJS...')
     // Use tsup for proper ESM/CJS build (handles Bun builtins correctly)
-    await $`npx tsup src/index.ts --format esm,cjs --outDir dist --external @gravito/core,@gravito/photon,ioredis,bun`
+    await $`bunx tsup src/index.ts --format esm,cjs --outDir dist --external @gravito/core,@gravito/photon,ioredis,bun`
   }
 
   if (isDtsOnly) {
     console.log('Generating Types...')
-    await $`npx tsc --emitDeclarationOnly --declaration --outDir dist`
+    await $`bunx tsc --emitDeclarationOnly --declaration --outDir dist`
 
     // Fix incorrect directory structure from tsconfig
     // TypeScript outputs to dist/plasma/src/... but we need dist/...

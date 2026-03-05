@@ -517,13 +517,15 @@ export async function buildPackage(config: BuildConfig): Promise<BuildResult> {
 
   // ─── 清理 dist ───
   const cleanTimer = createTimer()
-  try {
-    await rm(distDir, { recursive: true, force: true })
-    await mkdir(distDir, { recursive: true })
-    timing.clean = cleanTimer.elapsed()
-    logs.push(`清理 dist/ (${timing.clean.toFixed(0)}ms)`)
-  } catch (err) {
-    errors.push(`清理失敗: ${err instanceof Error ? err.message : String(err)}`)
+  if (!isDtsOnly) {
+    try {
+      await rm(distDir, { recursive: true, force: true })
+      await mkdir(distDir, { recursive: true })
+      timing.clean = cleanTimer.elapsed()
+      logs.push(`清理 dist/ (${timing.clean.toFixed(0)}ms)`)
+    } catch (err) {
+      errors.push(`清理失敗: ${err instanceof Error ? err.message : String(err)}`)
+    }
   }
 
   // ─── 僅 DTS 模式 ───

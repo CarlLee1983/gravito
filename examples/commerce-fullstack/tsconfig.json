@@ -14,11 +14,7 @@
       "@gravito/photon": ["../../packages/photon/src/index.ts"],
       "@gravito/atlas": ["../../packages/atlas/src/index.ts"],
       "@gravito/mass": ["../../packages/mass/src/index.ts"],
-      "@gravito/stasis": ["../../packages/stasis/src/index.ts"],
-      "@gravito/admin-shell-react": ["../../packages/admin-shell-react/src/index.ts"],
-      "@gravito/admin-ui-analytics": ["../../packages/admin-ui-analytics/src/index.tsx"],
-      "@gravito/admin-ui-announcement": ["../../packages/admin-ui-announcement/src/index.tsx"],
-      "@gravito/admin-ui-catalog": ["../../packages/admin-ui-catalog/src/index.tsx"]
+      "@gravito/stasis": ["../../packages/stasis/src/index.ts"]
     }
   },
   "include": ["src/**/*"]

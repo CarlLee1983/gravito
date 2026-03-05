@@ -9,8 +9,10 @@ console.log(
   isDtsOnly ? 'Building @gravito/stasis DTS...' : 'Building @gravito/stasis in parallel...'
 )
 
-// Clean dist
-await rm('dist', { recursive: true, force: true })
+// Clean dist only if not DTS-only to avoid race conditions with parallel builds
+if (!isDtsOnly) {
+  await rm('dist', { recursive: true, force: true })
+}
 
 // External dependencies（workspace peer deps）
 const externalDeps = ['@gravito/core', '@gravito/photon', '@gravito/plasma']

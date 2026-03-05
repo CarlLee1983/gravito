@@ -4,8 +4,10 @@ const isDtsOnly = process.argv.includes('--dts-only')
 
 console.log('Building @gravito/impulse...')
 
-// Clean dist
-await Bun.$`rm -rf dist`
+// Clean dist only if not DTS-only to avoid race conditions with parallel builds
+if (!isDtsOnly) {
+  await Bun.$`rm -rf dist`
+}
 
 // Use tsup for multi-format build
 const tsup = spawn(

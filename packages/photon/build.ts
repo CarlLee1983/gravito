@@ -3,8 +3,10 @@ import { build } from 'bun'
 
 const isDtsOnly = process.argv.includes('--dts-only')
 
-// Clean dist
-await rm('dist', { recursive: true, force: true })
+// Clean dist only if not DTS-only to avoid race conditions with parallel builds
+if (!isDtsOnly) {
+  await rm('dist', { recursive: true, force: true })
+}
 
 // Parallel build: JS/TS and type declarations can run simultaneously
 // since they output to different directories

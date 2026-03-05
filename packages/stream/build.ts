@@ -9,8 +9,10 @@ console.log(
   isDtsOnly ? 'Building @gravito/stream DTS...' : 'Building @gravito/stream in parallel...'
 )
 
-// Clean dist
-await rm('dist', { recursive: true, force: true })
+// Clean dist only if not DTS-only to avoid race conditions with parallel builds
+if (!isDtsOnly) {
+  await rm('dist', { recursive: true, force: true })
+}
 
 // External dependencies（workspace deps + 第三方 runtime deps）
 const externalDeps = [

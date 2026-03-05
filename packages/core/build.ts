@@ -7,8 +7,10 @@ const _pkgName = basename(import.meta.dirname) // "core"
 
 console.log(isDtsOnly ? 'Building @gravito/core DTS...' : 'Building @gravito/core in parallel...')
 
-// Clean dist
-await rm('dist', { recursive: true, force: true })
+// Clean dist only if not DTS-only to avoid race conditions with parallel builds
+if (!isDtsOnly) {
+  await rm('dist', { recursive: true, force: true })
+}
 
 // External dependencies（workspace deps + bun built-ins）
 // Note: @gravito/photon removed in Phase 2.1 - core no longer depends on photon

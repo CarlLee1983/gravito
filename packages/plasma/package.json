@@ -37,6 +37,9 @@
   ],
   "author": "Gravito Team",
   "license": "MIT",
+  "dependencies": {
+    "@gravito/core": "workspace:*"
+  },
   "devDependencies": {
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
