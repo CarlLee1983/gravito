@@ -169,9 +169,8 @@ export function csrfProtection(options: CsrfOptions = {}): MiddlewareHandler {
 
     const requestToken = headerToken || bodyToken
     if (!requestToken || !timingSafeEqual(token, requestToken)) {
-      // HTTP 419: I'm a teapot (custom error code for CSRF failures)
-      // Standard practice: use 403 Forbidden for token validation failures
-      return c.text('Invalid CSRF token', 403)
+      // HTTP 419: Authentication Timeout (Laravel standard for CSRF failures)
+      return c.text('Invalid CSRF token', 419)
     }
 
     await next()

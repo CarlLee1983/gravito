@@ -168,6 +168,13 @@ function shouldExcludePath(path: string, excludePaths: string[]): boolean {
 }
 
 /**
+ * 判斷 trace id 是否有效（非空且非全零）
+ */
+function isValidTraceId(traceId: string | undefined): boolean {
+  return !!traceId && traceId !== '' && traceId !== '00000000000000000000000000000000'
+}
+
+/**
  * 從 HTTP 狀態碼判斷 span 狀態
  */
 function getSpanStatusCode(
@@ -252,7 +259,7 @@ export function otelMiddleware(config: OtelMiddlewareConfig = {}): MiddlewareHan
 
     // 傳播 trace id header（請求前）
     const { traceId, spanId } = span.spanContext()
-    if (propagateTraceId && traceId) {
+    if (propagateTraceId && isValidTraceId(traceId)) {
       c.header(traceIdHeader, traceId)
     }
 
@@ -267,7 +274,7 @@ export function otelMiddleware(config: OtelMiddlewareConfig = {}): MiddlewareHan
       }
 
       // 確保 trace id 在回應 header 中
-      if (propagateTraceId && traceId) {
+      if (propagateTraceId && isValidTraceId(traceId)) {
         c.header(traceIdHeader, traceId)
       }
 

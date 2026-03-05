@@ -10,7 +10,7 @@
       "@gravito/ripple": ["../ripple/src/index.ts"],
       "@gravito/stasis": ["../stasis/src/index.ts"],
       "@gravito/plasma": ["../plasma/src/index.ts"],
-      "@gravito/core": ["../core/dist/index.d.ts"]
+      "@gravito/core": ["../core/src/index.ts"]
     }
   },
   "include": ["src/**/*"],

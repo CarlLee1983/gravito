@@ -307,13 +307,12 @@ export function circuitBreaker(config: CircuitBreakerConfig): MiddlewareHandler 
   const breaker = new CircuitBreaker(config)
 
   const middleware: GravitoMiddleware = async (c, next) => {
-    // 檢查熔斷器是否允許請求通過
-    if (!breaker.canRequest()) {
+    // 嘗試執行請求（原子化檢查並遞增 HALF_OPEN 計數器）
+    const requestCount = breaker.tryRequest()
+
+    if (requestCount === -1) {
       return await onOpen(c, breaker.getState())
     }
-
-    // 記錄請求開始（HALF_OPEN 計數器）
-    breaker.onRequestStart()
 
     try {
       await next()

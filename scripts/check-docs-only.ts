@@ -69,7 +69,7 @@ async function main() {
   try {
     // 取得 git diff
     const { stdout, exitCode } = await $`git diff --name-only ${BASE_REF} HEAD`.quiet().nothrow()
-    
+
     if (exitCode !== 0) {
       console.warn(`⚠️  git diff failed with exit code ${exitCode}. BASE_REF=${BASE_REF}`)
       // In case of git error, assume it's NOT docs-only to be safe

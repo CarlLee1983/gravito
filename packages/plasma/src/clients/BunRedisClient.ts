@@ -914,7 +914,7 @@ class BunRedisPipeline implements RedisPipelineContract {
     const promises = this.commands.map(async (cmd) => {
       try {
         // @ts-ignore Dynamic call
-        const result = await this.client[cmd.method](...cmd.args)
+        const result = await (this.client as any)[cmd.method](...cmd.args)
         return [null, result] as [Error | null, unknown]
       } catch (error) {
         return [error as Error, null] as [Error | null, unknown]

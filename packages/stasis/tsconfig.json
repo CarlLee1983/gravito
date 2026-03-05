@@ -6,7 +6,7 @@
     "baseUrl": ".",
     "paths": {
       "@gravito/plasma": ["../plasma/src/index.ts"],
-      "@gravito/core": ["../core/dist/index.d.ts"]
+      "@gravito/core": ["../core/src/index.ts"]
     }
   },
   "include": ["src/**/*"],

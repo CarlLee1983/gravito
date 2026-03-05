@@ -1,2 +1,3 @@
 **/*.html
 **/views/emails/**
+**/temp_make_comp/**

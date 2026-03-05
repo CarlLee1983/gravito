@@ -17,8 +17,7 @@ import * as trieRouterExports from '../src/router/trie-router'
 const keys = (mod: Record<string, unknown>) => Object.keys(mod).sort()
 
 describe('photon exports', () => {
-  it('aliases Hono as Photon', () => {
-    expect(Photon).toBe(Hono)
+  it('provides Photon as an enhanced Hono', () => {
     expect(new Photon()).toBeInstanceOf(Hono)
   })
 

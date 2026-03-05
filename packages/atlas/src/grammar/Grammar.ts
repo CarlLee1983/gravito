@@ -849,7 +849,6 @@ export abstract class Grammar implements GrammarContract {
       return (column as any).getValue()
     }
 
-
     if (column === '*') {
       return '*'
     }

@@ -29,6 +29,7 @@ const makeContext = (options: {
         const found = Object.keys(headers).find((k) => k.toLowerCase() === lowerKey)
         return found ? headers[found] : undefined
       },
+      raw: {} as any,
     },
     header: (name: string, value: string) => {
       setHeaders[name] = value

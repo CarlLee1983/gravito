@@ -215,6 +215,23 @@ export function createBunAdapter(): RuntimeAdapter {
         // Ignore if not found
       }
     },
+    async mkdir(path, options = {}) {
+      const fs = await import('node:fs/promises')
+      await fs.mkdir(path, options)
+    },
+    async readDir(path) {
+      const fs = await import('node:fs/promises')
+      const entries = await fs.readdir(path, { withFileTypes: true })
+      return entries.map((entry) => ({
+        name: entry.name,
+        isFile: entry.isFile(),
+        isDirectory: entry.isDirectory(),
+      }))
+    },
+    async removeRecursive(path) {
+      const fs = await import('node:fs/promises')
+      await fs.rm(path, { recursive: true, force: true })
+    },
     serve(config) {
       return Bun.serve({
         port: config.port,

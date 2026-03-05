@@ -14,33 +14,14 @@
     "jsx": "react-jsx",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "types": [
-      "bun-types"
-    ],
+    "types": ["bun-types"],
     "paths": {
-      "@gravito/ripple-client": [
-        "./src/index.ts"
-      ],
-      "@gravito/core": [
-        "../../packages/core/dist/index.d.ts"
-      ],
-      "@gravito/core/*": [
-        "../../packages/core/dist/*"
-      ],
-      "@gravito/*": [
-        "../../packages/*/dist/index.d.ts"
-      ]
+      "@gravito/ripple-client": ["./src/index.ts"],
+      "@gravito/core": ["../../packages/core/dist/index.d.ts"],
+      "@gravito/core/*": ["../../packages/core/dist/*"],
+      "@gravito/*": ["../../packages/*/dist/index.d.ts"]
     }
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "tests",
-    "**/*.test.ts",
-    "**/*.test.tsx"
-  ]
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "dist", "tests", "**/*.test.ts", "**/*.test.tsx"]
 }

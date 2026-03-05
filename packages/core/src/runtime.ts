@@ -63,5 +63,6 @@ export {
   // Detection
   getRuntimeEnv,
   getRuntimeKind,
+  resetRuntimeAdapter,
   toUint8Array,
 } from './runtime/index'

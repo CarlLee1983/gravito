@@ -3,7 +3,7 @@ import { basename } from 'node:path'
 import { build } from 'bun'
 
 const isDtsOnly = process.argv.includes('--dts-only')
-const pkgName = basename(import.meta.dirname) // "atlas"
+const _pkgName = basename(import.meta.dirname) // "atlas"
 
 console.log(isDtsOnly ? 'Building @gravito/atlas DTS...' : 'Building @gravito/atlas in parallel...')
 

@@ -87,3 +87,4 @@ examples/**/storage/
 
 # Worktrees
 .worktrees/
+\n# Test artifacts\ntemp_make_comp/

@@ -1,4 +1,4 @@
-import { cp, rm } from 'node:fs/promises'
+import { rm } from 'node:fs/promises'
 import { build } from 'bun'
 
 const isDtsOnly = process.argv.includes('--dts-only')
@@ -17,10 +17,7 @@ async function buildInParallel() {
     console.log('🔨 Building JS and type declarations in parallel...')
   }
 
-  const tempDir = isDtsOnly ? 'dist' : '.tsc-temp'
-  if (!isDtsOnly) {
-    await rm(tempDir, { recursive: true, force: true })
-  }
+  const tempDir = 'dist'
 
   // Start both processes in parallel
   const tasks: Promise<number>[] = []
@@ -93,107 +90,7 @@ async function buildInParallel() {
   }
 }
 
-// Recursively copy .d.ts files from temp to dist, preserving directory structure
-async function copyDtsFiles(src: string, dest: string) {
-  const entries = await import('node:fs/promises').then((m) =>
-    m.readdir(src, { withFileTypes: true })
-  )
-
-  for (const entry of entries) {
-    const srcPath = `${src}/${entry.name}`
-    const destPath = `${dest}/${entry.name}`
-
-    if (entry.isDirectory()) {
-      try {
-        await import('node:fs/promises').then((m) => m.mkdir(destPath, { recursive: true }))
-      } catch (_e) {
-        // ignore if already exists
-      }
-      await copyDtsFiles(srcPath, destPath)
-    } else if (entry.isFile() && entry.name.endsWith('.d.ts')) {
-      await cp(srcPath, destPath)
-    }
-  }
-}
-
 // Execute parallel build
 await buildInParallel()
-
-// Post-build cleanup and file reorganization
-const tempDir = isDtsOnly ? 'dist' : '.tsc-temp'
-if (!isDtsOnly) {
-  try {
-    // Copy from .tsc-temp/photon/src to dist (where our actual types are)
-    await copyDtsFiles(`${tempDir}/photon/src`, 'dist')
-    await rm(tempDir, { recursive: true, force: true })
-  } catch (e) {
-    console.warn('⚠️  Warning: Failed to copy type declarations:', e)
-  }
-} else {
-  // In dts-only mode, tsc outputs to dist, but with nested photon/src structure
-  // Move dist/photon/src/* to dist/* and clean up
-  try {
-    await copyDtsFiles('dist/photon/src', 'dist')
-    await rm('dist/photon', { recursive: true, force: true })
-    await rm('dist/core', { recursive: true, force: true })
-  } catch (e) {
-    console.warn('⚠️  Warning: Failed to reorganize type declarations:', e)
-  }
-}
-
-// Move .js or .d.ts files from dist/src to dist root
-async function moveFilesToRoot() {
-  const srcDir = 'dist/src'
-  try {
-    const entries = await import('node:fs/promises').then((m) =>
-      m.readdir(srcDir, { withFileTypes: true })
-    )
-
-    for (const entry of entries) {
-      const srcPath = `${srcDir}/${entry.name}`
-      const destPath = `dist/${entry.name}`
-
-      if (entry.isDirectory()) {
-        // Create subdirectory in dist if it doesn't exist
-        try {
-          await import('node:fs/promises').then((m) =>
-            m.mkdir(`dist/${entry.name}`, { recursive: true })
-          )
-        } catch (_e) {
-          // ignore
-        }
-
-        // Move files from subdirectory
-        const subEntries = await import('node:fs/promises').then((m) =>
-          m.readdir(srcPath, { withFileTypes: true })
-        )
-        for (const subEntry of subEntries) {
-          const subSrcPath = `${srcPath}/${subEntry.name}`
-          const subDestPath = `dist/${entry.name}/${subEntry.name}`
-
-          if (subEntry.isFile()) {
-            await import('node:fs/promises').then((m) => m.rename(subSrcPath, subDestPath))
-          }
-        }
-      } else if (entry.isFile()) {
-        await import('node:fs/promises').then((m) => m.rename(srcPath, destPath))
-      }
-    }
-
-    // Remove src directory
-    await rm(srcDir, { recursive: true, force: true })
-  } catch (_e) {
-    // If src doesn't exist, that's fine
-  }
-}
-
-await moveFilesToRoot()
-
-// Remove src directory completely from dist if it still exists
-try {
-  await rm('dist/src', { recursive: true, force: true })
-} catch (_e) {
-  // ignore
-}
 
 console.log('✅ Photon build completed')

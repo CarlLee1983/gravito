@@ -9,7 +9,8 @@
   "type": "module",
   "scripts": {
     "build": "echo Skipping build...",
-    "test": "true"
+    "test": "true",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
   "publishConfig": {
     "access": "public"

@@ -319,6 +319,7 @@ export {
   type RuntimeSpawnSyncResult,
   type RuntimeSqliteDatabase,
   type RuntimeSqliteStatement,
+  resetRuntimeAdapter,
   toUint8Array,
 } from './runtime'
 export {

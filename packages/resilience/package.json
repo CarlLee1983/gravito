@@ -35,7 +35,7 @@
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --outDir dist",
-    "typecheck": "tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test": "true"
   }
 }

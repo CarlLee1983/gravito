@@ -65,9 +65,13 @@
       "@gravito/launchpad-dashboard/*": ["../../packages/launchpad-dashboard/src/*"],
       "@gravito/luminosity": ["../../packages/luminosity/src/index.ts"],
       "@gravito/luminosity/*": ["../../packages/luminosity/src/*"],
-      "@gravito/luminosity-adapter-express": ["../../packages/luminosity-adapter-express/src/index.ts"],
+      "@gravito/luminosity-adapter-express": [
+        "../../packages/luminosity-adapter-express/src/index.ts"
+      ],
       "@gravito/luminosity-adapter-express/*": ["../../packages/luminosity-adapter-express/src/*"],
-      "@gravito/luminosity-adapter-photon": ["../../packages/luminosity-adapter-photon/src/index.ts"],
+      "@gravito/luminosity-adapter-photon": [
+        "../../packages/luminosity-adapter-photon/src/index.ts"
+      ],
       "@gravito/luminosity-adapter-photon/*": ["../../packages/luminosity-adapter-photon/src/*"],
       "@gravito/luminosity-cli": ["../../packages/luminosity-cli/src/index.ts"],
       "@gravito/luminosity-cli/*": ["../../packages/luminosity-cli/src/*"],
