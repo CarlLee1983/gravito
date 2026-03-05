@@ -67,6 +67,7 @@
     }
   },
   "devDependencies": {
+    "@gravito/core": "workspace:*",
     "@types/ws": "^8.18.1",
     "bun-types": "latest",
     "ioredis": "^5.4.2",

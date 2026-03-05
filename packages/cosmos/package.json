@@ -47,6 +47,7 @@
     "@gravito/photon": "^1.1.0"
   },
   "devDependencies": {
+    "@gravito/core": "workspace:*",
     "bun-types": "latest",
     "mitata": "^1.0.34",
     "tsup": "^8.5.1",

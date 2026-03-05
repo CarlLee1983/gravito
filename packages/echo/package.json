@@ -48,6 +48,7 @@
     "@gravito/core": "^2.0.0"
   },
   "devDependencies": {
+    "@gravito/core": "workspace:*",
     "bun-types": "latest",
     "typescript": "^5.9.3"
   },

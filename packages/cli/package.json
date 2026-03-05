@@ -46,6 +46,7 @@
     "directory": "packages/cli"
   },
   "devDependencies": {
+    "@gravito/core": "workspace:*",
     "bun-types": "latest"
   }
 }

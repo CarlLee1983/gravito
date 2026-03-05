@@ -37,6 +37,7 @@
     "handlebars": "^4.7.8"
   },
   "devDependencies": {
+    "@gravito/core": "workspace:*",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "bun-types": "latest"
