@@ -10,11 +10,11 @@ Gravito is a modular, high-performance TypeScript framework built for the modern
 - **Satellites (Domain Plugins)**: Self-contained business units (Catalog, Membership, Commerce) that implement specific domains using Clean Architecture.
 
 ### Key Technologies
-- **Runtime**: [Bun](https://bun.sh/) (Package manager, test runner, script execution).
+- **Runtime**: [Bun](https://bun.sh/) v1.3.9 (Package manager, test runner, script execution).
 - **Monorepo Management**: [TurboRepo](https://turbo.build/).
-- **Linting & Formatting**: [Biome](https://biomejs.dev/).
+- **Linting & Formatting**: [Biome](https://biomejs.dev/) v2.3.10.
 - **Web Engines**: [Hono](https://hono.dev/) (via `@gravito/photon`), [Elysia](https://elysiajs.com/).
-- **Data Layer**: Atlas ORM (`@gravito/atlas`).
+- **Data Layer**: Atlas ORM (`@gravito/atlas`) v1.1.0+.
 - **Communication**: Signal Event Bus (`@gravito/signal`).
 
 ---
@@ -27,7 +27,7 @@ The project is a monorepo managed by Bun and Turbo. Key commands are accessible 
 |---|---|---|
 | **Build** | `bun run build` | Build all packages and satellites via Turbo. |
 | **Test** | `bun run test` | Run all tests using Bun's native test runner. |
-| **Typecheck** | `bun run typecheck` | Run TypeScript compiler in `noEmit` mode across the monorepo. |
+| **Typecheck** | `bun run typecheck` | Run `bun tsc` in `noEmit` mode across the monorepo. |
 | **Lint/Format** | `bun run check` | Run Biome lint and format checks. |
 | **Fix Lint** | `bun run check:fix` | Automatically fix linting and formatting issues. |
 | **Launchpad** | `bun run launchpad:up` | Start the Gravito Launchpad (Development Dashboard). |
@@ -37,23 +37,26 @@ The project is a monorepo managed by Bun and Turbo. Key commands are accessible 
 
 ## 📏 Development Conventions
 
-### Code Style & Structure
-- **Biome Defaults**: 100 char width, 2 space indentation, single quotes, no semicolons, trailing commas.
-- **Strict TypeScript**: `noUnusedLocals` and `noUnusedParameters` are enabled and must be respected. Avoid `@ts-ignore` unless accompanied by an explanatory comment.
-- **Monorepo Layout**:
-  - `packages/`: Core framework packages (e.g., `core`, `atlas`, `photon`).
-  - `satellites/`: Domain-specific business logic plugins (e.g., `catalog`, `membership`).
-  - `examples/`: Reference implementations and verification projects.
+### TypeScript & Type Safety
+- **Compiler Consistency**: All packages must use TypeScript v5.9.3 (workspace version).
+- **Type Isolation**: 
+    - **Backend/Core**: MUST include `bun-types` in `tsconfig.json` and `devDependencies`.
+    - **Frontend**: MUST NOT include `bun-types` to avoid global DOM/namespace conflicts. Use `bun tsc` for typechecking.
+- **Strict Mode**: `noUnusedLocals` and `noUnusedParameters` are mandatory. Avoid `@ts-ignore` without explanation.
+
+### Data Layer (Atlas 1.1.0+)
+- **Manual Drivers**: Database drivers (e.g., `pg`, `mysql2`, `mongodb`) are now `peerDependencies`. They MUST be installed manually in the consumer project.
+- **Decorator Support**: Packages using Atlas decorators require `@swc/core` in `devDependencies` to prevent build-time metadata warnings.
+- **Mocking**: Drivers support constructor dependency injection (e.g., `deps.MongoClient`) for testing.
 
 ### Architectural Rules
-- **Satellite Isolation**: Satellites must NOT import from each other directly. Use the `@gravito/signal` event bus for cross-domain communication.
-- **Clean Architecture**: Business logic should be decoupled from infrastructure.
-- **Circular Dependencies**: Strictly forbidden. Use `bun run scripts/generate-dependency-graph.ts` to diagnose issues.
+- **Satellite Isolation**: Satellites must NOT import from each other directly. Use the `@gravito/signal` event bus.
+- **Static Site Detection**: Domain matching (e.g., `gravito.dev`, `*.gravito.dev`) must identify static sites early to prevent Inertia AJAX requests and 500 errors.
+- **Circular Dependencies**: Strictly forbidden. Use `bun run scripts/generate-dependency-graph.ts` for diagnosis.
 
-### Contribution Workflow
-- **Changesets**: Use `bun run changeset` to document public package changes.
-- **Commit Messages**: Follow conventional commits with package scope, e.g., `feat: [core] Add new hook type`.
-- **Pre-push Hooks**: Automated checks for affected packages and circular dependencies.
+### CI & Performance
+- **OOM Prevention**: CI workflows (GitHub Actions) are limited to a concurrency of 2 (`turbo --concurrency=2`).
+- **Validation**: Always run `bun run ci:simulate` before pushing significant changes.
 
 ---
 
