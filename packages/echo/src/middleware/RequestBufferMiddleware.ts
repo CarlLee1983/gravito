@@ -8,7 +8,7 @@
  * @since v1.1
  */
 
-import type { GravitoContext } from '@gravito/core'
+import type { GravitoContext, GravitoNext } from '@gravito/core'
 import type { BufferedRequest, RequestBufferConfig } from '../types'
 
 /**
@@ -47,7 +47,7 @@ export class RequestBufferMiddleware {
    * @returns 中介軟體處理函式
    */
   handler() {
-    return async (c: GravitoContext, next: () => Promise<Response | undefined>) => {
+    return async (c: GravitoContext, next: GravitoNext) => {
       if (!this.config.enabled) {
         return await next()
       }

@@ -55,8 +55,8 @@ export class GitHubProvider extends BaseProvider {
     }
 
     const parseResult = this.safeParseJson(payloadStr)
-    if (!parseResult.success) {
-      return this.createFailure('Failed to parse webhook payload')
+    if (parseResult.success === false) {
+      return this.createFailure(parseResult.error)
     }
 
     const event = parseResult.data as Record<string, unknown>

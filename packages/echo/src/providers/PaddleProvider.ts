@@ -60,7 +60,7 @@ export class PaddleProvider extends BaseProvider {
     }
 
     const parseResult = this.safeParseJson(payloadStr)
-    if (!parseResult.success) {
+    if (parseResult.success === false) {
       return this.createFailure(parseResult.error)
     }
 

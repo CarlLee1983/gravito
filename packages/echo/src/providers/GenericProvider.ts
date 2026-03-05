@@ -90,7 +90,7 @@ export class GenericProvider extends BaseProvider {
     }
 
     const parseResult = this.safeParseJson(payloadStr)
-    if (!parseResult.success) {
+    if (parseResult.success === false) {
       return this.createSuccess(payloadStr)
     }
 
