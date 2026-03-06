@@ -72,6 +72,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/gravito-framework/gravito.git",
-    "directory": "packages/monitor"
+    "directory": "packages/spectrum"
   }
 }
