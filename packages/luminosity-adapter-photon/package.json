@@ -35,6 +35,8 @@
     "@gravito/photon": "^1.1.0"
   },
   "devDependencies": {
+    "@gravito/core": "workspace:*",
+    "@types/node": "latest",
     "bun-types": "latest",
     "typescript": "^5.9.3"
   },

@@ -48,6 +48,9 @@
     "@opentelemetry/resources": "^1.29.0",
     "@opentelemetry/semantic-conventions": "^1.28.0",
     "@gravito/core": "workspace:*",
+    "@gravito/atlas": "workspace:*",
+    "@gravito/photon": "workspace:*",
+    "@types/node": "latest",
     "tsup": "^8.0.0",
     "typescript": "^5.9.3"
   },

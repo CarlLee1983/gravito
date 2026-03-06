@@ -14,7 +14,7 @@
     "jsx": "react-jsx",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "types": ["bun-types"],
+    "types": ["node", "bun-types"],
     "paths": {
       "@gravito/luminosity-adapter-express": ["./src/index.ts"],
       "@gravito/core": ["../../packages/core/dist/index.d.ts"],

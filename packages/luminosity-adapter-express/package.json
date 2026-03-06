@@ -31,6 +31,8 @@
     "@gravito/luminosity": "workspace:*"
   },
   "devDependencies": {
+    "@gravito/core": "workspace:*",
+    "@types/node": "latest",
     "@types/express": "^4.17.21",
     "bun-types": "latest",
     "tsup": "^8.5.1",
