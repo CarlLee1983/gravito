@@ -23,6 +23,7 @@ describe('MySQLGrammar', () => {
     groups: [],
     havings: [],
     joins: [],
+    unions: [],
     bindings: [],
     ...overrides,
   })

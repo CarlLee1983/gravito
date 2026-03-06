@@ -1,8 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { DB } from '../../../src/DB'
-import { column, deferred, Model } from '../../../src/orm/model'
-import { MonthlyPartitionStrategy } from '../../../src/partitioning/PartitionStrategy'
-import { Schema } from '../../../src/schema/Schema'
+import { column, DB, deferred, Model, MonthlyPartitionStrategy, Schema } from '../../../src'
 
 describe('Transparent Partitioning Routing', () => {
   beforeAll(async () => {

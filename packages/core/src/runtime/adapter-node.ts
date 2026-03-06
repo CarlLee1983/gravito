@@ -208,6 +208,39 @@ export function createNodeAdapter(): RuntimeAdapter {
       const payload = await toUint8Array(data)
       await fs.writeFile(path, payload)
     },
+    async appendFile(path, data) {
+      const fs = await import('node:fs/promises')
+      const payload = await toUint8Array(data)
+      await fs.appendFile(path, payload)
+    },
+    createFileSink(path) {
+      // biome-ignore lint: node context
+      const fs = require('node:fs')
+      const stream = fs.createWriteStream(path, { flags: 'a' })
+      return {
+        write(data) {
+          stream.write(data)
+        },
+        async flush() {
+          return new Promise((resolve, reject) => {
+            stream.once('error', reject)
+            stream.write('', (err: Error | null) => {
+              if (err) {
+                reject(err)
+              } else {
+                resolve()
+              }
+            })
+          })
+        },
+        async end() {
+          return new Promise((resolve, reject) => {
+            stream.once('error', reject)
+            stream.end(() => resolve())
+          })
+        },
+      }
+    },
     async readFile(path) {
       const fs = await import('node:fs/promises')
       const buffer = await fs.readFile(path)

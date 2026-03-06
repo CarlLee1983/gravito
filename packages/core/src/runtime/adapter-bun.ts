@@ -192,6 +192,26 @@ export function createBunAdapter(): RuntimeAdapter {
     async writeFile(path, data) {
       await Bun.write(path, data)
     },
+    async appendFile(path, data) {
+      const file = Bun.file(path)
+      const writer = file.writer()
+      writer.write(data)
+      await writer.end()
+    },
+    createFileSink(path) {
+      const writer = Bun.file(path).writer()
+      return {
+        write(data) {
+          writer.write(data)
+        },
+        async flush() {
+          await writer.flush()
+        },
+        async end() {
+          await writer.end()
+        },
+      }
+    },
     async readFile(path) {
       const file = Bun.file(path)
       const buffer = await file.arrayBuffer()

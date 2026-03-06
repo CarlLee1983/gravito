@@ -249,7 +249,7 @@ export class DatabaseBackupService {
    */
   private async discoverTables(): Promise<string[]> {
     try {
-      const tables = await Schema.getTables()
+      const tables = await Schema.connection(this.connectionName ?? 'default').getTables()
       return tables.filter((t) => t && t.length > 0)
     } catch {
       // 若 Schema.getTables 不支援，嘗試原始查詢

@@ -1,121 +1,222 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { DB } from '../../../src/DB'
-import { column, deferred, Model } from '../../../src/orm/model'
-import { Schema } from '../../../src/schema/Schema'
+import { column, DB, deferred, Model, Schema } from '../../../src'
+
+const VP_CONN = 'vp_test_conn'
+
+class VPProduct extends Model {
+  static table = 'vp_products'
+  static connection = VP_CONN
+  static extensionTable = 'vp_product_details'
+
+  @column({ isPrimary: true })
+  declare id: number
+
+  @column()
+  declare name: string
+
+  @column()
+  declare price: number
+
+  @deferred({ table: 'vp_product_details' })
+  declare description: string
+
+  @deferred({ table: 'vp_product_details' })
+  declare metadata: any
+}
+
+class VPProductExclude extends Model {
+  static table = 'vp_products'
+  static connection = VP_CONN
+  static extensionTable = 'vp_product_details'
+
+  @column({ isPrimary: true })
+  declare id: number
+
+  @column()
+  declare name: string
+
+  @column()
+  declare price: number
+
+  @deferred({ table: 'vp_product_details' })
+  declare description: string
+}
+
+class VPProductInclude extends Model {
+  static table = 'vp_products'
+  static connection = VP_CONN
+  static extensionTable = 'vp_product_details'
+
+  @column({ isPrimary: true })
+  declare id: number
+
+  @column()
+  declare name: string
+
+  @column()
+  declare price: number
+
+  @deferred({ table: 'vp_product_details' })
+  declare description: string
+}
+
+class VPProductUpdate extends Model {
+  static table = 'vp_products'
+  static connection = VP_CONN
+  static extensionTable = 'vp_product_details'
+
+  @column({ isPrimary: true })
+  declare id: number
+
+  @column()
+  declare name: string
+
+  @column()
+  declare price: number
+
+  @deferred({ table: 'vp_product_details' })
+  declare description: string
+}
+
+class VPProductDelete extends Model {
+  static table = 'vp_products'
+  static connection = VP_CONN
+  static extensionTable = 'vp_product_details'
+
+  @column({ isPrimary: true })
+  declare id: number
+
+  @column()
+  declare name: string
+
+  @column()
+  declare price: number
+
+  @deferred({ table: 'vp_product_details' })
+  declare description: string
+}
 
 describe('Vertical Partitioning Automation', () => {
   beforeAll(async () => {
-    DB.addConnection('default', {
+    DB.addConnection(VP_CONN, {
       driver: 'sqlite',
       database: ':memory:',
     })
 
     // Create main and extension tables
-    await Schema.create('products', (table) => {
+    await Schema.connection(VP_CONN).create('vp_products', (table) => {
       table.id()
       table.string('name')
+      table.decimal('price')
       table.timestamps()
     })
 
-    await Schema.create('product_details', (table) => {
-      table.integer('id').primary()
+    await Schema.connection(VP_CONN).create('vp_product_details', (table) => {
+      // Use 'id' as the link to match HasPersistence current behavior
+      table.integer('id').unsigned().primary()
       table.text('description')
       table.json('metadata').nullable()
     })
   })
 
   afterAll(async () => {
-    await DB.disconnectAll()
+    await DB.disconnect(VP_CONN)
   })
 
-  class Product extends Model {
-    static table = 'products'
-    static extensionTable = 'product_details'
-    static casts = {
-      metadata: 'json',
-    }
-
-    @column({ isPrimary: true })
-    declare id: number
-
-    @column()
-    declare name: string
-
-    @deferred()
-    declare description: string
-
-    @deferred()
-    declare metadata: any
-  }
-
   it('should automatically split data during save()', async () => {
-    const product = Product.make()
-    product.name = 'iPhone 17'
-    product.description = 'The best iPhone ever'
+    const product = VPProduct.make()
+    product.name = 'iPhone 15'
+    product.price = 999
+    product.description = 'The latest iPhone'
     product.metadata = { color: 'Titanium' }
 
     await product.save()
 
     expect(product.id).toBeDefined()
 
-    // Verify data in main table
-    const mainRow = await DB.table('products').where('id', product.id).first()
-    expect(mainRow.name).toBe('iPhone 17')
-    expect(mainRow.description).toBeUndefined()
+    // Verify main table
+    const mainData = await DB.connection(VP_CONN)
+      .table('vp_products')
+      .where('id', product.id)
+      .first()
+    expect(mainData.name).toBe('iPhone 15')
+    expect(mainData.description).toBeUndefined()
 
-    // Verify data in extension table
-    const extendedRow = await DB.table('product_details').where('id', product.id).first()
-    expect(extendedRow.description).toBe('The best iPhone ever')
-    expect(JSON.parse(extendedRow.metadata).color).toBe('Titanium')
+    // Verify extension table
+    const extensionData = await DB.connection(VP_CONN)
+      .table('vp_product_details')
+      .where('id', product.id)
+      .first()
+    expect(extensionData.description).toBe('The latest iPhone')
+
+    // Metadata is stringified in the DB for extension tables by HasPersistence
+    const meta =
+      typeof extensionData.metadata === 'string'
+        ? JSON.parse(extensionData.metadata)
+        : extensionData.metadata
+    expect(meta).toEqual({ color: 'Titanium' })
   })
 
   it('should exclude deferred columns by default in queries', async () => {
-    const products = await Product.query().get()
-    expect(products.length).toBeGreaterThan(0)
+    const p = VPProductExclude.make()
+    p.name = 'Test'
+    p.price = 100
+    p.description = 'Large text'
+    await p.save()
 
-    // Check first item
-    const p = products[0]
-    expect(p.name).toBe('iPhone 17')
-
-    // In our implementation, deferred columns are NOT in _attributes
-    expect((p as any)._attributes.description).toBeUndefined()
+    const found = await VPProductExclude.find(p.id)
+    expect(found?.name).toBe('Test')
+    // @ts-expect-error
+    expect(found?.description).toBeUndefined()
   })
 
   it('should include deferred columns when using withDeferred()', async () => {
-    const products = await Product.query().withDeferred().get()
-    expect(products.length).toBeGreaterThan(0)
+    const p = VPProductInclude.make()
+    p.name = 'Test'
+    p.price = 100
+    p.description = 'Large text'
+    await p.save()
 
-    const p = products[0]
-    expect(p.name).toBe('iPhone 17')
-    expect(p.description).toBe('The best iPhone ever')
-    expect(p.metadata.color).toBe('Titanium')
+    // Qualify 'id' to avoid ambiguity when joined with extension table
+    const found = await VPProductInclude.query()
+      .withDeferred()
+      .where('vp_products.id', p.id)
+      .first()
+    expect(found?.name).toBe('Test')
+    expect(found?.description).toBe('Large text')
   })
 
   it('should handle updates across both tables', async () => {
-    const product = (await Product.query().first()) as Product
-    product.name = 'iPhone 17 Pro'
-    product.description = 'Updated description'
+    const p = VPProductUpdate.make()
+    p.name = 'Old Name'
+    p.price = 100
+    p.description = 'Old Description'
+    await p.save()
 
-    await product.save()
+    p.name = 'New Name'
+    p.description = 'New Description'
+    await p.save()
 
-    // Verify both
-    const mainRow = await DB.table('products').where('id', product.id).first()
-    expect(mainRow.name).toBe('iPhone 17 Pro')
+    const main = await DB.connection(VP_CONN).table('vp_products').where('id', p.id).first()
+    expect(main.name).toBe('New Name')
 
-    const extendedRow = await DB.table('product_details').where('id', product.id).first()
-    expect(extendedRow.description).toBe('Updated description')
+    const ext = await DB.connection(VP_CONN).table('vp_product_details').where('id', p.id).first()
+    expect(ext.description).toBe('New Description')
   })
 
   it('should delete from both tables', async () => {
-    const product = (await Product.query().first()) as Product
-    const id = product.id
+    const p = VPProductDelete.make()
+    p.name = 'To Delete'
+    p.price = 100
+    p.description = 'To Delete'
+    await p.save()
 
-    await product.delete()
+    await p.delete()
 
-    const mainRow = await DB.table('products').where('id', id).first()
-    expect(mainRow).toBeNull()
+    const main = await DB.connection(VP_CONN).table('vp_products').where('id', p.id).first()
+    expect(main).toBeNull()
 
-    const extendedRow = await DB.table('product_details').where('id', id).first()
-    expect(extendedRow).toBeNull()
+    const ext = await DB.connection(VP_CONN).table('vp_product_details').where('id', p.id).first()
+    expect(ext).toBeNull()
   })
 })

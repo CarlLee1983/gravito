@@ -92,6 +92,7 @@ describe('JsonFileTraceSink', () => {
       workflowId: '123',
       workflowName: 'test',
     })
+    await sink.close()
 
     const contents = await readFile(filePath, 'utf8')
     expect(contents).toContain('"type":"workflow:start"')

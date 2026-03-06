@@ -1,9 +1,0 @@
-{
-  "name": "blog",
-  "id": "blog",
-  "version": "0.1.0",
-  "description": "A Gravito Satellite",
-  "capabilities": ["create-blog"],
-  "requirements": ["cache"],
-  "hooks": ["blog:created"]
-}

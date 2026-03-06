@@ -1,7 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { DB } from '../../../src/DB'
-import { Model } from '../../../src/orm/model/Model'
-import { MonthlyPartitionStrategy } from '../../../src/partitioning/PartitionStrategy'
+import { DB, Model, MonthlyPartitionStrategy, Schema } from '../../../src'
 
 describe('Table Partitioning Strategy', () => {
   beforeAll(() => {

@@ -297,7 +297,7 @@ export class Schema {
 
     return result.map((row) => {
       const r = row as Record<string, unknown>
-      return (r.table_name ?? r.TABLE_NAME ?? '') as string
+      return (r.table_name ?? r.TABLE_NAME ?? r.name ?? '') as string
     })
   }
 

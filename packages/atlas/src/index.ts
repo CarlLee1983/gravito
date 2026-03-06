@@ -112,6 +112,7 @@ export {
   ColumnNotFoundError,
   column,
   DirtyTracker,
+  deferred,
   eagerLoad,
   eagerLoadMany,
   getRelationships,
@@ -128,9 +129,12 @@ export {
   SchemaRegistry,
   SchemaSniffer,
   SoftDeletes,
+  sharded,
   TypeMismatchError,
   version,
 } from './orm'
+// Partitioning
+export { MonthlyPartitionStrategy } from './partitioning/PartitionStrategy'
 export { Expression, raw } from './query/Expression'
 // Query Builder
 export { QueryBuilder, QueryBuilderError, RecordNotFoundError } from './query/QueryBuilder'

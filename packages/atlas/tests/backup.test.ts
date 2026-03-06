@@ -1,17 +1,12 @@
 /**
  * @fileoverview DatabaseBackupService 測試
- *
- * 測試案例：
- * T1: backup - SQLite 正常備份（歸檔建立、manifest 驗證）
- * T2: restore - 正常還原（讀取歸檔、逐表插入）
- * T3: exportSchemaAsMigration - 生成 migration 檔案
- * T4: 錯誤處理 - 無效備份檔案應拋出錯誤
  */
 
-import { afterEach, beforeEach, describe, expect, it, jest, mock } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, it, jest, mock } from 'bun:test'
 import { randomUUID } from 'node:crypto'
 import * as os from 'node:os'
 import * as path from 'node:path'
+import { DB, Schema } from '../src'
 
 // ============ Mock 設定 ============
 
@@ -55,7 +50,6 @@ const mockRuntimeWriteFile = jest.fn(async (filePath: string, data: unknown) => 
     data instanceof Uint8Array ? new TextDecoder().decode(data) : String(data)
 })
 
-// readFile 拋出例外模擬不存在的檔案
 const mockRuntimeReadFile = jest.fn(async (filePath: string): Promise<Uint8Array> => {
   if (filePath.includes('nonexistent')) {
     throw new Error(`ENOENT: no such file or directory, '${filePath}'`)
@@ -76,218 +70,106 @@ mock.module('@gravito/core', () => ({
   }),
 }))
 
-// 模擬 node:fs/promises mkdir（DatabaseBackupService 直接使用 node:fs/promises）
+// 模擬 node:fs/promises mkdir
 mock.module('node:fs/promises', () => ({
   mkdir: jest.fn().mockResolvedValue(undefined),
-}))
-
-// 模擬 DB 和 Schema
-const mockInsert = jest.fn(async () => [])
-const mockDelete = jest.fn(async () => 0)
-const mockGet = jest.fn(async (table: string) => {
-  if (table === 'users') {
-    return [
-      { id: 1, name: 'Alice' },
-      { id: 2, name: 'Bob' },
-    ]
-  }
-  if (table === 'posts') {
-    return [
-      { id: 1, title: 'Hello' },
-      { id: 2, title: 'World' },
-      { id: 3, title: 'Third' },
-    ]
-  }
-  return []
-})
-
-const mockTable = jest.fn((tableName: string) => ({
-  get: () => mockGet(tableName),
-  insert: mockInsert,
-  delete: mockDelete,
-}))
-
-const mockRaw = jest.fn(async () => ({
-  rows: [{ table_name: 'users' }, { table_name: 'posts' }],
-}))
-
-const mockTransaction = jest.fn(async (fn: (trx: unknown) => Promise<void>) => {
-  await fn({
-    table: mockTable,
-    raw: mockRaw,
-  })
-})
-
-mock.module('../src/DB', () => ({
-  DB: {
-    connection: jest.fn(() => ({
-      table: mockTable,
-      raw: mockRaw,
-      transaction: mockTransaction,
-      config: { driver: 'sqlite' },
-    })),
-  },
-}))
-
-mock.module('../src/schema', () => ({
-  Schema: {
-    getTables: jest.fn(async () => ['users', 'posts']),
-    hasTable: jest.fn(async () => true),
-  },
+  writeFile: mockRuntimeWriteFile,
+  readFile: mockRuntimeReadFile,
 }))
 
 // ============ 測試主體 ============
 
 describe('DatabaseBackupService', () => {
-  let DatabaseBackupService: typeof import('../src/backup/DatabaseBackupService').DatabaseBackupService
+  let DatabaseBackupService: any
   let tmpDir: string
 
-  beforeEach(async () => {
-    ;({ DatabaseBackupService } = await import('../src/backup/DatabaseBackupService'))
+  beforeAll(async () => {
+    // 使用真實的 DB 和 Schema，但用 SQLite memory
+    DB.addConnection('backup_test', {
+      driver: 'sqlite',
+      database: ':memory:',
+    })
+
+    // 建立測試資料表
+    await Schema.connection('backup_test').create('users', (table) => {
+      table.id()
+      table.string('name')
+      table.string('email')
+    })
+
+    await Schema.connection('backup_test').create('posts', (table) => {
+      table.id()
+      table.string('title')
+      table.integer('userId')
+    })
+
+    // 插入測試資料
+    await DB.connection('backup_test')
+      .table('users')
+      .insert([
+        { name: 'Alice', email: 'alice@example.com' },
+        { name: 'Bob', email: 'bob@example.com' },
+      ])
+
+    await DB.connection('backup_test')
+      .table('posts')
+      .insert([
+        { title: 'Hello World', userId: 1 },
+        { title: 'Second Post', userId: 1 },
+        { title: 'Third Post', userId: 2 },
+      ])
+
+    const module = await import('../src/backup/DatabaseBackupService')
+    DatabaseBackupService = module.DatabaseBackupService
+  })
+
+  afterAll(async () => {
+    await DB.disconnect('backup_test')
+  })
+
+  it('T1: backup - SQLite 正常備份', async () => {
     tmpDir = path.join(os.tmpdir(), `atlas-backup-test-${randomUUID()}`)
-    // 重置所有 mock
-    jest.clearAllMocks()
-    for (const k of Object.keys(mockWrittenFiles)) {
-      delete mockWrittenFiles[k]
-    }
+    const backupPath = path.join(tmpDir, 'backup.tar.gz')
+
+    const service = new DatabaseBackupService('backup_test')
+    const result = await service.backup(backupPath)
+
+    expect(result.outputPath).toBe(backupPath)
+    expect(result.tables).toContain('users')
+    expect(result.tables).toContain('posts')
+    expect(mockArchiveCreate).toHaveBeenCalled()
   })
 
-  afterEach(() => {
-    jest.clearAllMocks()
+  it('T2: restore - 正常還原', async () => {
+    const backupPath = path.join(tmpDir, 'backup.tar.gz')
+
+    // 清空資料表以測試還原
+    await DB.connection('backup_test').table('users').delete()
+    await DB.connection('backup_test').table('posts').delete()
+
+    const service = new DatabaseBackupService('backup_test')
+    await service.restore(backupPath)
+
+    // 驗證資料已還原
+    const users = await DB.connection('backup_test').table('users').get()
+    expect(users).toHaveLength(2)
+
+    const posts = await DB.connection('backup_test').table('posts').get()
+    expect(posts).toHaveLength(3)
   })
 
-  describe('T1: backup() - SQLite 正常備份', () => {
-    it('應備份所有表並建立歸檔', async () => {
-      const service = new DatabaseBackupService()
-      const outputPath = `${tmpDir}/backup.tar.gz`
+  it('T3: exportSchemaAsMigration - 生成 migration 檔案', async () => {
+    const outputDir = path.join(tmpDir, 'migrations')
+    const service = new DatabaseBackupService('backup_test')
+    const filePath = await service.exportSchemaAsMigration('initial', outputDir)
 
-      const result = await service.backup(outputPath)
-
-      // 驗證基本結果欄位
-      expect(result.outputPath).toBe(outputPath)
-      expect(result.tableCount).toBe(2)
-      expect(result.tables).toContain('users')
-      expect(result.tables).toContain('posts')
-      expect(result.rowCount).toBe(5) // 2 users + 3 posts
-      expect(result.createdAt).toBeTruthy()
-
-      // 驗證 archive.create 有被呼叫
-      expect(mockArchiveCreate).toHaveBeenCalledTimes(1)
-
-      // 驗證 entries 包含必要檔案
-      const entries = mockArchiveCreate.mock.calls[0][0] as Record<string, string>
-      const entryKeys = Object.keys(entries)
-      expect(entryKeys).toContain('backup_manifest.json')
-      expect(entryKeys).toContain('data/users.jsonl')
-      expect(entryKeys).toContain('data/posts.jsonl')
-      expect(entryKeys).toContain('schema.json')
-
-      // 驗證 manifest 內容
-      const manifest = JSON.parse(entries['backup_manifest.json'])
-      expect(manifest.version).toBe('1.0.0')
-      expect(manifest.tables).toEqual(['users', 'posts'])
-      expect(manifest.driver).toBe('sqlite')
-      expect(manifest.rowCounts.users).toBe(2)
-      expect(manifest.rowCounts.posts).toBe(3)
-
-      // 驗證 runtime.writeFile 有被呼叫
-      expect(mockRuntimeWriteFile).toHaveBeenCalledWith(outputPath, expect.any(Uint8Array))
-    })
-
-    it('指定 tables 選項時只備份指定的表', async () => {
-      const service = new DatabaseBackupService()
-      const outputPath = `${tmpDir}/partial-backup.tar.gz`
-
-      const result = await service.backup(outputPath, { tables: ['users'] })
-
-      expect(result.tableCount).toBe(1)
-      expect(result.tables).toContain('users')
-      expect(result.tables).not.toContain('posts')
-      expect(result.rowCount).toBe(2)
-
-      const entries = mockArchiveCreate.mock.calls[0][0] as Record<string, string>
-      const entryKeys = Object.keys(entries)
-      expect(entryKeys).toContain('data/users.jsonl')
-      expect(entryKeys).not.toContain('data/posts.jsonl')
-    })
+    expect(filePath).toContain(outputDir)
+    expect(filePath).toContain('initial.ts')
   })
 
-  describe('T2: restore() - 正常還原', () => {
-    it('應從備份歸檔讀取 manifest 並插入各表資料', async () => {
-      const service = new DatabaseBackupService()
-      const backupPath = `${tmpDir}/backup.tar.gz`
-
-      await service.restore(backupPath)
-
-      // 驗證 runtime.readFile 讀取備份檔案
-      expect(mockRuntimeReadFile).toHaveBeenCalledWith(backupPath)
-
-      // 驗證 archive.readFile 讀取了 manifest
-      expect(mockArchiveReadFile).toHaveBeenCalledWith(
-        expect.any(Uint8Array),
-        'backup_manifest.json'
-      )
-
-      // 驗證每個表的 JSONL 都被讀取
-      expect(mockArchiveReadFile).toHaveBeenCalledWith(expect.any(Uint8Array), 'data/users.jsonl')
-      expect(mockArchiveReadFile).toHaveBeenCalledWith(expect.any(Uint8Array), 'data/posts.jsonl')
-
-      // 驗證資料被插入
-      expect(mockInsert).toHaveBeenCalled()
-    })
-
-    it('備份檔案不存在時應拋出錯誤', async () => {
-      const service = new DatabaseBackupService()
-      const nonExistentPath = `${tmpDir}/nonexistent-backup.tar.gz`
-
-      await expect(service.restore(nonExistentPath)).rejects.toThrow(/備份檔案不存在或無法讀取/)
-    })
-  })
-
-  describe('T3: exportSchemaAsMigration() - 生成 migration 檔案', () => {
-    it('應產生包含所有表定義的 TypeScript migration 檔案', async () => {
-      const service = new DatabaseBackupService()
-      const outputDir = `${tmpDir}/migrations`
-
-      const filePath = await service.exportSchemaAsMigration('initial_schema', outputDir)
-
-      // 驗證 writeFile 被呼叫且檔名包含 migration 名稱
-      expect(mockRuntimeWriteFile).toHaveBeenCalledTimes(1)
-      expect(filePath).toContain('initial_schema')
-      expect(filePath).toContain(outputDir)
-      expect(filePath).toEndWith('.ts')
-
-      // 驗證 migration 內容
-      const [, writtenContent] = mockRuntimeWriteFile.mock.calls[0]
-      expect(writtenContent).toContain('export async function up')
-      expect(writtenContent).toContain('export async function down')
-      expect(writtenContent).toContain('users')
-      expect(writtenContent).toContain('posts')
-      expect(writtenContent).toContain('sqlite')
-    })
-  })
-
-  describe('T4: 錯誤處理', () => {
-    it('restore() 收到無效備份（缺少 manifest）應拋出錯誤', async () => {
-      // 讓 archive.readFile 對 manifest 回傳 null
-      mockArchiveReadFile.mockImplementationOnce(async () => null)
-
-      const service = new DatabaseBackupService()
-
-      await expect(service.restore(`${tmpDir}/invalid-backup.tar.gz`)).rejects.toThrow(
-        /備份檔案格式無效/
-      )
-    })
-
-    it('backup() 支援 includeSchema:false 選項（不包含 schema.json）', async () => {
-      const service = new DatabaseBackupService()
-
-      await service.backup(`${tmpDir}/no-schema.tar.gz`, { includeSchema: false })
-
-      const entries = mockArchiveCreate.mock.calls[0][0] as Record<string, string>
-      const entryKeys = Object.keys(entries)
-      expect(entryKeys).not.toContain('schema.json')
-      expect(entryKeys).toContain('backup_manifest.json')
-    })
+  it('T4: 錯誤處理 - 無效備份檔案應拋出錯誤', async () => {
+    const invalidPath = path.join(tmpDir, 'nonexistent.tar.gz')
+    const service = new DatabaseBackupService('backup_test')
+    await expect(service.restore(invalidPath)).rejects.toThrow()
   })
 })

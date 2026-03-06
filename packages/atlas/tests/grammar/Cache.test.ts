@@ -16,6 +16,7 @@ test('cache size limit', () => {
       groups: [],
       havings: [],
       orders: [],
+      unions: [],
     }
     const grammar = new PostgresGrammar()
     grammar.compileSelect(query)
@@ -37,6 +38,7 @@ test('cache hit rate', () => {
     groups: [],
     havings: [],
     orders: [],
+    unions: [],
   }
   const grammar = new PostgresGrammar()
 

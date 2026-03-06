@@ -23,6 +23,7 @@ describe('PostgresGrammar', () => {
     groups: [],
     havings: [],
     joins: [],
+    unions: [],
     bindings: [],
     ...overrides,
   })
