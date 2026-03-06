@@ -67,6 +67,7 @@
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
+    "@types/node": "latest",
     "typescript": "^5.9.3",
     "vue": "^3.5.0"
   },

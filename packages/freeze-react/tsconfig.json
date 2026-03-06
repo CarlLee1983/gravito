@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.frontend.json",
   "compilerOptions": {
+    "types": ["node"],
     "outDir": "./dist",
     "jsx": "react-jsx"
   },
