@@ -42,5 +42,5 @@ export function ensureCsrfToken(c: GravitoContext, config: FortifyConfig): strin
   if (!options) {
     return null
   }
-  return getCsrfToken(c.native as any, options)
+  return getCsrfToken(c, options)
 }
