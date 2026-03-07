@@ -1,11 +1,10 @@
 /**
- * @gravito/ether - Ether Middleware for Hono/Photon
+ * @gravito/ether - Ether Middleware for Photon
  *
- * 提供 HTML 轉換中介軟體，可直接用於 Hono/Photon 應用
+ * 提供 HTML 轉換中介軟體，可直接用於 Photon 應用
  * 支援規則和管道的靈活組合
  */
 
-import type { MiddlewareHandler } from 'hono'
 import type { EtherPipeline } from '../core/EtherPipeline'
 import { EtherRewriter } from '../core/EtherRewriter'
 import type { DocumentRule, PipelineContext, TransformRule } from '../core/types'
@@ -48,12 +47,12 @@ export interface EtherMiddlewareOptions {
 /**
  * 建立 Ether Middleware
  *
- * 提供一個 Hono 中介軟體工廠函式，用於 HTML 轉換。
+ * 提供一個 Photon 中介軟體工廠函式，用於 HTML 轉換。
  * 該中介軟體會在下游處理完成後檢查 Content-Type，
  * 然後套用指定的規則和管道進行轉換。
  *
  * @param options - 中介軟體配置選項
- * @returns Hono 中介軟體處理函式
+ * @returns Photon 中介軟體處理函式
  *
  * @example
  * ```typescript
@@ -73,7 +72,7 @@ export interface EtherMiddlewareOptions {
  * }))
  * ```
  */
-export function etherMiddleware(options: EtherMiddlewareOptions = {}): MiddlewareHandler {
+export function etherMiddleware(options: EtherMiddlewareOptions = {}) {
   // 準備配置
   const contentTypes = options.contentTypes ?? ['text/html', 'application/xhtml+xml']
   const allowedTypes = new Set(contentTypes)
@@ -82,7 +81,7 @@ export function etherMiddleware(options: EtherMiddlewareOptions = {}): Middlewar
   const debug = options.debug ?? false
 
   // 回傳中介軟體處理函式
-  return async (c, next) => {
+  return async (c: any, next: any) => {
     // 執行下游中介軟體和路由處理器
     await next()
 

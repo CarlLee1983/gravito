@@ -5,7 +5,6 @@
  * 支援自訂 nonce 產生器和 CSP 指令
  */
 
-import type { MiddlewareHandler } from 'hono'
 import { createSecurityRule } from '../rules/SecurityRule'
 import { etherMiddleware } from './etherMiddleware'
 
@@ -60,7 +59,7 @@ export interface CSPMiddlewareOptions {
  * 4. 可選：在開發模式設定 Content-Security-Policy-Report-Only header
  *
  * @param options - CSP 中介軟體配置選項
- * @returns Hono 中介軟體處理函式
+ * @returns Photon 中介軟體處理函式
  *
  * @example
  * ```typescript
@@ -95,7 +94,7 @@ export interface CSPMiddlewareOptions {
  * <script nonce="abc-123-def-456">console.log('hello')</script>
  * ```
  */
-export function cspMiddleware(options: CSPMiddlewareOptions = {}): MiddlewareHandler {
+export function cspMiddleware(options: CSPMiddlewareOptions = {}) {
   // 準備 CSP 配置
   const defaultDirectives = {
     'script-src': "'self' 'nonce-{nonce}'",
@@ -114,7 +113,7 @@ export function cspMiddleware(options: CSPMiddlewareOptions = {}): MiddlewareHan
   const debug = options.debug ?? false
 
   // 回傳中介軟體處理函式
-  return async (c, next) => {
+  return async (c: any, next: any) => {
     // 為此次請求生成 nonce
     const nonce = nonceGenerator()
 

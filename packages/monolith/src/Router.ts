@@ -1,5 +1,3 @@
-import type { Hono } from 'hono'
-
 /**
  * Utility for registering resourceful routes.
  * @public
@@ -16,7 +14,7 @@ export class RouterHelper {
    * PUT    /prefix/:id      -> update
    * DELETE /prefix/:id      -> destroy
    */
-  public static resource(app: Hono<any, any, any>, prefix: string, controller: any) {
+  public static resource(app: any, prefix: string, controller: any) {
     const p = prefix.startsWith('/') ? prefix : `/${prefix}`
 
     // Mapping: Method -> [HTTP Verb, Path Suffix]
