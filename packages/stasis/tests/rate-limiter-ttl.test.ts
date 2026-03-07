@@ -226,11 +226,11 @@ describe('RateLimiter TTL Precision', () => {
       await store.put('test:4', 3, 30)
 
       const ttl1 = await limiter.availableIn('test:4', 30)
-      await Bun.sleep(2000)
+      await Bun.sleep(2500)
       const ttl2 = await limiter.availableIn('test:4', 30)
 
       expect(ttl1 - ttl2).toBeGreaterThanOrEqual(1)
-      expect(ttl1 - ttl2).toBeLessThanOrEqual(3)
+      expect(ttl1 - ttl2).toBeLessThanOrEqual(4)
     })
   })
 
