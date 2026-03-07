@@ -16,7 +16,7 @@ if (!isDtsOnly) {
     outdir: './dist',
     target: 'bun',
     format: 'esm',
-    external: ['@gravito/photon', '@sinclair/typebox', '@hono/typebox-validator'],
+    external: ['@gravito/photon', '@sinclair/typebox'],
   })
 }
 
