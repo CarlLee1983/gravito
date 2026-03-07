@@ -1,5 +1,4 @@
-import type { Context, Next } from 'hono'
-import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
+import type { Context } from '@gravito/photon'
 
 // Session token store (in-memory for simplicity, consider Redis for production)
 const sessions = new Map<string, { createdAt: number; expiresAt: number }>()
@@ -7,6 +6,63 @@ const sessions = new Map<string, { createdAt: number; expiresAt: number }>()
 // Configuration
 const SESSION_DURATION_MS = 24 * 60 * 60 * 1000 // 24 hours
 const SESSION_COOKIE_NAME = 'flux_session'
+
+// Helper: Get cookie value from context
+function getCookie(c: Context, name: string): string | undefined {
+  const cookieHeader = c.req.raw.headers.get('cookie')
+  if (!cookieHeader) return undefined
+  const cookies = cookieHeader.split(';').map((cookie) => cookie.trim())
+  for (const cookie of cookies) {
+    const [cookieName, cookieValue] = cookie.split('=')
+    if (cookieName === name) {
+      return decodeURIComponent(cookieValue || '')
+    }
+  }
+  return undefined
+}
+
+// Helper: Set cookie in response
+function setCookie(
+  c: Context,
+  name: string,
+  value: string,
+  options?: {
+    httpOnly?: boolean
+    secure?: boolean
+    sameSite?: 'Lax' | 'Strict' | 'None'
+    maxAge?: number
+    path?: string
+  }
+): void {
+  const cookieParts = [`${name}=${encodeURIComponent(value)}`]
+
+  if (options?.path) {
+    cookieParts.push(`Path=${options.path}`)
+  }
+  if (options?.maxAge !== undefined) {
+    cookieParts.push(`Max-Age=${options.maxAge}`)
+  }
+  if (options?.httpOnly) {
+    cookieParts.push('HttpOnly')
+  }
+  if (options?.secure) {
+    cookieParts.push('Secure')
+  }
+  if (options?.sameSite) {
+    cookieParts.push(`SameSite=${options.sameSite}`)
+  }
+
+  const setCookieHeader = cookieParts.join('; ')
+  c.header('Set-Cookie', setCookieHeader)
+}
+
+// Helper: Delete cookie
+function deleteCookie(c: Context, name: string, options?: { path?: string }): void {
+  setCookie(c, name, '', {
+    maxAge: 0,
+    path: options?.path,
+  })
+}
 
 /**
  * Generate a secure random session token
@@ -89,7 +145,7 @@ export function destroySession(c: Context): void {
 /**
  * Authentication middleware for API routes
  */
-export async function authMiddleware(c: Context, next: Next) {
+export async function authMiddleware(c: Context, next: () => Promise<void>) {
   // If no password is set, allow all requests
   if (!isAuthEnabled()) {
     return next()

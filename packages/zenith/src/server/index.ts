@@ -6,9 +6,6 @@ import { DB } from '@gravito/atlas'
 import { Photon } from '@gravito/photon'
 import { QuasarAgent } from '@gravito/quasar'
 import { MySQLPersistence, SQLitePersistence } from '@gravito/stream'
-import { serveStatic } from 'hono/bun'
-import { getCookie } from 'hono/cookie'
-import { streamSSE } from 'hono/streaming'
 import {
   authMiddleware,
   createSession,
@@ -19,6 +16,20 @@ import {
 import { CommandService } from './services/CommandService'
 import { PulseService } from './services/PulseService'
 import { QueueService } from './services/QueueService'
+
+// Helper: Get cookie value from request headers
+function getCookieValue(headers: Headers, name: string): string | undefined {
+  const cookieHeader = headers.get('cookie')
+  if (!cookieHeader) return undefined
+  const cookies = cookieHeader.split(';').map((c) => c.trim())
+  for (const cookie of cookies) {
+    const [cookieName, cookieValue] = cookie.split('=')
+    if (cookieName === name) {
+      return decodeURIComponent(cookieValue)
+    }
+  }
+  return undefined
+}
 
 const app = new Photon()
 
@@ -186,7 +197,7 @@ api.get('/health', (c) => c.json({ status: 'ok', time: new Date().toISOString() 
 
 // Auth endpoints (no middleware protection)
 api.get('/auth/status', (c) => {
-  const token = getCookie(c, 'flux_session')
+  const token = getCookieValue(c.req.raw.headers, 'flux_session')
   const isAuthenticated =
     !isAuthEnabled() || (token && require('./middleware/auth').validateSession(token))
   return c.json({
@@ -674,56 +685,83 @@ api.post('/queues/:name/purge', async (c) => {
 })
 
 api.get('/logs/stream', async (c) => {
-  return streamSSE(c, async (stream) => {
-    // 1. Send history first
-    const history = await queueService.getLogHistory()
-    for (const log of history) {
-      await stream.writeSSE({
-        data: JSON.stringify(log),
-        event: 'log',
-      })
-    }
+  // Create SSE response with proper headers
+  const encoder = new TextEncoder()
 
-    // 2. Subscribe to new logs
-    const unsubscribeLogs = queueService.onLog(async (msg) => {
-      await stream.writeSSE({
-        data: JSON.stringify(msg),
-        event: 'log',
-      })
-    })
-
-    // 3. Subscribe to real-time stats
-    const unsubscribeStats = queueService.onStats(async (stats) => {
-      await stream.writeSSE({
-        data: JSON.stringify(stats),
-        event: 'stats',
-      })
-    })
-
-    // 4. Poll Pulse Nodes per client (simple polling for now)
-    const pulseInterval = setInterval(async () => {
+  const readable = new ReadableStream({
+    async start(controller) {
       try {
-        const nodes = await pulseService.getNodes()
-        await stream.writeSSE({
-          data: JSON.stringify({ nodes }),
-          event: 'pulse',
+        // Helper to write SSE event
+        const writeSSE = (event: string, data: string) => {
+          let message = `event: ${event}\n`
+          message += `data: ${data}\n\n`
+          controller.enqueue(encoder.encode(message))
+        }
+
+        // 1. Send history first
+        const history = await queueService.getLogHistory()
+        for (const log of history) {
+          writeSSE('log', JSON.stringify(log))
+        }
+
+        // 2. Subscribe to new logs
+        const unsubscribeLogs = queueService.onLog(async (msg) => {
+          writeSSE('log', JSON.stringify(msg))
         })
-      } catch (_err) {
-        // ignore errors
+
+        // 3. Subscribe to real-time stats
+        const unsubscribeStats = queueService.onStats(async (stats) => {
+          writeSSE('stats', JSON.stringify(stats))
+        })
+
+        // 4. Poll Pulse Nodes per client (simple polling for now)
+        const pulseInterval = setInterval(async () => {
+          try {
+            const nodes = await pulseService.getNodes()
+            writeSSE('pulse', JSON.stringify({ nodes }))
+          } catch (_err) {
+            // ignore errors
+          }
+        }, 2000)
+
+        // Keep alive
+        const keepAliveInterval = setInterval(() => {
+          writeSSE('ping', 'heartbeat')
+        }, 5000)
+
+        // Cleanup on abort
+        const cleanup = () => {
+          unsubscribeLogs()
+          unsubscribeStats()
+          clearInterval(pulseInterval)
+          clearInterval(keepAliveInterval)
+        }
+
+        // Listen for client disconnect
+        c.req.raw.signal?.addEventListener('abort', cleanup)
+
+        // Store cleanup function for manual close (optional)
+        ;(controller as any)._cleanup = cleanup
+      } catch (err) {
+        controller.error(err)
       }
-    }, 2000)
+    },
 
-    stream.onAbort(() => {
-      unsubscribeLogs()
-      unsubscribeStats()
-      clearInterval(pulseInterval)
-    })
+    cancel() {
+      // Called when stream is closed
+      if ((this as any)._cleanup) {
+        ;(this as any)._cleanup()
+      }
+    },
+  })
 
-    // Keep alive
-    while (true) {
-      await stream.sleep(5000)
-      await stream.writeSSE({ data: 'heartbeat', event: 'ping' })
-    }
+  return new Response(readable, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    },
   })
 })
 
@@ -843,14 +881,39 @@ api.post('/alerts/test', async (c) => {
 
 app.route('/api', api)
 
-app.use(
-  '/*',
-  serveStatic({
-    root: './dist/client',
-  })
-)
+// Serve static files from dist/client
+app.get('*', async (c) => {
+  const url = new URL(c.req.path, 'http://localhost')
+  let filePath = url.pathname === '/' ? '/index.html' : url.pathname
 
-app.get('*', serveStatic({ path: './dist/client/index.html' }))
+  // Remove leading slash
+  if (filePath.startsWith('/')) {
+    filePath = filePath.slice(1)
+  }
+
+  const fullPath = `./dist/client/${filePath}`
+
+  try {
+    // Try to serve the requested file
+    const file = Bun.file(fullPath)
+    if (await file.exists()) {
+      return new Response(file)
+    }
+
+    // Fall back to index.html for SPA routing
+    const indexFile = Bun.file('./dist/client/index.html')
+    if (await indexFile.exists()) {
+      return new Response(indexFile, {
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      })
+    }
+
+    // File not found
+    return c.json({ error: 'Not found' }, 404)
+  } catch (_err) {
+    return c.json({ error: 'Not found' }, 404)
+  }
+})
 
 console.log(`[FluxConsole] Server starting on http://localhost:${PORT}`)
 
