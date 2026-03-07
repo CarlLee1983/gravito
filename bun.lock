@@ -1446,10 +1446,18 @@
         "@gravito/core": "workspace:*",
       },
       "devDependencies": {
+        "@types/ioredis": "^5.0.0",
         "bun-types": "latest",
+        "ioredis": "^5.8.2",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
       },
+      "peerDependencies": {
+        "ioredis": "^5.8.2",
+      },
+      "optionalPeers": [
+        "ioredis",
+      ],
     },
     "packages/prism": {
       "name": "@gravito/prism",
