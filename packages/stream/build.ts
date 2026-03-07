@@ -3,7 +3,7 @@ import { basename } from 'node:path'
 import { build } from 'bun'
 
 const isDtsOnly = process.argv.includes('--dts-only')
-const pkgName = basename(import.meta.dirname) // "stream"
+const _pkgName = basename(import.meta.dirname) // "stream"
 
 console.log(
   isDtsOnly ? 'Building @gravito/stream DTS...' : 'Building @gravito/stream in parallel...'
@@ -123,7 +123,7 @@ await buildInParallel()
 const tempDir = isDtsOnly ? 'dist' : '.tsc-temp'
 if (!isDtsOnly) {
   try {
-    const dtsSourceDir = `${tempDir}/${pkgName}/src`
+    const dtsSourceDir = tempDir
     await copyDtsFiles(dtsSourceDir, 'dist')
     await rm(tempDir, { recursive: true, force: true })
   } catch (e) {

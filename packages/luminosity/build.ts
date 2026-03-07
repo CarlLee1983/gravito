@@ -16,7 +16,7 @@ const tsup = spawn(
     'src/cli.ts',
     '--format',
     isDtsOnly ? 'esm' : 'esm,cjs',
-    ...(isDtsOnly ? ['--dts', '--dts-only'] : []),
+    ...(isDtsOnly ? ['--dts', '--dts-only'] : ['--dts']),
     '--tsconfig',
     'tsconfig.build.json',
     '--external',
