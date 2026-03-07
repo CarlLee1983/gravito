@@ -43,7 +43,7 @@ describe('throttleAuth middleware', () => {
     const middleware = throttleAuth({ maxAttempts: 1, decayMinutes: 1 })
     const ctx = createMockContext()
     const next: GravitoNext = mock(async () => {
-      return new Response(null, { status: 401 })
+      ctx.res = new Response(null, { status: 401 })
     })
 
     await middleware(ctx, next)
@@ -57,7 +57,7 @@ describe('throttleAuth middleware', () => {
     const middleware = throttleAuth({ maxAttempts: 1, decayMinutes: -1 })
     const ctx = createMockContext()
     const next: GravitoNext = mock(async () => {
-      return new Response(null, { status: 401 })
+      ctx.res = new Response(null, { status: 401 })
     })
 
     await middleware(ctx, next)

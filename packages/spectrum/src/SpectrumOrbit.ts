@@ -248,7 +248,8 @@ export class SpectrumOrbit implements GravitoOrbit {
       const startTime = performance.now()
       const startTimestamp = Date.now()
 
-      const res = (await next()) as Response | undefined
+      await next()
+      const res = c.res
 
       const duration = performance.now() - startTime
       this.currentRequestId = null
@@ -257,7 +258,7 @@ export class SpectrumOrbit implements GravitoOrbit {
         return res
       }
 
-      const finalRes = res || ((c as any).res as Response | undefined)
+      const finalRes = res || (c.res as Response | undefined)
 
       const request: CapturedRequest = {
         id: requestId,

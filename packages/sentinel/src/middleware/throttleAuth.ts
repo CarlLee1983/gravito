@@ -57,9 +57,10 @@ export function throttleAuth(options: AuthThrottleOptions = {}) {
       return c.json({ error: 'Too many login attempts. Please try again later.' }, 429)
     }
 
-    const response = await next()
+    await next()
+    const response = c.res
 
-    if ((response as any) && (response as any).status === 401) {
+    if (response && response.status === 401) {
       if (!record) {
         record = { count: 0, resetAt: now + decayMs }
         attempts.set(key, record)

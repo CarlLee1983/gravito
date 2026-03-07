@@ -80,7 +80,9 @@ describe('SpectrumOrbit', () => {
       },
     } as any
 
-    const next = mock(async () => new Response('ok'))
+    const next = mock(async () => {
+      skipCtx.res = new Response('ok')
+    })
     await middleware(skipCtx, next)
     expect(storage.storeRequest).not.toHaveBeenCalled()
 
@@ -94,7 +96,9 @@ describe('SpectrumOrbit', () => {
       },
     } as any
 
-    await middleware(ctx, async () => new Response('ok', { status: 201 }))
+    await middleware(ctx, async () => {
+      ctx.res = new Response('ok', { status: 201 })
+    })
     expect(storage.storeRequest).toHaveBeenCalled()
   })
 
