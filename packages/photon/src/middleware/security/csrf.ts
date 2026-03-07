@@ -12,7 +12,6 @@
 
 import crypto from 'node:crypto'
 import type { GravitoContext as Context, GravitoMiddleware } from '@gravito/core'
-import type { MiddlewareHandler } from 'hono'
 import { asHonoMiddleware } from '../../middleware-adapter'
 
 /**
@@ -132,7 +131,7 @@ export function getCsrfToken(c: Context, options: CsrfOptions = {}): string {
  * Middleware that validates CSRF tokens on unsafe requests.
  * @public
  */
-export function csrfProtection(options: CsrfOptions = {}): MiddlewareHandler {
+export function csrfProtection(options: CsrfOptions = {}): GravitoMiddleware {
   const cookieName = options.cookieName ?? 'gravito_csrf'
   const headerName = (options.headerName ?? 'X-CSRF-Token').toLowerCase()
   const formFieldName = options.formFieldName ?? '_token'

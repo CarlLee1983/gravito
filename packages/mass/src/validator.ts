@@ -61,5 +61,5 @@ export function validate<
     out: { [K in S]: Static<T> }
   }
 > {
-  return tbValidator(source, schema, hook)
+  return tbValidator(source, schema, hook) as any
 }

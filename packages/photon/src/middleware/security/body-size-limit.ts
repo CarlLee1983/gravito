@@ -9,7 +9,6 @@
  */
 
 import type { GravitoMiddleware } from '@gravito/core'
-import type { MiddlewareHandler } from 'hono'
 import { asHonoMiddleware } from '../../middleware-adapter'
 
 /**
@@ -41,7 +40,7 @@ const defaultMethods = ['POST', 'PUT', 'PATCH', 'DELETE']
 export function bodySizeLimit(
   maxBytes: number,
   options: BodySizeLimitOptions = {}
-): MiddlewareHandler {
+): GravitoMiddleware {
   const allowedMethods = (options.methods ?? defaultMethods).map((m) => m.toUpperCase())
 
   const middleware: GravitoMiddleware = async (c, next) => {

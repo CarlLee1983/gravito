@@ -57,6 +57,15 @@ export class KafkaNotifier extends EventEmitter {
   }
 
   /**
+   * 註冊訊息到達事件監聽器。
+   *
+   * @param callback 當訊息到達時呼叫的回呼函式
+   */
+  onMessageArrived(callback: (event: { queue: string; count: number }) => void): void {
+    this.on('message:arrived', callback)
+  }
+
+  /**
    * 觸發通知（由 Consumer 的 eachMessage 呼叫）。
    *
    * 執行已註冊的所有回呼，並發出 'notify' 事件。
@@ -70,6 +79,7 @@ export class KafkaNotifier extends EventEmitter {
     }
 
     this.emit('notify', queue)
+    this.emit('message:arrived', { queue, count: 1 })
 
     const queueCallbacks = this.callbacks.get(queue)
     if (!queueCallbacks) {
@@ -82,6 +92,30 @@ export class KafkaNotifier extends EventEmitter {
         // 回呼錯誤不應中斷通知流程
         // 可在此記錄錯誤，但暫不拋出
       })
+    }
+  }
+
+  /**
+   * 觸發帶有數量的通知。
+   *
+   * @param queue 佇列名稱
+   * @param count 訊息數量
+   */
+  notifyWithCount(queue: string, count: number): void {
+    if (!this.enabled) {
+      return
+    }
+
+    this.emit('notify', queue)
+    this.emit('message:arrived', { queue, count })
+
+    const queueCallbacks = this.callbacks.get(queue)
+    if (!queueCallbacks) {
+      return
+    }
+
+    for (const callback of queueCallbacks) {
+      callback(queue).catch((_err) => {})
     }
   }
 

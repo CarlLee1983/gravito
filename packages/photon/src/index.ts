@@ -2,13 +2,15 @@
  * @gravito/photon - High-performance web engine for the Gravito Galaxy Architecture.
  *
  * Photon serves as the foundational HTTP layer for Gravito, providing an ultra-fast,
- * type-safe routing system based on Hono. It is designed to be the "light" that
- * connects Satellites (domain plugins) and Orbits (infrastructure) within the ecosystem.
+ * type-safe routing system based on Bun's native HTTP API and Gravito's core engine.
+ * It is designed to be the "light" that connects Satellites (domain plugins) and
+ * Orbits (infrastructure) within the ecosystem.
  *
  * Key features:
- * - Zero-overhead routing and middleware.
+ * - Zero-overhead routing and middleware using Bun native APIs.
  * - Full TypeScript inference for request parameters and body.
  * - Built-in support for HTMX and binary (CBOR) protocols.
+ * - Seamless Gravito middleware integration.
  *
  * @example
  * ```typescript
@@ -16,14 +18,21 @@
  *
  * const app = new Photon()
  *
- * app.get('/welcome', (c) => c.text('Welcome to the Galaxy!'))
+ * app.get('/welcome', (c) => c.json({ message: 'Welcome to the Galaxy!' }))
  *
  * export default app
  * ```
  * @packageDocumentation
  */
 
-export * from 'hono'
+// Export Gravito core types for convenience
+export type {
+  GravitoContext,
+  GravitoErrorHandler,
+  GravitoHandler,
+  GravitoMiddleware,
+  GravitoNotFoundHandler,
+} from '@gravito/core'
 /**
  * Binary-related middleware for Photon.
  *
@@ -106,4 +115,4 @@ export * from './photon'
  * ```
  * @public
  */
-export { PhotonWithGravitoSupport as Photon } from './photon'
+export { Photon } from './photon'

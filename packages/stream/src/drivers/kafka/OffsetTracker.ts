@@ -17,6 +17,9 @@ export class OffsetTracker {
   /** topic -> partition -> 待確認 offset 集合 */
   private readonly pending = new Map<string, Map<number, Set<string>>>()
 
+  /** topic -> partition -> 統計資訊 */
+  private readonly stats = new Map<string, Map<number, { tracked: number; resolved: number }>>()
+
   /**
    * 標記一個 offset 為待處理。
    *
@@ -25,6 +28,7 @@ export class OffsetTracker {
    * @param offset Offset 值
    */
   track(topic: string, partition: number, offset: string): void {
+    // 更新 Pending
     if (!this.pending.has(topic)) {
       this.pending.set(topic, new Map())
     }
@@ -35,6 +39,19 @@ export class OffsetTracker {
     }
 
     topicPending.get(partition)?.add(offset)
+
+    // 更新 Stats
+    if (!this.stats.has(topic)) {
+      this.stats.set(topic, new Map())
+    }
+
+    const topicStats = this.stats.get(topic)!
+    if (!topicStats.has(partition)) {
+      topicStats.set(partition, { tracked: 0, resolved: 0 })
+    }
+
+    const partitionStat = topicStats.get(partition)!
+    partitionStat.tracked++
   }
 
   /**
@@ -55,15 +72,27 @@ export class OffsetTracker {
       return
     }
 
-    partitionPending.delete(offset)
+    if (partitionPending.has(offset)) {
+      partitionPending.delete(offset)
 
-    // 如果此分區已無待確認，更新已確認的最高值
-    if (partitionPending.size === 0) {
+      // 更新 Stats
+      const topicStats = this.stats.get(topic)
+      const partitionStat = topicStats?.get(partition)
+      if (partitionStat) {
+        partitionStat.resolved++
+      }
+
+      // 更新已確認的最高值（使用 BigInt 比較）
       if (!this.committed.has(topic)) {
         this.committed.set(topic, new Map())
       }
 
-      this.committed.get(topic)?.set(partition, offset)
+      const topicCommitted = this.committed.get(topic)!
+      const currentMax = topicCommitted.get(partition)
+
+      if (!currentMax || BigInt(offset) > BigInt(currentMax)) {
+        topicCommitted.set(partition, offset)
+      }
     }
   }
 
@@ -88,7 +117,7 @@ export class OffsetTracker {
 
     for (const [topic, partitions] of this.committed.entries()) {
       for (const [partition, offset] of partitions.entries()) {
-        // 檢查此 offset 是否在待確認中
+        // 只有當此分區沒有待處理的 offset 時，才可提交最高已完成值
         const topicPending = this.pending.get(topic)
         const partitionPending = topicPending?.get(partition)
 
@@ -113,6 +142,7 @@ export class OffsetTracker {
   clear(topic: string): void {
     this.committed.delete(topic)
     this.pending.delete(topic)
+    this.stats.delete(topic)
   }
 
   /**
@@ -129,21 +159,14 @@ export class OffsetTracker {
     let committed = 0
     let pending = 0
 
-    for (const topicPending of this.pending.values()) {
-      for (const partitionPending of topicPending.values()) {
-        tracked += partitionPending.size
+    for (const topicStats of this.stats.values()) {
+      for (const partitionStat of topicStats.values()) {
+        tracked += partitionStat.tracked
+        committed += partitionStat.resolved
       }
     }
 
-    for (const topicCommitted of this.committed.values()) {
-      committed += topicCommitted.size
-    }
-
-    for (const topicPending of this.pending.values()) {
-      for (const partitionPending of topicPending.values()) {
-        pending += partitionPending.size
-      }
-    }
+    pending = tracked - committed
 
     return {
       tracked,

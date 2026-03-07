@@ -180,10 +180,15 @@ export class RateLimitMiddleware implements ChannelMiddleware {
   private buckets = new Map<string, TokenBucket>()
 
   /**
+   * Cache store for distributed rate limiting.
+   */
+  public store: CacheStore
+
+  /**
    * Create a new RateLimitMiddleware instance.
    *
    * @param config - Rate limit configuration for each channel
-   * @param _store - Optional cache store for distributed rate limiting (future use)
+   * @param store - Optional cache store for distributed rate limiting (future use)
    *
    * @example
    * ```typescript
@@ -200,8 +205,9 @@ export class RateLimitMiddleware implements ChannelMiddleware {
    */
   constructor(
     private config: RateLimitConfig,
-    _store?: CacheStore
+    store?: CacheStore
   ) {
+    this.store = store || new MemoryStore()
     this.initializeBuckets()
   }
 

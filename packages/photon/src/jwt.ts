@@ -1,5 +1,4 @@
-import type { MiddlewareHandler } from 'hono'
-import type * as HonoJwt from 'hono/jwt'
+import type { GravitoMiddleware } from '@gravito/core'
 
 // Bun can require hono/jwt but ESM import may fail; proxy via require for runtime.
 const honoJwt = require('hono/jwt') as Partial<typeof HonoJwt>

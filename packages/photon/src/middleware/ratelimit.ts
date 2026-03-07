@@ -9,7 +9,6 @@
  */
 
 import type { GravitoContext, GravitoMiddleware } from '@gravito/core'
-import type { MiddlewareHandler } from 'hono'
 import { asHonoMiddleware } from '../middleware-adapter'
 
 // Type alias for convenience (used in config types)
@@ -320,7 +319,7 @@ const defaultOnRateLimitExceeded = (c: Context, retryAfter: number): Response =>
  * }))
  * ```
  */
-export function rateLimit(config: RateLimitConfig): MiddlewareHandler {
+export function rateLimit(config: RateLimitConfig): GravitoMiddleware {
   const {
     maxRequests,
     windowMs,
@@ -374,31 +373,31 @@ export const createRateLimiter = {
   /**
    * Strict: 10 requests per minute
    */
-  strict: (overrides?: Partial<RateLimitConfig>): MiddlewareHandler =>
+  strict: (overrides?: Partial<RateLimitConfig>): GravitoMiddleware =>
     rateLimit({ maxRequests: 10, windowMs: 60000, ...overrides }),
 
   /**
    * Moderate: 60 requests per minute
    */
-  moderate: (overrides?: Partial<RateLimitConfig>): MiddlewareHandler =>
+  moderate: (overrides?: Partial<RateLimitConfig>): GravitoMiddleware =>
     rateLimit({ maxRequests: 60, windowMs: 60000, ...overrides }),
 
   /**
    * Lenient: 100 requests per minute
    */
-  lenient: (overrides?: Partial<RateLimitConfig>): MiddlewareHandler =>
+  lenient: (overrides?: Partial<RateLimitConfig>): GravitoMiddleware =>
     rateLimit({ maxRequests: 100, windowMs: 60000, ...overrides }),
 
   /**
    * API: 1000 requests per hour
    */
-  api: (overrides?: Partial<RateLimitConfig>): MiddlewareHandler =>
+  api: (overrides?: Partial<RateLimitConfig>): GravitoMiddleware =>
     rateLimit({ maxRequests: 1000, windowMs: 3600000, ...overrides }),
 
   /**
    * Auth: 5 attempts per 15 minutes (for login endpoints)
    */
-  auth: (overrides?: Partial<RateLimitConfig>): MiddlewareHandler =>
+  auth: (overrides?: Partial<RateLimitConfig>): GravitoMiddleware =>
     rateLimit({ maxRequests: 5, windowMs: 900000, ...overrides }),
 }
 

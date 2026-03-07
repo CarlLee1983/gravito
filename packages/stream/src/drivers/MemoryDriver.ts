@@ -30,6 +30,8 @@ export interface MemoryDriverConfig {
 export class MemoryDriver implements QueueDriver {
   private queues = new Map<string, SerializedJob[]>()
   private maxSize: number
+  private readonly callbacks = new Map<string, Array<(queue: string) => Promise<void>>>()
+  private notificationsEnabled = false
 
   constructor(config: MemoryDriverConfig = {}) {
     this.maxSize = config.maxSize ?? Infinity
@@ -53,6 +55,7 @@ export class MemoryDriver implements QueueDriver {
     }
 
     q.push(job)
+    this.notify(queue)
   }
 
   /**
@@ -158,6 +161,7 @@ export class MemoryDriver implements QueueDriver {
       this.queues.set(queue, [])
     }
     this.queues.get(queue)?.push(...jobs)
+    this.notify(queue)
   }
 
   /**
@@ -189,26 +193,55 @@ export class MemoryDriver implements QueueDriver {
   }
 
   /**
-   * Stub: MemoryDriver doesn't support reactive notifications.
+   * Enable notifications for this driver.
    */
   async enableNotifications(): Promise<void> {
-    // No-op for in-memory driver
+    this.notificationsEnabled = true
   }
 
   /**
-   * Stub: MemoryDriver doesn't support reactive notifications.
+   * Disable notifications for this driver.
    */
   async disableNotifications(): Promise<void> {
-    // No-op for in-memory driver
+    this.notificationsEnabled = false
   }
 
   /**
-   * Stub: MemoryDriver doesn't support reactive notifications.
+   * Register a notification callback for specific queues.
+   *
+   * @param queues - The queue names.
+   * @param callback - The callback function.
    */
   async onNotify(
-    _queues: string | string[],
-    _callback: (queue: string) => Promise<void>
+    queues: string | string[],
+    callback: (queue: string) => Promise<void>
   ): Promise<void> {
-    // No-op for in-memory driver
+    const queueList = Array.isArray(queues) ? queues : [queues]
+    for (const queue of queueList) {
+      if (!this.callbacks.has(queue)) {
+        this.callbacks.set(queue, [])
+      }
+      this.callbacks.get(queue)?.push(callback)
+    }
+  }
+
+  /**
+   * Internal notify helper.
+   *
+   * @param queue - The queue name.
+   */
+  private notify(queue: string): void {
+    if (!this.notificationsEnabled) {
+      return
+    }
+
+    const queueCallbacks = this.callbacks.get(queue)
+    if (queueCallbacks) {
+      for (const cb of queueCallbacks) {
+        cb(queue).catch((_err) => {
+          // Ignore notification errors in memory driver
+        })
+      }
+    }
   }
 }

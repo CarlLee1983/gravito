@@ -341,7 +341,7 @@ export function validateWithCoercion<
 
     // Create new request object and inject coerced data
     // Use standard validation middleware for subsequent validation
-    const validator = tbValidator(source, schema, hook)
+    const validator = tbValidator(source, schema, hook) as any
 
     // Temporarily override request data access methods
     const originalQueryMethod = c.req.query
@@ -355,7 +355,7 @@ export function validateWithCoercion<
       c.req.param = () => data
     }
 
-    await validator(c, next)
+    await (validator as any)(c, next)
 
     // Restore original methods
     if (source === 'query') {

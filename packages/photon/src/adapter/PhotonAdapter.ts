@@ -496,7 +496,7 @@ function toPhotonHandler<V extends GravitoVariables>(handler: GravitoHandler<V>)
  */
 function toPhotonMiddleware<V extends GravitoVariables>(
   middleware: GravitoMiddleware<V>
-): MiddlewareHandler {
+): GravitoMiddleware {
   return async (c: Context, next: Next): Promise<Response | undefined> => {
     const ctx = contextPool.acquire<V>(c)
     try {

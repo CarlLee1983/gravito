@@ -9,12 +9,13 @@ describe('ReactiveStrategy', () => {
 
   beforeEach(() => {
     mockStats = { active: 0 }
+    const mockDriver = {
+      enableNotifications: mock(async () => {}),
+      disableNotifications: mock(async () => {}),
+      onNotify: mock(async () => {}),
+    }
     mockQueueManager = {
-      getDriver: mock(() => ({
-        enableNotifications: mock(async () => {}),
-        disableNotifications: mock(async () => {}),
-        onNotify: mock(async () => {}),
-      })),
+      getDriver: mock(() => mockDriver),
       pop: mock(async () => null),
       popMany: mock(async () => []),
     } as any

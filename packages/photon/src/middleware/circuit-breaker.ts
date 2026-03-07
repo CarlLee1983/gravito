@@ -15,7 +15,6 @@
  */
 
 import type { GravitoContext, GravitoMiddleware } from '@gravito/core'
-import type { MiddlewareHandler } from 'hono'
 import { asHonoMiddleware } from '../middleware-adapter'
 
 // Type alias for convenience
@@ -301,7 +300,7 @@ const defaultOnOpen = (c: Context, state: CircuitBreakerState): Response => {
  * app.use('/payment/*', circuitBreakerPresets.sensitive())
  * ```
  */
-export function circuitBreaker(config: CircuitBreakerConfig): MiddlewareHandler {
+export function circuitBreaker(config: CircuitBreakerConfig): GravitoMiddleware {
   const { isFailure = defaultIsFailure, onOpen = defaultOnOpen } = config
 
   const breaker = new CircuitBreaker(config)
@@ -348,7 +347,7 @@ export const circuitBreakerPresets = {
    * - 重置超時：60 秒
    * - 半開探測：1 個請求
    */
-  sensitive: (overrides?: Partial<CircuitBreakerConfig>): MiddlewareHandler =>
+  sensitive: (overrides?: Partial<CircuitBreakerConfig>): GravitoMiddleware =>
     circuitBreaker({
       failureThreshold: 3,
       resetTimeoutMs: 60000,
@@ -364,7 +363,7 @@ export const circuitBreakerPresets = {
    * - 重置超時：30 秒
    * - 半開探測：2 個請求
    */
-  standard: (overrides?: Partial<CircuitBreakerConfig>): MiddlewareHandler =>
+  standard: (overrides?: Partial<CircuitBreakerConfig>): GravitoMiddleware =>
     circuitBreaker({
       failureThreshold: 5,
       resetTimeoutMs: 30000,
@@ -380,7 +379,7 @@ export const circuitBreakerPresets = {
    * - 重置超時：10 秒
    * - 半開探測：3 個請求
    */
-  resilient: (overrides?: Partial<CircuitBreakerConfig>): MiddlewareHandler =>
+  resilient: (overrides?: Partial<CircuitBreakerConfig>): GravitoMiddleware =>
     circuitBreaker({
       failureThreshold: 10,
       resetTimeoutMs: 10000,

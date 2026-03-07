@@ -28,6 +28,7 @@ describe('ReactiveConsumer E2E (Reactive Strategy)', () => {
         memory: { driver: 'memory' },
       },
     })
+    queueManager.registerJobClasses([TestJob])
   })
 
   afterEach(async () => {
@@ -40,28 +41,31 @@ describe('ReactiveConsumer E2E (Reactive Strategy)', () => {
     consumer = new Consumer(queueManager, {
       queues: ['default'],
       concurrency: 2,
-      keepAlive: false,
+      keepAlive: true,
       reactive: true,
       reactivePollingFallback: 500,
       debug: false,
     })
 
-    // Push some jobs
+    // Start consumer first
+    const _startPromise = consumer.start()
+
+    // Give it a moment to initialize
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    // Push some jobs AFTER start
     const job1 = new TestJob('job1')
     const job2 = new TestJob('job2')
     const job3 = new TestJob('job3')
 
-    await job1.queue('default')
-    await job2.queue('default')
-    await job3.queue('default')
+    await queueManager.push(job1)
+    await queueManager.push(job2)
+    await queueManager.push(job3)
 
-    // Start consumer
-    await consumer.start()
-
-    // Wait for processing
+    // Wait for processing (with notifications it should be fast)
     await new Promise((resolve) => setTimeout(resolve, 500))
 
-    // All jobs should be processed (or at least some)
+    // All jobs should be processed
     expect(processedJobs.length).toBeGreaterThan(0)
   })
 
@@ -69,25 +73,31 @@ describe('ReactiveConsumer E2E (Reactive Strategy)', () => {
     consumer = new Consumer(queueManager, {
       queues: ['emails', 'sms'],
       concurrency: 3,
-      keepAlive: false,
+      keepAlive: true,
       reactive: true,
       reactivePollingFallback: 300,
       debug: false,
     })
 
-    // Push jobs to different queues
-    const job1 = new TestJob('email-1')
-    const job2 = new TestJob('sms-1')
-    const job3 = new TestJob('email-2')
-    const job4 = new TestJob('sms-2')
-
-    await queueManager.push('emails', job1)
-    await queueManager.push('sms', job2)
-    await queueManager.push('emails', job3)
-    await queueManager.push('sms', job4)
-
     // Start consumer
-    await consumer.start()
+    const _startPromise = consumer.start()
+
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    // Push jobs to different queues AFTER start
+    const job1 = new TestJob('email-1')
+    job1.onQueue('emails')
+    const job2 = new TestJob('sms-1')
+    job2.onQueue('sms')
+    const job3 = new TestJob('email-2')
+    job3.onQueue('emails')
+    const job4 = new TestJob('sms-2')
+    job4.onQueue('sms')
+
+    await queueManager.push(job1)
+    await queueManager.push(job2)
+    await queueManager.push(job3)
+    await queueManager.push(job4)
 
     // Wait for processing
     await new Promise((resolve) => setTimeout(resolve, 500))
@@ -100,21 +110,21 @@ describe('ReactiveConsumer E2E (Reactive Strategy)', () => {
     consumer = new Consumer(queueManager, {
       queues: ['default'],
       concurrency: 1,
-      keepAlive: false,
+      keepAlive: true,
       reactive: true,
       reactivePollingFallback: 200, // Short fallback interval
       debug: false,
     })
 
-    // Push job
+    // Push job BEFORE start (so reactive notification is missed)
     const job = new TestJob('fallback-test')
-    await job.queue('default')
+    await queueManager.push(job)
 
     // Start consumer
-    await consumer.start()
+    const _startPromise = consumer.start()
 
-    // Wait for processing (fallback polling should kick in)
-    await new Promise((resolve) => setTimeout(resolve, 400))
+    // Wait for processing (fallback polling should kick in after 200ms)
+    await new Promise((resolve) => setTimeout(resolve, 600))
 
     // Job should be processed via fallback polling
     expect(processedJobs.length).toBeGreaterThan(0)
@@ -131,7 +141,7 @@ describe('ReactiveConsumer E2E (Reactive Strategy)', () => {
     })
 
     const job = new TestJob('stop-test')
-    await job.queue('default')
+    await queueManager.push(job)
 
     // Start consumer
     const _startPromise = consumer.start()

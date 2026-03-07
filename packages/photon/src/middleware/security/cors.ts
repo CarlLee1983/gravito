@@ -9,7 +9,6 @@
  */
 
 import type { GravitoMiddleware } from '@gravito/core'
-import type { MiddlewareHandler } from 'hono'
 import { asHonoMiddleware } from '../../middleware-adapter'
 
 /**
@@ -52,7 +51,7 @@ function resolveOrigin(
  * Middleware handling Cross-Origin Resource Sharing (CORS).
  * @public
  */
-export function cors(options: CorsOptions = {}): MiddlewareHandler {
+export function cors(options: CorsOptions = {}): GravitoMiddleware {
   const methods = (
     options.methods ?? ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
   ).join(', ')

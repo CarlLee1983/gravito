@@ -7,7 +7,7 @@ describe('MessageBuffer', () => {
   let testMessage: BufferedMessage
 
   beforeEach(() => {
-    buffer = new MessageBuffer(10)
+    buffer = new MessageBuffer(200)
     testMessage = {
       job: {
         id: 'job-1',
