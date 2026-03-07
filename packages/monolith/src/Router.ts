@@ -1,4 +1,14 @@
 /**
+ * 路由註冊用的應用介面
+ */
+interface RoutableApp {
+  get(path: string, handler: unknown): unknown
+  post(path: string, handler: unknown): unknown
+  put(path: string, handler: unknown): unknown
+  delete(path: string, handler: unknown): unknown
+}
+
+/**
  * Utility for registering resourceful routes.
  * @public
  */
@@ -14,7 +24,7 @@ export class RouterHelper {
    * PUT    /prefix/:id      -> update
    * DELETE /prefix/:id      -> destroy
    */
-  public static resource(app: any, prefix: string, controller: any) {
+  public static resource(app: RoutableApp, prefix: string, controller: any) {
     const p = prefix.startsWith('/') ? prefix : `/${prefix}`
 
     // Mapping: Method -> [HTTP Verb, Path Suffix]
@@ -30,7 +40,8 @@ export class RouterHelper {
 
     for (const [method, [verb, suffix]] of Object.entries(routes)) {
       if (typeof controller.prototype[method] === 'function') {
-        ;(app as any)[verb](`${p}${suffix}`, controller.call(method))
+        const route = app[verb as keyof RoutableApp] as (path: string, handler: unknown) => unknown
+        route.call(app, `${p}${suffix}`, controller.call(method))
       }
     }
   }

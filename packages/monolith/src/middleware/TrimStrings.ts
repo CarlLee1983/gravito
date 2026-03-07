@@ -1,8 +1,10 @@
+import type { GravitoContext, GravitoNext } from '@gravito/core'
+
 /**
  * Automatically trim all strings in the request body and query.
  */
 export const trimStrings = () => {
-  return async (c: any, next: any) => {
+  return async (c: GravitoContext, next: GravitoNext) => {
     // We proxy the req.json and req.query methods to return trimmed data
     // This is more efficient than pre-processing everything if the controller doesn't use it.
 

@@ -5,6 +5,7 @@
  * 支援自訂 nonce 產生器和 CSP 指令
  */
 
+import type { GravitoContext, GravitoNext } from '@gravito/core'
 import { createSecurityRule } from '../rules/SecurityRule'
 import { etherMiddleware } from './etherMiddleware'
 
@@ -113,7 +114,7 @@ export function cspMiddleware(options: CSPMiddlewareOptions = {}) {
   const debug = options.debug ?? false
 
   // 回傳中介軟體處理函式
-  return async (c: any, next: any) => {
+  return async (c: GravitoContext, next: GravitoNext) => {
     // 為此次請求生成 nonce
     const nonce = nonceGenerator()
 

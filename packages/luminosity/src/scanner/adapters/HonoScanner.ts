@@ -13,7 +13,7 @@ export interface HonoScannerOptions {
 }
 
 /**
- * Route information from Hono's routes property
+ * Route information from the app's routes property
  */
 interface HonoRouteInfo {
   method: string
@@ -22,7 +22,7 @@ interface HonoRouteInfo {
 }
 
 /**
- * Hono-like interface for duck typing
+ * App-like interface for duck typing
  */
 interface HonoLike {
   routes: HonoRouteInfo[]
@@ -31,15 +31,14 @@ interface HonoLike {
 /**
  * HonoScanner
  *
- * Scans routes registered in a Hono application.
- * Works with Hono v3 and v4.
+ * Scans routes registered in a Photon/Hono-compatible application.
  *
  * @example
  * ```typescript
- * import { Hono } from 'hono'
+ * import { Photon } from '@gravito/photon'
  * import { HonoScanner, SitemapBuilder } from '@gravito/luminosity'
  *
- * const app = new Hono()
+ * const app = new Photon()
  * app.get('/hello', (c) => c.text('Hello'))
  * app.get('/blog/:slug', (c) => c.text('Blog'))
  *
