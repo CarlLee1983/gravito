@@ -42,7 +42,7 @@ try {
 
   console.log('Generating Types...')
   // Use tsup for main and react entries. Vue entry skipped for now due to .vue resolution issues in tsup dts
-  await $`npx tsup src/index.ts src/components/index.tsx --dts-only --format esm --outDir dist`
+  await $`bunx tsup src/index.ts src/components/index.tsx --dts-only --format esm --outDir dist`
 
   // Create a simple d.ts for vue index to satisfy exports
   await $`mkdir -p dist/vue`

@@ -1,4 +1,5 @@
 import type {
+  ApiErrorCode,
   ApiResponse,
   ChatMessage,
   Conversation,
@@ -60,7 +61,7 @@ export function createSupportApi(config: SupportApiConfig) {
 
       if (!response.ok) {
         // 根據 HTTP 狀態碼判斷錯誤類型
-        let code: import('../types').ApiErrorCode
+        let code: ApiErrorCode
         let retryable = false
 
         switch (response.status) {

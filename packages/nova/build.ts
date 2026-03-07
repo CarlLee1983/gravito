@@ -13,11 +13,11 @@ try {
   if (!isDtsOnly) {
     console.log('Building ESM/CJS...')
     // Use tsup for proper ESM/CJS build (handles Bun builtins correctly)
-    await $`npx tsup src/index.ts --format esm,cjs --outDir dist --external @gravito/core,bun`
+    await $`bunx tsup src/index.ts --format esm,cjs --outDir dist --external @gravito/core,bun`
   }
 
   console.log('Generating Types...')
-  await $`npx tsc --emitDeclarationOnly --declaration --outDir dist`
+  await $`bunx tsc --emitDeclarationOnly --declaration --outDir dist`
 
   // Fix incorrect directory structure from tsconfig
   // TypeScript outputs to dist/nova/src/... but we need dist/...

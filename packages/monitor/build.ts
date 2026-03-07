@@ -10,12 +10,14 @@ await Bun.$`rm -rf dist`
 // Use tsup for multi-format build
 const tsup = spawn(
   [
-    'npx',
+    'bunx',
     'tsup',
     'src/index.ts',
     '--format',
     isDtsOnly ? 'esm' : 'esm,cjs',
     ...(isDtsOnly ? ['--dts', '--dts-only'] : []),
+    '--tsconfig',
+    'tsconfig.build.json',
     '--external',
     '@gravito/core',
     '--external',

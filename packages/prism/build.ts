@@ -20,7 +20,7 @@ const external = [
 // Use tsup for multi-format build
 const tsup = spawn(
   [
-    'npx',
+    'bunx',
     'tsup',
     'src/index.ts',
     'src/vue.ts',
@@ -28,6 +28,8 @@ const tsup = spawn(
     isDtsOnly ? 'esm' : 'esm,cjs',
     '--dts',
     ...(isDtsOnly ? ['--dts-only'] : []),
+    '--tsconfig',
+    'tsconfig.build.json',
     '--external',
     external.join(','),
     '--outDir',

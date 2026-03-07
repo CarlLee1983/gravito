@@ -13,12 +13,14 @@ async function buildInParallel() {
   const tsupMainPromise = (async () => {
     const tsupMain = spawn(
       [
-        'npx',
+        'bunx',
         'tsup',
         'src/index.ts',
         '--format',
         isDtsOnly ? 'esm' : 'esm,cjs',
         ...(isDtsOnly ? ['--dts', '--dts-only'] : []),
+        '--tsconfig',
+        'tsconfig.build.json',
         '--external',
         '@gravito/luminosity,commander,picocolors',
         '--outDir',
@@ -42,11 +44,13 @@ async function buildInParallel() {
   const tsupCliPromise = (async () => {
     const tsupCli = spawn(
       [
-        'npx',
+        'bunx',
         'tsup',
         'bin/gravito-seo.ts',
         '--format',
         'esm',
+        '--tsconfig',
+        'tsconfig.build.json',
         '--external',
         '@gravito/luminosity,commander,picocolors',
         '--outDir',

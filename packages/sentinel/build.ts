@@ -10,7 +10,7 @@ await Bun.$`rm -rf dist`
 // Use tsup for multi-format build
 const tsup = spawn(
   [
-    'npx',
+    'bunx',
     'tsup',
     'src/index.ts',
     '--format',
