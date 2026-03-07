@@ -62,3 +62,33 @@ export function createPhoton(): PhotonWithGravitoSupport {
  * This allows @gravito/photon to be used as a drop-in replacement for hono.
  */
 export * from 'hono'
+export * from 'hono/csrf'
+export { csrf as csrfProtection } from 'hono/csrf'
+
+/**
+ * CSRF options.
+ * @public
+ */
+export interface CsrfOptions {
+  origin?:
+    | string
+    | string[]
+    | ((origin: string) => boolean | undefined | Promise<boolean | undefined>)
+  secFetchSite?: string | string[]
+}
+
+/**
+ * Helper to get CSRF token from context.
+ *
+ * Provides compatibility for Gravito ecosystem.
+ *
+ * @param c - Context
+ * @param _options - CSRF options
+ * @returns token or undefined
+ * @public
+ */
+export function getCsrfToken(c: Context, _options?: CsrfOptions): string | null {
+  // In modern Hono, CSRF token is usually managed via headers/cookies
+  // This is a compatibility shim
+  return c.req.header('x-csrf-token') || null
+}

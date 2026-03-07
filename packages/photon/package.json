@@ -136,6 +136,7 @@
   "dependencies": {
     "@gravito/core": "workspace:*",
     "cborg": "^4.3.2",
+    "hono": "^4.12.2",
     "zod": "^4.3.6"
   },
   "optionalDependencies": {
@@ -151,7 +152,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.0.0",
-    "bun-types": "latest"
+    "bun-types": "^1.3.10"
   },
   "publishConfig": {
     "access": "public"

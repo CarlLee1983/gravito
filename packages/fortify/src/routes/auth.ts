@@ -54,7 +54,7 @@ export function registerAuthRoutes(
 ): void {
   const prefix = config.prefix ?? ''
   const csrfOptions = resolveCsrfOptions(config)
-  const csrfMiddleware = csrfOptions ? (csrfProtection(csrfOptions) as any) : null
+  const csrfMiddleware = csrfOptions ? (csrfProtection(csrfOptions as any) as any) : null
 
   const securityConfig = config.security?.securityHeaders
   const middlewareStack = []
