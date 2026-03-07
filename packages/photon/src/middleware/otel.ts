@@ -11,8 +11,6 @@
 import { createRequire } from 'node:module'
 
 import type { GravitoContext, GravitoMiddleware } from '@gravito/core'
-import type { MiddlewareHandler } from 'hono'
-import { asHonoMiddleware } from '../middleware-adapter'
 
 // Runtime module loader (avoid static dependency)
 const createRequireLoader = () => {
@@ -217,7 +215,7 @@ function getSpanStatusCode(
  * }))
  * ```
  */
-export function otelMiddleware(config: OtelMiddlewareConfig = {}): MiddlewareHandler {
+export function otelMiddleware(config: OtelMiddlewareConfig = {}): GravitoMiddleware {
   const {
     serviceName = 'photon',
     serviceVersion = '1.0.0',
@@ -295,5 +293,5 @@ export function otelMiddleware(config: OtelMiddlewareConfig = {}): MiddlewareHan
     }
   }
 
-  return asHonoMiddleware(middleware)
+  return middleware
 }

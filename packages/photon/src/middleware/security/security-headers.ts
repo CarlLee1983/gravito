@@ -9,8 +9,6 @@
  */
 
 import type { GravitoContext as Context, GravitoMiddleware } from '@gravito/core'
-import type { MiddlewareHandler } from 'hono'
-import { asHonoMiddleware } from '../../middleware-adapter'
 
 /**
  * HSTS Configuration
@@ -52,7 +50,7 @@ function buildHstsHeader(options: HstsOptions): string {
  * Apply common security headers to responses (Helmet-style).
  * @public
  */
-export function securityHeaders(options: SecurityHeadersOptions = {}): MiddlewareHandler {
+export function securityHeaders(options: SecurityHeadersOptions = {}): GravitoMiddleware {
   const defaults: Required<Omit<SecurityHeadersOptions, 'contentSecurityPolicy' | 'hsts'>> = {
     frameOptions: 'DENY',
     referrerPolicy: 'no-referrer',
@@ -100,5 +98,5 @@ export function securityHeaders(options: SecurityHeadersOptions = {}): Middlewar
     return await next()
   }
 
-  return asHonoMiddleware(middleware)
+  return middleware
 }

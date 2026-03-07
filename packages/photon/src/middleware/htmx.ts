@@ -1,6 +1,4 @@
 import type { GravitoMiddleware } from '@gravito/core'
-import type { MiddlewareHandler } from 'hono'
-import { asHonoMiddleware } from '../middleware-adapter'
 
 /**
  * HTMX Middleware for Photon.
@@ -41,7 +39,7 @@ import { asHonoMiddleware } from '../middleware-adapter'
  * - `htmx.target`: The ID of the target element.
  * - `htmx.trigger`: The ID of the trigger element.
  */
-export const htmxMiddleware = (): MiddlewareHandler => {
+export const htmxMiddleware = (): GravitoMiddleware => {
   const middleware: GravitoMiddleware = async (c, next) => {
     // Check for HTMX request header
     const isHtmx = c.req.header('HX-Request') === 'true'
@@ -64,5 +62,5 @@ export const htmxMiddleware = (): MiddlewareHandler => {
     return await next()
   }
 
-  return asHonoMiddleware(middleware)
+  return middleware
 }

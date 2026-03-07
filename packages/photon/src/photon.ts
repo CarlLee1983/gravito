@@ -9,7 +9,6 @@
  */
 
 import type {
-  GravitoContext,
   GravitoErrorHandler,
   GravitoHandler,
   GravitoMiddleware,
@@ -65,6 +64,10 @@ export class Photon {
 
   useScoped(scope: string, path: string, ...middleware: GravitoMiddleware[]): void {
     this.adapter.useScoped(scope, path, ...middleware)
+  }
+
+  route(basePath: string, app: Photon): void {
+    this.mount(basePath, app)
   }
 
   mount(path: string, app: Photon | any): void {

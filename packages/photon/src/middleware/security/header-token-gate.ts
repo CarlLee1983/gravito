@@ -11,8 +11,6 @@
 import crypto from 'node:crypto'
 
 import type { GravitoContext as Context, GravitoMiddleware } from '@gravito/core'
-import type { MiddlewareHandler } from 'hono'
-import { asHonoMiddleware } from '../../middleware-adapter'
 
 /**
  * Timing-safe string comparison to prevent timing attacks
@@ -73,7 +71,7 @@ export function createHeaderGate(options: HeaderTokenGateOptions = {}) {
  * Useful for internal API authentication.
  * @public
  */
-export function requireHeaderToken(options: RequireHeaderTokenOptions = {}): MiddlewareHandler {
+export function requireHeaderToken(options: RequireHeaderTokenOptions = {}): GravitoMiddleware {
   const gate = createHeaderGate(options)
   const status = options.status ?? 403
   const message = options.message ?? 'Unauthorized'
@@ -85,5 +83,5 @@ export function requireHeaderToken(options: RequireHeaderTokenOptions = {}): Mid
     await next()
   }
 
-  return asHonoMiddleware(middleware)
+  return middleware
 }

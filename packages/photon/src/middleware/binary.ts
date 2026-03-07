@@ -1,7 +1,5 @@
 import type { GravitoMiddleware } from '@gravito/core'
 import { encode } from 'cborg'
-import type { MiddlewareHandler } from 'hono'
-import { asHonoMiddleware } from '../middleware-adapter'
 
 /**
  * Binary Middleware for Photon.
@@ -34,7 +32,7 @@ import { asHonoMiddleware } from '../middleware-adapter'
  * - Binary format reduces payload size by 20-40% on average.
  * - Optimized to read body directly without clone(), saving ~30% overhead.
  */
-export const binaryMiddleware = (): MiddlewareHandler => {
+export const binaryMiddleware = (): GravitoMiddleware => {
   const middleware: GravitoMiddleware = async (c, next) => {
     const res = await next()
 
@@ -79,5 +77,5 @@ export const binaryMiddleware = (): MiddlewareHandler => {
     return res
   }
 
-  return asHonoMiddleware(middleware)
+  return middleware
 }
