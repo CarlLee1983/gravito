@@ -1,7 +1,6 @@
 import type { GravitoContext, GravitoMiddleware } from '@gravito/core'
 import type { Static, TSchema } from '@sinclair/typebox'
 import { Value } from '@sinclair/typebox/value'
-import type { Context as HonoContext } from 'hono'
 
 export type {
   ValidationError,
@@ -66,35 +65,33 @@ function tbValidator<T extends TSchema>(
   hook?: (result: unknown, c: GravitoContext) => Response | Promise<Response> | undefined
 ): GravitoMiddleware {
   return async (ctx: GravitoContext, next) => {
-    // Handle both Hono native context and Gravito wrapped context
-    const honoCtx = (ctx.native || ctx) as HonoContext
     let data: unknown
 
     // Extract data from request based on source
     switch (source) {
       case 'json':
         try {
-          data = await honoCtx.req.json()
+          data = await ctx.req.json()
         } catch (_error) {
           const errorRes = await hook?.({ success: false }, ctx)
-          return errorRes || honoCtx.json({ error: 'Invalid JSON' }, 400)
+          return errorRes || ctx.json({ error: 'Invalid JSON' }, 400)
         }
         break
 
       case 'query':
-        data = honoCtx.req.query()
+        data = ctx.req.query()
         break
 
       case 'param':
-        data = honoCtx.req.param()
+        data = ctx.req.param()
         break
 
       case 'form':
         try {
-          data = await honoCtx.req.parseBody()
+          data = await ctx.req.parseBody()
         } catch (_error) {
           const errorRes = await hook?.({ success: false }, ctx)
-          return errorRes || honoCtx.json({ error: 'Invalid form data' }, 400)
+          return errorRes || ctx.json({ error: 'Invalid form data' }, 400)
         }
         break
 
@@ -109,14 +106,12 @@ function tbValidator<T extends TSchema>(
       const errors = Array.from(Value.Errors(schema, data))
       const result = { success: false, errors }
       const errorRes = await hook?.(result, ctx)
-      return errorRes || honoCtx.json({ error: 'Validation failed' }, 400)
+      return errorRes || ctx.json({ error: 'Validation failed' }, 400)
     }
 
-    // Store validated data in context using Hono's native valid() method
+    // Store validated data in context
     const validated = data as Static<T>
-
-    // Use Hono's native request.valid() method to store validated data
-    ;(honoCtx.req as any).valid = (target: string) => {
+    ;(ctx.req as any).valid = (target: string) => {
       if (target === source) {
         return validated
       }
