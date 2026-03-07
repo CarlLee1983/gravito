@@ -118,9 +118,9 @@ jobs:
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             # Filter: Changed packages and their dependents (consumers)
             # Note: Incremental build only, no DTS needed for validate
-            bunx turbo run build --filter="[origin/${{ github.base_ref }}]..."
+            bunx turbo run build --filter="[origin/${{ github.base_ref }}]..." --concurrency=2
           else
-            bun run build
+            bunx turbo run build --filter='./packages/*' --concurrency=2
           fi
 
   # --------------------------------------------------------------------------
@@ -284,10 +284,10 @@ jobs:
           echo "Running tests for: $FILTERS"
 
           # Typecheck (implicitly runs build if needed)
-          bunx turbo run typecheck $FILTERS --concurrency=4
+          bunx turbo run typecheck $FILTERS --concurrency=2
 
           # Unit Test
-          bunx turbo run test:unit $FILTERS --concurrency=4
+          bunx turbo run test:unit $FILTERS --concurrency=2
 
           # Integration Test
           if [ "${{ github.event_name }}" == "pull_request" ]; then
