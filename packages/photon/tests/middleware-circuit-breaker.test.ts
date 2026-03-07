@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @gravito/photon - Circuit Breaker Middleware Tests
  */

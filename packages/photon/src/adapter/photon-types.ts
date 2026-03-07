@@ -8,7 +8,7 @@
  * @since 2.0.0
  */
 
-import type { Context } from '@gravito/photon'
+import type { GravitoContext as Context } from '@gravito/core'
 
 /**
  * Extended Photon Request with additional properties

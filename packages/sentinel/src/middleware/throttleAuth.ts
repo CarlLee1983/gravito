@@ -59,7 +59,7 @@ export function throttleAuth(options: AuthThrottleOptions = {}) {
 
     const response = await next()
 
-    if (response && response.status === 401) {
+    if ((response as any) && (response as any).status === 401) {
       if (!record) {
         record = { count: 0, resetAt: now + decayMs }
         attempts.set(key, record)

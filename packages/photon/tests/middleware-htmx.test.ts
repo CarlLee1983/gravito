@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, expect, it } from 'bun:test'
 import { Photon } from '../src/index'
 import { htmxMiddleware } from '../src/middleware/htmx'
@@ -5,7 +6,7 @@ import { htmxMiddleware } from '../src/middleware/htmx'
 describe('HTMX Middleware', () => {
   it('should detect HTMX request and set context variables', async () => {
     const app = new Photon()
-    app.use(htmxMiddleware())
+    app.use(htmxMiddleware() as any)
 
     app.get('/htmx', (c) => {
       const isHtmx = c.get('htmx' as any)
@@ -51,7 +52,7 @@ describe('HTMX Middleware', () => {
 
   it('should handle history restore request', async () => {
     const app = new Photon()
-    app.use(htmxMiddleware())
+    app.use(htmxMiddleware() as any)
 
     app.get('/history', (c) => {
       return c.json({

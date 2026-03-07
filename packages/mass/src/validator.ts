@@ -6,47 +6,43 @@ export type {
   ValidationError,
   ValidationHook,
   ValidationResult,
-  ValidationSource,
 } from './types'
 
 /**
- * Creates a validation middleware using TypeBox schemas.
+ * Validation source types.
+ */
+export type ValidationSource = 'json' | 'form' | 'query' | 'param' | 'header' | 'cookie'
+
+/**
+ * Validates request data using TypeBox schema.
  *
- * This middleware validates incoming request data against the provided schema.
- * It integrates seamlessly with Photon's type system, providing full type safety
- * for validated data in the request context.
+ * This middleware provides high-performance validation with full TypeScript
+ * support. It leverages @hono/typebox-validator for runtime validation.
  *
- * @param source - The request data source to validate (json, query, param, form)
- * @param schema - The TypeBox schema defining the expected data structure
- * @param hook - Optional callback to handle validation results manually
- * @returns A Photon middleware handler that enforces the schema
- *
- * @example Validating a JSON body
+ * @example
  * ```typescript
- * app.post('/users',
- *   validate('json', Schema.Object({
- *     name: Schema.String(),
- *     age: Schema.Number()
- *   })),
- *   (c) => {
- *     const user = c.req.valid('json')
- *     return c.json({ created: user.name })
- *   }
- * )
- * ```
+ * import { Type } from '@sinclair/typebox'
+ * import { validate } from '@gravito/mass'
  *
- * @example Custom error handling with hook
- * ```typescript
- * validate('query', schema, (result, c) => {
- *   if (!result.success) {
- *     return c.json({ error: 'Invalid query params' }, 400)
- *   }
+ * const schema = Type.Object({
+ *   name: Type.String()
+ * })
+ *
+ * app.post('/users', validate('json', schema), (c) => {
+ *   const data = c.req.valid('json')
+ *   return c.json(data)
  * })
  * ```
+ *
+ * @param source - The data source to validate (json, query, param, etc.)
+ * @param schema - TypeBox schema
+ * @param hook - Optional validation hook for custom error handling
+ * @returns Photon middleware handler
+ * @public
  */
 export function validate<
   T extends TSchema,
-  S extends 'json' | 'query' | 'param' | 'form',
+  S extends string,
   E extends Env = Env,
   P extends string = string,
 >(
@@ -61,5 +57,5 @@ export function validate<
     out: { [K in S]: Static<T> }
   }
 > {
-  return tbValidator(source, schema, hook) as any
+  return tbValidator(source as any, schema, hook as any) as any
 }

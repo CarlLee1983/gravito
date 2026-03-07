@@ -8,24 +8,26 @@
  * @since 2.0.0
  */
 
-import type {
-  AdapterConfig,
-  GravitoContext,
-  GravitoErrorHandler,
-  GravitoHandler,
-  GravitoMiddleware,
-  GravitoNext,
-  GravitoNotFoundHandler,
-  GravitoRequest,
-  GravitoVariables,
-  HttpAdapter,
-  HttpMethod,
-  ProxyOptions,
-  RouteDefinition,
-  StatusCode,
+import {
+  type AdapterConfig,
+  type GravitoContext,
+  type GravitoErrorHandler,
+  type GravitoHandler,
+  type GravitoMiddleware,
+  type GravitoNext,
+  type GravitoNotFoundHandler,
+  type GravitoRequest,
+  type GravitoVariables,
+  type HttpAdapter,
+  type HttpMethod,
+  type ProxyOptions,
+  RequestScopeManager,
+  type RouteDefinition,
+  type StatusCode,
 } from '@gravito/core'
-import { RequestScopeManager } from '@gravito/core'
-import type { Context, Handler, MiddlewareHandler, Next, Photon } from '@gravito/photon'
+import type { Context, Handler, Next } from '../index'
+import type { Photon } from '../photon'
+
 import type {
   PhotonContextExtended,
   PhotonRequestExtended,
@@ -47,7 +49,7 @@ class PhotonRequestWrapper implements GravitoRequest {
    * Reset the wrapper for pooling
    */
   reset(photonCtx: Context): void {
-    this.photonCtx = photonCtx
+    this.photonCtx = photonCtx as any
   }
 
   /**
@@ -55,7 +57,7 @@ class PhotonRequestWrapper implements GravitoRequest {
    */
   static create(photonCtx: Context): PhotonRequestWrapper {
     const instance = new PhotonRequestWrapper()
-    instance.reset(photonCtx)
+    instance.reset(photonCtx as any)
     return instance
   }
 
@@ -76,7 +78,7 @@ class PhotonRequestWrapper implements GravitoRequest {
   }
 
   params(): Record<string, string> {
-    return this.photonCtx.req.param() as Record<string, string>
+    return (this.photonCtx.req as any).param()
   }
 
   query(name: string): string | undefined {
@@ -97,7 +99,7 @@ class PhotonRequestWrapper implements GravitoRequest {
   }
 
   async json<T = unknown>(): Promise<T> {
-    const ctx = this.photonCtx as PhotonContextExtended
+    const ctx = this.photonCtx as unknown as PhotonContextExtended
     if (ctx._cachedJsonBody !== undefined) {
       return ctx._cachedJsonBody as T
     }
@@ -128,7 +130,7 @@ class PhotonRequestWrapper implements GravitoRequest {
 
   valid<T = unknown>(target: string): T {
     const extendedReq = this.photonCtx.req as Context['req'] & PhotonRequestExtended
-    return extendedReq.valid<T>(target)
+    return (extendedReq as any).valid(target) as T
   }
 }
 
@@ -156,11 +158,11 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
    * Reset the wrapper for pooling
    */
   reset(photonCtx: Context): void {
-    this.photonCtx = photonCtx
+    this.photonCtx = photonCtx as any
     if (!this._req) {
-      this._req = PhotonRequestWrapper.create(photonCtx)
+      this._req = PhotonRequestWrapper.create(photonCtx as any)
     } else {
-      this._req.reset(photonCtx)
+      this._req.reset(photonCtx as any)
     }
     this._requestScope = new RequestScopeManager()
   }
@@ -172,7 +174,7 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
     photonCtx: Context
   ): GravitoContext<V> {
     const instance = new PhotonContextWrapper<V>()
-    instance.reset(photonCtx)
+    instance.reset(photonCtx as any)
     return instance as unknown as GravitoContext<V>
   }
 
@@ -353,7 +355,7 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
   }
 
   get executionCtx(): any | undefined {
-    return this.photonCtx.executionCtx
+    return (this.photonCtx as any).executionCtx
   }
 
   get env(): Record<string, unknown> | undefined {
@@ -458,10 +460,10 @@ class PhotonAdapterContextPool {
   acquire<V extends GravitoVariables>(photonCtx: Context): GravitoContext<V> {
     const wrapper = this.pool.pop()
     if (wrapper) {
-      wrapper.reset(photonCtx)
+      wrapper.reset(photonCtx as any)
       return wrapper as unknown as GravitoContext<V>
     }
-    return PhotonContextWrapper.create<V>(photonCtx) as unknown as ResettableContext<V>
+    return PhotonContextWrapper.create<V>(photonCtx as any) as unknown as ResettableContext<V>
   }
 
   release<V extends GravitoVariables>(wrapper: GravitoContext<V>): void {
@@ -480,9 +482,9 @@ const contextPool = new PhotonAdapterContextPool()
 /**
  * Convert a GravitoHandler to a Photon Handler
  */
-function toPhotonHandler<V extends GravitoVariables>(handler: GravitoHandler<V>): Handler {
+export function toPhotonHandler<V extends GravitoVariables>(handler: GravitoHandler<V>): Handler {
   return async (c: Context): Promise<Response> => {
-    const ctx = contextPool.acquire<V>(c)
+    const ctx = contextPool.acquire<V>(c as any)
     try {
       return await handler(ctx)
     } finally {
@@ -494,17 +496,17 @@ function toPhotonHandler<V extends GravitoVariables>(handler: GravitoHandler<V>)
 /**
  * Convert a GravitoMiddleware to a Photon MiddlewareHandler
  */
-function toPhotonMiddleware<V extends GravitoVariables>(
+export function toPhotonMiddleware<V extends GravitoVariables>(
   middleware: GravitoMiddleware<V>
-): GravitoMiddleware {
-  return async (c: Context, next: Next): Promise<Response | undefined> => {
-    const ctx = contextPool.acquire<V>(c)
+): any {
+  return async (c: Context, next: Next): Promise<Response | void> => {
+    const ctx = contextPool.acquire<V>(c as any)
     try {
       const gravitoNext: GravitoNext = async () => {
-        return (await next()) as unknown as Response | undefined
+        await next()
       }
       const result = await middleware(ctx, gravitoNext)
-      return result as Response | undefined
+      return result as Response | void
     } finally {
       contextPool.release(ctx)
     }
@@ -514,11 +516,11 @@ function toPhotonMiddleware<V extends GravitoVariables>(
 /**
  * Convert a GravitoErrorHandler to Photon's error handler signature
  */
-function toPhotonErrorHandler<V extends GravitoVariables>(
+export function toPhotonErrorHandler<V extends GravitoVariables>(
   handler: GravitoErrorHandler<V>
 ): (err: Error, c: Context) => Response | Promise<Response> {
   return async (err: Error, c: Context): Promise<Response> => {
-    const ctx = contextPool.acquire<V>(c)
+    const ctx = contextPool.acquire<V>(c as any)
     try {
       return await handler(err, ctx)
     } finally {
@@ -628,7 +630,7 @@ export class PhotonAdapter<V extends GravitoVariables = GravitoVariables>
     const photonMiddleware = middleware.map((m) => toPhotonMiddleware<V>(m))
 
     for (const m of photonMiddleware) {
-      this.app.use(fullPath, m)
+      this.app.use(fullPath, m as any)
     }
   }
 
@@ -657,7 +659,7 @@ export class PhotonAdapter<V extends GravitoVariables = GravitoVariables>
 
     const photonMiddleware = middleware.map((m) => toPhotonMiddleware<V>(m))
     for (const m of photonMiddleware) {
-      this.app.use(fullPath, m)
+      this.app.use(fullPath, m as any)
     }
   }
 
@@ -675,14 +677,14 @@ export class PhotonAdapter<V extends GravitoVariables = GravitoVariables>
   }
 
   onError(handler: GravitoErrorHandler<V>): void {
-    this.app.onError(toPhotonErrorHandler<V>(handler))
+    this.app.onError(toPhotonErrorHandler<V>(handler) as any)
   }
 
   onNotFound(handler: GravitoNotFoundHandler<V>): void {
-    this.app.notFound(async (c: Context) => {
-      const ctx = PhotonContextWrapper.create<V>(c)
+    this.app.notFound((async (c: Context) => {
+      const ctx = PhotonContextWrapper.create<V>(c as any)
       return handler(ctx)
-    })
+    }) as any)
   }
 
   /**
@@ -736,7 +738,7 @@ export function createPhotonAdapter<V extends GravitoVariables = GravitoVariable
 // Utility Exports
 // ─────────────────────────────────────────────────────────────────────────────
 
-export { PhotonContextWrapper, PhotonRequestWrapper, toPhotonHandler, toPhotonMiddleware }
+export { PhotonContextWrapper, PhotonRequestWrapper }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Rebranded Aliases (Gravito Core)

@@ -1,6 +1,5 @@
-import type { Env, Schema } from '@gravito/photon'
+import type { Hono } from '@gravito/photon'
 import { hc as beamClient } from '@gravito/photon/client'
-import type { Hono } from 'hono'
 import { BeamError, BeamNetworkError } from './errors'
 import { ConnectionPool } from './pool'
 import type { BeamOptions } from './types'
@@ -47,7 +46,7 @@ import {
  *
  * @public
  */
-export function createBeam<T extends Hono<Env, Schema, string>>(
+export function createBeam<T extends Hono<any, any, any>>(
   baseUrl: string,
   options?: BeamOptions
 ): ReturnType<typeof beamClient<T>> {
@@ -62,7 +61,7 @@ export function createBeam<T extends Hono<Env, Schema, string>>(
     !options?.onError &&
     !options?.pool
   ) {
-    return beamClient<T>(baseUrl, options)
+    return beamClient<T>(baseUrl, options) as any
   }
 
   // Advanced path: wrap fetch to support new features
@@ -71,7 +70,7 @@ export function createBeam<T extends Hono<Env, Schema, string>>(
   return beamClient<T>(baseUrl, {
     ...options,
     fetch: wrappedFetch,
-  })
+  }) as any
 }
 
 /**

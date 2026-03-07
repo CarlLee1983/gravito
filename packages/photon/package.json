@@ -2,7 +2,7 @@
   "name": "@gravito/photon",
   "sideEffects": false,
   "version": "1.1.0",
-  "description": "Gravito Photon - Native Bun HTTP engine",
+  "description": "Gravito Photon HTTP engine (compat wrapper)",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "module": "./dist/index.js",
@@ -21,6 +21,21 @@
       "bun": "./src/adapter/index.ts",
       "types": "./dist/adapter/index.d.ts",
       "default": "./dist/adapter/index.js"
+    },
+    "./client": {
+      "bun": "./src/client.ts",
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./logger": {
+      "bun": "./src/logger.ts",
+      "types": "./dist/logger.d.ts",
+      "default": "./dist/logger.js"
+    },
+    "./bun": {
+      "bun": "./src/bun.ts",
+      "types": "./dist/bun.d.ts",
+      "default": "./dist/bun.js"
     },
     "./jwt": {
       "bun": "./src/jwt.ts",
@@ -45,7 +60,7 @@
     "./middleware/ratelimit-redis": {
       "bun": "./src/middleware/ratelimit-redis.ts",
       "types": "./dist/middleware/ratelimit-redis.d.ts",
-      "default": "./dist/middleware/ratelimit.js"
+      "default": "./dist/middleware/ratelimit-redis.js"
     },
     "./middleware/otel": {
       "bun": "./src/middleware/otel.ts",
@@ -77,15 +92,35 @@
       "types": "./dist/middleware/ratelimit.d.ts",
       "default": "./dist/middleware/ratelimit.js"
     },
-    "./middleware/websocket": {
-      "bun": "./src/middleware/websocket.ts",
-      "types": "./dist/middleware/websocket.d.ts",
-      "default": "./dist/middleware/websocket.js"
+    "./http-exception": {
+      "bun": "./src/http-exception.ts",
+      "types": "./dist/http-exception.d.ts",
+      "default": "./dist/http-exception.js"
     },
-    "./openapi": {
-      "bun": "./src/openapi.ts",
-      "types": "./dist/openapi.d.ts",
-      "default": "./dist/openapi.js"
+    "./router/reg-exp-router": {
+      "bun": "./src/router/reg-exp-router.ts",
+      "types": "./dist/router/reg-exp-router.d.ts",
+      "default": "./dist/router/reg-exp-router.js"
+    },
+    "./router/trie-router": {
+      "bun": "./src/router/trie-router.ts",
+      "types": "./dist/router/trie-router.d.ts",
+      "default": "./dist/router/trie-router.js"
+    },
+    "./adapter/cloudflare": {
+      "bun": "./src/adapter/cloudflare.ts",
+      "types": "./dist/adapter/cloudflare.d.ts",
+      "default": "./dist/adapter/cloudflare.js"
+    },
+    "./adapter/vercel": {
+      "bun": "./src/adapter/vercel.ts",
+      "types": "./dist/adapter/vercel.d.ts",
+      "default": "./dist/adapter/vercel.js"
+    },
+    "./adapter/deno": {
+      "bun": "./src/adapter/deno.ts",
+      "types": "./dist/adapter/deno.d.ts",
+      "default": "./dist/adapter/deno.js"
     }
   },
   "scripts": {
@@ -115,6 +150,7 @@
     }
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.0.0",
     "bun-types": "latest"
   },
   "publishConfig": {
