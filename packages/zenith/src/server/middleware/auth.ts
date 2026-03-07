@@ -1,4 +1,6 @@
-import type { Context } from '@gravito/photon'
+import type { GravitoContext } from '@gravito/photon'
+
+type Context = GravitoContext
 
 // Session token store (in-memory for simplicity, consider Redis for production)
 const sessions = new Map<string, { createdAt: number; expiresAt: number }>()
@@ -145,7 +147,7 @@ export function destroySession(c: Context): void {
 /**
  * Authentication middleware for API routes
  */
-export async function authMiddleware(c: Context, next: () => Promise<void>) {
+export async function authMiddleware(c: Context, next: () => Promise<Response | undefined>) {
   // If no password is set, allow all requests
   if (!isAuthEnabled()) {
     return next()
