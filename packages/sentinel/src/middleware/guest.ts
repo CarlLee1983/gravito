@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from '@gravito/photon'
+import type { GravitoMiddleware } from '@gravito/core'
 import type { AuthManager } from '../AuthManager'
 
 /**
@@ -21,7 +21,7 @@ import type { AuthManager } from '../AuthManager'
  *
  * @public
  */
-export const guest = (guard?: string, redirectTo = '/'): MiddlewareHandler => {
+export const guest = (guard?: string, redirectTo = '/'): GravitoMiddleware => {
   return async (c, next) => {
     const manager = c.get('auth') as AuthManager
 

@@ -184,6 +184,7 @@ export class BunNativeAdapter implements HttpAdapter {
       const newReq = new Request(url.toString(), {
         method: ctx.req.method,
         headers: ctx.req.raw.headers,
+        body: ctx.req.raw.body,
       })
 
       const res = await subAdapter.fetch(newReq)

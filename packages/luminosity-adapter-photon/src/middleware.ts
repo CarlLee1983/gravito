@@ -1,5 +1,5 @@
+import type { GravitoContext, GravitoMiddleware } from '@gravito/core'
 import { type SeoConfig, SeoEngine } from '@gravito/luminosity'
-import type { Context, MiddlewareHandler } from '@gravito/photon'
 
 /**
  * Dependencies for the Gravito SEO middleware, supporting dependency injection for testing.
@@ -22,12 +22,12 @@ export interface GravitoSeoDeps {
  * @param config - The SEO configuration object.
  * @returns A Photon middleware handler.
  */
-export function gravitoSeo(config: SeoConfig, deps: GravitoSeoDeps = {}): MiddlewareHandler {
+export function gravitoSeo(config: SeoConfig, deps: GravitoSeoDeps = {}): GravitoMiddleware {
   const SeoEngineImpl = deps.SeoEngine ?? SeoEngine
   const engine = new SeoEngineImpl(config)
   let initialized = false
 
-  return async (c: Context, next) => {
+  return async (c: GravitoContext, next) => {
     const path = c.req.path
     const isRobots = path === '/robots.txt' || path.endsWith('/robots.txt')
     const isSitemap =

@@ -70,7 +70,7 @@ describe('csrf.ts', () => {
 
       expect(result).toBe('mock-csrf-token')
       expect(getCsrfTokenCalls.length).toBe(1)
-      expect(getCsrfTokenCalls[0].context).toBe(nativeContext)
+      expect(getCsrfTokenCalls[0].context).toBe(context)
       expect(getCsrfTokenCalls[0].options).toEqual({})
     })
 
@@ -87,7 +87,7 @@ describe('csrf.ts', () => {
 
       expect(result).toBe('mock-csrf-token')
       expect(getCsrfTokenCalls.length).toBe(1)
-      expect(getCsrfTokenCalls[0].context).toBe(nativeContext)
+      expect(getCsrfTokenCalls[0].context).toBe(context)
       expect(getCsrfTokenCalls[0].options).toEqual(customOptions)
     })
 
@@ -110,8 +110,8 @@ describe('csrf.ts', () => {
 
       ensureCsrfToken(context, config)
 
-      expect(getCsrfTokenCalls[0].context).toBe(nativeContext)
-      expect(getCsrfTokenCalls[0].context.mockData).toBe('test')
+      expect(getCsrfTokenCalls[0].context).toBe(context)
+      expect(getCsrfTokenCalls[0].context.native.mockData).toBe('test')
     })
   })
 })

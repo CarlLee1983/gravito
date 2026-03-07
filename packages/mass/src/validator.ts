@@ -59,9 +59,9 @@ export function validate<T extends TSchema>(
  *
  * @internal
  */
-function tbValidator<T extends TSchema>(
+function tbValidator(
   source: 'json' | 'query' | 'param' | 'form',
-  schema: T,
+  schema: TSchema,
   hook?: (result: unknown, c: GravitoContext) => Response | Promise<Response> | undefined
 ): GravitoMiddleware {
   return async (ctx: GravitoContext, next) => {
@@ -79,11 +79,11 @@ function tbValidator<T extends TSchema>(
         break
 
       case 'query':
-        data = ctx.req.query()
+        data = ctx.req.queries()
         break
 
       case 'param':
-        data = ctx.req.param()
+        data = ctx.req.params()
         break
 
       case 'form':
@@ -111,12 +111,7 @@ function tbValidator<T extends TSchema>(
 
     // Store validated data in context
     const validated = data as Static<T>
-    ;(ctx.req as any).valid = (target: string) => {
-      if (target === source) {
-        return validated
-      }
-      throw new Error(`Validation data for '${target}' not available`)
-    }
+    ctx.req.setValidated(source, validated)
 
     // Call hook with success result if provided
     if (hook) {

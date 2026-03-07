@@ -26,65 +26,92 @@ import { BunNativeAdapter } from '@gravito/core'
 export class Photon {
   private adapter = new BunNativeAdapter()
 
-  get(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): void {
+  get(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
     this.adapter.route('get', path, ...handlers)
+    return this
   }
 
-  post(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): void {
+  post(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
     this.adapter.route('post', path, ...handlers)
+    return this
   }
 
-  put(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): void {
+  put(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
     this.adapter.route('put', path, ...handlers)
+    return this
   }
 
-  delete(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): void {
+  delete(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
     this.adapter.route('delete', path, ...handlers)
+    return this
   }
 
-  patch(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): void {
+  patch(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
     this.adapter.route('patch', path, ...handlers)
+    return this
   }
 
-  head(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): void {
+  head(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
     this.adapter.route('head', path, ...handlers)
+    return this
   }
 
-  options(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): void {
+  options(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
     this.adapter.route('options', path, ...handlers)
+    return this
   }
 
-  use(path: string, ...middleware: GravitoMiddleware[]): void {
+  use(path: string, ...middleware: GravitoMiddleware[]): this {
     this.adapter.use(path, ...middleware)
+    return this
   }
 
-  useGlobal(...middleware: GravitoMiddleware[]): void {
+  useGlobal(...middleware: GravitoMiddleware[]): this {
     this.adapter.useGlobal(...middleware)
+    return this
   }
 
-  useScoped(scope: string, path: string, ...middleware: GravitoMiddleware[]): void {
+  useScoped(scope: string, path: string, ...middleware: GravitoMiddleware[]): this {
     this.adapter.useScoped(scope, path, ...middleware)
+    return this
   }
 
-  route(basePath: string, app: Photon): void {
+  route(basePath: string, app: Photon): this {
     this.mount(basePath, app)
+    return this
   }
 
-  mount(path: string, app: Photon | any): void {
+  mount(path: string, app: Photon | any): this {
     const subAdapter = app instanceof Photon ? app.adapter : app
     this.adapter.mount(path, subAdapter)
+    return this
   }
 
-  onError(handler: GravitoErrorHandler): void {
+  onError(handler: GravitoErrorHandler): this {
     this.adapter.onError(handler)
+    return this
   }
 
-  onNotFound(handler: GravitoNotFoundHandler): void {
+  onNotFound(handler: GravitoNotFoundHandler): this {
     this.adapter.onNotFound(handler)
+    return this
   }
 
   async fetch(request: Request, server?: any): Promise<Response> {
     return this.adapter.fetch(request, server)
+  }
+
+  async request(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+    const url =
+      typeof input === 'string'
+        ? input.startsWith('http')
+          ? input
+          : `http://localhost${input}`
+        : input instanceof URL
+          ? input.toString()
+          : (input as Request).url
+    const request = input instanceof Request ? input : new Request(url, init)
+    return this.fetch(request)
   }
 
   get websocket() {
