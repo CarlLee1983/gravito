@@ -4,7 +4,6 @@
  * @module @gravito/ripple/drivers
  */
 
-// @ts-expect-error
 import type { ConnectionOptions, NatsConnection } from 'nats'
 import { RippleDriverError } from '../errors/RippleError'
 import type { RippleLogger } from '../logging/Logger'
@@ -75,12 +74,11 @@ export class NATSDriver implements RippleDriver {
     })
 
     try {
-      // @ts-expect-error
       const { connect } = await import('nats')
       this.nats = await connect({
         servers: this.config.servers ?? 'nats://localhost:4222',
         user: this.config.user,
-        password: this.config.password,
+        pass: this.config.password,
         token: this.config.token,
         ...this.config.connectionOptions,
       })
@@ -88,9 +86,9 @@ export class NATSDriver implements RippleDriver {
       this._connected = true
       this._initialized = true
 
-      this.nats.closed().then((err: Error | null) => {
+      this.nats.closed().then((err: void | Error) => {
         this._connected = false
-        if (err) {
+        if (err instanceof Error) {
           this.handleError(err)
         }
       })
@@ -108,8 +106,8 @@ export class NATSDriver implements RippleDriver {
     }
 
     const subject = this.subjectPrefix + channel
-    // @ts-expect-error
-    const sc = (await import('nats')).JSONCodec()
+    const { JSONCodec } = await import('nats')
+    const sc = JSONCodec()
     this.nats.publish(subject, sc.encode({ event, data }))
   }
 
@@ -126,8 +124,8 @@ export class NATSDriver implements RippleDriver {
     if (!this.callbacks.has(subject)) {
       this.callbacks.set(subject, new Set())
 
-      // @ts-expect-error
-      const sc = (await import('nats')).JSONCodec()
+      const { JSONCodec } = await import('nats')
+      const sc = JSONCodec()
       const sub = this.nats.subscribe(subject)
       this.subscriptions.set(subject, sub)
 
@@ -194,8 +192,7 @@ export class NATSDriver implements RippleDriver {
     }
 
     try {
-      // @ts-expect-error
-      const { jetstream } = await import('nats')
+      const { StringCodec } = await import('nats')
       const js = this.nats.jetstream()
       const bucketName = `ripple_presence_${channel.replace(/[^a-zA-Z0-9_-]/g, '_')}`
 
@@ -215,7 +212,7 @@ export class NATSDriver implements RippleDriver {
 
       // Store user info
       const userId = String(userInfo.id)
-      const codec = jetstream().StringCodec()
+      const codec = StringCodec()
       await kv.put(userId, codec.encode(JSON.stringify(userInfo)))
 
       this.logger.debug('Tracked presence member in NATS KV', { channel, userId })
@@ -244,7 +241,6 @@ export class NATSDriver implements RippleDriver {
     }
 
     try {
-      // @ts-expect-error
       await import('nats')
       const js = this.nats.jetstream()
       const bucketName = `ripple_presence_${channel.replace(/[^a-zA-Z0-9_-]/g, '_')}`
@@ -281,14 +277,13 @@ export class NATSDriver implements RippleDriver {
     const members: PresenceUserInfo[] = []
 
     try {
-      // @ts-expect-error
-      const { jetstream } = await import('nats')
+      const { StringCodec } = await import('nats')
       const js = this.nats.jetstream()
       const bucketName = `ripple_presence_${channel.replace(/[^a-zA-Z0-9_-]/g, '_')}`
 
       try {
         const kv = await js.views.kv(bucketName)
-        const codec = jetstream().StringCodec()
+        const codec = StringCodec()
 
         // Get all keys
         const keys = await kv.keys()
