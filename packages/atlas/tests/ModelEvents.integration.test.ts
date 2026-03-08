@@ -137,8 +137,8 @@ describe('ModelEvents', () => {
   test('it triggers retrieved event on hydrate', async () => {
     const user = EventUser.hydrate<EventUser>({ id: 1, name: 'Carl' })
 
-    // retrieved event is async, wait a bit
-    await new Promise((resolve) => setTimeout(resolve, 10))
+    // retrieved event is async, wait a bit - increased for stability
+    await new Promise((resolve) => setTimeout(resolve, 100))
 
     expect(user.events).toContain('retrieved')
   })

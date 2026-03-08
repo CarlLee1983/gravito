@@ -31,6 +31,7 @@ import { Scaffold } from '@gravito/scaffold'
 export class MakeCommand {
   private searchPaths: string[] = []
   private architecture: 'mvc' | 'ddd' | 'cqrs' = 'mvc'
+  private cwd: string
 
   /**
    * Initializes a new MakeCommand instance.
@@ -40,14 +41,15 @@ export class MakeCommand {
    * in their project root, falling back to CLI defaults if a specific stub is missing.
    *
    * @param customStubsPath - Optional explicit path to search for stubs first.
+   * @param cwd - Optional current working directory (defaults to this.cwd).
    *
    * @example
    * ```typescript
    * const make = new MakeCommand('./overrides/stubs');
    * ```
    */
-  constructor(customStubsPath?: string) {
-    const cwd = process.cwd()
+  constructor(customStubsPath?: string, cwd: string = process.cwd()) {
+    this.cwd = cwd
 
     // Default built-in stub locations
     const devPath = path.resolve(__dirname, '../../stubs')
@@ -60,16 +62,16 @@ export class MakeCommand {
     // Define stub resolution priority (ordered from highest to lowest)
     this.searchPaths.push(
       // 1. Project root stubs (Highest priority - User overrides)
-      path.resolve(cwd, 'stubs'),
+      path.resolve(this.cwd, 'stubs'),
       // 2. Hidden project stubs
-      path.resolve(cwd, '.gravito/stubs'),
+      path.resolve(this.cwd, '.gravito/stubs'),
       // 3. CLI built-in stubs (Production mode)
       prodPath,
       // 4. CLI built-in stubs (Development mode)
       devPath,
       // 5. Monorepo-relative paths
-      path.resolve(cwd, 'packages/cli/stubs'),
-      path.resolve(cwd, '../packages/cli/stubs')
+      path.resolve(this.cwd, 'packages/cli/stubs'),
+      path.resolve(this.cwd, '../packages/cli/stubs')
     )
 
     // Prune non-existent paths to optimize file system lookups
@@ -84,7 +86,7 @@ export class MakeCommand {
    */
   private detectArchitecture() {
     try {
-      const pkgPath = path.join(process.cwd(), 'package.json')
+      const pkgPath = path.join(this.cwd, 'package.json')
       const content = readFileSync(pkgPath, 'utf-8')
       const pkg = JSON.parse(content)
       this.architecture = pkg.gravito?.architecture || 'mvc'
@@ -200,7 +202,7 @@ export class MakeCommand {
         const filePath = path.join(searchPath, filename)
         if (existsSync(filePath)) {
           // Provide visual feedback when using user-defined overrides (first two paths)
-          const cwd = process.cwd()
+          const cwd = this.cwd
           if (
             searchPath === path.resolve(cwd, 'stubs') ||
             searchPath === path.resolve(cwd, '.gravito/stubs')
@@ -243,8 +245,8 @@ export class MakeCommand {
   private async runSatellite(name: string, options: any) {
     const isInternal = options.internal || false
     const targetDir = isInternal
-      ? path.resolve(process.cwd(), 'satellites', name.toLowerCase())
-      : path.resolve(process.cwd(), name.toLowerCase())
+      ? path.resolve(this.cwd, 'satellites', name.toLowerCase())
+      : path.resolve(this.cwd, name.toLowerCase())
 
     const scaffold = new Scaffold()
 
@@ -281,7 +283,7 @@ export class MakeCommand {
    * @private
    */
   private resolveTargetPath(type: string, name: NormalizedName): string {
-    const cwd = process.cwd()
+    const cwd = this.cwd
 
     // Architecture-aware path mapping
     const architecturePaths: Record<'mvc' | 'ddd' | 'cqrs', Record<string, string>> = {
@@ -438,7 +440,7 @@ export class MakeCommand {
    * @private
    */
   private getRelativePath(fullpath: string): string {
-    return path.relative(process.cwd(), fullpath)
+    return path.relative(this.cwd, fullpath)
   }
 }
 
