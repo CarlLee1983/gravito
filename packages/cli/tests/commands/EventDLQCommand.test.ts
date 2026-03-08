@@ -11,7 +11,7 @@
  * - delete() 命令
  */
 
-import { beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
 import type { DeadLetterQueueManager, DLQRecord, DLQStats } from '@gravito/core'
 import { EventDLQCommand } from '../../src/commands/EventDLQCommand'
 
@@ -74,6 +74,7 @@ describe('EventDLQCommand', () => {
   let mockManager: DeadLetterQueueManager
   let consoleLogSpy: ReturnType<typeof spyOn>
   let _consoleErrorSpy: ReturnType<typeof spyOn>
+  let exitSpy: ReturnType<typeof spyOn>
 
   beforeEach(() => {
     mockManager = createMockDLQManager()
@@ -82,6 +83,15 @@ describe('EventDLQCommand', () => {
     // 捕獲 console 輸出
     consoleLogSpy = spyOn(console, 'log').mockImplementation(() => {})
     _consoleErrorSpy = spyOn(console, 'error').mockImplementation(() => {})
+
+    // Mock process.exit to prevent killing the test runner
+    exitSpy = spyOn(process, 'exit').mockImplementation(() => undefined as never)
+  })
+
+  afterEach(() => {
+    consoleLogSpy.mockRestore()
+    _consoleErrorSpy.mockRestore()
+    exitSpy.mockRestore()
   })
 
   // ==========================================================================
@@ -458,7 +468,7 @@ describe('EventDLQCommand', () => {
 
       expect(mockManager.clear).toHaveBeenCalled()
       const output = consoleLogSpy.mock.calls.flat().join('\n')
-      expect(output).toContain('Deleted')
+      expect(output).toContain('Successfully deleted')
       expect(output).toContain('10')
     })
 

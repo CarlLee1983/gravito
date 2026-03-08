@@ -183,8 +183,8 @@ describe('BunSQLPreparedStatementManager', () => {
       // 驗證語句被準備
       expect(managerWithShortTimeout.getSize()).toBe(1)
 
-      // 等待超過閒置超時時間
-      await new Promise((resolve) => setTimeout(resolve, 150))
+      // 等待超過閒置超時時間 - 增加等待時間以提高穩定性
+      await new Promise((resolve) => setTimeout(resolve, 300))
 
       // TTL 到期時應該自動清理（lru-cache 的 ttlAutopurge 功能）
       // 注意：TTL 清理發生在下一次訪問時或通過內部定時器

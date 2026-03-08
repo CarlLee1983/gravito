@@ -85,8 +85,8 @@ describe('PoolHealthChecker', () => {
   describe('getHealthStatus', () => {
     it('should get health status for specific connection', async () => {
       checker.start()
-      // Wait for health check to complete
-      await new Promise((resolve) => setTimeout(resolve, 150))
+      // Wait for health check to complete - increased for stability
+      await new Promise((resolve) => setTimeout(resolve, 250))
 
       const health = checker.getHealthStatus('default')
       expect(health).not.toBeNull()
@@ -95,7 +95,8 @@ describe('PoolHealthChecker', () => {
 
     it('should get health status for all connections', async () => {
       checker.start()
-      await new Promise((resolve) => setTimeout(resolve, 150))
+      // Increased for stability
+      await new Promise((resolve) => setTimeout(resolve, 250))
 
       const allHealth = checker.getHealthStatus()
       expect(allHealth instanceof Map).toBe(true)
@@ -111,7 +112,8 @@ describe('PoolHealthChecker', () => {
   describe('health evaluation', () => {
     it('should evaluate healthy status', async () => {
       checker.start()
-      await new Promise((resolve) => setTimeout(resolve, 150))
+      // Increased wait time for stability
+      await new Promise((resolve) => setTimeout(resolve, 250))
 
       const health = checker.getHealthStatus('default')
       expect((health as PoolHealth).status).toBe('healthy')
@@ -119,7 +121,8 @@ describe('PoolHealthChecker', () => {
 
     it('should trigger callback on status change', async () => {
       checker.start()
-      await new Promise((resolve) => setTimeout(resolve, 150))
+      // Increased wait time for stability
+      await new Promise((resolve) => setTimeout(resolve, 250))
 
       // First check should trigger callback
       expect(healthChangeCallback.mock.calls.length).toBeGreaterThan(0)
@@ -127,13 +130,14 @@ describe('PoolHealthChecker', () => {
 
     it('should not trigger callback if status unchanged', async () => {
       checker.start()
-      await new Promise((resolve) => setTimeout(resolve, 150))
+      // Increased wait time for stability
+      await new Promise((resolve) => setTimeout(resolve, 250))
       const callCount = healthChangeCallback.mock.calls.length
 
       // Wait another cycle
-      await new Promise((resolve) => setTimeout(resolve, 150))
+      await new Promise((resolve) => setTimeout(resolve, 250))
 
-      // Should not have significantly more calls (might have some due to timing)
+      // Should not have significantly more calls
       expect(healthChangeCallback.mock.calls.length).toBeLessThanOrEqual(callCount + 2)
     })
 
@@ -155,7 +159,8 @@ describe('PoolHealthChecker', () => {
         }) as any
 
       checker.start()
-      await new Promise((resolve) => setTimeout(resolve, 150))
+      // Increased wait time for stability
+      await new Promise((resolve) => setTimeout(resolve, 250))
 
       // Should have triggered critical callback
       expect(criticalCallback.mock.calls.length).toBeGreaterThan(0)

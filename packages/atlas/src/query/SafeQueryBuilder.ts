@@ -32,6 +32,10 @@ import { Expression } from './Expression'
  * ```
  */
 export class SafeIdentifier {
+  /**
+   * 內部標記，用於跨模組邊界識別 SafeIdentifier 實例
+   */
+  public readonly __isSafeIdentifier = true
   private readonly name: string
 
   constructor(identifierName: string) {
@@ -136,7 +140,12 @@ export class SafeQueryBuilder<T = Record<string, unknown>> {
     for (let i = 0; i < this.values.length; i++) {
       const value = this.values[i]
 
-      if (value instanceof SafeIdentifier) {
+      // 檢查是否為 SafeIdentifier，使用屬性標記以避免不同模組實例導致的 instanceof 失敗
+      if (
+        value &&
+        typeof value === 'object' &&
+        (value instanceof SafeIdentifier || (value as any).__isSafeIdentifier === true)
+      ) {
         // 安全識別符（表名/列名）- 已驗證後直接內聯
         sql += value.toString() + (this.sqlParts[i + 1] ?? '')
       } else {
