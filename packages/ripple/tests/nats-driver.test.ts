@@ -62,9 +62,7 @@ mock.module('nats', () => {
       encode: (v: any) => new TextEncoder().encode(JSON.stringify(v)),
       decode: (v: Uint8Array) => JSON.parse(new TextDecoder().decode(v)),
     }),
-    jetstream: () => ({
-      StringCodec: () => codec,
-    }),
+    StringCodec: () => codec,
   }
 })
 
