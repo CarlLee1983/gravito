@@ -1,21 +1,23 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { rm } from 'node:fs/promises'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { sleep } from '../src/locks'
 import { FileStore } from '../src/stores/FileStore'
 
-const TEST_DIR = './tmp/test-file-store-stability'
-
 describe('FileStore Stability', () => {
+  let testDir: string
+
   beforeAll(async () => {
-    await rm(TEST_DIR, { recursive: true, force: true })
+    testDir = await mkdtemp(join(tmpdir(), 'gravito-stasis-stability-'))
   })
 
   afterAll(async () => {
-    await rm(TEST_DIR, { recursive: true, force: true })
+    await rm(testDir, { recursive: true, force: true }).catch(() => {})
   })
 
   it('should use atomic writes to prevent partial files', async () => {
-    const store = new FileStore({ directory: TEST_DIR })
+    const store = new FileStore({ directory: testDir })
 
     const largeValue = { data: 'x'.repeat(10000) }
     await store.put('large-key', largeValue, 60)
@@ -26,7 +28,7 @@ describe('FileStore Stability', () => {
 
   it('should automatically clean up expired files', async () => {
     const store = new FileStore({
-      directory: TEST_DIR,
+      directory: testDir,
       enableCleanup: true,
       cleanupInterval: 100,
     })
@@ -47,7 +49,7 @@ describe('FileStore Stability', () => {
   })
 
   it('should not acquire lock while another holds it', async () => {
-    const store = new FileStore({ directory: TEST_DIR })
+    const store = new FileStore({ directory: testDir })
 
     const lock1 = store.lock('active-resource', 5)
     expect(await lock1.acquire()).toBe(true)
@@ -62,7 +64,7 @@ describe('FileStore Stability', () => {
   })
 
   it('should not allow duplicate lock acquisition', async () => {
-    const store = new FileStore({ directory: TEST_DIR })
+    const store = new FileStore({ directory: testDir })
 
     const lock1 = store.lock('resource2', 5)
     const lock2 = store.lock('resource2', 5)
@@ -77,7 +79,7 @@ describe('FileStore Stability', () => {
   })
 
   it('should cleanup expired files on demand', async () => {
-    const store = new FileStore({ directory: TEST_DIR, enableCleanup: false })
+    const store = new FileStore({ directory: testDir, enableCleanup: false })
 
     await store.put('temp1', 'value1', 0.05)
     await store.put('temp2', 'value2', 0.05)
@@ -93,7 +95,7 @@ describe('FileStore Stability', () => {
   })
 
   it('should handle concurrent writes safely', async () => {
-    const store = new FileStore({ directory: TEST_DIR })
+    const store = new FileStore({ directory: testDir })
 
     await Promise.all([
       store.put('concurrent', 'value1', 60),
@@ -109,14 +111,14 @@ describe('FileStore Stability', () => {
   })
 
   it('should handle invalid directory paths gracefully', async () => {
-    const store = new FileStore({ directory: TEST_DIR })
+    const store = new FileStore({ directory: testDir })
 
     const retrieved = await store.get('nonexistent')
     expect(retrieved).toBeNull()
   })
 
   it('should disable cleanup daemon when enableCleanup is false', async () => {
-    const store = new FileStore({ directory: TEST_DIR, enableCleanup: false })
+    const store = new FileStore({ directory: testDir, enableCleanup: false })
 
     await store.put('no-cleanup', 'value', 0.05)
 
@@ -127,7 +129,7 @@ describe('FileStore Stability', () => {
   })
 
   it('should properly destroy cleanup timer', async () => {
-    const store = new FileStore({ directory: TEST_DIR, cleanupInterval: 100 })
+    const store = new FileStore({ directory: testDir, cleanupInterval: 100 })
 
     await store.destroy()
 

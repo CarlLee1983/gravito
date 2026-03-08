@@ -1,18 +1,24 @@
-import { afterEach, describe, expect, test } from 'bun:test'
-import { rm } from 'node:fs/promises'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { sleep } from '../src/locks'
 import { FileStore } from '../src/stores/FileStore'
 
-const TEST_DIR = './tmp/test-filestore-maxfiles'
-
 describe('FileStore maxFiles', () => {
+  let testDir: string
+
+  beforeEach(async () => {
+    testDir = await mkdtemp(join(tmpdir(), 'gravito-stasis-maxfiles-'))
+  })
+
   afterEach(async () => {
-    await rm(TEST_DIR, { recursive: true, force: true }).catch(() => {})
+    await rm(testDir, { recursive: true, force: true }).catch(() => {})
   })
 
   test('enforces maxFiles limit by removing oldest files', async () => {
     const store = new FileStore({
-      directory: TEST_DIR,
+      directory: testDir,
       enableCleanup: true,
       cleanupInterval: 100, // fast cleanup for test
       maxFiles: 3,
@@ -34,7 +40,7 @@ describe('FileStore maxFiles', () => {
 
     // Check directly which files remain
     const fs = require('node:fs')
-    const files = fs.readdirSync(TEST_DIR).filter((f: string) => f.endsWith('.json'))
+    const files = fs.readdirSync(testDir).filter((f: string) => f.endsWith('.json'))
 
     expect(files.length).toBeLessThanOrEqual(3)
 

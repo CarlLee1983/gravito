@@ -1,4 +1,7 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { Redis } from '@gravito/plasma'
 import { RateLimiter } from '../src/RateLimiter'
 import { FileStore } from '../src/stores/FileStore'
@@ -89,10 +92,16 @@ describe('RateLimiter TTL Precision', () => {
   describe('FileStore', () => {
     let store: FileStore
     let limiter: RateLimiter
+    let testDir: string
 
-    beforeEach(() => {
-      store = new FileStore({ directory: './tmp/test-rate-limiter-ttl' })
+    beforeEach(async () => {
+      testDir = await mkdtemp(join(tmpdir(), 'gravito-stasis-limiter-'))
+      store = new FileStore({ directory: testDir })
       limiter = new RateLimiter(store)
+    })
+
+    afterEach(async () => {
+      await rm(testDir, { recursive: true, force: true }).catch(() => {})
     })
 
     it('returns accurate retryAfter when limit exceeded', async () => {
@@ -236,20 +245,25 @@ describe('RateLimiter TTL Precision', () => {
 
   describe('Cross-store TTL consistency', () => {
     it('all stores provide consistent retryAfter behavior', async () => {
-      const stores = [new MemoryStore(), new FileStore({ directory: './tmp/test-ttl-consistency' })]
+      const tempDir = await mkdtemp(join(tmpdir(), 'gravito-stasis-cross-'))
+      try {
+        const stores = [new MemoryStore(), new FileStore({ directory: tempDir })]
 
-      for (const store of stores) {
-        const limiter = new RateLimiter(store)
+        for (const store of stores) {
+          const limiter = new RateLimiter(store)
 
-        await limiter.attempt('key', 1, 10)
-        const blocked = await limiter.attempt('key', 1, 10)
+          await limiter.attempt('key', 1, 10)
+          const blocked = await limiter.attempt('key', 1, 10)
 
-        expect(blocked.allowed).toBe(false)
-        expect(blocked.retryAfter).toBeDefined()
-        expect(blocked.retryAfter).toBeGreaterThan(0)
-        expect(blocked.retryAfter).toBeLessThanOrEqual(10)
+          expect(blocked.allowed).toBe(false)
+          expect(blocked.retryAfter).toBeDefined()
+          expect(blocked.retryAfter).toBeGreaterThan(0)
+          expect(blocked.retryAfter).toBeLessThanOrEqual(10)
 
-        await store.flush()
+          await store.flush()
+        }
+      } finally {
+        await rm(tempDir, { recursive: true, force: true }).catch(() => {})
       }
     })
   })

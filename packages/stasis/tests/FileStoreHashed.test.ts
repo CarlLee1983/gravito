@@ -1,18 +1,23 @@
-import { afterEach, describe, expect, test } from 'bun:test'
-import { rm } from 'node:fs/promises'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { FileStore } from '../src/stores/FileStore'
 
-const TEST_DIR = './tmp/test-filestore-hashed'
-
 describe('FileStore Hashed Directories', () => {
+  let testDir: string
+
+  beforeEach(async () => {
+    testDir = await mkdtemp(join(tmpdir(), 'gravito-stasis-hashed-'))
+  })
+
   afterEach(async () => {
-    await rm(TEST_DIR, { recursive: true, force: true }).catch(() => {})
+    await rm(testDir, { recursive: true, force: true }).catch(() => {})
   })
 
   test('creates nested directories when enabled', async () => {
     const store = new FileStore({
-      directory: TEST_DIR,
+      directory: testDir,
       useSubdirectories: true,
     })
 
@@ -25,29 +30,29 @@ describe('FileStore Hashed Directories', () => {
 
     // Verify physical structure
     // We can't easily predict the exact hash without importing hashKey,
-    // but we can verify that subdirectories exist in TEST_DIR
+    // but we can verify that subdirectories exist in testDir
     const fs = require('node:fs')
-    const l1 = fs.readdirSync(TEST_DIR)
+    const l1 = fs.readdirSync(testDir)
     expect(l1.length).toBeGreaterThan(0)
 
     // Check if first level is a directory and has 2 chars
     const d1 = l1[0]
     expect(d1.length).toBe(2)
-    const stat1 = fs.statSync(join(TEST_DIR, d1))
+    const stat1 = fs.statSync(join(testDir, d1))
     expect(stat1.isDirectory()).toBe(true)
 
     // Check level 2
-    const l2 = fs.readdirSync(join(TEST_DIR, d1))
+    const l2 = fs.readdirSync(join(testDir, d1))
     expect(l2.length).toBeGreaterThan(0)
     const d2 = l2[0]
     expect(d2.length).toBe(2)
-    const stat2 = fs.statSync(join(TEST_DIR, d1, d2))
+    const stat2 = fs.statSync(join(testDir, d1, d2))
     expect(stat2.isDirectory()).toBe(true)
   })
 
   test('flush removes nested directories', async () => {
     const store = new FileStore({
-      directory: TEST_DIR,
+      directory: testDir,
       useSubdirectories: true,
     })
 
@@ -57,13 +62,13 @@ describe('FileStore Hashed Directories', () => {
     await store.flush()
 
     const fs = require('node:fs')
-    const files = fs.readdirSync(TEST_DIR)
+    const files = fs.readdirSync(testDir)
     expect(files.length).toBe(0)
   })
 
   test('cleanup works with nested directories', async () => {
     const store = new FileStore({
-      directory: TEST_DIR,
+      directory: testDir,
       useSubdirectories: true,
       enableCleanup: true,
       cleanupInterval: 100,

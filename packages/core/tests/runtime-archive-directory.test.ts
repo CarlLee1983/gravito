@@ -1,20 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { archiveFromDirectory, getArchiveAdapter } from '../src/runtime'
-
-// ============ 測試輔助 ============
-
-const testDir = `/tmp/gravito-archive-dir-test-${Date.now()}`
-const sourceDir = join(testDir, 'source')
-const outputPath = join(testDir, 'output.tar.gz')
-
-const hasBunTarball = typeof Bun !== 'undefined' && typeof (Bun as any).Tarball !== 'undefined'
 
 // ============ 測試群組 ============
 
 describe('archiveFromDirectory', () => {
+  let testDir: string
+  let sourceDir: string
+  let outputPath: string
+
+  const hasBunTarball = typeof Bun !== 'undefined' && typeof (Bun as any).Tarball !== 'undefined'
+
   beforeEach(async () => {
+    testDir = await mkdtemp(join(tmpdir(), 'gravito-archive-dir-test-'))
+    sourceDir = join(testDir, 'source')
+    outputPath = join(testDir, 'output.tar.gz')
+
     await mkdir(sourceDir, { recursive: true })
     await mkdir(join(sourceDir, 'sub'), {
       recursive: true,

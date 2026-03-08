@@ -9,7 +9,8 @@ import {
   jest,
   mock,
 } from 'bun:test'
-import { rm } from 'node:fs/promises'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 class AdapterMock {
@@ -37,7 +38,10 @@ let ImagePipeline: typeof import('../src/pipelines/ImagePipeline').ImagePipeline
 let VideoPipeline: typeof import('../src/pipelines/VideoPipeline').VideoPipeline
 let BaseProcessor: typeof import('../src/processors/BaseProcessor').BaseProcessor
 
+let testTmpDir: string
+
 beforeAll(async () => {
+  testTmpDir = await mkdtemp(join(tmpdir(), 'gravito-forge-test-'))
   ;({ ForgeService } = await import('../src/ForgeService'))
   ;({ ImageProcessor } = await import('../src/processors/ImageProcessor'))
   ;({ VideoProcessor } = await import('../src/processors/VideoProcessor'))
@@ -50,8 +54,7 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  await rm('/tmp/forge-image', { recursive: true, force: true })
-  await rm('/tmp/forge-video', { recursive: true, force: true })
+  await rm(testTmpDir, { recursive: true, force: true })
 })
 
 describe('ForgeService', () => {
@@ -76,7 +79,7 @@ describe('ForgeService', () => {
     }
     const processing = new ForgeService({ storage })
 
-    const outputPath = join(process.cwd(), 'tests', '.tmp-output.bin')
+    const outputPath = join(testTmpDir, '.tmp-output.bin')
     await Bun.write(outputPath, 'data')
 
     ;(processing as any).videoProcessor = {
@@ -129,11 +132,15 @@ describe('ForgeService', () => {
 describe('Pipelines', () => {
   it('executes pipeline steps and chains outputs', async () => {
     const pipeline = new BasePipeline()
+    const stepA = join(testTmpDir, 'step-a')
+    const stepB = join(testTmpDir, 'step-b')
+    const input = join(testTmpDir, 'input.jpg')
+
     const processorA = {
       supports: (mime: string) => mime === 'image/jpeg',
       process: async () => ({
-        url: '/tmp/step-a',
-        path: '/tmp/step-a',
+        url: stepA,
+        path: stepA,
         size: 1,
         mimeType: 'image/png',
       }),
@@ -141,8 +148,8 @@ describe('Pipelines', () => {
     const processorB = {
       supports: (mime: string) => mime === 'image/png',
       process: async () => ({
-        url: '/tmp/step-b',
-        path: '/tmp/step-b',
+        url: stepB,
+        path: stepB,
         size: 2,
         mimeType: 'image/webp',
       }),
@@ -150,7 +157,7 @@ describe('Pipelines', () => {
 
     pipeline.add(processorA, {}).add(processorB, {})
     const results = await pipeline.execute({
-      source: '/tmp/input.jpg',
+      source: input,
       filename: 'input.jpg',
       mimeType: 'image/jpeg',
     })
@@ -161,12 +168,15 @@ describe('Pipelines', () => {
 
   it('throws when processor does not support mime type', async () => {
     const pipeline = new BasePipeline()
+    const output = join(testTmpDir, 'output')
+    const input = join(testTmpDir, 'input.jpg')
+
     pipeline.add(
       {
         supports: () => false,
         process: async () => ({
-          url: '/tmp/output',
-          path: '/tmp/output',
+          url: output,
+          path: output,
           size: 1,
           mimeType: 'image/png',
         }),
@@ -176,7 +186,7 @@ describe('Pipelines', () => {
 
     await expect(
       pipeline.execute({
-        source: '/tmp/input.jpg',
+        source: input,
         filename: 'input.jpg',
         mimeType: 'image/jpeg',
       })
@@ -195,15 +205,12 @@ describe('Pipelines', () => {
 })
 
 describe('Processors', () => {
-  afterEach(async () => {
-    await rm('/tmp/forge-image', { recursive: true, force: true })
-    await rm('/tmp/forge-video', { recursive: true, force: true })
-  })
-
   it('processes images with options', async () => {
-    const processor = new ImageProcessor({ tempDir: '/tmp/forge-image' })
+    const processorDir = join(testTmpDir, 'forge-image')
+    const input = join(testTmpDir, 'input.jpg')
+    const processor = new ImageProcessor({ tempDir: processorDir })
     const output = await processor.process(
-      { source: '/tmp/input.jpg', filename: 'input.jpg', mimeType: 'image/jpeg' },
+      { source: input, filename: 'input.jpg', mimeType: 'image/jpeg' },
       { width: 100, height: 200, rotate: 90, quality: 80, format: 'png' }
     )
 
@@ -212,9 +219,11 @@ describe('Processors', () => {
   })
 
   it('processes videos with options', async () => {
-    const processor = new VideoProcessor({ tempDir: '/tmp/forge-video' })
+    const processorDir = join(testTmpDir, 'forge-video')
+    const input = join(testTmpDir, 'input.mp4')
+    const processor = new VideoProcessor({ tempDir: processorDir })
     const output = await processor.process(
-      { source: '/tmp/input.mp4', filename: 'input.mp4', mimeType: 'video/mp4' },
+      { source: input, filename: 'input.mp4', mimeType: 'video/mp4' },
       { width: 1280, rotate: 90, quality: 23, format: 'webm', codec: 'libvpx' }
     )
 
@@ -254,8 +263,9 @@ describe('Status management', () => {
     expect(processing.status).toBe('processing')
     expect(processing.progress).toBe(50)
 
+    const output = join(testTmpDir, 'output')
     const completed = ProcessingStatusManager.completed(processing, {
-      url: '/tmp/output',
+      url: output,
       size: 1,
       mimeType: 'image/png',
     })
@@ -363,6 +373,7 @@ describe('SSEHandler', () => {
 
   it('closes stream for completed status', async () => {
     const store = new MemoryStatusStore()
+    const output = join(testTmpDir, 'output')
     const status = {
       jobId: 'job-sse-2',
       status: 'completed' as const,
@@ -370,7 +381,7 @@ describe('SSEHandler', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       result: {
-        url: '/tmp/output',
+        url: output,
         size: 100,
         mimeType: 'image/png',
       },
@@ -410,11 +421,12 @@ describe('ProcessFileJob', () => {
   it('handles job execution with processing status updates', async () => {
     const store = new MemoryStatusStore()
     const { ProcessFileJob } = await import('../src/jobs/ProcessFileJob')
+    const input = join(testTmpDir, 'input.jpg')
 
     const job = new ProcessFileJob({
       jobId: 'job-process-1',
       input: {
-        source: '/tmp/input.jpg',
+        source: input,
         filename: 'input.jpg',
         mimeType: 'image/jpeg',
       },
@@ -429,10 +441,11 @@ describe('ProcessFileJob', () => {
 
   it('throws when status store is missing', async () => {
     const { ProcessFileJob } = await import('../src/jobs/ProcessFileJob')
+    const input = join(testTmpDir, 'input.jpg')
 
     const job = new ProcessFileJob({
       jobId: 'job-process-2',
-      input: { source: '/tmp/input.jpg', filename: 'input.jpg' },
+      input: { source: input, filename: 'input.jpg' },
       options: {},
     })
 
@@ -442,10 +455,11 @@ describe('ProcessFileJob', () => {
   it('throws when forge service is missing', async () => {
     const store = new MemoryStatusStore()
     const { ProcessFileJob } = await import('../src/jobs/ProcessFileJob')
+    const input = join(testTmpDir, 'input.jpg')
 
     const job = new ProcessFileJob({
       jobId: 'job-process-3',
-      input: { source: '/tmp/input.jpg', filename: 'input.jpg' },
+      input: { source: input, filename: 'input.jpg' },
       options: {},
       statusStore: store,
     })
@@ -456,7 +470,8 @@ describe('ProcessFileJob', () => {
 
 describe('Image processing options', () => {
   it('handles image processor with various format options', async () => {
-    const processor = new ImageProcessor({ tempDir: '/tmp/forge-image' })
+    const processorDir = join(testTmpDir, 'forge-image')
+    const processor = new ImageProcessor({ tempDir: processorDir })
 
     // Test that processor handles different formats
     expect(processor.supports('image/jpeg')).toBe(true)
@@ -466,7 +481,8 @@ describe('Image processing options', () => {
   })
 
   it('handles video processor with various format options', async () => {
-    const processor = new VideoProcessor({ tempDir: '/tmp/forge-video' })
+    const processorDir = join(testTmpDir, 'forge-video')
+    const processor = new VideoProcessor({ tempDir: processorDir })
 
     // Test that processor handles different formats
     expect(processor.supports('video/mp4')).toBe(true)
@@ -536,7 +552,7 @@ describe('DiskSpaceGuard', () => {
     const { DiskSpaceGuard } = await import('../src/utils/DiskSpaceGuard')
 
     // Check for 1KB of space (should succeed on most systems)
-    const hasSpace = await DiskSpaceGuard.hasEnoughSpace('/tmp', 1024)
+    const hasSpace = await DiskSpaceGuard.hasEnoughSpace(testTmpDir, 1024)
     expect(typeof hasSpace).toBe('boolean')
   })
 
@@ -547,7 +563,7 @@ describe('DiskSpaceGuard', () => {
     const toPetabytes = 1024 * 1024 * 1024 * 1024 * 1024
 
     try {
-      await DiskSpaceGuard.check('/tmp', toPetabytes)
+      await DiskSpaceGuard.check(testTmpDir, toPetabytes)
     } catch (error) {
       expect(error).toBeInstanceOf(Error)
       expect((error as Error).message).toContain('Insufficient disk space')
@@ -558,6 +574,7 @@ describe('DiskSpaceGuard', () => {
 describe('Pipeline error handling', () => {
   it('handles pipeline execution errors gracefully', async () => {
     const pipeline = new BasePipeline()
+    const input = join(testTmpDir, 'input.jpg')
 
     // Add a processor that will fail
     pipeline.add(
@@ -572,7 +589,7 @@ describe('Pipeline error handling', () => {
 
     await expect(
       pipeline.execute({
-        source: '/tmp/input.jpg',
+        source: input,
         filename: 'input.jpg',
         mimeType: 'image/jpeg',
       })
@@ -581,6 +598,9 @@ describe('Pipeline error handling', () => {
 
   it('chains multiple processors in sequence', async () => {
     const pipeline = new BasePipeline()
+    const input = join(testTmpDir, 'input.jpg')
+    const step1 = join(testTmpDir, 'step1')
+    const step2 = join(testTmpDir, 'step2')
 
     const results: any[] = []
 
@@ -591,8 +611,8 @@ describe('Pipeline error handling', () => {
         process: async (_input) => {
           results.push('step1')
           return {
-            url: '/tmp/step1',
-            path: '/tmp/step1',
+            url: step1,
+            path: step1,
             size: 100,
             mimeType: 'image/png',
           }
@@ -608,8 +628,8 @@ describe('Pipeline error handling', () => {
         process: async (_input) => {
           results.push('step2')
           return {
-            url: '/tmp/step2',
-            path: '/tmp/step2',
+            url: step2,
+            path: step2,
             size: 150,
             mimeType: 'image/webp',
           }
@@ -619,7 +639,7 @@ describe('Pipeline error handling', () => {
     )
 
     await pipeline.execute({
-      source: '/tmp/input.jpg',
+      source: input,
       filename: 'input.jpg',
       mimeType: 'image/jpeg',
     })
@@ -653,7 +673,8 @@ describe('ForgeService advanced features', () => {
 
 describe('BaseProcessor MIME type detection', () => {
   it('detects MIME type from filename extension', () => {
-    const processor = new ImageProcessor({ tempDir: '/tmp/forge-image' })
+    const processorDir = join(testTmpDir, 'forge-image')
+    const processor = new ImageProcessor({ tempDir: processorDir })
 
     expect(processor.supports('image/jpeg')).toBe(true)
     expect(processor.supports('image/png')).toBe(true)
@@ -662,7 +683,8 @@ describe('BaseProcessor MIME type detection', () => {
   })
 
   it('returns false for unsupported MIME types', () => {
-    const processor = new ImageProcessor({ tempDir: '/tmp/forge-image' })
+    const processorDir = join(testTmpDir, 'forge-image')
+    const processor = new ImageProcessor({ tempDir: processorDir })
 
     expect(processor.supports('video/mp4')).toBe(false)
     expect(processor.supports('audio/mpeg')).toBe(false)
@@ -704,15 +726,13 @@ describe('Pipeline fluent API', () => {
 })
 
 describe('BaseProcessor with metadata', () => {
-  afterEach(async () => {
-    await rm('/tmp/forge-image-meta', { recursive: true, force: true })
-  })
-
   it('includes metadata in processing output', async () => {
-    const processor = new ImageProcessor({ tempDir: '/tmp/forge-image-meta' })
+    const processorDir = join(testTmpDir, 'forge-image-meta')
+    const input = join(testTmpDir, 'test.jpg')
+    const processor = new ImageProcessor({ tempDir: processorDir })
 
     const result = await processor.process(
-      { source: '/tmp/test.jpg', filename: 'test.jpg', mimeType: 'image/jpeg' },
+      { source: input, filename: 'test.jpg', mimeType: 'image/jpeg' },
       { width: 100, height: 100, format: 'png' }
     )
 
@@ -721,15 +741,13 @@ describe('BaseProcessor with metadata', () => {
 })
 
 describe('VideoProcessor with transcode options', () => {
-  afterEach(async () => {
-    await rm('/tmp/forge-video-meta', { recursive: true, force: true })
-  })
-
   it('handles video transcoding with codec', async () => {
-    const processor = new VideoProcessor({ tempDir: '/tmp/forge-video-meta' })
+    const processorDir = join(testTmpDir, 'forge-video-meta')
+    const input = join(testTmpDir, 'test.mp4')
+    const processor = new VideoProcessor({ tempDir: processorDir })
 
     const result = await processor.process(
-      { source: '/tmp/test.mp4', filename: 'test.mp4', mimeType: 'video/mp4' },
+      { source: input, filename: 'test.mp4', mimeType: 'video/mp4' },
       { format: 'webm', codec: 'libvpx', bitrate: '2500k' }
     )
 
@@ -738,7 +756,8 @@ describe('VideoProcessor with transcode options', () => {
   })
 
   it('handles various video formats', () => {
-    const processor = new VideoProcessor({ tempDir: '/tmp/forge-video' })
+    const processorDir = join(testTmpDir, 'forge-video')
+    const processor = new VideoProcessor({ tempDir: processorDir })
 
     expect(processor.supports('video/mp4')).toBe(true)
     expect(processor.supports('video/webm')).toBe(true)
@@ -753,18 +772,21 @@ describe('ForgeService sync vs async processing', () => {
       statusStore: new MemoryStatusStore(),
     })
 
+    const output = join(testTmpDir, 'output.png')
+    const input = join(testTmpDir, 'input.jpg')
+
     ;(service as any).imageProcessor = {
       supports: () => true,
       process: async () => ({
-        path: '/tmp/output.png',
-        url: 'file:///tmp/output.png',
+        path: output,
+        url: `file://${output}`,
         size: 1024,
         mimeType: 'image/png',
       }),
     }
 
     const result = await service.process({
-      source: '/tmp/input.jpg',
+      source: input,
       filename: 'input.jpg',
       mimeType: 'image/jpeg',
     })
@@ -775,9 +797,10 @@ describe('ForgeService sync vs async processing', () => {
   it('performs asynchronous processing with status tracking', async () => {
     const store = new MemoryStatusStore()
     const service = new ForgeService({ statusStore: store })
+    const input = join(testTmpDir, 'input.jpg')
 
     const job = await service.processAsync({
-      source: '/tmp/input.jpg',
+      source: input,
       filename: 'input.jpg',
     })
 
