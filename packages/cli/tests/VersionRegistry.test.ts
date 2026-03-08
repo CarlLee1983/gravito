@@ -6,20 +6,22 @@ import { VersionRegistry } from '../src/utils/VersionRegistry'
 
 describe('VersionRegistry', () => {
   let registry: VersionRegistry
+  let tempDir: string
   let cacheFile: string
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    // Create a temporary directory for the test
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gravito-test-'))
+    cacheFile = path.join(tempDir, '.gravito/versions-cache.json')
+
     registry = new VersionRegistry()
-    cacheFile = path.join(os.homedir(), '.gravito/versions-cache.json')
+    // Override the cache file path for testing
+    ;(registry as any).cacheFile = cacheFile
   })
 
   afterEach(async () => {
-    // 清理緩存文件
-    try {
-      await fs.unlink(cacheFile)
-    } catch {
-      // 忽略錯誤
-    }
+    // Clean up temporary directory
+    await fs.rm(tempDir, { recursive: true, force: true })
   })
 
   it('應該能初始化版本註冊表', async () => {

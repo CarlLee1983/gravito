@@ -2,17 +2,27 @@
  * @fileoverview Tests for Redis presence persistence
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
 import { RedisDriver } from '../src/drivers/RedisDriver'
 import type { PresenceUserInfo } from '../src/types'
+import { MockRedis } from './mock-redis'
 
 describe('RedisDriver - Presence Persistence', () => {
   let driver: RedisDriver
+  let mockRedis: MockRedis
 
   beforeEach(async () => {
+    mockRedis = new MockRedis()
+
+    mock.module('ioredis', () => ({
+      default: function Redis() {
+        return mockRedis
+      },
+    }))
+
     driver = new RedisDriver({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: Number(process.env.REDIS_PORT) || 6379,
+      host: 'localhost',
+      port: 6379,
       keyPrefix: `test:${Math.random().toString(36).substring(7)}:`,
     })
     await driver.init?.()

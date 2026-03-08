@@ -88,6 +88,46 @@ export class MockRedis {
     return 'OK'
   }
 
+  async expire(key: string, seconds: number): Promise<number> {
+    // We don't implement actual expiration, just return success
+    return 1
+  }
+
+  // --- Hashes ---
+  async hset(key: string, field: string, value: string): Promise<number> {
+    let hash = this.data.get(key)
+    if (!hash || typeof hash !== 'object') {
+      hash = {}
+      this.data.set(key, hash)
+    }
+    const isNew = !(field in hash)
+    hash[field] = value
+    return isNew ? 1 : 0
+  }
+
+  async hdel(key: string, ...fields: string[]): Promise<number> {
+    const hash = this.data.get(key)
+    if (!hash || typeof hash !== 'object') {
+      return 0
+    }
+    let count = 0
+    for (const field of fields) {
+      if (field in hash) {
+        delete hash[field]
+        count++
+      }
+    }
+    return count
+  }
+
+  async hgetall(key: string): Promise<Record<string, string>> {
+    const hash = this.data.get(key)
+    if (!hash || typeof hash !== 'object') {
+      return {}
+    }
+    return { ...hash }
+  }
+
   // --- Lists ---
   async lpush(key: string, ...values: any[]): Promise<number> {
     const list = this.getContainer(key, 'list') as any[]

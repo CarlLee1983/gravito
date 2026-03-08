@@ -29,23 +29,23 @@ describe('RippleServer v5.0', () => {
         path: '/websocket',
         authEndpoint: '/api/auth',
         pingInterval: 60000,
-        port: 4000,
+        port: 0,
       })
       expect(server.config.path).toBe('/websocket')
       expect(server.config.authEndpoint).toBe('/api/auth')
       expect(server.config.pingInterval).toBe(60000)
-      expect(server.config.port).toBe(4000)
+      expect(server.config.port).toBe(0)
     })
 
     it('should auto-detect runtime if not specified', () => {
-      server = new RippleServer({ port: 3001 })
+      server = new RippleServer({ port: 0 })
       // Should not throw - runtime is auto-detected
       expect(server).toBeDefined()
     })
 
     it('should accept explicit runtime selection', () => {
       server = new RippleServer({
-        port: 3002,
+        port: 0,
         runtime: 'bun',
       })
       expect(server.config.runtime).toBe('bun')
@@ -54,7 +54,7 @@ describe('RippleServer v5.0', () => {
 
   describe('Server Lifecycle', () => {
     it('should start and shutdown cleanly', async () => {
-      server = new RippleServer({ port: 3003 })
+      server = new RippleServer({ port: 0 })
 
       await server.start()
       expect(server).toBeDefined()
@@ -65,7 +65,7 @@ describe('RippleServer v5.0', () => {
 
     it('should initialize driver on start', async () => {
       server = new RippleServer({
-        port: 3004,
+        port: 0,
         driver: 'local',
       })
 
@@ -80,7 +80,7 @@ describe('RippleServer v5.0', () => {
 
   describe('Stats and Health', () => {
     beforeEach(() => {
-      server = new RippleServer({ port: 3005 })
+      server = new RippleServer({ port: 0 })
     })
 
     it('should return stats', () => {
@@ -103,7 +103,7 @@ describe('RippleServer v5.0', () => {
 
   describe('Broadcasting', () => {
     beforeEach(() => {
-      server = new RippleServer({ port: 3006 })
+      server = new RippleServer({ port: 0 })
     })
 
     it('should broadcast to channels', () => {
@@ -124,7 +124,7 @@ describe('RippleServer v5.0', () => {
 
   describe('Event Listeners', () => {
     beforeEach(() => {
-      server = new RippleServer({ port: 3007 })
+      server = new RippleServer({ port: 0 })
     })
 
     it('should register event listeners', () => {
@@ -140,7 +140,7 @@ describe('RippleServer v5.0', () => {
   describe('Interceptors', () => {
     it('should support middleware interceptors', async () => {
       server = new RippleServer({
-        port: 3008,
+        port: 0,
         interceptors: [
           async (_ctx, next) => {
             // Interceptor logic
@@ -153,7 +153,7 @@ describe('RippleServer v5.0', () => {
     })
 
     it('should add interceptors via use()', () => {
-      server = new RippleServer({ port: 3009 })
+      server = new RippleServer({ port: 0 })
 
       server.use(async (_ctx, next) => {
         // Interceptor logic
@@ -167,7 +167,7 @@ describe('RippleServer v5.0', () => {
   describe('Metrics', () => {
     it('should support metrics when enabled', () => {
       server = new RippleServer({
-        port: 3010,
+        port: 0,
         metrics: {
           enabled: true,
           prefix: 'ripple_test',
@@ -180,7 +180,7 @@ describe('RippleServer v5.0', () => {
 
     it('should return empty string when metrics disabled', () => {
       server = new RippleServer({
-        port: 3011,
+        port: 0,
         metrics: {
           enabled: false,
         },
@@ -194,7 +194,7 @@ describe('RippleServer v5.0', () => {
   describe('Reconnection', () => {
     it('should support reconnection when enabled', () => {
       server = new RippleServer({
-        port: 3012,
+        port: 0,
         reconnection: {
           enabled: true,
           sessionTTL: 60000,
@@ -208,13 +208,13 @@ describe('RippleServer v5.0', () => {
 
   describe('Serialization', () => {
     it('should support JSON serialization by default', () => {
-      server = new RippleServer({ port: 3013 })
+      server = new RippleServer({ port: 0 })
       expect(server).toBeDefined()
     })
 
     it('should support Protobuf serialization', () => {
       server = new RippleServer({
-        port: 3014,
+        port: 0,
         serializer: 'protobuf',
       })
       expect(server).toBeDefined()
@@ -222,7 +222,7 @@ describe('RippleServer v5.0', () => {
 
     it('should support Pure Protobuf serialization', () => {
       server = new RippleServer({
-        port: 3018,
+        port: 0,
         serializer: 'protobuf',
         serializerOptions: { pure: true },
       })
@@ -234,7 +234,7 @@ describe('RippleServer v5.0', () => {
 
   describe('Backward Compatibility', () => {
     it('should support deprecated init() method', async () => {
-      server = new RippleServer({ port: 3015 })
+      server = new RippleServer({ port: 0 })
 
       // Old API should still work
       await server.init()
@@ -243,7 +243,7 @@ describe('RippleServer v5.0', () => {
     })
 
     it('should support deprecated upgrade() method', () => {
-      server = new RippleServer({ port: 3016, path: '/ws' })
+      server = new RippleServer({ port: 0, path: '/ws' })
 
       // This should work but log deprecation warning
       const req = new Request('http://localhost:3016/other')
@@ -257,7 +257,7 @@ describe('RippleServer v5.0', () => {
 
 describe('Engine Abstraction', () => {
   it('should create BunEngine by default on Bun', () => {
-    const server = new RippleServer({ port: 3017 })
+    const server = new RippleServer({ port: 0 })
     expect(server).toBeDefined()
     // Default runtime is 'bun' if Bun is defined
     expect(server.config.runtime).toBeUndefined() // auto-detect
@@ -265,7 +265,7 @@ describe('Engine Abstraction', () => {
 
   it('should support node-uws runtime selection', async () => {
     const server = new RippleServer({
-      port: 3019,
+      port: 0,
       runtime: 'node-uws',
     })
 
@@ -286,7 +286,7 @@ describe('Engine Abstraction', () => {
 
   it('should support node-ws runtime selection', async () => {
     const server = new RippleServer({
-      port: 3023,
+      port: 0,
       runtime: 'node-ws',
     })
 
@@ -298,17 +298,17 @@ describe('Engine Abstraction', () => {
 
 describe('Driver Selection', () => {
   it('should use LocalDriver by default', () => {
-    const server = new RippleServer({ port: 3020 })
+    const server = new RippleServer({ port: 0 })
     expect(server.driverName).toBe('local')
   })
 
   it('should support Redis driver when configured', () => {
     const server = new RippleServer({
-      port: 3021,
+      port: 0,
       driver: 'redis',
       redis: {
         host: 'localhost',
-        port: 6379,
+        port: 0,
       },
     })
     expect(server.driverName).toBe('redis')
@@ -316,7 +316,7 @@ describe('Driver Selection', () => {
 
   it('should support NATS driver when configured', () => {
     const server = new RippleServer({
-      port: 3022,
+      port: 0,
       driver: 'nats',
       nats: {
         servers: ['nats://localhost:4222'],

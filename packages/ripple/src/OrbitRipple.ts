@@ -81,7 +81,7 @@ export class OrbitRipple implements GravitoOrbit {
         core.logger.info(`🌊 Ripple ready at ws://[host]${path} (shared port with HTTP)`)
       } else {
         // Fallback: Start WebSocket on separate port for non-BunNativeAdapter
-        const wsPort = (this.config as any).port || 6001
+        const wsPort = this.config.port !== undefined ? this.config.port : 6001
         await this.server.start(wsPort)
         core.logger.info(`🌊 Ripple ready at ws://localhost:${wsPort}${path} (separate port)`)
       }

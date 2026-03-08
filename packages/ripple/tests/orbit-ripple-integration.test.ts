@@ -248,11 +248,8 @@ describe('OrbitRipple x BunNativeAdapter Integration', () => {
         hooks: { doAction: vi.fn() },
       } as any
 
-      const orbit = new OrbitRipple({ port: 6001 })
+      const orbit = new OrbitRipple({ port: 0 })
       const server = orbit.getServer()
-
-      // 注意：因為 start() 會真正啟動服務，我們只驗證邏輯流
-      // 實際測試中應該 mock 掉 engine.listen()
       const startSpy = vi.spyOn(server, 'start')
 
       orbit.install(mockCore as any)
@@ -261,7 +258,7 @@ describe('OrbitRipple x BunNativeAdapter Integration', () => {
       await new Promise((resolve) => setTimeout(resolve, 100))
 
       // 因為沒有 registerWebSocketRoute，應該呼叫 start()
-      expect(startSpy).toHaveBeenCalledWith(6001)
+      expect(startSpy).toHaveBeenCalledWith(0)
 
       startSpy.mockRestore()
       await server.shutdown()

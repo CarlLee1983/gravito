@@ -57,11 +57,20 @@ describe('WsEngine', () => {
 
     const ws = new WebSocket(`ws://localhost:${port}`)
 
-    await new Promise<void>((resolve) => {
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('Timeout waiting for message')), 2000)
       ws.on('open', () => {
         ws.send('hello')
-        setTimeout(resolve, 100)
       })
+
+      // Wait for receivedMessage to be set
+      const check = setInterval(() => {
+        if (receivedMessage === 'hello') {
+          clearTimeout(timer)
+          clearInterval(check)
+          resolve()
+        }
+      }, 50)
     })
 
     expect(receivedMessage).toBe('hello')

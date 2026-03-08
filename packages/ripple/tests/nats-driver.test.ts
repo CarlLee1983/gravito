@@ -102,8 +102,12 @@ describe('NATSDriver', () => {
 
     // Verify subscription was called
     // (mock nats returns an async iterator that yields once)
-    // We need to wait a tiny bit for the async loop to process the yielded value
-    await new Promise((resolve) => setTimeout(resolve, 10))
+    // We need to wait for the async loop to process the yielded value
+    let attempts = 0
+    while (received.length === 0 && attempts < 20) {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      attempts++
+    }
 
     expect(received).toHaveLength(1)
     expect(received[0]).toEqual({ event: 'test', data: 'hello' })

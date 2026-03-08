@@ -71,6 +71,7 @@
     "@types/ws": "^8.18.1",
     "bun-types": "latest",
     "ioredis": "^5.4.2",
+    "nats": "^2.23.0",
     "protobufjs": "^8.0.0",
     "tinybench": "^6.0.0",
     "typescript": "^5.9.3",

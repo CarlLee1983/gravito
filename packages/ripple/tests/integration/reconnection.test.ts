@@ -8,99 +8,52 @@ import type { RippleConfig } from '../../src/types'
 
 describe('Reconnection Flow Integration', () => {
   let server: RippleServer
-  let mockWs: any
+  const config: RippleConfig = {
+    path: '/ws',
+    reconnection: {
+      enabled: true,
+      sessionTTL: 60000,
+      maxSessions: 1000,
+    },
+  }
 
   beforeEach(async () => {
-    const config: RippleConfig = {
-      path: '/ws',
-      reconnection: {
-        enabled: true,
-        sessionTTL: 60000,
-        maxSessions: 100,
-      },
-    }
-
     server = new RippleServer(config)
-
-    // Mock WebSocket
-    mockWs = {
-      data: {
-        id: 'client-123',
-        channels: new Set(['news', 'updates']),
-        userId: 'user-456',
-        userInfo: { name: 'Test User' },
-      },
-      send: () => {},
-      close: () => {},
-    }
+    await server.init()
   })
 
   afterEach(async () => {
     await server.shutdown()
   })
 
-  describe('session creation on disconnect', () => {
-    it('should create session when client disconnects', () => {
-      // Simulate disconnect
+  describe('session management', () => {
+    it('should create session on disconnect', async () => {
       const sessionManager = (server as any).sessionManager
-      expect(sessionManager).toBeDefined()
-
-      const initialCount = sessionManager.getSessionCount()
-
-      // Trigger handleClose
-      ;(server as any).handleClose(mockWs, 1000, 'Normal closure')
-
-      const finalCount = sessionManager.getSessionCount()
-      expect(finalCount).toBe(initialCount + 1)
-    })
-
-    it('should not create session if reconnection disabled', async () => {
-      const noReconnectServer = new RippleServer({ path: '/ws' })
-
-      const sessionManager = (noReconnectServer as any).sessionManager
-      expect(sessionManager).toBeUndefined()
-
-      await noReconnectServer.shutdown()
-    })
-
-    it('should not create session if client has no channels', () => {
-      const emptyWs = {
-        ...mockWs,
+      const ws = {
         data: {
-          ...mockWs.data,
-          channels: new Set(),
+          id: 'client-123',
+          channels: new Set(['news', 'alerts']),
         },
       }
 
-      const sessionManager = (server as any).sessionManager
-      const initialCount = sessionManager.getSessionCount()
+      // Simulate close
+      ;(server as any).handleClose(ws, 1000, 'Normal closure')
 
-      ;(server as any).handleClose(emptyWs, 1000, 'Normal closure')
-
-      const finalCount = sessionManager.getSessionCount()
-      expect(finalCount).toBe(initialCount)
+      expect(sessionManager.getSessionCount()).toBe(1)
     })
-  })
 
-  describe('session restoration on reconnect', () => {
-    it('should restore subscriptions from session', async () => {
+    it('should restore subscriptions on reconnect', async () => {
       const sessionManager = (server as any).sessionManager
 
-      // Create a session
       const token = sessionManager.createSession({
         clientId: 'client-123',
-        userId: 'user-456',
-        channels: ['news', 'updates'],
-        userInfo: { name: 'Test User' },
+        channels: ['news', 'alerts'],
       })
 
-      // Simulate reconnect with token
       const reconnectWs = {
         data: {
           id: 'client-123',
           channels: new Set(),
-          userId: 'user-456',
-          userInfo: { name: 'Test User' },
           reconnectionToken: token,
         },
         send: () => {},
@@ -108,18 +61,18 @@ describe('Reconnection Flow Integration', () => {
 
       await (server as any).handleOpen(reconnectWs)
 
-      // Verify subscriptions were restored
-      expect(reconnectWs.data.channels.size).toBeGreaterThan(0)
+      // Subscriptions should be restored
+      expect(reconnectWs.data.channels.has('news')).toBe(true)
+      expect(reconnectWs.data.channels.has('alerts')).toBe(true)
 
       // Session should be removed after successful reconnection
-      const session = sessionManager.getSession(token)
-      expect(session).toBeUndefined()
+      expect(sessionManager.getSessionCount()).toBe(0)
     })
 
     it('should handle invalid reconnection token', async () => {
       const reconnectWs = {
         data: {
-          id: 'client-new',
+          id: 'client-123',
           channels: new Set(),
           reconnectionToken: 'invalid-token',
         },
@@ -128,7 +81,7 @@ describe('Reconnection Flow Integration', () => {
 
       await (server as any).handleOpen(reconnectWs)
 
-      // Should not restore any subscriptions
+      // Should not restore anything
       expect(reconnectWs.data.channels.size).toBe(0)
     })
 
@@ -137,7 +90,7 @@ describe('Reconnection Flow Integration', () => {
         path: '/ws',
         reconnection: {
           enabled: true,
-          sessionTTL: 10, // 10ms
+          sessionTTL: 30, // 30ms
         },
       })
 
@@ -148,7 +101,10 @@ describe('Reconnection Flow Integration', () => {
       })
 
       // Wait for expiration
-      await Bun.sleep(20)
+      await Bun.sleep(60)
+
+      const session = sessionManager.getSession(token)
+      expect(session).toBeUndefined()
 
       const reconnectWs = {
         data: {

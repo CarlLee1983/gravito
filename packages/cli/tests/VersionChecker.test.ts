@@ -6,20 +6,22 @@ import { VersionChecker } from '../src/utils/VersionChecker'
 
 describe('VersionChecker', () => {
   let checker: VersionChecker
+  let tempDir: string
   let cacheFile: string
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    // Create a temporary directory for the test
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gravito-test-'))
+    cacheFile = path.join(tempDir, '.gravito/version-check-cache.json')
+
     checker = new VersionChecker()
-    cacheFile = path.join(os.homedir(), '.gravito/version-check-cache.json')
+    // Override the cache file path for testing
+    ;(checker as any).cacheFile = cacheFile
   })
 
   afterEach(async () => {
-    // 清理緩存文件
-    try {
-      await fs.unlink(cacheFile)
-    } catch {
-      // 忽略錯誤
-    }
+    // Clean up temporary directory
+    await fs.rm(tempDir, { recursive: true, force: true })
 
     // 清理環境變數
     delete process.env.GRAVITO_SKIP_VERSION_CHECK
