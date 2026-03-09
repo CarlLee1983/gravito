@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
 import { useEffect, useRef } from 'react'
+import { isDev } from './env'
 
 /**
  * 開發環境下的效能監控 HOC
@@ -20,7 +21,7 @@ export function withPerformanceTracking<P extends object>(
   componentName: string
 ): ComponentType<P> {
   // 生產環境直接返回原組件
-  if (!import.meta.env.DEV) {
+  if (!isDev) {
     return Component
   }
 
@@ -62,7 +63,7 @@ export function useRenderTracking(componentName: string): void {
   const renderCount = useRef(0)
   const lastRenderTime = useRef(Date.now())
 
-  if (!import.meta.env.DEV) {
+  if (!isDev) {
     return
   }
 
@@ -96,7 +97,7 @@ export function useRenderTracking(componentName: string): void {
  * ```
  */
 export function measurePerformance<T extends (...args: any[]) => any>(fn: T, label: string): T {
-  if (!import.meta.env.DEV) {
+  if (!isDev) {
     return fn
   }
 
@@ -132,7 +133,7 @@ export function measureAsyncPerformance<T extends (...args: any[]) => Promise<an
   fn: T,
   label: string
 ): T {
-  if (!import.meta.env.DEV) {
+  if (!isDev) {
     return fn
   }
 
