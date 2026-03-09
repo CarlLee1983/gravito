@@ -48,8 +48,6 @@ describe('secureStorage', () => {
 
       expect(secureStorage.get('expiring')).toBeNull()
       expect(localStorageMock.removeItem).toHaveBeenCalledWith('gravito_support_expiring')
-
-      vi.useRealTimers()
     })
 
     it('未過期的項目應該正常回傳', () => {
@@ -68,8 +66,6 @@ describe('secureStorage', () => {
       vi.advanceTimersByTime(500)
 
       expect(secureStorage.get('valid')).toBe('test')
-
-      vi.useRealTimers()
     })
   })
 

@@ -1,5 +1,9 @@
-import { beforeEach, vi } from 'vitest'
+import { configure } from '@testing-library/react'
+import { afterEach, beforeEach, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
+
+// Configure testing library
+configure({ asyncUtilTimeout: 5000 })
 
 // Mock localStorage with actual storage behavior
 const storage = new Map<string, string>()
@@ -54,6 +58,11 @@ beforeEach(() => {
   vi.stubGlobal('fetch', mockFetch)
   vi.stubGlobal('localStorage', localStorageMock)
   vi.stubGlobal('WebSocket', WebSocketMock)
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
+  vi.useRealTimers()
 })
 
 export { localStorageMock, mockFetch }

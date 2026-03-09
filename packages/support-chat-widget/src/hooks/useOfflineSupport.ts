@@ -82,7 +82,10 @@ export function useOfflineSupport(options: UseOfflineSupportOptions): UseOffline
   const { apiConfig, conversationId, onSyncSuccess, onSyncError } = options
 
   const [isOnline, setIsOnline] = useState(navigator.onLine)
-  const [pendingCount, setPendingCount] = useState(0)
+  const [pendingCount, setPendingCount] = useState(() => {
+    const state = chatPersistence.load()
+    return state?.pendingMessages.length ?? 0
+  })
 
   /**
    * Adds a message to the pending queue in local persistence.
@@ -172,16 +175,6 @@ export function useOfflineSupport(options: UseOfflineSupportOptions): UseOffline
       syncPending()
     }
   }, [isOnline, pendingCount, syncPending])
-
-  /**
-   * Initialize the pending count from persistent storage on mount.
-   */
-  useEffect(() => {
-    const state = chatPersistence.load()
-    if (state) {
-      setPendingCount(state.pendingMessages.length)
-    }
-  }, [])
 
   return {
     isOnline,
