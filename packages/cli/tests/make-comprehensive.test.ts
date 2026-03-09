@@ -27,7 +27,7 @@ describe('MakeCommand Comprehensive', () => {
   it('should create a request class', async () => {
     await cmd.run('request', 'CreateUser')
 
-    const file = path.join(tempDir, 'src/Http/Requests/CreateUserRequest.ts')
+    const file = path.join(tempDir, 'src/http/requests/CreateUserRequest.ts')
     expect(await fs.exists(file)).toBe(true)
 
     const content = await fs.readFile(file, 'utf-8')

@@ -26,6 +26,7 @@ console.log(dtsOnly ? '生成 @gravito/ripple-client 型別宣告...' : '構建 
 const result = await buildPackage({
   entrypoints: ['src/index.ts', 'src/react.tsx', 'src/vue.ts'],
   outdir: 'dist',
+  external: ['react', 'vue'],
   // ripple-client 使用 .mjs 後綴，不生成 .cjs（靠 stub）
   format: ['esm'],
   target: 'browser',
@@ -35,7 +36,7 @@ const result = await buildPackage({
   esmNaming: '[name].mjs',
   dts: true,
   dtsOnly,
-  tscArgs: ['--skipLibCheck', '--types', 'node'],
+  tscArgs: ['--skipLibCheck'],
   silent: false,
 })
 

@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.frontend.json",
   "compilerOptions": {
-    "types": ["node"],
+    "types": [],
     "outDir": "./dist",
     "noEmit": false,
     "declaration": true,

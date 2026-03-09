@@ -23,7 +23,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: 1.3.9
 
       # Changesets needs Node/NPM to publish, although we can configure it to use bun.
       # For stability, we use standard node setup for publishing.

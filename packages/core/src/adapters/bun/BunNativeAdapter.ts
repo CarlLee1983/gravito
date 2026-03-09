@@ -99,10 +99,6 @@ export class BunNativeAdapter implements HttpAdapter {
       return true // Global wildcard
     }
 
-    if (!pattern.includes('*')) {
-      return path === pattern // Exact match
-    }
-
     // Handle /api/* format
     if (pattern.endsWith('/*')) {
       const basePattern = pattern.slice(0, -2) // Remove /*
@@ -115,7 +111,9 @@ export class BunNativeAdapter implements HttpAdapter {
       return path.startsWith(basePattern)
     }
 
-    return false
+    // Default: treat as prefix match if it matches exactly or as a parent directory
+    // This allows .use('/api', ...) to match '/api/test'
+    return path === pattern || path.startsWith(`${pattern}/`)
   }
 
   /**

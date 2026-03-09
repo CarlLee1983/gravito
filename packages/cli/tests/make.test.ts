@@ -27,7 +27,7 @@ describe('MakeCommand', () => {
   it('should create a controller', async () => {
     await cmd.run('controller', 'TestUser')
 
-    const file = path.join(tempDir, 'src/Http/Controllers/TestUserController.ts')
+    const file = path.join(tempDir, 'src/http/controllers/TestUserController.ts')
     expect(await fs.exists(file)).toBe(true)
 
     const content = await fs.readFile(file, 'utf-8')
@@ -38,7 +38,7 @@ describe('MakeCommand', () => {
   it('should create a middleware', async () => {
     await cmd.run('middleware', 'EnsureAuth')
 
-    const file = path.join(tempDir, 'src/Http/Middleware/EnsureAuthMiddleware.ts')
+    const file = path.join(tempDir, 'src/http/middleware/EnsureAuthMiddleware.ts')
     expect(await fs.exists(file)).toBe(true)
 
     const content = await fs.readFile(file, 'utf-8')
@@ -48,7 +48,7 @@ describe('MakeCommand', () => {
   it('should create a model', async () => {
     await cmd.run('model', 'Product')
 
-    const file = path.join(tempDir, 'src/Models/Product.ts')
+    const file = path.join(tempDir, 'src/models/Product.ts')
     expect(await fs.exists(file)).toBe(true)
 
     const content = await fs.readFile(file, 'utf-8')
@@ -58,7 +58,7 @@ describe('MakeCommand', () => {
   it('should create a command with default signature', async () => {
     await cmd.run('command', 'GreetCommand')
 
-    const file = path.join(tempDir, 'src/Commands/GreetCommand.ts')
+    const file = path.join(tempDir, 'src/commands/GreetCommand.ts')
     expect(await fs.exists(file)).toBe(true)
 
     const content = await fs.readFile(file, 'utf-8')
@@ -69,7 +69,7 @@ describe('MakeCommand', () => {
   it('should create a command with custom signature', async () => {
     await cmd.run('command', 'TestCommand', { command: 'app:test' })
 
-    const file = path.join(tempDir, 'src/Commands/TestCommand.ts')
+    const file = path.join(tempDir, 'src/commands/TestCommand.ts')
     expect(await fs.exists(file)).toBe(true)
 
     const content = await fs.readFile(file, 'utf-8')
