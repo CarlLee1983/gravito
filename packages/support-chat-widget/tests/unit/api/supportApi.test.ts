@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createSupportApi } from '../../../src/api/supportApi'
 import type { ChatMessage, Conversation, ConversationContext } from '../../../src/types'
-
-// Mock fetch
-const mockFetch = vi.fn()
-globalThis.fetch = mockFetch
+import { mockFetch } from '../../setup'
 
 describe('supportApi', () => {
   const baseUrl = 'https://api.test.com'

@@ -1,33 +1,32 @@
-import { cleanup, renderHook } from '@testing-library/react'
+import { cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useMessages } from '../../../src/hooks/useMessages'
 
+// Mock createSupportApi
+const mockGetMessages = vi.fn()
+const mockSendMessage = vi.fn()
+
+vi.mock('../../../src/api/supportApi', () => ({
+  createSupportApi: vi.fn(() => ({
+    getMessages: mockGetMessages,
+    sendMessage: mockSendMessage,
+  })),
+}))
+
 describe('useMessages', () => {
   const apiBaseUrl = 'https://api.test.com'
-  const _conversationId = 'CONV-123'
 
-  // Mock createSupportApi
-  let mockGetMessages: ReturnType<typeof vi.fn>
-  let mockSendMessage: ReturnType<typeof vi.fn>
-
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks()
-
-    mockGetMessages = vi.fn()
-    mockSendMessage = vi.fn()
-
-    // 動態 mock supportApi module
-    vi.doMock('../../../src/api/supportApi', () => ({
-      createSupportApi: vi.fn(() => ({
-        getMessages: mockGetMessages,
-        sendMessage: mockSendMessage,
-      })),
-    }))
+    // Default success response
+    mockGetMessages.mockResolvedValue({
+      success: true,
+      data: { messages: [], hasMore: false },
+    })
   })
 
   afterEach(() => {
     cleanup()
-    vi.doUnmock('../../../src/api/supportApi')
   })
 
   it('初始狀態應該為空', () => {
@@ -44,7 +43,7 @@ describe('useMessages', () => {
     expect(result.current.hasMore).toBe(false)
   })
 
-  it('應該能夠設置錯誤狀態', () => {
+  it('應該能夠設置錯誤狀態', async () => {
     mockGetMessages.mockResolvedValueOnce({
       success: false,
       error: {
@@ -61,6 +60,12 @@ describe('useMessages', () => {
       })
     )
 
+    // 等待加載完成和錯誤狀態設置
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false)
+    })
+
+    expect(result.current.error?.message).toBe('Test error')
     expect(result.current.messages).toEqual([])
   })
 })

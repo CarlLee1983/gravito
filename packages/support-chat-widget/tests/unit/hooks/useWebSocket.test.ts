@@ -106,6 +106,7 @@ describe('useWebSocket', () => {
   })
 
   it('連接失敗時應該設置狀態為 error', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     mockConnect.mockRejectedValueOnce(new Error('Connection failed'))
 
     const { result } = renderHook(() =>
@@ -124,6 +125,8 @@ describe('useWebSocket', () => {
     await waitFor(() => {
       expect(result.current.status).toBe('error')
     })
+    expect(consoleErrorSpy).toHaveBeenCalled()
+    consoleErrorSpy.mockRestore()
   })
 
   it('有會話 ID 時應該訂閱頻道', async () => {

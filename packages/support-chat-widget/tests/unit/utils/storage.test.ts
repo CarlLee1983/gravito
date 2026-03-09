@@ -149,12 +149,15 @@ describe('secureStorage', () => {
 
   describe('錯誤處理', () => {
     it('當 localStorage 不可用時應該降級處理', () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       localStorageMock.setItem.mockImplementation(() => {
         throw new Error('QuotaExceededError')
       })
 
       // 不應該拋出錯誤
       expect(() => secureStorage.set('test', 'value')).not.toThrow()
+      expect(consoleWarnSpy).toHaveBeenCalled()
+      consoleWarnSpy.mockRestore()
     })
 
     it('當 localStorage.getItem 拋出錯誤時應該回傳 null', () => {

@@ -3,12 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useErrorHandler } from '../../../src/hooks/useErrorHandler'
 
 describe('useErrorHandler', () => {
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>
+
   beforeEach(() => {
     vi.clearAllMocks()
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
   })
 
   afterEach(() => {
     cleanup()
+    consoleErrorSpy.mockRestore()
   })
 
   it('初始狀態應該沒有錯誤', () => {

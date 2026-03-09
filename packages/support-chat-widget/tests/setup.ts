@@ -39,6 +39,15 @@ Object.defineProperty(globalThis, 'localStorage', {
   writable: true,
 })
 
+// Mock global fetch to prevent real network requests during tests
+const mockFetch = vi.fn().mockImplementation(() =>
+  Promise.resolve({
+    ok: true,
+    json: async () => ({}),
+  })
+)
+globalThis.fetch = mockFetch
+
 // Mock WebSocket
 class WebSocketMock {
   onopen: (() => void) | null = null
@@ -52,4 +61,4 @@ class WebSocketMock {
 
 globalThis.WebSocket = WebSocketMock as unknown as typeof WebSocket
 
-export { localStorageMock }
+export { localStorageMock, mockFetch }
