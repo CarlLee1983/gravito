@@ -1,8 +1,6 @@
-import { cleanup, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { useMessages } from '../../../src/hooks/useMessages'
+import { vi } from 'vitest'
 
-// Mock createSupportApi
+// Mock MUST be at the top, before other imports
 const mockGetMessages = vi.fn()
 const mockSendMessage = vi.fn()
 
@@ -12,6 +10,10 @@ vi.mock('../../../src/api/supportApi', () => ({
     sendMessage: mockSendMessage,
   })),
 }))
+
+import { cleanup, renderHook, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { useMessages } from '../../../src/hooks/useMessages'
 
 describe('useMessages', () => {
   const apiBaseUrl = 'https://api.test.com'
@@ -62,7 +64,7 @@ describe('useMessages', () => {
 
     // 等待加載完成和錯誤狀態設置
     await waitFor(() => {
-      expect(result.current.isLoading).toBe(false)
+      expect(result.current.error).not.toBeNull()
     })
 
     expect(result.current.error?.message).toBe('Test error')

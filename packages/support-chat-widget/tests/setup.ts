@@ -25,20 +25,6 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-// 確保 window 存在（jsdom 環境）
-if (typeof window !== 'undefined') {
-  Object.defineProperty(window, 'localStorage', {
-    value: localStorageMock,
-    writable: true,
-  })
-}
-
-// 同時設置 globalThis.localStorage（兼容性）
-Object.defineProperty(globalThis, 'localStorage', {
-  value: localStorageMock,
-  writable: true,
-})
-
 // Mock global fetch to prevent real network requests during tests
 const mockFetch = vi.fn().mockImplementation(() =>
   Promise.resolve({
@@ -47,6 +33,22 @@ const mockFetch = vi.fn().mockImplementation(() =>
   })
 )
 globalThis.fetch = mockFetch
+
+// 確保 window 存在（jsdom/happy-dom 環境）
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'localStorage', {
+    value: localStorageMock,
+    writable: true,
+  })
+  // Also mock window.fetch for happy-dom
+  window.fetch = mockFetch
+}
+
+// 同時設置 globalThis.localStorage（兼容性）
+Object.defineProperty(globalThis, 'localStorage', {
+  value: localStorageMock,
+  writable: true,
+})
 
 // Mock WebSocket
 class WebSocketMock {
