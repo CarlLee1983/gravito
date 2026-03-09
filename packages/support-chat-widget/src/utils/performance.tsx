@@ -20,7 +20,7 @@ export function withPerformanceTracking<P extends object>(
   componentName: string
 ): ComponentType<P> {
   // 生產環境直接返回原組件
-  if (process.env.NODE_ENV !== 'development') {
+  if (!import.meta.env.DEV) {
     return Component
   }
 
@@ -62,7 +62,7 @@ export function useRenderTracking(componentName: string): void {
   const renderCount = useRef(0)
   const lastRenderTime = useRef(Date.now())
 
-  if (process.env.NODE_ENV !== 'development') {
+  if (!import.meta.env.DEV) {
     return
   }
 
@@ -96,7 +96,7 @@ export function useRenderTracking(componentName: string): void {
  * ```
  */
 export function measurePerformance<T extends (...args: any[]) => any>(fn: T, label: string): T {
-  if (process.env.NODE_ENV !== 'development') {
+  if (!import.meta.env.DEV) {
     return fn
   }
 
@@ -132,7 +132,7 @@ export function measureAsyncPerformance<T extends (...args: any[]) => Promise<an
   fn: T,
   label: string
 ): T {
-  if (process.env.NODE_ENV !== 'development') {
+  if (!import.meta.env.DEV) {
     return fn
   }
 
