@@ -316,4 +316,30 @@ describe('useWebSocket', () => {
     // 應該只調用一次
     expect(mockConnect).toHaveBeenCalledTimes(1)
   })
+
+  it('應該處理併發的 connect 調用', async () => {
+    const { result } = renderHook(() =>
+      useWebSocket({
+        wsUrl,
+        conversationId,
+        onMessage,
+      })
+    )
+
+    // 模擬稍微慢一點的連線
+    mockConnect.mockImplementationOnce(() => new Promise((resolve) => setTimeout(resolve, 50)))
+
+    // 同時發起兩個請求
+    let p1: Promise<void>
+    let p2: Promise<void>
+
+    await act(async () => {
+      p1 = result.current.connect()
+      p2 = result.current.connect()
+      await Promise.all([p1, p2])
+    })
+
+    // 應該只調用一次 mockConnect
+    expect(mockConnect).toHaveBeenCalledTimes(1)
+  })
 })

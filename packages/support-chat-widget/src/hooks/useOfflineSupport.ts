@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SupportApiConfig } from '../api/supportApi'
 import type { ChatMessage } from '../types'
 import { chatPersistence } from '../utils/persistence'
@@ -87,6 +87,18 @@ export function useOfflineSupport(options: UseOfflineSupportOptions): UseOffline
     return state?.pendingMessages.length ?? 0
   })
 
+  // Use refs for callbacks to prevent infinite loops in useEffect if they are not memoized
+  const onSyncSuccessRef = useRef(onSyncSuccess)
+  const onSyncErrorRef = useRef(onSyncError)
+
+  useEffect(() => {
+    onSyncSuccessRef.current = onSyncSuccess
+  }, [onSyncSuccess])
+
+  useEffect(() => {
+    onSyncErrorRef.current = onSyncError
+  }, [onSyncError])
+
   /**
    * Adds a message to the pending queue in local persistence.
    *
@@ -140,11 +152,11 @@ export function useOfflineSupport(options: UseOfflineSupportOptions): UseOffline
     try {
       await chatPersistence.syncPendingMessages(apiConfig, conversationId)
       setPendingCount(0)
-      onSyncSuccess?.()
+      onSyncSuccessRef.current?.()
     } catch (error) {
-      onSyncError?.(error instanceof Error ? error : new Error('Sync failed'))
+      onSyncErrorRef.current?.(error instanceof Error ? error : new Error('Sync failed'))
     }
-  }, [apiConfig, conversationId, onSyncSuccess, onSyncError])
+  }, [apiConfig, conversationId])
 
   /**
    * Listen for browser online/offline events.

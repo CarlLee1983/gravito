@@ -27,6 +27,7 @@
     "@gravito/photon": "workspace:*",
     "@gravito/quasar": "workspace:*",
     "@gravito/stream": "workspace:*",
+    "hono": "^4.12.2",
     "@tanstack/react-query": "^5.0.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

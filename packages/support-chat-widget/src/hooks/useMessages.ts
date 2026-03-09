@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createSupportApi } from '../api/supportApi'
 import type { ChatMessage, UseMessagesOptions, UseMessagesReturn } from '../types'
 
@@ -38,6 +38,7 @@ export function useMessages(options: UseMessagesOptions): UseMessagesReturn {
   const [error, setError] = useState<Error | null>(null)
   const [hasMore, setHasMore] = useState(false)
   const [nextCursor, setNextCursor] = useState<string | undefined>()
+  const loadingRef = useRef<Promise<void> | null>(null)
 
   // Initialize API client
   const api = useMemo(() => createSupportApi({ baseUrl: apiBaseUrl }), [apiBaseUrl])
@@ -46,62 +47,74 @@ export function useMessages(options: UseMessagesOptions): UseMessagesReturn {
    * Loads the initial set of messages for the current conversation.
    */
   const loadMessages = useCallback(async () => {
-    if (!conversationId) {
+    if (!conversationId || loadingRef.current) {
       return
     }
 
-    setIsLoading(true)
-    setError(null)
+    const loadPromise = (async () => {
+      setIsLoading(true)
+      setError(null)
 
-    try {
-      const result = await api.getMessages(conversationId, { limit: 50 })
+      try {
+        const result = await api.getMessages(conversationId, { limit: 50 })
 
-      if (result.success && result.data) {
-        setMessages([...result.data.messages])
-        setHasMore(result.data.hasMore)
-        setNextCursor(result.data.nextCursor)
-      } else if (result.error) {
-        setError(new Error(result.error.message))
+        if (result.success && result.data) {
+          setMessages([...result.data.messages])
+          setHasMore(result.data.hasMore)
+          setNextCursor(result.data.nextCursor)
+        } else if (result.error) {
+          setError(new Error(result.error.message))
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Unknown error'))
+      } finally {
+        setIsLoading(false)
+        loadingRef.current = null
       }
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'))
-    } finally {
-      setIsLoading(false)
-    }
+    })()
+
+    loadingRef.current = loadPromise
+    return loadPromise
   }, [api, conversationId])
 
   /**
    * Loads the next page of older messages (pagination).
    */
   const loadMore = useCallback(async () => {
-    if (!conversationId || !hasMore || !nextCursor || isLoading) {
+    if (!conversationId || !hasMore || !nextCursor || isLoading || loadingRef.current) {
       return
     }
 
-    setIsLoading(true)
-    setError(null)
+    const loadPromise = (async () => {
+      setIsLoading(true)
+      setError(null)
 
-    try {
-      const result = await api.getMessages(conversationId, {
-        limit: 50,
-        cursor: nextCursor,
-        direction: 'before',
-      })
+      try {
+        const result = await api.getMessages(conversationId, {
+          limit: 50,
+          cursor: nextCursor,
+          direction: 'before',
+        })
 
-      if (result.success && result.data) {
-        // Prepend older messages to the list
-        const newMessages = result.data.messages
-        setMessages((prev) => [...newMessages, ...prev])
-        setHasMore(result.data.hasMore)
-        setNextCursor(result.data.nextCursor)
-      } else if (result.error) {
-        setError(new Error(result.error.message))
+        if (result.success && result.data) {
+          // Prepend older messages to the list
+          const newMessages = result.data.messages
+          setMessages((prev) => [...newMessages, ...prev])
+          setHasMore(result.data.hasMore)
+          setNextCursor(result.data.nextCursor)
+        } else if (result.error) {
+          setError(new Error(result.error.message))
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Unknown error'))
+      } finally {
+        setIsLoading(false)
+        loadingRef.current = null
       }
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'))
-    } finally {
-      setIsLoading(false)
-    }
+    })()
+
+    loadingRef.current = loadPromise
+    return loadPromise
   }, [api, conversationId, hasMore, nextCursor, isLoading])
 
   /**

@@ -26,6 +26,10 @@ export { CleanArchitectureGenerator } from './generators/CleanArchitectureGenera
 export { DddGenerator, type DddModuleType } from './generators/DddGenerator'
 // DDD Sub-generators
 export { AdvancedModuleGenerator } from './generators/ddd/AdvancedModuleGenerator'
+export {
+  type CQRSQueryConfig,
+  CQRSQueryModuleGenerator,
+} from './generators/ddd/CQRSQueryModuleGenerator'
 export { EnterpriseMvcGenerator } from './generators/EnterpriseMvcGenerator'
 export { SatelliteGenerator } from './generators/SatelliteGenerator'
 // Stub Generator

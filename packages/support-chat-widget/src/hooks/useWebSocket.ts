@@ -37,6 +37,7 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
   const [status, setStatus] = useState<ConnectionStatus>('disconnected')
   const [isConnected, setIsConnected] = useState(false)
   const clientRef = useRef<any>(null)
+  const connectingRef = useRef<Promise<void> | null>(null)
   const channelRef = useRef<any>(null)
 
   /**
@@ -59,33 +60,45 @@ export function useWebSocket(options: UseWebSocketOptions): UseWebSocketReturn {
    * @throws {Error} If the connection attempt fails.
    */
   const connect = useCallback(async () => {
-    // Prevent multiple connection attempts if already active
+    // Prevent multiple connection attempts if already active or connecting
     if (clientRef.current) {
       return
     }
 
-    updateStatus('connecting')
-
-    try {
-      // Dynamic import to avoid bundling issues in certain environments
-      const { createRippleClient } = await import('@gravito/ripple-client')
-
-      const client = createRippleClient({
-        host: wsUrl,
-        autoReconnect: true,
-        maxReconnectAttempts: 5,
-      })
-
-      await client.connect()
-
-      clientRef.current = client
-      setIsConnected(true)
-      updateStatus('connected')
-    } catch (error) {
-      console.error('WebSocket connection failed:', error)
-      setIsConnected(false)
-      updateStatus('error')
+    if (connectingRef.current) {
+      return connectingRef.current
     }
+
+    const connectionPromise = (async () => {
+      updateStatus('connecting')
+
+      try {
+        // Dynamic import to avoid bundling issues in certain environments
+        const { createRippleClient } = await import('@gravito/ripple-client')
+
+        const client = createRippleClient({
+          host: wsUrl,
+          autoReconnect: true,
+          maxReconnectAttempts: 5,
+        })
+
+        await client.connect()
+
+        clientRef.current = client
+        setIsConnected(true)
+        updateStatus('connected')
+      } catch (error) {
+        console.error('WebSocket connection failed:', error)
+        setIsConnected(false)
+        updateStatus('error')
+        throw error
+      } finally {
+        connectingRef.current = null
+      }
+    })()
+
+    connectingRef.current = connectionPromise
+    return connectionPromise
   }, [wsUrl, updateStatus])
 
   /**

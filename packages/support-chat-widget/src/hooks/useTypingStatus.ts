@@ -31,6 +31,12 @@ export function useTypingStatus(options: UseTypingStatusOptions): UseTypingStatu
 
   const [isAgentTyping, setIsAgentTyping] = useState(false)
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const onTypingChangeRef = useRef(onTypingChange)
+
+  // Keep ref in sync
+  useEffect(() => {
+    onTypingChangeRef.current = onTypingChange
+  }, [onTypingChange])
 
   /**
    * Notifies the support agent that the user is currently typing.
@@ -68,7 +74,7 @@ export function useTypingStatus(options: UseTypingStatusOptions): UseTypingStatu
       }
 
       setIsAgentTyping(true)
-      onTypingChange?.(true)
+      onTypingChangeRef.current?.(true)
 
       // Reset the inactivity timeout
       if (typingTimeoutRef.current) {
@@ -78,7 +84,7 @@ export function useTypingStatus(options: UseTypingStatusOptions): UseTypingStatu
       // Automatically clear typing status after 3 seconds of inactivity
       typingTimeoutRef.current = setTimeout(() => {
         setIsAgentTyping(false)
-        onTypingChange?.(false)
+        onTypingChangeRef.current?.(false)
       }, 3000)
     }
 
@@ -92,7 +98,7 @@ export function useTypingStatus(options: UseTypingStatusOptions): UseTypingStatu
       }
       setIsAgentTyping(false)
     }
-  }, [conversationId, onTypingChange, on])
+  }, [conversationId, on])
 
   /**
    * Ensures all timers are cleared when the component unmounts.
