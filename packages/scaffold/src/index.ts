@@ -23,7 +23,9 @@ export {
   type GeneratorContext,
 } from './generators/BaseGenerator'
 export { CleanArchitectureGenerator } from './generators/CleanArchitectureGenerator'
-export { DddGenerator } from './generators/DddGenerator'
+export { DddGenerator, type DddModuleType } from './generators/DddGenerator'
+// DDD Sub-generators
+export { AdvancedModuleGenerator } from './generators/ddd/AdvancedModuleGenerator'
 export { EnterpriseMvcGenerator } from './generators/EnterpriseMvcGenerator'
 export { SatelliteGenerator } from './generators/SatelliteGenerator'
 // Stub Generator

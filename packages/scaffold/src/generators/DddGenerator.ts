@@ -9,9 +9,17 @@
 
 import type { DirectoryNode } from '../types'
 import { BaseGenerator, type GeneratorConfig, type GeneratorContext } from './BaseGenerator'
+import { AdvancedModuleGenerator } from './ddd/AdvancedModuleGenerator'
 import { BootstrapGenerator } from './ddd/BootstrapGenerator'
 import { ModuleGenerator } from './ddd/ModuleGenerator'
 import { SharedKernelGenerator } from './ddd/SharedKernelGenerator'
+
+/**
+ * DDD Module Type options
+ * - simple: Basic CRUD structure
+ * - advanced: Complete Event Sourcing with Aggregates, Events, EventStore, and EventApplier
+ */
+export type DddModuleType = 'simple' | 'advanced'
 
 /**
  * DddGenerator implements the full Domain-Driven Design (DDD) architectural pattern.
@@ -20,19 +28,35 @@ import { SharedKernelGenerator } from './ddd/SharedKernelGenerator'
  * Value Objects, Domain Events, and a Shared Kernel. It is ideal for complex
  * enterprise applications with rich business logic.
  *
+ * Supports multiple module templates:
+ * - **simple**: Basic DDD structure with CRUD operations
+ * - **advanced**: Complete Event Sourcing with Aggregate Roots, Domain Events, EventStore
+ *
  * @public
  * @since 3.0.0
  */
 export class DddGenerator extends BaseGenerator {
   private moduleGenerator: ModuleGenerator
+  private advancedModuleGenerator: AdvancedModuleGenerator
   private sharedKernelGenerator: SharedKernelGenerator
   private bootstrapGenerator: BootstrapGenerator
+  private moduleType: DddModuleType = 'simple'
 
   constructor(config: GeneratorConfig) {
     super(config)
     this.moduleGenerator = new ModuleGenerator()
+    this.advancedModuleGenerator = new AdvancedModuleGenerator()
     this.sharedKernelGenerator = new SharedKernelGenerator()
     this.bootstrapGenerator = new BootstrapGenerator()
+  }
+
+  /**
+   * Set the module type for generated modules
+   * @param type - 'simple' for basic CRUD, 'advanced' for Event Sourcing
+   * @default 'simple'
+   */
+  setModuleType(type: DddModuleType): void {
+    this.moduleType = type
   }
 
   get architectureType() {
@@ -48,6 +72,9 @@ export class DddGenerator extends BaseGenerator {
   }
 
   getDirectoryStructure(context: GeneratorContext): DirectoryNode[] {
+    // Use the appropriate module generator based on module type
+    const moduleGenerator = this.getModuleGenerator()
+
     return [
       this.bootstrapGenerator.generateConfigDirectory(context),
       {
@@ -63,8 +90,12 @@ export class DddGenerator extends BaseGenerator {
             type: 'directory',
             name: 'Modules',
             children: [
-              this.moduleGenerator.generate('Ordering', context),
-              this.moduleGenerator.generate('Catalog', context),
+              moduleGenerator === 'advanced'
+                ? this.advancedModuleGenerator.generate('Ordering', context)
+                : this.moduleGenerator.generate('Ordering', context),
+              moduleGenerator === 'advanced'
+                ? this.advancedModuleGenerator.generate('Catalog', context)
+                : this.moduleGenerator.generate('Catalog', context),
             ],
           },
           {
@@ -122,6 +153,13 @@ export class DddGenerator extends BaseGenerator {
   }
 
   /**
+   * Get the active module generator type
+   */
+  private getModuleGenerator(): DddModuleType {
+    return this.moduleType
+  }
+
+  /**
    * Override package.json for DDD architecture (uses main.ts instead of bootstrap.ts)
    */
   protected override generatePackageJson(context: GeneratorContext): string {
@@ -162,6 +200,33 @@ export class DddGenerator extends BaseGenerator {
 
 This project follows **Domain-Driven Design (DDD)** with strategic and tactical patterns.
 
+${
+  this.moduleType === 'advanced'
+    ? `
+## Module Types
+
+This project uses **Advanced Module Template** with Event Sourcing:
+- **Event Sourcing**: Complete event stream as source of truth
+- **Aggregate Roots**: Domain objects managing state through events
+- **Domain Events**: Rich, expressive events capturing domain changes
+- **Event Store**: Persistent event log for state reconstruction
+- **Event Applier**: Pure functions for immutable state transitions
+
+See each module's Domain/Services/{ModuleName}EventApplier.ts for event handling patterns.
+`
+    : `
+## Module Types
+
+This project uses **Simple Module Template** with basic CRUD:
+- **Aggregates**: Standard entity-based domain objects
+- **Repositories**: Data access abstractions
+- **Services**: Domain and application logic
+- **Events**: Optional domain event support
+
+To upgrade a module to Event Sourcing, use the Advanced template when scaffolding new modules.
+`
+}
+
 ## Service Providers
 
 Service providers are the central place to configure your application and modules. They follow the ServiceProvider pattern with \`register()\` and \`boot()\` lifecycle methods.
@@ -197,7 +262,8 @@ Context/
 │   ├── Aggregates/     # Aggregate roots + entities
 │   ├── Events/         # Domain events
 │   ├── Repositories/   # Repository interfaces
-│   └── Services/       # Domain services
+│   ├── Services/       # Domain services (${this.moduleType === 'advanced' ? 'EventApplier for Event Sourcing' : 'domain logic'})
+│   └── ValueObjects/   # Domain value objects
 ├── Application/        # Use cases
 │   ├── Commands/       # Write operations
 │   ├── Queries/        # Read operations
@@ -205,6 +271,7 @@ Context/
 │   └── DTOs/           # Data transfer objects
 ├── Infrastructure/     # External concerns
 │   ├── Persistence/    # Repository implementations
+│   ├── EventStore/     # ${this.moduleType === 'advanced' ? 'Event storage and reconstruction' : '(optional) Event storage'}
 │   └── Providers/      # DI configuration
 └── UserInterface/      # Entry points
     ├── Http/           # REST controllers
@@ -225,6 +292,7 @@ Contains types shared across contexts:
 2. **Domain Events**: Inter-context communication
 3. **CQRS**: Separate read/write models
 4. **Repository Pattern**: Persistence abstraction
+${this.moduleType === 'advanced' ? '5. **Event Sourcing**: Event stream as single source of truth\n6. **Event Applier**: Pure functions for state transitions' : ''}
 
 Created with ❤️ using Gravito Framework
 `
