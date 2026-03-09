@@ -22,12 +22,12 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/node": "latest",
-    "@vitest/coverage-v8": "^2.1.8",
+    "@vitest/coverage-v8": "2.1.9",
     "happy-dom": "^15.11.6",
     "tsup": "^8.3.5",
     "typescript": "^5.9.3",
     "vite": "^7.3.0",
-    "vitest": "^2.1.8"
+    "vitest": "2.1.9"
   },
   "scripts": {
     "build": "tsup src/index.tsx --format esm",

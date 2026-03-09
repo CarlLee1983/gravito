@@ -18,13 +18,6 @@ const localStorageMock = {
   }),
 }
 
-beforeEach(() => {
-  // 清除存儲內容
-  storage.clear()
-  // 重置 mock 呼叫記錄
-  vi.clearAllMocks()
-})
-
 // Mock global fetch to prevent real network requests during tests
 const mockFetch = vi.fn().mockImplementation(() =>
   Promise.resolve({
@@ -32,23 +25,6 @@ const mockFetch = vi.fn().mockImplementation(() =>
     json: async () => ({}),
   })
 )
-globalThis.fetch = mockFetch
-
-// 確保 window 存在（jsdom/happy-dom 環境）
-if (typeof window !== 'undefined') {
-  Object.defineProperty(window, 'localStorage', {
-    value: localStorageMock,
-    writable: true,
-  })
-  // Also mock window.fetch for happy-dom
-  window.fetch = mockFetch
-}
-
-// 同時設置 globalThis.localStorage（兼容性）
-Object.defineProperty(globalThis, 'localStorage', {
-  value: localStorageMock,
-  writable: true,
-})
 
 // Mock WebSocket
 class WebSocketMock {
@@ -61,6 +37,23 @@ class WebSocketMock {
   close = vi.fn()
 }
 
-globalThis.WebSocket = WebSocketMock as unknown as typeof WebSocket
+beforeEach(() => {
+  // Clear storage and mocks
+  storage.clear()
+  vi.clearAllMocks()
+
+  // Reset mockFetch default implementation for each test
+  mockFetch.mockImplementation(() =>
+    Promise.resolve({
+      ok: true,
+      json: async () => ({}),
+    })
+  )
+
+  // Use vi.stubGlobal for better environment isolation (works for globalThis and window)
+  vi.stubGlobal('fetch', mockFetch)
+  vi.stubGlobal('localStorage', localStorageMock)
+  vi.stubGlobal('WebSocket', WebSocketMock)
+})
 
 export { localStorageMock, mockFetch }

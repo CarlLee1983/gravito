@@ -22,7 +22,7 @@ describe('useOfflineSupport', () => {
     localStorage.clear()
     vi.clearAllMocks()
     // Reset navigator.onLine to true for each test
-    Object.defineProperty(navigator, 'onLine', { value: true, writable: true, configurable: true })
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true)
   })
 
   it('應該偵測初始網路狀態', () => {
@@ -38,7 +38,7 @@ describe('useOfflineSupport', () => {
 
   it('應該將訊息加入待發送佇列', async () => {
     // 模擬離線，防止立即同步
-    Object.defineProperty(navigator, 'onLine', { value: false, writable: true, configurable: true })
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
 
     const { result } = renderHook(() =>
       useOfflineSupport({
@@ -58,7 +58,7 @@ describe('useOfflineSupport', () => {
     const onSyncSuccess = vi.fn()
 
     // 模擬離線開始
-    Object.defineProperty(navigator, 'onLine', { value: false, writable: true, configurable: true })
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
 
     const { result } = renderHook(() =>
       useOfflineSupport({
@@ -77,11 +77,7 @@ describe('useOfflineSupport', () => {
 
     // 切換到上線
     await act(async () => {
-      Object.defineProperty(navigator, 'onLine', {
-        value: true,
-        writable: true,
-        configurable: true,
-      })
+      vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true)
       window.dispatchEvent(new Event('online'))
     })
 
@@ -102,11 +98,7 @@ describe('useOfflineSupport', () => {
     )
 
     await act(async () => {
-      Object.defineProperty(navigator, 'onLine', {
-        value: false,
-        writable: true,
-        configurable: true,
-      })
+      vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
       window.dispatchEvent(new Event('offline'))
     })
 
@@ -147,7 +139,7 @@ describe('useOfflineSupport', () => {
     })
 
     // 模擬離線以防止自動同步
-    Object.defineProperty(navigator, 'onLine', { value: false, writable: true, configurable: true })
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
 
     const { result } = renderHook(() =>
       useOfflineSupport({

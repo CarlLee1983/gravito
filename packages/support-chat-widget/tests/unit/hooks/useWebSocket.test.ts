@@ -71,8 +71,12 @@ describe('useWebSocket', () => {
   it('連接時應該更新狀態為 connecting', async () => {
     const onStatusChange = vi.fn()
 
-    // 延遲 connect 完成，以便捕獲 'connecting' 狀態
-    mockConnect.mockImplementationOnce(() => new Promise((resolve) => setTimeout(resolve, 100)))
+    // 使用控制的 Promise 而不是 setTimeout，防止 CI 延時問題
+    let resolveConnect: (value: void | PromiseLike<void>) => void
+    const connectPromiseControlled = new Promise<void>((resolve) => {
+      resolveConnect = resolve
+    })
+    mockConnect.mockImplementationOnce(() => connectPromiseControlled)
 
     const { result } = renderHook(() =>
       useWebSocket({
@@ -96,6 +100,7 @@ describe('useWebSocket', () => {
     expect(onStatusChange).toHaveBeenCalledWith('connecting')
 
     await act(async () => {
+      resolveConnect?.()
       await connectPromise
     })
 
