@@ -1,6 +1,6 @@
 # @gravito/atlas
 
-## 2.1.0
+## 2.2.0
 
 ### Minor Changes
 
@@ -9,6 +9,12 @@
   - **Native Streaming**: Refactored `stream()` to use true `AsyncIterable` from the Bun kernel.
   - **Native Transactions**: Added support for native transaction closures via `runTransaction()`, improving connection safety and performance.
 - **test: Enhanced Coverage**: Added comprehensive unit tests for native transactions and streaming.
+
+## 2.1.0
+
+### Minor Changes
+
+- **feat: Bun Native SQL enhancements**: (Previous 2.1.0 release)
 
 ## 2.0.0
 
