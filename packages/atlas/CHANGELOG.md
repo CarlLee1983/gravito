@@ -1,5 +1,23 @@
 # @gravito/atlas
 
+## 2.1.0
+
+### Minor Changes
+
+- **perf: Bun 1.3.9 Native Optimization**: Leveraged native `Bun.sql` features for extreme performance.
+  - **Native `values()`**: Implemented `values()` method to fetch raw arrays, eliminating object mapping overhead for aggregates and `pluck()`.
+  - **Native Streaming**: Refactored `stream()` to use true `AsyncIterable` from the Bun kernel.
+  - **Native Transactions**: Added support for native transaction closures via `runTransaction()`, improving connection safety and performance.
+- **test: Enhanced Coverage**: Added comprehensive unit tests for native transactions and streaming.
+
+## 2.0.0
+
+### Major Changes
+
+- **Breaking: Modular Type System**: Refactored monolithic type definitions into composable modules.
+- **Breaking: specialized Query Builders**: Split QueryBuilder into concern-based sub-builders (Aggregate, Mutation, Pagination).
+- **feat: Tree-shaking**: Enabled `sideEffects: false` for significantly smaller production bundles.
+
 ## 1.3.0
 
 ### Minor Changes
