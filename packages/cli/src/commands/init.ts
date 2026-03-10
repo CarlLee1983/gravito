@@ -319,14 +319,43 @@ export async function initCommand(options: InitOptions = {}) {
 export function registerInitCommand(cli: ReturnType<typeof import('cac').default>) {
   cli
     .command('init [name]', '建立新的 Gravito 企業級專案 (Create a new enterprise project)')
-    .option('--architecture <type>', '架構模式: enterprise-mvc, clean, ddd')
-    .option('--pm <manager>', '套件管理器: bun, npm, yarn, pnpm', { default: 'bun' })
-    .option('--skip-install', '跳過依賴安裝')
-    .option('--skip-git', '跳過 Git 初始化')
+    .option(
+      '--architecture <type>',
+      '架構模式 (Architecture pattern):\n        enterprise-mvc | clean | ddd | action-domain | standalone-engine | satellite'
+    )
+    .option(
+      '--ddd-type <type>',
+      'DDD 模組範本 (DDD module template, 僅適用於 --architecture ddd):\n        simple | advanced | cqrs-query'
+    )
+    .option('--pm <manager>', '套件管理器 (Package manager): bun, npm, yarn, pnpm', {
+      default: 'bun',
+    })
+    .option('--skip-install', '跳過依賴安裝 (Skip dependency installation)')
+    .option('--skip-git', '跳過 Git 初始化 (Skip git initialization)')
     .action(async (name, options) => {
+      // Validate ddd-type flag
+      if (options.dddType) {
+        const validDddTypes = ['simple', 'advanced', 'cqrs-query']
+        if (!validDddTypes.includes(options.dddType)) {
+          console.error(
+            pc.red(
+              `❌ 無效的 DDD 模組類型: "${options.dddType}"\n允許的值: ${validDddTypes.join(', ')}`
+            )
+          )
+          process.exit(1)
+        }
+
+        // Only allow ddd-type with ddd architecture
+        if (options.architecture && options.architecture !== 'ddd') {
+          console.error(pc.red(`❌ --ddd-type 選項只適用於 --architecture ddd`))
+          process.exit(1)
+        }
+      }
+
       await initCommand({
         name,
         architecture: options.architecture as ArchitectureType,
+        dddModuleType: options.dddType as 'simple' | 'advanced' | 'cqrs-query' | undefined,
         packageManager: options.pm,
         skipInstall: options.skipInstall,
         skipGit: options.skipGit,
