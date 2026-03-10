@@ -11,6 +11,7 @@ import type { DirectoryNode } from '../types'
 import { BaseGenerator, type GeneratorConfig, type GeneratorContext } from './BaseGenerator'
 import { AdvancedModuleGenerator } from './ddd/AdvancedModuleGenerator'
 import { BootstrapGenerator } from './ddd/BootstrapGenerator'
+import { CQRSQueryModuleGenerator } from './ddd/CQRSQueryModuleGenerator'
 import { ModuleGenerator } from './ddd/ModuleGenerator'
 import { SharedKernelGenerator } from './ddd/SharedKernelGenerator'
 
@@ -18,8 +19,9 @@ import { SharedKernelGenerator } from './ddd/SharedKernelGenerator'
  * DDD Module Type options
  * - simple: Basic CRUD structure
  * - advanced: Complete Event Sourcing with Aggregates, Events, EventStore, and EventApplier
+ * - cqrs-query: CQRS Query Side with Read Models, Event Projectors, Query Services
  */
-export type DddModuleType = 'simple' | 'advanced'
+export type DddModuleType = 'simple' | 'advanced' | 'cqrs-query'
 
 /**
  * DddGenerator implements the full Domain-Driven Design (DDD) architectural pattern.
@@ -31,6 +33,7 @@ export type DddModuleType = 'simple' | 'advanced'
  * Supports multiple module templates:
  * - **simple**: Basic DDD structure with CRUD operations
  * - **advanced**: Complete Event Sourcing with Aggregate Roots, Domain Events, EventStore
+ * - **cqrs-query**: CQRS read-side with Event Projectors and denormalized Read Models
  *
  * @public
  * @since 3.0.0
@@ -38,6 +41,7 @@ export type DddModuleType = 'simple' | 'advanced'
 export class DddGenerator extends BaseGenerator {
   private moduleGenerator: ModuleGenerator
   private advancedModuleGenerator: AdvancedModuleGenerator
+  private cqrsQueryModuleGenerator: CQRSQueryModuleGenerator
   private sharedKernelGenerator: SharedKernelGenerator
   private bootstrapGenerator: BootstrapGenerator
   private moduleType: DddModuleType = 'simple'
@@ -46,13 +50,14 @@ export class DddGenerator extends BaseGenerator {
     super(config)
     this.moduleGenerator = new ModuleGenerator()
     this.advancedModuleGenerator = new AdvancedModuleGenerator()
+    this.cqrsQueryModuleGenerator = new CQRSQueryModuleGenerator()
     this.sharedKernelGenerator = new SharedKernelGenerator()
     this.bootstrapGenerator = new BootstrapGenerator()
   }
 
   /**
    * Set the module type for generated modules
-   * @param type - 'simple' for basic CRUD, 'advanced' for Event Sourcing
+   * @param type - 'simple' for basic CRUD, 'advanced' for Event Sourcing, 'cqrs-query' for CQRS Read Side
    * @default 'simple'
    */
   setModuleType(type: DddModuleType): void {
@@ -64,7 +69,7 @@ export class DddGenerator extends BaseGenerator {
   }
 
   get displayName(): string {
-    return 'Domain-Driven Design (DDD)'
+    return `Domain-Driven Design (DDD)${this.moduleType === 'cqrs-query' ? ' + CQRS' : ''}`
   }
 
   get description(): string {
@@ -90,12 +95,16 @@ export class DddGenerator extends BaseGenerator {
             type: 'directory',
             name: 'Modules',
             children: [
-              moduleGenerator === 'advanced'
-                ? this.advancedModuleGenerator.generate('Ordering', context)
-                : this.moduleGenerator.generate('Ordering', context),
-              moduleGenerator === 'advanced'
-                ? this.advancedModuleGenerator.generate('Catalog', context)
-                : this.moduleGenerator.generate('Catalog', context),
+              moduleGenerator === 'cqrs-query'
+                ? this.cqrsQueryModuleGenerator.generate('Ordering', context)
+                : moduleGenerator === 'advanced'
+                  ? this.advancedModuleGenerator.generate('Ordering', context)
+                  : this.moduleGenerator.generate('Ordering', context),
+              moduleGenerator === 'cqrs-query'
+                ? this.cqrsQueryModuleGenerator.generate('Catalog', context)
+                : moduleGenerator === 'advanced'
+                  ? this.advancedModuleGenerator.generate('Catalog', context)
+                  : this.moduleGenerator.generate('Catalog', context),
             ],
           },
           {
@@ -201,8 +210,50 @@ export class DddGenerator extends BaseGenerator {
 This project follows **Domain-Driven Design (DDD)** with strategic and tactical patterns.
 
 ${
-  this.moduleType === 'advanced'
+  this.moduleType === 'cqrs-query'
     ? `
+## Module Types
+
+This project uses **CQRS Query Module Template** with event projection:
+- **Read Models**: Denormalized, query-optimized data structures
+- **Event Projectors**: Pure functions transforming events to read models
+- **Query Services**: Dedicated read-side use cases
+- **Event Subscribers**: Subscribe to write-side domain events
+- **Optional Caching**: Dual-tier caching (memory + Redis)
+
+See each module's Domain/Projectors/{ModuleName}EventProjector.ts for projection patterns.
+
+## CQRS Architecture
+
+\`\`\`
+Write Side (Command)          Read Side (Query)
+┌──────────────────────┐      ┌──────────────────────┐
+│ Aggregate Root       │      │ Read Model           │
+│ (Event Sourcing)     │      │ (Denormalized)       │
+└──────────────────────┘      └──────────────────────┘
+        │                              ▲
+        │ Domain Events                │
+        ▼                              │
+┌──────────────────────┐      ┌──────────────────────┐
+│ Event Store          │─────▶│ Event Subscriber     │
+└──────────────────────┘      └──────────────────────┘
+                                      │
+                                      │ Projects Events
+                                      ▼
+                             ┌──────────────────────┐
+                             │ Event Projector      │
+                             │ (Pure Functions)     │
+                             └──────────────────────┘
+                                      │
+                                      ▼
+                             ┌──────────────────────┐
+                             │ Read Model DB        │
+                             │ (Eventually Consistent)
+                             └──────────────────────┘
+\`\`\`
+`
+    : this.moduleType === 'advanced'
+      ? `
 ## Module Types
 
 This project uses **Advanced Module Template** with Event Sourcing:
@@ -214,7 +265,7 @@ This project uses **Advanced Module Template** with Event Sourcing:
 
 See each module's Domain/Services/{ModuleName}EventApplier.ts for event handling patterns.
 `
-    : `
+      : `
 ## Module Types
 
 This project uses **Simple Module Template** with basic CRUD:
@@ -257,6 +308,34 @@ Service providers are the central place to configure your application and module
 Each bounded context follows this structure:
 
 \`\`\`
+${
+  this.moduleType === 'cqrs-query'
+    ? `
+Context/                     # CQRS Read Side Module
+├── Domain/                  # Query domain logic
+│   ├── ReadModels/         # Denormalized data structures (immutable)
+│   ├── Projectors/         # Pure functions: Event → ReadModel
+│   └── Repositories/       # Read model access interfaces
+├── Application/            # Query use cases
+│   ├── Services/          # Query services (findById, findAll, search, etc.)
+│   └── DTOs/              # Data transfer objects for responses
+├── Infrastructure/        # Data access & external services
+│   ├── Repositories/      # Read model implementations (ORM)
+│   ├── Subscribers/       # Event subscribers (trigger projections)
+│   └── Cache/             # Optional caching layer (memory + Redis)
+└── Presentation/          # Entry points
+    ├── Controllers/       # HTTP query endpoints
+    └── Routes/            # Route registration
+\`\`\`
+
+**Key Differences from Write Side:**
+- No Commands (read-only)
+- No EventStore (subscribes to write-side events)
+- Pure projectors (deterministic, testable)
+- Read models optimized for specific queries
+- Eventual consistency (projections may lag behind events)
+`
+    : `
 Context/
 ├── Domain/              # Core business logic
 │   ├── Aggregates/     # Aggregate roots + entities
@@ -277,6 +356,8 @@ Context/
     ├── Http/           # REST controllers
     └── Cli/            # CLI commands
 \`\`\`
+`
+}
 
 ## SharedKernel
 
@@ -292,7 +373,16 @@ Contains types shared across contexts:
 2. **Domain Events**: Inter-context communication
 3. **CQRS**: Separate read/write models
 4. **Repository Pattern**: Persistence abstraction
-${this.moduleType === 'advanced' ? '5. **Event Sourcing**: Event stream as single source of truth\n6. **Event Applier**: Pure functions for state transitions' : ''}
+${
+  this.moduleType === 'cqrs-query'
+    ? `5. **Event Projection**: Transforming events to denormalized read models
+6. **Pure Projectors**: Deterministic, testable event handlers
+7. **Eventual Consistency**: Read models eventually consistent with events
+8. **Query Optimization**: Read models optimized for specific use cases`
+    : this.moduleType === 'advanced'
+      ? '5. **Event Sourcing**: Event stream as single source of truth\n6. **Event Applier**: Pure functions for state transitions'
+      : ''
+}
 
 Created with ❤️ using Gravito Framework
 `
