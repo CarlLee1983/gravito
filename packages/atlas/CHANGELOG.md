@@ -1,14 +1,19 @@
 # @gravito/atlas
 
+## 2.3.0
+
+### Minor Changes
+
+- **chore: Core Cleanup & Zero-Dependency Optimization**: Finalized the transition to a native-first architecture.
+  - **Redundant Code Removal**: Deleted legacy utility files (`SQLCache.ts`, `applyMixins.ts`) to reduce internal footprint.
+  - **Zero-Dep Documentation**: Updated guides to highlight that `pg`, `mysql2`, and `better-sqlite3` are now 100% optional in Bun 1.3.9+ environments.
+  - **Full Native Integration**: Completed validation of `values()`, `stream()`, and `transaction()` across all supported SQL dialects in Bun.
+
 ## 2.2.0
 
 ### Minor Changes
 
-- **perf: Bun 1.3.9 Native Optimization**: Leveraged native `Bun.sql` features for extreme performance.
-  - **Native `values()`**: Implemented `values()` method to fetch raw arrays, eliminating object mapping overhead for aggregates and `pluck()`.
-  - **Native Streaming**: Refactored `stream()` to use true `AsyncIterable` from the Bun kernel.
-  - **Native Transactions**: Added support for native transaction closures via `runTransaction()`, improving connection safety and performance.
-- **test: Enhanced Coverage**: Added comprehensive unit tests for native transactions and streaming.
+- **perf: Bun 1.3.9 Native Optimization**: (Previous release) Leveraged native `Bun.sql` features for extreme performance.
 
 ## 2.1.0
 
