@@ -220,6 +220,62 @@ export class Connection implements ConnectionContract {
   }
 
   /**
+   * Execute raw SQL and return rows as arrays of values
+   */
+  async values<T = unknown[]>(sql: string, bindings: unknown[] = []): Promise<T[]> {
+    await this.ensureConnected()
+
+    const startTime = performance.now()
+    const timestamp = Date.now()
+
+    try {
+      let rows: T[]
+
+      if (typeof this.driver.values === 'function') {
+        rows = await this.driver.values<T>(sql, bindings)
+      } else {
+        // Fallback: use query and extract object values
+        const result = await this.driver.query(sql, bindings)
+        rows = result.rows.map((row) => Object.values(row as object)) as T[]
+      }
+
+      const duration = performance.now() - startTime
+
+      // Record Metrics (Zero-Overhead check)
+      if (this.metrics) {
+        this.metrics.operationDuration?.record(duration, {
+          'db.system': this.config.driver,
+          'db.operation': 'values',
+        })
+      }
+
+      // Fire listeners
+      if (Connection.queryListeners.length > 0) {
+        const queryData = {
+          connection: this.name,
+          sql,
+          bindings,
+          duration,
+          timestamp,
+        }
+        for (const listener of Connection.queryListeners) {
+          listener(queryData)
+        }
+      }
+
+      return rows
+    } catch (error) {
+      if (this.metrics) {
+        this.metrics.operationErrors?.add(1, {
+          'db.system': this.config.driver,
+          'db.operation': 'values',
+        })
+      }
+      throw error
+    }
+  }
+
+  /**
    * Execute raw SQL statement (INSERT/UPDATE/DELETE)
    */
   async execute(sql: string, bindings: unknown[] = []): Promise<ExecuteResult> {
@@ -271,6 +327,15 @@ export class Connection implements ConnectionContract {
    */
   async transaction<T>(callback: (connection: ConnectionContract) => Promise<T>): Promise<T> {
     await this.ensureConnected()
+
+    // Prefer native transaction closure if supported by driver (e.g. Bun.sql)
+    if (typeof this.driver.runTransaction === 'function') {
+      return await this.driver.runTransaction(async () => {
+        return await callback(this.proxy || this)
+      })
+    }
+
+    // Fallback to procedural BEGIN/COMMIT
     await this.driver.beginTransaction()
 
     try {

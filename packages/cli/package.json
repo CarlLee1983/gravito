@@ -1,7 +1,7 @@
 {
   "name": "@gravito/pulse",
   "sideEffects": false,
-  "version": "3.3.1",
+  "version": "3.4.0",
   "description": "The official CLI for Gravito Galaxy Architecture. Scaffold projects and manage your universe.",
   "bin": {
     "gravito": "bin/gravito.mjs"

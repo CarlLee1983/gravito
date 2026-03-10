@@ -32,8 +32,26 @@ describe('BunSQLDriver', () => {
     // Mock SQL instance
     const mockSQLInstance = {
       query: mockQuery,
-      unsafe: mockQuery,
+      unsafe: mock((...args: any[]) => {
+        const res = mockQuery(...args)
+        // Add async iterator to the result to support for-await-of
+        ;(res as any)[Symbol.asyncIterator] = async function* () {
+          const resolved = await res
+          const items = Array.isArray(resolved)
+            ? resolved
+            : resolved && typeof resolved[Symbol.iterator] === 'function'
+              ? Array.from(resolved)
+              : resolved?.rows || []
+          for (const item of items) {
+            yield item
+          }
+        }
+        return res
+      }),
       simple: mockQuery, // Add simple() method for interpolated SQL
+      transaction: mock(async (cb: any) => {
+        return await cb(mockSQLInstance)
+      }),
       prepare: mock(() => mockPreparedStmt),
       close: mock(() => Promise.resolve()),
       connections: {
@@ -201,6 +219,21 @@ describe('BunSQLDriver', () => {
     await driver.beginTransaction()
     await driver.rollback()
     expect(mockQuery).toHaveBeenCalled()
+    expect(driver.inTransaction()).toBe(false)
+  })
+
+  test('handles native runTransaction', async () => {
+    const config = { driver: 'postgres' as const, database: 'test' }
+    const driver = new BunSQLDriver(config)
+    await driver.connect()
+
+    const result = await driver.runTransaction(async () => {
+      expect(driver.inTransaction()).toBe(true)
+      await driver.query('INSERT INTO users VALUES (?)', ['Alice'])
+      return 'success'
+    })
+
+    expect(result).toBe('success')
     expect(driver.inTransaction()).toBe(false)
   })
 

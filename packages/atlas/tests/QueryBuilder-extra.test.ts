@@ -30,6 +30,20 @@ function makeBuilder<T = Record<string, unknown>>(
     getConfig: () => ({ driver: 'postgres' as const, database: 'test' }),
     table: <U>(_name: string) => new QueryBuilder<U>(connection, grammar, _name),
     raw: rawImpl,
+    values: async (sql: string, bindings?: unknown[]) => {
+      const result = await rawImpl(sql, bindings)
+      // Since rawImpl returns the full object in these tests, we need to extract only the selected columns if it's a SELECT query
+      // For a simple mock, if it's a COUNT, MAX etc it returns [{aggregate: X}]
+      // If it's a SELECT name, it should return [['Nova'], ['Lex']]
+      return result.rows.map((row: any) => {
+        if ('exists' in row) return [row.exists]
+        if ('aggregate' in row) return [row.aggregate]
+        // If SELECT name FROM ...
+        if (sql.includes('"name"')) return [row.name]
+        if (sql.includes('"id"')) return [row.id]
+        return Object.values(row)
+      }) as any
+    },
     transaction: async <U>(callback: (conn: ConnectionContract) => Promise<U>) =>
       callback(connection),
     disconnect: async () => {},
