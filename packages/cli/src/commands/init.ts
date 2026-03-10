@@ -21,6 +21,8 @@ interface InitOptions {
   name?: string
   /** The architecture pattern to use. */
   architecture?: ArchitectureType
+  /** For DDD architecture: the module template type. */
+  dddModuleType?: 'simple' | 'advanced' | 'cqrs-query'
   /** The package manager to use. */
   packageManager?: 'bun' | 'npm' | 'yarn' | 'pnpm'
   /** Whether to skip dependency installation. */
@@ -112,6 +114,40 @@ export async function initCommand(options: InitOptions = {}) {
     architecture = archResult as ArchitectureType
   }
 
+  // Step 2b: DDD Module Type (only if DDD selected)
+  let dddModuleType: 'simple' | 'advanced' | 'cqrs-query' | undefined
+  if (architecture === 'ddd' && !options.dddModuleType) {
+    const dddTypeResult = await select({
+      message: '選擇 DDD 模組範本 (Select DDD module template):',
+      options: [
+        {
+          value: 'simple',
+          label: '📦 Simple',
+          hint: '基本 CRUD 結構 (Basic CRUD with Aggregates)',
+        },
+        {
+          value: 'advanced',
+          label: '📜 Advanced (Event Sourcing)',
+          hint: '完整事件溯源模式 (Event Sourcing with full audit trail)',
+        },
+        {
+          value: 'cqrs-query',
+          label: '🔍 CQRS Query Module',
+          hint: 'CQRS 查詢端模組 (Query-optimized read models)',
+        },
+      ],
+    })
+
+    if (isCancel(dddTypeResult)) {
+      cancel('操作已取消')
+      process.exit(0)
+    }
+
+    dddModuleType = dddTypeResult as 'simple' | 'advanced' | 'cqrs-query'
+  } else if (options.dddModuleType) {
+    dddModuleType = options.dddModuleType
+  }
+
   // Step 3: Package manager
   let packageManager = options.packageManager
   if (!packageManager) {
@@ -176,6 +212,7 @@ export async function initCommand(options: InitOptions = {}) {
       name: projectName,
       targetDir,
       architecture,
+      ...(dddModuleType && { dddModuleType }),
       packageManager,
       withSpectrum: withSpectrum as boolean,
       installDeps: !options.skipInstall,

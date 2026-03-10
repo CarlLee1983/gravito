@@ -92,7 +92,7 @@ export class Scaffold {
    * @returns {Promise<ScaffoldResult>}
    */
   async create(options: ScaffoldOptions): Promise<ScaffoldResult> {
-    const generator = this.createGenerator(options.architecture)
+    const generator = this.createGenerator(options)
     const fs = await import('node:fs/promises')
 
     // 1. Resolve Profile
@@ -145,30 +145,44 @@ export class Scaffold {
   }
 
   /**
-   * Create a generator for the specified architecture.
+   * Create a generator for the specified architecture with options.
+   * @param options - Scaffold options including architecture type and module type for DDD
    */
-  private createGenerator(type: ArchitectureType): BaseGenerator {
+  private createGenerator(options: ScaffoldOptions | ArchitectureType): BaseGenerator {
     const config = {
       templatesDir: this.templatesDir,
       verbose: this.verbose,
     }
 
-    switch (type) {
-      case 'enterprise-mvc':
-        return new EnterpriseMvcGenerator(config)
-      case 'clean':
-        return new CleanArchitectureGenerator(config)
-      case 'ddd':
-        return new DddGenerator(config)
-      case 'action-domain':
-        return new ActionDomainGenerator(config)
-      case 'satellite':
-        return new SatelliteGenerator(config)
-      case 'standalone-engine':
-        return new StandaloneEngineGenerator(config)
-      default:
-        throw new Error(`Unknown architecture type: ${type}`)
-    }
+    // Support both old-style (type string) and new-style (ScaffoldOptions object) calls
+    const type = typeof options === 'string' ? options : options.architecture
+
+    const generator = (() => {
+      switch (type) {
+        case 'enterprise-mvc':
+          return new EnterpriseMvcGenerator(config)
+        case 'clean':
+          return new CleanArchitectureGenerator(config)
+        case 'ddd': {
+          const dddGen = new DddGenerator(config)
+          // Set module type for DDD if provided in options
+          if (typeof options !== 'string' && options.dddModuleType) {
+            dddGen.setModuleType(options.dddModuleType)
+          }
+          return dddGen
+        }
+        case 'action-domain':
+          return new ActionDomainGenerator(config)
+        case 'satellite':
+          return new SatelliteGenerator(config)
+        case 'standalone-engine':
+          return new StandaloneEngineGenerator(config)
+        default:
+          throw new Error(`Unknown architecture type: ${type}`)
+      }
+    })()
+
+    return generator
   }
 
   /**

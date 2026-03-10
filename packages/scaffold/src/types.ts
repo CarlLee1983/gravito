@@ -28,6 +28,9 @@ export interface ScaffoldOptions {
   /** The primary architectural pattern to apply. */
   architecture: ArchitectureType
 
+  /** For DDD architecture: the module template type. @default 'simple' */
+  dddModuleType?: 'simple' | 'advanced' | 'cqrs-query'
+
   /** Preferred package manager for dependency installation. @default 'bun' */
   packageManager?: 'bun' | 'npm' | 'yarn' | 'pnpm'
 
