@@ -5,7 +5,7 @@
 **@gravito/atlas** is a high-performance, developer-centric database toolkit. It provides a fluent Query Builder, a robust Active Record ORM, and advanced sharding capabilities inspired by the best patterns of Laravel and Drizzle.
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.6.0-orange)](package.json)
+[![Version](https://img.shields.io/badge/version-2.3.0-orange)](package.json)
 [![Performance](https://img.shields.io/badge/performance-extreme-brightgreen)](docs/architecture.md)
 
 ---
@@ -94,11 +94,47 @@ Detailed documentation is available in the `docs/` directory:
 
 ## 📦 Installation
 
+### Core Package
+
 ```bash
 bun add @gravito/atlas
 ```
 
-> **Note**: Drivers must be installed separately. See [Drivers Documentation](docs/drivers.md).
+### Peer Dependencies (Optional Drivers)
+
+**@gravito/atlas** supports multiple databases through optional peer dependencies. Install only the drivers you need:
+
+| Driver | Package | Version | Use Case |
+|--------|---------|---------|----------|
+| **PostgreSQL** | `pg` | `^8.11.0` | Production, advanced features |
+| **MySQL** | `mysql2` | `^3.9.0` | Production, compatibility |
+| **SQLite** | `better-sqlite3` | `^11.0.0` | Development, embedded databases |
+| **MongoDB** | `mongodb` | `^6.0.0` | Document databases |
+| **Redis** | `ioredis` | `^5.8.2` | In-memory caching/sessions |
+
+#### Installation Examples
+
+```bash
+# PostgreSQL
+bun add pg
+
+# MySQL
+bun add mysql2
+
+# SQLite (for development/testing)
+bun add better-sqlite3
+
+# MongoDB
+bun add mongodb
+
+# Redis
+bun add ioredis
+
+# Multiple drivers
+bun add pg mysql2 better-sqlite3
+```
+
+> **Note**: All database drivers are **optional peer dependencies**. Only install what your application needs. See [Drivers Documentation](docs/drivers.md) for detailed configuration.
 
 ---
 
