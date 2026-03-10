@@ -55,6 +55,13 @@ export interface DriverContract {
   execute(sql: string, bindings?: unknown[]): Promise<ExecuteResult>
 
   /**
+   * 執行查詢並以陣列的陣列回傳結果列 (例如 [[1, 'Alice'], [2, 'Bob']])
+   * 用於極致效能的單一欄位讀取或聚合操作
+   * @optional 僅由支援原生 values 的驅動實作 (如 Bun.sql)
+   */
+  values?<T = unknown[]>(sql: string, bindings?: unknown[]): Promise<T[]>
+
+  /**
    * 開始交易
    */
   beginTransaction(): Promise<void>
@@ -73,6 +80,12 @@ export interface DriverContract {
    * 檢查是否在交易中
    */
   inTransaction(): boolean
+
+  /**
+   * 在原生交易閉包中執行回呼
+   * @optional 僅由支援原生交易閉包的驅動實作 (如 Bun.sql)
+   */
+  runTransaction?<T>(callback: () => Promise<T>): Promise<T>
 
   // ============================================================================
   // 進階功能（可選 - 支援該功能的驅動才需實作）
@@ -172,6 +185,12 @@ export interface ConnectionContract {
    * 執行原始 SQL 查詢並回傳結果
    */
   raw<T = Record<string, unknown>>(sql: string, bindings?: unknown[]): Promise<QueryResult<T>>
+
+  /**
+   * 執行原始 SQL 查詢並以陣列的陣列回傳結果
+   * 避免將結果映射為物件，提供最高效能
+   */
+  values<T = unknown[]>(sql: string, bindings?: unknown[]): Promise<T[]>
 
   /**
    * 執行原始 SQL 語句（INSERT/UPDATE/DELETE）

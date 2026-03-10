@@ -75,8 +75,8 @@ export class AggregateBuilder {
         span.setAttribute('db.statement', sql)
       }
 
-      const result = await this.connection.raw<{ aggregate: number | null }>(sql, compiled.bindings)
-      const value = result.rows[0]?.aggregate
+      const rows = await this.connection.values<[number | null]>(sql, compiled.bindings)
+      const value = rows[0]?.[0]
       return value === null || value === undefined ? null : Number(value)
     } finally {
       span?.end()

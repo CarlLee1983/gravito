@@ -22,6 +22,7 @@ import { BunSQLPreparedStatementManager } from './BunSQLPreparedStatement'
 export class BunSQLDriver implements DriverContract {
   private client: unknown | null = null
   private sqliteClient: unknown | null = null
+  private currentTx: unknown | null = null
   private connected = false
   private transactionActive = false
   private preparedManager?: BunSQLPreparedStatementManager
@@ -74,6 +75,7 @@ export class BunSQLDriver implements DriverContract {
     }
     this.connected = false
     this.transactionActive = false
+    this.currentTx = null
   }
 
   isConnected(): boolean {
@@ -104,8 +106,10 @@ export class BunSQLDriver implements DriverContract {
           /* ignore */
         }
       } else {
-        // @ts-expect-error
-        const result = await this.client.unsafe(sql, normalized)
+        // Use current transaction client if available
+        const client = (this.currentTx || this.client) as any
+        const result = await client.unsafe(sql, normalized)
+
         rows = Array.isArray(result)
           ? result
           : result && typeof result[Symbol.iterator] === 'function'
@@ -148,6 +152,25 @@ export class BunSQLDriver implements DriverContract {
 
       const res = await this.query(sql, bindings)
       return { affectedRows: res.rowCount ?? 0, insertId: res.insertId }
+    } catch (error) {
+      throw this.normalizeError(error, sql, bindings)
+    }
+  }
+
+  async values<T = unknown[]>(sql: string, bindings: unknown[] = []): Promise<T[]> {
+    await this.ensureConnection()
+    try {
+      const normalized = this.normalizeBindings(bindings)
+
+      if (this.sqliteClient) {
+        // @ts-expect-error
+        const stmt = this.sqliteClient.query(sql)
+        return stmt.values(...normalized) as T[]
+      } else {
+        const client = (this.currentTx || this.client) as any
+        const query = client.unsafe(sql, normalized)
+        return (await query.values()) as T[]
+      }
     } catch (error) {
       throw this.normalizeError(error, sql, bindings)
     }
@@ -203,6 +226,43 @@ export class BunSQLDriver implements DriverContract {
       await this.query('ROLLBACK')
     }
     this.transactionActive = false
+  }
+
+  /**
+   * Run callback within a native Bun.sql transaction
+   */
+  async runTransaction<T>(callback: () => Promise<T>): Promise<T> {
+    if (this.sqliteClient) {
+      // Fallback to legacy transaction for SQLite (bun:sqlite doesn't have closure-based tx)
+      await this.beginTransaction()
+      try {
+        const result = await callback()
+        await this.commit()
+        return result
+      } catch (error) {
+        await this.rollback()
+        throw error
+      }
+    }
+
+    await this.ensureConnection()
+    const client = this.client as any
+    if (!client?.transaction) {
+      throw new Error('Native transaction not supported')
+    }
+
+    return await client.transaction(async (tx: any) => {
+      const prevTx = this.currentTx
+      const prevActive = this.transactionActive
+      this.currentTx = tx
+      this.transactionActive = true
+      try {
+        return await callback()
+      } finally {
+        this.currentTx = prevTx
+        this.transactionActive = prevActive
+      }
+    })
   }
 
   inTransaction(): boolean {
@@ -285,9 +345,20 @@ export class BunSQLDriver implements DriverContract {
   ): AsyncIterable<T> {
     await this.ensureConnection()
     try {
-      const result = await this.query(sql, bindings)
-      if (result.rows) {
-        for (const row of result.rows) {
+      if (this.sqliteClient) {
+        // Fallback for SQLite as it might not support native async streaming the same way
+        const result = await this.query<T>(sql, bindings)
+        if (result.rows) {
+          for (const row of result.rows) {
+            yield row
+          }
+        }
+      } else {
+        const normalized = this.normalizeBindings(bindings)
+        const client = (this.currentTx || this.client) as any
+        // Use native Bun.sql non-awaited iterator for true streaming
+        const query = client.unsafe(sql, normalized)
+        for await (const row of query) {
           yield row as T
         }
       }
