@@ -6,6 +6,8 @@ title: Orbit Pulse (CLI)
 
 The official CLI for scaffolding and managing Gravito projects.
 
+> **📝 Package Note**: This folder is `packages/cli`, but the published npm package is named `@gravito/pulse`. This is intentional—Pulse is the CLI's role as the beating heart of your Gravito projects.
+
 Gravito CLI provides a comprehensive suite of tools to help you build, test, and manage your application, offering an experience similar to Laravel Artisan.
 
 ## Installation
