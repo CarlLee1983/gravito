@@ -32,7 +32,18 @@ import type {
 } from './types'
 
 // Bun runtime optimization: cache frequently used functions
-const bunPeek = require('bun').peek
+let bunPeek: ((promise: any) => any) | null = null
+let bunFile: ((path: string) => any) | null = null
+
+try {
+  const bunModule = require('bun') as any
+  bunPeek = bunModule.peek
+  bunFile = bunModule.file
+} catch {
+  // Fallback for Node.js environments
+  bunPeek = (promise: any) => promise
+  bunFile = (path: string) => path // Just return the path as-is
+}
 
 /**
  * Precompile middleware chain into a single function
@@ -388,10 +399,10 @@ export class Gravito {
     const optimizeEntry = (entry: any) => {
       const optimized = { ...entry }
       if (typeof optimized.key === 'string' && !optimized.key.startsWith('-----BEGIN')) {
-        optimized.key = require('bun').file(optimized.key)
+        optimized.key = bunFile(optimized.key)
       }
       if (typeof optimized.cert === 'string' && !optimized.cert.startsWith('-----BEGIN')) {
-        optimized.cert = require('bun').file(optimized.cert)
+        optimized.cert = bunFile(optimized.cert)
       }
       if (isProd && optimized.lowMemoryMode === undefined) {
         optimized.lowMemoryMode = true

@@ -43,26 +43,9 @@ async function buildInParallel() {
     })()
     tasks.push(esmPromise)
 
-    // Task 2: bun build CJS
-    const cjsPromise = (async () => {
-      const cjsResult = await build({
-        entrypoints: ['src/index.ts', 'src/compat.ts', 'src/engine/index.ts', 'src/ffi/index.ts'],
-        outdir: 'dist',
-        format: 'cjs',
-        target: 'bun',
-        splitting: false,
-        sourcemap: 'external',
-        naming: '[dir]/[name].cjs',
-        external: externalDeps,
-      })
-
-      if (!cjsResult.success) {
-        console.error('❌ CJS build failed:', cjsResult.logs)
-        return 1
-      }
-      return 0
-    })()
-    tasks.push(cjsPromise)
+    // Task 2: Skip CJS build for now (Bun-only project)
+    // CJS module wrapping in Bun is causing issues with dynamic require()
+    // Since gravito-ddd is Bun-only, ESM is sufficient
   }
 
   // Task 3: tsc 生成型別宣告
