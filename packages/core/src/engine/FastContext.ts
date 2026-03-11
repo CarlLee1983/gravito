@@ -11,19 +11,20 @@ import { RequestScopeManager } from '../Container/RequestScopeManager'
 import type { FastRequest, FastContext as IFastContext } from './types'
 
 // Bun runtime optimization: cache frequently used functions
-let bunEscapeHTML: ((html: string) => string) | null = null
+let bunEscapeHTML: (html: string) => string = (html: string) => {
+  // Default fallback for Node.js environments
+  return html
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 try {
   bunEscapeHTML = (require('bun') as any).escapeHTML
 } catch {
-  // Fallback for Node.js environments
-  bunEscapeHTML = (html: string) => {
-    return html
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;')
-  }
+  // Already have default fallback
 }
 
 /**

@@ -32,17 +32,15 @@ import type {
 } from './types'
 
 // Bun runtime optimization: cache frequently used functions
-let bunPeek: ((promise: any) => any) | null = null
-let bunFile: ((path: string) => any) | null = null
+let bunPeek = (promise: any) => promise // Default fallback
+let bunFile = (path: string) => path // Default fallback
 
 try {
   const bunModule = require('bun') as any
   bunPeek = bunModule.peek
   bunFile = bunModule.file
 } catch {
-  // Fallback for Node.js environments
-  bunPeek = (promise: any) => promise
-  bunFile = (path: string) => path // Just return the path as-is
+  // Already have default fallback
 }
 
 /**
