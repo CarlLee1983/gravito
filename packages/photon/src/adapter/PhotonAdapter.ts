@@ -25,8 +25,12 @@ import {
   type RouteDefinition,
   type StatusCode,
 } from '@gravito/core'
-import type { Context, Handler, Next } from '../index'
 import type { Photon } from '../photon'
+
+// 內部型別別名：Photon 移除 Hono 後，底層引擎直接使用 GravitoContext
+type Context = GravitoContext
+type Next = GravitoNext
+type Handler = GravitoHandler
 
 import type {
   PhotonContextExtended,
@@ -128,9 +132,24 @@ class PhotonRequestWrapper implements GravitoRequest {
     return this.photonCtx.req.raw
   }
 
+  get routePattern(): string | undefined {
+    return (this.photonCtx.req as any).routePattern
+  }
+
+  get routePath(): string | undefined {
+    return this.routePattern
+  }
+
   valid<T = unknown>(target: string): T {
     const extendedReq = this.photonCtx.req as Context['req'] & PhotonRequestExtended
     return (extendedReq as any).valid(target) as T
+  }
+
+  setValidated(target: string, data: unknown): void {
+    const extendedReq = this.photonCtx.req as Context['req'] & PhotonRequestExtended
+    if (typeof (extendedReq as any).setValidated === 'function') {
+      ;(extendedReq as any).setValidated(target, data)
+    }
   }
 }
 
@@ -681,7 +700,7 @@ export class PhotonAdapter<V extends GravitoVariables = GravitoVariables>
   }
 
   onNotFound(handler: GravitoNotFoundHandler<V>): void {
-    this.app.notFound((async (c: Context) => {
+    this.app.onNotFound((async (c: Context) => {
       const ctx = PhotonContextWrapper.create<V>(c as any)
       return handler(ctx)
     }) as any)

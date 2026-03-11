@@ -122,5 +122,3 @@ export class Photon {
     return this.adapter
   }
 }
-
-export { PhotonWithGravitoSupport as Photon }
