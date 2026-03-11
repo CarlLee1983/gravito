@@ -9,7 +9,6 @@
  */
 
 import type { GravitoMiddleware } from '@gravito/core'
-import { asHonoMiddleware } from '../../middleware-adapter'
 
 /**
  * Allowed origin(s) configuration.
@@ -101,5 +100,5 @@ export function cors(options: CorsOptions = {}): GravitoMiddleware {
     await next()
   }
 
-  return asHonoMiddleware(middleware)
+  return middleware
 }

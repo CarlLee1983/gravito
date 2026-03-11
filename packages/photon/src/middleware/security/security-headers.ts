@@ -9,7 +9,6 @@
  */
 
 import type { GravitoContext as Context, GravitoMiddleware } from '@gravito/core'
-import { asHonoMiddleware } from '../../middleware-adapter'
 
 /**
  * HSTS Configuration
@@ -99,5 +98,5 @@ export function securityHeaders(options: SecurityHeadersOptions = {}): GravitoMi
     return await next()
   }
 
-  return asHonoMiddleware(middleware)
+  return middleware
 }

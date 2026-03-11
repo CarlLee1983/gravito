@@ -11,7 +11,6 @@
 import crypto from 'node:crypto'
 
 import type { GravitoContext as Context, GravitoMiddleware } from '@gravito/core'
-import { asHonoMiddleware } from '../../middleware-adapter'
 
 /**
  * Timing-safe string comparison to prevent timing attacks
@@ -84,5 +83,5 @@ export function requireHeaderToken(options: RequireHeaderTokenOptions = {}): Gra
     await next()
   }
 
-  return asHonoMiddleware(middleware)
+  return middleware
 }

@@ -14,7 +14,6 @@
  */
 
 import type { GravitoMiddleware } from '@gravito/core'
-import { asHonoMiddleware } from '../../middleware-adapter'
 
 type RateLimiterLike = {
   attempt: (
@@ -129,5 +128,5 @@ export function throttleRequests(options: ThrottleRequestsOptions = {}): Gravito
     await next()
   }
 
-  return asHonoMiddleware(middleware)
+  return middleware
 }

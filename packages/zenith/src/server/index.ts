@@ -3,12 +3,10 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { DB } from '@gravito/atlas'
+import type { GravitoContext } from '@gravito/photon'
 import { Photon } from '@gravito/photon'
 import { QuasarAgent } from '@gravito/quasar'
 import { MySQLPersistence, SQLitePersistence } from '@gravito/stream'
-import { serveStatic } from 'hono/bun'
-import { getCookie } from 'hono/cookie'
-import { streamSSE } from 'hono/streaming'
 import {
   authMiddleware,
   createSession,
@@ -19,6 +17,20 @@ import {
 import { CommandService } from './services/CommandService'
 import { PulseService } from './services/PulseService'
 import { QueueService } from './services/QueueService'
+
+// Helper: Get cookie value from request headers
+function getCookieValue(headers: Headers, name: string): string | undefined {
+  const cookieHeader = headers.get('cookie')
+  if (!cookieHeader) return undefined
+  const cookies = cookieHeader.split(';').map((c) => c.trim())
+  for (const cookie of cookies) {
+    const [cookieName, cookieValue] = cookie.split('=')
+    if (cookieName === name) {
+      return decodeURIComponent(cookieValue)
+    }
+  }
+  return undefined
+}
 
 const app = new Photon()
 
@@ -182,11 +194,11 @@ queueService
 
 const api = new Photon()
 
-api.get('/health', (c) => c.json({ status: 'ok', time: new Date().toISOString() }))
+api.get('/health', (c: GravitoContext) => c.json({ status: 'ok', time: new Date().toISOString() }))
 
 // Auth endpoints (no middleware protection)
-api.get('/auth/status', (c) => {
-  const token = getCookie(c, 'flux_session')
+api.get('/auth/status', (c: GravitoContext) => {
+  const token = getCookieValue(c.req.raw.headers, 'flux_session')
   const isAuthenticated =
     !isAuthEnabled() || (token && require('./middleware/auth').validateSession(token))
   return c.json({
@@ -195,9 +207,9 @@ api.get('/auth/status', (c) => {
   })
 })
 
-api.post('/auth/login', async (c) => {
+api.post('/auth/login', async (c: GravitoContext) => {
   try {
-    const { password } = await c.req.json()
+    const { password } = await c.req.json<any>()
 
     if (!verifyPassword(password)) {
       return c.json({ success: false, error: 'Invalid password' }, 401)
@@ -210,7 +222,7 @@ api.post('/auth/login', async (c) => {
   }
 })
 
-api.post('/auth/logout', (c) => {
+api.post('/auth/logout', (c: GravitoContext) => {
   destroySession(c)
   return c.json({ success: true })
 })
@@ -218,7 +230,7 @@ api.post('/auth/logout', (c) => {
 // Apply auth middleware to all other API routes
 api.use('/*', authMiddleware)
 
-api.get('/queues', async (c) => {
+api.get('/queues', async (c: GravitoContext) => {
   try {
     const queues = await queueService.listQueues()
     return c.json({ queues })
@@ -228,7 +240,7 @@ api.get('/queues', async (c) => {
   }
 })
 
-api.get('/search', async (c) => {
+api.get('/search', async (c: GravitoContext) => {
   const query = c.req.query('q') || ''
   const type = (c.req.query('type') as 'all' | 'waiting' | 'delayed' | 'failed') || 'all'
   const limit = parseInt(c.req.query('limit') || '20', 10)
@@ -246,7 +258,7 @@ api.get('/search', async (c) => {
   }
 })
 
-api.get('/archive/search', async (c) => {
+api.get('/archive/search', async (c: GravitoContext) => {
   const query = c.req.query('q') || ''
   const queue = c.req.query('queue')
   const page = parseInt(c.req.query('page') || '1', 10)
@@ -265,7 +277,7 @@ api.get('/archive/search', async (c) => {
   }
 })
 
-api.get('/logs/archive', async (c) => {
+api.get('/logs/archive', async (c: GravitoContext) => {
   const level = c.req.query('level')
   const workerId = c.req.query('workerId')
   const queue = c.req.query('queue')
@@ -294,8 +306,8 @@ api.get('/logs/archive', async (c) => {
   }
 })
 
-api.post('/queues/:name/retry-all', async (c) => {
-  const name = c.req.param('name')
+api.post('/queues/:name/retry-all', async (c: GravitoContext) => {
+  const name = c.req.param('name')!
   try {
     const count = await queueService.retryDelayedJob(name)
     return c.json({ success: true, count })
@@ -304,8 +316,8 @@ api.post('/queues/:name/retry-all', async (c) => {
   }
 })
 
-api.post('/queues/:name/retry-all-failed', async (c) => {
-  const name = c.req.param('name')
+api.post('/queues/:name/retry-all-failed', async (c: GravitoContext) => {
+  const name = c.req.param('name')!
   try {
     const count = await queueService.retryAllFailedJobs(name)
     return c.json({ success: true, count })
@@ -314,8 +326,8 @@ api.post('/queues/:name/retry-all-failed', async (c) => {
   }
 })
 
-api.post('/queues/:name/clear-failed', async (c) => {
-  const name = c.req.param('name')
+api.post('/queues/:name/clear-failed', async (c: GravitoContext) => {
+  const name = c.req.param('name')!
   try {
     await queueService.clearFailedJobs(name)
     return c.json({ success: true })
@@ -324,8 +336,8 @@ api.post('/queues/:name/clear-failed', async (c) => {
   }
 })
 
-api.post('/queues/:name/pause', async (c) => {
-  const name = c.req.param('name')
+api.post('/queues/:name/pause', async (c: GravitoContext) => {
+  const name = c.req.param('name')!
   try {
     await queueService.pauseQueue(name)
     return c.json({ success: true, paused: true })
@@ -334,8 +346,8 @@ api.post('/queues/:name/pause', async (c) => {
   }
 })
 
-api.post('/queues/:name/resume', async (c) => {
-  const name = c.req.param('name')
+api.post('/queues/:name/resume', async (c: GravitoContext) => {
+  const name = c.req.param('name')!
   try {
     await queueService.resumeQueue(name)
     return c.json({ success: true, paused: false })
@@ -344,8 +356,8 @@ api.post('/queues/:name/resume', async (c) => {
   }
 })
 
-api.get('/queues/:name/jobs', async (c) => {
-  const name = c.req.param('name')
+api.get('/queues/:name/jobs', async (c: GravitoContext) => {
+  const name = c.req.param('name')!
   const type = (c.req.query('type') as 'waiting' | 'delayed' | 'failed') || 'waiting'
   try {
     const jobs = await queueService.getJobs(name, type)
@@ -356,8 +368,8 @@ api.get('/queues/:name/jobs', async (c) => {
   }
 })
 
-api.get('/queues/:name/jobs/count', async (c) => {
-  const name = c.req.param('name')
+api.get('/queues/:name/jobs/count', async (c: GravitoContext) => {
+  const name = c.req.param('name')!
   const type = (c.req.query('type') as 'waiting' | 'delayed' | 'failed') || 'waiting'
   try {
     const count = await queueService.getJobCount(name, type)
@@ -368,8 +380,8 @@ api.get('/queues/:name/jobs/count', async (c) => {
   }
 })
 
-api.get('/queues/:name/archive', async (c) => {
-  const name = c.req.param('name')
+api.get('/queues/:name/archive', async (c: GravitoContext) => {
+  const name = c.req.param('name')!
   const page = parseInt(c.req.query('page') || '1', 10)
   const limit = parseInt(c.req.query('limit') || '50', 10)
 
@@ -391,7 +403,7 @@ api.get('/queues/:name/archive', async (c) => {
   }
 })
 
-api.get('/throughput', async (c) => {
+api.get('/throughput', async (c: GravitoContext) => {
   try {
     const data = await queueService.getThroughputData()
     return c.json({ data })
@@ -400,7 +412,7 @@ api.get('/throughput', async (c) => {
   }
 })
 
-api.get('/workers', async (c) => {
+api.get('/workers', async (c: GravitoContext) => {
   try {
     const [legacyWorkers, pulseNodes] = await Promise.all([
       queueService.listWorkers(),
@@ -491,7 +503,7 @@ api.get('/workers', async (c) => {
   }
 })
 
-api.get('/metrics/history', async (c) => {
+api.get('/metrics/history', async (c: GravitoContext) => {
   try {
     const metrics = ['waiting', 'delayed', 'failed', 'workers']
     const history: Record<string, number[]> = {}
@@ -508,7 +520,7 @@ api.get('/metrics/history', async (c) => {
   }
 })
 
-api.get('/system/status', (c) => {
+api.get('/system/status', (c: GravitoContext) => {
   const mem = process.memoryUsage()
   const totalMem = os.totalmem()
 
@@ -542,7 +554,7 @@ api.get('/system/status', (c) => {
 })
 
 // --- Pulse Monitoring ---
-api.get('/pulse/nodes', async (c) => {
+api.get('/pulse/nodes', async (c: GravitoContext) => {
   try {
     const nodes = await pulseService.getNodes()
     return c.json({ nodes })
@@ -552,9 +564,9 @@ api.get('/pulse/nodes', async (c) => {
 })
 
 // --- Pulse Remote Control (Phase 3) ---
-api.post('/pulse/command', async (c) => {
+api.post('/pulse/command', async (c: GravitoContext) => {
   try {
-    const { service, nodeId, type, queue, jobKey, driver, action } = await c.req.json()
+    const { service, nodeId, type, queue, jobKey, driver, action } = await c.req.json<any>()
 
     // Validate required fields
     if (!service || !nodeId || !type || !queue || !jobKey) {
@@ -587,9 +599,9 @@ api.post('/pulse/command', async (c) => {
   }
 })
 
-api.post('/queues/:name/jobs/delete', async (c) => {
-  const queueName = c.req.param('name')
-  const { type, raw } = await c.req.json()
+api.post('/queues/:name/jobs/delete', async (c: GravitoContext) => {
+  const queueName = c.req.param('name')!
+  const { type, raw } = await c.req.json<any>()
   try {
     const success = await queueService.deleteJob(queueName, type, raw)
     return c.json({ success })
@@ -598,9 +610,9 @@ api.post('/queues/:name/jobs/delete', async (c) => {
   }
 })
 
-api.post('/queues/:name/jobs/retry', async (c) => {
-  const queueName = c.req.param('name')
-  const { raw } = await c.req.json()
+api.post('/queues/:name/jobs/retry', async (c: GravitoContext) => {
+  const queueName = c.req.param('name')!
+  const { raw } = await c.req.json<any>()
   try {
     const success = await queueService.retryJob(queueName, raw)
     return c.json({ success })
@@ -609,9 +621,9 @@ api.post('/queues/:name/jobs/retry', async (c) => {
   }
 })
 
-api.post('/queues/:name/jobs/bulk-delete', async (c) => {
-  const queueName = c.req.param('name')
-  const { type, raws } = await c.req.json()
+api.post('/queues/:name/jobs/bulk-delete', async (c: GravitoContext) => {
+  const queueName = c.req.param('name')!
+  const { type, raws } = await c.req.json<any>()
   try {
     const deleted = await queueService.deleteJobs(queueName, type, raws)
     return c.json({ success: true, count: deleted })
@@ -620,9 +632,9 @@ api.post('/queues/:name/jobs/bulk-delete', async (c) => {
   }
 })
 
-api.post('/queues/:name/jobs/bulk-retry', async (c) => {
-  const queueName = c.req.param('name')
-  const { type, raws } = await c.req.json()
+api.post('/queues/:name/jobs/bulk-retry', async (c: GravitoContext) => {
+  const queueName = c.req.param('name')!
+  const { type, raws } = await c.req.json<any>()
   try {
     const retried = await queueService.retryJobs(queueName, type, raws)
     return c.json({ success: true, count: retried })
@@ -631,9 +643,9 @@ api.post('/queues/:name/jobs/bulk-retry', async (c) => {
   }
 })
 
-api.post('/queues/:name/jobs/bulk-delete-all', async (c) => {
-  const queueName = c.req.param('name')
-  const { type } = await c.req.json()
+api.post('/queues/:name/jobs/bulk-delete-all', async (c: GravitoContext) => {
+  const queueName = c.req.param('name')!
+  const { type } = await c.req.json<any>()
   try {
     const deleted = await queueService.deleteAllJobs(queueName, type)
     return c.json({ success: true, count: deleted })
@@ -642,9 +654,9 @@ api.post('/queues/:name/jobs/bulk-delete-all', async (c) => {
   }
 })
 
-api.post('/queues/:name/jobs/bulk-retry-all', async (c) => {
-  const queueName = c.req.param('name')
-  const { type } = await c.req.json()
+api.post('/queues/:name/jobs/bulk-retry-all', async (c: GravitoContext) => {
+  const queueName = c.req.param('name')!
+  const { type } = await c.req.json<any>()
   try {
     const retried = await queueService.retryAllJobs(queueName, type)
     return c.json({ success: true, count: retried })
@@ -653,8 +665,8 @@ api.post('/queues/:name/jobs/bulk-retry-all', async (c) => {
   }
 })
 
-api.post('/maintenance/cleanup-archive', async (c) => {
-  const { days = 30 } = await c.req.json()
+api.post('/maintenance/cleanup-archive', async (c: GravitoContext) => {
+  const { days = 30 } = await c.req.json<any>()
   try {
     const deleted = await queueService.cleanupArchive(days)
     return c.json({ success: true, deleted })
@@ -663,8 +675,8 @@ api.post('/maintenance/cleanup-archive', async (c) => {
   }
 })
 
-api.post('/queues/:name/purge', async (c) => {
-  const name = c.req.param('name')
+api.post('/queues/:name/purge', async (c: GravitoContext) => {
+  const name = c.req.param('name')!
   try {
     await queueService.purgeQueue(name)
     return c.json({ success: true })
@@ -673,62 +685,89 @@ api.post('/queues/:name/purge', async (c) => {
   }
 })
 
-api.get('/logs/stream', async (c) => {
-  return streamSSE(c, async (stream) => {
-    // 1. Send history first
-    const history = await queueService.getLogHistory()
-    for (const log of history) {
-      await stream.writeSSE({
-        data: JSON.stringify(log),
-        event: 'log',
-      })
-    }
+api.get('/logs/stream', async (c: GravitoContext) => {
+  // Create SSE response with proper headers
+  const encoder = new TextEncoder()
 
-    // 2. Subscribe to new logs
-    const unsubscribeLogs = queueService.onLog(async (msg) => {
-      await stream.writeSSE({
-        data: JSON.stringify(msg),
-        event: 'log',
-      })
-    })
-
-    // 3. Subscribe to real-time stats
-    const unsubscribeStats = queueService.onStats(async (stats) => {
-      await stream.writeSSE({
-        data: JSON.stringify(stats),
-        event: 'stats',
-      })
-    })
-
-    // 4. Poll Pulse Nodes per client (simple polling for now)
-    const pulseInterval = setInterval(async () => {
+  const readable = new ReadableStream({
+    async start(controller) {
       try {
-        const nodes = await pulseService.getNodes()
-        await stream.writeSSE({
-          data: JSON.stringify({ nodes }),
-          event: 'pulse',
+        // Helper to write SSE event
+        const writeSSE = (event: string, data: string) => {
+          let message = `event: ${event}\n`
+          message += `data: ${data}\n\n`
+          controller.enqueue(encoder.encode(message))
+        }
+
+        // 1. Send history first
+        const history = await queueService.getLogHistory()
+        for (const log of history) {
+          writeSSE('log', JSON.stringify(log))
+        }
+
+        // 2. Subscribe to new logs
+        const unsubscribeLogs = queueService.onLog(async (msg) => {
+          writeSSE('log', JSON.stringify(msg))
         })
-      } catch (_err) {
-        // ignore errors
+
+        // 3. Subscribe to real-time stats
+        const unsubscribeStats = queueService.onStats(async (stats) => {
+          writeSSE('stats', JSON.stringify(stats))
+        })
+
+        // 4. Poll Pulse Nodes per client (simple polling for now)
+        const pulseInterval = setInterval(async () => {
+          try {
+            const nodes = await pulseService.getNodes()
+            writeSSE('pulse', JSON.stringify({ nodes }))
+          } catch (_err) {
+            // ignore errors
+          }
+        }, 2000)
+
+        // Keep alive
+        const keepAliveInterval = setInterval(() => {
+          writeSSE('ping', 'heartbeat')
+        }, 5000)
+
+        // Cleanup on abort
+        const cleanup = () => {
+          unsubscribeLogs()
+          unsubscribeStats()
+          clearInterval(pulseInterval)
+          clearInterval(keepAliveInterval)
+        }
+
+        // Listen for client disconnect
+        c.req.raw.signal?.addEventListener('abort', cleanup)
+
+        // Store cleanup function for manual close (optional)
+        ;(controller as any)._cleanup = cleanup
+      } catch (err) {
+        controller.error(err)
       }
-    }, 2000)
+    },
 
-    stream.onAbort(() => {
-      unsubscribeLogs()
-      unsubscribeStats()
-      clearInterval(pulseInterval)
-    })
+    cancel() {
+      // Called when stream is closed
+      if ((this as any)._cleanup) {
+        ;(this as any)._cleanup()
+      }
+    },
+  })
 
-    // Keep alive
-    while (true) {
-      await stream.sleep(5000)
-      await stream.writeSSE({ data: 'heartbeat', event: 'ping' })
-    }
+  return new Response(readable, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    },
   })
 })
 
 // --- Schedules ---
-api.get('/schedules', async (c) => {
+api.get('/schedules', async (c: GravitoContext) => {
   try {
     const schedules = await queueService.listSchedules()
     return c.json({ schedules })
@@ -737,8 +776,8 @@ api.get('/schedules', async (c) => {
   }
 })
 
-api.post('/schedules', async (c) => {
-  const body = await c.req.json()
+api.post('/schedules', async (c: GravitoContext) => {
+  const body = await c.req.json<any>()
   try {
     await queueService.registerSchedule(body)
     return c.json({ success: true })
@@ -747,8 +786,8 @@ api.post('/schedules', async (c) => {
   }
 })
 
-api.post('/schedules/run/:id', async (c) => {
-  const id = c.req.param('id')
+api.post('/schedules/run/:id', async (c: GravitoContext) => {
+  const id = c.req.param('id')!
   try {
     await queueService.runScheduleNow(id)
     return c.json({ success: true })
@@ -757,8 +796,8 @@ api.post('/schedules/run/:id', async (c) => {
   }
 })
 
-api.delete('/schedules/:id', async (c) => {
-  const id = c.req.param('id')
+api.delete('/schedules/:id', async (c: GravitoContext) => {
+  const id = c.req.param('id')!
   try {
     await queueService.removeSchedule(id)
     return c.json({ success: true })
@@ -768,7 +807,7 @@ api.delete('/schedules/:id', async (c) => {
 })
 
 // --- Alerting ---
-api.get('/alerts/config', async (c) => {
+api.get('/alerts/config', async (c: GravitoContext) => {
   return c.json({
     rules: queueService.alerts.getRules(),
     config: queueService.alerts.getConfig(),
@@ -777,8 +816,8 @@ api.get('/alerts/config', async (c) => {
 })
 
 // Maintenance API temporarily disabled - requires ServerConfigManager enhancement
-// api.post('/maintenance/config', async (c) => {
-//   const config = await c.req.json()
+// api.post('/maintenance/config', async (c: GravitoContext) => {
+//   const config = await c.req.json<any>()
 //   try {
 //     // await queueService.saveMaintenanceConfig(config)
 //     return c.json({ success: true })
@@ -787,8 +826,8 @@ api.get('/alerts/config', async (c) => {
 //   }
 // })
 
-api.post('/alerts/config', async (c) => {
-  const config = await c.req.json()
+api.post('/alerts/config', async (c: GravitoContext) => {
+  const config = await c.req.json<any>()
   try {
     await queueService.alerts.saveConfig(config)
     return c.json({ success: true })
@@ -797,8 +836,8 @@ api.post('/alerts/config', async (c) => {
   }
 })
 
-api.post('/alerts/rules', async (c) => {
-  const rule = await c.req.json()
+api.post('/alerts/rules', async (c: GravitoContext) => {
+  const rule = await c.req.json<any>()
   try {
     await queueService.alerts.addRule(rule)
     return c.json({ success: true })
@@ -807,8 +846,8 @@ api.post('/alerts/rules', async (c) => {
   }
 })
 
-api.delete('/alerts/rules/:id', async (c) => {
-  const id = c.req.param('id')
+api.delete('/alerts/rules/:id', async (c: GravitoContext) => {
+  const id = c.req.param('id')!
   try {
     await queueService.alerts.deleteRule(id)
     return c.json({ success: true })
@@ -817,7 +856,7 @@ api.delete('/alerts/rules/:id', async (c) => {
   }
 })
 
-api.post('/alerts/test', async (c) => {
+api.post('/alerts/test', async (c: GravitoContext) => {
   try {
     const nodes = await pulseService.getNodes()
     queueService.alerts.check({
@@ -843,14 +882,39 @@ api.post('/alerts/test', async (c) => {
 
 app.route('/api', api)
 
-app.use(
-  '/*',
-  serveStatic({
-    root: './dist/client',
-  })
-)
+// Serve static files from dist/client
+app.get('*', async (c: GravitoContext) => {
+  const url = new URL(c.req.path, 'http://localhost')
+  let filePath = url.pathname === '/' ? '/index.html' : url.pathname
 
-app.get('*', serveStatic({ path: './dist/client/index.html' }))
+  // Remove leading slash
+  if (filePath.startsWith('/')) {
+    filePath = filePath.slice(1)
+  }
+
+  const fullPath = `./dist/client/${filePath}`
+
+  try {
+    // Try to serve the requested file
+    const file = Bun.file(fullPath)
+    if (await file.exists()) {
+      return new Response(file)
+    }
+
+    // Fall back to index.html for SPA routing
+    const indexFile = Bun.file('./dist/client/index.html')
+    if (await indexFile.exists()) {
+      return new Response(indexFile, {
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      })
+    }
+
+    // File not found
+    return c.json({ error: 'Not found' }, 404)
+  } catch (_err) {
+    return c.json({ error: 'Not found' }, 404)
+  }
+})
 
 console.log(`[FluxConsole] Server starting on http://localhost:${PORT}`)
 

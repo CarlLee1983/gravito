@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import type { Context } from '@gravito/photon'
+import type { GravitoContext } from '@gravito/photon'
 import type { Authenticatable } from '../src/contracts/Authenticatable'
 import { TokenGuard } from '../src/guards/TokenGuard'
 import { CallbackUserProvider } from '../src/providers/CallbackUserProvider'
@@ -32,7 +32,7 @@ describe('TokenGuard', () => {
         },
         header: () => undefined,
       },
-    } as unknown as Context
+    } as unknown as GravitoContext
 
     const guard = new TokenGuard(provider, ctx, 'api_token', 'api_token', false, true)
 
@@ -54,7 +54,7 @@ describe('TokenGuard', () => {
         query: () => undefined,
         header: (key: string) => (key === 'Authorization' ? 'Bearer valid-token' : undefined),
       },
-    } as unknown as Context
+    } as unknown as GravitoContext
 
     const guard = new TokenGuard(provider, ctx)
 
@@ -74,7 +74,7 @@ describe('TokenGuard', () => {
         query: () => 'invalid',
         header: () => undefined,
       },
-    } as unknown as Context
+    } as unknown as GravitoContext
 
     const guard = new TokenGuard(provider, ctx)
 

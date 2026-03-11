@@ -1,10 +1,10 @@
-import type { MiddlewareHandler } from 'hono'
+import type { GravitoContext, GravitoNext } from '@gravito/core'
 
 /**
  * Automatically trim all strings in the request body and query.
  */
-export const trimStrings = (): MiddlewareHandler => {
-  return async (c, next) => {
+export const trimStrings = () => {
+  return async (c: GravitoContext, next: GravitoNext) => {
     // We proxy the req.json and req.query methods to return trimmed data
     // This is more efficient than pre-processing everything if the controller doesn't use it.
 
@@ -13,7 +13,7 @@ export const trimStrings = (): MiddlewareHandler => {
       try {
         const body = await c.req.json()
         clean(body, (val) => (typeof val === 'string' ? val.trim() : val))
-        // Since Hono's body is already read, we might need to store it in context
+        // Since body is already read, we might need to store it in context
         // But for now, let's assume we use a simpler approach for the prototype.
       } catch {
         // Skip if not valid JSON

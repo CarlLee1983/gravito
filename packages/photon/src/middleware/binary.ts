@@ -1,6 +1,5 @@
 import type { GravitoMiddleware } from '@gravito/core'
 import { encode } from 'cborg'
-import { asHonoMiddleware } from '../middleware-adapter'
 
 /**
  * Binary Middleware for Photon.
@@ -78,5 +77,5 @@ export const binaryMiddleware = (): GravitoMiddleware => {
     return res
   }
 
-  return asHonoMiddleware(middleware)
+  return middleware
 }

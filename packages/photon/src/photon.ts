@@ -1,61 +1,126 @@
 /**
- * @fileoverview Enhanced Photon Class with Gravito Middleware Support
+ * @fileoverview Photon - Gravito 原生 HTTP 引擎
  *
- * Extends Hono with native support for Gravito middleware types,
- * enabling seamless integration of Gravito-typed middleware without adapters.
+ * 使用 Bun 原生 HTTP Adapter，提供高效能、型別安全的路由系統。
+ * 完全基於 @gravito/core 的 BunNativeAdapter，無 Hono 依賴。
  *
  * @module @gravito/photon/photon
  * @public
  */
 
-import type { GravitoMiddleware } from '@gravito/core'
-import type { MiddlewareHandler } from 'hono'
-import { Hono } from 'hono'
+import type {
+  GravitoErrorHandler,
+  GravitoHandler,
+  GravitoMiddleware,
+  GravitoNotFoundHandler,
+} from '@gravito/core'
+import { BunNativeAdapter } from '@gravito/core'
 
 /**
- * Enhanced Photon application class with Gravito middleware support.
+ * Photon 應用類別 - 高效能 Gravito HTTP 引擎
  *
- * A subclass of Hono that automatically adapts Gravito-typed middleware
- * for seamless integration. Type-safe at both compile and runtime.
- *
- * @example
- * ```typescript
- * import { Photon } from '@gravito/photon'
- *
- * const app = new Photon()
- *
- * // Works with both Hono and Gravito middleware:
- * app.use(honoMiddleware)       // Traditional Hono
- * app.use(gravitoMiddleware)    // Gravito-typed (automatically adapted)
- * ```
+ * 包裝 BunNativeAdapter，提供便利的 API
  *
  * @public
  */
-export class PhotonWithGravitoSupport extends Hono {
-  // Inherit all Hono methods, with transparent support for GravitoMiddleware
-  // Runtime conversion happens automatically via implicit type casting
-  // Both MiddlewareHandler and GravitoMiddleware have identical signatures at runtime
-}
+export class Photon {
+  private adapter = new BunNativeAdapter()
 
-/**
- * Helper function to explicitly convert Gravito middleware to Hono middleware.
- *
- * Usually not needed - Photon automatically adapts Gravito middleware.
- * Use this only if you need explicit control over conversion.
- *
- * @example
- * ```typescript
- * import { toHonoMiddleware } from '@gravito/photon'
- *
- * const adapted = toHonoMiddleware(gravitoMiddleware)
- * ```
- *
- * @public
- */
-export function toHonoMiddleware(middleware: GravitoMiddleware): MiddlewareHandler {
-  // Both types have identical signatures at runtime
-  // (ctx, next) => Response | void | Promise<Response | void>
-  return middleware as unknown as MiddlewareHandler
+  get(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
+    this.adapter.route('get', path, ...handlers)
+    return this
+  }
+
+  post(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
+    this.adapter.route('post', path, ...handlers)
+    return this
+  }
+
+  put(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
+    this.adapter.route('put', path, ...handlers)
+    return this
+  }
+
+  delete(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
+    this.adapter.route('delete', path, ...handlers)
+    return this
+  }
+
+  patch(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
+    this.adapter.route('patch', path, ...handlers)
+    return this
+  }
+
+  head(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
+    this.adapter.route('head', path, ...handlers)
+    return this
+  }
+
+  options(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
+    this.adapter.route('options', path, ...handlers)
+    return this
+  }
+
+  use(path: string, ...middleware: GravitoMiddleware[]): this {
+    this.adapter.use(path, ...middleware)
+    return this
+  }
+
+  useGlobal(...middleware: GravitoMiddleware[]): this {
+    this.adapter.useGlobal(...middleware)
+    return this
+  }
+
+  useScoped(scope: string, path: string, ...middleware: GravitoMiddleware[]): this {
+    this.adapter.useScoped(scope, path, ...middleware)
+    return this
+  }
+
+  route(basePath: string, app: Photon): this {
+    this.mount(basePath, app)
+    return this
+  }
+
+  mount(path: string, app: Photon | any): this {
+    const subAdapter = app instanceof Photon ? app.adapter : app
+    this.adapter.mount(path, subAdapter)
+    return this
+  }
+
+  onError(handler: GravitoErrorHandler): this {
+    this.adapter.onError(handler)
+    return this
+  }
+
+  onNotFound(handler: GravitoNotFoundHandler): this {
+    this.adapter.onNotFound(handler)
+    return this
+  }
+
+  async fetch(request: Request, server?: any): Promise<Response> {
+    return this.adapter.fetch(request, server)
+  }
+
+  async request(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+    const url =
+      typeof input === 'string'
+        ? input.startsWith('http')
+          ? input
+          : `http://localhost${input}`
+        : input instanceof URL
+          ? input.toString()
+          : (input as Request).url
+    const request = input instanceof Request ? input : new Request(url, init)
+    return this.fetch(request)
+  }
+
+  get websocket() {
+    return this.adapter.websocket
+  }
+
+  get native(): BunNativeAdapter {
+    return this.adapter
+  }
 }
 
 export { PhotonWithGravitoSupport as Photon }

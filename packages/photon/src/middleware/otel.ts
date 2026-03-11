@@ -11,7 +11,6 @@
 import { createRequire } from 'node:module'
 
 import type { GravitoContext, GravitoMiddleware } from '@gravito/core'
-import { asHonoMiddleware } from '../middleware-adapter'
 
 // Runtime module loader (avoid static dependency)
 const createRequireLoader = () => {
@@ -294,5 +293,5 @@ export function otelMiddleware(config: OtelMiddlewareConfig = {}): GravitoMiddle
     }
   }
 
-  return asHonoMiddleware(middleware)
+  return middleware
 }

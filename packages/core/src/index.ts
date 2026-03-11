@@ -22,8 +22,8 @@ export const VERSION = packageJson.version
 // These types enable swapping out the underlying HTTP engine.
 // ─────────────────────────────────────────────────────────────────────────────
 
+export { BunNativeAdapter } from './adapters/bun/BunNativeAdapter'
 export { GravitoEngineAdapter } from './adapters/GravitoEngineAdapter'
-
 // Adapters
 export type { AdapterConfig, AdapterFactory, HttpAdapter, RouteDefinition } from './adapters/types'
 export { isHttpAdapter } from './adapters/types'

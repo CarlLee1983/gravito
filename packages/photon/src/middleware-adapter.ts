@@ -11,17 +11,25 @@
 import type { GravitoMiddleware } from '@gravito/core'
 
 /**
- * Identity middleware adapter.
- * Since Photon now uses GravitoMiddleware directly, no adaptation is needed.
+ * Identity function for Gravito middleware.
+ *
+ * This function accepts a GravitoMiddleware and returns it unchanged.
+ * It serves as a type-safe way to ensure middleware implements the correct interface.
  *
  * @param middleware - Gravito-typed middleware function
- * @returns The same middleware (no-op adapter for backwards compatibility)
+ * @returns The same middleware function
+ *
+ * @example
+ * ```typescript
+ * import { asHonoMiddleware } from '@gravito/photon/middleware-adapter'
+ * import { myGravitoMiddleware } from './my-middleware'
+ *
+ * const app = new Photon()
+ * app.use(asHonoMiddleware(myGravitoMiddleware))
+ * ```
  *
  * @internal
  */
-export function asGravitoMiddleware(middleware: GravitoMiddleware): GravitoMiddleware {
+export function asHonoMiddleware(middleware: GravitoMiddleware): GravitoMiddleware {
   return middleware
 }
-
-// Re-export for backwards compatibility
-export const asHonoMiddleware = asGravitoMiddleware

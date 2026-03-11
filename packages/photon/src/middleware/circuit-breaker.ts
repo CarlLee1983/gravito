@@ -15,7 +15,6 @@
  */
 
 import type { GravitoContext, GravitoMiddleware } from '@gravito/core'
-import { asHonoMiddleware } from '../middleware-adapter'
 
 // Type alias for convenience
 type Context = GravitoContext
@@ -330,7 +329,7 @@ export function circuitBreaker(config: CircuitBreakerConfig): GravitoMiddleware 
     }
   }
 
-  return asHonoMiddleware(middleware)
+  return middleware
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

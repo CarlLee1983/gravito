@@ -9,7 +9,6 @@
  */
 
 import type { GravitoMiddleware } from '@gravito/core'
-import { asHonoMiddleware } from '../../middleware-adapter'
 
 /**
  * Options for body size limiting
@@ -105,5 +104,5 @@ export function bodySizeLimit(
     await next()
   }
 
-  return asHonoMiddleware(middleware)
+  return middleware
 }

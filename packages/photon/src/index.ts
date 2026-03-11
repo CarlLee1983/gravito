@@ -1,94 +1,73 @@
 /**
- * @gravito/photon - High-performance web engine for the Gravito Galaxy Architecture.
+ * @gravito/photon - Native Bun HTTP engine for Gravito
  *
- * Photon serves as the foundational HTTP layer for Gravito, providing an ultra-fast,
- * type-safe routing system based on Hono. It is designed to work seamlessly with
- * Gravito's micro-kernel architecture while maintaining full compatibility with
- * the Hono ecosystem.
- *
- * Key Features:
- * - Ultra-fast routing using Radix Tree (Trie)
- * - Built-in support for Gravito-typed middleware
- * - Extensive middleware ecosystem (CORS, JWT, OpenTelemetry, HTMX, etc.)
- * - Native support for Bun runtime
- * - Developer-friendly API similar to Express/Koa
+ * Photon is a high-performance, type-safe HTTP layer built on Bun's native
+ * features and @gravito/core's BunNativeAdapter.
  *
  * @example
  * ```typescript
  * import { Photon } from '@gravito/photon'
  *
  * const app = new Photon()
- *
- * // Route handling
- * app.get('/hello', (c) => c.text('Hello Gravito!'))
- *
- * // Middleware usage
- * app.use('/api/*', myMiddleware)        // Traditional Hono
- * app.use('/api/*', gravitoMiddleware)    // Gravito-typed
- *
- * // Mounting sub-routers
- * app.route('/v1', v1Router)
+ * app.get('/api/users', (c) => c.json({ users: [] }))
+ * export default app
  * ```
- * @public
  */
-
-import type { Context, Handler, MiddlewareHandler, Next } from 'hono'
-import { Hono } from 'hono'
-import { PhotonWithGravitoSupport } from './photon'
-
-// Export primary application class
-export { PhotonWithGravitoSupport as Photon } from './photon'
-
-// Re-export essential Hono types
-export type { Context, Handler, MiddlewareHandler, Next }
-
-// Re-export common Hono members for convenience
-export { Hono }
-
 /**
- * Default Photon instance factory.
- * @public
- */
-export function createPhoton(): PhotonWithGravitoSupport {
-  return new PhotonWithGravitoSupport()
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Compatibility Layer
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Re-export common Hono exports to ensure full compatibility.
- * This allows @gravito/photon to be used as a drop-in replacement for hono.
- */
-export * from 'hono'
-export * from 'hono/csrf'
-export { csrf as csrfProtection } from 'hono/csrf'
-
-/**
- * CSRF options.
- * @public
- */
-export interface CsrfOptions {
-  origin?:
-    | string
-    | string[]
-    | ((origin: string) => boolean | undefined | Promise<boolean | undefined>)
-  secFetchSite?: string | string[]
-}
-
-/**
- * Helper to get CSRF token from context.
+ * Binary-related middleware for Photon.
  *
- * Provides compatibility for Gravito ecosystem.
+ * Provides utilities for handling binary data formats like CBOR,
+ * optimizing payload size and serialization speed for high-performance APIs.
  *
- * @param c - Context
- * @param _options - CSRF options
- * @returns token or undefined
  * @public
  */
-export function getCsrfToken(c: Context, _options?: CsrfOptions): string | null {
-  // In modern Hono, CSRF token is usually managed via headers/cookies
-  // This is a compatibility shim
-  return c.req.header('x-csrf-token') || null
-}
+
+export type {
+  GravitoContext,
+  GravitoErrorHandler,
+  GravitoHandler,
+  GravitoMiddleware,
+  GravitoNotFoundHandler,
+} from '@gravito/core'
+export * from './middleware/binary'
+/**
+ * HTMX-related middleware for Photon.
+ *
+ * Enhances Photon with first-class support for HTMX, including
+ * automatic request detection and simplified header access for hypermedia-driven UIs.
+ *
+ * @public
+ */
+export * from './middleware/htmx'
+/**
+ * Rate limiting middleware for Photon.
+ *
+ * Provides built-in rate limiting with token bucket and sliding window strategies.
+ * Supports both memory-based and custom storage backends.
+ *
+ * @public
+ */
+export * from './middleware/ratelimit'
+/**
+ * Redis-based rate limiting storage.
+ * @public
+ */
+export * from './middleware/ratelimit-redis'
+/**
+ * Security middleware for Photon.
+ *
+ * Provides HTTP security utilities migrated from `@gravito/core`:
+ * CORS, CSRF protection, security headers, body size limiting,
+ * header token gating, and request throttling.
+ *
+ * @public
+ */
+export * from './middleware/security'
+export * from './middleware-adapter'
+/**
+ * OpenAPI utilities
+ * @public
+ */
+export * from './openapi'
+// Export main Photon application class and types
+export { Photon } from './photon'

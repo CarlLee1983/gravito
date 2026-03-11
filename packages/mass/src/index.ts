@@ -69,9 +69,6 @@
  * @packageDocumentation
  */
 
-// Export validator
-export { tbValidator as validator } from '@hono/typebox-validator'
-
 // Export TypeBox types
 export type { Static, TSchema } from '@sinclair/typebox'
 // Re-export TypeBox Schema builder as Schema

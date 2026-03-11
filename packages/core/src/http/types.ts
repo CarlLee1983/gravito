@@ -242,6 +242,13 @@ export interface GravitoRequest {
    * @throws {Error} If validation was not performed for this target
    */
   valid<T = unknown>(target: ValidationTarget): T
+
+  /**
+   * Store validated data for a specific source
+   * @param target - The validation target
+   * @param data - The validated data to store
+   */
+  setValidated(target: ValidationTarget, data: unknown): void
 }
 
 /**

@@ -1,5 +1,4 @@
 import type { GravitoMiddleware } from '@gravito/core'
-import { asHonoMiddleware } from '../middleware-adapter'
 
 /**
  * HTMX Middleware for Photon.
@@ -63,5 +62,5 @@ export const htmxMiddleware = (): GravitoMiddleware => {
     return await next()
   }
 
-  return asHonoMiddleware(middleware)
+  return middleware
 }

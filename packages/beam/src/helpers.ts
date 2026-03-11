@@ -1,5 +1,3 @@
-import type { Env, Schema } from '@gravito/photon'
-import type { Hono } from 'hono'
 import { BeamError } from './errors'
 import { createBeam } from './index'
 import type { BeamOptions } from './types'
@@ -43,7 +41,7 @@ import type { BeamOptions } from './types'
  *
  * @public
  */
-export function createAuthenticatedBeam<T extends Hono<Env, Schema, string>>(
+export function createAuthenticatedBeam<T extends Record<string, any>>(
   baseUrl: string,
   getToken: () => string | Promise<string>,
   options?: Omit<BeamOptions, 'headers'>

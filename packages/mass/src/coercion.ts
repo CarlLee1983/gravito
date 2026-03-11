@@ -1,7 +1,8 @@
-import type { Context, Env, MiddlewareHandler } from '@gravito/photon'
-import { tbValidator } from '@hono/typebox-validator'
+import type { GravitoContext, GravitoMiddleware } from '@gravito/core'
 import type { Static, TBoolean, TInteger, TNumber, TSchema } from '@sinclair/typebox'
 import { Type } from '@sinclair/typebox'
+import { Value } from '@sinclair/typebox/value'
+import type { Context as HonoContext } from 'hono'
 
 /**
  * String to Number Coercion Helper.
@@ -238,14 +239,11 @@ export function coerceData<T extends TSchema>(data: unknown, schema: T): unknown
  * are string-based.
  *
  * @template T - TypeBox schema type
- * @template S - Validation source type
- * @template E - Photon environment type
- * @template P - Route path type
  *
  * @param source - Validation source (recommend using 'query' or 'param')
  * @param schema - TypeBox schema definition
  * @param hook - Optional validation result hook
- * @returns Photon middleware handler
+ * @returns Gravito middleware handler
  *
  * @example Query Parameter Coercion
  * ```typescript
@@ -296,40 +294,43 @@ export function coerceData<T extends TSchema>(data: unknown, schema: T): unknown
  * )
  * ```
  */
-export function validateWithCoercion<
-  T extends TSchema,
-  S extends 'json' | 'query' | 'param' | 'form',
-  E extends Env = Env,
-  P extends string = string,
->(
-  source: S,
+export function validateWithCoercion<T extends TSchema>(
+  source: 'json' | 'query' | 'param' | 'form',
   schema: T,
-  hook?: (result: unknown, c: Context<E>) => Response | Promise<Response> | undefined
-): MiddlewareHandler<
-  E,
-  P,
-  {
-    in: { [K in S]: Static<T> }
-    out: { [K in S]: Static<T> }
-  }
-> {
-  return async (c, next) => {
-    // Get raw data
+  hook?: (result: unknown, c: GravitoContext) => Response | Promise<Response> | undefined
+): GravitoMiddleware {
+  return async (ctx: GravitoContext, next) => {
+    // Handle both Hono native context and Gravito wrapped context
+    const honoCtx = (ctx.native || ctx) as HonoContext
     let data: unknown
 
     switch (source) {
       case 'json':
-        data = await c.req.json()
+        try {
+          data = await honoCtx.req.json()
+        } catch (_error) {
+          const errorRes = await hook?.({ success: false }, ctx)
+          return errorRes || honoCtx.json({ error: 'Invalid JSON' }, 400)
+        }
         break
+
       case 'query':
-        data = c.req.query()
+        data = honoCtx.req.query()
         break
+
       case 'param':
-        data = c.req.param()
+        data = honoCtx.req.param()
         break
+
       case 'form':
-        data = await c.req.parseBody()
+        try {
+          data = await honoCtx.req.parseBody()
+        } catch (_error) {
+          const errorRes = await hook?.({ success: false }, ctx)
+          return errorRes || honoCtx.json({ error: 'Invalid form data' }, 400)
+        }
         break
+
       default:
         data = {}
     }
@@ -339,29 +340,36 @@ export function validateWithCoercion<
       data = coerceData(data, schema)
     }
 
-    // Create new request object and inject coerced data
-    // Use standard validation middleware for subsequent validation
-    const validator = tbValidator(source, schema, hook) as any
+    // Validate data using TypeBox
+    const isValid = Value.Check(schema, data)
 
-    // Temporarily override request data access methods
-    const originalQueryMethod = c.req.query
-    const originalParamMethod = c.req.param
-
-    if (source === 'query') {
-      // @ts-expect-error - Temporary method override to inject coerced data
-      c.req.query = () => data as Record<string, string>
-    } else if (source === 'param') {
-      // @ts-expect-error - Temporary method override to inject coerced data
-      c.req.param = () => data
+    if (!isValid) {
+      const errors = Array.from(Value.Errors(schema, data))
+      const result = { success: false, errors }
+      const errorRes = await hook?.(result, ctx)
+      return errorRes || honoCtx.json({ error: 'Validation failed' }, 400)
     }
 
-    await (validator as any)(c, next)
+    // Store validated data in context
+    const validated = data as Static<T>
 
-    // Restore original methods
-    if (source === 'query') {
-      c.req.query = originalQueryMethod
-    } else if (source === 'param') {
-      c.req.param = originalParamMethod
+    // Use Hono's native request.valid() method to store validated data
+    ;(honoCtx.req as any).valid = (target: string) => {
+      if (target === source) {
+        return validated
+      }
+      throw new Error(`Validation data for '${target}' not available`)
     }
+
+    // Call hook with success result if provided
+    if (hook) {
+      const successRes = await hook({ success: true }, ctx)
+      if (successRes) {
+        return successRes
+      }
+    }
+
+    // Continue to next middleware
+    await next()
   }
 }

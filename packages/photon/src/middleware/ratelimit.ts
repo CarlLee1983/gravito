@@ -9,7 +9,6 @@
  */
 
 import type { GravitoContext, GravitoMiddleware } from '@gravito/core'
-import { asHonoMiddleware } from '../middleware-adapter'
 
 // Type alias for convenience (used in config types)
 type Context = GravitoContext
@@ -363,7 +362,7 @@ export function rateLimit(config: RateLimitConfig): GravitoMiddleware {
     await next()
   }
 
-  return asHonoMiddleware(middleware)
+  return middleware
 }
 
 /**
