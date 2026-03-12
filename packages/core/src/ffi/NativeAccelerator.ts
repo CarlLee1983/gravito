@@ -61,14 +61,11 @@ export class NativeAccelerator {
       }
 
       // 嘗試載入 bun:ffi 的 cc 函數
-      const bunFfi = require('bun:ffi')
-      if (typeof bunFfi.cc !== 'function') {
-        this.available = false
-        return false
-      }
-
-      this.available = true
-      return true
+      // NOTE: bun:ffi require() calls cause CJS compatibility code to be emitted
+      // which breaks ESM parsing. For now, disable FFI checks and use JavaScript fallback
+      // TODO: Revisit when Bun's ESM module handling improves
+      this.available = false
+      return false
     } catch {
       this.available = false
       return false
@@ -145,33 +142,9 @@ export class NativeAccelerator {
    * 支援從原始碼目錄或 npm 套件的 src/ffi/native 目錄載入
    */
   private static resolveCSourcePath(): string {
-    const path = require('node:path')
-    const fs = require('node:fs')
-
-    // 取得當前模組目錄（ESM 優先，CJS 回退）
-    const currentDir =
-      typeof import.meta?.dir === 'string' && import.meta.dir !== ''
-        ? import.meta.dir
-        : typeof __dirname === 'string'
-          ? __dirname
-          : process.cwd()
-
-    // 嘗試多個可能的路徑（開發時 vs 發佈後）
-    const candidates = [
-      path.resolve(currentDir, 'native', 'cbor.c'),
-      path.resolve(currentDir, '..', 'ffi', 'native', 'cbor.c'),
-      path.resolve(currentDir, '..', '..', 'src', 'ffi', 'native', 'cbor.c'),
-    ]
-
-    for (const candidate of candidates) {
-      try {
-        if (fs.existsSync(candidate)) {
-          return candidate
-        }
-      } catch {}
-    }
-
-    throw new Error(`C 原始碼檔案未找到，嘗試路徑: ${candidates.join(', ')}`)
+    // NOTE: This method is never called since FFI is disabled
+    // Removed require() calls that caused CJS compat code generation
+    throw new Error('FFI is disabled - resolveCSourcePath should not be called')
   }
 
   /**
@@ -186,36 +159,10 @@ export class NativeAccelerator {
         return null
       }
 
-      const bunFfi = require('bun:ffi')
-      if (typeof bunFfi.cc !== 'function') {
-        return null
-      }
-
-      // 解析 C 原始碼路徑
-      const cSourcePath = this.resolveCSourcePath()
-
-      if (this.isDebugEnabled()) {
-        console.log(`[GRAVITO_FFI] 載入 C 原始碼: ${cSourcePath}`)
-      }
-
-      // 使用 bun:ffi 的 cc() 編譯 C 代碼
-      // cc() 的 source 參數接受檔案路徑（不是源碼字串）
-      const lib = bunFfi.cc({
-        source: cSourcePath,
-        symbols: {
-          gravito_cbor_encode: {
-            args: ['ptr', 'usize', 'ptr', 'usize'],
-            returns: 'i32',
-          },
-          gravito_cbor_decode: {
-            args: ['ptr', 'usize', 'ptr', 'usize'],
-            returns: 'i32',
-          },
-        },
-      })
-
-      // cc() 返回 { close, symbols: { ... } }
-      return new NativeCborAccelerator(lib.symbols)
+      // NOTE: bun:ffi require() calls cause CJS compatibility code to be emitted
+      // which breaks ESM parsing. Disabled FFI for now, using JavaScript fallback
+      // TODO: Revisit when Bun's ESM module handling improves
+      return null
     } catch (error) {
       if (this.isDebugEnabled()) {
         console.error('[GRAVITO_FFI] 編譯失敗:', error)
@@ -246,95 +193,5 @@ export class NativeAccelerator {
   }
 }
 
-/**
- * 原生 C CBOR 加速器包裝類
- */
-class NativeCborAccelerator implements CborAccelerator {
-  private symbols: any
-
-  constructor(symbols: any) {
-    this.symbols = symbols
-  }
-
-  encode(data: Record<string, unknown>): Uint8Array {
-    // 將物件序列化為 JSON
-    const json = JSON.stringify(data)
-    const jsonBytes = new TextEncoder().encode(json)
-
-    // 估算 CBOR 輸出大小（CBOR 通常比 JSON 小 20-40%）
-    let outputCapacity = Math.ceil(jsonBytes.length * 1.5)
-    const maxAttempts = 3
-
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const outputBuffer = new Uint8Array(outputCapacity)
-
-      // 調用 C 編碼函數
-      const result = this.symbols.gravito_cbor_encode(
-        jsonBytes,
-        jsonBytes.length,
-        outputBuffer,
-        outputCapacity
-      )
-
-      if (typeof result !== 'number') {
-        throw new Error('FFI 回傳值無效')
-      }
-
-      if (result > 0) {
-        // 成功
-        return outputBuffer.slice(0, result)
-      }
-
-      if (result === -1) {
-        // Buffer 不足，擴大重試
-        outputCapacity *= 2
-        continue
-      }
-
-      // 其他錯誤
-      throw new Error(`CBOR 編碼失敗 (error: ${result})`)
-    }
-
-    throw new Error(`CBOR 編碼失敗：超過最大重試次數，需要 > ${outputCapacity} 位元組`)
-  }
-
-  decode(bytes: Uint8Array): Record<string, unknown> {
-    // 估算 JSON 輸出大小（JSON 通常比 CBOR 大）
-    let jsonCapacity = Math.ceil(bytes.length * 3)
-    const maxAttempts = 3
-
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const jsonBuffer = new Uint8Array(jsonCapacity)
-
-      // 調用 C 解碼函數
-      const result = this.symbols.gravito_cbor_decode(bytes, bytes.length, jsonBuffer, jsonCapacity)
-
-      if (typeof result !== 'number') {
-        throw new Error('FFI 回傳值無效')
-      }
-
-      if (result > 0) {
-        // 成功
-        const jsonString = new TextDecoder().decode(jsonBuffer.slice(0, result))
-        const obj = JSON.parse(jsonString)
-
-        if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) {
-          throw new Error('CBOR 根值必須是物件')
-        }
-
-        return obj as Record<string, unknown>
-      }
-
-      if (result === -1) {
-        // Buffer 不足，擴大重試
-        jsonCapacity *= 2
-        continue
-      }
-
-      // 其他錯誤
-      throw new Error(`CBOR 解碼失敗 (error: ${result})`)
-    }
-
-    throw new Error(`CBOR 解碼失敗：超過最大重試次數，需要 > ${jsonCapacity} 位元組`)
-  }
-}
+// NOTE: NativeCborAccelerator class was removed as FFI is disabled
+// When FFI is re-enabled in the future, this class will need to be restored
