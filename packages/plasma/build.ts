@@ -11,9 +11,10 @@ if (!isDtsOnly) {
 
 try {
   if (!isDtsOnly) {
-    console.log('Building ESM/CJS...')
-    // Use tsup for proper ESM/CJS build (handles Bun builtins correctly)
-    await $`bunx tsup src/index.ts --format esm,cjs --outDir dist --external @gravito/core,@gravito/photon,ioredis,bun`
+    console.log('Building ESM...')
+    // Build ESM only - Bun-only project
+    // CJS causes module resolution issues with require() calls
+    await $`bunx tsup src/index.ts --format esm --outDir dist --external @gravito/core,@gravito/photon,ioredis,bun`
   }
 
   if (isDtsOnly) {

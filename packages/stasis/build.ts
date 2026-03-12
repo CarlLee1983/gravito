@@ -44,26 +44,8 @@ async function buildInParallel() {
     })()
     tasks.push(esmPromise)
 
-    // Task 2: bun build CJS
-    const cjsPromise = (async () => {
-      const cjsResult = await build({
-        entrypoints: ['src/index.ts'],
-        outdir: 'dist',
-        format: 'cjs',
-        target: 'node',
-        splitting: false,
-        sourcemap: 'external',
-        naming: '[dir]/[name].cjs',
-        external: externalDeps,
-      })
-
-      if (!cjsResult.success) {
-        console.error('❌ CJS build failed:', cjsResult.logs)
-        return 1
-      }
-      return 0
-    })()
-    tasks.push(cjsPromise)
+    // Task 2: Skip CJS build - Bun-only project uses ESM exclusively
+    // CJS build causes Bun module resolution issues with require() calls
   }
 
   // Task 3: tsc 生成型別宣告（使用 tsconfig.build.json + noCheck）

@@ -10,28 +10,21 @@
   "exports": {
     ".": {
       "browser": "./src/index.browser.ts",
+      "bun": "./src/index.ts",
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "default": "./dist/index.cjs"
+      "default": "./dist/index.js"
     },
     "./compat": {
       "types": "./dist/compat.d.ts",
-      "import": "./dist/compat.js",
-      "require": "./dist/compat.cjs",
-      "default": "./dist/compat.cjs"
+      "default": "./dist/compat.js"
     },
     "./engine": {
       "types": "./dist/engine/index.d.ts",
-      "import": "./dist/engine/index.js",
-      "require": "./dist/engine/index.cjs",
-      "default": "./dist/engine/index.cjs"
+      "default": "./dist/engine/index.js"
     },
     "./ffi": {
       "types": "./dist/ffi/index.d.ts",
-      "import": "./dist/ffi/index.js",
-      "require": "./dist/ffi/index.cjs",
-      "default": "./dist/ffi/index.cjs"
+      "default": "./dist/ffi/index.js"
     },
     "./compat/async-local-storage": {
       "browser": "./src/compat/async-local-storage.browser.ts",
