@@ -44,13 +44,21 @@ export class BunSQLDriver implements DriverContract {
           this.config.database === ':memory:' ? ':memory:' : this.config.database
         )
       } else {
-        const g = globalThis as Record<string, any>
-        // biome-ignore lint/complexity/useLiteralKeys: Intentionally using bracket notation to hide 'Bun' symbol from tsc checks
-        const bunSql = g['Bun']?.sql
-        if (!bunSql) {
-          throw new Error('Bun.sql not found')
-        }
-        this.client = bunSql(this.getConnectionUrl())
+        // 使用 postgres 庫代替 Bun.sql（更兼容運行時 SQL）
+        const postgresModule = await import('postgres')
+        const postgres = (postgresModule as any).default || postgresModule
+
+        const config = this.config as any
+
+        this.client = postgres({
+          host: config.host || '127.0.0.1',
+          port: config.port || 5432,
+          database: config.database || 'postgres',
+          username: config.username || 'postgres',
+          password: config.password || '',
+        })
+
+        console.log(`✅ [Atlas] Connected to ${config.driver} via postgres client`)
       }
       this.connected = true
     } catch (error) {
@@ -106,23 +114,33 @@ export class BunSQLDriver implements DriverContract {
           /* ignore */
         }
       } else {
-        // Use current transaction client if available
+        // 使用 postgres 客戶端執行查詢
         const client = (this.currentTx || this.client) as any
-        const result = await client.unsafe(sql, normalized)
 
-        rows = Array.isArray(result)
-          ? result
-          : result && typeof result[Symbol.iterator] === 'function'
-            ? Array.from(result)
-            : result?.rows || []
+        // postgres 库使用模板字符串或直接 SQL + 參數
+        // 但我們需要適配 Atlas 的 API
+        // 使用 unsafe 方法模擬（直接執行 SQL）
+        try {
+          // postgres 庫支持直接執行 SQL
+          const result = await client.unsafe(sql, normalized)
 
-        // Try to get insertId from result metadata or first row (common for Postgres RETURNING)
-        lastInsertRowid = result?.lastInsertRowid
-        if (lastInsertRowid === undefined && rows.length > 0) {
-          const firstRow = rows[0] as any
-          if (firstRow && (firstRow.id !== undefined || firstRow.ID !== undefined)) {
-            lastInsertRowid = firstRow.id ?? firstRow.ID
+          rows = Array.isArray(result)
+            ? result
+            : result && typeof result[Symbol.iterator] === 'function'
+              ? Array.from(result)
+              : result?.rows || result || []
+
+          // 提取 lastInsertRowid
+          lastInsertRowid = result?.lastInsertRowid || result?.[0]?.id
+          if (lastInsertRowid === undefined && rows.length > 0) {
+            const firstRow = rows[0] as any
+            if (firstRow && (firstRow.id !== undefined || firstRow.ID !== undefined)) {
+              lastInsertRowid = firstRow.id ?? firstRow.ID
+            }
           }
+        } catch (error) {
+          // postgres 庫可能沒有 unsafe 方法，嘗試另一種方式
+          throw this.normalizeError(error, sql, bindings)
         }
       }
 
@@ -168,8 +186,19 @@ export class BunSQLDriver implements DriverContract {
         return stmt.values(...normalized) as T[]
       } else {
         const client = (this.currentTx || this.client) as any
-        const query = client.unsafe(sql, normalized)
-        return (await query.values()) as T[]
+        let result: T[] = []
+
+        if (typeof client.unsafe === 'function') {
+          const query = client.unsafe(sql, normalized)
+          result = (await query.values()) as T[]
+        } else if (typeof client.prepare === 'function') {
+          const stmt = client.prepare(sql)
+          result = stmt.values(...normalized) as T[]
+        } else {
+          throw new Error('Bun.sql client does not have unsafe() or prepare() method')
+        }
+
+        return result
       }
     } catch (error) {
       throw this.normalizeError(error, sql, bindings)
@@ -356,10 +385,22 @@ export class BunSQLDriver implements DriverContract {
       } else {
         const normalized = this.normalizeBindings(bindings)
         const client = (this.currentTx || this.client) as any
-        // Use native Bun.sql non-awaited iterator for true streaming
-        const query = client.unsafe(sql, normalized)
-        for await (const row of query) {
-          yield row as T
+
+        if (typeof client.unsafe === 'function') {
+          // Use native Bun.sql non-awaited iterator for true streaming
+          const query = client.unsafe(sql, normalized)
+          for await (const row of query) {
+            yield row as T
+          }
+        } else if (typeof client.prepare === 'function') {
+          // Fallback: use prepare() + iterate
+          const stmt = client.prepare(sql)
+          const rows = stmt.all(...normalized) as T[]
+          for (const row of rows) {
+            yield row
+          }
+        } else {
+          throw new Error('Bun.sql client does not have unsafe() or prepare() method')
         }
       }
     } catch (error) {

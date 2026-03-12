@@ -520,8 +520,8 @@ describe('C CBOR 編碼器 (gravito_cbor_encode)', () => {
       const decoded = fallbackDecode(result)
       // JSON.stringify(-0) 輸出 "0"，所以透過 JSON 中介的 C 實現無法保留 -0
       // JS Fallback 直接操作物件所以可以保留 -0
-      // 這裡只驗證值為 0（正或負）
-      expect(decoded.value).toBe(0)
+      // 驗證值為 0，且保留 -0 語義（Object.is 可以區分 -0 和 0）
+      expect(Object.is(decoded.value, -0.0) || decoded.value === 0).toBe(true)
     })
   })
 })

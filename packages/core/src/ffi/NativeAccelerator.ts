@@ -23,7 +23,6 @@ import type { CborAccelerator, NativeAcceleratorStatus } from './types'
  */
 export class NativeAccelerator {
   private static readonly DEBUG_ENV = 'GRAVITO_FFI_DEBUG'
-  private static readonly DISABLE_ENV = 'GRAVITO_FFI_DISABLE'
 
   /**
    * FFI 可用性緩存
