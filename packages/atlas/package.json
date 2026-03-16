@@ -1,7 +1,7 @@
 {
   "name": "@gravito/atlas",
   "sideEffects": false,
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "The Standard Database Orbit - Custom Query Builder & ORM for Gravito",
   "type": "module",
   "main": "./dist/index.js",

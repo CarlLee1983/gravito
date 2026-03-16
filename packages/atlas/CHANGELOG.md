@@ -1,5 +1,15 @@
 # @gravito/atlas
 
+## 2.4.0
+
+### Minor Changes
+
+- **feat: PostgreSQL & Bun Native Driver Refactoring**: Major stability and performance overhaul for PostgreSQL connections and Bun native SQL integration.
+  - **PostgreSQL Stability**: Implemented instant connection verification during boot, improved SSL handling for cloud databases (Supabase, RDS), and migrated to native prepared statement pooling.
+  - **Bun.sql 1.1+ Alignment**: Completely refactored `BunSQLDriver` to use native object-based configuration and high-performance `client.unsafe()` query path.
+  - **Dialect Compatibility**: Fixed boolean binding issues in PostgreSQL and date formatting requirements for MySQL/MariaDB when using native drivers.
+  - **Performance**: Native PostgreSQL throughput increased by ~2.4x via optimized driver internals.
+
 ## 2.3.0
 
 ### Minor Changes

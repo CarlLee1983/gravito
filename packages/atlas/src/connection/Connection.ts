@@ -432,12 +432,18 @@ export class Connection implements ConnectionContract {
 
     // Auto-detect: prefer native driver when available and not explicitly disabled
     const useNative =
-      this.config.useNativeDriver !== false &&
+      this.config.useNativeDriver === true &&
       bunSql &&
-      ['postgres', 'mysql', 'mariadb', 'sqlite'].includes(this.config.driver)
+      (this.config.driver === 'sqlite' ||
+        this.config.driver === 'postgres' ||
+        this.config.driver === 'mysql' ||
+        this.config.driver === 'mariadb')
 
     if (useNative) {
-      console.debug?.(`[Atlas] Using Bun.sql native driver for ${this.config.driver}`)
+      if (process.env.DEBUG_ATLAS) {
+        // biome-ignore lint: Internal debug logging
+        console.debug?.(`[Atlas] Using Bun.sql native driver for ${this.config.driver}`)
+      }
       return new BunSQLDriver(this.config)
     }
 

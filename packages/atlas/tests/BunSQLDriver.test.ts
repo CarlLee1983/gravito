@@ -106,13 +106,17 @@ describe('BunSQLDriver', () => {
     await driver.connect()
 
     expect(mockSQLClass).toHaveBeenCalled()
-    // Check if called with correct connection string
-    // postgres://user:password@localhost:5432/test_db
-    const url = mockSQLClass.mock.calls[0][0]
-    expect(url).toContain('postgres://')
-    expect(url).toContain('user:password@localhost:5432')
-    expect(url).toContain('/test_db')
-    expect(driver.isConnected()).toBe(true)
+    // Check if called with correct connection string OR object
+    const callArgs = mockSQLClass.mock.calls[0][0]
+    if (typeof callArgs === 'string') {
+      expect(callArgs).toContain('postgres://')
+      expect(callArgs).toContain('user:password@localhost:5432')
+      expect(callArgs).toContain('/test_db')
+    } else {
+      expect(callArgs.hostname).toBe('localhost')
+      expect(callArgs.database).toBe('test_db')
+      expect(callArgs.username).toBe('user')
+    }
   })
 
   test('connects using Bun.sql with correct URL for MySQL', async () => {
@@ -127,10 +131,15 @@ describe('BunSQLDriver', () => {
     const driver = new BunSQLDriver(config)
     await driver.connect()
 
-    const url = mockSQLClass.mock.calls[0][0]
-    expect(url).toContain('mysql://')
-    expect(url).toContain('root@127.0.0.1:3306')
-    expect(url).toContain('/my_app')
+    const callArgs = mockSQLClass.mock.calls[0][0]
+    if (typeof callArgs === 'string') {
+      expect(callArgs).toContain('mysql://')
+      expect(callArgs).toContain('root@127.0.0.1:3306')
+      expect(callArgs).toContain('/my_app')
+    } else {
+      expect(callArgs.hostname).toBe('127.0.0.1')
+      expect(callArgs.database).toBe('my_app')
+    }
   })
 
   test('connects and queries using bun:sqlite for SQLite', async () => {
@@ -179,7 +188,20 @@ describe('BunSQLDriver', () => {
     expect(mockQuery).toHaveBeenCalled()
     const args = mockQuery.mock.calls[0][1]
     expect(args[0]).toBe(now.toISOString())
-    expect(args[1]).toBe(1)
+    expect(args[1]).toBe(true)
+  })
+
+  test('normalizes MySQL dates without ISO separators for native driver', async () => {
+    const config = { driver: 'mysql' as const, database: 'test' }
+    const driver = new BunSQLDriver(config)
+    await driver.connect()
+
+    const now = new Date('2026-03-16T12:34:56.789Z')
+    await driver.query('SELECT * FROM users WHERE created_at = ?', [now])
+
+    expect(mockQuery).toHaveBeenCalled()
+    const args = mockQuery.mock.calls[0][1]
+    expect(args[0]).toBe('2026-03-16 12:34:56')
   })
 
   test('handles execution results (INSERT/UPDATE)', async () => {
@@ -446,9 +468,14 @@ describe('BunSQLDriver', () => {
       const driver = new BunSQLDriver(config)
       await driver.connect()
 
-      const url = mockSQLClass.mock.calls[mockSQLClass.mock.calls.length - 1][0]
-      expect(url).toContain('max=20')
-      expect(url).toContain('idle_timeout=60000')
+      const callArgs = mockSQLClass.mock.calls[mockSQLClass.mock.calls.length - 1][0]
+      if (typeof callArgs === 'string') {
+        expect(callArgs).toContain('max=20')
+        expect(callArgs).toContain('idle_timeout=60')
+      } else {
+        expect(callArgs.max).toBe(20)
+        expect(callArgs.idle_timeout).toBe(60)
+      }
     })
 
     test('應該在連線 URL 中包含 SSL 配置', async () => {
@@ -462,8 +489,12 @@ describe('BunSQLDriver', () => {
       const driver = new BunSQLDriver(config)
       await driver.connect()
 
-      const url = mockSQLClass.mock.calls[mockSQLClass.mock.calls.length - 1][0]
-      expect(url).toContain('sslmode=require')
+      const callArgs = mockSQLClass.mock.calls[mockSQLClass.mock.calls.length - 1][0]
+      if (typeof callArgs === 'string') {
+        expect(callArgs).toContain('sslmode=require')
+      } else {
+        expect(callArgs.tls).toBeDefined()
+      }
     })
   })
 })

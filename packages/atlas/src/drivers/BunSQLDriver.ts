@@ -38,27 +38,44 @@ export class BunSQLDriver implements DriverContract {
       return
     }
     try {
+      const { SQL } = await import('bun')
+
       if (this.config.driver === 'sqlite') {
         const { Database } = await import('bun:sqlite')
         this.sqliteClient = new Database(
           this.config.database === ':memory:' ? ':memory:' : this.config.database
         )
+      } else if (
+        this.config.driver === 'postgres' ||
+        this.config.driver === 'mysql' ||
+        this.config.driver === 'mariadb'
+      ) {
+        // 使用 Bun.sql 連接字符串 (URL 優先)
+        const connUrl = this.buildConnectionUrl()
+
+        try {
+          if (process.env.DEBUG_ATLAS) {
+            const c = this.config as any
+            console.debug?.(`[BunSQLDriver] Connecting to ${this.config.driver}`)
+            console.debug?.(`[BunSQLDriver] URL: ${connUrl?.replace(/:[^@]*@/, ':***@')}`)
+            console.debug?.(
+              `[BunSQLDriver] Config: host=${c.host}, port=${c.port}, db=${c.database}, user=${c.username}`
+            )
+            console.debug?.(`[BunSQLDriver] Creating Bun.sql instance for ${this.config.driver}`)
+          }
+          // 使用 URL 字符串初始化 (最簡單的方式)
+          this.client = new SQL(connUrl)
+          if (process.env.DEBUG_ATLAS) {
+            console.debug?.(`[BunSQLDriver] Bun.sql instance created successfully`)
+          }
+        } catch (e) {
+          if (process.env.DEBUG_ATLAS) {
+            console.debug?.(`[BunSQLDriver] Failed to create SQL instance:`, e)
+          }
+          throw new ConnectionError(`Failed to initialize Bun.sql ${this.config.driver}: ${e}`, e)
+        }
       } else {
-        // 使用 postgres 庫代替 Bun.sql（更兼容運行時 SQL）
-        const postgresModule = await import('postgres')
-        const postgres = (postgresModule as any).default || postgresModule
-
-        const config = this.config as any
-
-        this.client = postgres({
-          host: config.host || '127.0.0.1',
-          port: config.port || 5432,
-          database: config.database || 'postgres',
-          username: config.username || 'postgres',
-          password: config.password || '',
-        })
-
-        console.log(`✅ [Atlas] Connected to ${config.driver} via postgres client`)
+        throw new ConnectionError(`BunSQLDriver does not support ${this.config.driver}`, null)
       }
       this.connected = true
     } catch (error) {
@@ -98,14 +115,12 @@ export class BunSQLDriver implements DriverContract {
     try {
       const normalized = this.normalizeBindings(bindings)
 
-      let rows: T[] = []
-      let lastInsertRowid: unknown
-
       if (this.sqliteClient) {
         // @ts-expect-error
         const stmt = this.sqliteClient.query(sql)
-        // Ensure parameters are correctly handled for SQLite
-        rows = stmt.all(...normalized) as T[]
+        const rows = stmt.all(...normalized) as T[]
+
+        let lastInsertRowid: any
         try {
           // @ts-expect-error
           const idRes = this.sqliteClient.query('SELECT last_insert_rowid() as id').get() as any
@@ -113,41 +128,51 @@ export class BunSQLDriver implements DriverContract {
         } catch {
           /* ignore */
         }
-      } else {
-        // 使用 postgres 客戶端執行查詢
-        const client = (this.currentTx || this.client) as any
 
-        // postgres 库使用模板字符串或直接 SQL + 參數
-        // 但我們需要適配 Atlas 的 API
-        // 使用 unsafe 方法模擬（直接執行 SQL）
-        try {
-          // postgres 庫支持直接執行 SQL
-          const result = await client.unsafe(sql, normalized)
+        return { rows, rowCount: rows.length, insertId: lastInsertRowid }
+      }
 
-          rows = Array.isArray(result)
-            ? result
-            : result && typeof result[Symbol.iterator] === 'function'
-              ? Array.from(result)
-              : result?.rows || result || []
+      // PostgreSQL/MySQL: 使用 Bun.sql 原生 unsafe 查詢
+      const client = (this.currentTx || this.client) as any
 
-          // 提取 lastInsertRowid
-          lastInsertRowid = result?.lastInsertRowid || result?.[0]?.id
-          if (lastInsertRowid === undefined && rows.length > 0) {
-            const firstRow = rows[0] as any
-            if (firstRow && (firstRow.id !== undefined || firstRow.ID !== undefined)) {
-              lastInsertRowid = firstRow.id ?? firstRow.ID
-            }
-          }
-        } catch (error) {
-          // postgres 庫可能沒有 unsafe 方法，嘗試另一種方式
-          throw this.normalizeError(error, sql, bindings)
+      if (process.env.DEBUG_ATLAS) {
+        console.debug?.(`[BunSQLDriver] Query: ${sql.substring(0, 80)}...`)
+        console.debug?.(`[BunSQLDriver] Client type:`, typeof client)
+        console.debug?.(
+          `[BunSQLDriver] Client.unsafe exists:`,
+          typeof client?.unsafe === 'function'
+        )
+      }
+
+      if (!client || typeof client.unsafe !== 'function') {
+        throw new Error(
+          `Client is not valid or unsafe() method not available. Client type: ${typeof client}`
+        )
+      }
+
+      // Bun.sql 的 result 本身就是 rows (陣列)
+      // 同時包含 metadata 如 columns, count 等
+      const result = await client.unsafe(sql, normalized)
+      if (process.env.DEBUG_ATLAS) {
+        console.debug?.(`[BunSQLDriver] Query executed, rows:`, result?.length ?? 0)
+      }
+
+      const rows = Array.isArray(result) ? result : result?.rows || []
+      let lastInsertRowid = result.insertId || result.lastInsertRowid
+
+      // 若無原生 insertId，嘗試從第一行提取 id (PostgreSQL RETURNING 模式)
+      if (!lastInsertRowid && rows.length > 0) {
+        const firstRow = rows[0] as any
+        if (firstRow) {
+          // 常見的 ID 欄位名稱
+          lastInsertRowid = firstRow.id ?? firstRow.ID ?? firstRow.insertId
         }
       }
 
       return {
-        rows,
-        rowCount: rows.length,
-        insertId: lastInsertRowid as number | bigint | string | undefined,
+        rows: rows as T[],
+        rowCount: result.count ?? rows.length,
+        insertId: lastInsertRowid,
       }
     } catch (error) {
       throw this.normalizeError(error, sql, bindings)
@@ -166,10 +191,12 @@ export class BunSQLDriver implements DriverContract {
           affectedRows: result.changes,
           insertId: result.lastInsertRowid,
         }
+      } else {
+        // PostgreSQL/MySQL：使用 Bun.sql
+        const normalized = this.normalizeBindings(bindings)
+        const res = await this.query(sql, normalized)
+        return { affectedRows: res.rowCount ?? 0, insertId: res.insertId }
       }
-
-      const res = await this.query(sql, bindings)
-      return { affectedRows: res.rowCount ?? 0, insertId: res.insertId }
     } catch (error) {
       throw this.normalizeError(error, sql, bindings)
     }
@@ -208,14 +235,17 @@ export class BunSQLDriver implements DriverContract {
   private normalizeBindings(bindings: unknown[]): unknown[] {
     return bindings.map((b) => {
       if (b instanceof Date) {
+        // MySQL/MariaDB 原生驅動不喜歡 ISO8601 中的 'T' 和 'Z'
+        if (this.config.driver === 'mysql' || this.config.driver === 'mariadb') {
+          return b.toISOString().slice(0, 19).replace('T', ' ')
+        }
         return b.toISOString()
       }
       if (b === undefined) {
         return null
       }
-      if (typeof b === 'boolean') {
-        return b ? 1 : 0
-      }
+      // 不要轉換布林值為整數，Bun.sql 原生支援布林類型
+      // 且 PostgreSQL 嚴格區分布林與整數
       return b
     })
   }
@@ -304,31 +334,40 @@ export class BunSQLDriver implements DriverContract {
     }
   }
 
-  private getConnectionUrl(): string {
+  private buildConnectionUrl(): string | undefined {
     const c = this.config as any
+    if (c.url) return c.url
+
     const protocol =
       c.driver === 'postgres'
         ? 'postgres'
         : c.driver === 'mysql' || c.driver === 'mariadb'
           ? 'mysql'
-          : 'sqlite'
+          : null
+
+    if (!protocol) return undefined
+
     const auth = c.username
       ? c.password
         ? `${c.username}:${encodeURIComponent(c.password)}@`
         : `${c.username}@`
       : ''
+
     const params = new URLSearchParams()
     if (c.ssl) {
-      params.set('sslmode', 'require')
+      params.set(c.driver === 'postgres' ? 'sslmode' : 'ssl', 'require')
     }
     if (c.pool?.max) {
       params.set('max', String(c.pool.max))
     }
     if (c.pool?.idleTimeout) {
-      params.set('idle_timeout', String(c.pool.idleTimeout))
+      params.set('idle_timeout', String(Math.floor(c.pool.idleTimeout / 1000)))
     }
+
     const q = params.toString()
-    return `${protocol}://${auth}${c.host ?? 'localhost'}${c.port ? `:${c.port}` : ''}/${c.database}${q ? `?${q}` : ''}`
+    const defaultPort = c.driver === 'postgres' ? '5432' : '3306'
+
+    return `${protocol}://${auth}${c.host ?? 'localhost'}:${c.port ?? defaultPort}/${c.database}${q ? `?${q}` : ''}`
   }
 
   async prepare(sql: string): Promise<string> {

@@ -64,7 +64,6 @@ export class PostgresDriver implements DriverContract {
         database: this.poolConfig.database,
         user: this.poolConfig.username,
         password: this.poolConfig.password,
-        ssl: this.poolConfig.ssl,
         // Pool settings
         min: this.poolConfig.pool?.min ?? 2,
         max: this.poolConfig.pool?.max ?? 10,
@@ -72,13 +71,30 @@ export class PostgresDriver implements DriverContract {
         connectionTimeoutMillis: this.poolConfig.pool?.acquireTimeout ?? 5000,
       }
 
+      // Enhanced SSL configuration
+      if (this.poolConfig.ssl) {
+        if (typeof this.poolConfig.ssl === 'boolean') {
+          // If ssl: true, default to rejectUnauthorized: false for easier cloud DB connection
+          pgPoolConfig.ssl = this.poolConfig.ssl ? { rejectUnauthorized: false } : false
+        } else {
+          pgPoolConfig.ssl = this.poolConfig.ssl
+        }
+      }
+
       if (this.poolConfig.applicationName) {
         pgPoolConfig.application_name = this.poolConfig.applicationName
       }
 
       this.pool = new pg.Pool(pgPoolConfig)
+
+      // Verify connection immediately to catch config errors early
+      const client = await this.pool.connect()
+      client.release()
+
       this.connected = true
     } catch (error) {
+      this.connected = false
+      this.pool = null
       throw new ConnectionError('Could not connect to PostgreSQL', error)
     }
   }
@@ -116,30 +132,48 @@ export class PostgresDriver implements DriverContract {
     sql: string,
     bindings: unknown[] = []
   ): Promise<QueryResult<T>> {
-    const client = await this.getClient()
-    const params = bindings.map((b) => (b === undefined ? null : b))
+    const params = bindings.map((b) => {
+      if (b === undefined) return null
+      if (b instanceof Date) return b.toISOString()
+      return b
+    })
+
+    if (this.transactionActive && this.transactionClient) {
+      try {
+        const result = await this.transactionClient.query(sql, params)
+        return this.formatQueryResult<T>(result)
+      } catch (error) {
+        throw this.normalizeError(error, sql, bindings)
+      }
+    }
+
+    if (!this.connected || !this.pool) {
+      await this.connect()
+    }
 
     try {
-      const result = await client.query(sql, params)
-
-      const fields = result.fields?.map((f: PgFieldInfo) => ({
-        name: f.name,
-        dataType: f.dataTypeID?.toString(),
-        tableId: f.tableID,
-      }))
-
-      return {
-        rows: result.rows as T[],
-        rowCount: result.rowCount ?? 0,
-        ...(fields ? { fields } : {}),
-      }
+      // Use pool.query directly for better performance and automatic connection release
+      const result = await this.pool!.query(sql, params)
+      return this.formatQueryResult<T>(result)
     } catch (error) {
       throw this.normalizeError(error, sql, bindings)
-    } finally {
-      // Release client if not in transaction
-      if (!this.transactionActive && client !== this.transactionClient) {
-        ;(client as PgPoolClient).release?.()
-      }
+    }
+  }
+
+  /**
+   * Format pg result to Atlas QueryResult
+   */
+  private formatQueryResult<T>(result: PgResult): QueryResult<T> {
+    const fields = result.fields?.map((f: PgFieldInfo) => ({
+      name: f.name,
+      dataType: f.dataTypeID?.toString(),
+      tableId: f.tableID,
+    }))
+
+    return {
+      rows: result.rows as T[],
+      rowCount: result.rowCount ?? 0,
+      ...(fields ? { fields } : {}),
     }
   }
 
@@ -147,33 +181,51 @@ export class PostgresDriver implements DriverContract {
    * Execute a statement (INSERT/UPDATE/DELETE)
    */
   async execute(sql: string, bindings: unknown[] = []): Promise<ExecuteResult> {
-    const client = await this.getClient()
-    const params = bindings.map((b) => (b === undefined ? null : b))
+    const params = bindings.map((b) => {
+      if (b === undefined) return null
+      if (b instanceof Date) return b.toISOString()
+      return b
+    })
+
+    if (this.transactionActive && this.transactionClient) {
+      try {
+        const result = await this.transactionClient.query(sql, params)
+        return this.formatExecuteResult(result)
+      } catch (error) {
+        throw this.normalizeError(error, sql, bindings)
+      }
+    }
+
+    if (!this.connected || !this.pool) {
+      await this.connect()
+    }
 
     try {
-      const result = await client.query(sql, params)
-
-      // Try to extract insert ID from RETURNING clause
-      let insertId: number | bigint | undefined
-      if (result.rows && result.rows.length > 0) {
-        const firstRow = result.rows[0] as Record<string, unknown>
-        // Look for common primary key column names
-        insertId = (firstRow.id ?? firstRow.ID ?? firstRow[Object.keys(firstRow)[0] ?? '']) as
-          | number
-          | bigint
-          | undefined
-      }
-
-      return {
-        affectedRows: result.rowCount ?? 0,
-        ...(insertId !== undefined ? { insertId } : {}),
-      }
+      const result = await this.pool!.query(sql, params)
+      return this.formatExecuteResult(result)
     } catch (error) {
       throw this.normalizeError(error, sql, bindings)
-    } finally {
-      if (!this.transactionActive && client !== this.transactionClient) {
-        ;(client as PgPoolClient).release?.()
-      }
+    }
+  }
+
+  /**
+   * Format pg result to Atlas ExecuteResult
+   */
+  private formatExecuteResult(result: PgResult): ExecuteResult {
+    // Try to extract insert ID from RETURNING clause
+    let insertId: number | bigint | undefined
+    if (result.rows && result.rows.length > 0) {
+      const firstRow = result.rows[0] as Record<string, unknown>
+      // Look for common primary key column names
+      insertId = (firstRow.id ?? firstRow.ID ?? firstRow[Object.keys(firstRow)[0] ?? '']) as
+        | number
+        | bigint
+        | undefined
+    }
+
+    return {
+      affectedRows: result.rowCount ?? 0,
+      ...(insertId !== undefined ? { insertId } : {}),
     }
   }
 
@@ -187,51 +239,52 @@ export class PostgresDriver implements DriverContract {
     }
 
     const name = `stmt_${++this.statementCounter}`
-    const client = await this.getClient()
-
-    try {
-      // Postgres PREPARE syntax: PREPARE name AS query
-      await client.query(`PREPARE ${name} AS ${sql}`)
-      this.preparedStatements.set(sql, name)
-      return name
-    } finally {
-      if (!this.transactionActive && client !== this.transactionClient) {
-        ;(client as PgPoolClient).release?.()
-      }
-    }
+    this.preparedStatements.set(sql, name)
+    return name
   }
 
   /**
    * Execute a prepared statement
    */
   async executePrepared<T>(name: string, bindings: unknown[] = []): Promise<QueryResult<T>> {
-    const client = await this.getClient()
     const params = bindings.map((b) => (b === undefined ? null : b))
 
-    try {
-      // EXECUTE name(params)
-      const placeholders = params.map((_, i) => `$${i + 1}`).join(', ')
-      const executeSql = `EXECUTE ${name}${placeholders ? `(${placeholders})` : ''}`
-
-      const result = await client.query(executeSql, params)
-
-      const fields = result.fields?.map((f: PgFieldInfo) => ({
-        name: f.name,
-        dataType: f.dataTypeID?.toString(),
-        tableId: f.tableID,
-      }))
-
-      return {
-        rows: result.rows as T[],
-        rowCount: result.rowCount ?? 0,
-        ...(fields ? { fields } : {}),
+    // Find original SQL for this name if available
+    let sql = `EXECUTE ${name}`
+    for (const [s, n] of this.preparedStatements.entries()) {
+      if (n === name) {
+        sql = s
+        break
       }
+    }
+
+    if (this.transactionActive && this.transactionClient) {
+      try {
+        // Use pg's built-in prepared statement support via name and text
+        const result = await this.transactionClient.query({
+          name,
+          text: sql,
+          values: params,
+        })
+        return this.formatQueryResult<T>(result)
+      } catch (error) {
+        throw this.normalizeError(error, `EXECUTE ${name}`, bindings)
+      }
+    }
+
+    if (!this.connected || !this.pool) {
+      await this.connect()
+    }
+
+    try {
+      const result = await this.pool!.query({
+        name,
+        text: sql,
+        values: params,
+      })
+      return this.formatQueryResult<T>(result)
     } catch (error) {
       throw this.normalizeError(error, `EXECUTE ${name}`, bindings)
-    } finally {
-      if (!this.transactionActive && client !== this.transactionClient) {
-        ;(client as PgPoolClient).release?.()
-      }
     }
   }
 
@@ -239,22 +292,9 @@ export class PostgresDriver implements DriverContract {
    * Clear all prepared statements
    */
   async clearPreparedStatements(): Promise<void> {
-    const client = await this.getClient()
-
-    try {
-      for (const name of this.preparedStatements.values()) {
-        try {
-          await client.query(`DEALLOCATE ${name}`)
-        } catch {
-          // Ignore error if already deallocated
-        }
-      }
-      this.preparedStatements.clear()
-    } finally {
-      if (!this.transactionActive && client !== this.transactionClient) {
-        ;(client as PgPoolClient).release?.()
-      }
-    }
+    this.preparedStatements.clear()
+    // In pg, prepared statements with 'name' are managed automatically by the pool/client.
+    // We don't need to manually DEALLOCATE unless we used raw SQL PREPARE.
   }
 
   /**
@@ -413,24 +453,6 @@ export class PostgresDriver implements DriverContract {
       console.error('Failed to adjust PostgreSQL pool size:', error)
       throw error
     }
-  }
-
-  /**
-   * Get a client for executing queries
-   */
-  private async getClient(): Promise<PgClient> {
-    if (!this.connected || !this.pool) {
-      await this.connect()
-    }
-
-    if (this.transactionActive && this.transactionClient) {
-      return this.transactionClient
-    }
-
-    if (!this.pool) {
-      throw new Error('Database connection failed')
-    }
-    return this.pool.connect()
   }
 
   /**
