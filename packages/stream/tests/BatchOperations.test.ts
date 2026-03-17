@@ -33,26 +33,20 @@ describe('Batch Operations', () => {
     it('should work with concurrency', async () => {
       const manager = new QueueManager()
       const driver = manager.getDriver('default')
+      const batches: number[] = []
+      let callCount = 0
 
-      // Mock with delay to test concurrency?
-      // Hard to deterministicly test concurrency without deeper instrumentation.
-      // But we can ensure it completes.
-      driver.pushMany = async (_queue, _jobs) => {
+      driver.pushMany = async (_queue, jobs) => {
+        callCount++
+        batches.push(jobs.length)
         await new Promise((r) => setTimeout(r, 10))
       }
 
       const jobs = Array.from({ length: 20 }, () => new TestJob())
       await manager.pushMany(jobs, { batchSize: 5, concurrency: 2 })
-      // 4 batches of 5. Concurrency 2.
-      // Timeline:
-      // T0: Batch 1, Batch 2 start
-      // T10: Batch 1, 2 finish. Batch 3, 4 start
-      // T20: Batch 3, 4 finish.
-      // Total ~20ms.
-      // If serial: 4 * 10 = 40ms.
 
-      // This is flaky in CI. Just checking it runs without error.
-      expect(true).toBe(true)
+      expect(callCount).toBe(4)
+      expect(batches).toEqual([5, 5, 5, 5])
     })
   })
 

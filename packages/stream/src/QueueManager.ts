@@ -459,23 +459,6 @@ export class QueueManager {
 
       // Process chunks with concurrency
       if (concurrency > 1) {
-        const activePromises: Promise<void>[] = []
-        for (const chunk of chunks) {
-          const promise = processBatch(driver, queue, chunk)
-          activePromises.push(promise)
-
-          if (activePromises.length >= concurrency) {
-            await Promise.race(activePromises)
-            // Clean up finished promises? simpler to just await all if we don't need strict pool
-            // Actually Promise.race just tells us ONE finished. We need to remove it.
-            // A simple way is using p-limit style, or just Promise.all for blocks of N.
-            // For simplicity and robustness, let's use blocks of N (Promise.all).
-            // It's slightly less efficient than a sliding window but much simpler to implement without external deps.
-          }
-        }
-        // Wait for remaining (This logic is flawed for true concurrency pool.
-        // Let's use simple chunking for now: process 'concurrency' chunks at a time).
-
         for (let i = 0; i < chunks.length; i += concurrency) {
           const batchPromises = chunks
             .slice(i, i + concurrency)
