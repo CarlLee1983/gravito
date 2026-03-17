@@ -259,6 +259,39 @@ describe('TranslationLoaders', () => {
       expect(receivedHeaders['X-Custom']).toBe('value')
     })
 
+    it('should unref request timeout timers', async () => {
+      const originalSetTimeout = global.setTimeout
+      const handle = {
+        unrefCalled: false,
+        unref() {
+          this.unrefCalled = true
+        },
+      }
+
+      globalThis.fetch = mock(() =>
+        Promise.resolve({
+          ok: true,
+          status: 200,
+          headers: new Map(),
+          json: async () => ({}),
+        })
+      ) as any
+
+      global.setTimeout = ((_fn: () => void) => handle as any) as unknown as typeof setTimeout
+
+      try {
+        const loader = new RemoteLoader({
+          url: 'https://api.example.com/i18n/:locale',
+          timeout: 100,
+        })
+        await loader.load('en')
+
+        expect(handle.unrefCalled).toBe(true)
+      } finally {
+        global.setTimeout = originalSetTimeout
+      }
+    })
+
     it('should support fallback loader when all retries fail', async () => {
       globalThis.fetch = mock(() => Promise.reject(new Error('Network error'))) as any
 

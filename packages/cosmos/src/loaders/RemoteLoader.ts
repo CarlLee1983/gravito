@@ -156,6 +156,7 @@ export class RemoteLoader implements TranslationLoaderChain {
     const url = this.url.replace(':locale', locale)
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), this.timeout)
+    timeoutId.unref?.()
 
     try {
       const headers: Record<string, string> = { ...this.headers }
