@@ -9,6 +9,9 @@ export interface MaintenanceConfig {
 export class MaintenanceScheduler {
   private static readonly ONE_DAY = 24 * 60 * 60 * 1000
   private static readonly CHECK_INTERVAL = 3600000 // 1 hour
+  private initialTimer: ReturnType<typeof setTimeout> | null = null
+  private loopTimer: ReturnType<typeof setTimeout> | null = null
+  private stopped = false
 
   constructor(
     private redis: Redis,
@@ -19,17 +22,50 @@ export class MaintenanceScheduler {
    * Start the maintenance loop
    */
   start(initialDelay = 30000): void {
-    setTimeout(() => {
+    this.stop()
+    this.stopped = false
+
+    this.initialTimer = setTimeout(() => {
+      this.initialTimer = null
+
       const loop = async () => {
+        if (this.stopped) {
+          return
+        }
+
         try {
           await this.checkMaintenance()
         } catch (err) {
           console.error('[Maintenance] Task Error:', err)
         }
-        setTimeout(loop, MaintenanceScheduler.CHECK_INTERVAL)
+
+        if (this.stopped) {
+          return
+        }
+
+        this.loopTimer = setTimeout(loop, MaintenanceScheduler.CHECK_INTERVAL)
+        this.loopTimer.unref?.()
       }
-      loop()
+      void loop()
     }, initialDelay)
+    this.initialTimer.unref?.()
+  }
+
+  /**
+   * Stop the maintenance loop
+   */
+  stop(): void {
+    this.stopped = true
+
+    if (this.initialTimer) {
+      clearTimeout(this.initialTimer)
+      this.initialTimer = null
+    }
+
+    if (this.loopTimer) {
+      clearTimeout(this.loopTimer)
+      this.loopTimer = null
+    }
   }
 
   /**
