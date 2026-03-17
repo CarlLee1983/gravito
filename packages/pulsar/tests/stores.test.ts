@@ -43,10 +43,42 @@ describe('FileSessionStore', () => {
     expect(await store.get('file1')).toBeNull()
   })
 
+  it('expires records based on TTL', async () => {
+    const store = new FileSessionStore(tempDir)
+    const originalNow = Date.now
+    let now = 1_000
+    Date.now = () => now
+
+    try {
+      await store.set(
+        'file-expiring',
+        { data: { foo: 'bar' }, createdAt: now, lastActivityAt: now },
+        1
+      )
+      expect((await store.get('file-expiring'))?.data.foo).toBe('bar')
+
+      now += 2_000
+      expect(await store.get('file-expiring')).toBeNull()
+    } finally {
+      Date.now = originalNow
+    }
+  })
+
   it('returns null for invalid json', async () => {
     const store = new FileSessionStore(tempDir)
     await writeFile(join(tempDir, 'bad.json'), '{not-json}', 'utf-8')
     expect(await store.get('bad')).toBeNull()
+  })
+
+  it('reads legacy plain session payloads for backward compatibility', async () => {
+    const store = new FileSessionStore(tempDir)
+    await writeFile(
+      join(tempDir, 'legacy.json'),
+      JSON.stringify({ data: { foo: 'bar' }, createdAt: 0, lastActivityAt: 0 }),
+      'utf-8'
+    )
+
+    expect((await store.get('legacy'))?.data.foo).toBe('bar')
   })
 })
 

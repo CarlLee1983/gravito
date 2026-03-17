@@ -3,6 +3,11 @@ import { join } from 'node:path'
 import { getRuntimeAdapter } from '@gravito/core'
 import type { SessionId, SessionRecord, SessionStore } from '../types'
 
+interface PersistedSessionFile {
+  record: SessionRecord
+  expiresAt: number
+}
+
 /**
  * File-based session store for development and small-scale production.
  *
@@ -73,6 +78,16 @@ export class FileSessionStore implements SessionStore {
     return join(this.path, `${safeId}.json`)
   }
 
+  private isPersistedSessionFile(value: unknown): value is PersistedSessionFile {
+    return (
+      !!value &&
+      typeof value === 'object' &&
+      'record' in value &&
+      'expiresAt' in value &&
+      typeof (value as PersistedSessionFile).expiresAt === 'number'
+    )
+  }
+
   async get(id: SessionId): Promise<SessionRecord | null> {
     const path = this.getFilePath(id)
     if (!(await this.runtime.exists(path))) {
@@ -80,14 +95,30 @@ export class FileSessionStore implements SessionStore {
     }
     try {
       const content = await this.runtime.readFile(path)
-      return JSON.parse(new TextDecoder().decode(content)) as SessionRecord
+      const parsed = JSON.parse(new TextDecoder().decode(content)) as
+        | SessionRecord
+        | PersistedSessionFile
+
+      if (this.isPersistedSessionFile(parsed)) {
+        if (Date.now() >= parsed.expiresAt) {
+          await this.delete(id)
+          return null
+        }
+        return parsed.record
+      }
+
+      return parsed as SessionRecord
     } catch {
       return null
     }
   }
 
-  async set(id: SessionId, record: SessionRecord, _ttlSeconds: number): Promise<void> {
-    await this.runtime.writeFile(this.getFilePath(id), JSON.stringify(record))
+  async set(id: SessionId, record: SessionRecord, ttlSeconds: number): Promise<void> {
+    const persisted: PersistedSessionFile = {
+      record,
+      expiresAt: Date.now() + ttlSeconds * 1000,
+    }
+    await this.runtime.writeFile(this.getFilePath(id), JSON.stringify(persisted))
   }
 
   async delete(id: SessionId): Promise<void> {
