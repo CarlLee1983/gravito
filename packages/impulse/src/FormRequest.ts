@@ -263,7 +263,8 @@ export abstract class FormRequest<T = unknown> {
    * @returns A result object containing either validated data or error details.
    */
   async validate(
-    ctx: Context
+    ctx: Context,
+    options: { partial?: boolean } = {}
   ): Promise<
     { success: true; data: unknown } | { success: false; error: ValidationErrorResponse }
   > {
@@ -294,8 +295,13 @@ export abstract class FormRequest<T = unknown> {
       data = this.transform(data)
     }
 
-    const validator = SchemaValidatorFactory.getValidator(this.schema)
-    const result = await validator.validate(this.schema, data)
+    let schema = this.schema
+    if (options.partial && typeof (schema as any)?.partial === 'function') {
+      schema = (schema as any).partial()
+    }
+
+    const validator = SchemaValidatorFactory.getValidator(schema)
+    const result = await validator.validate(schema, data)
 
     if (!result.success) {
       const details: ValidationErrorDetail[] = (result.errors ?? []).map((err) => ({
@@ -349,14 +355,9 @@ export function validateRequest<T>(
   return async (ctx, next) => {
     const { FormRequestInstanceCache } = require('./core/FormRequestInstanceCache')
     const request = FormRequestInstanceCache.getInstance(RequestClass)
-
-    const result = await ((request as any).validate.length >= 2 ||
-    (request as any).validate.toString().includes('partial') ||
-    (request as any).schema?.constructor?.name === 'ZodObject'
-      ? (request as any).validate(ctx, {
-          partial: options.partial ?? ctx.req.method === 'PATCH',
-        })
-      : request.validate(ctx))
+    const result = await (request as any).validate(ctx, {
+      partial: options.partial ?? ctx.req.method === 'PATCH',
+    })
 
     if (!result.success) {
       const errorData = result.error.error

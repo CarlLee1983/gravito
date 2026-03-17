@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, mock } from 'bun:test'
 import { Photon } from '@gravito/photon'
-import { Impulse, ZodFormRequest, z } from '../src/index'
+import { FormRequest, Impulse, ZodFormRequest, z } from '../src/index'
 
 // Mock Gravito Core exceptions
 class GravitoException extends Error {
@@ -124,6 +124,31 @@ describe('v1.1 Features', () => {
     const json = (await res.json()) as any
     expect(json.data.age).toBe(25)
     expect(json.data.city).toBeUndefined()
+  })
+
+  it('should support partial validation for classic FormRequest on PATCH', async () => {
+    class ClassicPatchRequest extends FormRequest {
+      schema = z.object({
+        name: z.string().min(2),
+        email: z.string().email(),
+      })
+    }
+
+    const app = createApp()
+    app.patch('/classic/:id', validateRequest(ClassicPatchRequest), (c: any) => {
+      return c.json({ data: c.get('validated') })
+    })
+
+    const res = await app.request('/classic/1', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Updated' }),
+    })
+
+    expect(res.status).toBe(200)
+    const json = (await res.json()) as any
+    expect(json.data.name).toBe('Updated')
+    expect(json.data.email).toBeUndefined()
   })
 
   // 2. Cache Clearing (HMR support)
