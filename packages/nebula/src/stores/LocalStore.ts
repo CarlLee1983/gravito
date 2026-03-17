@@ -4,6 +4,7 @@ import {
   getArchiveAdapter,
   getRuntimeAdapter,
   runtimeMkdir,
+  runtimeStatFull,
 } from '@gravito/core'
 import type { PutOptions, StorageItem, StorageMetadata, StorageStore } from '../store'
 
@@ -75,12 +76,12 @@ export class LocalStore implements StorageStore {
       return null
     }
     const path = this.resolvePath(key)
-    const stat = await this.runtime.stat(path)
+    const stat = await runtimeStatFull(this.runtime, path)
     return {
       key,
       size: stat.size,
       mimeType: this.guessMimeType(key),
-      lastModified: new Date(),
+      lastModified: new Date(stat.mtimeMs),
     }
   }
 

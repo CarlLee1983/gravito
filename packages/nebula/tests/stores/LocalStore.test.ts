@@ -107,6 +107,28 @@ describe('LocalStore - Metadata', () => {
     expect(meta).toBeNull()
   })
 
+  it('should use filesystem mtime for lastModified', async () => {
+    await store.put('mtime.txt', 'first')
+    const firstMeta = await store.getMetadata('mtime.txt')
+
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    await store.put('mtime.txt', 'second')
+    const secondMeta = await store.getMetadata('mtime.txt')
+
+    expect(firstMeta).not.toBeNull()
+    expect(secondMeta).not.toBeNull()
+    if (!firstMeta || !secondMeta) {
+      throw new Error('Expected metadata to exist')
+    }
+    if (!firstMeta.lastModified || !secondMeta.lastModified) {
+      throw new Error('Expected lastModified to exist')
+    }
+
+    expect(firstMeta.lastModified).toBeInstanceOf(Date)
+    expect(secondMeta.lastModified).toBeInstanceOf(Date)
+    expect(secondMeta.lastModified.getTime()).toBeGreaterThan(firstMeta.lastModified.getTime())
+  })
+
   it('should guess MIME types correctly', async () => {
     const tests = [
       { key: 'file.txt', expected: 'text/plain' },
