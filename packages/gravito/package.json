@@ -1,15 +1,22 @@
 {
   "name": "gravito",
   "sideEffects": false,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "The official CLI for Gravito Galaxy Architecture. Scaffold projects and manage your universe.",
   "bin": {
     "gravito": "bin/gravito.js"
   },
   "type": "module",
+  "exports": {
+    ".": "./bin/gravito.js"
+  },
+  "files": [
+    "bin",
+    "README.md"
+  ],
   "scripts": {
     "build": "echo Skipping build...",
-    "test": "true",
+    "test": "bun test tests/ --timeout=10000",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
   "publishConfig": {

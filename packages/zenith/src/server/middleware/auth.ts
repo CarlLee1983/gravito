@@ -147,7 +147,7 @@ export function destroySession(c: Context): void {
 /**
  * Authentication middleware for API routes
  */
-export async function authMiddleware(c: Context, next: () => Promise<Response | undefined>) {
+export async function authMiddleware(c: Context, next: () => Promise<Response | void>) {
   // If no password is set, allow all requests
   if (!isAuthEnabled()) {
     return next()

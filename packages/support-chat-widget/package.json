@@ -1,10 +1,20 @@
 {
   "name": "@gravito/support-chat-widget",
   "sideEffects": false,
-  "version": "0.2.1",
+  "version": "0.2.2",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "dependencies": {
     "@gravito/ripple-client": "workspace:*",
     "react": "^19.0.0",
