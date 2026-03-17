@@ -18,6 +18,10 @@ import type { UserProvider } from '../contracts/UserProvider'
  */
 export class TokenGuard<User extends Authenticatable = Authenticatable> implements Guard<User> {
   protected userInstance: User | null = null
+  private static readonly HASH_ALGORITHMS = {
+    sha256: 'SHA-256',
+    sha512: 'SHA-512',
+  } as const
 
   /**
    * Create a new token guard instance.
@@ -90,7 +94,10 @@ export class TokenGuard<User extends Authenticatable = Authenticatable> implemen
   private async hashToken(token: string): Promise<string> {
     const encoder = new TextEncoder()
     const data = encoder.encode(token)
-    const hashBuffer = await crypto.subtle.digest(this.hashAlgorithm.toUpperCase(), data)
+    const hashBuffer = await crypto.subtle.digest(
+      TokenGuard.HASH_ALGORITHMS[this.hashAlgorithm],
+      data
+    )
     return Buffer.from(hashBuffer).toString('hex')
   }
 

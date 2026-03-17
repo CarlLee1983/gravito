@@ -114,6 +114,29 @@ describe('TokenGuard', () => {
     expect(await guard.user()).toBeNull()
     expect(await guard.validate({ api_token: 'query-token' })).toBe(false)
   })
+
+  it('hashes bearer tokens with Web Crypto compatible algorithm names', async () => {
+    const token = 'secret-token'
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token))
+    const expectedHash = Buffer.from(digest).toString('hex')
+
+    const ctx = {
+      req: {
+        query: () => null,
+        header: () => `Bearer ${token}`,
+      },
+    }
+
+    const provider = {
+      retrieveByCredentials: async (creds: Record<string, unknown>) =>
+        creds.api_token === expectedHash ? { getAuthIdentifier: () => 'hashed-user' } : null,
+      validateCredentials: async () => true,
+    }
+
+    const guard = new TokenGuard(provider as any, ctx as any, 'api_token', 'api_token', true)
+
+    expect(await guard.id()).toBe('hashed-user')
+  })
 })
 
 describe('JwtGuard', () => {
