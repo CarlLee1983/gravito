@@ -45,6 +45,7 @@ export class StreamingConsumer extends EventEmitter {
   private sequencer: GroupSequencer | null = null
   private heartbeat: HeartbeatManager | null = null
   private abortController: AbortController | null = null
+  private sharedWorker: Worker | null = null
 
   constructor(
     private readonly queueManager: QueueManager,
@@ -122,8 +123,8 @@ export class StreamingConsumer extends EventEmitter {
       onEvent: this.options.onEvent,
     })
 
-    // 建立 Worker
-    const worker = new Worker(this.options.workerOptions)
+    // 建立共享 Worker。sandboxed + 並發模式下改為每個執行單位獨立建立。
+    this.sharedWorker = new Worker(this.options.workerOptions)
 
     this.log('Started', {
       queues: this.options.queues,
@@ -172,11 +173,18 @@ export class StreamingConsumer extends EventEmitter {
           // 非同步執行（不 await），確保並發
           this.sequencer
             .run(this.options.groupJobsSequential !== false ? job.groupId : undefined, async () => {
-              const result = await executor.execute(job, worker)
-              if (result.shouldStop) {
-                this.stopRequested = true
-                // 通知 generator 停止
-                this.abortController?.abort()
+              const worker = this.createWorkerForExecution(concurrency)
+              try {
+                const result = await executor.execute(job, worker)
+                if (result.shouldStop) {
+                  this.stopRequested = true
+                  // 通知 generator 停止
+                  this.abortController?.abort()
+                }
+              } finally {
+                if (worker !== this.sharedWorker) {
+                  await worker.terminate()
+                }
               }
             })
             .finally(() => {
@@ -260,6 +268,10 @@ export class StreamingConsumer extends EventEmitter {
     this.sequencer?.destroy()
     this.sequencer = null
     this.heartbeat?.stop()
+    this.sharedWorker?.terminate().catch(() => {
+      // 靜默忽略 worker 清理失敗
+    })
+    this.sharedWorker = null
 
     if (this.options.monitor && this.heartbeat) {
       this.heartbeat.publishLog('info', 'Consumer stopped').catch(() => {
@@ -290,5 +302,13 @@ export class StreamingConsumer extends EventEmitter {
       // biome-ignore lint/suspicious/noConsole: debug 模式下允許輸出
       console.log(prefix, message)
     }
+  }
+
+  private createWorkerForExecution(concurrency: number): Worker {
+    if (this.options.workerOptions?.sandboxed && concurrency > 1) {
+      return new Worker(this.options.workerOptions)
+    }
+
+    return this.sharedWorker ?? new Worker(this.options.workerOptions)
   }
 }

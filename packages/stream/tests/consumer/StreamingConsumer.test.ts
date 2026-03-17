@@ -45,6 +45,16 @@ class FailingTestJob extends Job {
   }
 }
 
+class SandboxedSleepJob extends Job {
+  constructor(public readonly durationMs = 50) {
+    super()
+  }
+
+  async handle(): Promise<void> {
+    await new Promise((r) => setTimeout(r, this.durationMs))
+  }
+}
+
 // ─── 輔助工具 ────────────────────────────────────────────────────
 
 function createQueue() {
@@ -57,6 +67,7 @@ function createQueue() {
   })
   queue.registerJobClasses([SimpleTestJob as unknown as typeof Job])
   queue.registerJobClasses([SleepJob as unknown as typeof Job])
+  queue.registerJobClasses([SandboxedSleepJob as unknown as typeof Job])
   queue.registerJobClasses([FailingTestJob as unknown as typeof Job])
   return queue
 }
@@ -207,6 +218,32 @@ describe('StreamingConsumer', () => {
     const firstEndIdx = log.findIndex((l) => l.startsWith('end'))
     const startBeforeFirstEnd = log.slice(0, firstEndIdx).filter((l) => l.startsWith('start'))
     expect(startBeforeFirstEnd.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('should process sandboxed jobs concurrently without cross-worker failures', async () => {
+    await queue.push(new SandboxedSleepJob(60))
+    await queue.push(new SandboxedSleepJob(60))
+
+    consumer = new StreamingConsumer(
+      queue,
+      defaultOptions({
+        concurrency: 2,
+        workerOptions: {
+          sandboxed: true,
+          sandboxConfig: {
+            maxExecutionTime: 5000,
+            isolateContexts: false,
+          },
+        },
+      })
+    )
+    consumer.start()
+
+    await new Promise((r) => setTimeout(r, 400))
+    await consumer.requestStop()
+
+    expect(consumer.getStats().failed).toBe(0)
+    expect(consumer.getStats().processed).toBe(2)
   })
 
   // ─── group 序列 ────────────────────────────────────────────────
