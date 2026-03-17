@@ -1,3 +1,4 @@
+import { createPublicKey, verify } from 'node:crypto'
 import type { GravitoContext } from '@gravito/core'
 import type { WebhookDriver } from '../types'
 
@@ -28,7 +29,9 @@ export class SendGridWebhookDriver implements WebhookDriver {
    * Handles the SendGrid webhook request.
    */
   async handle(c: GravitoContext): Promise<{ event: string; payload: any }[] | null> {
-    const body = await c.req.json()
+    const rawBody =
+      typeof c.req.text === 'function' ? await c.req.text() : JSON.stringify(await c.req.json())
+    const body = rawBody ? JSON.parse(rawBody) : []
 
     // SendGrid events are usually sent as an array
     const events = Array.isArray(body) ? body : [body]
@@ -41,7 +44,7 @@ export class SendGridWebhookDriver implements WebhookDriver {
         throw new Error('Missing SendGrid signature headers')
       }
 
-      if (!this.verifySignature(JSON.stringify(body), signature, timestamp)) {
+      if (!this.verifySignature(rawBody, signature, timestamp)) {
         throw new Error('Invalid SendGrid signature')
       }
     }
@@ -68,13 +71,21 @@ export class SendGridWebhookDriver implements WebhookDriver {
    * Real SendGrid validation uses Elliptic Curve (ECDSA).
    * This is a placeholder for the logic structure.
    */
-  private verifySignature(_payload: string, _signature: string, _timestamp: string): boolean {
+  private verifySignature(payload: string, signature: string, timestamp: string): boolean {
     if (!this.config.publicKey) {
       return true
     }
 
-    // In a real implementation, you would use crypto.verify with the SendGrid public key.
-    // SendGrid uses ECDSA with SHA256.
-    return true // Placeholder: Actual implementation requires 'crypto' public key verification
+    try {
+      const publicKey = createPublicKey(this.config.publicKey)
+      return verify(
+        'sha256',
+        Buffer.from(`${timestamp}${payload}`),
+        publicKey,
+        Buffer.from(signature, 'base64')
+      )
+    } catch {
+      return false
+    }
   }
 }
