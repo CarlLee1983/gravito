@@ -49,16 +49,35 @@ export class TcpClient implements ITcpClient {
    */
   async connect(): Promise<ITcpConnection> {
     return new Promise((resolve, reject) => {
+      let settled = false
+      let socketRef: any | null = null
+
       const timeoutHandle = setTimeout(() => {
+        if (settled) {
+          return
+        }
+
+        settled = true
+        try {
+          socketRef?.close?.()
+        } catch {}
         reject(new Error(`Connection timeout after ${this.options.timeout}ms`))
       }, this.options.timeout)
 
       try {
-        Bun.connect({
+        socketRef = Bun.connect({
           hostname: this.options.host,
           port: this.options.port,
           socket: {
             open: (socket) => {
+              if (settled) {
+                try {
+                  socket.close?.()
+                } catch {}
+                return
+              }
+
+              settled = true
               clearTimeout(timeoutHandle)
               const id = randomUUID()
               const remoteAddress = `${this.options.host}:${this.options.port}`
@@ -66,6 +85,11 @@ export class TcpClient implements ITcpClient {
               resolve(conn as ITcpConnection)
             },
             error: (_socket, error) => {
+              if (settled) {
+                return
+              }
+
+              settled = true
               clearTimeout(timeoutHandle)
               reject(error)
             },
