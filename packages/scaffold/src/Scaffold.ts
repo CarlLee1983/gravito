@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { ActionDomainGenerator } from './generators/ActionDomainGenerator'
 import { BaseGenerator } from './generators/BaseGenerator'
 import { CleanArchitectureGenerator } from './generators/CleanArchitectureGenerator'
@@ -32,9 +33,13 @@ import type { ArchitectureType, ScaffoldOptions, ScaffoldResult } from './types'
 export class Scaffold {
   private templatesDir: string
   private verbose: boolean
+  private static readonly packageDir = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '..'
+  )
 
   constructor(options: { templatesDir?: string; verbose?: boolean } = {}) {
-    this.templatesDir = options.templatesDir ?? path.resolve(__dirname, '../templates')
+    this.templatesDir = options.templatesDir ?? path.resolve(Scaffold.packageDir, 'templates')
     this.verbose = options.verbose ?? false
   }
 
