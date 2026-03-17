@@ -111,6 +111,26 @@ describe('Request Deduplication (v1.2)', () => {
       expect(deduplicator.size).toBe(0)
     })
 
+    test('should unref deduplication eviction timers', async () => {
+      const originalSetTimeout = global.setTimeout
+      const handle = {
+        unrefCalled: false,
+        unref() {
+          this.unrefCalled = true
+        },
+      }
+      const mockFetch = mock(() => Promise.resolve(new Response('ok')))
+
+      global.setTimeout = ((_fn: () => void) => handle as any) as unknown as typeof setTimeout
+
+      try {
+        await deduplicator.fetch(mockFetch, 'http://localhost/api/users', { method: 'GET' })
+        expect(handle.unrefCalled).toBe(true)
+      } finally {
+        global.setTimeout = originalSetTimeout
+      }
+    })
+
     test('should include relevant headers in cache key', async () => {
       const mockFetch = mock(() => Promise.resolve(new Response('ok')))
 

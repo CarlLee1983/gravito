@@ -97,6 +97,29 @@ describe('createFetchWithTimeout', () => {
       }
     }
   })
+
+  test('should unref timeout handles', async () => {
+    const originalSetTimeout = global.setTimeout
+    const handle = {
+      unrefCalled: false,
+      unref() {
+        this.unrefCalled = true
+      },
+    }
+    const mockFetch = mock(() => Promise.resolve(new Response('OK', { status: 200 })))
+    globalThis.fetch = mockFetch
+
+    global.setTimeout = ((_fn: () => void) => handle as any) as unknown as typeof setTimeout
+
+    try {
+      const fetchWithTimeout = createFetchWithTimeout(5000)
+      await fetchWithTimeout('http://example.com')
+
+      expect(handle.unrefCalled).toBe(true)
+    } finally {
+      global.setTimeout = originalSetTimeout
+    }
+  })
 })
 
 describe('executeWithRetry', () => {

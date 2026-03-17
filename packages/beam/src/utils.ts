@@ -55,6 +55,7 @@ export function createFetchWithTimeout(
   return async (input, init) => {
     const timeoutController = new AbortController()
     const timeoutId = setTimeout(() => timeoutController.abort(), timeout)
+    timeoutId.unref?.()
 
     try {
       // Merge timeout signal with user signal and init signal
@@ -287,6 +288,7 @@ export class RequestDeduplicator {
     const timeout = setTimeout(() => {
       this.clearEntry(key)
     }, this.window)
+    timeout.unref?.()
     this.timeouts.set(key, timeout)
 
     return promise.then((res) => res.clone())
