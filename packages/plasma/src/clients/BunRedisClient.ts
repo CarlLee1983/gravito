@@ -109,7 +109,10 @@ export class BunRedisClient implements RedisClientContract {
           throw error
         }
         const delay = Math.min(baseDelay * 2 ** (attempt - 1), 3000) + Math.random() * 100
-        await new Promise((resolve) => setTimeout(resolve, delay))
+        await new Promise((resolve) => {
+          const timer = setTimeout(resolve, delay)
+          timer.unref?.()
+        })
       }
     }
   }

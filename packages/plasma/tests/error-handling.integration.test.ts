@@ -104,4 +104,41 @@ describe('BunRedisClient Error Handling', () => {
     // 1 retry means at least one delay of 10ms + connectTimeout of 50ms
     expect(duration).toBeGreaterThan(50)
   })
+
+  it('should unref backoff timer during retries', async () => {
+    const originalSetTimeout = globalThis.setTimeout
+    let unrefCalled = false
+
+    globalThis.setTimeout = ((handler: TimerHandler, timeout?: number, ...args: any[]) => {
+      const timer = originalSetTimeout(handler, timeout, ...args) as unknown as ReturnType<
+        typeof setTimeout
+      >
+      return Object.assign(timer, {
+        unref: () => {
+          unrefCalled = true
+          return timer
+        },
+      })
+    }) as unknown as typeof setTimeout
+
+    try {
+      const badClient = new BunRedisClient({
+        host: 'localhost',
+        port: 9998,
+        maxRetries: 1,
+        retryDelay: 10,
+        connectTimeout: 50,
+      })
+
+      try {
+        await badClient.connect()
+      } catch {
+        // Expected
+      }
+
+      expect(unrefCalled).toBe(true)
+    } finally {
+      globalThis.setTimeout = originalSetTimeout
+    }
+  })
 })
