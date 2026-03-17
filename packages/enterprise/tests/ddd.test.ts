@@ -53,4 +53,32 @@ describe('@gravito/enterprise DDD', () => {
     expect(cmd.name).toBe('carl')
     expect(query.id).toBe('1')
   })
+
+  test('ValueObject equality should ignore property insertion order', () => {
+    class Address extends ValueObject<{
+      street: string
+      meta: {
+        zip: string
+        city: string
+      }
+    }> {}
+
+    const left = new Address({
+      street: 'Main St',
+      meta: {
+        zip: '10001',
+        city: 'Taipei',
+      },
+    })
+
+    const right = new Address({
+      meta: {
+        city: 'Taipei',
+        zip: '10001',
+      },
+      street: 'Main St',
+    } as any)
+
+    expect(left.equals(right)).toBe(true)
+  })
 })
