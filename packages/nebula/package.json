@@ -1,7 +1,7 @@
 {
   "name": "@gravito/nebula",
   "sideEffects": false,
-  "version": "4.1.1",
+  "version": "4.1.2",
   "publishConfig": {
     "access": "public"
   },
@@ -25,7 +25,7 @@
   "scripts": {
     "build": "bun run build.ts",
     "build:dts": "bun run build.ts --dts-only",
-    "test": "true",
+    "test": "bun test tests/ --timeout=10000",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test:coverage": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",
     "test:ci": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage && bun run --bun scripts/check-coverage.ts",

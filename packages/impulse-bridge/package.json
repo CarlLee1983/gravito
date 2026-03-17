@@ -1,7 +1,7 @@
 {
   "name": "@gravito/impulse-bridge",
   "sideEffects": false,
-  "version": "2.0.1",
+  "version": "2.0.2",
   "publishConfig": {
     "access": "public"
   },
@@ -21,10 +21,10 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --clean",
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
     "build:dts": "tsup src/index.ts --format cjs,esm --dts --clean",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
-    "test": "true"
+    "test": "bun test tests/ --timeout=10000"
   },
   "peerDependencies": {
     "@gravito/core": "^2.0.0",

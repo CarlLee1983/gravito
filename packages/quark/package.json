@@ -1,6 +1,6 @@
 {
   "name": "@gravito/quark",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Bun-native TCP server and client for Gravito. High-performance networking with frame protocols and backpressure management.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -21,7 +21,7 @@
   "scripts": {
     "build": "bun run build.ts",
     "build:dts": "bun run build.ts --dts-only",
-    "test": "true",
+    "test": "bun test tests/ --timeout=10000",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test:coverage": "echo \"✓ No tests for quark (infrastructure package)\"",
     "test:ci": "echo \"✓ No tests for quark (infrastructure package)\""
