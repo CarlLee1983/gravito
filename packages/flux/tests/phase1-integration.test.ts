@@ -168,6 +168,169 @@ describe('Phase 1 Integration: Risk Mitigation', () => {
       expect(result.status).toBe('compensation_failed')
       expect(result.history[0].status).toBe('compensating')
     })
+
+    it('should persist compensation_failed status when rollback is aborted', async () => {
+      const recoveryManager = new RecoveryManager()
+      recoveryManager.registerAction('step1', { type: 'abort' })
+      const contextManager = new ContextManager()
+      const traceEmitter = new TraceEmitter()
+      const rollbackManager = new RollbackManager(
+        storage,
+        contextManager,
+        traceEmitter,
+        undefined,
+        {
+          retryPolicy: new CompensationRetryPolicy({
+            maxAttempts: 1,
+            initialDelay: 1,
+            backoffCoefficient: 1,
+            maxDelay: 1,
+            jitter: 0,
+          }),
+          idempotencyGuard: new IdempotencyGuard(),
+          recoveryManager,
+        }
+      )
+
+      const customEngine = new FluxEngine({
+        storage,
+        defaultRetries: 0,
+        defaultTimeout: 5000,
+      })
+      ;(customEngine as any).rollbackManager = rollbackManager
+
+      const workflow = createWorkflow('abort-compensation-test')
+        .step(
+          'step1',
+          async (ctx) => {
+            ctx.data.action = 'done'
+          },
+          {
+            compensate: async () => {
+              throw new Error('Abort this rollback')
+            },
+          }
+        )
+        .step('step2', async () => {
+          throw new Error('Step 2 failed')
+        })
+
+      const result = await customEngine.execute(workflow, {})
+      const stored = await storage.load(result.id)
+
+      expect(result.status).toBe('compensation_failed')
+      expect(stored?.status).toBe('compensation_failed')
+    })
+
+    it('should reset skipped compensation step back from compensating state', async () => {
+      const recoveryManager = new RecoveryManager()
+      recoveryManager.registerAction('step1', { type: 'skip' })
+      const contextManager = new ContextManager()
+      const traceEmitter = new TraceEmitter()
+      const rollbackManager = new RollbackManager(
+        storage,
+        contextManager,
+        traceEmitter,
+        undefined,
+        {
+          retryPolicy: new CompensationRetryPolicy({
+            maxAttempts: 1,
+            initialDelay: 1,
+            backoffCoefficient: 1,
+            maxDelay: 1,
+            jitter: 0,
+          }),
+          idempotencyGuard: new IdempotencyGuard(),
+          recoveryManager,
+        }
+      )
+
+      const customEngine = new FluxEngine({
+        storage,
+        defaultRetries: 0,
+        defaultTimeout: 5000,
+      })
+      ;(customEngine as any).rollbackManager = rollbackManager
+
+      const workflow = createWorkflow('skip-compensation-test')
+        .step(
+          'step1',
+          async (ctx) => {
+            ctx.data.action = 'done'
+          },
+          {
+            compensate: async () => {
+              throw new Error('Skip this compensation')
+            },
+          }
+        )
+        .step('step2', async () => {
+          throw new Error('Step 2 failed')
+        })
+
+      const result = await customEngine.execute(workflow, {})
+
+      expect(result.status).toBe('rolled_back')
+      expect(result.history[0].status).toBe('completed')
+      expect(result.history[0].error).toBe('Skip this compensation')
+    })
+
+    it('should honor retry recovery action for failed compensation', async () => {
+      let compensationAttempts = 0
+      const recoveryManager = new RecoveryManager()
+      recoveryManager.registerAction('step1', { type: 'retry', maxAttempts: 2 })
+      const contextManager = new ContextManager()
+      const traceEmitter = new TraceEmitter()
+      const rollbackManager = new RollbackManager(
+        storage,
+        contextManager,
+        traceEmitter,
+        undefined,
+        {
+          retryPolicy: new CompensationRetryPolicy({
+            maxAttempts: 1,
+            initialDelay: 1,
+            backoffCoefficient: 1,
+            maxDelay: 1,
+            jitter: 0,
+          }),
+          idempotencyGuard: new IdempotencyGuard(),
+          recoveryManager,
+        }
+      )
+
+      const customEngine = new FluxEngine({
+        storage,
+        defaultRetries: 0,
+        defaultTimeout: 5000,
+      })
+      ;(customEngine as any).rollbackManager = rollbackManager
+
+      const workflow = createWorkflow('retry-recovery-compensation-test')
+        .step(
+          'step1',
+          async (ctx) => {
+            ctx.data.action = 'done'
+          },
+          {
+            compensate: async () => {
+              compensationAttempts++
+              if (compensationAttempts < 3) {
+                throw new Error('Retry compensation later')
+              }
+            },
+          }
+        )
+        .step('step2', async () => {
+          throw new Error('Step 2 failed')
+        })
+
+      const result = await customEngine.execute(workflow, {})
+
+      expect(result.status).toBe('rolled_back')
+      expect(result.history[0].status).toBe('compensated')
+      expect(compensationAttempts).toBe(3)
+    })
   })
 
   describe('End-to-End: E-commerce Order Rollback', () => {

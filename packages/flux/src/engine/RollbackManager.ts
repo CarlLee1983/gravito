@@ -106,6 +106,7 @@ export class RollbackManager {
     })
 
     let compensatedCount = 0
+    let skippedCount = 0
 
     for (let i = failedAtIndex - 1; i >= 0; i--) {
       const step = definition.steps[i]
@@ -150,12 +151,40 @@ export class RollbackManager {
 
         const action = this.recoveryManager.getAction(step.name)
 
+        if (action?.type === 'retry') {
+          const retryResult = await new CompensationRetryPolicy({
+            ...this.retryPolicy.getConfig(),
+            maxAttempts: action.maxAttempts ?? this.retryPolicy.getConfig().maxAttempts,
+          }).execute(async () => {
+            await step.compensate?.(currentCtx)
+          })
+
+          if (retryResult.success) {
+            execution = { ...execution, status: 'compensated', compensatedAt: new Date() }
+            currentCtx = updateWorkflowContext(currentCtx, {
+              history: currentCtx.history.map((h, idx) => (idx === i ? execution : h)),
+            })
+            compensatedCount++
+
+            await this.traceEmitter.stepCompensate(currentCtx, step.name, i)
+            currentCtx = await this.persist(currentCtx)
+            continue
+          }
+        }
+
         if (action?.type === 'skip') {
+          execution = { ...execution, status: 'completed', error: error.message }
+          currentCtx = updateWorkflowContext(currentCtx, {
+            history: currentCtx.history.map((h, idx) => (idx === i ? execution : h)),
+          })
+          currentCtx = await this.persist(currentCtx)
+          skippedCount++
           continue
         }
 
         if (action?.type === 'abort') {
           currentCtx = updateWorkflowContext(currentCtx, { status: 'compensation_failed' })
+          currentCtx = await this.persist(currentCtx)
           await this.traceEmitter.emit({
             type: 'workflow:error',
             timestamp: Date.now(),
@@ -169,6 +198,7 @@ export class RollbackManager {
 
         await this.recoveryManager.notifyRecoveryNeeded(currentCtx, step.name, error)
         currentCtx = updateWorkflowContext(currentCtx, { status: 'compensation_failed' })
+        currentCtx = await this.persist(currentCtx)
         await this.traceEmitter.emit({
           type: 'workflow:error',
           timestamp: Date.now(),
@@ -183,7 +213,7 @@ export class RollbackManager {
       currentCtx = await this.persist(currentCtx)
     }
 
-    if (compensatedCount > 0) {
+    if (compensatedCount > 0 || skippedCount > 0) {
       currentCtx = updateWorkflowContext(currentCtx, { status: 'rolled_back' })
       await this.traceEmitter.emit({
         type: 'workflow:rollback_complete',
