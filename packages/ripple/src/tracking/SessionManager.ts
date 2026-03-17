@@ -149,6 +149,7 @@ export class SessionManager {
     this.cleanupInterval = setInterval(() => {
       this.cleanupExpiredSessions()
     }, 30000) // Run every 30 seconds
+    this.cleanupInterval.unref?.()
   }
 
   /**

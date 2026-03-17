@@ -233,6 +233,33 @@ describe('SessionManager', () => {
       // This test mainly ensures no errors are thrown
       expect(manager.getSessionCount()).toBe(0)
     })
+
+    it('should unref cleanup interval so it does not keep the process alive', () => {
+      const originalSetInterval = globalThis.setInterval
+      let unrefCalled = false
+
+      globalThis.setInterval = ((handler: TimerHandler, timeout?: number, ...args: any[]) => {
+        const timer = originalSetInterval(handler, timeout, ...args) as ReturnType<
+          typeof setInterval
+        >
+        return Object.assign(timer, {
+          unref: () => {
+            unrefCalled = true
+            return timer
+          },
+        })
+      }) as unknown as typeof setInterval
+
+      const manager = new SessionManager({
+        sessionTTL: 60000,
+        maxSessions: 100,
+      })
+
+      expect(unrefCalled).toBe(true)
+
+      manager.shutdown()
+      globalThis.setInterval = originalSetInterval
+    })
   })
 
   describe('session expiry', () => {
