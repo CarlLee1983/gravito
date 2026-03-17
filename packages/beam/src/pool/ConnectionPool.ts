@@ -70,7 +70,12 @@ export class ConnectionPool {
    * Returns a fetch-compatible function that acquires connections
    * from the pool before making requests.
    */
-  createPooledFetch(): (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> {
+  createPooledFetch(
+    executeFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> = (
+      input,
+      init
+    ) => fetch(input, init)
+  ): (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> {
     return async (input: RequestInfo | URL, init?: RequestInit) => {
       if (this.closed) {
         throw new Error('Connection pool has been closed')
@@ -93,7 +98,7 @@ export class ConnectionPool {
           Connection: 'keep-alive',
         }
 
-        const response = await fetch(input, {
+        const response = await executeFetch(input, {
           ...init,
           headers,
         })

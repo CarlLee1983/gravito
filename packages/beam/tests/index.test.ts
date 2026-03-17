@@ -1,5 +1,6 @@
-import { describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import { Photon } from '@gravito/photon'
+import { BeamTimeoutError } from '../src/errors'
 import { createBeam, createGravitoClient } from '../src/index'
 
 // Simulate AppType pattern (simple scenario)
@@ -22,6 +23,16 @@ function _createTypeOnlyApp() {
 type TestAppRoutes = ReturnType<typeof _createTypeOnlyApp>
 
 describe('@gravito/beam', () => {
+  let originalFetch: typeof globalThis.fetch
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch
+  })
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+  })
+
   describe('AppType pattern (simple)', () => {
     test('createBeam should return a client instance', () => {
       const client = createBeam<TestAppType>('http://localhost:3000')
@@ -145,6 +156,30 @@ describe('@gravito/beam', () => {
         retry: { count: 3 },
       })
       expect(client).toBeDefined()
+    })
+
+    test('should preserve timeout behavior when connection pooling is enabled', async () => {
+      globalThis.fetch = mock((_input: RequestInfo | URL, init?: RequestInit) => {
+        return new Promise((resolve, reject) => {
+          const timeoutId = setTimeout(() => resolve(new Response('OK')), 1000)
+
+          init?.signal?.addEventListener(
+            'abort',
+            () => {
+              clearTimeout(timeoutId)
+              reject(new DOMException('Aborted', 'AbortError'))
+            },
+            { once: true }
+          )
+        })
+      }) as typeof globalThis.fetch
+
+      const client = createBeam<TestAppType>('http://localhost:3000', {
+        timeout: 50,
+        pool: { healthCheck: false },
+      })
+
+      await expect(client.hello.$get()).rejects.toThrow(BeamTimeoutError)
     })
   })
 })

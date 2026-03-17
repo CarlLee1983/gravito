@@ -1,3 +1,4 @@
+import type { Hono } from 'hono'
 import { BeamError } from './errors'
 import { createBeam } from './index'
 import type { BeamOptions } from './types'
@@ -41,7 +42,7 @@ import type { BeamOptions } from './types'
  *
  * @public
  */
-export function createAuthenticatedBeam<T extends Record<string, any>>(
+export function createAuthenticatedBeam<T extends Hono<any, any, any>>(
   baseUrl: string,
   getToken: () => string | Promise<string>,
   options?: Omit<BeamOptions, 'headers'>

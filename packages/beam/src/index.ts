@@ -1,4 +1,5 @@
 import { hc as beamClient } from '@gravito/photon/client'
+import type { Hono } from 'hono'
 import { BeamError, BeamNetworkError } from './errors'
 import { ConnectionPool } from './pool'
 import type { BeamOptions } from './types'
@@ -45,7 +46,7 @@ import {
  *
  * @public
  */
-export function createBeam<T extends Record<string, any> = Record<string, any>>(
+export function createBeam<T extends Hono<any, any, any> = Hono<any, any, any>>(
   baseUrl: string,
   options?: BeamOptions
 ): ReturnType<typeof beamClient<T>> {
@@ -127,7 +128,7 @@ function createEnhancedFetch(options: BeamOptions) {
           : (input: RequestInfo | URL, init?: RequestInit) => fetch(input, init)
 
       const baseFetchFn: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> = pool
-        ? pool.createPooledFetch()
+        ? pool.createPooledFetch(timeoutFn)
         : timeoutFn
 
       // Wrap with deduplicator if enabled

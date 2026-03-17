@@ -48,6 +48,7 @@ export class WorkerPool {
   private metrics?: WorkerPoolMetrics
   private healthCheckTimer?: NodeJS.Timeout
   private metricsTimer?: NodeJS.Timeout
+  private autoScalingTimer?: NodeJS.Timeout
   private isRunning = false
   private scaleDownCounter = 0
 
@@ -97,13 +98,19 @@ export class WorkerPool {
       () => this.performHealthCheck(),
       this.config.metricsInterval
     )
+    this.healthCheckTimer.unref?.()
 
     // Start metrics collection
     this.metricsTimer = setInterval(() => this.collectMetrics(), this.config.metricsInterval)
+    this.metricsTimer.unref?.()
 
     // Start auto-scaling if enabled
     if (this.config.enableAutoScaling) {
-      setInterval(() => this.performAutoScaling(), this.config.metricsInterval)
+      this.autoScalingTimer = setInterval(
+        () => this.performAutoScaling(),
+        this.config.metricsInterval
+      )
+      this.autoScalingTimer.unref?.()
     }
   }
 
@@ -119,6 +126,12 @@ export class WorkerPool {
 
     if (this.metricsTimer) {
       clearInterval(this.metricsTimer)
+      this.metricsTimer = undefined
+    }
+
+    if (this.autoScalingTimer) {
+      clearInterval(this.autoScalingTimer)
+      this.autoScalingTimer = undefined
     }
 
     // Mark all workers as terminated
