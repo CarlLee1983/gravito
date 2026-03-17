@@ -1,6 +1,6 @@
 {
   "name": "@gravito/quark",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Bun-native TCP server and client for Gravito. High-performance networking with frame protocols and backpressure management.",
   "type": "module",
   "main": "./dist/index.cjs",

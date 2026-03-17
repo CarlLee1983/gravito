@@ -1,7 +1,7 @@
 {
   "name": "@gravito/enterprise",
   "sideEffects": false,
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Enterprise architecture primitives for Gravito framework (DDD/Clean Architecture)",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

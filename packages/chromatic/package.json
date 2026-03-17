@@ -1,6 +1,6 @@
 {
   "name": "@gravito/chromatic",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Color manipulation, styling and theming system for Gravito",
   "module": "./dist/index.js",
   "main": "./dist/index.cjs",

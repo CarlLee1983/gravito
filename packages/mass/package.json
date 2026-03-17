@@ -1,7 +1,7 @@
 {
   "name": "@gravito/mass",
   "sideEffects": false,
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "TypeBox-based validation for Gravito - High-performance schema validation with full TypeScript support",
   "type": "module",
   "main": "./dist/index.js",

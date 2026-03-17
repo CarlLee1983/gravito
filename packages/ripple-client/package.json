@@ -1,7 +1,7 @@
 {
   "name": "@gravito/ripple-client",
   "sideEffects": false,
-  "version": "4.0.0-alpha.1",
+  "version": "4.0.0-alpha.2",
   "description": "Frontend WebSocket client for @gravito/ripple. Works with React, Vue, and vanilla JavaScript.",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",

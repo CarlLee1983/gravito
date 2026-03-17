@@ -1,7 +1,7 @@
 {
   "name": "@gravito/nova",
   "sideEffects": false,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Bun Shell orchestration engine for Gravito - type-safe shell command execution",
   "type": "module",
   "main": "./dist/index.js",

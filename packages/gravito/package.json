@@ -1,7 +1,7 @@
 {
   "name": "gravito",
   "sideEffects": false,
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "The official CLI for Gravito Galaxy Architecture. Scaffold projects and manage your universe.",
   "bin": {
     "gravito": "bin/gravito.js"

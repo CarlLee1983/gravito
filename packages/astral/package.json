@@ -1,7 +1,7 @@
 {
   "name": "@gravito/astral",
   "sideEffects": false,
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Schema-driven OpenAPI generator for Gravito with Swagger UI support",
   "module": "./dist/index.js",
   "main": "./dist/index.cjs",

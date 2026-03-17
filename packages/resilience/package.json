@@ -1,6 +1,6 @@
 {
   "name": "@gravito/resilience",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Event system resilience layer for Gravito (Circuit Breaker, DLQ, Backpressure, Worker Pool)",
   "license": "MIT",
   "type": "module",
