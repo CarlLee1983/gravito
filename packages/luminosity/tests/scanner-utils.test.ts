@@ -70,5 +70,10 @@ describe('Scanner Utils', () => {
       expect(matchesPatterns('/api/v1/users', [/^\/api\//])).toBe(true)
       expect(matchesPatterns('/web/users', [/^\/api\//])).toBe(false)
     })
+
+    it('should treat regex metacharacters literally in string patterns', () => {
+      expect(matchesPatterns('/docs/v1.2', ['/docs/v1.2'])).toBe(true)
+      expect(matchesPatterns('/docs/v12', ['/docs/v1.2'])).toBe(false)
+    })
   })
 })

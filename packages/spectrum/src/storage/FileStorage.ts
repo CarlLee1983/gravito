@@ -181,9 +181,6 @@ export class FileStorage implements SpectrumStorage {
    * @param list - The cache array
    */
   private async append(path: string, data: any, list: any[]): Promise<void> {
-    // 加入記憶體快取
-    list.unshift(data)
-
     const line = `${JSON.stringify(data)}\n`
 
     try {
@@ -195,6 +192,9 @@ export class FileStorage implements SpectrumStorage {
         // Fallback：使用 RuntimeAdapter.appendFile
         await this.runtime.appendFile?.(path, line)
       }
+
+      // 僅在持久化成功後更新記憶體快取，避免快取與磁碟狀態不一致
+      list.unshift(data)
     } catch (e) {
       console.error(`[Spectrum] Failed to write to ${path}`, e)
     }

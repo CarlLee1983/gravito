@@ -1,3 +1,7 @@
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 /**
  * Extract parameter names from a route path.
  *
@@ -96,7 +100,9 @@ export function matchesPatterns(path: string, patterns: (string | RegExp)[]): bo
   for (const pattern of patterns) {
     if (typeof pattern === 'string') {
       // Simple glob-like matching
-      const regex = new RegExp(`^${pattern.replace(/\*/g, '.*').replace(/\?/g, '.')}$`)
+      const regex = new RegExp(
+        `^${escapeRegex(pattern).replace(/\\\*/g, '.*').replace(/\\\?/g, '.')}$`
+      )
       if (regex.test(path)) {
         return true
       }
