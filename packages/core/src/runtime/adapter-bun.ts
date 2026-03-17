@@ -7,6 +7,10 @@
 
 import type { RuntimeAdapter, RuntimeSpawnOptions } from './types'
 
+function createEphemeralPort(): number {
+  return Math.floor(Math.random() * 50000) + 10000
+}
+
 /**
  * Create a RuntimeAdapter for the Bun runtime.
  * @internal
@@ -253,11 +257,28 @@ export function createBunAdapter(): RuntimeAdapter {
       await fs.rm(path, { recursive: true, force: true })
     },
     serve(config) {
-      return Bun.serve({
-        port: config.port,
-        fetch: config.fetch,
-        websocket: config.websocket as any,
-      })
+      if (config.port !== 0) {
+        return Bun.serve({
+          port: config.port,
+          fetch: config.fetch,
+          websocket: config.websocket as any,
+        })
+      }
+
+      let lastError: unknown
+      for (let attempt = 0; attempt < 20; attempt++) {
+        try {
+          return Bun.serve({
+            port: createEphemeralPort(),
+            fetch: config.fetch,
+            websocket: config.websocket as any,
+          })
+        } catch (error) {
+          lastError = error
+        }
+      }
+
+      throw lastError ?? new Error('[RuntimeAdapter] Failed to allocate an ephemeral port')
     },
   }
 }

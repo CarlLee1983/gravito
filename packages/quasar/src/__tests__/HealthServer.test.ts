@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
+import type { IncomingMessage, RequestListener, ServerResponse } from 'node:http'
 import { HealthServer } from '../health/HealthServer'
 
 function createMockAgent(overrides: Record<string, any> = {}) {
@@ -24,12 +25,65 @@ describe('HealthServer', () => {
   let server: HealthServer
   let agent: any
   let port: number
+  let requestHandler:
+    | ((req: IncomingMessage, res: ServerResponse<IncomingMessage>) => void | Promise<void>)
+    | undefined
+  let fakeNodeServer: {
+    listen: (port: number, cb: () => void) => void
+    close: (cb: (err?: Error | null) => void) => void
+    once: (event: string, cb: (error: Error) => void) => void
+    off: (event: string, cb: (error: Error) => void) => void
+  }
+
+  async function invoke(url: string, headers: Record<string, string> = {}) {
+    let statusCode = 200
+    let responseHeaders: Record<string, string> = {}
+    let body = ''
+
+    const req = {
+      url,
+      headers,
+    } as IncomingMessage
+
+    const res = {
+      writeHead(code: number, headers?: Record<string, string>) {
+        statusCode = code
+        responseHeaders = headers ?? {}
+        return res
+      },
+      end(chunk?: string) {
+        body = chunk ?? ''
+        return res
+      },
+    } as unknown as ServerResponse<IncomingMessage>
+
+    await requestHandler?.(req, res)
+
+    return {
+      statusCode,
+      headers: responseHeaders,
+      body,
+      json: () => JSON.parse(body),
+    }
+  }
 
   beforeEach(() => {
-    // 使用隨機可用 port 避免衝突
     port = 10000 + Math.floor(Math.random() * 50000)
     agent = createMockAgent()
-    server = new HealthServer(agent, port)
+    fakeNodeServer = {
+      listen(_port, cb) {
+        cb()
+      },
+      close(cb) {
+        cb(null)
+      },
+      once() {},
+      off() {},
+    }
+    server = new HealthServer(agent, port, ((handler: RequestListener) => {
+      requestHandler = handler
+      return fakeNodeServer as any
+    }) as any)
   })
 
   afterEach(async () => {
@@ -38,16 +92,14 @@ describe('HealthServer', () => {
 
   it('should start and listen on the specified port', async () => {
     await server.start()
-
-    const response = await fetch(`http://localhost:${port}/health`)
-    expect(response.status).toBe(200)
+    const response = await invoke('/health')
+    expect(response.statusCode).toBe(200)
   })
 
   it('should return healthy status on /health', async () => {
     await server.start()
-
-    const response = await fetch(`http://localhost:${port}/health`)
-    const data = await response.json()
+    const response = await invoke('/health')
+    const data = response.json()
 
     expect(data.status).toBe('healthy')
     expect(data.service).toBe('test-service')
@@ -59,9 +111,8 @@ describe('HealthServer', () => {
 
   it('should return healthy status on /', async () => {
     await server.start()
-
-    const response = await fetch(`http://localhost:${port}/`)
-    const data = await response.json()
+    const response = await invoke('/')
+    const data = response.json()
 
     expect(data.status).toBe('healthy')
   })
@@ -76,11 +127,10 @@ describe('HealthServer', () => {
     }))
 
     await server.start()
+    const response = await invoke('/health')
+    expect(response.statusCode).toBe(503)
 
-    const response = await fetch(`http://localhost:${port}/health`)
-    expect(response.status).toBe(503)
-
-    const data = await response.json()
+    const data = response.json()
     expect(data.status).toBe('unhealthy')
   })
 
@@ -94,11 +144,10 @@ describe('HealthServer', () => {
     }))
 
     await server.start()
+    const response = await invoke('/health')
+    expect(response.statusCode).toBe(503)
 
-    const response = await fetch(`http://localhost:${port}/health`)
-    expect(response.status).toBe(503)
-
-    const data = await response.json()
+    const data = response.json()
     expect(data.status).toBe('degraded')
   })
 
@@ -112,17 +161,15 @@ describe('HealthServer', () => {
     }))
 
     await server.start()
-
-    const response = await fetch(`http://localhost:${port}/health`)
-    const data = await response.json()
+    const response = await invoke('/health')
+    const data = response.json()
     expect(data.status).toBe('healthy')
   })
 
   it('should return cluster status on /cluster', async () => {
     await server.start()
-
-    const response = await fetch(`http://localhost:${port}/cluster`)
-    const data = await response.json()
+    const response = await invoke('/cluster')
+    const data = response.json()
 
     expect(data.nodes).toEqual([{ id: 'node-1', service: 'test' }])
     expect(data.isLeader).toBe(true)
@@ -133,61 +180,48 @@ describe('HealthServer', () => {
     agent.getClusterStatus = mock(() => Promise.reject(new Error('Redis down')))
 
     await server.start()
+    const response = await invoke('/cluster')
+    expect(response.statusCode).toBe(500)
 
-    const response = await fetch(`http://localhost:${port}/cluster`)
-    expect(response.status).toBe(500)
-
-    const data = await response.json()
+    const data = response.json()
     expect(data.error).toBe('Failed to fetch cluster status')
   })
 
   it('should return prometheus metrics on /metrics (text/plain)', async () => {
     await server.start()
+    const response = await invoke('/metrics')
+    const text = response.body
 
-    const response = await fetch(`http://localhost:${port}/metrics`)
-    const text = await response.text()
-
-    expect(response.headers.get('content-type')).toBe('text/plain')
+    expect(response.headers['Content-Type']).toBe('text/plain')
     expect(text).toContain('quasar_heartbeats_total')
   })
 
   it('should return JSON metrics on /metrics with Accept: application/json', async () => {
     await server.start()
+    const response = await invoke('/metrics', { accept: 'application/json' })
+    const data = response.json()
 
-    const response = await fetch(`http://localhost:${port}/metrics`, {
-      headers: { Accept: 'application/json' },
-    })
-    const data = await response.json()
-
-    expect(response.headers.get('content-type')).toBe('application/json')
+    expect(response.headers['Content-Type']).toBe('application/json')
     expect(data).toBeDefined()
   })
 
   it('should return 404 for unknown paths', async () => {
     await server.start()
-
-    const response = await fetch(`http://localhost:${port}/unknown`)
-    expect(response.status).toBe(404)
+    const response = await invoke('/unknown')
+    expect(response.statusCode).toBe(404)
   })
 
   it('should stop gracefully', async () => {
-    // 建立獨立 server 避免 afterEach 重複 stop
-    const localPort = 10000 + Math.floor(Math.random() * 50000)
-    const localServer = new HealthServer(agent, localPort)
+    const localServer = new HealthServer(agent, port, ((handler: RequestListener) => {
+      requestHandler = handler
+      return fakeNodeServer as any
+    }) as any)
     await localServer.start()
-
-    // 第一次 stop 不應拋錯
     await localServer.stop()
-
-    // 確認 port 已釋放（第二次 stop 不走 afterEach 了）
   })
 
   it('should handle stop when not started', async () => {
-    // 建立新 server 但不 start
-    const localPort = 10000 + Math.floor(Math.random() * 50000)
-    const localServer = new HealthServer(agent, localPort)
-
-    // Stop without start should resolve
+    const localServer = new HealthServer(agent, port, (() => fakeNodeServer as any) as any)
     await localServer.stop()
   })
 

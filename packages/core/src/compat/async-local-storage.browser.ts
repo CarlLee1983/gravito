@@ -2,7 +2,7 @@
  * Browser-safe AsyncLocalStorage mock
  */
 export class AsyncLocalStorage<T> {
-  private store: T | null = null
+  private store: T | undefined
 
   run<R>(store: T, fn: () => R): R {
     const prev = this.store
@@ -15,10 +15,10 @@ export class AsyncLocalStorage<T> {
   }
 
   getStore(): T | undefined {
-    return this.store || undefined
+    return this.store
   }
 
   disable(): void {
-    this.store = null
+    this.store = undefined
   }
 }

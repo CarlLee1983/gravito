@@ -1,6 +1,6 @@
 {
   "name": "@gravito/core",
-  "version": "2.0.4",
+  "version": "2.0.6",
   "description": "",
   "module": "./dist/index.js",
   "main": "./dist/index.js",
@@ -9,8 +9,8 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "browser": "./src/index.browser.ts",
-      "bun": "./src/index.ts",
+      "browser": "./dist/index.browser.js",
+      "bun": "./dist/index.js",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
@@ -27,12 +27,12 @@
       "default": "./dist/ffi/index.js"
     },
     "./compat/async-local-storage": {
-      "browser": "./src/compat/async-local-storage.browser.ts",
-      "default": "./src/compat/async-local-storage.ts"
+      "browser": "./dist/compat/async-local-storage.browser.js",
+      "default": "./dist/compat/async-local-storage.js"
     },
     "./compat/crypto": {
-      "browser": "./src/compat/crypto.browser.ts",
-      "default": "./src/compat/crypto.ts"
+      "browser": "./dist/compat/crypto.browser.js",
+      "default": "./dist/compat/crypto.js"
     }
   },
   "files": [

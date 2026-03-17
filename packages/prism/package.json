@@ -1,6 +1,6 @@
 {
   "name": "@gravito/prism",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "publishConfig": {
     "access": "public"
   },
@@ -12,13 +12,13 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "bun": "./src/index.ts",
+      "bun": "./dist/index.js",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
     "./vue": {
-      "bun": "./src/vue.ts",
+      "bun": "./dist/vue.js",
       "types": "./dist/vue.d.ts",
       "import": "./dist/vue.js",
       "require": "./dist/vue.cjs"

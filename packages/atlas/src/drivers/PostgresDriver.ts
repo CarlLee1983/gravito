@@ -522,10 +522,12 @@ interface PgPool {
   connect(): Promise<PgPoolClient>
   end(): Promise<void>
   query(sql: string, values?: unknown[]): Promise<PgResult>
+  query(config: PgQueryConfig): Promise<PgResult>
 }
 
 interface PgClient {
   query(sql: string, values?: unknown[]): Promise<PgResult>
+  query(config: PgQueryConfig): Promise<PgResult>
   release(): void
 }
 
@@ -537,6 +539,12 @@ interface PgResult {
   rows: unknown[]
   rowCount: number | null
   fields?: PgFieldInfo[]
+}
+
+interface PgQueryConfig {
+  name?: string | undefined
+  text: string
+  values?: unknown[] | undefined
 }
 
 interface PgFieldInfo {

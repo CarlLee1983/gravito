@@ -17,54 +17,24 @@ export class HealthServer {
 
   constructor(
     private agent: QuasarAgent,
-    private port = 9999
+    private port = 9999,
+    private serverFactory: typeof createServer = createServer
   ) {}
 
   async start(): Promise<void> {
-    this.server = createServer((req: IncomingMessage, res: ServerResponse) => {
-      if (req.url === '/health' || req.url === '/') {
-        const status = this.getStatus()
-        const statusCode = status.status === 'healthy' ? 200 : 503
-
-        res.writeHead(statusCode, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify(status))
-      } else if (req.url === '/cluster') {
-        this.agent
-          .getClusterStatus()
-          .then((cluster) => {
-            res.writeHead(200, { 'Content-Type': 'application/json' })
-            res.end(
-              JSON.stringify({
-                nodes: cluster,
-                isLeader: this.agent.isLeader(),
-                timestamp: Date.now(),
-              })
-            )
-          })
-          .catch((_err) => {
-            res.writeHead(500)
-            res.end(JSON.stringify({ error: 'Failed to fetch cluster status' }))
-          })
-      } else if (req.url === '/metrics') {
-        const status = this.agent.getStatus()
-        const metrics = status.metrics
-
-        if (req.headers.accept?.includes('application/json')) {
-          res.writeHead(200, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify(metrics))
-        } else {
-          res.writeHead(200, { 'Content-Type': 'text/plain' })
-          const prometheusMetrics = this.agent.getPrometheusMetrics()
-          res.end(prometheusMetrics)
-        }
-      } else {
-        res.writeHead(404)
-        res.end()
-      }
+    this.server = this.serverFactory((req: IncomingMessage, res: ServerResponse) => {
+      void this.handleRequest(req, res)
     })
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      const onError = (error: Error) => {
+        this.server?.off('error', onError)
+        reject(error)
+      }
+
+      this.server?.once('error', onError)
       this.server?.listen(this.port, () => {
+        this.server?.off('error', onError)
         console.log(`[Quasar] Health server listening on port ${this.port}`)
         resolve()
       })
@@ -78,13 +48,61 @@ export class HealthServer {
         return
       }
       this.server.close((err) => {
-        if (err) {
+        if (err && (err as NodeJS.ErrnoException).code !== 'ERR_SERVER_NOT_RUNNING') {
           reject(err)
         } else {
+          this.server = null
           resolve()
         }
       })
     })
+  }
+
+  private async handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    if (req.url === '/health' || req.url === '/') {
+      const status = this.getStatus()
+      const statusCode = status.status === 'healthy' ? 200 : 503
+
+      res.writeHead(statusCode, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(status))
+      return
+    }
+
+    if (req.url === '/cluster') {
+      try {
+        const cluster = await this.agent.getClusterStatus()
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(
+          JSON.stringify({
+            nodes: cluster,
+            isLeader: this.agent.isLeader(),
+            timestamp: Date.now(),
+          })
+        )
+      } catch {
+        res.writeHead(500)
+        res.end(JSON.stringify({ error: 'Failed to fetch cluster status' }))
+      }
+      return
+    }
+
+    if (req.url === '/metrics') {
+      const status = this.agent.getStatus()
+      const metrics = status.metrics
+
+      if (req.headers.accept?.includes('application/json')) {
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(metrics))
+      } else {
+        res.writeHead(200, { 'Content-Type': 'text/plain' })
+        const prometheusMetrics = this.agent.getPrometheusMetrics()
+        res.end(prometheusMetrics)
+      }
+      return
+    }
+
+    res.writeHead(404)
+    res.end()
   }
 
   getStatus(): HealthStatus {

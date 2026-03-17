@@ -52,6 +52,12 @@ export class BunSQLDriver implements DriverContract {
       ) {
         // 使用 Bun.sql 連接字符串 (URL 優先)
         const connUrl = this.buildConnectionUrl()
+        if (!connUrl) {
+          throw new ConnectionError(
+            `Failed to build connection URL for ${this.config.driver}`,
+            null
+          )
+        }
 
         try {
           if (process.env.DEBUG_ATLAS) {

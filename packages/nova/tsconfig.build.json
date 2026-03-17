@@ -16,10 +16,7 @@
     "emitDecoratorMetadata": true,
     "types": ["bun-types"],
     "paths": {
-      "@gravito/nova": ["./src/index.ts"],
-      "@gravito/core": ["../../packages/core/dist/index.d.ts"],
-      "@gravito/core/*": ["../../packages/core/dist/*"],
-      "@gravito/*": ["../../packages/*/dist/index.d.ts"]
+      "@gravito/nova": ["./src/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],

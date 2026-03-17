@@ -1,7 +1,7 @@
 {
   "name": "@gravito/stasis",
   "sideEffects": false,
-  "version": "3.2.1",
+  "version": "3.2.2",
   "publishConfig": {
     "access": "public"
   },
@@ -12,7 +12,7 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "bun": "./src/index.ts",
+      "bun": "./dist/index.js",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }

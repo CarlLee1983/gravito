@@ -15,6 +15,9 @@ try {
     // Build ESM only - Bun-only project
     // CJS causes module resolution issues with require() calls
     await $`bunx tsup src/index.ts --format esm --outDir dist --external @gravito/core,@gravito/photon,ioredis,bun`
+
+    console.log('Generating Types...')
+    await $`bunx tsc -p tsconfig.build.json --emitDeclarationOnly --declaration --outDir dist`
   }
 
   if (isDtsOnly) {

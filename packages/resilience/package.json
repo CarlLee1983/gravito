@@ -1,6 +1,6 @@
 {
   "name": "@gravito/resilience",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Event system resilience layer for Gravito (Circuit Breaker, DLQ, Backpressure, Worker Pool)",
   "license": "MIT",
   "type": "module",
@@ -10,14 +10,14 @@
   "sideEffects": false,
   "exports": {
     ".": {
-      "bun": "./src/index.ts",
+      "bun": "./dist/index.js",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     }
   },
   "peerDependencies": {
-    "@gravito/core": "workspace:*",
+    "@gravito/core": "^2.0.0",
     "@opentelemetry/api": "^1.9.0"
   },
   "peerDependenciesMeta": {
@@ -34,8 +34,13 @@
     "typescript": "^5.9.3"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts --outDir dist",
+    "build": "bun run build.ts",
+    "build:dts": "bun run build.ts --dts-only",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
-    "test": "true"
-  }
+    "test": "bun test tests/ --timeout=10000"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
 }

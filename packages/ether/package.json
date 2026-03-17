@@ -1,24 +1,28 @@
 {
   "name": "@gravito/ether",
   "sideEffects": false,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Gravito Ether - Bun HTMLRewriter-based HTML transformation engine",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "module": "./dist/index.js",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "exports": {
     ".": {
-      "bun": "./src/index.ts",
+      "bun": "./dist/index.js",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./middleware": {
-      "bun": "./src/middleware/index.ts",
+      "bun": "./dist/middleware/index.js",
       "types": "./dist/middleware/index.d.ts",
       "default": "./dist/middleware/index.js"
     },
     "./rules": {
-      "bun": "./src/rules/index.ts",
+      "bun": "./dist/rules/index.js",
       "types": "./dist/rules/index.d.ts",
       "default": "./dist/rules/index.js"
     }
@@ -32,7 +36,7 @@
   },
   "dependencies": {},
   "peerDependencies": {
-    "@gravito/core": ">=1.0.0"
+    "@gravito/core": "^2.0.0"
   },
   "peerDependenciesMeta": {
     "@gravito/core": {

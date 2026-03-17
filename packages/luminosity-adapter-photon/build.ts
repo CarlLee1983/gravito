@@ -1,10 +1,14 @@
 import { existsSync } from 'node:fs'
 import { cp, mkdir } from 'node:fs/promises'
-import { build } from 'bun'
+import { $, build } from 'bun'
 
 const isDtsOnly = process.argv.includes('--dts-only')
 
 console.log('🔨 Building @gravito/luminosity-adapter-photon in parallel...')
+
+if (!isDtsOnly) {
+  await $`rm -rf dist`
+}
 
 // Build JS/TS and type declarations in parallel (independent tasks)
 async function buildInParallel() {
@@ -35,10 +39,13 @@ async function buildInParallel() {
 
   // Task 2: tsc (type declarations)
   const tscPromise = (async () => {
-    const tsc = Bun.spawn(['bunx', 'tsc', '--emitDeclarationOnly', '--skipLibCheck'], {
-      stdout: 'inherit',
-      stderr: 'inherit',
-    })
+    const tsc = Bun.spawn(
+      ['bunx', 'tsc', '-p', 'tsconfig.build.json', '--emitDeclarationOnly', '--skipLibCheck'],
+      {
+        stdout: 'inherit',
+        stderr: 'inherit',
+      }
+    )
     const exitCode = await tsc.exited
     if (exitCode !== 0) {
       console.warn('⚠️ Warning: Type generation issues')

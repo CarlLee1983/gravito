@@ -141,6 +141,10 @@ export function cspMiddleware(options: CSPMiddlewareOptions = {}) {
       })
       .join('; ')
 
+    if (!c.res) {
+      return
+    }
+
     // 設定 Content-Security-Policy header
     c.res.headers.set('Content-Security-Policy', cspValue)
 

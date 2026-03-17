@@ -26,8 +26,24 @@ async function buildInParallel() {
     // Task 1: bun build ESM
     const esmPromise = (async () => {
       const buildResult = await build({
-        entrypoints: ['src/index.ts', 'src/compat.ts', 'src/engine/index.ts', 'src/ffi/index.ts'],
+        entrypoints: [
+          'src/index.ts',
+          'src/index.browser.ts',
+          'src/compat.ts',
+          'src/compat/async-local-storage.ts',
+          'src/compat/async-local-storage.browser.ts',
+          'src/compat/crypto.ts',
+          'src/compat/crypto.browser.ts',
+          'src/engine/index.ts',
+          'src/ffi/index.ts',
+          'src/ffi/types.ts',
+          'src/ffi/cbor-fallback.ts',
+          'src/ffi/hash-fallback.ts',
+          'src/ffi/NativeAccelerator.ts',
+          'src/ffi/NativeHasher.ts',
+        ],
         outdir: 'dist',
+        root: 'src',
         format: 'esm',
         target: 'bun',
         splitting: false,
@@ -101,6 +117,21 @@ if (!isDtsOnly) {
   } catch (e) {
     console.warn('⚠️  Warning: Failed to copy type declarations:', e)
   }
+
+  // Bun may emit a broken bundled ffi/index.js for re-export-only entrypoints.
+  // Write an explicit ESM wrapper so @gravito/core/ffi always resolves correctly.
+  await Bun.write(
+    'dist/ffi/index.js',
+    [
+      "export { CborFallbackDecoder, CborFallbackEncoder } from './cbor-fallback.js'",
+      "export { HashFallback } from './hash-fallback.js'",
+      "export { NativeAccelerator } from './NativeAccelerator.js'",
+      "export { NativeHasher } from './NativeHasher.js'",
+      "export { CBOR_LENGTH_ENCODING, CBOR_MAJOR_TYPES, CBOR_SIMPLE_VALUES } from './types.js'",
+      '',
+    ].join('\n')
+  )
+  await rm('dist/ffi/index.js.map', { force: true })
 }
 
 console.log('✅ @gravito/core build completed')

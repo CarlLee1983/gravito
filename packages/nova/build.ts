@@ -17,11 +17,11 @@ try {
   }
 
   console.log('Generating Types...')
-  await $`bunx tsc --emitDeclarationOnly --declaration --outDir dist`
+  await $`bunx tsc -p tsconfig.build.json --emitDeclarationOnly --declaration --outDir dist`
 
   // Fix incorrect directory structure from tsconfig
   // TypeScript outputs to dist/nova/src/... but we need dist/...
-  if (existsSync('dist/nova')) {
+  if (existsSync('dist/nova/src')) {
     await mkdir('dist', { recursive: true })
     await cp('dist/nova/src', 'dist', { recursive: true })
     await $`rm -rf dist/nova`

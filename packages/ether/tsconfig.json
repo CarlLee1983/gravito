@@ -2,12 +2,16 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
     "declaration": true,
     "emitDeclarationOnly": false,
     "composite": true,
     "skipLibCheck": true,
-    "types": ["node", "bun-types"]
+    "types": ["node", "bun-types"],
+    "baseUrl": ".",
+    "paths": {
+      "@gravito/core": ["../core/dist/index.d.ts"],
+      "@gravito/core/*": ["../core/dist/*"]
+    }
   },
   "include": ["src/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist"]

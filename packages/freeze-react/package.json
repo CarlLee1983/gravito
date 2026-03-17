@@ -1,7 +1,7 @@
 {
   "name": "@gravito/freeze-react",
   "sideEffects": false,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "React adapter for @gravito/freeze SSG module",
   "type": "module",
   "main": "./dist/index.js",
@@ -9,7 +9,7 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "bun": "./src/index.ts",
+      "bun": "./dist/index.js",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }

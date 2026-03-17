@@ -1,7 +1,7 @@
 {
   "name": "@gravito/luminosity-adapter-photon",
   "sideEffects": false,
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Luminosity adapter for Photon-based environments",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -9,7 +9,7 @@
   "type": "module",
   "exports": {
     ".": {
-      "bun": "./src/index.ts",
+      "bun": "./dist/index.js",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }

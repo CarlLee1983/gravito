@@ -1,4 +1,4 @@
-import { beforeEach, describe, it } from 'bun:test'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import { createHttpTester, PlanetCore } from '../src'
 import { BunNativeAdapter } from '../src/adapters/bun/BunNativeAdapter'
 
@@ -82,5 +82,27 @@ describe('Testing Harness (Laravel style)', () => {
   it('should assert header missing', async () => {
     core.router.get('/no-header', (c) => c.text('OK'))
     await (await tester.get('/no-header')).assertHeaderMissing('X-Missing')
+  })
+
+  it('should persist multiple cookies including expires attributes', async () => {
+    core.router.get('/login', (c) => {
+      c.header('Set-Cookie', 'session=abc123; Expires=Wed, 21 Oct 2037 07:28:00 GMT; Path=/', {
+        append: true,
+      })
+      c.header('Set-Cookie', 'theme=dark; Path=/', { append: true })
+      return c.text('logged in')
+    })
+
+    core.router.get('/me', (c) => {
+      const cookie = c.req.header('cookie') ?? ''
+      return c.json({ cookie })
+    })
+
+    await tester.get('/login')
+    const response = await tester.get('/me')
+
+    expect(await response.getJson()).toEqual({
+      cookie: 'session=abc123; theme=dark',
+    })
   })
 })

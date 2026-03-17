@@ -16,10 +16,7 @@
     "emitDecoratorMetadata": true,
     "types": ["node", "bun-types"],
     "paths": {
-      "@gravito/luminosity-adapter-photon": ["./src/index.ts"],
-      "@gravito/core": ["../../packages/core/dist/index.d.ts"],
-      "@gravito/core/*": ["../../packages/core/dist/*"],
-      "@gravito/*": ["../../packages/*/dist/index.d.ts"]
+      "@gravito/luminosity-adapter-photon": ["./src/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],

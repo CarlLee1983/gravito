@@ -106,20 +106,42 @@ export class HttpTester {
     const response = await this.core.adapter.fetch(request)
 
     // Capture cookies from response
-    const setCookie = response.headers.get('Set-Cookie')
-    if (setCookie) {
-      // Handle multiple Set-Cookie headers (often separated by commas in Fetch API's get())
-      const parts = setCookie.split(/,(?=[^;]+=[^;]+)/)
-      for (const part of parts) {
-        const cookiePair = part.split(';')[0].trim()
-        const [name, ...valueParts] = cookiePair.split('=')
-        if (name) {
-          this.cookies.set(name, valueParts.join('='))
-        }
+    for (const setCookie of this.getSetCookieHeaders(response.headers)) {
+      const cookiePair = setCookie.split(';')[0]?.trim()
+      if (!cookiePair) {
+        continue
+      }
+      const [name, ...valueParts] = cookiePair.split('=')
+      if (name) {
+        this.cookies.set(name, valueParts.join('='))
       }
     }
 
     return new TestResponse(response)
+  }
+
+  private getSetCookieHeaders(headers: Headers): string[] {
+    const headersWithGetSetCookie = headers as Headers & {
+      getSetCookie?: () => string[]
+      toJSON?: () => Record<string, string | string[]>
+    }
+
+    const getSetCookie = headersWithGetSetCookie.getSetCookie?.()
+    if (getSetCookie && getSetCookie.length > 0) {
+      return getSetCookie
+    }
+
+    const headerJson = headersWithGetSetCookie.toJSON?.()
+    const jsonSetCookie = headerJson?.['set-cookie']
+    if (Array.isArray(jsonSetCookie)) {
+      return jsonSetCookie
+    }
+    if (typeof jsonSetCookie === 'string') {
+      return [jsonSetCookie]
+    }
+
+    const setCookie = headers.get('Set-Cookie')
+    return setCookie ? [setCookie] : []
   }
 }
 

@@ -51,6 +51,7 @@ async function buildInParallel() {
           'src/router/trie-router.ts',
         ],
         outdir: 'dist',
+        root: 'src',
         format: 'esm',
         target: 'node',
         splitting: false,

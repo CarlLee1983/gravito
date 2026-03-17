@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test'
+import { AsyncLocalStorage as BrowserAsyncLocalStorage } from '../src/compat/async-local-storage.browser'
 import {
   createSqliteDatabase,
   getPasswordAdapter,
@@ -265,15 +266,55 @@ describe('runtime', () => {
     })
 
     describe('Bun adapter serve', () => {
-      it('should start a server and stop it', async () => {
+      it('should translate port 0 into an ephemeral port for Bun.serve', async () => {
         const adapter = getRuntimeAdapter()
-        const server = adapter.serve({
-          port: 0, // 隨機可用端口
-          fetch: () => new Response('ok'),
-        })
+        const originalServe = Bun.serve
+        let capturedPort: number | undefined
 
-        expect(server).toBeDefined()
-        server.stop?.()
+        Bun.serve = ((options: Bun.Serve) => {
+          capturedPort = options.port
+          return {
+            stop() {},
+          } as Bun.Server
+        }) as typeof Bun.serve
+
+        try {
+          const server = adapter.serve({
+            port: 0,
+            fetch: () => new Response('ok'),
+          })
+
+          expect(server).toBeDefined()
+          expect(typeof capturedPort).toBe('number')
+          expect(capturedPort).toBeGreaterThan(0)
+        } finally {
+          Bun.serve = originalServe
+        }
+      })
+
+      it('should pass through explicit ports to Bun.serve', async () => {
+        const adapter = getRuntimeAdapter()
+        const originalServe = Bun.serve
+        let capturedPort: number | undefined
+
+        Bun.serve = ((options: Bun.Serve) => {
+          capturedPort = options.port
+          return {
+            stop() {},
+          } as Bun.Server
+        }) as typeof Bun.serve
+
+        try {
+          const server = adapter.serve({
+            port: 4321,
+            fetch: () => new Response('ok'),
+          })
+
+          expect(server).toBeDefined()
+          expect(capturedPort).toBe(4321)
+        } finally {
+          Bun.serve = originalServe
+        }
       })
     })
   })
@@ -373,6 +414,24 @@ describe('runtime', () => {
       expect(rows.length).toBe(1)
 
       db.close()
+    })
+  })
+
+  describe('AsyncLocalStorage browser fallback', () => {
+    it('should preserve falsy store values', () => {
+      const storage = new BrowserAsyncLocalStorage<string | number | boolean>()
+
+      storage.run(0, () => {
+        expect(storage.getStore()).toBe(0)
+      })
+
+      storage.run(false, () => {
+        expect(storage.getStore()).toBe(false)
+      })
+
+      storage.run('', () => {
+        expect(storage.getStore()).toBe('')
+      })
     })
   })
 })

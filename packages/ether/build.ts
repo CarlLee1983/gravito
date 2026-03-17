@@ -36,6 +36,7 @@ async function buildInParallel() {
           'src/rules/index.ts',
         ],
         outdir: 'dist',
+        root: 'src',
         format: 'esm',
         target: 'node',
         splitting: false,

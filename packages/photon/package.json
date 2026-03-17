@@ -1,124 +1,129 @@
 {
   "name": "@gravito/photon",
   "sideEffects": false,
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Gravito Photon HTTP engine (compat wrapper)",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "module": "./dist/index.js",
+  "files": [
+    "dist",
+    "README.md",
+    "README.zh-TW.md"
+  ],
   "exports": {
     ".": {
-      "bun": "./src/index.ts",
+      "bun": "./dist/index.js",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./native": {
-      "bun": "./src/native.ts",
+      "bun": "./dist/native.js",
       "types": "./dist/native.d.ts",
       "default": "./dist/native.js"
     },
     "./adapter": {
-      "bun": "./src/adapter/index.ts",
+      "bun": "./dist/adapter/index.js",
       "types": "./dist/adapter/index.d.ts",
       "default": "./dist/adapter/index.js"
     },
     "./client": {
-      "bun": "./src/client.ts",
+      "bun": "./dist/client.js",
       "types": "./dist/client.d.ts",
       "default": "./dist/client.js"
     },
     "./logger": {
-      "bun": "./src/logger.ts",
+      "bun": "./dist/logger.js",
       "types": "./dist/logger.d.ts",
       "default": "./dist/logger.js"
     },
     "./bun": {
-      "bun": "./src/bun.ts",
+      "bun": "./dist/bun.js",
       "types": "./dist/bun.d.ts",
       "default": "./dist/bun.js"
     },
     "./jwt": {
-      "bun": "./src/jwt.ts",
+      "bun": "./dist/jwt.js",
       "types": "./dist/jwt.d.ts",
       "default": "./dist/jwt.js"
     },
     "./middleware/binary": {
-      "bun": "./src/middleware/binary.ts",
+      "bun": "./dist/middleware/binary.js",
       "types": "./dist/middleware/binary.d.ts",
       "default": "./dist/middleware/binary.js"
     },
     "./middleware/htmx": {
-      "bun": "./src/middleware/htmx.ts",
+      "bun": "./dist/middleware/htmx.js",
       "types": "./dist/middleware/htmx.d.ts",
       "default": "./dist/middleware/htmx.js"
     },
     "./middleware/ratelimit": {
-      "bun": "./src/middleware/ratelimit.ts",
+      "bun": "./dist/middleware/ratelimit.js",
       "types": "./dist/middleware/ratelimit.d.ts",
       "default": "./dist/middleware/ratelimit.js"
     },
     "./middleware/ratelimit-redis": {
-      "bun": "./src/middleware/ratelimit-redis.ts",
+      "bun": "./dist/middleware/ratelimit-redis.js",
       "types": "./dist/middleware/ratelimit-redis.d.ts",
       "default": "./dist/middleware/ratelimit-redis.js"
     },
     "./middleware/otel": {
-      "bun": "./src/middleware/otel.ts",
+      "bun": "./dist/middleware/otel.js",
       "types": "./dist/middleware/otel.d.ts",
       "default": "./dist/middleware/otel.js"
     },
     "./middleware/streaming": {
-      "bun": "./src/middleware/streaming.ts",
+      "bun": "./dist/middleware/streaming.js",
       "types": "./dist/middleware/streaming.d.ts",
       "default": "./dist/middleware/streaming.js"
     },
     "./middleware/security": {
-      "bun": "./src/middleware/security/index.ts",
+      "bun": "./dist/middleware/security/index.js",
       "types": "./dist/middleware/security/index.d.ts",
       "default": "./dist/middleware/security/index.js"
     },
     "./middleware/body": {
-      "bun": "./src/middleware/security/body-size-limit.ts",
+      "bun": "./dist/middleware/security/body-size-limit.js",
       "types": "./dist/middleware/security/body-size-limit.d.ts",
       "default": "./dist/middleware/security/body-size-limit.js"
     },
     "./middleware/cors": {
-      "bun": "./src/middleware/security/cors.ts",
+      "bun": "./dist/middleware/security/cors.js",
       "types": "./dist/middleware/security/cors.d.ts",
       "default": "./dist/middleware/security/cors.js"
     },
     "./middleware/rate-limit": {
-      "bun": "./src/middleware/ratelimit.ts",
+      "bun": "./dist/middleware/ratelimit.js",
       "types": "./dist/middleware/ratelimit.d.ts",
       "default": "./dist/middleware/ratelimit.js"
     },
     "./http-exception": {
-      "bun": "./src/http-exception.ts",
+      "bun": "./dist/http-exception.js",
       "types": "./dist/http-exception.d.ts",
       "default": "./dist/http-exception.js"
     },
     "./router/reg-exp-router": {
-      "bun": "./src/router/reg-exp-router.ts",
+      "bun": "./dist/router/reg-exp-router.js",
       "types": "./dist/router/reg-exp-router.d.ts",
       "default": "./dist/router/reg-exp-router.js"
     },
     "./router/trie-router": {
-      "bun": "./src/router/trie-router.ts",
+      "bun": "./dist/router/trie-router.js",
       "types": "./dist/router/trie-router.d.ts",
       "default": "./dist/router/trie-router.js"
     },
     "./adapter/cloudflare": {
-      "bun": "./src/adapter/cloudflare.ts",
+      "bun": "./dist/adapter/cloudflare.js",
       "types": "./dist/adapter/cloudflare.d.ts",
       "default": "./dist/adapter/cloudflare.js"
     },
     "./adapter/vercel": {
-      "bun": "./src/adapter/vercel.ts",
+      "bun": "./dist/adapter/vercel.js",
       "types": "./dist/adapter/vercel.d.ts",
       "default": "./dist/adapter/vercel.js"
     },
     "./adapter/deno": {
-      "bun": "./src/adapter/deno.ts",
+      "bun": "./dist/adapter/deno.js",
       "types": "./dist/adapter/deno.d.ts",
       "default": "./dist/adapter/deno.js"
     }
