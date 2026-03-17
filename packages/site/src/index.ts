@@ -1,3 +1,5 @@
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { type GravitoConfig, getEscapeHtml, PlanetCore } from '@gravito/core'
 import { I18nOrbit } from '@gravito/cosmos'
 import { OrbitMonolith } from '@gravito/monolith'
@@ -8,9 +10,8 @@ const translations = {
   zh: { hero: { title: 'Gravito 框架' }, nav: { switch: 'English' } },
 }
 
-// Dynamic Content Path Logic (Dev vs Docker vs Root)
-const isSiteRoot = process.cwd().endsWith('site')
-const contentPath = isSiteRoot ? 'resources/content/docs' : 'packages/site/resources/content/docs'
+const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const contentPath = 'resources/content/docs'
 
 const config: GravitoConfig = {
   orbits: [
@@ -20,7 +21,7 @@ const config: GravitoConfig = {
       translations,
     }),
     new OrbitMonolith({
-      root: process.cwd(),
+      root: packageRoot,
       collections: {
         docs: { path: contentPath },
       },
