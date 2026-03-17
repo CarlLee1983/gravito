@@ -82,6 +82,7 @@ export class ProgressTracker {
           console.error('[ProgressTracker] Failed to flush progress:', err)
         })
       }, this.updateInterval)
+      this.updateTimer.unref?.()
     }
   }
 

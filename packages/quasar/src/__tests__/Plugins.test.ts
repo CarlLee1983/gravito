@@ -196,6 +196,35 @@ describe('MaintenancePlugin', () => {
     expect((plugin as any).timer).toBeDefined()
   })
 
+  it('should unref the maintenance timer', async () => {
+    const originalSetInterval = globalThis.setInterval
+    let unrefCalled = false
+
+    globalThis.setInterval = ((handler: TimerHandler, timeout?: number, ...args: any[]) => {
+      const timer = originalSetInterval(handler, timeout, ...args) as unknown as ReturnType<
+        typeof setInterval
+      >
+      return Object.assign(timer, {
+        unref: () => {
+          unrefCalled = true
+          return timer
+        },
+      })
+    }) as unknown as typeof setInterval
+
+    plugin = new MaintenancePlugin({ interval: 60000 })
+    const { agent } = createMockAgent()
+    plugin.onRegister(agent)
+
+    try {
+      await plugin.onStart(agent as any)
+      expect(unrefCalled).toBe(true)
+    } finally {
+      await plugin.onStop(agent as any)
+      globalThis.setInterval = originalSetInterval
+    }
+  })
+
   it('should clear timer on onStop', async () => {
     plugin = new MaintenancePlugin({ interval: 60000 })
     const { agent } = createMockAgent()

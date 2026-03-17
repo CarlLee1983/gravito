@@ -101,6 +101,35 @@ describe('LeaderElection', () => {
     expect((election as any).running).toBe(true)
   })
 
+  it('should unref the next tick timer', async () => {
+    const originalSetTimeout = globalThis.setTimeout
+    let unrefCalled = false
+
+    globalThis.setTimeout = ((handler: TimerHandler, timeout?: number, ...args: any[]) => {
+      const timer = originalSetTimeout(handler, timeout, ...args) as unknown as ReturnType<
+        typeof setTimeout
+      >
+      return Object.assign(timer, {
+        unref: () => {
+          unrefCalled = true
+          return timer
+        },
+      })
+    }) as unknown as typeof setTimeout
+
+    redis = createMockRedis()
+    logger = createMockLogger()
+    election = new LeaderElection(redis, { service: 'api', nodeId: 'node-1', interval: 50 }, logger)
+
+    try {
+      election.start()
+      await new Promise((resolve) => setTimeout(resolve, 20))
+      expect(unrefCalled).toBe(true)
+    } finally {
+      globalThis.setTimeout = originalSetTimeout
+    }
+  })
+
   it('should refresh TTL when already leader', async () => {
     redis = createMockRedis({
       // First call: NX fails (null)

@@ -184,7 +184,11 @@ export class RedirectDetector {
 
     try {
       const { connection, table, columns } = database
-      const query = `SELECT ${columns.from}, ${columns.to}, ${columns.type} FROM ${table} WHERE ${columns.from} = ? LIMIT 1`
+      const safeTable = this.assertSafeIdentifier(table)
+      const safeFrom = this.assertSafeIdentifier(columns.from)
+      const safeTo = this.assertSafeIdentifier(columns.to)
+      const safeType = this.assertSafeIdentifier(columns.type)
+      const query = `SELECT ${safeFrom}, ${safeTo}, ${safeType} FROM ${safeTable} WHERE ${safeFrom} = ? LIMIT 1`
       const results = await connection.query(query, [url])
 
       if (results.length === 0) {
@@ -239,6 +243,7 @@ export class RedirectDetector {
       // Send HEAD request
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), timeout)
+      timeoutId.unref?.()
 
       try {
         const response = await fetch(fullUrl, {
@@ -285,5 +290,12 @@ export class RedirectDetector {
       rule,
       expires: Date.now() + ttl,
     })
+  }
+
+  private assertSafeIdentifier(identifier: string): string {
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(identifier)) {
+      throw new Error(`Invalid database identifier: ${identifier}`)
+    }
+    return identifier
   }
 }

@@ -167,6 +167,7 @@ export class LeaderElection extends EventEmitter {
 
     if (this.running) {
       this.timer = setTimeout(() => this.tick(), this.interval)
+      this.timer.unref?.()
     }
   }
 }

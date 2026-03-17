@@ -11,6 +11,31 @@ describe('RippleServer Additional Tests', () => {
   })
 
   describe('Initialization and Shutdown', () => {
+    it('should unref ping interval so it does not keep the process alive', async () => {
+      const originalSetInterval = globalThis.setInterval
+      let unrefCalled = false
+
+      globalThis.setInterval = ((handler: TimerHandler, timeout?: number, ...args: any[]) => {
+        const timer = originalSetInterval(handler, timeout, ...args) as ReturnType<
+          typeof setInterval
+        >
+        return Object.assign(timer, {
+          unref: () => {
+            unrefCalled = true
+            return timer
+          },
+        })
+      }) as unknown as typeof setInterval
+
+      try {
+        server = new RippleServer({ pingInterval: 1000, port: 0 })
+        await server.init()
+        expect(unrefCalled).toBe(true)
+      } finally {
+        globalThis.setInterval = originalSetInterval
+      }
+    })
+
     it('should provide health status', async () => {
       server = new RippleServer()
       const health = await server.getHealth()

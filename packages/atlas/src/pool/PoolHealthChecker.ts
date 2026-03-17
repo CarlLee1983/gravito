@@ -94,6 +94,7 @@ export class PoolHealthChecker {
     this.intervalHandle = setInterval(() => {
       this.checkAllConnections()
     }, this.config.checkInterval)
+    this.intervalHandle.unref?.()
 
     // Check immediately
     this.checkAllConnections()
@@ -219,6 +220,7 @@ export class PoolHealthChecker {
       const connection = this.connectionManager.connection(connectionName)
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), this.config.connectionTestTimeout)
+      timeout.unref?.()
 
       try {
         await Promise.race([

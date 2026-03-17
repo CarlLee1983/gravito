@@ -59,6 +59,31 @@ describe('PoolHealthChecker', () => {
   })
 
   describe('start/stop', () => {
+    it('should unref the health check interval', () => {
+      const originalSetInterval = globalThis.setInterval
+      let unrefCalled = false
+
+      globalThis.setInterval = ((handler: TimerHandler, timeout?: number, ...args: any[]) => {
+        const timer = originalSetInterval(handler, timeout, ...args) as ReturnType<
+          typeof setInterval
+        >
+        return Object.assign(timer, {
+          unref: () => {
+            unrefCalled = true
+            return timer
+          },
+        })
+      }) as unknown as typeof setInterval
+
+      try {
+        checker.start()
+        expect(unrefCalled).toBe(true)
+      } finally {
+        checker.stop()
+        globalThis.setInterval = originalSetInterval
+      }
+    })
+
     it('should start health checking', (done) => {
       checker.start()
       // After starting, the first check should have been called
@@ -168,6 +193,36 @@ describe('PoolHealthChecker', () => {
   })
 
   describe('configuration', () => {
+    it('should unref connection test timeout', async () => {
+      const originalSetTimeout = globalThis.setTimeout
+      let unrefCalled = false
+
+      globalThis.setTimeout = ((handler: TimerHandler, timeout?: number, ...args: any[]) => {
+        const timer = originalSetTimeout(handler, timeout, ...args) as ReturnType<typeof setTimeout>
+        return Object.assign(timer, {
+          unref: () => {
+            unrefCalled = true
+            return timer
+          },
+        })
+      }) as unknown as typeof setTimeout
+
+      const timeoutChecker = new PoolHealthChecker(mockConnectionManager, {
+        ...DEFAULT_HEALTH_CHECK_CONFIG,
+        checkInterval: 100,
+        enableConnectionTest: true,
+      })
+
+      try {
+        timeoutChecker.start()
+        await new Promise((resolve) => setTimeout(resolve, 150))
+        expect(unrefCalled).toBe(true)
+      } finally {
+        timeoutChecker.stop()
+        globalThis.setTimeout = originalSetTimeout
+      }
+    })
+
     it('should respect custom thresholds', async () => {
       const customChecker = new PoolHealthChecker(mockConnectionManager, {
         checkInterval: 100,

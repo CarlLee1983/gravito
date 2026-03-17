@@ -42,6 +42,7 @@ export class AckManager {
         this.pendingAcks.delete(key)
         resolve(false)
       }, timeout)
+      timer.unref?.()
 
       this.pendingAcks.set(key, {
         clientId,

@@ -23,6 +23,36 @@ describe('Performance Optimizations', () => {
   })
 
   describe('LogBuffer Smart Truncation', () => {
+    it('should unref the flush interval timer', () => {
+      const originalSetInterval = globalThis.setInterval
+      let unrefCalled = false
+
+      globalThis.setInterval = ((handler: TimerHandler, timeout?: number, ...args: any[]) => {
+        const timer = originalSetInterval(handler, timeout, ...args) as unknown as ReturnType<
+          typeof setInterval
+        >
+        return Object.assign(timer, {
+          unref: () => {
+            unrefCalled = true
+            return timer
+          },
+        })
+      }) as unknown as typeof setInterval
+
+      try {
+        const mockRedis = new MockRedis() as any
+        const buffer = new LogBuffer(mockRedis, 'test:', {
+          batchSize: 1,
+          flushInterval: 1000,
+        })
+
+        expect(unrefCalled).toBe(true)
+        buffer.stop()
+      } finally {
+        globalThis.setInterval = originalSetInterval
+      }
+    })
+
     it('should truncate large data field', async () => {
       const mockRedis = new MockRedis() as any
       const maxPayloadSize = 100

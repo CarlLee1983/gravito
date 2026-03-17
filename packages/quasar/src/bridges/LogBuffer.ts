@@ -161,6 +161,7 @@ export class LogBuffer {
     this.timer = setInterval(() => {
       this.flush()
     }, this.options.flushInterval)
+    this.timer.unref?.()
   }
 
   stop(): void {

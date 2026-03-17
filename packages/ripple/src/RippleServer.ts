@@ -761,6 +761,7 @@ export class RippleServer {
           } catch {}
         }
       }, this.config.pingInterval)
+      this.pingInterval.unref?.()
     }
   }
 

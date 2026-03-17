@@ -564,12 +564,17 @@ export class CacheRepository {
 
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
+          let timeoutId: ReturnType<typeof setTimeout> | undefined
           value = await Promise.race([
             Promise.resolve(callback()),
-            new Promise<never>((_, reject) =>
-              setTimeout(() => reject(new Error('Refresh timeout')), timeoutMillis)
-            ),
+            new Promise<never>((_, reject) => {
+              timeoutId = setTimeout(() => reject(new Error('Refresh timeout')), timeoutMillis)
+              timeoutId.unref?.()
+            }),
           ])
+          if (timeoutId) {
+            clearTimeout(timeoutId)
+          }
           break
         } catch (err) {
           lastError = err
