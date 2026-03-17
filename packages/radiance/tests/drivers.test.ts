@@ -4,6 +4,21 @@ import { PusherDriver } from '../src/drivers/PusherDriver'
 import { RedisDriver } from '../src/drivers/RedisDriver'
 import { WebSocketDriver } from '../src/drivers/WebSocketDriver'
 
+async function hmacSHA256(message: string, secret: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(message))
+  return Array.from(new Uint8Array(signature))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
 describe('AblyDriver', () => {
   it('broadcasts via HTTP and authorizes presence channels', async () => {
     const originalFetch = globalThis.fetch
@@ -38,6 +53,9 @@ describe('PusherDriver', () => {
     const auth = await driver.authorizeChannel('presence-room', 'socket-1', 'user-1')
     expect(auth.auth).toContain('key:')
     expect(auth.channel_data).toContain('user-1')
+    expect(auth.auth).toBe(
+      `key:${await hmacSHA256(`socket-1:presence-room:${auth.channel_data}`, 'secret')}`
+    )
 
     globalThis.fetch = originalFetch
   })

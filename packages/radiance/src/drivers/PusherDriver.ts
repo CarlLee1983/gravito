@@ -136,19 +136,21 @@ export class PusherDriver implements BroadcastDriver {
     socketId: string,
     userId?: string | number
   ): Promise<{ auth: string; channel_data?: string }> {
-    const stringToSign = `${socketId}:${channel}`
-    const signature = await this.hmacSHA256(stringToSign, this.config.secret)
-
     if (channel.startsWith('presence-')) {
       const channelData = JSON.stringify({
         user_id: userId?.toString(),
         user_info: {},
       })
+      const stringToSign = `${socketId}:${channel}:${channelData}`
+      const signature = await this.hmacSHA256(stringToSign, this.config.secret)
       return {
         auth: `${this.config.key}:${signature}`,
         channel_data: channelData,
       }
     }
+
+    const stringToSign = `${socketId}:${channel}`
+    const signature = await this.hmacSHA256(stringToSign, this.config.secret)
 
     return {
       auth: `${this.config.key}:${signature}`,
