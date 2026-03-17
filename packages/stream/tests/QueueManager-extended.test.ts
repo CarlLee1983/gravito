@@ -160,6 +160,17 @@ describe('QueueManager (extended)', () => {
       const serializer = manager.getSerializer()
       expect(serializer).toBeDefined()
     })
+
+    it('should register job classes when serialization cache is enabled', () => {
+      const manager = new QueueManager({ useSerializationCache: true })
+      manager.registerJobClasses([SimpleJob])
+
+      const serializer = manager.getSerializer()
+      const serialized = serializer.serialize(new SimpleJob())
+      const restored = serializer.deserialize(serialized)
+
+      expect(restored).toBeInstanceOf(SimpleJob)
+    })
   })
 
   describe('getPersistence', () => {

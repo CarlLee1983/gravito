@@ -306,9 +306,22 @@ export class QueueManager {
    * ```
    */
   registerJobClasses(jobClasses: Array<new (...args: unknown[]) => Job>): void {
-    if (this.defaultSerializer instanceof ClassNameSerializer) {
-      this.defaultSerializer.registerMany(jobClasses)
+    const serializer = this.unwrapClassSerializer(this.defaultSerializer)
+    if (serializer) {
+      serializer.registerMany(jobClasses)
     }
+  }
+
+  private unwrapClassSerializer(serializer: JobSerializer): ClassNameSerializer | null {
+    if (serializer instanceof ClassNameSerializer) {
+      return serializer
+    }
+
+    if (serializer instanceof CachedSerializer) {
+      return this.unwrapClassSerializer(serializer.getDelegate())
+    }
+
+    return null
   }
 
   /**

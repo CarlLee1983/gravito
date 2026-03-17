@@ -232,7 +232,14 @@ export class FluxEngine {
     ctx = updateWorkflowContext(ctx, {
       history: ctx.history.map((h, i) =>
         i === idx
-          ? { ...h, status: 'completed' as const, completedAt: new Date(), output: payload }
+          ? {
+              ...h,
+              status: 'completed' as const,
+              completedAt: new Date(),
+              suspendedAt: undefined,
+              waitingFor: undefined,
+              output: payload,
+            }
           : h
       ),
     })

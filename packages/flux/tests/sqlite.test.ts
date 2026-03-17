@@ -146,4 +146,10 @@ describe('BunSQLiteStorage', () => {
     expect(tables).toHaveLength(1)
     await customStorage.close()
   })
+
+  it('should reject unsafe table names', () => {
+    expect(() => new BunSQLiteStorage({ tableName: 'workflows; DROP TABLE users' })).toThrow(
+      'Invalid tableName'
+    )
+  })
 })

@@ -194,11 +194,43 @@ describe('FluxEngineHelpers', () => {
       expect(ctx.history[1].status).toBe('pending')
       expect(ctx.history[1].startedAt).toBeUndefined()
       expect(ctx.history[1].completedAt).toBeUndefined()
+      expect(ctx.history[1].suspendedAt).toBeUndefined()
+      expect(ctx.history[1].waitingFor).toBeUndefined()
       expect(ctx.history[1].duration).toBeUndefined()
+      expect(ctx.history[1].output).toBeUndefined()
       expect(ctx.history[1].error).toBeUndefined()
       expect(ctx.history[1].retries).toBe(0)
 
       expect(ctx.history[2].status).toBe('pending')
+    })
+
+    it('should clear suspension metadata when resetting suspended steps', () => {
+      const ctx = createMockContext({
+        history: [
+          {
+            name: 'step1',
+            status: 'completed',
+            retries: 0,
+          },
+          {
+            name: 'wait-approval',
+            status: 'suspended',
+            startedAt: new Date(),
+            suspendedAt: new Date(),
+            waitingFor: 'approval',
+            output: { stale: true },
+            retries: 1,
+          },
+        ],
+      })
+
+      resetHistoryFrom(ctx, 1)
+
+      expect(ctx.history[1].status).toBe('pending')
+      expect(ctx.history[1].suspendedAt).toBeUndefined()
+      expect(ctx.history[1].waitingFor).toBeUndefined()
+      expect(ctx.history[1].output).toBeUndefined()
+      expect(ctx.history[1].retries).toBe(0)
     })
 
     it('should handle empty history gracefully', () => {

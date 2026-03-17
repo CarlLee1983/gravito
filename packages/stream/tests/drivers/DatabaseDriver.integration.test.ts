@@ -71,6 +71,16 @@ describe('DatabaseDriver', () => {
         '[DatabaseDriver] dbService is required'
       )
     })
+
+    test('應拒絕不安全的 table 名稱', () => {
+      expect(
+        () =>
+          new DatabaseDriver({
+            table: 'queue_jobs; DROP TABLE users',
+            dbService: mockDb,
+          })
+      ).toThrow('Invalid table')
+    })
   })
 
   // --- push 測試 ---

@@ -38,6 +38,8 @@ describe('FluxEngine Async Signals', () => {
     expect(endResult.data.result).toBe(20)
     expect(endResult.history[0].status).toBe('completed')
     expect(endResult.history[0].output).toEqual({ multiplier: 2 })
+    expect(endResult.history[0].waitingFor).toBeUndefined()
+    expect(endResult.history[0].suspendedAt).toBeUndefined()
   })
 
   test('should fail if signaling wrong workflow', async () => {

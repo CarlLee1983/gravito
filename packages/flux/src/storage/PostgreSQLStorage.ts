@@ -52,7 +52,7 @@ export class PostgreSQLStorage implements WorkflowStorage {
    */
   constructor(options: PostgreSQLStorageOptions = {}) {
     this.options = options
-    this.tableName = options.tableName ?? 'flux_workflows'
+    this.tableName = validateSqlIdentifier(options.tableName ?? 'flux_workflows', 'tableName')
   }
 
   /**
@@ -308,6 +308,15 @@ export class PostgreSQLStorage implements WorkflowStorage {
     await this.init()
     await this.pool.query('VACUUM ANALYZE')
   }
+}
+
+function validateSqlIdentifier(value: string, field: string): string {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(value)) {
+    throw new Error(
+      `Invalid ${field}: "${value}". Only letters, numbers, and underscores are allowed.`
+    )
+  }
+  return value
 }
 
 /**

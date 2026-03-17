@@ -43,7 +43,7 @@ export class BunSQLiteStorage implements WorkflowStorage {
    */
   constructor(options: BunSQLiteStorageOptions = {}) {
     this.db = new Database(options.path ?? ':memory:')
-    this.tableName = options.tableName ?? 'flux_workflows'
+    this.tableName = validateSqlIdentifier(options.tableName ?? 'flux_workflows', 'tableName')
   }
 
   /**
@@ -275,6 +275,15 @@ export class BunSQLiteStorage implements WorkflowStorage {
   vacuum(): void {
     this.db.run('VACUUM')
   }
+}
+
+function validateSqlIdentifier(value: string, field: string): string {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(value)) {
+    throw new Error(
+      `Invalid ${field}: "${value}". Only letters, numbers, and underscores are allowed.`
+    )
+  }
+  return value
 }
 
 /**

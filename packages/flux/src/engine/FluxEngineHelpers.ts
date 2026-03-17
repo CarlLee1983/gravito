@@ -133,7 +133,11 @@ export function resetHistoryFrom<TInput, TData>(
     entry.status = 'pending'
     entry.startedAt = undefined
     entry.completedAt = undefined
+    entry.suspendedAt = undefined
+    entry.compensatedAt = undefined
+    entry.waitingFor = undefined
     entry.duration = undefined
+    entry.output = undefined
     entry.error = undefined
     entry.retries = 0
   }

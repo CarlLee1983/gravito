@@ -48,4 +48,11 @@ export class CachedSerializer implements JobSerializer {
   deserialize(serialized: SerializedJob): Job {
     return this.delegate.deserialize(serialized)
   }
+
+  /**
+   * Exposes the wrapped serializer for integrations that need serializer-specific behavior.
+   */
+  getDelegate(): JobSerializer {
+    return this.delegate
+  }
 }

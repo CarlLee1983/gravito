@@ -70,6 +70,12 @@ describe('PostgreSQLStorage (Mock)', () => {
       const customStorage = new PostgreSQLStorage({ tableName: 'my_workflows' })
       expect((customStorage as any).tableName).toBe('my_workflows')
     })
+
+    it('should reject unsafe table names', () => {
+      expect(() => new PostgreSQLStorage({ tableName: 'workflows; DROP TABLE users' })).toThrow(
+        'Invalid tableName'
+      )
+    })
   })
 
   describe('init', () => {

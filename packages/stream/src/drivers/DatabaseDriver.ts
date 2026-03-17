@@ -62,7 +62,7 @@ export class DatabaseDriver implements QueueDriver {
   private dbService: DatabaseService
 
   constructor(config: DatabaseDriverConfig) {
-    this.tableName = config.table ?? 'jobs'
+    this.tableName = validateSqlIdentifier(config.table ?? 'jobs', 'table')
     this.dbService = config.dbService!
 
     if (!this.dbService) {
@@ -451,4 +451,13 @@ export class DatabaseDriver implements QueueDriver {
     }
     await this.dbService.execute(`DELETE FROM ${this.tableName} WHERE id = $1`, [job.id])
   }
+}
+
+function validateSqlIdentifier(value: string, field: string): string {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(value)) {
+    throw new Error(
+      `Invalid ${field}: "${value}". Only letters, numbers, and underscores are allowed.`
+    )
+  }
+  return value
 }
