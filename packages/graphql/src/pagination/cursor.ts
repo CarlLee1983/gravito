@@ -48,6 +48,10 @@ export function decodeCursor(cursor: string): CursorData {
       throw new Error('Cursor missing required fields')
     }
 
+    if (typeof data.offset !== 'number' || !Number.isFinite(data.offset) || data.offset < 0) {
+      throw new Error('Cursor offset must be a non-negative finite number')
+    }
+
     return data as CursorData
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)

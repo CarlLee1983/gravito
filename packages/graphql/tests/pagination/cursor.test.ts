@@ -56,4 +56,28 @@ describe('Cursor 編碼/解碼', () => {
     expect(() => decodeCursor('')).toThrow()
     expect(() => decodeCursor('=====')).toThrow()
   })
+
+  test('應拒絕 offset 型別錯誤或非法值的 cursor', () => {
+    const invalidType = Buffer.from(JSON.stringify({ id: 1, offset: 'bad' }))
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '')
+    const invalidNegative = encodeCursor({ id: 1, offset: -1 })
+    const invalidNaN = Buffer.from(JSON.stringify({ id: 1, offset: 'NaN-marker' }))
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '')
+
+    expect(() => decodeCursor(invalidType)).toThrow(
+      'Cursor offset must be a non-negative finite number'
+    )
+    expect(() => decodeCursor(invalidNegative)).toThrow(
+      'Cursor offset must be a non-negative finite number'
+    )
+    expect(() => decodeCursor(invalidNaN)).toThrow(
+      'Cursor offset must be a non-negative finite number'
+    )
+  })
 })
