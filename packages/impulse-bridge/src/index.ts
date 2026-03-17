@@ -34,7 +34,8 @@ export const ImpulseBridge = {
     // 1. Try to inject into InertiaService if it exists (@gravito/ion)
     const inertia = ctx.get('inertia') as any
     if (inertia && typeof inertia.share === 'function') {
-      const currentBlueprints = (inertia.getSharedProps?.().blueprints as any) || {}
+      const currentSharedProps = inertia.getSharedProps?.() ?? {}
+      const currentBlueprints = currentSharedProps.blueprints ?? {}
       currentBlueprints[key] = blueprint
       inertia.share('blueprints', currentBlueprints)
       return

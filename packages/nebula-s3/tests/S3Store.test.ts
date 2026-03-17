@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import { S3Store } from '../src/S3Store'
 
 /**
@@ -9,6 +9,37 @@ import { S3Store } from '../src/S3Store'
  */
 
 describe('S3Store - 基本功能', () => {
+  it('應該將 forcePathStyle 傳遞給 Bun S3Client', () => {
+    const OriginalS3Client = (Bun as any).S3Client
+    const ctor = mock((_config: Record<string, unknown>) => ({
+      file: () => ({
+        write: async () => {},
+        exists: async () => false,
+        arrayBuffer: async () => new ArrayBuffer(0),
+        delete: async () => {},
+        stat: async () => null,
+      }),
+    }))
+    let capturedConfig: Record<string, unknown> | undefined
+
+    ;(Bun as any).S3Client = function MockS3Client(config: Record<string, unknown>) {
+      capturedConfig = config
+      return ctor(config)
+    }
+
+    try {
+      new S3Store({
+        bucket: 'test-bucket',
+        endpoint: 'https://minio.local',
+        forcePathStyle: true,
+      })
+
+      expect(capturedConfig?.forcePathStyle).toBe(true)
+    } finally {
+      ;(Bun as any).S3Client = OriginalS3Client
+    }
+  })
+
   it('應該能夠建立 S3Store 實例', () => {
     const store = new S3Store({
       bucket: 'test-bucket',

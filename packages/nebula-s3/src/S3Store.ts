@@ -65,6 +65,10 @@ export class S3Store implements StorageStore {
       config.endpoint = options.endpoint
     }
 
+    if (options.forcePathStyle !== undefined) {
+      config.forcePathStyle = options.forcePathStyle
+    }
+
     // biome-ignore lint/suspicious/noExplicitAny: Bun S3Client type
     this.s3 = new (Bun as any).S3Client(config)
   }

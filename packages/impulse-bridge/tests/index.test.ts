@@ -47,6 +47,27 @@ describe('ImpulseBridge', () => {
     })
   })
 
+  it('shares blueprints when inertia has share but no getSharedProps helper', () => {
+    const sharedProps: Record<string, unknown> = {}
+    const ctx = createContext({
+      inertia: {
+        share: (key: string, value: unknown) => {
+          sharedProps[key] = value
+        },
+      },
+    })
+
+    ImpulseBridge.share(ctx as any, 'register', MockRequest as any)
+
+    expect(sharedProps.blueprints).toEqual({
+      register: {
+        fields: {
+          email: { type: 'string', required: true },
+        },
+      },
+    })
+  })
+
   it('falls back to inertiaShared state', async () => {
     const ctx = createContext()
     const next = async () => new Response('ok')
