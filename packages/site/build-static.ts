@@ -1,18 +1,21 @@
 import { mkdir, writeFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
-import { generateI18nEntries, SitemapStream, streamToPromise } from '@gravito/constellation'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { generateI18nEntries, SitemapStream } from '@gravito/constellation'
 import { ContentManager } from '@gravito/monolith'
 import { app } from './src/index.ts'
 
-async function build() {
+const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)))
+
+export async function build() {
   console.log('🏗️  Starting SSG Build for gravito.dev...')
 
-  const outputDir = join(process.cwd(), 'packages/site/dist-static')
+  const outputDir = join(packageRoot, 'dist-static')
   const locales = ['en', 'zh']
   const domain = 'https://gravito.dev'
 
   // Sitemap Stream
-  const smStream = new SitemapStream({ hostname: domain })
+  const smStream = new SitemapStream({ baseUrl: domain })
 
   // Abstract Path Discovery
   // We scan EN content and assume it exists for ZH too (or we could scan both)
@@ -22,8 +25,7 @@ async function build() {
   routes.add('/')
 
   // 2. Dynamic Docs
-  // Use local content manager for discovery (CWD is site root)
-  const contentManager = new ContentManager(process.cwd())
+  const contentManager = new ContentManager(packageRoot)
   contentManager.defineCollection('docs', { path: 'resources/content/docs' })
 
   console.log('🔍 Scanning docs...')
@@ -41,7 +43,7 @@ async function build() {
 
     for (const entry of entries) {
       // Write to sitemap
-      smStream.write(entry)
+      smStream.add(entry)
 
       // Render HTML
       const relativeUrl = new URL(entry.url).pathname // e.g., /en/docs/intro
@@ -65,8 +67,7 @@ async function build() {
   }
 
   // 4. Finish Sitemap
-  smStream.end()
-  const sitemapXml = await streamToPromise(smStream)
+  const sitemapXml = smStream.toXML()
   await writeFile(join(outputDir, 'sitemap.xml'), sitemapXml)
   console.log('🗺️  Sitemap generated.')
 
@@ -99,10 +100,13 @@ async function build() {
   }
 
   console.log('✅ SSG Build Complete! Output: dist-static')
-  process.exit(0)
 }
 
-build().catch((e) => {
-  console.error(e)
-  process.exit(1)
-})
+if (import.meta.main) {
+  build()
+    .then(() => process.exit(0))
+    .catch((e) => {
+      console.error(e)
+      process.exit(1)
+    })
+}

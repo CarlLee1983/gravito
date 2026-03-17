@@ -57,10 +57,15 @@ export function useTelemetry(url = 'ws://localhost:4000/ws') {
       host: url,
       // 客戶端需要手動調用 connect()，不需要 autoConnect 屬性
     })
+    let disposed = false
 
     const start = async () => {
       try {
         await client.connect()
+        if (disposed) {
+          client.disconnect()
+          return
+        }
         setConnected(true)
         console.log('[Telemetry] Ripple Connected')
 
@@ -69,6 +74,9 @@ export function useTelemetry(url = 'ws://localhost:4000/ws') {
         // 根據我們後端的實作: core.ripple.publish('telemetry', { type, data })
         // Ripple 的廣播通常會包裝成事件。
         client.channel('telemetry').listen('telemetry.data', (payload: any) => {
+          if (disposed) {
+            return
+          }
           const { type, data } = payload
           const timestamp = Date.now()
 
@@ -83,13 +91,16 @@ export function useTelemetry(url = 'ws://localhost:4000/ws') {
         })
       } catch (err) {
         console.error('[Telemetry] Connection failed', err)
-        setConnected(false)
+        if (!disposed) {
+          setConnected(false)
+        }
       }
     }
 
     start()
 
     return () => {
+      disposed = true
       client.disconnect()
     }
   }, [url])
