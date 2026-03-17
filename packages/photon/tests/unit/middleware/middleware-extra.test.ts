@@ -113,6 +113,28 @@ describe('bodySizeLimit middleware', () => {
     await bodySizeLimit(10)(ctx, next)
     expect(next).toHaveBeenCalled()
   })
+
+  test('preserves request body for downstream handlers during streaming validation', async () => {
+    const request = new Request('https://example.com', {
+      method: 'POST',
+      body: 'hello',
+    })
+
+    const ctx = {
+      ...makeContext({ method: 'POST', headers: {} }),
+      req: {
+        ...makeContext({ method: 'POST', headers: {} }).req,
+        raw: request,
+      },
+    } as any
+
+    let bodyText = ''
+    await bodySizeLimit(10)(ctx, async () => {
+      bodyText = await request.text()
+    })
+
+    expect(bodyText).toBe('hello')
+  })
 })
 
 describe('securityHeaders middleware', () => {

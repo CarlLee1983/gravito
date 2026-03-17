@@ -148,6 +148,27 @@ describe('HealthRegistry', () => {
     expect(result.status).toBe('unhealthy')
     expect(result.reason).toContain('db')
   })
+
+  test('invalidates cached report when checks change', async () => {
+    const registry = new HealthRegistry({ cacheTtl: 60_000 })
+
+    registry.register('db', () => ({ status: 'healthy' }))
+    const initialReport = await registry.check()
+
+    expect(initialReport.status).toBe('healthy')
+
+    registry.register('queue', () => ({ status: 'unhealthy', message: 'backlog' }))
+    const updatedReport = await registry.check()
+
+    expect(updatedReport.status).toBe('unhealthy')
+    expect(updatedReport.checks.queue?.status).toBe('unhealthy')
+
+    registry.unregister('queue')
+    const finalReport = await registry.check()
+
+    expect(finalReport.status).toBe('healthy')
+    expect(finalReport.checks.queue).toBeUndefined()
+  })
 })
 
 describe('MetricsRegistry', () => {

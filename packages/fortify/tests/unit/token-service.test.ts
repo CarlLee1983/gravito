@@ -80,6 +80,22 @@ describe('PersonalAccessTokenService', () => {
     expect(result).toBeNull()
   })
 
+  test('validateToken returns null for hash mismatch without updating usage', async () => {
+    mockQueryBuilder.first.mockResolvedValue({
+      id: 1,
+      tokenable_id: 1,
+      token: 'a'.repeat(64),
+      expires_at: null,
+      created_at: new Date(),
+      updated_at: new Date(),
+    } as any)
+
+    const result = await service.validateToken('1|some_token')
+
+    expect(result).toBeNull()
+    expect(mockQueryBuilder.update).not.toHaveBeenCalled()
+  })
+
   test('revokeToken deletes the token', async () => {
     mockQueryBuilder.delete.mockResolvedValue(1 as any)
 

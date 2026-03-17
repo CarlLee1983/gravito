@@ -73,9 +73,12 @@ export function bodySizeLimit(
     // Slow path: Validate actual body size by streaming chunks
     // This prevents attacks where clients omit/forge Content-Length header
     const rawRequest = c.req.raw
-    if (rawRequest?.body) {
+    const validationRequest =
+      rawRequest && typeof rawRequest.clone === 'function' ? rawRequest.clone() : null
+
+    if (validationRequest?.body) {
       try {
-        const reader = rawRequest.body.getReader()
+        const reader = validationRequest.body.getReader()
         let totalSize = 0
 
         try {

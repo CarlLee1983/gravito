@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto'
 import type { ConnectionContract } from '@gravito/atlas'
 
 export interface PersonalAccessToken {
@@ -154,7 +155,11 @@ export class PersonalAccessTokenService {
 
   private async verifyToken(plainToken: string, hashedToken: string): Promise<boolean> {
     const computedHash = await this.hashToken(plainToken)
-    return computedHash === hashedToken
+    if (computedHash.length !== hashedToken.length) {
+      return false
+    }
+
+    return timingSafeEqual(Buffer.from(computedHash), Buffer.from(hashedToken))
   }
 
   private calculateExpiration(minutes?: number): Date | null {

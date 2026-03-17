@@ -271,6 +271,43 @@ describe('ForgeService - processAsync() minAvailableSpace 檢查', () => {
     expect(job.id).toBeDefined()
     expect(job.status.status).toBe('pending')
   })
+
+  it('建立 job 後會在背景執行並更新完成狀態', async () => {
+    const store = new MemoryStatusStore()
+    const service = new ForgeService({ statusStore: store })
+
+    ;(service as any).imageProcessor = {
+      supports: () => true,
+      process: jest.fn(async (_input: unknown, options: any) => {
+        if (typeof options.onProgress === 'function') {
+          await options.onProgress({ progress: 50, message: 'halfway' })
+        }
+
+        return {
+          path: '/tmp/output.jpg',
+          url: 'file:///tmp/output.jpg',
+          size: 123,
+          mimeType: 'image/jpeg',
+        }
+      }),
+    }
+
+    const job = await service.processAsync({
+      source: '/tmp/input.jpg',
+      filename: 'input.jpg',
+      mimeType: 'image/jpeg',
+    })
+
+    let finalStatus = await store.get(job.id)
+    for (let i = 0; i < 20 && finalStatus?.status !== 'completed'; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      finalStatus = await store.get(job.id)
+    }
+
+    expect(finalStatus?.status).toBe('completed')
+    expect(finalStatus?.progress).toBe(100)
+    expect(finalStatus?.result?.mimeType).toBe('image/jpeg')
+  })
 })
 
 describe('ForgeService - getMimeType() 各路徑', () => {

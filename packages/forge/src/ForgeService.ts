@@ -13,6 +13,7 @@ import type {
   FileOutput,
   PackageResultsOptions,
   PackageResultsOutput,
+  ProcessingProgress,
   ProcessingStatus,
   ProcessOptions,
 } from './types'
@@ -120,6 +121,9 @@ export class ForgeService {
     const jobId = crypto.randomUUID()
     const status = ProcessingStatusManager.create(jobId)
     await this.statusStore.set(status)
+
+    void this.executeAsyncJob(jobId, input, _options)
+
     return { id: jobId, status }
   }
 
@@ -298,5 +302,54 @@ export class ForgeService {
   private matchesPattern(fileName: string, pattern: string): boolean {
     const regexStr = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*')
     return new RegExp(`^${regexStr}$`).test(fileName)
+  }
+
+  private async executeAsyncJob(
+    jobId: string,
+    input: FileInput,
+    options: ProcessOptions
+  ): Promise<void> {
+    if (!this.statusStore) {
+      return
+    }
+
+    let status = await this.statusStore.get(jobId)
+    if (!status) {
+      status = ProcessingStatusManager.create(jobId)
+      await this.statusStore.set(status)
+    }
+
+    let currentStatus: ProcessingStatus = status
+
+    try {
+      currentStatus = ProcessingStatusManager.processing(currentStatus, 0, 'Starting processing')
+      await this.statusStore.set(currentStatus)
+
+      const output = await this.process(input, {
+        ...options,
+        onProgress: async (progress: ProcessingProgress) => {
+          currentStatus = ProcessingStatusManager.processing(
+            currentStatus,
+            progress.progress,
+            progress.message
+          )
+          await this.statusStore?.set(currentStatus)
+
+          const upstreamProgress = options.onProgress
+          if (typeof upstreamProgress === 'function') {
+            await upstreamProgress(progress)
+          }
+        },
+      })
+
+      currentStatus = ProcessingStatusManager.completed(currentStatus, output)
+      await this.statusStore.set(currentStatus)
+    } catch (error) {
+      currentStatus = ProcessingStatusManager.failed(
+        currentStatus,
+        error instanceof Error ? error.message : String(error)
+      )
+      await this.statusStore.set(currentStatus)
+    }
   }
 }

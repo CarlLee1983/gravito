@@ -54,6 +54,7 @@ export class HealthRegistry {
    */
   register(name: string, check: HealthCheckFn): this {
     this.checks.set(name, check)
+    this.clearCache()
     return this
   }
 
@@ -61,7 +62,12 @@ export class HealthRegistry {
    * Unregister a health check
    */
   unregister(name: string): boolean {
-    return this.checks.delete(name)
+    const removed = this.checks.delete(name)
+    if (removed) {
+      this.clearCache()
+    }
+
+    return removed
   }
 
   /**
@@ -197,5 +203,10 @@ export class HealthRegistry {
       misses: this.cacheMisses,
       hitRate: total > 0 ? this.cacheHits / total : 0,
     }
+  }
+
+  private clearCache(): void {
+    this.cachedReport = null
+    this.cacheExpiry = 0
   }
 }
