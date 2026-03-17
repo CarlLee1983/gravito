@@ -205,6 +205,7 @@ export class KeyRotationManager {
       },
       60 * 60 * 1000
     )
+    this.cleanupTimer.unref?.()
   }
 
   /**

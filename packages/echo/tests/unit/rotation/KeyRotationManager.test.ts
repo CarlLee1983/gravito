@@ -412,6 +412,33 @@ describe('KeyRotationManager', () => {
 
       expect(manager).toBeDefined()
     })
+
+    it('啟用自動清理時應該 unref 定時器', () => {
+      const originalSetInterval = globalThis.setInterval
+      let unrefCalled = false
+
+      globalThis.setInterval = ((handler: TimerHandler, timeout?: number, ...args: any[]) => {
+        const timer = originalSetInterval(handler, timeout, ...args) as ReturnType<
+          typeof setInterval
+        >
+        return Object.assign(timer, {
+          unref: () => {
+            unrefCalled = true
+            return timer
+          },
+        })
+      }) as unknown as typeof setInterval
+
+      const manager = new KeyRotationManager({
+        enabled: true,
+        autoCleanup: true,
+      })
+
+      expect(unrefCalled).toBe(true)
+
+      manager.destroy()
+      globalThis.setInterval = originalSetInterval
+    })
   })
 
   describe('getAllProviderKeys', () => {
