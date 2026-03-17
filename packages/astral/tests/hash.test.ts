@@ -26,6 +26,13 @@ describe('Stable Hash', () => {
 
     expect(hash1).toBe(hash2)
   })
+
+  test('should ignore object key insertion order', () => {
+    const hash1 = stableHash({ foo: 'bar', baz: 123, nested: { a: 1, b: 2 } })
+    const hash2 = stableHash({ nested: { b: 2, a: 1 }, baz: 123, foo: 'bar' })
+
+    expect(hash1).toBe(hash2)
+  })
 })
 
 describe('Stable Schema Key', () => {

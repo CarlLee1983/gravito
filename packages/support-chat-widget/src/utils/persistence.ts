@@ -104,6 +104,7 @@ export const chatPersistence = {
     try {
       const { createSupportApi } = await import('../api/supportApi')
       const api = createSupportApi(config)
+      const failedMessages: ChatMessage[] = []
 
       // Send each message in the queue
       for (const message of state.pendingMessages) {
@@ -111,14 +112,14 @@ export const chatPersistence = {
           await api.sendMessage(conversationId, message.content)
         } catch (error) {
           console.error('[Persistence] Failed to sync message:', error)
-          // Continue attempting remaining messages even if one fails
+          failedMessages.push(message)
         }
       }
 
-      // Clear the pending queue after sync attempt
+      // Only remove messages that were actually delivered.
       this.save({
         ...state,
-        pendingMessages: [],
+        pendingMessages: failedMessages,
         lastSyncAt: Date.now(),
       })
     } catch (error) {

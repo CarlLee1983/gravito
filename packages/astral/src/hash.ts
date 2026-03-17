@@ -11,7 +11,7 @@
  * @returns 穩定的雜湊字串
  */
 export function stableHash(input: unknown): string {
-  const str = typeof input === 'string' ? input : JSON.stringify(input)
+  const str = typeof input === 'string' ? input : stableSerialize(input)
 
   // DJB2 雜湊演算法
   let hash = 5381
@@ -19,6 +19,20 @@ export function stableHash(input: unknown): string {
     hash = ((hash << 5) + hash) ^ str.charCodeAt(i)
   }
   return `hash:${(hash >>> 0).toString(36)}`
+}
+
+function stableSerialize(input: unknown): string {
+  return JSON.stringify(input, (_key, value) => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return Object.keys(value)
+        .sort()
+        .reduce<Record<string, unknown>>((sorted, key) => {
+          sorted[key] = (value as Record<string, unknown>)[key]
+          return sorted
+        }, {})
+    }
+    return value
+  })
 }
 
 /**

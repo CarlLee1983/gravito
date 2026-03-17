@@ -2,6 +2,36 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PersistedState } from '../../src/utils/persistence'
 import { chatPersistence } from '../../src/utils/persistence'
 
+vi.mock('../../src/api/supportApi', () => ({
+  createSupportApi: vi.fn(),
+}))
+
+const localStorageMock = (() => {
+  const store = new Map<string, string>()
+
+  return {
+    get length() {
+      return store.size
+    },
+    clear: vi.fn(() => {
+      store.clear()
+    }),
+    getItem: vi.fn((key: string) => store.get(key) ?? null),
+    key: vi.fn((index: number) => Array.from(store.keys())[index] ?? null),
+    removeItem: vi.fn((key: string) => {
+      store.delete(key)
+    }),
+    setItem: vi.fn((key: string, value: string) => {
+      store.set(key, value)
+    }),
+  }
+})()
+
+Object.defineProperty(globalThis, 'localStorage', {
+  value: localStorageMock,
+  configurable: true,
+})
+
 describe('chatPersistence', () => {
   beforeEach(() => {
     localStorage.clear()
@@ -172,10 +202,49 @@ describe('chatPersistence', () => {
       }
 
       chatPersistence.save(state)
+      await chatPersistence.syncPendingMessages({ baseUrl: 'https://api.gravito.io' }, 'CONV-123')
+    })
 
-      await expect(
-        chatPersistence.syncPendingMessages({ baseUrl: 'https://api.gravito.io' }, 'CONV-123')
-      ).resolves.not.toThrow()
+    it('應該保留同步失敗的待發送訊息', async () => {
+      const { createSupportApi } = await import('../../src/api/supportApi')
+      ;(createSupportApi as any).mockReturnValue({
+        sendMessage: vi
+          .fn()
+          .mockResolvedValueOnce(undefined)
+          .mockRejectedValueOnce(new Error('network fail')),
+      } as any)
+
+      const state: PersistedState = {
+        conversationId: 'CONV-123',
+        messages: [],
+        pendingMessages: [
+          {
+            id: 'pending-1',
+            conversationId: 'CONV-123',
+            sender: 'CUSTOMER',
+            content: 'first',
+            status: 'sending',
+            createdAt: new Date(),
+          },
+          {
+            id: 'pending-2',
+            conversationId: 'CONV-123',
+            sender: 'CUSTOMER',
+            content: 'second',
+            status: 'sending',
+            createdAt: new Date(),
+          },
+        ],
+        lastSyncAt: Date.now(),
+      }
+
+      chatPersistence.save(state)
+
+      await chatPersistence.syncPendingMessages({ baseUrl: 'https://api.gravito.io' }, 'CONV-123')
+
+      const loaded = chatPersistence.load()
+      expect(loaded?.pendingMessages).toHaveLength(1)
+      expect(loaded?.pendingMessages[0]?.id).toBe('pending-2')
     })
   })
 
