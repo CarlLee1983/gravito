@@ -30,6 +30,28 @@ describe('InertiaService', () => {
     })
   })
 
+  it('should vary on both Accept and X-Inertia for JSON responses', async () => {
+    const headers = new Headers()
+    const req = {
+      url: '/test',
+      header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+    }
+
+    const ctx = {
+      req,
+      res: { headers },
+      header: (key: string, value: string) => {
+        headers.set(key, value)
+      },
+      json: mock((data: any) => data),
+    } as any
+
+    const service = new InertiaService(ctx, { version: '1.0' })
+    await service.render('TestComponent', { foo: 'bar' })
+
+    expect(headers.get('Vary')).toBe('Accept, X-Inertia')
+  })
+
   it('should share props across renders', async () => {
     const req = {
       url: '/test',
@@ -274,6 +296,29 @@ describe('InertiaService', () => {
 
     expect(response.status).toBe(409)
     expect(ctx.header).toHaveBeenCalledWith('X-Inertia-Location', '/test')
+  })
+
+  it('should vary on X-Inertia for location responses', () => {
+    const headers = new Headers()
+    const req = {
+      url: '/test',
+      header: (key: string) => (key === 'X-Inertia' ? 'true' : undefined),
+    }
+
+    const ctx = {
+      req,
+      res: { headers },
+      header: (key: string, value: string) => {
+        headers.set(key, value)
+      },
+    } as any
+
+    const service = new InertiaService(ctx, { version: '1.0' })
+    const response = service.location('/login')
+
+    expect(response.status).toBe(409)
+    expect(headers.get('Vary')).toBe('X-Inertia')
+    expect(headers.get('X-Inertia-Location')).toBe('/login')
   })
 
   it('should correctly pass rootVars to the root template', async () => {

@@ -1,8 +1,14 @@
-import { describe, expect, it } from 'bun:test'
+import { afterEach, describe, expect, it } from 'bun:test'
 import { ColorDepth } from '../../src/core/types'
 import { TerminalDetector } from '../../src/terminal/TerminalDetector'
 
 describe('TerminalDetector', () => {
+  afterEach(() => {
+    delete process.env.NO_COLOR
+    delete process.env.FORCE_COLOR
+    TerminalDetector.getInstance().clearCache()
+  })
+
   describe('getInstance', () => {
     it('應該返回單例', () => {
       const detector1 = TerminalDetector.getInstance()
@@ -44,6 +50,28 @@ describe('TerminalDetector', () => {
       const capabilities = TerminalDetector.getInstance().detect()
       expect(capabilities).toBeDefined()
       expect(typeof capabilities.depth).toBe('number')
+    })
+
+    it('應該讓 NO_COLOR 優先於 TTY/CI 色彩推斷', () => {
+      process.env.NO_COLOR = '1'
+
+      const detector = TerminalDetector.getInstance()
+      const originalStdoutIsTTY = process.stdout.isTTY
+
+      Object.defineProperty(process.stdout, 'isTTY', {
+        configurable: true,
+        value: true,
+      })
+
+      try {
+        const capabilities = detector.detect()
+        expect(capabilities.hasColor).toBe(false)
+      } finally {
+        Object.defineProperty(process.stdout, 'isTTY', {
+          configurable: true,
+          value: originalStdoutIsTTY,
+        })
+      }
     })
   })
 

@@ -126,6 +126,19 @@ export class InertiaService {
   private readonly onRenderCallback?: (metrics: RenderMetrics) => void
   private escapeHtml = getEscapeHtml()
 
+  private appendVaryHeader(...values: string[]): void {
+    const existing = this.context.res?.headers?.get?.('Vary') ?? ''
+    const current = existing
+      .split(',')
+      .map((value: string) => value.trim())
+      .filter(Boolean)
+
+    const merged = Array.from(new Set([...current, ...values]))
+    if (merged.length > 0) {
+      this.context.header('Vary', merged.join(', '))
+    }
+  }
+
   /**
    * Creates a deferred prop that will be loaded after the initial render.
    *
@@ -463,7 +476,7 @@ export class InertiaService {
         }
 
         this.context.header('X-Inertia', 'true')
-        this.context.header('Vary', 'Accept')
+        this.appendVaryHeader('Accept', 'X-Inertia')
         response = this.context.json(page, status)
       } else {
         const view = this.context.get('view') as ViewService | undefined
@@ -674,6 +687,7 @@ export class InertiaService {
     const isInertiaRequest = Boolean(this.context.req.header('X-Inertia'))
 
     if (isInertiaRequest) {
+      this.appendVaryHeader('X-Inertia')
       this.context.header('X-Inertia-Location', url)
       return new Response('', { status: 409 })
     }

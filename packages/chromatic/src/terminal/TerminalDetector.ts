@@ -41,10 +41,6 @@ export class TerminalDetector {
 
   // 檢查是否有色彩支援
   private hasColorSupport(): boolean {
-    if (this.isCI() || this.isTTY()) {
-      return true
-    }
-
     if (typeof process !== 'undefined' && process.env) {
       const env = process.env
       if (env.NO_COLOR) {
@@ -56,6 +52,10 @@ export class TerminalDetector {
       if (env.COLORTERM === 'truecolor') {
         return true
       }
+    }
+
+    if (this.isCI() || this.isTTY()) {
+      return true
     }
 
     return false
