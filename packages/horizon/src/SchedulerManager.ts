@@ -217,19 +217,20 @@ export class SchedulerManager {
     try {
       if (task.background) {
         this.executeTask(task)
-          .catch((err) => {
+          .catch((err): { success: boolean; timedOut: boolean } => {
             this.logger?.error(`Background task ${task.name} failed`, err)
+            return { success: false, timedOut: false }
           })
-          .finally(async () => {
+          .then(async (result) => {
             // Release execution lock when background task finishes
-            if (task.preventOverlapping) {
+            if (task.preventOverlapping && !result.timedOut) {
               await this.lockManager.release(runningLockKey)
             }
           })
       } else {
-        await this.executeTask(task)
+        const result = await this.executeTask(task)
         // Release execution lock when foreground task finishes
-        if (task.preventOverlapping) {
+        if (task.preventOverlapping && !result.timedOut) {
           await this.lockManager.release(runningLockKey)
         }
       }
@@ -255,7 +256,7 @@ export class SchedulerManager {
    *
    * @internal
    */
-  private async executeTask(task: ScheduledTask) {
+  private async executeTask(task: ScheduledTask): Promise<{ success: boolean; timedOut: boolean }> {
     const startTime = Date.now()
     await this.hooks?.doAction('scheduler:task:start', { name: task.name, startTime })
 
@@ -303,7 +304,7 @@ export class SchedulerManager {
           } catch {}
         }
 
-        return
+        return { success: true, timedOut: false }
       } catch (err: any) {
         lastError = err
         this.logger?.error(`Task ${task.name} failed (attempt ${attempt + 1})`, err)
@@ -326,6 +327,11 @@ export class SchedulerManager {
       try {
         await cb(lastError)
       } catch {}
+    }
+
+    return {
+      success: false,
+      timedOut: lastError?.message.includes('timed out after') ?? false,
     }
   }
 }

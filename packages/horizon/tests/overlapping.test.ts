@@ -159,6 +159,31 @@ describe('Overlapping Control', () => {
     expect(hasLock).toBe(false)
   })
 
+  test('should keep running lock after timeout to avoid overlapping re-entry', async () => {
+    let finished = false
+    const callback = mock(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 80))
+      finished = true
+    })
+
+    const task = scheduler
+      .task('timed-out-task', callback)
+      .everyMinute()
+      .withoutOverlapping(1)
+      .timeout(10)
+
+    const testDate = new Date('2023-01-01T12:00:00Z')
+    const runningLockKey = 'task:running:timed-out-task'
+
+    await scheduler.runTask(task.getTask(), testDate)
+
+    const hasLockImmediatelyAfterTimeout = await lockManager.exists(runningLockKey)
+    expect(hasLockImmediatelyAfterTimeout).toBe(true)
+
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    expect(finished).toBe(true)
+  })
+
   test('should use custom TTL for overlapping lock', async () => {
     const customTTL = 7200 // 2 hours
     const callback = mock(() => {})
