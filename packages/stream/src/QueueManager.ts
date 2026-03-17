@@ -306,10 +306,14 @@ export class QueueManager {
    * ```
    */
   registerJobClasses(jobClasses: Array<new (...args: unknown[]) => Job>): void {
-    const serializer = this.unwrapClassSerializer(this.defaultSerializer)
+    const serializer = this.getClassSerializer()
     if (serializer) {
       serializer.registerMany(jobClasses)
     }
+  }
+
+  private getClassSerializer(): ClassNameSerializer | null {
+    return this.unwrapClassSerializer(this.defaultSerializer)
   }
 
   private unwrapClassSerializer(serializer: JobSerializer): ClassNameSerializer | null {
@@ -345,6 +349,8 @@ export class QueueManager {
     const queue = job.queueName ?? 'default'
     const driver = this.getDriver(connection)
     const serializer = this.getSerializer()
+
+    this.getClassSerializer()?.register(job.constructor as new (...args: unknown[]) => Job)
 
     // Serialize job
     const serialized = serializer.serialize(job)
@@ -410,6 +416,7 @@ export class QueueManager {
       const connection = job.connectionName ?? this.defaultConnection
       const queue = job.queueName ?? 'default'
       const key = `${connection}:${queue}`
+      this.getClassSerializer()?.register(job.constructor as new (...args: unknown[]) => Job)
       const serialized = serializer.serialize(job)
 
       if (!groups.has(key)) {

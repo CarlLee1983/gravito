@@ -204,11 +204,7 @@ describe('Worker - Sandboxed 模式（整合測試）', () => {
     // 不應該拋出錯誤
   })
 
-  // 注意：由於 Worker Thread 的序列化限制，以下測試可能無法正常工作
-  // 需要實作完整的 Job 類別註冊和序列化機制才能正常運行
-
-  // Issue #329: [stream] Implement SandboxedWorker serialization support
-  test.skip('應該在 sandboxed 模式下執行 Job', async () => {
+  test('應該在 sandboxed 模式下執行 Job', async () => {
     const worker = new Worker({
       sandboxed: true,
       sandboxConfig: {
@@ -223,8 +219,7 @@ describe('Worker - Sandboxed 模式（整合測試）', () => {
     await worker.terminate()
   })
 
-  // Issue #329: [stream] Implement SandboxedWorker serialization support
-  test.skip('應該處理 sandboxed 模式下的超時', async () => {
+  test('應該處理 sandboxed 模式下的超時', async () => {
     const worker = new Worker({
       sandboxed: true,
       sandboxConfig: {

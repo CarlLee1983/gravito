@@ -99,6 +99,7 @@ describe('QueueManager (extended)', () => {
       await manager.push(job)
       const popped = await manager.pop('default')
       expect(popped).toBeDefined()
+      expect(popped).toBeInstanceOf(SimpleJob)
     })
 
     it('should push to specific queue', async () => {
@@ -108,6 +109,7 @@ describe('QueueManager (extended)', () => {
       await manager.push(job)
       const popped = await manager.pop('emails')
       expect(popped).toBeDefined()
+      expect(popped).toBeInstanceOf(SimpleJob)
     })
 
     it('should archive job on complete', async () => {
@@ -122,15 +124,42 @@ describe('QueueManager (extended)', () => {
         countLogs: mock(() => Promise.resolve(0)),
       }
 
-      const manager = new QueueManager({ persistence: { adapter: mockAdapter } })
+      const mockDriver: any = {
+        push: mock(() => Promise.resolve()),
+        pop: mock(async () => ({
+          id: 'job-1',
+          type: 'class',
+          className: 'SimpleJob',
+          data: '{}',
+          createdAt: Date.now(),
+          attempts: 0,
+        })),
+        complete: mock(() => Promise.resolve()),
+        size: mock(() => Promise.resolve(0)),
+        clear: mock(() => Promise.resolve()),
+      }
+
+      const manager = new QueueManager({
+        persistence: { adapter: mockAdapter, archiveCompleted: true },
+      })
+      ;(manager as any).drivers.set('default', mockDriver)
+      manager.registerJobClasses([SimpleJob])
       const job = new SimpleJob()
 
       await manager.push(job)
-      const serialized = await manager.pop('default')
-      if (serialized) {
-        await manager.complete('default', serialized)
+      const popped = await manager.pop('default')
+      if (popped) {
+        await manager.complete(popped)
         expect(mockAdapter.archive).toHaveBeenCalled()
       }
+    })
+
+    it('should auto-register class jobs when serialization cache is enabled', async () => {
+      const manager = new QueueManager({ useSerializationCache: true })
+      await manager.push(new SimpleJob())
+
+      const popped = await manager.pop('default')
+      expect(popped).toBeInstanceOf(SimpleJob)
     })
   })
 

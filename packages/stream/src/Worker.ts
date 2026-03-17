@@ -187,9 +187,23 @@ export class Worker {
    * @returns Serialized job data.
    */
   private serializeJob(job: Job): SerializedJob {
-    // Serialize Job to JSON
-    // Note: This is a simplified version; real-world usage might require more complex serialization logic
-    const data = JSON.stringify(job)
+    const properties: Record<string, unknown> = {}
+    for (const key in job) {
+      if (
+        Object.hasOwn(job, key) &&
+        typeof (job as unknown as Record<string, unknown>)[key] !== 'function'
+      ) {
+        properties[key] = (job as unknown as Record<string, unknown>)[key]
+      }
+    }
+
+    const handleSource = serializeJobMethod(job, 'handle')
+    const data = JSON.stringify({
+      ...properties,
+      __sandboxedJob: true,
+      __handleSource: handleSource,
+      __className: job.constructor.name,
+    })
 
     return {
       id: job.id ?? `job-${Date.now()}-${Math.random()}`,
@@ -243,4 +257,26 @@ export class Worker {
       await this.sandboxedWorker.terminate()
     }
   }
+}
+
+function serializeJobMethod(job: Job, methodName: 'handle'): string {
+  const instanceMethod = (job as unknown as Record<string, unknown>)[methodName]
+  if (typeof instanceMethod === 'function') {
+    return normalizeMethodSource(instanceMethod.toString(), methodName)
+  }
+
+  throw new Error(`Job must implement ${methodName}()`)
+}
+
+function normalizeMethodSource(source: string, methodName: string): string {
+  const trimmed = source.trim()
+  const methodPattern = new RegExp(`^(async\\s+)?${methodName}\\s*\\(`)
+
+  if (methodPattern.test(trimmed)) {
+    return trimmed.replace(methodPattern, (_match, asyncKeyword: string | undefined) => {
+      return `${asyncKeyword ?? ''}function ${methodName}(`
+    })
+  }
+
+  return trimmed
 }

@@ -82,7 +82,8 @@ const jobClasses = new Map<string, any>()
  */
 function deserializeJob(serialized: SerializedJob): any {
   if (serialized.type === 'json') {
-    return JSON.parse(serialized.data as string)
+    const parsed = JSON.parse(serialized.data as string)
+    return restoreSandboxedJob(parsed)
   }
 
   if (serialized.type === 'class') {
@@ -118,6 +119,33 @@ function deserializeJob(serialized: SerializedJob): any {
   }
 
   throw new Error(`Unknown serialization type: ${serialized.type}`)
+}
+
+function restoreSandboxedJob(value: any): any {
+  if (
+    value &&
+    typeof value === 'object' &&
+    value.__sandboxedJob === true &&
+    typeof value.__handleSource === 'string'
+  ) {
+    const job = { ...value }
+    const handleSource = job.__handleSource
+    delete job.__sandboxedJob
+    delete job.__handleSource
+    delete job.__className
+    job.handle = compileMethod(handleSource)
+    return job
+  }
+
+  return value
+}
+
+function compileMethod(source: string): (...args: any[]) => any {
+  const fn = new Function(`return (${source})`)()
+  if (typeof fn !== 'function') {
+    throw new Error('Failed to restore sandboxed job handler')
+  }
+  return fn
 }
 
 /**
