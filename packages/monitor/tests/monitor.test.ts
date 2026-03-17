@@ -99,6 +99,33 @@ describe('HealthRegistry', () => {
     expect(report.checks.slow?.message).toContain('timeout')
   })
 
+  test('clears timeout handles after checks complete', async () => {
+    const registry = new HealthRegistry({ timeout: 50 })
+    const originalSetTimeout = global.setTimeout
+    const originalClearTimeout = global.clearTimeout
+    const handle = { unref: mock(() => {}) }
+    const clearTimeoutMock = mock(() => {})
+
+    global.setTimeout = ((fn: () => void) => {
+      void fn
+      return handle as any
+    }) as unknown as typeof setTimeout
+    global.clearTimeout = clearTimeoutMock as unknown as typeof clearTimeout
+
+    registry.register('fast', async () => ({ status: 'healthy' }))
+
+    try {
+      const report = await registry.check()
+
+      expect(report.status).toBe('healthy')
+      expect(handle.unref).toHaveBeenCalled()
+      expect(clearTimeoutMock).toHaveBeenCalled()
+    } finally {
+      global.setTimeout = originalSetTimeout
+      global.clearTimeout = originalClearTimeout
+    }
+  })
+
   test('returns unhealthy when a check fails', async () => {
     const registry = new HealthRegistry({
       enabled: true,

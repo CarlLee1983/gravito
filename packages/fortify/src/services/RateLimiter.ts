@@ -71,6 +71,7 @@ export class MemoryRateLimiterStorage implements RateLimiterStorage {
       this.store.delete(key)
       this.timers.delete(key)
     }, ttl * 1000)
+    timer.unref?.()
 
     this.timers.set(key, timer)
   }

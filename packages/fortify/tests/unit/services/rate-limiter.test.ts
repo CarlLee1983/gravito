@@ -73,6 +73,28 @@ describe('MemoryRateLimiterStorage', () => {
     expect(afterExpiry).toBeNull()
   })
 
+  it('unrefs TTL timers so they do not keep the process alive', async () => {
+    const originalSetTimeout = global.setTimeout
+    const handle = {
+      unrefCalled: false,
+      unref() {
+        this.unrefCalled = true
+      },
+    }
+
+    global.setTimeout = ((fn: () => void) => {
+      void fn
+      return handle as any
+    }) as unknown as typeof setTimeout
+
+    try {
+      await storage.set('temp-key', { attempts: 1, lastAttempt: new Date() }, 60)
+      expect(handle.unrefCalled).toBe(true)
+    } finally {
+      global.setTimeout = originalSetTimeout
+    }
+  })
+
   it('clears all entries and timers', async () => {
     await storage.increment('key1')
     await storage.increment('key2')

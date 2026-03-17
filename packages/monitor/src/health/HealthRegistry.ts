@@ -85,13 +85,15 @@ export class HealthRegistry {
     check: HealthCheckFn
   ): Promise<HealthCheckResult & { name: string }> {
     const start = performance.now()
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
 
     try {
       const result = await Promise.race([
         Promise.resolve(check()),
-        new Promise<HealthCheckResult>((_, reject) =>
-          setTimeout(() => reject(new Error('Health check timeout')), this.timeout)
-        ),
+        new Promise<HealthCheckResult>((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error('Health check timeout')), this.timeout)
+          timeoutId.unref?.()
+        }),
       ])
 
       const latency = Math.round(performance.now() - start)
@@ -110,6 +112,10 @@ export class HealthRegistry {
         status: 'unhealthy',
         message,
         latency,
+      }
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
       }
     }
   }
