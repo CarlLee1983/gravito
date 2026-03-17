@@ -160,7 +160,8 @@ export class LibraryLoader {
 
     // Handle simple wildcards (e.g., /usr/lib/lib*.so)
     if (pattern.includes('*')) {
-      const regex = new RegExp(`^${pattern.replace(/\*/g, '.*')}$`)
+      const escapedPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+      const regex = new RegExp(`^${escapedPattern.replace(/\*/g, '.*')}$`)
       return regex.test(path)
     }
 

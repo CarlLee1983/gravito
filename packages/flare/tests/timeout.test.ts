@@ -102,6 +102,7 @@ describe('TimeoutChannel', () => {
       })
 
       await timeoutChannel.send(new TestNotification(), notifiable)
+      await new Promise((resolve) => setTimeout(resolve, 250))
 
       expect(onTimeout).not.toHaveBeenCalled()
     })

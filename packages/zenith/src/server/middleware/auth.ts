@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto'
 import type { GravitoContext } from '@gravito/photon'
 
 type Context = GravitoContext
@@ -90,7 +91,15 @@ export function verifyPassword(password: string): boolean {
   if (!authPassword) {
     return true // No password set, allow access
   }
-  return password === authPassword
+
+  const expected = Buffer.from(authPassword)
+  const actual = Buffer.from(password)
+
+  if (expected.length !== actual.length) {
+    return false
+  }
+
+  return timingSafeEqual(expected, actual)
 }
 
 /**
@@ -181,5 +190,6 @@ export function cleanupExpiredSessions(): void {
   }
 }
 
-// Run cleanup every 10 minutes
-setInterval(cleanupExpiredSessions, 10 * 60 * 1000)
+// Run cleanup every 10 minutes without keeping the process alive on its own.
+const cleanupInterval = setInterval(cleanupExpiredSessions, 10 * 60 * 1000)
+cleanupInterval.unref?.()

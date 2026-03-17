@@ -91,6 +91,8 @@ export class RippleClient {
         return
       }
 
+      this.clearReconnectTimer()
+
       this.stateManager.setState('connecting')
 
       try {

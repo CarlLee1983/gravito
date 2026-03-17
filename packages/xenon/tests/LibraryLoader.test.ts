@@ -114,6 +114,21 @@ describe('LibraryLoader', () => {
         XenonSecurityError
       )
     })
+
+    it('should treat regex metacharacters in wildcard patterns literally', () => {
+      const loader = new LibraryLoader(
+        {
+          allowedPaths: ['/usr/lib/lib.+.so'],
+        },
+        createMockFfiLoader()
+      )
+
+      expect(() => loader.load('test', '/usr/lib/libabc.so', TEST_SYMBOLS.simple)).toThrow(
+        XenonSecurityError
+      )
+
+      expect(() => loader.load('test', '/usr/lib/lib.+.so', TEST_SYMBOLS.simple)).not.toThrow()
+    })
   })
 
   describe('symbol validation', () => {

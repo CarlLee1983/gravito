@@ -177,6 +177,10 @@ export class RemoteLoader implements TranslationLoaderChain {
         if (cached) {
           return cached
         }
+
+        // ETag 與本地翻譯快取脫鉤時，丟棄 stale ETag 後重新抓取完整內容。
+        this.etagMap.delete(locale)
+        return this.fetchWithTimeout(locale)
       }
 
       // 處理錯誤狀態碼

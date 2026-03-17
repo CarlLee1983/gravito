@@ -86,4 +86,30 @@ describe('VersionRegistry', () => {
     // 應該從緩存讀取，版本相同
     expect(version1).toBe(version2)
   })
+
+  it('在 monorepo 開發模式下應優先使用本地版本而非緩存', async () => {
+    await fs.mkdir(path.dirname(cacheFile), { recursive: true })
+    await fs.writeFile(
+      cacheFile,
+      JSON.stringify(
+        {
+          timestamp: Date.now(),
+          versions: {
+            '@gravito/core': '^0.0.1',
+          },
+        },
+        null,
+        2
+      )
+    )
+
+    ;(registry as any).isMonorepoEnv = () => true
+    ;(registry as any).loadFromMonorepo = async function () {
+      this.versionMap.set('@gravito/core', '9.9.9-local')
+    }
+
+    await registry.initialize()
+
+    expect(registry.get('@gravito/core')).toBe('9.9.9-local')
+  })
 })

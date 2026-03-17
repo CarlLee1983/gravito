@@ -101,20 +101,27 @@ export class TimeoutChannel implements NotificationChannel {
     // Create AbortController
     const controller = new AbortController()
     const { signal } = controller
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+    let settled = false
+    let handleExternalAbort: (() => void) | undefined
 
     // If external signal is provided, listen to it
     if (options?.signal) {
       if (options.signal.aborted) {
         throw new AbortError('Request was aborted before sending')
       }
-      options.signal.addEventListener('abort', () => {
+      handleExternalAbort = () => {
         controller.abort()
-      })
+      }
+      options.signal.addEventListener('abort', handleExternalAbort, { once: true })
     }
 
     // Create timeout Promise
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
+        if (settled) {
+          return
+        }
         if (this.config.onTimeout) {
           this.config.onTimeout(this.inner.constructor.name, notification)
         }
@@ -145,6 +152,16 @@ export class TimeoutChannel implements NotificationChannel {
 
     // Use Promise.race: throw error immediately on timeout
     // Timeout works even if underlying service doesn't support AbortSignal
-    return Promise.race([sendPromise, timeoutPromise])
+    try {
+      return await Promise.race([sendPromise, timeoutPromise])
+    } finally {
+      settled = true
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+      if (options?.signal && handleExternalAbort) {
+        options.signal.removeEventListener('abort', handleExternalAbort)
+      }
+    }
   }
 }

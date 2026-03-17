@@ -1,7 +1,7 @@
 import { OutputFormatter } from './colors/OutputFormatter'
 import { NovaShellError } from './errors'
 import type { ShellCommand } from './ShellCommand'
-import type { ColorConfig, ShellResult } from './types'
+import type { ColorConfig, ShellResult, ShellRunOptions } from './types'
 
 /**
  * Represents a pipeline of shell commands connected via pipes.
@@ -64,20 +64,7 @@ export class Pipeline {
    * Internal method to execute piped commands.
    */
   private async _executePipeline(): Promise<ShellResult> {
-    // Build the full piped command by extracting command strings from each ShellCommand
-    const commandStrings = this.commands.map((cmd) => {
-      // Build command string from the ShellCommand's template strings and values
-      let cmd_str = ''
-      for (let i = 0; i < cmd.strings.length; i++) {
-        cmd_str += cmd.strings[i]
-        if (i < cmd.values.length) {
-          const value = cmd.values[i]
-          // Escape the value to prevent shell injection
-          cmd_str += `'${String(value).replace(/'/g, "'\\''")}'`
-        }
-      }
-      return cmd_str
-    })
+    const commandStrings = this.commands.map((cmd) => cmd.toShellString())
 
     // Filter out empty commands
     const validCommands = commandStrings.filter((cmd) => cmd.length > 0)
@@ -88,10 +75,13 @@ export class Pipeline {
 
     // Join commands with pipes
     const fullCommand = validCommands.join(' | ')
+    const runOptions = this._resolveRunOptions()
 
     try {
-      // Execute the piped command using bash
       const proc = Bun.spawn(['bash', '-c', fullCommand], {
+        cwd: runOptions.cwd,
+        env: runOptions.env ? { ...process.env, ...runOptions.env } : undefined,
+        timeout: runOptions.timeout,
         stdout: 'pipe',
         stderr: 'pipe',
       })
@@ -128,6 +118,36 @@ export class Pipeline {
         throw error
       }
       throw error
+    }
+  }
+
+  private _resolveRunOptions(): Pick<ShellRunOptions, 'cwd' | 'env' | 'timeout'> {
+    const commandOptions = this.commands.map((cmd) => cmd.getRunOptions())
+    const cwdValues = new Set(
+      commandOptions
+        .map((options) => options.cwd)
+        .filter((cwd): cwd is string => typeof cwd === 'string' && cwd.length > 0)
+    )
+
+    if (cwdValues.size > 1) {
+      throw new Error('Pipeline commands must use the same cwd')
+    }
+
+    const env = commandOptions.reduce<Record<string, string> | undefined>((merged, options) => {
+      if (!options.env) {
+        return merged
+      }
+      return { ...(merged ?? {}), ...options.env }
+    }, undefined)
+
+    const timeouts = commandOptions
+      .map((options) => options.timeout)
+      .filter((timeout): timeout is number => typeof timeout === 'number')
+
+    return {
+      cwd: cwdValues.values().next().value,
+      env,
+      timeout: timeouts.length > 0 ? Math.min(...timeouts) : undefined,
     }
   }
 }

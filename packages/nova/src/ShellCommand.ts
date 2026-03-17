@@ -1,6 +1,6 @@
 import { OutputFormatter } from './colors/OutputFormatter'
 import { NovaShellError } from './errors'
-import type { ColorConfig, ShellResult } from './types'
+import type { ColorConfig, ShellResult, ShellRunOptions } from './types'
 
 /**
  * Represents a shell command built from template literals.
@@ -128,6 +128,27 @@ export class ShellCommand implements PromiseLike<ShellResult> {
   }
 
   /**
+   * Build the escaped shell command string for execution.
+   */
+  toShellString(): string {
+    return this._buildCommandString()
+  }
+
+  /**
+   * Return the configured execution options for this command.
+   */
+  getRunOptions(): ShellRunOptions {
+    return {
+      cwd: this._cwd,
+      env: this._env,
+      quiet: this._quiet,
+      nothrow: this._nothrow,
+      timeout: this._timeout,
+      color: this._colorConfig,
+    }
+  }
+
+  /**
    * PromiseLike implementation for direct await support.
    */
   // biome-ignore lint/suspicious/noThenProperty: Required for PromiseLike interface
@@ -157,7 +178,7 @@ export class ShellCommand implements PromiseLike<ShellResult> {
    * Internal method to execute the command using Bun's shell.
    */
   private async _executeCommand(): Promise<ShellResult> {
-    const cmdStr = this._buildCommandString()
+    const cmdStr = this.toShellString()
 
     try {
       // Use Bun.spawn to execute the command with proper options

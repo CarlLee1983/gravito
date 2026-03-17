@@ -361,6 +361,54 @@ describe('RippleClient', () => {
     expect(client.getState()).toBe('disconnected')
     expect(client.getSocketId()).toBeNull()
   })
+
+  it('clears pending reconnect timer when connect is called manually', async () => {
+    const client = new RippleClient({
+      host: 'ws://localhost',
+      reconnectDelay: 50,
+      maxReconnectAttempts: 1,
+    })
+
+    const originalSetTimeout = globalThis.setTimeout
+    const originalClearTimeout = globalThis.clearTimeout
+    let scheduled: (() => void) | null = null
+    let clearedTimer: unknown = null
+
+    globalThis.setTimeout = ((fn: () => void) => {
+      scheduled = fn
+      return 123 as any
+    }) as unknown as typeof setTimeout
+
+    globalThis.clearTimeout = ((timer: unknown) => {
+      clearedTimer = timer
+    }) as unknown as typeof clearTimeout
+
+    const initialSocketCount = MockWebSocket.instances.length
+
+    const connectPromise = client.connect()
+    const ws = MockWebSocket.instances.at(-1)!
+    ws.emitOpen()
+    ws.emitMessage(JSON.stringify({ type: 'connected', socketId: 'socket-5' }))
+    await connectPromise
+
+    ws.close()
+    expect(client.getState()).toBe('reconnecting')
+    expect(typeof scheduled).toBe('function')
+
+    const reconnectPromise = client.connect()
+    const reconnectWs = MockWebSocket.instances.at(-1)!
+    reconnectWs.emitOpen()
+    reconnectWs.emitMessage(JSON.stringify({ type: 'connected', socketId: 'socket-6' }))
+    await reconnectPromise
+
+    expect(clearedTimer).toBe(123)
+
+    scheduled?.()
+    expect(MockWebSocket.instances.length).toBe(initialSocketCount + 2)
+
+    globalThis.setTimeout = originalSetTimeout
+    globalThis.clearTimeout = originalClearTimeout
+  })
 })
 
 describe('createRippleClient', () => {

@@ -159,6 +159,52 @@ describe('TranslationLoaders', () => {
       expect(callCount).toBe(2)
     })
 
+    it('should refetch when server returns 304 but translation cache is missing', async () => {
+      let callCount = 0
+      globalThis.fetch = mock((_url: string, options?: any) => {
+        callCount++
+        const ifNoneMatch = options?.headers?.['If-None-Match']
+
+        if (!ifNoneMatch && callCount === 1) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            headers: new Map([['ETag', '"v1"']]),
+            json: async () => ({ version: '1.0' }),
+          })
+        }
+
+        if (callCount === 2) {
+          return Promise.resolve({
+            ok: true,
+            status: 304,
+            headers: new Map([['ETag', '"v1"']]),
+          })
+        }
+
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          headers: new Map([['ETag', '"v2"']]),
+          json: async () => ({ version: '2.0' }),
+        })
+      }) as any
+
+      const loader = new RemoteLoader({
+        url: 'https://api.example.com/i18n/:locale',
+        etagCache: true,
+      })
+
+      const translations1 = await loader.load('en')
+      expect(translations1?.version).toBe('1.0')
+
+      ;(loader as any).translationCache.clear()
+
+      const translations2 = await loader.load('en')
+      expect(translations2?.version).toBe('2.0')
+      expect(callCount).toBe(3)
+    })
+
     it('should retry on failure', async () => {
       let attemptCount = 0
       globalThis.fetch = mock(() => {

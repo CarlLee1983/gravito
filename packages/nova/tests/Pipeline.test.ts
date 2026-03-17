@@ -1,9 +1,18 @@
-import { describe, expect, it } from 'bun:test'
+import { afterEach, describe, expect, it } from 'bun:test'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { NovaShellError } from '../src/errors'
 import { Pipeline } from '../src/Pipeline'
 import { ShellCommand } from '../src/ShellCommand'
 
 describe('Pipeline', () => {
+  const tempDirs: string[] = []
+
+  afterEach(async () => {
+    await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })))
+  })
+
   // Basic pipeline tests
   it('should execute single command pipeline', async () => {
     const cmd = new ShellCommand(['echo ', ''], ['single'])
@@ -159,5 +168,45 @@ describe('Pipeline', () => {
     expect(result.success).toBe(true)
     const lines = result.stdout.split('\n').filter((l) => l.length > 0)
     expect(lines).toEqual(['a', 'b'])
+  })
+
+  it('should respect cwd across a multi-command pipeline', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'nova-pipeline-'))
+    tempDirs.push(dir)
+    await Bun.write(join(dir, 'cwd-marker.txt'), 'ok')
+
+    const cmd1 = new ShellCommand(['pwd'], []).cwd(dir)
+    const cmd2 = new ShellCommand(['cat cwd-marker.txt'], []).cwd(dir)
+    const pipeline = new Pipeline([cmd1, cmd2])
+    const result = await pipeline.run()
+
+    expect(result.success).toBe(true)
+    expect(result.stdout).toBe('ok')
+  })
+
+  it('should merge env variables into pipeline execution', async () => {
+    const cmd1 = new ShellCommand(['printf "%s" "$PIPELINE_TEST_VAR"'], []).env({
+      PIPELINE_TEST_VAR: 'merged-env',
+    })
+    const cmd2 = new ShellCommand(['cat'], [])
+    const pipeline = new Pipeline([cmd1, cmd2])
+
+    const result = await pipeline.run()
+
+    expect(result.success).toBe(true)
+    expect(result.stdout).toBe('merged-env')
+  })
+
+  it('should reject pipelines with conflicting cwd values', async () => {
+    const dirA = await mkdtemp(join(tmpdir(), 'nova-pipeline-a-'))
+    const dirB = await mkdtemp(join(tmpdir(), 'nova-pipeline-b-'))
+    tempDirs.push(dirA, dirB)
+
+    const pipeline = new Pipeline([
+      new ShellCommand(['pwd'], []).cwd(dirA),
+      new ShellCommand(['cat'], []).cwd(dirB),
+    ])
+
+    await expect(pipeline.run()).rejects.toThrow('Pipeline commands must use the same cwd')
   })
 })

@@ -46,16 +46,15 @@ export class VersionRegistry {
    * 3. 優先使用緩存 (如果未過期)
    */
   async initialize(): Promise<void> {
-    // 先嘗試從緩存讀取
-    if (await this.loadFromCache()) {
-      return
-    }
-
     const isDev = this.isMonorepoEnv()
 
     if (isDev) {
       await this.loadFromMonorepo()
     } else {
+      // 非 monorepo 安裝時才優先使用快取，避免本地開發版號被陳舊快取覆蓋。
+      if (await this.loadFromCache()) {
+        return
+      }
       await this.loadFromRegistry()
     }
 
