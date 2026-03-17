@@ -211,6 +211,36 @@ describe('OrbitPulsar middleware', () => {
     expect(core.hooks.doAction).toHaveBeenCalledWith('session:regenerated', expect.any(Object))
   })
 
+  it('invalidates the previous session id after regenerate', async () => {
+    const core = createCore()
+    const orbit = new OrbitPulsar({ csrf: { enabled: false } })
+    orbit.install(core as any)
+
+    const c1 = createContext()
+    await core.middleware?.(c1, async () => {
+      const session = c1.get('session') as any
+      session.put('userId', '123')
+    })
+
+    const originalSessionCookie = getCookieValue(c1.setCookies, 'gravito_session')
+
+    const c2 = createContext({ cookie: `gravito_session=${originalSessionCookie}` })
+    await core.middleware?.(c2, async () => {
+      const session = c2.get('session') as any
+      session.regenerate()
+    })
+
+    const regeneratedSessionCookie = getCookieValue(c2.setCookies, 'gravito_session')
+    expect(regeneratedSessionCookie).not.toBe(originalSessionCookie)
+
+    const c3 = createContext({ cookie: `gravito_session=${originalSessionCookie}` })
+    await core.middleware?.(c3, async () => {
+      const session = c3.get('session') as any
+      expect(session.isStarted()).toBe(false)
+      expect(session.get('userId')).toBeUndefined()
+    })
+  })
+
   it('isStarted returns correct state', async () => {
     const core = createCore()
     const orbit = new OrbitPulsar({ csrf: { enabled: false } })

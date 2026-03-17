@@ -129,6 +129,7 @@ export class OrbitPulsar implements GravitoOrbit {
       let data: Record<string, any> = record?.data ?? {}
       let dirty = false
       let isRegenerated = false
+      let invalidatedSessionId: SessionId | null = null
       const started = !!record
       const markDirty = () => {
         dirty = true
@@ -254,22 +255,30 @@ export class OrbitPulsar implements GravitoOrbit {
         },
         /** Changes the session ID while keeping the existing data. */
         regenerate: () => {
+          const previousSessionId = sessionId
           const old = { ...data }
           delete old._csrf
           data = old
           sessionId = generateToken()
           markDirty()
           isRegenerated = true
+          if (started || dirty) {
+            invalidatedSessionId = previousSessionId
+          }
           if (core.hooks?.doAction) {
             core.hooks.doAction('session:regenerated', { sessionId })
           }
         },
         /** Clears all session data and changes the session ID. */
         invalidate: () => {
+          const previousSessionId = sessionId
           data = {}
           sessionId = generateToken()
           markDirty()
           isRegenerated = true
+          if (started || dirty) {
+            invalidatedSessionId = previousSessionId
+          }
         },
         /** Permanently expires and deletes the session. */
         destroy: () => session.invalidate(),
@@ -363,6 +372,10 @@ export class OrbitPulsar implements GravitoOrbit {
                   (record ? (now() - record.lastActivityAt) / 1000 >= touchIntervalSeconds : true)
 
                 if (shouldSave) {
+                  if (invalidatedSessionId && invalidatedSessionId !== sessionId) {
+                    await store.delete(invalidatedSessionId)
+                    invalidatedSessionId = null
+                  }
                   await store.set(
                     sessionId,
                     { data, createdAt: record?.createdAt ?? now(), lastActivityAt: now() },
@@ -398,6 +411,10 @@ export class OrbitPulsar implements GravitoOrbit {
         (record ? (now() - record.lastActivityAt) / 1000 >= touchIntervalSeconds : true)
 
       if (shouldSave) {
+        if (invalidatedSessionId && invalidatedSessionId !== sessionId) {
+          await store.delete(invalidatedSessionId)
+          invalidatedSessionId = null
+        }
         await store.set(
           sessionId,
           { data, createdAt: record?.createdAt ?? now(), lastActivityAt: now() },
