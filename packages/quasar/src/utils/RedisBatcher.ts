@@ -112,6 +112,7 @@ export class RedisBatcher {
     this.timer = setInterval(() => {
       this.flush()
     }, this.options.flushInterval)
+    this.timer.unref?.()
   }
 
   stop(): void {

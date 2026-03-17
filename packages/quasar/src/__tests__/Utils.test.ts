@@ -338,6 +338,38 @@ describe('AdaptiveHeartbeat', () => {
     }
   })
 
+  it('should unref the scheduled heartbeat timer', () => {
+    const originalSetTimeout = globalThis.setTimeout
+    let unrefCalled = false
+
+    globalThis.setTimeout = ((handler: TimerHandler, timeout?: number, ...args: any[]) => {
+      const timer = originalSetTimeout(handler, timeout, ...args) as unknown as ReturnType<
+        typeof setTimeout
+      >
+      return Object.assign(timer, {
+        unref: () => {
+          unrefCalled = true
+          return timer
+        },
+      })
+    }) as unknown as typeof setTimeout
+
+    try {
+      heartbeat = new AdaptiveHeartbeat(async () => {}, {
+        baseInterval: 100,
+        minInterval: 50,
+        maxInterval: 1000,
+        jitter: 0,
+        backoffMultiplier: 2,
+      })
+
+      heartbeat.start()
+      expect(unrefCalled).toBe(true)
+    } finally {
+      globalThis.setTimeout = originalSetTimeout
+    }
+  })
+
   it('should start and call callback', async () => {
     const callback = mock(() => Promise.resolve())
     heartbeat = new AdaptiveHeartbeat(callback, {

@@ -74,6 +74,7 @@ export class DiagnosticPlugin implements QuasarPlugin {
       this.loopLag = Math.max(0, now - this.lastLoopTick - 1000)
       this.lastLoopTick = now
     }, 1000)
+    this.timer.unref?.()
   }
 
   /**

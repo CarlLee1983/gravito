@@ -77,6 +77,7 @@ export class AdaptiveHeartbeat {
         this.scheduleNext()
       }
     }, interval)
+    this.timer.unref?.()
   }
 
   private recordSuccess() {

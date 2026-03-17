@@ -46,6 +46,30 @@ describe('RedisBatcher', () => {
     }
   })
 
+  it('should unref the flush timer', () => {
+    const originalSetInterval = globalThis.setInterval
+    let unrefCalled = false
+
+    globalThis.setInterval = ((handler: TimerHandler, timeout?: number, ...args: any[]) => {
+      const timer = originalSetInterval(handler, timeout, ...args) as unknown as ReturnType<
+        typeof setInterval
+      >
+      return Object.assign(timer, {
+        unref: () => {
+          unrefCalled = true
+          return timer
+        },
+      })
+    }) as unknown as typeof setInterval
+
+    try {
+      batcher = new RedisBatcher(redis as any, { maxBatchSize: 100, flushInterval: 5000 })
+      expect(unrefCalled).toBe(true)
+    } finally {
+      globalThis.setInterval = originalSetInterval
+    }
+  })
+
   it('should queue set operations', () => {
     batcher = new RedisBatcher(redis as any, { maxBatchSize: 100, flushInterval: 5000 })
 

@@ -85,6 +85,34 @@ describe('DiagnosticPlugin', () => {
     expect((plugin as any).timer).toBeDefined()
   })
 
+  it('should unref the diagnostic timer', async () => {
+    const originalSetInterval = globalThis.setInterval
+    let unrefCalled = false
+
+    globalThis.setInterval = ((handler: TimerHandler, timeout?: number, ...args: any[]) => {
+      const timer = originalSetInterval(handler, timeout, ...args) as unknown as ReturnType<
+        typeof setInterval
+      >
+      return Object.assign(timer, {
+        unref: () => {
+          unrefCalled = true
+          return timer
+        },
+      })
+    }) as unknown as typeof setInterval
+
+    const { agent } = createMockAgent()
+    plugin.onRegister(agent)
+
+    try {
+      await plugin.onStart(agent)
+      expect(unrefCalled).toBe(true)
+    } finally {
+      await plugin.onStop()
+      globalThis.setInterval = originalSetInterval
+    }
+  })
+
   it('should collect diagnostics on tick event', async () => {
     const { agent, events, metricsCollector } = createMockAgent()
     plugin.onRegister(agent)

@@ -22,6 +22,21 @@
 
 import type { ConnectionContract } from '@gravito/atlas'
 
+const SAFE_IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/
+const SAFE_OPERATORS = new Set(['=', '!=', '<>', '>', '>=', '<', '<=', 'LIKE', 'ILIKE', 'IN'])
+
+function validateIdentifier(name: string, kind: string): void {
+  if (!SAFE_IDENTIFIER_PATTERN.test(name)) {
+    throw new Error(`Invalid ${kind}: ${name}`)
+  }
+}
+
+function validateOperator(operator: string): void {
+  if (!SAFE_OPERATORS.has(operator.toUpperCase())) {
+    throw new Error(`Invalid operator: ${operator}`)
+  }
+}
+
 export interface UpdateCondition {
   column: string
   operator: string
@@ -46,7 +61,9 @@ export class BatchUpdateBuilder {
   constructor(
     private connection: ConnectionContract,
     private tableName: string
-  ) {}
+  ) {
+    validateIdentifier(tableName, 'table name')
+  }
 
   /**
    * 新增 WHERE 條件
@@ -54,6 +71,8 @@ export class BatchUpdateBuilder {
    * ✅ 參數綁定防止 SQL Injection
    */
   where(column: string, operator: string, value: unknown): this {
+    validateIdentifier(column, 'column name')
+    validateOperator(operator)
     this.conditions.push({ column, operator, value })
     return this
   }
@@ -73,7 +92,10 @@ export class BatchUpdateBuilder {
 
     // 建立 SET 子句
     const setClause = Object.keys(updates)
-      .map((col, idx) => `${col} = $${idx + 1}`)
+      .map((col, idx) => {
+        validateIdentifier(col, 'column name')
+        return `${col} = $${idx + 1}`
+      })
       .join(', ')
 
     // 建立 WHERE 子句
