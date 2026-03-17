@@ -111,7 +111,7 @@ function tbValidator(
     }
 
     // Store validated data in context
-    const validated = data as Static<T>
+    const validated = data as Static<TSchema>
     ctx.req.setValidated(source, validated)
 
     // Call hook with success result if provided

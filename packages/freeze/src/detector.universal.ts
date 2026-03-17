@@ -2,6 +2,10 @@ import type { FreezeConfig } from './config'
 import type { AbsolutePath, Locale } from './types'
 import { asAbsolutePath } from './types'
 
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 /**
  * Information about a redirect rule match.
  *
@@ -57,7 +61,7 @@ export class FreezeDetector {
    */
   constructor(protected config: FreezeConfig) {
     for (const locale of config.locales) {
-      this.localeRegexMap.set(locale, new RegExp(`^/${locale}(/|$)`))
+      this.localeRegexMap.set(locale, new RegExp(`^/${escapeRegex(locale)}(/|$)`))
     }
   }
 

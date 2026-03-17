@@ -69,6 +69,21 @@ describe('@gravito/freeze', () => {
         expect(detector.getLocaleFromPath(asAbsolutePath('/docs'))).toBe(asLocale('en'))
         expect(detector.getLocaleFromPath(asAbsolutePath('/'))).toBe(asLocale('en'))
       })
+
+      it('should not treat locale metacharacters as regex wildcards', () => {
+        const trickyConfig = defineConfig({
+          staticDomains: [],
+          locales: [asLocale('en.*'), asLocale('zh')],
+          defaultLocale: asLocale('zh'),
+          baseUrl: 'https://example.com',
+        })
+
+        const trickyDetector = createDetector(trickyConfig)
+        expect(trickyDetector.getLocaleFromPath(asAbsolutePath('/en123/docs'))).toBe(asLocale('zh'))
+        expect(trickyDetector.getLocaleFromPath(asAbsolutePath('/en.*/docs'))).toBe(
+          asLocale('en.*')
+        )
+      })
     })
 
     describe('getLocalizedPath', () => {
@@ -436,6 +451,18 @@ describe('@gravito/freeze', () => {
       expect(getLocalizedPath(asAbsolutePath('/'), asLocale('en'), locales, defaultLocale)).toBe(
         asAbsolutePath('/')
       )
+    })
+
+    it('should strip literal locale prefixes with regex metacharacters safely', () => {
+      const locales = ['en.*', 'zh']
+      const defaultLocale = 'zh'
+
+      expect(
+        getLocalizedPath(asAbsolutePath('/en.*/docs'), asLocale('zh'), locales, defaultLocale)
+      ).toBe(asAbsolutePath('/docs'))
+      expect(
+        getLocalizedPath(asAbsolutePath('/en123/docs'), asLocale('zh'), locales, defaultLocale)
+      ).toBe(asAbsolutePath('/en123/docs'))
     })
   })
 })

@@ -5,6 +5,10 @@
  * Used by both runtime detection and build-time generation.
  */
 
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 /**
  * Extracts the locale identifier from a URL path.
  *
@@ -53,7 +57,7 @@ export function stripLocalePrefix(path: string, locales: string[]): string {
   let cleanPath = path
   for (const loc of locales) {
     if (cleanPath === `/${loc}` || cleanPath.startsWith(`/${loc}/`)) {
-      cleanPath = cleanPath.replace(new RegExp(`^/${loc}`), '') || '/'
+      cleanPath = cleanPath.replace(new RegExp(`^/${escapeRegex(loc)}`), '') || '/'
       break
     }
   }

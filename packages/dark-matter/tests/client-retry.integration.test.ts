@@ -10,12 +10,16 @@ type MongoClientOptions = {
 let connectAttempts = 0
 let shouldFailTimes = 0
 let connectionErrors: string[] = []
+let clientInstances = 0
+let closeCalls = 0
 
 class MongoClientMock {
   constructor(
     public uri: string,
     public options?: MongoClientOptions
-  ) {}
+  ) {
+    clientInstances++
+  }
 
   async connect() {
     connectAttempts++
@@ -27,7 +31,9 @@ class MongoClientMock {
     }
   }
 
-  async close() {}
+  async close() {
+    closeCalls++
+  }
 
   db(_name?: string) {
     return {
@@ -62,6 +68,8 @@ describe('MongoClient 重試邏輯', () => {
     connectAttempts = 0
     shouldFailTimes = 0
     connectionErrors = []
+    clientInstances = 0
+    closeCalls = 0
   })
 
   describe('連線失敗後重試', () => {
@@ -117,6 +125,24 @@ describe('MongoClient 重試邏輯', () => {
 
       expect(connectAttempts).toBe(4) // 1 次初始嘗試 + 3 次重試
       expect(client.isConnected()).toBe(false)
+    })
+
+    it('應該在每次重試時建立新的原生 client 並清理失敗連線', async () => {
+      shouldFailTimes = 2
+
+      const client = new MongoClient({
+        uri: 'mongodb://localhost:27017',
+        database: 'test',
+      })
+
+      await client.connect({
+        maxRetries: 3,
+        retryDelayMs: 10,
+      })
+
+      expect(clientInstances).toBe(3)
+      expect(closeCalls).toBe(2)
+      expect(client.isConnected()).toBe(true)
     })
   })
 

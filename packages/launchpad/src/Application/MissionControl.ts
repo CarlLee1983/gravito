@@ -55,14 +55,16 @@ export class MissionControl {
       const stats = await this.docker.getStats(rocket.containerId)
       onTelemetry('stats', { rocketId: rocket.id, ...stats })
     }, 5000)
+    statsTimer.unref?.()
 
     const ttl = 10 * 60 * 1000
-    setTimeout(async () => {
+    const recycleTimer = setTimeout(async () => {
       console.log(`[MissionControl] 任務 ${mission.id} TTL 已到期，執行自動回收...`)
       clearInterval(statsTimer)
       await this.poolManager.recycle(mission.id)
       onTelemetry('log', { rocketId: rocket.id, text: '--- MISSION EXPIRED (TTL) ---' })
     }, ttl)
+    recycleTimer.unref?.()
 
     return rocket.id
   }

@@ -1,4 +1,4 @@
-import type { Context, Env } from '@gravito/photon'
+import type { GravitoContext } from '@gravito/photon'
 import type { Static, TSchema } from '@sinclair/typebox'
 
 /**
@@ -47,13 +47,11 @@ export interface ValidationResult<T extends TSchema> {
  * after validation but before the main route handler.
  *
  * @template T - The TypeBox schema type
- * @template E - The Photon environment type
- *
  * @param result - The outcome of the validation
  * @param context - The Photon request context
  * @returns A Response object to short-circuit the request, or undefined to proceed
  */
-export type ValidationHook<T extends TSchema, E extends Env = Env> = (
+export type ValidationHook<T extends TSchema> = (
   result: ValidationResult<T>,
-  context: Context<E>
+  context: GravitoContext
 ) => Response | Promise<Response> | undefined

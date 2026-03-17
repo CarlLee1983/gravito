@@ -77,18 +77,32 @@ export class MongoClient implements MongoClientContract {
       options.socketTimeoutMS = this.config.socketTimeoutMS
     }
 
-    this.client = new this.mongodb.MongoClient(uri, options)
-
     let lastError: Error | null = null
     for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
+      const client = new this.mongodb.MongoClient(uri, options)
+      this.client = client
+
       try {
-        await this.client.connect()
+        await client.connect()
         const dbName = this.config.database ?? 'test'
-        this.db = this.client.db(dbName)
+        this.db = client.db(dbName)
         this.connected = true
         return
       } catch (error) {
         lastError = error as Error
+        this.connected = false
+        this.db = null
+
+        try {
+          await client.close()
+        } catch {
+          // Ignore cleanup failures from a partially opened client.
+        }
+
+        if (this.client === client) {
+          this.client = null
+        }
+
         if (attempt < config.maxRetries) {
           const delay = config.retryDelayMs * config.backoffMultiplier ** attempt
           await new Promise((resolve) => setTimeout(resolve, delay))

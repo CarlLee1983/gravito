@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
 import { existsSync } from 'node:fs'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -52,5 +52,35 @@ describe('ContentWatcher', () => {
     expect(cleared).toBe(true)
 
     watcher.close()
+  })
+
+  it('should unref debounce timers', async () => {
+    const manager = new ContentManager(new LocalDriver(TMP_DIR))
+    manager.defineCollection('docs', { path: 'docs' })
+
+    const watcher = new ContentWatcher(manager, TMP_DIR, { debounceMs: 100 })
+    const handle = { unref: mock(() => {}) }
+    const originalSetTimeout = global.setTimeout
+    global.setTimeout = ((fn: () => void) => {
+      fn()
+      return handle as any
+    }) as typeof setTimeout
+
+    try {
+      watcher.watch('docs')
+      await writeFile(join(TMP_DIR, 'docs', 'en', 'test.md'), '# Changed Again')
+
+      for (let i = 0; i < 20; i++) {
+        if (handle.unref.mock.calls.length > 0) {
+          break
+        }
+        await new Promise((resolve) => originalSetTimeout(resolve, 10))
+      }
+
+      expect(handle.unref).toHaveBeenCalled()
+    } finally {
+      global.setTimeout = originalSetTimeout
+      watcher.close()
+    }
   })
 })

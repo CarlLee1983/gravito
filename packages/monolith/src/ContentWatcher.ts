@@ -54,13 +54,12 @@ export class ContentWatcher {
           clearTimeout(this.debounceTimers.get(key))
         }
 
-        this.debounceTimers.set(
-          key,
-          setTimeout(() => {
-            this.handleFileChange(collection, filename.toString(), localePrefix)
-            this.debounceTimers.delete(key)
-          }, this.options.debounceMs ?? 100)
-        )
+        const timer = setTimeout(() => {
+          this.handleFileChange(collection, filename.toString(), localePrefix)
+          this.debounceTimers.delete(key)
+        }, this.options.debounceMs ?? 100)
+        timer.unref?.()
+        this.debounceTimers.set(key, timer)
       })
 
       this.watchers.push(watcher)

@@ -41,17 +41,19 @@ describe('MissionControl timers', () => {
     let intervalFn: (() => Promise<void>) | null = null
     const clearIntervalMock = mock(() => {})
     let timeoutPromise: Promise<void> | null = null
+    const intervalHandle = { unref: mock(() => {}) }
+    const timeoutHandle = { unref: mock(() => {}) }
 
     global.setInterval = ((fn: () => Promise<void>) => {
       intervalFn = fn
-      return 123 as any
+      return intervalHandle as any
     }) as any
 
     global.clearInterval = clearIntervalMock as any
 
     global.setTimeout = ((fn: () => Promise<void>) => {
       timeoutPromise = Promise.resolve(fn())
-      return 456 as any
+      return timeoutHandle as any
     }) as any
 
     const mc = new MissionControl(poolManager as any, injector as any, docker as any)
@@ -61,6 +63,8 @@ describe('MissionControl timers', () => {
       await mc.launch(mission, onTelemetry)
 
       expect(intervalFn).not.toBeNull()
+      expect(intervalHandle.unref).toHaveBeenCalled()
+      expect(timeoutHandle.unref).toHaveBeenCalled()
       await intervalFn?.()
       expect(docker.getStats).toHaveBeenCalledWith(rocket.containerId)
 
