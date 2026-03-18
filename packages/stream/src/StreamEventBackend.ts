@@ -1,4 +1,5 @@
 import type { EventBackend, EventTask } from '@gravito/core'
+import type { EventOptions } from '@gravito/core/events/EventOptions'
 import type { QueueManager } from './QueueManager'
 import { SystemEventJob } from './SystemEventJob'
 import type { JobPushOptions } from './types'
@@ -11,6 +12,19 @@ import type { JobPushOptions } from './types'
  * - 'hybrid': Bull retries + Core DLQ fallback (future phase)
  */
 export type RetryStrategy = 'bull' | 'core' | 'hybrid'
+
+interface CircuitBreakerLike {
+  getState?(): string
+  recordFailure?(error: Error): void
+  recordSuccess?(): void
+}
+
+interface StreamEventOptions extends EventOptions {
+  groupId?: string
+  maxAttempts?: number
+  retryAfter?: number
+  retryMultiplier?: number
+}
 
 /**
  * Configuration for StreamEventBackend.
@@ -38,7 +52,7 @@ export interface StreamEventBackendConfig {
   /**
    * CircuitBreaker getter (injected from core)
    */
-  getCircuitBreaker?: (hook: string) => any
+  getCircuitBreaker?: (hook: string) => CircuitBreakerLike | undefined
 }
 
 /**
@@ -89,16 +103,16 @@ export class StreamEventBackend implements EventBackend {
    */
   private buildJobOptions(task: EventTask): JobPushOptions {
     const options: JobPushOptions = {}
+    const taskOptions = task.options as StreamEventOptions
 
     // Map priority if present
-    if (task.options?.priority) {
-      options.priority = task.options.priority
+    if (taskOptions.priority) {
+      options.priority = taskOptions.priority
     }
 
-    // Map group ID for FIFO processing (if provided in options as any)
-    const taskOptionsAny = task.options as any
-    if (taskOptionsAny?.groupId) {
-      options.groupId = taskOptionsAny.groupId
+    // Map group ID for FIFO processing if extended options provide it.
+    if (taskOptions.groupId) {
+      options.groupId = taskOptions.groupId
     }
 
     return options
@@ -142,13 +156,13 @@ export class StreamEventBackend implements EventBackend {
    */
   private applyRetryStrategy(job: SystemEventJob, task: EventTask): void {
     const strategy = this.config.retryStrategy ?? 'bull'
-    const taskOptionsAny = task.options as any
+    const taskOptions = task.options as StreamEventOptions
 
     if (strategy === 'bull' || strategy === 'hybrid') {
       // Let Bull Queue handle retries with exponential backoff
-      job.maxAttempts = taskOptionsAny?.maxAttempts ?? 3
-      job.retryAfterSeconds = taskOptionsAny?.retryAfter ?? 5
-      job.retryMultiplier = taskOptionsAny?.retryMultiplier ?? 2
+      job.maxAttempts = taskOptions.maxAttempts ?? 3
+      job.retryAfterSeconds = taskOptions.retryAfter ?? 5
+      job.retryMultiplier = taskOptions.retryMultiplier ?? 2
     }
 
     // For 'core' and 'hybrid', we'd use EventPriorityQueue retry logic
