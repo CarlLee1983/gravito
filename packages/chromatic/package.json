@@ -60,6 +60,6 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@gravito/core": "workspace:*"
+    "@gravito/core": "^2.0.6"
   }
 }

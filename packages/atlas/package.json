@@ -14,7 +14,7 @@
     }
   },
   "bin": {
-    "orbit": "src/cli.ts"
+    "orbit": "dist/cli.js"
   },
   "scripts": {
     "build": "bun run build.ts",
@@ -44,7 +44,7 @@
   "author": "Gravito Team",
   "license": "MIT",
   "dependencies": {
-    "@gravito/core": "workspace:*",
+    "@gravito/core": "^2.0.6",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/semantic-conventions": "^1.39.0",
     "lru-cache": "^11.0.2",

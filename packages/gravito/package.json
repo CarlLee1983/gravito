@@ -15,7 +15,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "echo Skipping build...",
+    "build": "node --check bin/gravito.js",
     "test": "bun test tests/ --timeout=10000",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
@@ -23,7 +23,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@gravito/pulse": "^3.2.1"
+    "@gravito/pulse": "^3.4.2"
   },
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",

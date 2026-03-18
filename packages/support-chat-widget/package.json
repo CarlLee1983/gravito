@@ -16,7 +16,7 @@
     "README.md"
   ],
   "dependencies": {
-    "@gravito/ripple-client": "workspace:*",
+    "@gravito/ripple-client": "^4.0.0-alpha.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "lucide-react": "^0.562.0",

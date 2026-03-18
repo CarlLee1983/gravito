@@ -45,7 +45,7 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@gravito/core": "workspace:*"
+    "@gravito/core": "^2.0.6"
   },
   "devDependencies": {
     "bun-types": "latest",

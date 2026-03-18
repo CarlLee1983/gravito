@@ -40,7 +40,7 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@gravito/nova": "workspace:*"
+    "@gravito/nova": "^1.0.2"
   },
   "optionalDependencies": {
     "cron-parser": "^4.9.0"
