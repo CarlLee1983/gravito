@@ -72,7 +72,14 @@ export class StaticSiteGenerator {
    *
    * @param core - The PlanetCore instance to crawl routes from.
    */
-  constructor(private core: PlanetCore) {}
+  constructor(
+    private core: PlanetCore,
+    private readonly defaultOptions: ExportOptions = {}
+  ) {}
+
+  private resolveOptions(options: ExportOptions = {}): ExportOptions {
+    return { ...this.defaultOptions, ...options }
+  }
 
   private logMemory(label: string): void {
     const usage = process.memoryUsage()
@@ -111,17 +118,18 @@ export class StaticSiteGenerator {
     outputDir: string,
     options: ExportOptions = {}
   ): Promise<void> {
-    const baseUrl = options.baseUrl ?? 'https://gravito.dev'
+    const resolvedOptions = this.resolveOptions(options)
+    const baseUrl = resolvedOptions.baseUrl ?? 'https://gravito.dev'
 
     this.core.logger.info('[SSG] Resolving dynamic routes...')
     const resolved = await DynamicRouteResolver.resolve(dynamicRoutes)
     this.core.logger.info(`[SSG] Resolved ${resolved.length} static paths from dynamic routes`)
 
-    if (options.incremental) {
-      const builder = new IncrementalBuilder(this.core, outputDir, options)
-      await builder.export(resolved, baseUrl, options)
+    if (resolvedOptions.incremental) {
+      const builder = new IncrementalBuilder(this.core, outputDir, resolvedOptions)
+      await builder.export(resolved, baseUrl, resolvedOptions)
     } else {
-      await this.exportRoutes(resolved, outputDir, baseUrl, options)
+      await this.exportRoutes(resolved, outputDir, baseUrl, resolvedOptions)
     }
   }
 
@@ -140,14 +148,15 @@ export class StaticSiteGenerator {
    * ```
    */
   async exportIncremental(outputDir: string, options: ExportOptions = {}): Promise<void> {
-    const baseUrl = options.baseUrl ?? 'https://gravito.dev'
+    const resolvedOptions = this.resolveOptions(options)
+    const baseUrl = resolvedOptions.baseUrl ?? 'https://gravito.dev'
 
     const routes = this.getStaticRoutes()
-    const extraPaths = (options.extraPaths ?? []).map((p) => ({ path: p }))
+    const extraPaths = (resolvedOptions.extraPaths ?? []).map((p) => ({ path: p }))
     const resolved = [...routes.map((r) => ({ path: r.path })), ...extraPaths]
 
-    const builder = new IncrementalBuilder(this.core, outputDir, options)
-    await builder.export(resolved, baseUrl, options)
+    const builder = new IncrementalBuilder(this.core, outputDir, resolvedOptions)
+    await builder.export(resolved, baseUrl, resolvedOptions)
 
     await this.generateSitemap(outputDir, resolved, baseUrl)
     await this.generateRobotsTxt(outputDir, baseUrl)

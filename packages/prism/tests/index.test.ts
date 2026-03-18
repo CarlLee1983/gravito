@@ -1,5 +1,5 @@
 import { describe, expect, it, mock } from 'bun:test'
-import { OrbitPrism, TemplateEngine } from '../src/index'
+import { OrbitPrism, StaticSiteGenerator, TemplateEngine } from '../src/index'
 
 describe('OrbitPrism', () => {
   it('should register view engine', async () => {
@@ -49,6 +49,36 @@ describe('TemplateEngine', () => {
   // So we will test regex replacements via exposed methods if we refactored,
   // or just mocking readTemplate. For now let's rely on integration-style testing if possible.
   // Actually, we can test interpolate logic if we make it public or access via render if we mock readTemplate.
+})
+
+describe('StaticSiteGenerator', () => {
+  it('merges constructor defaults with per-export overrides', () => {
+    const ssg = new StaticSiteGenerator(
+      {
+        logger: {
+          debug: mock(() => {}),
+          info: mock(() => {}),
+        },
+      } as any,
+      {
+        incremental: true,
+        concurrency: 4,
+        timeout: 5000,
+      }
+    )
+
+    const resolved = (ssg as any).resolveOptions({
+      timeout: 1000,
+      baseUrl: 'https://example.com',
+    })
+
+    expect(resolved).toEqual({
+      incremental: true,
+      concurrency: 4,
+      timeout: 1000,
+      baseUrl: 'https://example.com',
+    })
+  })
 })
 
 // Since we cannot easily mock private methods or fs here without more setup,

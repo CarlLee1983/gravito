@@ -101,7 +101,7 @@ export class OrbitPrism implements GravitoOrbit {
 
     core.hooks.doAction('view:helpers:register', engine)
 
-    const ssg = new StaticSiteGenerator(core)
+    const ssg = new StaticSiteGenerator(core, this.options?.ssg)
     core.container.singleton('ssg', () => ssg)
     core.logger.info('[OrbitPrism] SSG registered (Exposed as: ssg)')
   }
