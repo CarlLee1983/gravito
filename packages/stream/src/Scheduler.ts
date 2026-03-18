@@ -1,5 +1,6 @@
-import parser from 'cron-parser'
+import { CronExpressionParser } from 'cron-parser'
 import type { GroupRedisClient } from './drivers/RedisDriver'
+import type { Job } from './Job'
 import { DistributedLock } from './locks/DistributedLock'
 import type { QueueManager } from './QueueManager'
 import type { SerializedJob } from './types'
@@ -181,6 +182,10 @@ export class Scheduler {
     return this.distributedLock
   }
 
+  private getNextRunTime(cron: string): number {
+    return CronExpressionParser.parse(cron).next().getTime()
+  }
+
   /**
    * Registers a new scheduled job or updates an existing one.
    *
@@ -190,7 +195,7 @@ export class Scheduler {
    * @throws {Error} If Redis client does not support pipelining.
    */
   async register(config: Omit<ScheduledJobConfig, 'nextRun' | 'enabled'>): Promise<void> {
-    const nextRun = (parser as any).parse(config.cron).next().getTime()
+    const nextRun = this.getNextRunTime(config.cron)
     const fullConfig: ScheduledJobConfig = {
       ...config,
       nextRun,
@@ -351,9 +356,9 @@ export class Scheduler {
     const data = await client.hgetall?.(`${this.prefix}schedule:${id}`)
 
     if (data?.id) {
-      const serialized = JSON.parse(data.job)
+      const serialized = JSON.parse(data.job) as SerializedJob
       const serializer = this.manager.getSerializer()
-      const job = serializer.deserialize(serialized) as any
+      const job: Job = serializer.deserialize(serialized)
       await this.manager.push(job)
     }
   }
@@ -408,7 +413,7 @@ export class Scheduler {
               await driver.push(data.queue, serializedJob)
 
               // 2. Schedule next run
-              const nextRun = (parser as any).parse(data.cron).next().getTime()
+              const nextRun = this.getNextRunTime(data.cron)
 
               if (typeof client.pipeline === 'function') {
                 const pipe = client.pipeline()

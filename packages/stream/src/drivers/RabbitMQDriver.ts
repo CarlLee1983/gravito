@@ -2,6 +2,43 @@ import type { SerializedJob } from '../types'
 import { prepareJobForTransport } from './prepareJobForTransport'
 import type { QueueDriver } from './QueueDriver'
 
+interface RabbitMessage {
+  content: Buffer
+}
+
+interface RabbitChannel {
+  assertExchange(exchange: string, type: string, options: { durable: boolean }): Promise<unknown>
+  assertQueue(queue: string, options: { durable: boolean }): Promise<unknown>
+  bindQueue(queue: string, exchange: string, routingKey: string): Promise<unknown>
+  publish(
+    exchange: string,
+    routingKey: string,
+    content: Buffer,
+    options: { persistent: boolean }
+  ): boolean
+  sendToQueue(queue: string, content: Buffer, options: { persistent: boolean }): boolean
+  get(queue: string, options: { noAck: boolean }): Promise<RabbitMessage | false | null>
+  ack(message: RabbitMessage): void
+  nack(message: RabbitMessage, allUpTo: boolean, requeue: boolean): void
+  reject(message: RabbitMessage, requeue: boolean): void
+  consume(
+    queue: string,
+    onMessage: (message: RabbitMessage | null) => Promise<void>,
+    options: { noAck: boolean }
+  ): Promise<unknown>
+  prefetch(count: number): Promise<unknown>
+  checkQueue(queue: string): Promise<{ messageCount: number }>
+  purgeQueue(queue: string): Promise<unknown>
+}
+
+interface RabbitConnection {
+  createChannel(): Promise<RabbitChannel>
+}
+
+type RabbitClient = RabbitConnection | RabbitChannel
+
+type RabbitQueuedJob = SerializedJob & { _raw?: RabbitMessage }
+
 /**
  * RabbitMQ driver configuration.
  */
@@ -10,7 +47,7 @@ export interface RabbitMQDriverConfig {
    * RabbitMQ client (amqplib) Connection or Channel.
    * If a Connection is provided, the driver will create and manage a Channel.
    */
-  client: any
+  client: RabbitClient
 
   /**
    * Exchange name (optional).
@@ -38,8 +75,8 @@ export interface RabbitMQDriverConfig {
  * ```
  */
 export class RabbitMQDriver implements QueueDriver {
-  private connection: any
-  private channel: any
+  private connection: RabbitClient
+  private channel?: RabbitChannel
   private exchange?: string
   private exchangeType: string
 
@@ -55,16 +92,20 @@ export class RabbitMQDriver implements QueueDriver {
     }
   }
 
+  private isRabbitConnection(client: RabbitClient): client is RabbitConnection {
+    return typeof (client as RabbitConnection).createChannel === 'function'
+  }
+
   /**
    * Ensure channel is created.
    */
-  public async ensureChannel(): Promise<any> {
+  public async ensureChannel(): Promise<RabbitChannel> {
     if (this.channel) {
       return this.channel
     }
 
     // If client is a connection, create channel
-    if (typeof this.connection.createChannel === 'function') {
+    if (this.isRabbitConnection(this.connection)) {
       this.channel = await this.connection.createChannel()
     } else {
       // Assume client is already a channel
@@ -119,10 +160,10 @@ export class RabbitMQDriver implements QueueDriver {
       return null
     }
 
-    const job = JSON.parse(msg.content.toString()) as SerializedJob
+    const job = JSON.parse(msg.content.toString()) as RabbitQueuedJob
     // Attach raw message for acknowledgement if needed
     // Note: We use a Symbol or internal property to avoid leaking to serialization
-    ;(job as any)._raw = msg
+    job._raw = msg
 
     return job
   }
@@ -146,8 +187,8 @@ export class RabbitMQDriver implements QueueDriver {
         break // Queue empty
       }
 
-      const job = JSON.parse(msg.content.toString()) as SerializedJob
-      ;(job as any)._raw = msg
+      const job = JSON.parse(msg.content.toString()) as RabbitQueuedJob
+      job._raw = msg
       results.push(job)
     }
 
@@ -174,7 +215,7 @@ export class RabbitMQDriver implements QueueDriver {
   /**
    * Negative acknowledge a message.
    */
-  async nack(message: any, requeue = true): Promise<void> {
+  async nack(message: RabbitMessage, requeue = true): Promise<void> {
     const channel = await this.ensureChannel()
     channel.nack(message, false, requeue)
   }
@@ -182,7 +223,7 @@ export class RabbitMQDriver implements QueueDriver {
   /**
    * Reject a message.
    */
-  async reject(message: any, requeue = true): Promise<void> {
+  async reject(message: RabbitMessage, requeue = true): Promise<void> {
     const channel = await this.ensureChannel()
     channel.reject(message, requeue)
   }
@@ -210,14 +251,14 @@ export class RabbitMQDriver implements QueueDriver {
 
     await channel.consume(
       queue,
-      async (msg: any) => {
+      async (msg: RabbitMessage | null) => {
         if (!msg) {
           return
         }
 
-        const job = JSON.parse(msg.content.toString()) as SerializedJob
+        const job = JSON.parse(msg.content.toString()) as RabbitQueuedJob
         // Attach raw message for manual control
-        ;(job as any)._raw = msg
+        job._raw = msg
 
         await callback(job)
 

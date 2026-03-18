@@ -30,13 +30,7 @@ export interface KafkaDriverConfig {
     consumer: (args: { groupId: string }) => {
       connect: () => Promise<void>
       subscribe: (args: { topics: string[] }) => Promise<void>
-      run: (args: {
-        eachMessage: (args: {
-          topic: string
-          partition: number
-          message: { key?: Buffer; value: Buffer; offset: string }
-        }) => Promise<void>
-      }) => Promise<void>
+      run: (args: KafkaConsumerRunOptions) => Promise<void>
       disconnect: () => Promise<void>
     }
   }
@@ -46,6 +40,28 @@ export interface KafkaDriverConfig {
    * @default 'gravito-workers'
    */
   consumerGroupId?: string
+}
+
+interface KafkaMessage {
+  key?: Buffer
+  value: Buffer | null
+  offset: string
+}
+
+interface KafkaBatch {
+  messages: KafkaMessage[]
+}
+
+interface KafkaEachBatchPayload {
+  batch: KafkaBatch
+  resolveOffset(offset: string): void
+  heartbeat(): Promise<void>
+  isRunning(): boolean
+}
+
+interface KafkaConsumerRunOptions {
+  eachMessage?: (args: { topic: string; partition: number; message: KafkaMessage }) => Promise<void>
+  eachBatch?: (args: KafkaEachBatchPayload) => Promise<void>
 }
 
 /**
@@ -238,7 +254,7 @@ export class KafkaDriver implements QueueDriver {
     await consumer.subscribe({ topics: [queue] })
 
     await consumer.run({
-      eachBatch: async ({ batch, resolveOffset, heartbeat, isRunning }: any) => {
+      eachBatch: async ({ batch, resolveOffset, heartbeat, isRunning }) => {
         for (const message of batch.messages) {
           if (!isRunning() || !message.value) {
             continue
@@ -265,6 +281,6 @@ export class KafkaDriver implements QueueDriver {
           }
         }
       },
-    } as any)
+    })
   }
 }

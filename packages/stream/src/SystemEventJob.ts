@@ -1,6 +1,15 @@
 import { app } from '@gravito/core'
 import { Job } from './Job'
 
+export interface SystemEventJobOptions {
+  queue?: string
+  priority?: string | number
+  delay?: number
+  retryAfter?: number
+  retryMultiplier?: number
+  connection?: string
+}
+
 /**
  * SystemEventJob - Internal job for processing Gravito async hooks.
  *
@@ -15,7 +24,7 @@ export class SystemEventJob extends Job {
   constructor(
     public readonly hook: string,
     public readonly args: unknown,
-    public readonly options: Record<string, any> = {}
+    public readonly options: SystemEventJobOptions = {}
   ) {
     super()
 
