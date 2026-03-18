@@ -2,6 +2,11 @@ import type { ConnectionContract } from '@gravito/atlas'
 import { DB, Schema } from '@gravito/atlas'
 import type { JobRow, PersistenceAdapter, SerializedJob } from '../types'
 
+interface SearchSubqueryBuilder {
+  where(column: string, operator: string, value: string): SearchSubqueryBuilder
+  orWhere(column: string, operator: string, value: string): SearchSubqueryBuilder
+}
+
 /**
  * MySQL Persistence Adapter.
  *
@@ -168,7 +173,7 @@ export class MySQLPersistence implements PersistenceAdapter {
     }
 
     const rows = await q
-      .where((sub: any) => {
+      .where((sub: SearchSubqueryBuilder) => {
         sub
           .where('job_id', 'like', `%${query}%`)
           .orWhere('payload', 'like', `%${query}%`)
@@ -252,7 +257,7 @@ export class MySQLPersistence implements PersistenceAdapter {
       startTime?: Date
       endTime?: Date
     } = {}
-  ): Promise<any[]> {
+  ): Promise<Record<string, unknown>[]> {
     let query = this.db.table(this.logsTable)
 
     if (options.level) {

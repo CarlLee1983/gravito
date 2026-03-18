@@ -164,8 +164,8 @@ export interface QueueDriver {
       uptime: number
       last_ping: string
       queues: string[]
-      metrics?: Record<string, any>
-      [key: string]: any
+      metrics?: Record<string, unknown>
+      [key: string]: unknown
     },
     prefix?: string
   ): Promise<void>
@@ -183,7 +183,7 @@ export interface QueueDriver {
       workerId: string
       jobId?: string
       timestamp: string
-      [key: string]: any
+      [key: string]: unknown
     },
     prefix?: string
   ): Promise<void>

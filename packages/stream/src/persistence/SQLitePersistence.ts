@@ -2,6 +2,15 @@ import type { ConnectionContract } from '@gravito/atlas'
 import { Schema } from '@gravito/atlas'
 import type { JobRow, PersistenceAdapter, SerializedJob } from '../types'
 
+interface TransactionalConnection extends ConnectionContract {
+  transaction<T>(callback: (trx: ConnectionContract) => Promise<T>): Promise<T>
+}
+
+interface SearchSubqueryBuilder {
+  where(column: string, operator: string, value: string): SearchSubqueryBuilder
+  orWhere(column: string, operator: string, value: string): SearchSubqueryBuilder
+}
+
 /**
  * SQLite Persistence Adapter.
  *
@@ -70,8 +79,9 @@ export class SQLitePersistence implements PersistenceAdapter {
         }))
 
         // For SQLite, wrapping in a transaction significantly improves performance
-        if (typeof (this.db as any).transaction === 'function') {
-          await (this.db as any).transaction(async (trx: any) => {
+        const transactionalDb = this.db as TransactionalConnection
+        if (typeof transactionalDb.transaction === 'function') {
+          await transactionalDb.transaction(async (trx: ConnectionContract) => {
             await trx.table(this.table).insert(records)
           })
         } else {
@@ -179,7 +189,7 @@ export class SQLitePersistence implements PersistenceAdapter {
     }
 
     const rows = await q
-      .where((sub: any) => {
+      .where((sub: SearchSubqueryBuilder) => {
         sub
           .where('job_id', 'like', `%${query}%`)
           .orWhere('payload', 'like', `%${query}%`)
@@ -263,7 +273,7 @@ export class SQLitePersistence implements PersistenceAdapter {
       startTime?: Date
       endTime?: Date
     } = {}
-  ): Promise<any[]> {
+  ): Promise<Record<string, unknown>[]> {
     let query = this.db.table(this.logsTable)
 
     if (options.level) {
