@@ -26,6 +26,57 @@ export interface BullWorkerClient {
   [key: string]: any
 }
 
+interface BullJobOptions {
+  priority?: number
+  delay?: number
+  attempts?: number
+  backoff?: {
+    type: 'exponential'
+    delay: number
+  }
+  group?: {
+    id: string
+  }
+}
+
+interface BullJobData {
+  id: string
+  type: SerializedJob['type']
+  data: SerializedJob['data']
+  className?: string
+  createdAt: number
+  delaySeconds?: number
+  attempts: number
+  maxAttempts: number
+  groupId?: string
+  retryAfterSeconds?: number
+  retryMultiplier?: number
+  error?: string
+  failedAt?: number
+  priority?: string | number
+}
+
+interface WorkerHeartbeatPayload {
+  id: string
+  status: string
+  hostname: string
+  pid: number
+  uptime: number
+  last_ping: string
+  queues: string[]
+  metrics?: Record<string, unknown>
+  [key: string]: unknown
+}
+
+interface WorkerLogPayload {
+  level: string
+  message: string
+  workerId: string
+  jobId?: string
+  timestamp: string
+  [key: string]: unknown
+}
+
 /**
  * Bull Queue driver configuration.
  */
@@ -122,8 +173,8 @@ export class BullMQDriver implements QueueDriver {
   /**
    * Build Job Options from JobPushOptions.
    */
-  private buildJobOptions(options?: JobPushOptions): Record<string, any> {
-    const bullOptions: Record<string, any> = {}
+  private buildJobOptions(options?: JobPushOptions): BullJobOptions {
+    const bullOptions: BullJobOptions = {}
 
     // Priority mapping: 'high' -> 1, 'normal' -> 5, 'low' -> 10
     if (options?.priority) {
@@ -144,7 +195,7 @@ export class BullMQDriver implements QueueDriver {
   /**
    * Create Bull job data from SerializedJob.
    */
-  private createBullJobData(job: SerializedJob): any {
+  private createBullJobData(job: SerializedJob): BullJobData {
     return {
       id: job.id,
       type: job.type,
@@ -170,7 +221,7 @@ export class BullMQDriver implements QueueDriver {
     try {
       const q = this.getQueue(queue)
       const bullJobData = this.createBullJobData(job)
-      const bullOptions: Record<string, any> = this.buildJobOptions(options)
+      const bullOptions = this.buildJobOptions(options)
 
       // Add delay if specified
       if (job.delaySeconds && job.delaySeconds > 0) {
@@ -423,9 +474,9 @@ export class BullMQDriver implements QueueDriver {
       uptime: number
       last_ping: string
       queues: string[]
-      metrics?: Record<string, any>
-      [key: string]: any
-    },
+      metrics?: Record<string, unknown>
+      [key: string]: unknown
+    } & WorkerHeartbeatPayload,
     _prefix?: string
   ): Promise<void> {
     // Placeholder for heartbeat reporting
@@ -444,8 +495,8 @@ export class BullMQDriver implements QueueDriver {
       workerId: string
       jobId?: string
       timestamp: string
-      [key: string]: any
-    },
+      [key: string]: unknown
+    } & WorkerLogPayload,
     _prefix?: string
   ): Promise<void> {
     if (this.debug) {
