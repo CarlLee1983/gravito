@@ -1,3 +1,29 @@
+import type { DatabaseService } from './drivers/DatabaseDriver'
+
+export interface RedisLikeClient {
+  [key: string]: unknown
+}
+
+export interface KafkaLikeClient {
+  [key: string]: unknown
+}
+
+export interface SqsLikeClient {
+  [key: string]: unknown
+}
+
+export interface RabbitMqLikeClient {
+  [key: string]: unknown
+}
+
+export interface BullMqQueueLike {
+  [key: string]: unknown
+}
+
+export interface BullMqWorkerLike {
+  [key: string]: unknown
+}
+
 /**
  * Represents a job that has been serialized for storage in a queue.
  *
@@ -237,7 +263,7 @@ export interface DatabaseDriverConfig {
   /** Driver type identifier */
   driver: 'database'
   /** Database service implementation for executing queries */
-  dbService: any
+  dbService: DatabaseService
   /** Optional custom table name for storing jobs */
   table?: string
 }
@@ -261,7 +287,7 @@ export interface RedisDriverConfig {
   /** Driver type identifier */
   driver: 'redis'
   /** Redis client instance (ioredis or node-redis compatible) */
-  client: any
+  client: RedisLikeClient
   /** Optional key prefix for namespacing */
   prefix?: string
 }
@@ -284,7 +310,7 @@ export interface KafkaDriverConfig {
   /** Driver type identifier */
   driver: 'kafka'
   /** Kafka client instance */
-  client: any
+  client: KafkaLikeClient
   /** Consumer group ID for coordinating workers */
   consumerGroupId?: string
 }
@@ -308,7 +334,7 @@ export interface SQSDriverConfig {
   /** Driver type identifier */
   driver: 'sqs'
   /** Amazon SQS client instance */
-  client: any
+  client: SqsLikeClient
   /** Optional prefix for resolving queue names to URLs */
   queueUrlPrefix?: string
   /** The duration (in seconds) that received messages are hidden from other consumers */
@@ -336,7 +362,7 @@ export interface RabbitMQDriverConfig {
   /** Driver type identifier */
   driver: 'rabbitmq'
   /** AMQP client instance */
-  client: any
+  client: RabbitMqLikeClient
   /** Exchange name to publish to */
   exchange?: string
   /** Type of exchange (direct, topic, fanout, headers) */
@@ -403,9 +429,9 @@ export interface BullMQDriverConfig {
   /** Driver type identifier */
   driver: 'bullmq'
   /** Bull Queue instance */
-  queue: any
+  queue: BullMqQueueLike
   /** Optional Bull Worker instance */
-  worker?: any
+  worker?: BullMqWorkerLike
   /** Key prefix for queue namespacing */
   prefix?: string
   /** Enable debug logging */

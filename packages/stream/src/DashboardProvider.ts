@@ -1,5 +1,21 @@
 import type { GravitoContext } from '@gravito/core'
 import type { QueueManager } from './QueueManager'
+import type { QueueStats } from './types'
+
+interface DashboardRouter {
+  get(
+    path: string,
+    handler: (context: GravitoContext) => Promise<Response | unknown> | Response | unknown
+  ): void
+  post(
+    path: string,
+    handler: (context: GravitoContext) => Promise<Response | unknown> | Response | unknown
+  ): void
+}
+
+interface DashboardCore {
+  adapter: DashboardRouter
+}
 
 /**
  * Provides API routes for the Stream Monitoring Dashboard.
@@ -18,7 +34,7 @@ export class DashboardProvider {
    * @param core - The PlanetCore instance.
    * @param basePath - The base path for API routes (default: '/_flux').
    */
-  registerRoutes(core: any, basePath = '/_flux'): void {
+  registerRoutes(core: DashboardCore, basePath = '/_flux'): void {
     const router = core.adapter
 
     router.get(`${basePath}/stats`, async (c: GravitoContext) => {
@@ -29,7 +45,7 @@ export class DashboardProvider {
     router.get(`${basePath}/queues`, async (c: GravitoContext) => {
       const stats = await this.manager.getGlobalStats()
       const queues = Object.entries(stats.connections).flatMap(([conn, qList]) =>
-        qList.map((q: any) => ({
+        qList.map((q: QueueStats) => ({
           connection: conn,
           name: q.queue,
           size: q.size,
@@ -52,8 +68,8 @@ export class DashboardProvider {
 
       const statuses = status ? (status.includes(',') ? status.split(',') : status) : undefined
       const [jobs, total] = await Promise.all([
-        persistence.list(queue, { status: statuses as any, limit, offset }),
-        persistence.count(queue, { status: statuses as any }),
+        persistence.list(queue, { status: statuses, limit, offset }),
+        persistence.count(queue, { status: statuses }),
       ])
 
       return c.json({

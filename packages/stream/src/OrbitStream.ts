@@ -5,6 +5,10 @@ import { QueueManager } from './QueueManager'
 import { StreamEventBackend } from './StreamEventBackend'
 import type { QueueConfig } from './types'
 
+interface SignalEmitter {
+  emit(event: string, payload: unknown): void
+}
+
 /**
  * Configuration options for the OrbitStream extension.
  *
@@ -209,7 +213,7 @@ export class OrbitStream implements GravitoOrbit {
     const consumerOptions: ConsumerOptions = {
       ...options,
       onEvent: (event, payload) => {
-        const signal = this.core?.container.make('signal') as any
+        const signal = this.core?.container.make('signal') as SignalEmitter | undefined
         if (signal && typeof signal.emit === 'function') {
           signal.emit(`stream:${event}`, payload)
         }
