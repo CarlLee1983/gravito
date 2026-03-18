@@ -1,4 +1,21 @@
 import { type Counter, type Histogram, type Meter, metrics } from '@opentelemetry/api'
+import type { PoolStats } from '../types'
+
+interface ObservableResult {
+  observe(value: number, attributes?: Record<string, string>): void
+}
+
+interface ObservableGaugeLike {
+  addCallback(callback: (result: ObservableResult) => void): void
+  removeCallback?(callback: (result: ObservableResult) => void): void
+}
+
+type ObservableGaugeMeter = Meter & {
+  createObservableGauge?(
+    name: string,
+    options?: { description?: string; unit?: string }
+  ): ObservableGaugeLike
+}
 
 export interface AtlasMetricsConfig {
   enabled: boolean
@@ -13,8 +30,8 @@ export class AtlasMetrics {
   public readonly operationErrors?: Counter
 
   // Connection pool metrics
-  public readonly poolSize?: any // ObservableGauge
-  public readonly poolUtilization?: any // ObservableGauge
+  public readonly poolSize?: ObservableGaugeLike
+  public readonly poolUtilization?: ObservableGaugeLike
   public readonly poolWaitTime?: Histogram
   public readonly poolAcquisitionErrors?: Counter
 
@@ -34,7 +51,7 @@ export class AtlasMetrics {
 
       // Connection pool metrics
       try {
-        const meterAny = this.meter as any
+        const meterAny = this.meter as ObservableGaugeMeter
         if (meterAny.createObservableGauge) {
           this.poolSize = meterAny.createObservableGauge('db.client.connections.usage', {
             description: 'Number of connections in various states',
@@ -70,10 +87,7 @@ export class AtlasMetrics {
   /**
    * Register pool statistics callback for ObservableGauge
    */
-  registerPoolStatsCallback(
-    connectionName: string,
-    getStats: () => { idle: number; active: number; pending: number; max: number } | null
-  ): void {
+  registerPoolStatsCallback(connectionName: string, getStats: () => PoolStats | null): void {
     if (!this.poolSize || !this.poolUtilization) {
       return
     }
@@ -85,9 +99,8 @@ export class AtlasMetrics {
       }
 
       // Record idle, active, and pending connections
-      const poolSizeAny = this.poolSize as any
-      if (poolSizeAny?.addCallback) {
-        poolSizeAny.addCallback((result: any) => {
+      if (this.poolSize) {
+        this.poolSize.addCallback((result) => {
           result.observe(stats.idle, {
             'db.connection.name': connectionName,
             state: 'idle',
@@ -105,9 +118,8 @@ export class AtlasMetrics {
 
       // Record utilization ratio
       const utilization = stats.active / stats.max
-      const poolUtilizationAny = this.poolUtilization as any
-      if (poolUtilizationAny?.addCallback) {
-        poolUtilizationAny.addCallback((result: any) => {
+      if (this.poolUtilization) {
+        this.poolUtilization.addCallback((result) => {
           result.observe(utilization, {
             'db.connection.name': connectionName,
           })

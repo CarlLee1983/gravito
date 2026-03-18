@@ -4,7 +4,7 @@
  */
 
 import type { ConnectionManager } from '../connection/ConnectionManager'
-import type { PoolStats } from '../types'
+import type { ConnectionConfig, PoolStats } from '../types'
 import type { PoolAdjustmentDecision, PoolStrategy } from './PoolStrategy'
 
 export interface PoolStatsHistory {
@@ -168,14 +168,15 @@ export class AdaptivePoolManager {
   private buildContext(connectionName: string, stats: PoolStats) {
     const history = this.getHistory(connectionName).map((h) => h.stats)
     const connection = this.connectionManager.connection(connectionName)
-    const config = connection.getConfig() as any
+    const config: ConnectionConfig = connection.getConfig()
+    const poolConfig = 'pool' in config ? config.pool : undefined
 
     return {
       stats,
       history,
       config: {
-        min: config.pool?.min,
-        max: config.pool?.max,
+        min: poolConfig?.min,
+        max: poolConfig?.max,
       },
       connectionName,
     }
@@ -242,9 +243,9 @@ export class AdaptivePoolManager {
     }
 
     // Try to adjust pool size (if driver supports it)
-    if (typeof (driver as any).adjustPoolSize === 'function') {
+    if (typeof driver.adjustPoolSize === 'function') {
       try {
-        await (driver as any).adjustPoolSize(decision.targetSize)
+        await driver.adjustPoolSize(decision.targetSize)
 
         // Record adjustment
         const event: PoolAdjustmentEvent = {

@@ -17,6 +17,17 @@ import { SchemaDiff } from './schema/SchemaDiff'
 import { TypeGenerator } from './schema/TypeGenerator'
 import { TypeWriter } from './schema/TypeWriter'
 import { SeederRunner } from './seed/SeederRunner'
+import type { DriverType } from './types'
+
+type MigrationDialect = Extract<DriverType, 'postgres' | 'mysql' | 'mariadb'>
+
+function toMigrationDialect(dialect: DriverType): MigrationDialect | null {
+  if (dialect === 'postgres' || dialect === 'mysql' || dialect === 'mariadb') {
+    return dialect
+  }
+
+  return null
+}
 
 async function main() {
   const args = process.argv.slice(2)
@@ -184,8 +195,9 @@ async function main() {
         const connection = DB.connection()
         const driver = connection.getDriver()
         const dialect = driver.getDriverName()
+        const migrationDialect = toMigrationDialect(dialect)
 
-        if (dialect === 'sqlite' || dialect === 'mongodb' || dialect === 'redis') {
+        if (!migrationDialect) {
           console.error(`db:push is not supported for ${dialect} driver.`)
           process.exit(1)
         }
@@ -196,7 +208,7 @@ async function main() {
           process.exit(1)
         }
 
-        const generator = new MigrationGenerator({ dialect: dialect as any })
+        const generator = new MigrationGenerator({ dialect: migrationDialect })
         let totalChanges = 0
 
         for (const table of tables) {
@@ -323,7 +335,13 @@ async function main() {
           break
         }
 
-        const gen = new MigrationGenerator({ dialect: dialect as any })
+        const migrationDialect = toMigrationDialect(dialect)
+        if (!migrationDialect) {
+          console.error(`migrate:generate is not supported for ${dialect} driver.`)
+          process.exit(1)
+        }
+
+        const gen = new MigrationGenerator({ dialect: migrationDialect })
         const content = gen.generateMigrationScript(diff)
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -1)
         const filename = `${timestamp}_sync_${table}.ts`

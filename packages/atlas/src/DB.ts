@@ -246,9 +246,9 @@ export class DB {
       return { rows: [], affectedRows: 0 }
     }
 
-    driver.query = async (sql: string, bindings?: unknown[]) => {
+    driver.query = async <T = Record<string, unknown>>(sql: string, bindings?: unknown[]) => {
       queries.push(this.interpolateBindings(sql, bindings || []))
-      return { rows: [], rowCount: 0 } as any
+      return { rows: [], rowCount: 0 } as QueryResult<T>
     }
 
     try {
@@ -572,8 +572,8 @@ export class DB {
       maxRetries?: number
       baseDelay?: number
       maxDelay?: number
-      retryableErrors?: (error: any) => boolean
-      onRetry?: (error: any, attempt: number, delay: number) => void
+      retryableErrors?: (error: unknown) => boolean
+      onRetry?: (error: unknown, attempt: number, delay: number) => void
     } = {}
   ): Promise<T> {
     const { maxRetries = 5, baseDelay = 100, maxDelay = 30000 } = options
@@ -587,12 +587,18 @@ export class DB {
         return await DB.transaction(async (conn) => {
           return await callback(conn, attempts)
         }, connectionName)
-      } catch (error: any) {
-        const errorCode = error.code || error.originalError?.code
+      } catch (error: unknown) {
+        const dbError = error as {
+          code?: unknown
+          originalError?: { code?: unknown }
+          name?: unknown
+        }
+        const errorCode = dbError.code || dbError.originalError?.code
+        const errorCodeString = typeof errorCode === 'string' ? errorCode : undefined
         const isRetryable =
-          error.name === 'StaleModelError' ||
-          (errorCode &&
-            ['40001', 'ER_LOCK_DEADLOCK', 'SQLITE_BUSY', '40P01'].includes(errorCode)) ||
+          dbError.name === 'StaleModelError' ||
+          (errorCodeString &&
+            ['40001', 'ER_LOCK_DEADLOCK', 'SQLITE_BUSY', '40P01'].includes(errorCodeString)) ||
           options.retryableErrors?.(error)
 
         if (!isRetryable || attempts >= maxRetries) {

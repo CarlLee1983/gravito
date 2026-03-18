@@ -162,11 +162,11 @@ export class MigrationGenerator {
 
 // Changes: +${diff.added.length} added, -${diff.removed.length} removed, ~${diff.modified.length} modified
 
-export async function up(connection: any): Promise<void> {
+export async function up(connection: { raw(sql: string): Promise<unknown> }): Promise<void> {
 ${statements.map((s) => `  await connection.raw(\`${s}\`)`).join('\n')}
 }
 
-export async function down(_connection: any): Promise<void> {
+export async function down(_connection: { raw(sql: string): Promise<unknown> }): Promise<void> {
   // TODO: Add rollback statements
   throw new Error('Rollback not auto-generated. Please implement manually.')
 }

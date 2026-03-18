@@ -15,7 +15,12 @@ import {
   PoolHealthChecker,
 } from '../pool/PoolHealthChecker'
 import { createDefaultStrategies } from '../pool/PoolStrategy'
-import { DEFAULT_WARMER_CONFIG, PoolWarmer, type PoolWarmerConfig } from '../pool/PoolWarmer'
+import {
+  DEFAULT_WARMER_CONFIG,
+  PoolWarmer,
+  type PoolWarmerConfig,
+  type WarmupResult,
+} from '../pool/PoolWarmer'
 import type {
   AtlasConnectionEntry,
   ConnectionConfig,
@@ -386,7 +391,7 @@ export class ConnectionManager {
   /**
    * Warm up all connection pools
    */
-  async warmup(): Promise<any> {
+  async warmup(): Promise<WarmupResult | undefined> {
     if (!this.warmer) {
       this.enableWarmup()
     }

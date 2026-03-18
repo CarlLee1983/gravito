@@ -1,4 +1,11 @@
-import { type Context, context, type Span, type Tracer, trace } from '@opentelemetry/api'
+import {
+  type Attributes,
+  type Context,
+  context,
+  type Span,
+  type Tracer,
+  trace,
+} from '@opentelemetry/api'
 
 export interface AtlasTracingConfig {
   enabled: boolean
@@ -16,7 +23,7 @@ export class AtlasTracer {
     }
   }
 
-  startSpan(name: string, attributes: Record<string, any> = {}): Span | undefined {
+  startSpan(name: string, attributes: Attributes = {}): Span | undefined {
     if (!this.tracer || !this.config.enabled) {
       return undefined
     }

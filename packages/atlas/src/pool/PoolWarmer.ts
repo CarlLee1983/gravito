@@ -4,6 +4,7 @@
  */
 
 import type { ConnectionManager } from '../connection/ConnectionManager'
+import type { ConnectionContract } from '../types'
 
 export interface PoolWarmerConfig {
   /**
@@ -187,7 +188,7 @@ export class PoolWarmer {
   /**
    * Execute a warmup query with timeout
    */
-  private async executeWarmupQuery(connection: any, timeout: number): Promise<void> {
+  private async executeWarmupQuery(connection: ConnectionContract, timeout: number): Promise<void> {
     const controller = new AbortController()
     const timeoutHandle = setTimeout(() => controller.abort(), timeout)
 

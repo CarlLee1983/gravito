@@ -29,6 +29,13 @@ export interface PrometheusExporterConfig {
   includeNodeMetrics?: boolean
 }
 
+export interface PrometheusMetricsServer {
+  port: number
+  endpoint: string
+  start(): void
+  stop(): void
+}
+
 /**
  * Setup Prometheus exporter for OpenTelemetry metrics
  *
@@ -80,7 +87,9 @@ export function setupPrometheusExporter(config: PrometheusExporterConfig = {}): 
  * // Start the server to expose metrics at http://localhost:9464/metrics
  * ```
  */
-export function createPrometheusMetricsServer(config: PrometheusExporterConfig = {}): any {
+export function createPrometheusMetricsServer(
+  config: PrometheusExporterConfig = {}
+): PrometheusMetricsServer | null {
   const port = config.port ?? 9464
   const endpoint = config.endpoint ?? '/metrics'
 

@@ -39,6 +39,28 @@ export interface ModelTypeMap {
   columns: Record<string, string>
 }
 
+type ReflectWithMetadata = typeof Reflect & {
+  getMetadata?: (metadataKey: string, target: object) => unknown
+}
+
+type AtlasModelExport = {
+  prototype: object
+  table?: string
+  getTable?: () => string
+}
+
+function readColumnMetadata(target: object): Record<string, ColumnMeta> | undefined {
+  const reflectApi = Reflect as ReflectWithMetadata
+  if (typeof reflectApi.getMetadata !== 'function') {
+    return undefined
+  }
+
+  const metadata = reflectApi.getMetadata(COLUMN_METADATA_KEY, target)
+  return metadata && typeof metadata === 'object'
+    ? (metadata as Record<string, ColumnMeta>)
+    : undefined
+}
+
 // ============================================================================
 // Column type mapping
 // ============================================================================
@@ -132,8 +154,7 @@ async function extractColumnsFromFile(filePath: string): Promise<ModelTypeMap[]>
   const maps: ModelTypeMap[] = []
 
   try {
-    // biome-ignore lint/suspicious/noExplicitAny: Dynamic module loading
-    const mod = (await import(filePath)) as Record<string, any>
+    const mod = (await import(filePath)) as Record<string, unknown>
 
     for (const [exportName, exported] of Object.entries(mod)) {
       if (typeof exported !== 'function') {
@@ -141,17 +162,15 @@ async function extractColumnsFromFile(filePath: string): Promise<ModelTypeMap[]>
       }
 
       // Check for Atlas column metadata
-      const columns: Record<string, ColumnMeta> | undefined =
-        typeof Reflect !== 'undefined' && typeof (Reflect as any).getMetadata === 'function'
-          ? (Reflect as any).getMetadata(COLUMN_METADATA_KEY, exported.prototype)
-          : undefined
+      const modelExport = exported as AtlasModelExport
+      const columns = readColumnMetadata(modelExport.prototype)
 
       if (!columns || Object.keys(columns).length === 0) {
         continue
       }
 
       const tableName: string =
-        exported.table ?? exported.getTable?.() ?? `${exportName.toLowerCase()}s`
+        modelExport.table ?? modelExport.getTable?.() ?? `${exportName.toLowerCase()}s`
 
       const columnMap: Record<string, string> = {}
       for (const [colName, meta] of Object.entries(columns)) {

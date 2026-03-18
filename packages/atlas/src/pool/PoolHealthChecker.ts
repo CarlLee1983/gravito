@@ -4,7 +4,7 @@
  */
 
 import type { ConnectionManager } from '../connection/ConnectionManager'
-import type { PoolHealth } from '../types'
+import type { PoolHealth, PoolStats } from '../types'
 
 export interface PoolHealthCheckConfig {
   /**
@@ -179,7 +179,7 @@ export class PoolHealthChecker {
   /**
    * Evaluate pool health based on statistics
    */
-  private evaluateHealth(connectionName: string, stats: any): PoolHealth {
+  private evaluateHealth(connectionName: string, stats: PoolStats): PoolHealth {
     const utilization = stats.active / stats.max
     const pendingRatio = stats.pending / stats.max
 
