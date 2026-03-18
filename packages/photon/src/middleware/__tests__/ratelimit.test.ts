@@ -18,7 +18,7 @@ describe('Rate Limiting Middleware', () => {
 
   it('should block requests exceeding limit', async () => {
     const app = new Photon()
-    app.use('*', rateLimit({ maxRequests: 2, windowMs: 60000 }) as any)
+    app.use('*', rateLimit({ maxRequests: 2, windowMs: 60000 }))
     app.get('/test', (c) => c.json({ ok: true }))
 
     await app.request('http://localhost/test')
@@ -34,7 +34,7 @@ describe('Rate Limiting Middleware', () => {
 
   it('should add rate limit headers', async () => {
     const app = new Photon()
-    app.use('*', rateLimit({ maxRequests: 100, windowMs: 60000 }) as any)
+    app.use('*', rateLimit({ maxRequests: 100, windowMs: 60000 }))
     app.get('/test', (c) => c.json({ ok: true }))
 
     const res = await app.request('http://localhost/test')
@@ -89,7 +89,7 @@ describe('Rate Limiting Middleware', () => {
 
   it('should include draft headers when enabled', async () => {
     const app = new Photon()
-    app.use('*', rateLimit({ maxRequests: 100, windowMs: 60000, draftHeaders: true }) as any)
+    app.use('*', rateLimit({ maxRequests: 100, windowMs: 60000, draftHeaders: true }))
     app.get('/test', (c) => c.json({ ok: true }))
 
     const res = await app.request('http://localhost/test')
@@ -101,7 +101,7 @@ describe('Rate Limiting Middleware', () => {
 
   it('should support preset configurations', async () => {
     const app = new Photon()
-    app.use('/api/*', rateLimiter.strict() as any)
+    app.use('/api/*', rateLimiter.strict())
     app.get('/api/data', (c) => c.json({ ok: true }))
 
     for (let i = 0; i < 10; i++) {

@@ -155,7 +155,7 @@ export function csrfProtection(options: CsrfOptions = {}): GravitoMiddleware {
       contentType.includes('multipart/form-data')
     ) {
       try {
-        const body = (await c.req.parseBody()) as Record<string, any> | null
+        const body = (await c.req.parseBody()) as Record<string, unknown> | null
         const raw = body?.[formFieldName]
         if (typeof raw === 'string') {
           bodyToken = raw

@@ -29,10 +29,27 @@ interface RedisLikeClient {
    * Pipeline support (optional, for optimization)
    */
   pipeline?(): {
-    get(key: string): any
-    pttl(key: string): any
+    get(key: string): RedisPipeline
+    pttl(key: string): RedisPipeline
     exec(): Promise<[Error | null, unknown][]>
   }
+}
+
+interface RedisPipeline {
+  get(key: string): RedisPipeline
+  pttl(key: string): RedisPipeline
+  exec(): Promise<[Error | null, unknown][]>
+}
+
+type EvalRateLimitResult = [number | string, number | string]
+
+function isEvalRateLimitResult(value: unknown): value is EvalRateLimitResult {
+  return (
+    Array.isArray(value) &&
+    value.length >= 2 &&
+    (typeof value[0] === 'number' || typeof value[0] === 'string') &&
+    (typeof value[1] === 'number' || typeof value[1] === 'string')
+  )
 }
 
 /**
@@ -105,11 +122,9 @@ export class RedisStore implements RateLimitStore {
     `
 
     // Support both ioredis and node-redis style eval
-    let result: any
-    if (typeof this.client.eval === 'function') {
-      result = await this.client.eval(luaScript, 1, fullKey, this.config.windowMs)
-    } else {
-      throw new Error('Redis client does not support eval()')
+    const result = await this.client.eval(luaScript, 1, fullKey, this.config.windowMs)
+    if (!isEvalRateLimitResult(result)) {
+      throw new Error('Redis client eval() returned an unexpected result')
     }
 
     // result is [count, ttl]

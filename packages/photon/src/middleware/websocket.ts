@@ -21,7 +21,7 @@
  * @since 2.0.0
  */
 
-import type { WSEvents } from 'hono/ws'
+import type { WSEvents, WSMessageReceive } from 'hono/ws'
 import { defineWebSocketHelper, WSContext } from 'hono/ws'
 
 // Re-export native WebSocket implementation (zero Hono type dependency for handler logic)
@@ -80,12 +80,34 @@ export function adaptHonoWSContext(honoWs: WSContext): NativeWSContext {
  *
  * @internal
  */
-export function adaptHonoMessageEvent(honoEvent: any): {
+type HonoWSMessageEvent = {
+  data: WSMessageReceive
+}
+
+async function normalizeHonoMessageData(
+  data: WSMessageReceive
+): Promise<string | ArrayBuffer | Uint8Array> {
+  if (typeof data === 'string' || data instanceof ArrayBuffer || data instanceof Uint8Array) {
+    return data
+  }
+
+  if (data instanceof SharedArrayBuffer) {
+    return new Uint8Array(data)
+  }
+
+  if (data instanceof Blob) {
+    return await data.arrayBuffer()
+  }
+
+  throw new TypeError('Unsupported WebSocket message payload type')
+}
+
+export async function adaptHonoMessageEvent(honoEvent: HonoWSMessageEvent): Promise<{
   data: string | ArrayBuffer | Uint8Array
   lastMessageInBatch?: boolean
-} {
+}> {
   return {
-    data: honoEvent.data,
+    data: await normalizeHonoMessageData(honoEvent.data),
   }
 }
 
@@ -143,9 +165,9 @@ export function defineHonoWSHandler<TIn = unknown, TOut = unknown>(
         return nativeEvents.onOpen?.(event, nativeWs)
       },
 
-      onMessage(event, honoWs) {
+      async onMessage(event, honoWs) {
         const nativeWs = adaptHonoWSContext(honoWs)
-        const nativeEvent = adaptHonoMessageEvent(event)
+        const nativeEvent = await adaptHonoMessageEvent(event)
         return nativeEvents.onMessage?.(nativeEvent, nativeWs)
       },
 

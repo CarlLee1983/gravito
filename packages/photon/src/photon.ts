@@ -16,6 +16,8 @@ import type {
 } from '@gravito/core'
 import { BunNativeAdapter } from '@gravito/core'
 
+type MountablePhotonApp = Photon | BunNativeAdapter
+
 /**
  * Photon 應用類別 - 高效能 Gravito HTTP 引擎
  *
@@ -81,7 +83,7 @@ export class Photon {
     return this
   }
 
-  mount(path: string, app: Photon | any): this {
+  mount(path: string, app: MountablePhotonApp): this {
     const subAdapter = app instanceof Photon ? app.adapter : app
     this.adapter.mount(path, subAdapter)
     return this
@@ -97,7 +99,7 @@ export class Photon {
     return this
   }
 
-  async fetch(request: Request, server?: any): Promise<Response> {
+  async fetch(request: Request, server?: unknown): Promise<Response> {
     return this.adapter.fetch(request, server)
   }
 

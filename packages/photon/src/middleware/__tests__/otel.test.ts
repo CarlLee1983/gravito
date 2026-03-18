@@ -40,7 +40,7 @@ describe('otelMiddleware - no-op 降級', () => {
   it('當 @opentelemetry/api 未安裝時應該正常處理請求', async () => {
     // otel.ts 預設在找不到 @opentelemetry/api 時降級為 no-op
     const app = new Photon()
-    app.use('*', otelMiddleware() as any as any as any)
+    app.use('*', otelMiddleware())
     app.get('/test', (c) => c.json({ ok: true }))
 
     const res = await app.request('http://localhost/test')
@@ -52,7 +52,7 @@ describe('otelMiddleware - no-op 降級', () => {
 
   it('no-op 模式下不應該拋出錯誤', async () => {
     const app = new Photon()
-    app.use('*', otelMiddleware({ serviceName: 'test-service' }) as any)
+    app.use('*', otelMiddleware({ serviceName: 'test-service' }))
     app.get('/api/data', (c) => c.json({ data: 'value' }))
 
     const res = await app.request('http://localhost/api/data')
@@ -94,7 +94,7 @@ describe('otelMiddleware - 初始化與配置', () => {
 
   it('no-op span 的 setAttribute 應該可以鏈式呼叫', () => {
     // 測試 no-op span 的實作
-    const mw = otelMiddleware() as any as any as any
+    const mw = otelMiddleware()
     expect(typeof mw).toBe('function')
   })
 
@@ -251,7 +251,7 @@ describe('otelMiddleware - spanNameResolver', () => {
 describe('otelMiddleware - 錯誤處理', () => {
   it('下游中間件拋出錯誤時 otel 中間件應正確傳遞錯誤', async () => {
     const app = new Photon()
-    app.use('*', otelMiddleware() as any as any as any)
+    app.use('*', otelMiddleware())
     app.get('/error', (_c) => {
       throw new Error('Test error')
     })
@@ -268,7 +268,7 @@ describe('otelMiddleware - 錯誤處理', () => {
 
   it('4xx 錯誤應該正常追蹤（no-op 模式）', async () => {
     const app = new Photon()
-    app.use('*', otelMiddleware() as any as any as any)
+    app.use('*', otelMiddleware())
     app.get('/not-found', (c) => c.json({ error: 'Not Found' }, 404))
 
     const res = await app.request('http://localhost/not-found')
@@ -283,7 +283,7 @@ describe('otelMiddleware - 錯誤處理', () => {
 describe('otelMiddleware - 預設配置', () => {
   it('不帶配置的情況下應該使用預設值', async () => {
     const app = new Photon()
-    app.use('*', otelMiddleware() as any as any as any)
+    app.use('*', otelMiddleware())
     app.get('/default', (c) => c.json({ ok: true }))
 
     const res = await app.request('http://localhost/default')
@@ -301,7 +301,7 @@ describe('otelMiddleware - 預設配置', () => {
 
   it('多個請求應該都能正常處理', async () => {
     const app = new Photon()
-    app.use('*', otelMiddleware() as any as any as any)
+    app.use('*', otelMiddleware())
     app.get('/api/a', (c) => c.json({ endpoint: 'a' }))
     app.get('/api/b', (c) => c.json({ endpoint: 'b' }))
     app.post('/api/c', (c) => c.json({ endpoint: 'c' }))

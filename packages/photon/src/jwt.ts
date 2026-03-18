@@ -12,17 +12,18 @@
  */
 
 import type { GravitoMiddleware } from '@gravito/core'
+import type * as HonoJwt from 'hono/jwt'
 
 // Bun can require hono/jwt but ESM import may fail; proxy via require for runtime.
-const honoJwt = require('hono/jwt') as any
+const honoJwt = require('hono/jwt') as typeof HonoJwt
 
 const ensure =
-  <T extends (...args: any[]) => any>(fn: T | undefined, name: string) =>
+  <T extends (...args: never[]) => unknown>(fn: T | undefined, name: string) =>
   (...args: Parameters<T>): ReturnType<T> => {
     if (!fn) {
       throw new Error(`hono/jwt helper '${name}' is not available`)
     }
-    return fn(...args)
+    return fn(...args) as ReturnType<T>
   }
 
 /**

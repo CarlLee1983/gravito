@@ -15,10 +15,25 @@ import type { GravitoContext as Context } from '@gravito/core'
  */
 export interface PhotonRequestExtended {
   /**
+   * Return all route params when called without a name.
+   */
+  param(): Record<string, string>
+
+  /**
    * Validate request data against a schema
    * This is typically added by validation middleware
    */
   valid<T = unknown>(target: string): T
+
+  /**
+   * Store validated payload for later retrieval.
+   */
+  setValidated?(target: string, data: unknown): void
+
+  /**
+   * Matched route pattern, if available.
+   */
+  routePattern?: string
 
   /**
    * Allow dynamic property access for middleware extensions
@@ -84,5 +99,6 @@ export function hasCachedJsonBody(ctx: Context): ctx is PhotonContextExtended {
  * Type guard to check if request has valid method
  */
 export function hasValidMethod(req: Context['req']): req is Context['req'] & PhotonRequestExtended {
-  return 'valid' in req && typeof (req as any).valid === 'function'
+  const request = req as Context['req'] & Partial<PhotonRequestExtended>
+  return 'valid' in request && typeof request.valid === 'function'
 }
