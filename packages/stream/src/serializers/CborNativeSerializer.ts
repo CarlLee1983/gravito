@@ -4,6 +4,8 @@ import type { Job } from '../Job'
 import type { SerializedJob } from '../types'
 import type { JobSerializer } from './JobSerializer'
 
+type JobState = Record<string, unknown>
+
 /**
  * 原生 CBOR 序列化器
  *
@@ -102,7 +104,7 @@ export class CborNativeSerializer implements JobSerializer {
       )
     }
 
-    const job = Object.create({}) as Record<string, any>
+    const job: JobState = Object.create({})
     if (properties) {
       Object.assign(job, properties)
     }
@@ -131,7 +133,7 @@ export class CborNativeSerializer implements JobSerializer {
       job.retryMultiplier = serialized.retryMultiplier
     }
 
-    return job as Job
+    return job as unknown as Job
   }
 
   /**

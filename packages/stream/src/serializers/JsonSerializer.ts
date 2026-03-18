@@ -2,6 +2,8 @@ import type { Job } from '../Job'
 import type { SerializedJob } from '../types'
 import type { JobSerializer } from './JobSerializer'
 
+type JobState = Record<string, unknown>
+
 /**
  * JSON Serializer.
  *
@@ -62,7 +64,7 @@ export class JsonSerializer implements JobSerializer {
         : Buffer.from(serialized.data).toString('utf8')
     const properties = JSON.parse(dataStr)
     // Only restores properties, not class instances.
-    const job = Object.create({}) as Record<string, any>
+    const job: JobState = Object.create({})
     Object.assign(job, properties)
 
     job.id = serialized.id
@@ -79,6 +81,6 @@ export class JsonSerializer implements JobSerializer {
       job.attempts = serialized.attempts
     }
 
-    return job as Job
+    return job as unknown as Job
   }
 }

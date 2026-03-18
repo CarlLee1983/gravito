@@ -104,6 +104,17 @@ interface WorkerResponse {
   stack?: string
 }
 
+type BunWorkerSpawnOptions = NonNullable<ConstructorParameters<typeof Worker>[1]> & {
+  inspectPort?: number
+  preload?: string[]
+  smol?: boolean
+}
+
+type RefableWorker = Worker & {
+  ref?: () => void
+  unref?: () => void
+}
+
 /**
  * Bun Worker.
  *
@@ -129,7 +140,7 @@ interface WorkerResponse {
  * ```
  */
 export class BunWorker {
-  private worker: Worker | null = null
+  private worker: RefableWorker | null = null
   private state: WorkerState = WorkerState.INITIALIZING
   private config: {
     maxExecutionTime: number
@@ -166,7 +177,7 @@ export class BunWorker {
    * @returns The active Worker instance.
    * @throws {Error} If worker initialization fails or times out.
    */
-  private async initWorker(): Promise<Worker> {
+  private async initWorker(): Promise<RefableWorker> {
     if (this.worker && this.state !== WorkerState.TERMINATED) {
       return this.worker
     }
@@ -174,7 +185,7 @@ export class BunWorker {
     const workerPath = resolve(__dirname, 'bun-job-executor.ts')
 
     // Build worker options with Bun-specific features
-    const workerOptions: Record<string, any> = {}
+    const workerOptions: BunWorkerSpawnOptions = {}
 
     // Enable memory-efficient mode if requested
     if (this.config.smol) {
@@ -195,7 +206,7 @@ export class BunWorker {
     }
 
     // Create the worker
-    this.worker = new Worker(workerPath, workerOptions)
+    this.worker = new Worker(workerPath, workerOptions) as RefableWorker
     this.state = WorkerState.INITIALIZING
 
     // Wait for worker to be ready
@@ -429,8 +440,8 @@ export class BunWorker {
    * Bun-specific optimization for background workers.
    */
   unref(): void {
-    if (this.worker && typeof (this.worker as any).unref === 'function') {
-      ;(this.worker as any).unref()
+    if (typeof this.worker?.unref === 'function') {
+      this.worker.unref()
     }
   }
 
@@ -440,8 +451,8 @@ export class BunWorker {
    * Bun-specific optimization for background workers.
    */
   ref(): void {
-    if (this.worker && typeof (this.worker as any).ref === 'function') {
-      ;(this.worker as any).ref()
+    if (typeof this.worker?.ref === 'function') {
+      this.worker.ref()
     }
   }
 }

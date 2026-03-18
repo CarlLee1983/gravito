@@ -71,10 +71,30 @@ interface WorkerResponse {
   stack?: string
 }
 
+type ExecutableJob = Record<string, unknown> & {
+  handle: (...args: unknown[]) => unknown | Promise<unknown>
+}
+
+type JobClassConstructor = {
+  prototype: object
+}
+
+type SandboxedJobPayload = Record<string, unknown> & {
+  __className?: unknown
+  __handleSource?: unknown
+  __sandboxedJob?: unknown
+}
+
+type ClassRegistry = Record<string, string>
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object'
+}
+
 /**
  * Registry of known Job classes.
  */
-const jobClasses = new Map<string, any>()
+const jobClasses = new Map<string, JobClassConstructor>()
 
 /**
  * Registers a Job class definition.
@@ -96,7 +116,7 @@ const jobClasses = new Map<string, any>()
  * @returns The instantiated job object.
  * @throws {Error} If deserialization fails or class is unknown.
  */
-async function deserializeJob(serialized: SerializedJob): Promise<any> {
+async function deserializeJob(serialized: SerializedJob): Promise<unknown> {
   if (serialized.type === 'json') {
     const parsed = JSON.parse(serialized.data as string)
     return restoreSandboxedJob(parsed)
@@ -137,15 +157,10 @@ async function deserializeJob(serialized: SerializedJob): Promise<any> {
   throw new Error(`Unknown serialization type: ${serialized.type}`)
 }
 
-function restoreSandboxedJob(value: any): any {
-  if (
-    value &&
-    typeof value === 'object' &&
-    value.__sandboxedJob === true &&
-    typeof value.__handleSource === 'string'
-  ) {
-    const job = { ...value }
-    const handleSource = job.__handleSource
+function restoreSandboxedJob(value: unknown): unknown {
+  if (isSandboxedJobPayload(value)) {
+    const job: Record<string, unknown> = { ...value }
+    const handleSource = value.__handleSource
     delete job.__sandboxedJob
     delete job.__handleSource
     delete job.__className
@@ -156,12 +171,38 @@ function restoreSandboxedJob(value: any): any {
   return value
 }
 
-function compileMethod(source: string): (...args: any[]) => any {
+function compileMethod(source: string): (...args: unknown[]) => unknown {
   const fn = new Function(`return (${source})`)()
   if (typeof fn !== 'function') {
     throw new Error('Failed to restore sandboxed job handler')
   }
-  return fn
+  return fn as (...args: unknown[]) => unknown
+}
+
+function isSandboxedJobPayload(value: unknown): value is SandboxedJobPayload & {
+  __handleSource: string
+  __sandboxedJob: true
+} {
+  return (
+    isRecord(value) && value.__sandboxedJob === true && typeof value.__handleSource === 'string'
+  )
+}
+
+function isExecutableJob(value: unknown): value is ExecutableJob {
+  return isRecord(value) && typeof value.handle === 'function'
+}
+
+function parseClassRegistry(serialized: string): ClassRegistry {
+  const parsed = JSON.parse(serialized)
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('Invalid class registry payload')
+  }
+
+  return Object.fromEntries(
+    Object.entries(parsed).filter(
+      (entry): entry is [string, string] => typeof entry[1] === 'string'
+    )
+  )
 }
 
 /**
@@ -173,7 +214,7 @@ function compileMethod(source: string): (...args: any[]) => any {
 async function executeJob(serialized: SerializedJob): Promise<void> {
   const job = await deserializeJob(serialized)
 
-  if (typeof job.handle !== 'function') {
+  if (!isExecutableJob(job)) {
     throw new Error('Job must have a handle() method')
   }
 
@@ -233,7 +274,7 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
     try {
       // Dynamically register job classes if provided
       if (message.classRegistry) {
-        const registry = JSON.parse(message.classRegistry)
+        const registry = parseClassRegistry(message.classRegistry)
         for (const [className, path] of Object.entries(registry)) {
           try {
             // In Bun, use dynamic import for ES modules

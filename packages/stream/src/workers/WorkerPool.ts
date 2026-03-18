@@ -8,11 +8,12 @@
  */
 
 import type { SerializedJob } from '../types'
-import type { SandboxedWorker, SandboxedWorkerConfig } from './SandboxedWorker'
+import type { SandboxedWorkerConfig } from './SandboxedWorker'
 import {
   type IWorkerFactory,
   RuntimeAwareWorkerFactory,
   type RuntimeEnvironment,
+  type Worker,
   type WorkerConfig,
 } from './WorkerFactory'
 
@@ -117,7 +118,7 @@ export interface WorkerPoolStats {
  * ```
  */
 export class WorkerPool {
-  private workers: Array<SandboxedWorker | any> = []
+  private workers: Worker[] = []
   private factory: IWorkerFactory
   private config: Required<Omit<WorkerPoolConfig, 'factory' | 'runtime'>> & {
     factory: IWorkerFactory
@@ -177,7 +178,7 @@ export class WorkerPool {
    *
    * @returns The newly created worker.
    */
-  private createWorker(): SandboxedWorker | any {
+  private createWorker(): Worker {
     const config: WorkerConfig = {
       maxExecutionTime: this.config.maxExecutionTime,
       maxMemory: this.config.maxMemory,
@@ -201,7 +202,7 @@ export class WorkerPool {
    *
    * @returns An available worker or `null`.
    */
-  private getAvailableWorker(): SandboxedWorker | null {
+  private getAvailableWorker(): Worker | null {
     const readyWorker = this.workers.find((w) => w.isReady())
     if (readyWorker) {
       return readyWorker

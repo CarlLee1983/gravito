@@ -42,6 +42,34 @@ export interface DatabaseDriverConfig {
   dbService?: DatabaseService
 }
 
+type JobReservationRow = {
+  id: string
+  payload: string
+  attempts: number
+  created_at: Date
+  available_at: Date
+}
+
+type CountRow = {
+  count: number
+}
+
+function toRowArray<T>(result: T[] | T | null | undefined): T[] {
+  if (Array.isArray(result)) {
+    return result
+  }
+
+  return result ? [result] : []
+}
+
+function hasJobReservationId(row: unknown): row is JobReservationRow {
+  return !!row && typeof row === 'object' && typeof (row as { id?: unknown }).id === 'string'
+}
+
+function readCount(rows: CountRow[] | CountRow | null | undefined): number {
+  return toRowArray(rows)[0]?.count || 0
+}
+
 /**
  * Database-backed queue driver.
  *
@@ -238,13 +266,12 @@ export class DatabaseDriver implements QueueDriver {
         [queue]
       )
 
-      const rows = Array.isArray(result) ? result : result ? [result] : []
+      const rows = toRowArray(result)
       if (!rows || rows.length === 0) {
         return []
       }
 
-      // Ensure rows is treated as array of objects (DatabaseService might return different shapes)
-      const validRows = rows.filter((r) => r?.id) as any[]
+      const validRows = rows.filter(hasJobReservationId)
       if (validRows.length === 0) {
         return []
       }
@@ -297,35 +324,35 @@ export class DatabaseDriver implements QueueDriver {
 
     try {
       // Pending: available now and not reserved
-      const pendingRes = (await this.dbService.execute<{ count: number }>(
+      const pendingRes = await this.dbService.execute<CountRow>(
         `SELECT COUNT(*) as count FROM ${this.tableName} WHERE queue = $1 AND available_at <= NOW() AND reserved_at IS NULL`,
         [queue]
-      )) as any[]
+      )
 
       // Delayed: available in future
-      const delayedRes = (await this.dbService.execute<{ count: number }>(
+      const delayedRes = await this.dbService.execute<CountRow>(
         `SELECT COUNT(*) as count FROM ${this.tableName} WHERE queue = $1 AND available_at > NOW()`,
         [queue]
-      )) as any[]
+      )
 
       // Reserved: currently in flight
-      const reservedRes = (await this.dbService.execute<{ count: number }>(
+      const reservedRes = await this.dbService.execute<CountRow>(
         `SELECT COUNT(*) as count FROM ${this.tableName} WHERE queue = $1 AND reserved_at IS NOT NULL`,
         [queue]
-      )) as any[]
+      )
 
       // Failed
-      const failedRes = (await this.dbService.execute<{ count: number }>(
+      const failedRes = await this.dbService.execute<CountRow>(
         `SELECT COUNT(*) as count FROM ${this.tableName} WHERE queue = $1`,
         [failedQueue]
-      )) as any[]
+      )
 
       return {
         queue,
-        size: pendingRes[0]?.count || 0,
-        delayed: delayedRes[0]?.count || 0,
-        reserved: reservedRes[0]?.count || 0,
-        failed: failedRes[0]?.count || 0,
+        size: readCount(pendingRes),
+        delayed: readCount(delayedRes),
+        reserved: readCount(reservedRes),
+        failed: readCount(failedRes),
       }
     } catch (err) {
       console.error('[DatabaseDriver] Failed to get stats:', err)

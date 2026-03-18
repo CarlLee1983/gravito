@@ -5,12 +5,12 @@ import type { QueueDriver } from './QueueDriver'
  * Bull Queue client interface (compatible with bullmq package).
  */
 export interface BullQueueClient {
-  add(name: string, data: any, options?: any): Promise<any>
-  getJob(id: string): Promise<any | null>
+  add(name: string, data: BullJobData, options?: BullJobOptions): Promise<unknown>
+  getJob(id: string): Promise<BullStoredJob | null>
   count(): Promise<number>
-  process(handler: (job: any) => Promise<void>): void
-  on(event: string, handler: (...args: any[]) => void): void
-  off(event: string, handler: (...args: any[]) => void): void
+  process(handler: (job: BullStoredJob) => Promise<void>): void
+  on(event: string, handler: (...args: unknown[]) => void): void
+  off(event: string, handler: (...args: unknown[]) => void): void
   pause(): Promise<void>
   resume(): Promise<void>
   clean(grace: number, limit?: number, type?: string): Promise<number>
@@ -19,11 +19,11 @@ export interface BullQueueClient {
   getDelayedCount(): Promise<number>
   getFailedCount(): Promise<number>
   getActiveCount(): Promise<number>
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export interface BullWorkerClient {
-  [key: string]: any
+  [key: string]: unknown
 }
 
 interface BullJobOptions {
@@ -54,6 +54,10 @@ interface BullJobData {
   error?: string
   failedAt?: number
   priority?: string | number
+}
+
+interface BullStoredJob {
+  moveToFailed?(error: Error, token: boolean): Promise<void>
 }
 
 interface WorkerHeartbeatPayload {
@@ -99,7 +103,7 @@ export interface BullMQDriverConfig {
     port?: number
     password?: string
     db?: number
-    [key: string]: any
+    [key: string]: unknown
   }
 
   /**

@@ -39,7 +39,7 @@ export interface IWorkerFactory {
    * @param config - Configuration for the worker.
    * @returns A worker instance (BunWorker or SandboxedWorker).
    */
-  create(config: WorkerConfig): BunWorker | SandboxedWorker
+  create(config: WorkerConfig): Worker
 
   /**
    * Get the detected runtime environment.
@@ -128,7 +128,7 @@ export class RuntimeAwareWorkerFactory implements IWorkerFactory {
    * @param config - Configuration for the worker.
    * @returns A BunWorker if running on Bun, SandboxedWorker otherwise.
    */
-  create(config: WorkerConfig): BunWorker | SandboxedWorker {
+  create(config: WorkerConfig): Worker {
     if (this.runtime === 'bun') {
       return new BunWorker(config as BunWorkerConfig)
     }

@@ -40,6 +40,27 @@ export interface ScheduledJobConfig {
   enabled: boolean
 }
 
+type ScheduledJobRecord = Record<string, string> & {
+  id: string
+  cron: string
+  queue: string
+  job: string
+  enabled: string
+}
+
+function isScheduledJobRecord(
+  value: Record<string, string> | undefined
+): value is ScheduledJobRecord {
+  return (
+    !!value &&
+    typeof value.id === 'string' &&
+    typeof value.cron === 'string' &&
+    typeof value.queue === 'string' &&
+    typeof value.job === 'string' &&
+    typeof value.enabled === 'string'
+  )
+}
+
 /**
  * Configuration options for the Scheduler.
  *
@@ -253,7 +274,7 @@ export class Scheduler {
 
     for (const id of ids) {
       const data = await client.hgetall?.(`${this.prefix}schedule:${id}`)
-      if (data?.id) {
+      if (isScheduledJobRecord(data)) {
         configs.push({
           ...data,
           lastRun: data.lastRun ? parseInt(data.lastRun, 10) : undefined,

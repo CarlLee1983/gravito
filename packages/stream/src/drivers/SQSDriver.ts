@@ -10,6 +10,9 @@ export interface SQSDriverConfig {
    */
   client: {
     send: (command: unknown) => Promise<{
+      Attributes?: {
+        ApproximateNumberOfMessages?: string
+      }
       MessageId?: string
       Messages?: Array<{
         MessageId?: string
@@ -219,7 +222,7 @@ export class SQSDriver implements QueueDriver {
         })
       )
 
-      return parseInt((response as any).Attributes?.ApproximateNumberOfMessages ?? '0', 10)
+      return parseInt(response.Attributes?.ApproximateNumberOfMessages ?? '0', 10)
     } catch (error) {
       console.error('[SQSDriver] Error getting queue size:', error)
       return 0

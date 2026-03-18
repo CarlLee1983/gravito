@@ -64,6 +64,16 @@ enum WorkerState {
   TERMINATED = 'terminated',
 }
 
+interface WorkerResponse {
+  type: 'success' | 'error' | 'ready'
+  error?: string
+  stack?: string
+}
+
+type WorkerResourceLimits = NonNullable<
+  NonNullable<ConstructorParameters<typeof ThreadWorker>[1]>['resourceLimits']
+>
+
 /**
  * Sandboxed Worker.
  *
@@ -137,7 +147,7 @@ export class SandboxedWorker {
       }
     }
 
-    const resourceLimits: any = {}
+    const resourceLimits: WorkerResourceLimits = {}
     if (this.config.maxMemory > 0) {
       resourceLimits.maxOldGenerationSizeMb = this.config.maxMemory
       resourceLimits.maxYoungGenerationSizeMb = Math.min(this.config.maxMemory / 2, 128)
@@ -155,7 +165,7 @@ export class SandboxedWorker {
         reject(new Error('Worker initialization timeout'))
       }, 5000)
 
-      this.worker?.once('message', (message: any) => {
+      this.worker?.once('message', (message: WorkerResponse) => {
         clearTimeout(timeout)
         if (message.type === 'ready') {
           this.state = WorkerState.READY
@@ -231,7 +241,7 @@ export class SandboxedWorker {
    */
   private executeInWorker(worker: ThreadWorker, job: SerializedJob): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      const messageHandler = (message: any) => {
+      const messageHandler = (message: WorkerResponse) => {
         if (message.type === 'success') {
           cleanup()
           resolve()

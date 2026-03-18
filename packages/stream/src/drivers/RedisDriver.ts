@@ -9,23 +9,33 @@ import type { QueueDriver } from './QueueDriver'
 export interface RedisClient {
   lpush(key: string, ...values: string[]): Promise<number>
   rpop(key: string, count?: number): Promise<string | string[] | null>
+  brpop?(...args: Array<string | number>): Promise<[string, string] | null>
   llen(key: string): Promise<number>
   del(key: string, ...keys: string[]): Promise<number>
   lpushx?(key: string, ...values: string[]): Promise<number>
   rpoplpush?(src: string, dst: string): Promise<string | null>
   zadd?(key: string, score: number, member: string): Promise<number>
+  zcard?(key: string): Promise<number>
   zrange?(key: string, start: number, end: number, ...args: string[]): Promise<string[]>
+  zrangebyscore?(key: string, min: string | number, max: string | number): Promise<string[]>
   zrem?(key: string, ...members: string[]): Promise<number>
   get?(key: string): Promise<string | null>
-  set?(key: string, value: string, ...args: any[]): Promise<'OK' | null>
+  hgetall?(key: string): Promise<Record<string, string>>
+  set?(key: string, value: string, ...args: Array<string | number>): Promise<'OK' | null>
   ltrim?(key: string, start: number, stop: number): Promise<'OK'>
   lrange?(key: string, start: number, stop: number): Promise<string[]>
   publish?(channel: string, message: string): Promise<number>
-  pipeline?(): any
+  pipeline?(): RedisPipeline
   defineCommand?(name: string, options: { numberOfKeys: number; lua: string }): void
   incr?(key: string): Promise<number>
   expire?(key: string, seconds: number): Promise<number>
-  eval(script: string, numKeys: number, ...args: (string | number)[]): Promise<any>
+  eval(script: string, numKeys: number, ...args: (string | number)[]): Promise<unknown>
+  subscribe?(...channels: string[]): Promise<unknown>
+  on?(
+    event: 'message',
+    handler: (channel: string, message: string) => void | Promise<void>
+  ): unknown
+  on?(event: string, handler: (...args: unknown[]) => void): unknown
 
   /**
    * Binary-capable RPOP（ioredis Buffer mode）
@@ -37,7 +47,7 @@ export interface RedisClient {
    * Binary-capable BRPOP（ioredis Buffer mode）
    * 支援 blocking pop 的 binary frame 讀取
    */
-  brpopBuffer?(...args: any[]): Promise<[Buffer, Buffer] | null>
+  brpopBuffer?(...args: Array<string | number>): Promise<[Buffer, Buffer] | null>
 
   /**
    * Binary-capable LRANGE（ioredis Buffer mode）
@@ -51,7 +61,7 @@ export interface RedisClient {
    */
   lpushBuffer?(key: string, ...values: Buffer[]): Promise<number>
 
-  [key: string]: any
+  [key: string]: unknown
 }
 
 interface BinaryTransportPayload {
@@ -69,6 +79,36 @@ type RedisTransportPayload = BinaryTransportPayload | JsonTransportPayload
 interface PipelineReply<T = unknown> {
   0: Error | null
   1: T
+}
+
+interface RedisPipeline {
+  llen(key: string): RedisPipeline
+  zcard(key: string): RedisPipeline
+  lpush(key: string, ...values: string[]): RedisPipeline
+  ltrim(key: string, start: number, stop: number): RedisPipeline
+  rpop(key: string): RedisPipeline
+  del(key: string, ...keys: string[]): RedisPipeline
+  hset(key: string, values: Record<string, string | number | boolean>): RedisPipeline
+  zadd(key: string, score: number, member: string): RedisPipeline
+  zrem(key: string, ...members: string[]): RedisPipeline
+  pushGroupJob?(
+    waitList: string,
+    activeSet: string,
+    pendingList: string,
+    groupId: string,
+    payload: string
+  ): RedisPipeline
+  lpushBuffer?(key: string, ...values: Buffer[]): RedisPipeline
+  exec(): Promise<PipelineReply[] | null>
+}
+
+function isRedisEvalPopResult(value: unknown): value is [string, string | Buffer] {
+  return (
+    Array.isArray(value) &&
+    value.length >= 2 &&
+    typeof value[0] === 'string' &&
+    (typeof value[1] === 'string' || Buffer.isBuffer(value[1]))
+  )
 }
 
 interface WorkerHeartbeatPayload {
@@ -553,7 +593,7 @@ export class RedisDriver implements QueueDriver {
     try {
       const result = await this.client.eval(script, keys.length, ...keys, Date.now().toString())
 
-      if (result?.[1]) {
+      if (isRedisEvalPopResult(result)) {
         return this.parsePayloadAuto(result[1])
       }
     } catch (_err) {
