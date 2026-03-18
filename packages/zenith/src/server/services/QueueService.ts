@@ -1,10 +1,64 @@
 import { EventEmitter } from 'node:events'
-import { type MySQLPersistence, QueueManager } from '@gravito/stream'
+import type { PersistenceAdapter, ScheduledJobConfig, SerializedJob } from '@gravito/stream'
+import { QueueManager } from '@gravito/stream'
 import { Redis } from 'ioredis'
+import type { JsonValue, PulseNode } from '../../shared/types'
 import { AlertService } from './AlertService'
 import { LogStreamProcessor } from './LogStreamProcessor'
 import { MaintenanceScheduler } from './MaintenanceScheduler'
 import { QueueMetricsCollector } from './QueueMetricsCollector'
+
+type QueuePersistenceConfig = {
+  adapter: PersistenceAdapter
+  archiveCompleted?: boolean
+  archiveFailed?: boolean
+  archiveEnqueued?: boolean
+}
+
+export interface MonitoringWorker {
+  id: string
+  hostname?: string
+  status?: string
+  pid: number
+  uptime: number
+  memory?: {
+    rss: string
+    heapTotal?: string
+    heapUsed?: string
+  }
+  queues?: unknown[]
+  concurrency?: number
+  timestamp?: string
+  loadAvg?: number[]
+}
+
+export interface QueueJobRecord {
+  id?: string
+  name?: string
+  data?: JsonValue | Uint8Array
+  payload?: JsonValue | Uint8Array
+  scheduledAt?: string
+  _raw?: string
+  _error?: string
+  _archived?: boolean
+  [key: string]: unknown
+}
+
+export interface ArchivedLogRecord {
+  level: string
+  message: string
+  workerId: string
+  queue?: string
+  timestamp: Date | string
+  [key: string]: unknown
+}
+
+interface SearchablePersistence {
+  search(
+    query: string,
+    options?: { limit?: number; offset?: number; queue?: string }
+  ): Promise<SerializedJob[]>
+}
 
 /**
  * Snapshot of queue statistics.
@@ -72,7 +126,7 @@ export interface SystemLog {
 export interface GlobalStats {
   queues: QueueStats[]
   throughput: { timestamp: string; count: number }[]
-  workers: WorkerReport[]
+  workers: MonitoringWorker[]
 }
 
 /**
@@ -109,16 +163,7 @@ export class QueueService {
    * @param prefix - Key prefix for all Redis keys used by the queues.
    * @param persistence - Optional configuration for MySQL persistence.
    */
-  constructor(
-    redisUrl: string,
-    prefix = 'queue:',
-    persistence?: {
-      adapter: MySQLPersistence
-      archiveCompleted?: boolean
-      archiveFailed?: boolean
-      archiveEnqueued?: boolean
-    }
-  ) {
+  constructor(redisUrl: string, prefix = 'queue:', persistence?: QueuePersistenceConfig) {
     this.redis = new Redis(redisUrl, {
       lazyConnect: true,
     })
@@ -139,7 +184,7 @@ export class QueueService {
       connections: {
         redis: {
           driver: 'redis',
-          client: this.redis as any,
+          client: this.redis,
           prefix,
         },
       },
@@ -281,18 +326,18 @@ export class QueueService {
     type: 'waiting' | 'delayed' | 'failed' = 'waiting',
     start = 0,
     stop = 49
-  ): Promise<any[]> {
+  ): Promise<QueueJobRecord[]> {
     const key = `${this.prefix}${queueName}`
     let rawJobs: string[] = []
 
     if (type === 'delayed') {
       const results = await this.redis.zrange(`${key}:delayed`, start, stop, 'WITHSCORES')
-      const formatted = []
+      const formatted: QueueJobRecord[] = []
       for (let i = 0; i < results.length; i += 2) {
         const jobStr = results[i]!
         const score = results[i + 1]!
         try {
-          const parsed = JSON.parse(jobStr)
+          const parsed = JSON.parse(jobStr) as Record<string, unknown>
           formatted.push({
             ...parsed,
             _raw: jobStr,
@@ -307,9 +352,9 @@ export class QueueService {
       const listKey = type === 'failed' ? `${key}:failed` : key
       rawJobs = await this.redis.lrange(listKey, start, stop)
 
-      const jobs = rawJobs.map((jobStr) => {
+      const jobs: QueueJobRecord[] = rawJobs.map((jobStr) => {
         try {
-          const parsed = JSON.parse(jobStr)
+          const parsed = JSON.parse(jobStr) as Record<string, unknown>
           return { ...parsed, _raw: jobStr }
         } catch (_e) {
           return { _raw: jobStr, _error: 'Failed to parse JSON' }
@@ -320,9 +365,9 @@ export class QueueService {
       if (jobs.length < stop - start + 1 && persistence && type === 'failed') {
         const archived = await persistence.list(queueName, {
           limit: stop - start + 1 - jobs.length,
-          status: type as 'failed',
+          status: type,
         })
-        return [...jobs, ...archived.map((a: any) => ({ ...a, _archived: true }))]
+        return [...jobs, ...archived.map((a) => ({ ...a, _archived: true }))]
       }
 
       return jobs
@@ -338,8 +383,8 @@ export class QueueService {
    * @param injectedWorkers - Optional worker data (for testing).
    */
   async recordStatusMetrics(
-    nodes: Record<string, any> = {},
-    injectedWorkers?: any[]
+    nodes: Record<string, PulseNode[]> = {},
+    injectedWorkers?: MonitoringWorker[]
   ): Promise<void> {
     const stats = await this.listQueues()
     const totals = stats.reduce(
@@ -359,7 +404,7 @@ export class QueueService {
     pipe.set(`flux_console:metrics:delayed:${now}`, totals.delayed, 'EX', 3600)
     pipe.set(`flux_console:metrics:failed:${now}`, totals.failed, 'EX', 3600)
 
-    const workers = injectedWorkers || (await this.listWorkers())
+    const workers = (injectedWorkers || (await this.listWorkers())) as MonitoringWorker[]
     pipe.set(`flux_console:metrics:workers:${now}`, workers.length, 'EX', 3600)
 
     await pipe.exec()
@@ -373,8 +418,8 @@ export class QueueService {
     this.alerts
       .check({
         queues: stats,
-        nodes: nodes as any,
-        workers: workers as any,
+        nodes,
+        workers,
         totals,
       })
       .catch((err) => console.error('[AlertService] Rule Evaluation Error:', err))
@@ -683,7 +728,7 @@ export class QueueService {
           ...log,
           timestamp: new Date(),
         })
-        .catch((err: any) => console.error('[QueueService] Log Archive Error:', err))
+        .catch((err: unknown) => console.error('[QueueService] Log Archive Error:', err))
     }
   }
 
@@ -692,9 +737,9 @@ export class QueueService {
    *
    * @returns List of recent logs (max 100).
    */
-  async getLogHistory(): Promise<any[]> {
+  async getLogHistory(): Promise<ArchivedLogRecord[]> {
     const logs = await this.redis.lrange('flux_console:logs:history', 0, -1)
-    return logs.map((l) => JSON.parse(l)).reverse()
+    return logs.map((l) => JSON.parse(l) as ArchivedLogRecord).reverse()
   }
 
   /**
@@ -709,9 +754,10 @@ export class QueueService {
   async searchJobs(
     query: string,
     options: { limit?: number; type?: 'all' | 'waiting' | 'delayed' | 'failed' } = {}
-  ): Promise<any[]> {
+  ): Promise<Array<QueueJobRecord & { _queue: string; _type: string; _matchType: string }>> {
     const { limit = 20, type = 'all' } = options
-    const results: any[] = []
+    const results: Array<QueueJobRecord & { _queue: string; _type: string; _matchType: string }> =
+      []
     const queryLower = query.toLowerCase()
 
     const queues = await this.listQueues()
@@ -721,14 +767,15 @@ export class QueueService {
         break
       }
 
-      const types = type === 'all' ? ['waiting', 'delayed', 'failed'] : [type]
+      const types: Array<'waiting' | 'delayed' | 'failed'> =
+        type === 'all' ? ['waiting', 'delayed', 'failed'] : [type]
 
       for (const jobType of types) {
         if (results.length >= limit) {
           break
         }
 
-        const jobs = await this.getJobs(queue.name, jobType as any, 0, 99)
+        const jobs = await this.getJobs(queue.name, jobType, 0, 99)
 
         for (const job of jobs) {
           if (results.length >= limit) {
@@ -775,7 +822,7 @@ export class QueueService {
     limit = 50,
     status?: 'completed' | 'failed',
     filter: { jobId?: string; startTime?: Date; endTime?: Date } = {}
-  ): Promise<{ jobs: any[]; total: number }> {
+  ): Promise<{ jobs: Array<SerializedJob & { _archived: true }>; total: number }> {
     const persistence = this.manager.getPersistence()
     if (!persistence) {
       return { jobs: [], total: 0 }
@@ -788,7 +835,7 @@ export class QueueService {
     ])
 
     return {
-      jobs: jobs.map((j: any) => ({ ...j, _archived: true })),
+      jobs: jobs.map((j) => ({ ...j, _archived: true as const })),
       total,
     }
   }
@@ -803,8 +850,8 @@ export class QueueService {
   async searchArchive(
     query: string,
     options: { limit?: number; page?: number; queue?: string } = {}
-  ): Promise<{ jobs: any[]; total: number }> {
-    const persistence = this.manager.getPersistence() as any
+  ): Promise<{ jobs: Array<SerializedJob & { _archived: true }>; total: number }> {
+    const persistence = this.manager.getPersistence() as SearchablePersistence | undefined
     if (!persistence || typeof persistence.search !== 'function') {
       return { jobs: [], total: 0 }
     }
@@ -814,7 +861,7 @@ export class QueueService {
 
     const jobs = await persistence.search(query, { limit, offset, queue })
     return {
-      jobs: jobs.map((j: any) => ({ ...j, _archived: true })),
+      jobs: jobs.map((j) => ({ ...j, _archived: true as const })),
       total: jobs.length === limit ? limit * page + 1 : (page - 1) * limit + jobs.length,
     }
   }
@@ -836,7 +883,7 @@ export class QueueService {
       startTime?: Date
       endTime?: Date
     } = {}
-  ): Promise<{ logs: any[]; total: number }> {
+  ): Promise<{ logs: ArchivedLogRecord[]; total: number }> {
     const persistence = this.manager.getPersistence()
     if (!persistence) {
       return { logs: [], total: 0 }
@@ -872,7 +919,7 @@ export class QueueService {
    *
    * @returns List of schedules.
    */
-  async listSchedules(): Promise<any[]> {
+  async listSchedules(): Promise<ScheduledJobConfig[]> {
     const scheduler = this.manager.getScheduler()
     return await scheduler.list()
   }
@@ -886,7 +933,7 @@ export class QueueService {
     id: string
     cron: string
     queue: string
-    job: any
+    job: SerializedJob
   }): Promise<void> {
     const scheduler = this.manager.getScheduler()
     await scheduler.register(config)

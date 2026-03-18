@@ -1,4 +1,5 @@
 import { DB } from '@gravito/atlas'
+import type { PersistenceAdapter } from '@gravito/stream'
 import { MySQLPersistence, SQLitePersistence } from '@gravito/stream'
 
 export interface ServerConfig {
@@ -14,7 +15,7 @@ export interface ServerConfig {
     password?: string
   }
   persistence?: {
-    adapter: any
+    adapter: PersistenceAdapter & { setupTable(): Promise<void> }
     archiveCompleted: boolean
     archiveFailed: boolean
     archiveEnqueued: boolean

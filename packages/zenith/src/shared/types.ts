@@ -1,3 +1,31 @@
+export type JsonPrimitive = string | number | boolean | null
+export type JsonValue = JsonPrimitive | JsonObject | JsonValue[]
+
+export interface JsonObject {
+  [key: string]: JsonValue
+}
+
+export interface LaravelWorkerMeta {
+  pid: number
+  status: string
+  cpu: number
+  memory: number
+  cmdline?: string
+  [key: string]: unknown
+}
+
+export interface LaravelMeta {
+  workerCount: number
+  roots?: string[]
+  workers?: LaravelWorkerMeta[]
+  [key: string]: unknown
+}
+
+export interface PulseNodeMeta {
+  laravel?: LaravelMeta
+  [key: string]: unknown
+}
+
 /**
  * Metrics representing CPU usage for a specific node/process.
  *
@@ -125,7 +153,7 @@ export interface PulseNode {
   /** Runtime details. */
   runtime: PulseRuntime
   /** Unstructured metadata (e.g., framework-specific details). */
-  meta?: any
+  meta?: PulseNodeMeta
   /** Epoch timestamp of the last heartbeat received. */
   timestamp: number
 }

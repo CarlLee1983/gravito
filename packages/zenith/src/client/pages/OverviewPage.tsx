@@ -13,6 +13,7 @@ import {
   Terminal,
 } from 'lucide-react'
 import React from 'react'
+import type { PulseNodeMeta } from '../../shared/types'
 import { JobInspector } from '../components/JobInspector'
 import { LogArchiveModal } from '../components/LogArchiveModal'
 import { ThroughputChart } from '../ThroughputChart'
@@ -35,9 +36,25 @@ interface SystemLog {
   message: string
 }
 
+interface WorkerInfo {
+  id: string
+  service?: string
+  status: 'online' | 'offline' | 'idle'
+  pid: number
+  uptime: number
+  metrics?: {
+    cpu: number
+    cores: number
+    ram: {
+      rss: number
+    }
+  }
+  meta?: PulseNodeMeta
+}
+
 interface FluxStats {
   queues: QueueStats[]
-  workers: any[]
+  workers: WorkerInfo[]
 }
 
 const DEFAULT_STATS: FluxStats = {
@@ -145,7 +162,7 @@ function LiveLogs({
   )
 }
 
-function QueueHeatmap({ queues }: { queues: any[] }) {
+function QueueHeatmap({ queues }: { queues: QueueStats[] }) {
   return (
     <div className="card-premium p-6 mb-8 overflow-hidden relative group">
       <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity scanline pointer-events-none"></div>
@@ -367,7 +384,7 @@ export function OverviewPage() {
   const [isLogArchiveOpen, setIsLogArchiveOpen] = React.useState(false)
 
   React.useEffect(() => {
-    const handler = (e: any) => setSelectedQueue(e.detail)
+    const handler = (e: Event) => setSelectedQueue((e as CustomEvent<string>).detail)
     window.addEventListener('select-queue', handler)
     return () => window.removeEventListener('select-queue', handler)
   }, [])
@@ -392,8 +409,8 @@ export function OverviewPage() {
 
   // Stats update listener
   React.useEffect(() => {
-    const handler = (e: any) => {
-      const newStats = e.detail
+    const handler = (e: Event) => {
+      const newStats = (e as CustomEvent<Partial<FluxStats>>).detail
       if (newStats) {
         setStats((prev) => ({
           queues: newStats.queues || prev.queues,

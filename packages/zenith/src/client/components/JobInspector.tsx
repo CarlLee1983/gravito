@@ -3,13 +3,14 @@ import { motion } from 'framer-motion'
 import { AlertCircle, CheckCircle2, Clock, RefreshCcw, Search } from 'lucide-react'
 import React from 'react'
 import { createPortal } from 'react-dom'
+import type { JsonValue } from '../../shared/types'
 import { cn } from '../utils'
 import { ConfirmDialog } from './ConfirmDialog'
 
 interface Job {
   id: string
   name?: string
-  data?: any
+  data?: JsonValue
   status?: string
   timestamp?: number
   scheduledAt?: string
@@ -147,7 +148,7 @@ export function JobInspector({ queueName, onClose }: JobInspectorProps) {
       return
     }
     const endpoint = action === 'delete' ? 'delete' : 'retry'
-    const body: any = { raw: job._raw }
+    const body: { raw: string; type?: typeof view } = { raw: job._raw }
     if (action === 'delete') {
       body.type = view
     }

@@ -1,6 +1,22 @@
 import type { CommandType, QuasarCommand } from '@gravito/quasar'
 import { Redis } from 'ioredis'
 
+type QueueDriver = 'redis' | 'laravel' | 'bullmq' | 'bull' | 'bee-queue'
+
+type CommandPayload =
+  | {
+      queue: string
+      jobKey: string
+      driver: QueueDriver
+      action?: never
+    }
+  | {
+      queue: string
+      action: 'retry-all' | 'restart' | 'retry'
+      driver: 'laravel'
+      jobKey?: string
+    }
+
 /**
  * CommandService handles sending commands from Zenith to Quasar agents.
  *
@@ -35,7 +51,7 @@ export class CommandService {
     service: string,
     nodeId: string,
     type: CommandType,
-    payload: any
+    payload: CommandPayload
   ): Promise<string> {
     const commandId = crypto.randomUUID()
 
@@ -46,7 +62,7 @@ export class CommandService {
       payload,
       timestamp: Date.now(),
       issuer: 'zenith',
-    } as any
+    } as QuasarCommand
 
     const channel = `gravito:quasar:cmd:${service}:${nodeId}`
 
@@ -64,7 +80,7 @@ export class CommandService {
     nodeId: string,
     queue: string,
     jobKey: string,
-    driver: 'redis' | 'laravel' | 'bullmq' | 'bull' | 'bee-queue' = 'redis'
+    driver: QueueDriver = 'redis'
   ): Promise<string> {
     return this.sendCommand(service, nodeId, 'RETRY_JOB', {
       queue,
@@ -81,7 +97,7 @@ export class CommandService {
     nodeId: string,
     queue: string,
     jobKey: string,
-    driver: 'redis' | 'laravel' | 'bullmq' | 'bull' | 'bee-queue' = 'redis'
+    driver: QueueDriver = 'redis'
   ): Promise<string> {
     return this.sendCommand(service, nodeId, 'DELETE_JOB', {
       queue,
@@ -97,7 +113,7 @@ export class CommandService {
     service: string,
     queue: string,
     jobKey: string,
-    driver: 'redis' | 'laravel' | 'bullmq' | 'bull' | 'bee-queue' = 'redis'
+    driver: QueueDriver = 'redis'
   ): Promise<string> {
     return this.retryJob(service, '*', queue, jobKey, driver)
   }
@@ -109,7 +125,7 @@ export class CommandService {
     service: string,
     queue: string,
     jobKey: string,
-    driver: 'redis' | 'laravel' | 'bullmq' | 'bull' | 'bee-queue' = 'redis'
+    driver: QueueDriver = 'redis'
   ): Promise<string> {
     return this.deleteJob(service, '*', queue, jobKey, driver)
   }

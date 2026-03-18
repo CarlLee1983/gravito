@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events'
 import { Redis } from 'ioredis'
 import nodemailer from 'nodemailer'
 import type { AlertConfig, AlertEvent, AlertRule, PulseNode } from '../../shared/types'
-import type { WorkerReport } from './QueueService'
+import type { MonitoringWorker, QueueStats } from './QueueService'
 
 /**
  * AlertService monitors system telemetry and triggers notifications.
@@ -125,9 +125,9 @@ export class AlertService {
    * Evaluates rules against provided data.
    */
   async check(data: {
-    queues: any[]
+    queues: QueueStats[]
     nodes: Record<string, PulseNode[]>
-    workers: WorkerReport[]
+    workers: MonitoringWorker[]
     totals: { waiting: number; delayed: number; failed: number }
   }) {
     const now = Date.now()
@@ -279,7 +279,10 @@ export class AlertService {
     }
   }
 
-  private async sendEmail(config: any, event: AlertEvent) {
+  private async sendEmail(
+    config: NonNullable<AlertConfig['channels']['email']>,
+    event: AlertEvent
+  ) {
     const transporter = nodemailer.createTransport({
       host: config.smtpHost,
       port: config.smtpPort,

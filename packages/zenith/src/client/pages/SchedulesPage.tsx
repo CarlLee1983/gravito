@@ -17,10 +17,19 @@ import {
   X,
 } from 'lucide-react'
 import { useState } from 'react'
+import type { JsonValue } from '../../shared/types'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { useNotifications } from '../contexts/NotificationContext'
 
-// Update interface to match actual API response
+interface MutationError {
+  message?: string
+}
+
+interface ScheduleJobPayload {
+  className?: string
+  payload?: JsonValue
+}
+
 interface ScheduleInfo {
   id: string
   cron: string
@@ -28,8 +37,8 @@ interface ScheduleInfo {
   job: {
     className?: string
     name?: string
-    data?: any
-    payload?: any
+    data?: JsonValue
+    payload?: JsonValue
   }
   lastRun?: number | string
   nextRun?: number | string
@@ -42,6 +51,14 @@ interface QueueListItem {
   failed: number
   active: number
   paused: boolean
+}
+
+interface SchedulesResponse {
+  schedules: ScheduleInfo[]
+}
+
+interface QueuesResponse {
+  queues: QueueListItem[]
 }
 
 /**
@@ -69,12 +86,12 @@ export function SchedulesPage() {
 
   const { addNotification } = useNotifications()
 
-  const { data: queueData } = useQuery<{ queues: QueueListItem[] }>({
+  const { data: queueData } = useQuery<QueuesResponse>({
     queryKey: ['queues'],
     queryFn: () => fetch('/api/queues').then((res) => res.json()),
   })
 
-  const { data, isLoading } = useQuery<{ schedules: ScheduleInfo[] }>({
+  const { data, isLoading } = useQuery<SchedulesResponse>({
     queryKey: ['schedules'],
     queryFn: () => fetch('/api/schedules').then((res) => res.json()),
   })
@@ -90,7 +107,7 @@ export function SchedulesPage() {
       })
       setConfirmRunId(null)
     },
-    onError: (err: any) => {
+    onError: (err: MutationError) => {
       addNotification({
         type: 'error',
         title: 'Trigger Failed',
@@ -114,7 +131,7 @@ export function SchedulesPage() {
   })
 
   const registerMutation = useMutation({
-    mutationFn: (body: any) =>
+    mutationFn: (body: { id: string; cron: string; queue: string; job: ScheduleJobPayload }) =>
       fetch('/api/schedules', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -138,7 +155,7 @@ export function SchedulesPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const payload = JSON.parse(formData.payload)
+      const payload = JSON.parse(formData.payload) as JsonValue
       registerMutation.mutate({
         id: formData.id,
         cron: formData.cron,
@@ -439,7 +456,7 @@ export function SchedulesPage() {
                         value={formData.queue}
                         onChange={(e) => setFormData({ ...formData, queue: e.target.value })}
                       >
-                        {queues.map((q: any) => (
+                        {queues.map((q) => (
                           <option key={q.name} value={q.name}>
                             {q.name}
                           </option>

@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from 'clsx'
 import { Activity, Cpu } from 'lucide-react'
+import type { PulseNodeMeta } from '../shared/types'
 import { twMerge } from 'tailwind-merge'
 
 function cn(...inputs: ClassValue[]) {
@@ -35,7 +36,7 @@ function getWorkerName(id: string, pid: number) {
 interface WorkerInfo {
   id: string
   service?: string
-  status: 'online' | 'offline'
+  status: 'online' | 'offline' | 'idle'
   pid: number
   uptime: number
   metrics?: {
@@ -45,12 +46,7 @@ interface WorkerInfo {
       rss: number
     }
   }
-  meta?: {
-    laravel?: {
-      workerCount: number
-      roots: string[]
-    }
-  }
+  meta?: PulseNodeMeta
 }
 
 /**

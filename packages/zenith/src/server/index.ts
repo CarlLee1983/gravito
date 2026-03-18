@@ -6,7 +6,15 @@ import { DB } from '@gravito/atlas'
 import type { GravitoContext } from '@gravito/photon'
 import { Photon } from '@gravito/photon'
 import { QuasarAgent } from '@gravito/quasar'
+import type { PersistenceAdapter, ScheduledJobConfig, SerializedJob } from '@gravito/stream'
 import { MySQLPersistence, SQLitePersistence } from '@gravito/stream'
+import type {
+  AlertConfig,
+  AlertRule,
+  LaravelWorkerMeta,
+  PulseNode,
+  PulseNodeMeta,
+} from '../shared/types'
 import {
   authMiddleware,
   createSession,
@@ -17,6 +25,133 @@ import {
 import { CommandService } from './services/CommandService'
 import { PulseService } from './services/PulseService'
 import { QueueService } from './services/QueueService'
+
+type PersistenceConfig =
+  | {
+      adapter: PersistenceAdapter & { setupTable(): Promise<void> }
+      archiveCompleted: boolean
+      archiveFailed: boolean
+      archiveEnqueued: boolean
+    }
+  | undefined
+
+type WorkerStatus = 'online' | 'idle' | 'offline'
+
+interface DashboardWorker {
+  id: string
+  service?: string
+  status: WorkerStatus
+  pid: number
+  uptime: number
+  metrics: {
+    cpu: number
+    cores: number
+    ram: {
+      rss: number
+      heapUsed: number
+      total: number
+    }
+  }
+  queues?: PulseNode['queues']
+  meta?: PulseNodeMeta | Record<string, unknown>
+}
+
+interface LoginBody {
+  password: string
+}
+
+interface PulseCommandBody {
+  service: string
+  nodeId: string
+  type: 'RETRY_JOB' | 'DELETE_JOB' | 'LARAVEL_ACTION'
+  queue: string
+  jobKey: string
+  driver?: 'redis' | 'laravel' | 'bullmq' | 'bull' | 'bee-queue'
+  action?: 'retry-all' | 'restart' | 'retry'
+}
+
+interface DeleteJobBody {
+  type: 'waiting' | 'delayed' | 'failed'
+  raw: string
+}
+
+interface RetryJobBody {
+  raw: string
+}
+
+interface BulkJobsBody {
+  type: 'waiting' | 'delayed' | 'failed'
+  raws: string[]
+}
+
+interface BulkRetryJobsBody {
+  type: 'delayed' | 'failed'
+  raws: string[]
+}
+
+interface BulkDeleteAllBody {
+  type: 'waiting' | 'delayed' | 'failed'
+}
+
+interface BulkRetryAllBody {
+  type: 'delayed' | 'failed'
+}
+
+interface CleanupArchiveBody {
+  days?: number
+}
+
+interface ScheduleBody extends Omit<ScheduledJobConfig, 'nextRun' | 'enabled' | 'lastRun'> {
+  job: SerializedJob
+}
+
+function mapLaravelWorkerStatus(status: string): WorkerStatus {
+  return status === 'running' || status === 'sleep' ? 'online' : 'idle'
+}
+
+function expandPulseNodeWorkers(node: PulseNode): DashboardWorker[] {
+  const mainNode: DashboardWorker = {
+    id: node.id,
+    service: node.service,
+    status: (node.runtime.status as WorkerStatus) || 'online',
+    pid: node.pid,
+    uptime: node.runtime.uptime,
+    metrics: {
+      cpu: node.cpu.process,
+      cores: node.cpu.cores,
+      ram: {
+        rss: node.memory.process.rss,
+        heapUsed: node.memory.process.heapUsed,
+        total: node.memory.system.total,
+      },
+    },
+    queues: node.queues,
+    meta: node.meta,
+  }
+
+  const subWorkers =
+    node.meta?.laravel?.workers?.map(
+      (worker: LaravelWorkerMeta): DashboardWorker => ({
+        id: `${node.id}-php-${worker.pid}`,
+        service: `${node.service} / LARAVEL`,
+        status: mapLaravelWorkerStatus(worker.status),
+        pid: worker.pid,
+        uptime: node.runtime.uptime,
+        metrics: {
+          cpu: worker.cpu,
+          cores: 1,
+          ram: {
+            rss: worker.memory,
+            heapUsed: worker.memory,
+            total: node.memory.system.total,
+          },
+        },
+        meta: { isVirtual: true, cmdline: worker.cmdline },
+      })
+    ) ?? []
+
+  return [mainNode, ...subWorkers]
+}
 
 // Helper: Get cookie value from request headers
 function getCookieValue(headers: Headers, name: string): string | undefined {
@@ -40,11 +175,9 @@ const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379'
 const QUEUE_PREFIX = process.env.QUEUE_PREFIX || 'queue:'
 
 // Persistence Initialize
-let persistence:
-  | { adapter: any; archiveCompleted: boolean; archiveFailed: boolean; archiveEnqueued: boolean }
-  | undefined
+let persistence: PersistenceConfig
 
-const dbDriver = process.env.DB_DRIVER || (process.env.DB_HOST ? 'mysql' : 'sqlite')
+const dbDriver: 'mysql' | 'sqlite' = process.env.DB_HOST ? 'mysql' : 'sqlite'
 
 if (dbDriver === 'sqlite' || process.env.DB_HOST) {
   if (dbDriver === 'sqlite') {
@@ -54,8 +187,8 @@ if (dbDriver === 'sqlite' || process.env.DB_HOST) {
     })
   } else {
     DB.addConnection('default', {
-      driver: dbDriver as any,
-      host: process.env.DB_HOST,
+      driver: 'mysql',
+      host: process.env.DB_HOST || '127.0.0.1',
       port: parseInt(process.env.DB_PORT || '3306', 10),
       database: process.env.DB_NAME || 'flux',
       username: process.env.DB_USER || 'root',
@@ -104,52 +237,7 @@ queueService
           queueService.listWorkers(),
         ])
 
-        const pulseWorkers = Object.values(pulseNodes)
-          .flat()
-          .flatMap((node) => {
-            const mainNode = {
-              id: node.id,
-              service: node.service,
-              status: node.runtime.status || 'online',
-              pid: node.pid,
-              uptime: node.runtime.uptime,
-              metrics: {
-                cpu: node.cpu.process,
-                cores: node.cpu.cores,
-                ram: {
-                  rss: node.memory.process.rss,
-                  heapUsed: node.memory.process.heapUsed,
-                  total: node.memory.system.total,
-                },
-              },
-              queues: node.queues,
-              meta: node.meta,
-            }
-
-            const subWorkers: any[] = []
-            if (node.meta?.laravel?.workers && Array.isArray(node.meta.laravel.workers)) {
-              node.meta.laravel.workers.forEach((w: any) => {
-                subWorkers.push({
-                  id: `${node.id}-php-${w.pid}`,
-                  service: `${node.service} / LARAVEL`,
-                  status: w.status === 'running' || w.status === 'sleep' ? 'online' : 'idle',
-                  pid: w.pid,
-                  uptime: node.runtime.uptime,
-                  metrics: {
-                    cpu: w.cpu,
-                    cores: 1,
-                    ram: {
-                      rss: w.memory,
-                      heapUsed: w.memory,
-                      total: node.memory.system.total,
-                    },
-                  },
-                  meta: { isVirtual: true, cmdline: w.cmdline },
-                })
-              })
-            }
-            return [mainNode, ...subWorkers]
-          })
+        const pulseWorkers = Object.values(pulseNodes).flat().flatMap(expandPulseNodeWorkers)
 
         const formattedLegacy = legacyWorkers.map((w) => ({
           id: w.id,
@@ -209,7 +297,7 @@ api.get('/auth/status', (c: GravitoContext) => {
 
 api.post('/auth/login', async (c: GravitoContext) => {
   try {
-    const { password } = await c.req.json<any>()
+    const { password } = await c.req.json<LoginBody>()
 
     if (!verifyPassword(password)) {
       return c.json({ success: false, error: 'Invalid password' }, 401)
@@ -420,59 +508,7 @@ api.get('/workers', async (c: GravitoContext) => {
     ])
 
     // Transform PulseNodes to match the frontend Worker interface
-    const pulseWorkers = Object.values(pulseNodes)
-      .flat()
-      .flatMap((node) => {
-        // 1. The Main Agent Node
-        const mainNode = {
-          id: node.id,
-          service: node.service,
-          status: node.runtime.status || 'online',
-          pid: node.pid,
-          uptime: node.runtime.uptime,
-          metrics: {
-            cpu: node.cpu.process,
-            cores: node.cpu.cores,
-            ram: {
-              rss: node.memory.process.rss,
-              heapUsed: node.memory.process.heapUsed,
-              total: node.memory.system.total,
-            },
-          },
-          queues: node.queues,
-          meta: node.meta,
-        }
-
-        // 2. Virtual Child Workers (e.g. Laravel)
-        const subWorkers: any[] = []
-        if (node.meta?.laravel?.workers && Array.isArray(node.meta.laravel.workers)) {
-          node.meta.laravel.workers.forEach((w: any) => {
-            subWorkers.push({
-              id: `${node.id}-php-${w.pid}`,
-              service: `${node.service} / LARAVEL`, // Distinct service name
-              status: w.status === 'running' || w.status === 'sleep' ? 'online' : 'idle',
-              pid: w.pid,
-              uptime: node.runtime.uptime, // Inherit uptime for now, or 0
-              metrics: {
-                cpu: w.cpu, // Per-process CPU
-                cores: 1, // Single threaded PHP
-                ram: {
-                  rss: w.memory,
-                  heapUsed: w.memory,
-                  total: node.memory.system.total,
-                },
-              },
-              meta: {
-                // Tag it so UI can maybe style it differently?
-                isVirtual: true,
-                cmdline: w.cmdline,
-              },
-            })
-          })
-        }
-
-        return [mainNode, ...subWorkers]
-      })
+    const pulseWorkers = Object.values(pulseNodes).flat().flatMap(expandPulseNodeWorkers)
 
     // Transform Legacy Workers to match interface (best effort)
     const formattedLegacy = legacyWorkers.map((w) => ({
@@ -566,7 +602,8 @@ api.get('/pulse/nodes', async (c: GravitoContext) => {
 // --- Pulse Remote Control (Phase 3) ---
 api.post('/pulse/command', async (c: GravitoContext) => {
   try {
-    const { service, nodeId, type, queue, jobKey, driver, action } = await c.req.json<any>()
+    const { service, nodeId, type, queue, jobKey, driver, action } =
+      await c.req.json<PulseCommandBody>()
 
     // Validate required fields
     if (!service || !nodeId || !type || !queue || !jobKey) {
@@ -581,12 +618,18 @@ api.post('/pulse/command', async (c: GravitoContext) => {
       )
     }
 
-    const commandId = await commandService.sendCommand(service, nodeId, type, {
-      queue,
-      jobKey,
-      driver: driver || 'redis',
-      action,
-    })
+    const commandId =
+      type === 'LARAVEL_ACTION'
+        ? await commandService.sendCommand(service, nodeId, type, {
+            queue,
+            driver: 'laravel',
+            action: action || 'retry',
+          })
+        : await commandService.sendCommand(service, nodeId, type, {
+            queue,
+            jobKey,
+            driver: driver || 'redis',
+          })
 
     return c.json({
       success: true,
@@ -601,7 +644,7 @@ api.post('/pulse/command', async (c: GravitoContext) => {
 
 api.post('/queues/:name/jobs/delete', async (c: GravitoContext) => {
   const queueName = c.req.param('name')!
-  const { type, raw } = await c.req.json<any>()
+  const { type, raw } = await c.req.json<DeleteJobBody>()
   try {
     const success = await queueService.deleteJob(queueName, type, raw)
     return c.json({ success })
@@ -612,7 +655,7 @@ api.post('/queues/:name/jobs/delete', async (c: GravitoContext) => {
 
 api.post('/queues/:name/jobs/retry', async (c: GravitoContext) => {
   const queueName = c.req.param('name')!
-  const { raw } = await c.req.json<any>()
+  const { raw } = await c.req.json<RetryJobBody>()
   try {
     const success = await queueService.retryJob(queueName, raw)
     return c.json({ success })
@@ -623,7 +666,7 @@ api.post('/queues/:name/jobs/retry', async (c: GravitoContext) => {
 
 api.post('/queues/:name/jobs/bulk-delete', async (c: GravitoContext) => {
   const queueName = c.req.param('name')!
-  const { type, raws } = await c.req.json<any>()
+  const { type, raws } = await c.req.json<BulkJobsBody>()
   try {
     const deleted = await queueService.deleteJobs(queueName, type, raws)
     return c.json({ success: true, count: deleted })
@@ -634,7 +677,7 @@ api.post('/queues/:name/jobs/bulk-delete', async (c: GravitoContext) => {
 
 api.post('/queues/:name/jobs/bulk-retry', async (c: GravitoContext) => {
   const queueName = c.req.param('name')!
-  const { type, raws } = await c.req.json<any>()
+  const { type, raws } = await c.req.json<BulkRetryJobsBody>()
   try {
     const retried = await queueService.retryJobs(queueName, type, raws)
     return c.json({ success: true, count: retried })
@@ -645,7 +688,7 @@ api.post('/queues/:name/jobs/bulk-retry', async (c: GravitoContext) => {
 
 api.post('/queues/:name/jobs/bulk-delete-all', async (c: GravitoContext) => {
   const queueName = c.req.param('name')!
-  const { type } = await c.req.json<any>()
+  const { type } = await c.req.json<BulkDeleteAllBody>()
   try {
     const deleted = await queueService.deleteAllJobs(queueName, type)
     return c.json({ success: true, count: deleted })
@@ -656,7 +699,7 @@ api.post('/queues/:name/jobs/bulk-delete-all', async (c: GravitoContext) => {
 
 api.post('/queues/:name/jobs/bulk-retry-all', async (c: GravitoContext) => {
   const queueName = c.req.param('name')!
-  const { type } = await c.req.json<any>()
+  const { type } = await c.req.json<BulkRetryAllBody>()
   try {
     const retried = await queueService.retryAllJobs(queueName, type)
     return c.json({ success: true, count: retried })
@@ -666,7 +709,7 @@ api.post('/queues/:name/jobs/bulk-retry-all', async (c: GravitoContext) => {
 })
 
 api.post('/maintenance/cleanup-archive', async (c: GravitoContext) => {
-  const { days = 30 } = await c.req.json<any>()
+  const { days = 30 } = await c.req.json<CleanupArchiveBody>()
   try {
     const deleted = await queueService.cleanupArchive(days)
     return c.json({ success: true, deleted })
@@ -688,6 +731,8 @@ api.post('/queues/:name/purge', async (c: GravitoContext) => {
 api.get('/logs/stream', async (c: GravitoContext) => {
   // Create SSE response with proper headers
   const encoder = new TextEncoder()
+
+  let cleanup: (() => void) | undefined
 
   const readable = new ReadableStream({
     async start(controller) {
@@ -731,7 +776,7 @@ api.get('/logs/stream', async (c: GravitoContext) => {
         }, 5000)
 
         // Cleanup on abort
-        const cleanup = () => {
+        cleanup = () => {
           unsubscribeLogs()
           unsubscribeStats()
           clearInterval(pulseInterval)
@@ -740,9 +785,6 @@ api.get('/logs/stream', async (c: GravitoContext) => {
 
         // Listen for client disconnect
         c.req.raw.signal?.addEventListener('abort', cleanup)
-
-        // Store cleanup function for manual close (optional)
-        ;(controller as any)._cleanup = cleanup
       } catch (err) {
         controller.error(err)
       }
@@ -750,9 +792,7 @@ api.get('/logs/stream', async (c: GravitoContext) => {
 
     cancel() {
       // Called when stream is closed
-      if ((this as any)._cleanup) {
-        ;(this as any)._cleanup()
-      }
+      cleanup?.()
     },
   })
 
@@ -777,7 +817,7 @@ api.get('/schedules', async (c: GravitoContext) => {
 })
 
 api.post('/schedules', async (c: GravitoContext) => {
-  const body = await c.req.json<any>()
+  const body = await c.req.json<ScheduleBody>()
   try {
     await queueService.registerSchedule(body)
     return c.json({ success: true })
@@ -827,7 +867,7 @@ api.get('/alerts/config', async (c: GravitoContext) => {
 // })
 
 api.post('/alerts/config', async (c: GravitoContext) => {
-  const config = await c.req.json<any>()
+  const config = await c.req.json<AlertConfig>()
   try {
     await queueService.alerts.saveConfig(config)
     return c.json({ success: true })
@@ -837,7 +877,7 @@ api.post('/alerts/config', async (c: GravitoContext) => {
 })
 
 api.post('/alerts/rules', async (c: GravitoContext) => {
-  const rule = await c.req.json<any>()
+  const rule = await c.req.json<AlertRule>()
   try {
     await queueService.alerts.addRule(rule)
     return c.json({ success: true })
@@ -871,7 +911,7 @@ api.post('/alerts/test', async (c: GravitoContext) => {
           memory: { rss: '0', heapTotal: '0', heapUsed: '0' },
           queues: [],
         },
-      ] as any,
+      ],
       totals: { waiting: 9999, delayed: 0, failed: 9999 },
     })
     return c.json({ success: true, message: 'Test alert dispatched' })
