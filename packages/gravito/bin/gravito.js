@@ -11,6 +11,7 @@ const require = createRequire(import.meta.url);
  * @param {string[]} [options.argv]
  * @param {(id: string) => string} [options.resolve]
  * @param {typeof spawn} [options.spawnFn]
+ * @param {string} [options.command]
  * @param {(code: number) => void} [options.exit]
  * @param {NodeJS.ProcessEnv} [options.env]
  * @returns {Promise<import('node:child_process').ChildProcess | null>}
@@ -20,18 +21,25 @@ export async function run(options = {}) {
     argv = process.argv.slice(2),
     resolve = require.resolve,
     spawnFn = spawn,
+    command = process.execPath,
     exit = process.exit,
     env = process.env,
   } = options;
 
   try {
     const cliPath = resolve('@gravito/pulse/bin/gravito.mjs');
-    const child = spawnFn('bun', [cliPath, ...argv], {
+    const child = spawnFn(command, [cliPath, ...argv], {
       stdio: 'inherit',
       env,
     });
     child.on('exit', (code) => {
       exit(code ?? 0);
+    });
+    child.on('error', (error) => {
+      console.error(
+        `❌ Failed to start @gravito/pulse: ${error instanceof Error ? error.message : String(error)}`
+      );
+      exit(1);
     });
     return child;
   } catch (err) {

@@ -12,6 +12,7 @@ const require = createRequire(import.meta.url)
  * @param {string[]} [options.argv] - Command line arguments passed to the CLI.
  * @param {Function} [options.resolve] - Dependency resolver function.
  * @param {Function} [options.spawnFn] - Process spawn function.
+ * @param {string} [options.command] - Executable used to launch the CLI.
  * @param {Function} [options.exit] - Process exit function.
  * @param {Object} [options.env] - Environment variables.
  * @returns {Promise<import('node:child_process').ChildProcess | null>} The spawned CLI process.
@@ -22,6 +23,7 @@ export async function run(options = {}) {
     argv = process.argv.slice(2),
     resolve = require.resolve,
     spawnFn = spawn,
+    command = process.execPath,
     exit = process.exit,
     env = process.env,
   } = options
@@ -32,13 +34,19 @@ export async function run(options = {}) {
     const cliPath = resolve('@gravito/pulse/bin/gravito.mjs')
 
     // Execute the CLI create command
-    const child = spawnFn('bun', [cliPath, 'create', ...argv], {
+    const child = spawnFn(command, [cliPath, 'create', ...argv], {
       stdio: 'inherit',
       env,
     })
 
     child.on('exit', (code) => {
       exit(code ?? 0)
+    })
+    child.on('error', (error) => {
+      console.error(
+        `❌ Failed to start @gravito/pulse: ${error instanceof Error ? error.message : String(error)}`
+      )
+      exit(1)
     })
     return child
   } catch (err) {

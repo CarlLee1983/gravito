@@ -26,6 +26,7 @@ describe('gravito wrapper package', () => {
 
     await run({
       argv: ['doctor', '--json'],
+      command: '/tmp/bun',
       resolve: (id) => {
         expect(id).toBe('@gravito/pulse/bin/gravito.mjs')
         return '/tmp/pulse-cli.mjs'
@@ -39,11 +40,34 @@ describe('gravito wrapper package', () => {
 
     expect(calls).toHaveLength(1)
     expect(calls[0]).toEqual({
-      cmd: 'bun',
+      cmd: '/tmp/bun',
       args: ['/tmp/pulse-cli.mjs', 'doctor', '--json'],
       opts: { stdio: 'inherit', env: { TEST_ENV: '1' } },
     })
     expect(exitCode).toBe(0)
+  })
+
+  it('exits with error when spawning pulse fails', async () => {
+    const errorSpy = spyOn(console, 'error').mockImplementation(() => {})
+    let exitCode: number | undefined
+
+    await run({
+      resolve: () => '/tmp/pulse-cli.mjs',
+      spawnFn: () => ({
+        on: (event: string, cb: (value?: unknown) => void) => {
+          if (event === 'error') {
+            cb(new Error('spawn failed'))
+          }
+        },
+      }),
+      exit: (code) => {
+        exitCode = code
+      },
+    })
+
+    expect(exitCode).toBe(1)
+    expect(errorSpy).toHaveBeenCalled()
+    errorSpy.mockRestore()
   })
 
   it('exits with error when pulse cannot be resolved', async () => {

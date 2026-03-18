@@ -25,6 +25,7 @@ describe('create-gravito-app', () => {
 
     await run({
       argv: ['my-app', '--template', 'basic'],
+      command: '/tmp/bun',
       resolve,
       spawnFn,
       exit,
@@ -32,7 +33,7 @@ describe('create-gravito-app', () => {
     })
 
     expect(calls).toHaveLength(1)
-    expect(calls[0].cmd).toBe('bun')
+    expect(calls[0].cmd).toBe('/tmp/bun')
     expect(calls[0].args).toEqual([
       '/tmp/gravito-cli.mjs',
       'create',
@@ -42,6 +43,30 @@ describe('create-gravito-app', () => {
     ])
     expect(calls[0].opts).toEqual({ stdio: 'inherit', env: { TEST_ENV: '1' } })
     expect(exitCode).toBe(0)
+  })
+
+  it('exits with error when spawning the CLI fails', async () => {
+    const errorSpy = spyOn(console, 'error').mockImplementation(() => {})
+    let exitCode: number | undefined
+    const exit = (code: number) => {
+      exitCode = code
+    }
+
+    await run({
+      resolve: () => '/tmp/gravito-cli.mjs',
+      spawnFn: () => ({
+        on: (event: string, cb: (value?: unknown) => void) => {
+          if (event === 'error') {
+            cb(new Error('spawn failed'))
+          }
+        },
+      }),
+      exit,
+    })
+
+    expect(exitCode).toBe(1)
+    expect(errorSpy).toHaveBeenCalled()
+    errorSpy.mockRestore()
   })
 
   it('exits with error when the CLI cannot be resolved', async () => {
