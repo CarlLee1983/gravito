@@ -7,6 +7,27 @@ import type { JobSerializer } from './JobSerializer'
  */
 const isBun = typeof globalThis.Bun !== 'undefined'
 
+interface BunJsonlApi {
+  parse(input: string): unknown[]
+  parseChunk(input: string): {
+    values: unknown[]
+    read: number
+    done: boolean
+    error: SyntaxError | null
+  }
+}
+
+interface JobStateRecord extends Record<string, unknown> {
+  id?: string
+  groupId?: string
+  priority?: string | number
+  delaySeconds?: number
+  attempts?: number
+  maxAttempts?: number
+  retryAfterSeconds?: number
+  retryMultiplier?: number
+}
+
 /**
  * JSONL (JSON Lines) Serializer。
  *
@@ -58,7 +79,7 @@ export class JsonlSerializer implements JobSerializer {
   /**
    * 將 SerializedJob 的 metadata 還原至 job 物件上。
    */
-  private restoreMetadata(job: Record<string, any>, serialized: SerializedJob): void {
+  private restoreMetadata(job: JobStateRecord, serialized: SerializedJob): void {
     job.id = serialized.id
     if (serialized.groupId) {
       job.groupId = serialized.groupId
@@ -129,7 +150,7 @@ export class JsonlSerializer implements JobSerializer {
       )
     }
 
-    const job = Object.create({}) as Record<string, any>
+    const job = Object.create({}) as JobStateRecord
     Object.assign(job, properties)
     this.restoreMetadata(job, serialized)
 
@@ -160,7 +181,7 @@ export class JsonlSerializer implements JobSerializer {
 
     if (isBun) {
       // 使用 Bun 原生 JSONL 解析器以獲得最佳性能
-      parsed = (globalThis.Bun as any).JSONL.parse(jsonlStr) as SerializedJob[]
+      parsed = (globalThis.Bun.JSONL as unknown as BunJsonlApi).parse(jsonlStr) as SerializedJob[]
     } else {
       // 降級：逐行解析
       parsed = jsonlStr
@@ -201,8 +222,11 @@ export class JsonlSerializer implements JobSerializer {
   *deserializeStream(chunk: string): Generator<Job> {
     if (isBun) {
       // 使用 Bun 原生 JSONL 增量解析器
-      const items = (globalThis.Bun as any).JSONL.parseChunk(chunk) as SerializedJob[]
-      for (const serialized of items) {
+      const result = (globalThis.Bun.JSONL as unknown as BunJsonlApi).parseChunk(chunk)
+      if (result.error) {
+        throw new Error(`JsonlSerializer: failed to parse JSONL chunk: ${result.error.message}`)
+      }
+      for (const serialized of result.values as SerializedJob[]) {
         yield this.deserialize(serialized)
       }
     } else {

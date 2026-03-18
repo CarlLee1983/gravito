@@ -237,7 +237,7 @@ export class BufferedPersistence implements PersistenceAdapter {
     search?: string
     startTime?: Date
     endTime?: Date
-  }): Promise<any[]> {
+  }): Promise<Record<string, unknown>[]> {
     return this.adapter.listLogs(options)
   }
 

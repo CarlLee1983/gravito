@@ -54,6 +54,32 @@ export interface RedisClient {
   [key: string]: any
 }
 
+interface BinaryTransportPayload {
+  isBinary: true
+  buffer: Buffer
+}
+
+interface JsonTransportPayload {
+  isBinary: false
+  payload: string
+}
+
+type RedisTransportPayload = BinaryTransportPayload | JsonTransportPayload
+
+interface PipelineReply<T = unknown> {
+  0: Error | null
+  1: T
+}
+
+interface WorkerHeartbeatPayload {
+  id: string
+  [key: string]: unknown
+}
+
+interface LogPayload {
+  [key: string]: unknown
+}
+
 /**
  * Extended Redis client with custom commands.
  */
@@ -265,10 +291,7 @@ export class RedisDriver implements QueueDriver {
    *
    * @returns Buffer（binary path）或 string（legacy path）
    */
-  private serializeJobForTransport(
-    job: SerializedJob,
-    groupId?: string
-  ): { isBinary: true; buffer: Buffer } | { isBinary: false; payload: string } {
+  private serializeJobForTransport(job: SerializedJob, groupId?: string): RedisTransportPayload {
     // Binary path：job.type === 'binary' 且 data 是 Uint8Array
     if (this.isBinaryJob(job)) {
       // 若 groupId 來自 options，加入 job 中
@@ -293,6 +316,24 @@ export class RedisDriver implements QueueDriver {
       failedAt: job.failedAt,
     }
     return { isBinary: false, payload: JSON.stringify(payloadObj) }
+  }
+
+  private serializeJsonJobForTransport(job: SerializedJob, groupId?: string): string {
+    const jobForTransport = prepareJobForTransport(job)
+    return JSON.stringify({
+      id: jobForTransport.id,
+      type: jobForTransport.type,
+      data: jobForTransport.data,
+      className: job.className,
+      createdAt: job.createdAt,
+      delaySeconds: job.delaySeconds,
+      attempts: job.attempts,
+      maxAttempts: job.maxAttempts,
+      groupId: groupId ?? job.groupId,
+      error: job.error,
+      failedAt: job.failedAt,
+      priority: job.priority,
+    })
   }
 
   /**
@@ -366,10 +407,11 @@ export class RedisDriver implements QueueDriver {
       // Group FIFO 目前只支援 JSON（Lua script 接受 string payload）
       // Binary job 若有 groupId，改走一般 binary push（不使用 Lua）
       if (this.isBinaryJob(job)) {
-        const { buffer } = this.serializeJobForTransport(job, groupId) as {
-          isBinary: true
-          buffer: Buffer
+        const serialized = this.serializeJobForTransport(job, groupId)
+        if (!serialized.isBinary) {
+          throw new Error('[RedisDriver] Expected binary transport payload for binary job')
         }
+        const { buffer } = serialized
         // 使用 lpushBuffer 若可用，否則用一般 lpush（string）
         if (typeof this.client.lpushBuffer === 'function') {
           await this.client.lpushBuffer(key, buffer)
@@ -386,11 +428,13 @@ export class RedisDriver implements QueueDriver {
       }
 
       // Legacy path 走 Lua
-      const { payload } = this.serializeJobForTransport(job, groupId) as {
-        isBinary: false
-        payload: string
-      }
-      await this.client.pushGroupJob(key, activeSetKey, pendingListKey, groupId, payload)
+      await this.client.pushGroupJob(
+        key,
+        activeSetKey,
+        pendingListKey,
+        groupId,
+        this.serializeJsonJobForTransport(job, groupId)
+      )
       return
     }
 
@@ -425,32 +469,20 @@ export class RedisDriver implements QueueDriver {
     }
 
     // Legacy path
-    const serialized = this.serializeJobForTransport(job, groupId)
-    if (serialized.isBinary) {
-      // 不應到達這裡，但作保護
-      await this.client.lpush(key, serialized.buffer.toString('base64'))
-      return
-    }
-
-    let payload: string | Buffer
-    if ((serialized as any).isBinary) {
-      payload = (serialized as any).buffer
-    } else {
-      payload = (serialized as any).payload
-    }
+    const payload = this.serializeJsonJobForTransport(job, groupId)
 
     // For delayed jobs, prefer Sorted Sets (ZADD) when supported
     if (job.delaySeconds && job.delaySeconds > 0) {
       const delayKey = `${key}:delayed`
       const score = Date.now() + job.delaySeconds * 1000
       if (typeof this.client.zadd === 'function') {
-        await this.client.zadd(delayKey, score, payload as any)
+        await this.client.zadd(delayKey, score, payload)
       } else {
         // Fallback: push directly (no delay support)
-        await this.client.lpush(key, payload as any)
+        await this.client.lpush(key, payload)
       }
     } else {
-      await this.client.lpush(key, payload as any)
+      await this.client.lpush(key, payload)
     }
   }
 
@@ -665,7 +697,7 @@ export class RedisDriver implements QueueDriver {
     } else {
       // Legacy path
       const payload = JSON.stringify(failedJob)
-      await this.client.lpush(key, payload as any)
+      await this.client.lpush(key, payload)
     }
 
     // Optional: Keep DLQ capped at 1000 items to avoid bloat
@@ -758,13 +790,13 @@ export class RedisDriver implements QueueDriver {
     }
 
     const hasGroup = jobs.some((j) => j.groupId)
-    const hasPriority = jobs.some((j) => (j as any).priority)
+    const hasPriority = jobs.some((j) => j.priority !== undefined)
 
     if (hasGroup || hasPriority) {
       if (typeof this.client.pipeline === 'function') {
         const pipe = this.client.pipeline()
         for (const job of jobs) {
-          const priority = (job as any).priority
+          const priority = job.priority
           const key = this.getKey(queue, priority)
           const groupId = job.groupId
 
@@ -832,7 +864,7 @@ export class RedisDriver implements QueueDriver {
       for (const job of jobs) {
         await this.push(queue, job, {
           groupId: job.groupId,
-          priority: (job as any).priority,
+          priority: job.priority,
         })
       }
       return
@@ -873,7 +905,7 @@ export class RedisDriver implements QueueDriver {
           attempts: job.attempts,
           maxAttempts: job.maxAttempts,
           groupId: job.groupId,
-          priority: (job as any).priority,
+          priority: job.priority,
         })
       })
 
@@ -957,7 +989,9 @@ export class RedisDriver implements QueueDriver {
             }
             const replies = await pipeline.exec()
             if (replies) {
-              fetched = replies.map((r: any) => r[1]).filter((r: any) => r !== null)
+              fetched = (replies as PipelineReply<string | null>[])
+                .map((reply) => reply[1])
+                .filter((reply): reply is string => reply !== null)
             }
           } else {
             for (let i = 0; i < remaining; i++) {
@@ -990,7 +1024,7 @@ export class RedisDriver implements QueueDriver {
   /**
    * Reports a worker heartbeat.
    */
-  async reportHeartbeat(workerInfo: any, prefix?: string): Promise<void> {
+  async reportHeartbeat(workerInfo: WorkerHeartbeatPayload, prefix?: string): Promise<void> {
     const key = `${prefix ?? this.prefix}worker:${workerInfo.id}`
     if (typeof this.client.set === 'function') {
       await this.client.set(key, JSON.stringify(workerInfo), 'EX', 10)
@@ -1000,7 +1034,7 @@ export class RedisDriver implements QueueDriver {
   /**
    * Publishes monitoring logs.
    */
-  async publishLog(logPayload: any, prefix?: string): Promise<void> {
+  async publishLog(logPayload: LogPayload, prefix?: string): Promise<void> {
     const payload = JSON.stringify(logPayload)
     const monitorPrefix = prefix ?? this.prefix
 
@@ -1106,7 +1140,7 @@ export class RedisDriver implements QueueDriver {
       delete resetJob.failedAt
 
       await this.push(queue, resetJob, {
-        priority: (resetJob as any).priority,
+        priority: resetJob.priority,
         groupId: resetJob.groupId,
       })
       retried++

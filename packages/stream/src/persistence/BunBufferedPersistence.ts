@@ -869,7 +869,7 @@ export class BunBufferedPersistence implements PersistenceAdapter {
     search?: string
     startTime?: Date
     endTime?: Date
-  }): Promise<unknown[]> {
+  }): Promise<Record<string, unknown>[]> {
     return this.adapter.listLogs(options)
   }
 

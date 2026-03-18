@@ -694,7 +694,7 @@ export interface PersistenceAdapter {
     search?: string
     startTime?: Date
     endTime?: Date
-  }): Promise<any[]>
+  }): Promise<Record<string, unknown>[]>
 
   /**
    * Count system logs in the archive.

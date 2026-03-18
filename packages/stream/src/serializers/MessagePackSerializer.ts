@@ -2,6 +2,11 @@ import type { Job } from '../Job'
 import type { SerializedJob } from '../types'
 import type { JobSerializer } from './JobSerializer'
 
+interface MessagePackCodec {
+  encode(value: Record<string, unknown>): Uint8Array
+  decode(value: Uint8Array): Record<string, unknown>
+}
+
 /**
  * MessagePack Serializer.
  *
@@ -17,11 +22,11 @@ import type { JobSerializer } from './JobSerializer'
  * ```
  */
 export class MessagePackSerializer implements JobSerializer {
-  private msgpack: any
+  private msgpack: MessagePackCodec
 
   constructor() {
     try {
-      this.msgpack = require('@msgpack/msgpack')
+      this.msgpack = require('@msgpack/msgpack') as MessagePackCodec
     } catch (_e) {
       throw new Error(
         'MessagePackSerializer requires @msgpack/msgpack. Please install it: bun add @msgpack/msgpack'
@@ -74,9 +79,9 @@ export class MessagePackSerializer implements JobSerializer {
       typeof serialized.data === 'string'
         ? Buffer.from(serialized.data, 'base64')
         : Buffer.from(serialized.data)
-    const properties = this.msgpack.decode(buffer) as Record<string, any>
+    const properties = this.msgpack.decode(buffer)
 
-    const job = Object.create({}) as Record<string, any>
+    const job = Object.create({}) as Record<string, unknown>
     Object.assign(job, properties)
 
     job.id = serialized.id
@@ -93,6 +98,6 @@ export class MessagePackSerializer implements JobSerializer {
       job.attempts = serialized.attempts
     }
 
-    return job as Job
+    return job as unknown as Job
   }
 }
