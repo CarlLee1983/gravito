@@ -28,6 +28,7 @@ async function buildInParallel() {
       const buildResult = await build({
         entrypoints: [
           'src/index.ts',
+          'src/native.ts',
           'src/client.ts',
           'src/logger.ts',
           'src/bun.ts',
@@ -40,6 +41,9 @@ async function buildInParallel() {
           'src/middleware/otel.ts',
           'src/middleware/ratelimit-redis.ts',
           'src/middleware/ratelimit.ts',
+          'src/middleware/security/index.ts',
+          'src/middleware/security/body-size-limit.ts',
+          'src/middleware/security/cors.ts',
           'src/middleware/sse.ts',
           'src/middleware/streaming.ts',
           'src/middleware/websocket.ts',

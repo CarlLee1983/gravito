@@ -1,5 +1,13 @@
-import type { GravitoContext, GravitoNext } from '@gravito/core'
+import type { GravitoContext, GravitoMiddleware, GravitoNext } from '@gravito/core'
 import type { Gravito } from '@gravito/core/engine'
+
+type CloudflareContext = GravitoContext<Record<string, unknown>>
+
+interface CloudflareOrbitCore {
+  adapter: {
+    useGlobal: (middleware: GravitoMiddleware<Record<string, unknown>>) => void
+  }
+}
 
 /**
  * OrbitCloudflare
@@ -19,7 +27,7 @@ export const OrbitCloudflare = {
   /** The unique name of the orbit */
   name: 'cloudflare',
   /** Current version of the orbit */
-  version: '1.0.0',
+  version: '1.0.4',
 
   /**
    * Initializes the orbit by registering a global middleware that
@@ -27,15 +35,15 @@ export const OrbitCloudflare = {
    *
    * @param core - The PlanetCore instance.
    */
-  async boot(core: any) {
+  async boot(core: CloudflareOrbitCore) {
     // 1. Register global middleware to map ctx.env -> ctx variables
-    core.adapter.useGlobal(async (ctx: GravitoContext, next: GravitoNext) => {
+    core.adapter.useGlobal(async (ctx: CloudflareContext, next: GravitoNext) => {
       const env = ctx.env
       if (env) {
         // Proxy context variables to include Cloudflare's env
         // This makes env bindings available via ctx.get() or object destructuring
         for (const [key, value] of Object.entries(env)) {
-          ctx.set(key, value as any)
+          ctx.set(key, value)
         }
       }
       return await next()
@@ -82,7 +90,11 @@ export type CloudflareOptions = {}
  */
 export const handle = (app: Gravito, _options: CloudflareOptions = {}) => {
   return {
-    fetch: async (request: Request, _env: any, _executionCtx: ExecutionContext) => {
+    fetch: async (
+      request: Request,
+      _env: Record<string, unknown>,
+      _executionCtx: ExecutionContext
+    ) => {
       // In a real implementation, the adapter would handle env/executionCtx
       // For now, we assume Gravito.fetch is the entry point
       return app.fetch(request)

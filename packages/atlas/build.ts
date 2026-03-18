@@ -31,8 +31,8 @@ async function buildInParallel() {
   const tempDir = 'dist'
 
   if (!isDtsOnly) {
-    // Task 1: bun build ESM（atlas 只有 ESM exports）
-    const esmPromise = (async () => {
+    // Task 1: bun build ESM library
+    const libraryPromise = (async () => {
       const buildResult = await build({
         entrypoints: ['src/index.ts'],
         outdir: 'dist',
@@ -49,10 +49,31 @@ async function buildInParallel() {
       }
       return 0
     })()
-    tasks.push(esmPromise)
+    tasks.push(libraryPromise)
+
+    // Task 2: bundle the CLI so the published bin does not depend on unpacked source files.
+    const cliPromise = (async () => {
+      const cliResult = await build({
+        entrypoints: ['src/cli.ts'],
+        outdir: 'dist',
+        format: 'esm',
+        target: 'bun',
+        splitting: false,
+        sourcemap: 'external',
+        naming: 'cli.js',
+        external: externalDeps,
+      })
+
+      if (!cliResult.success) {
+        console.error('❌ CLI build failed:', cliResult.logs)
+        return 1
+      }
+      return 0
+    })()
+    tasks.push(cliPromise)
   }
 
-  // Task 2: tsc 生成型別宣告（使用 tsconfig.build.json + noCheck）
+  // Task 3: tsc 生成型別宣告（使用 tsconfig.build.json + noCheck）
   const tscPromise = (async () => {
     const tsc = Bun.spawn(['bunx', 'tsc', '-p', 'tsconfig.build.json', '--outDir', tempDir], {
       stdout: 'inherit',

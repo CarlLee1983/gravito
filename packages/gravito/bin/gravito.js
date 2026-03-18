@@ -4,21 +4,43 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 
-export async function run() {
-  const argv = process.argv.slice(2);
+/**
+ * Delegate the published gravito binary to @gravito/pulse.
+ *
+ * @param {object} [options]
+ * @param {string[]} [options.argv]
+ * @param {(id: string) => string} [options.resolve]
+ * @param {typeof spawn} [options.spawnFn]
+ * @param {(code: number) => void} [options.exit]
+ * @param {NodeJS.ProcessEnv} [options.env]
+ * @returns {Promise<import('node:child_process').ChildProcess | null>}
+ */
+export async function run(options = {}) {
+  const {
+    argv = process.argv.slice(2),
+    resolve = require.resolve,
+    spawnFn = spawn,
+    exit = process.exit,
+    env = process.env,
+  } = options;
+
   try {
-    const cliPath = require.resolve('@gravito/pulse/bin/gravito.mjs');
-    const child = spawn('bun', [cliPath, ...argv], {
+    const cliPath = resolve('@gravito/pulse/bin/gravito.mjs');
+    const child = spawnFn('bun', [cliPath, ...argv], {
       stdio: 'inherit',
-      env: process.env,
+      env,
     });
     child.on('exit', (code) => {
-      process.exit(code ?? 0);
+      exit(code ?? 0);
     });
+    return child;
   } catch (err) {
     console.error('❌ Failed to locate @gravito/pulse. Please try again.');
-    process.exit(1);
+    exit(1);
+    return null;
   }
 }
 
-run();
+if (import.meta.main) {
+  run();
+}
