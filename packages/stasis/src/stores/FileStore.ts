@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { dirname, join } from 'node:path'
 import {
   getRuntimeAdapter,
@@ -10,7 +11,6 @@ import {
   runtimeStatFull,
   runtimeWriteFileExclusive,
 } from '@gravito/core'
-import { NativeHasher } from '@gravito/core/ffi'
 import { type CacheLock, LockTimeoutError, sleep } from '../locks'
 import type { CacheStore } from '../store'
 import {
@@ -330,7 +330,7 @@ export class FileStore implements CacheStore {
 }
 
 function hashKey(key: string): string {
-  return NativeHasher.sha256(key)
+  return createHash('sha256').update(key).digest('hex')
 }
 
 function syncHashKey(key: string): string {
