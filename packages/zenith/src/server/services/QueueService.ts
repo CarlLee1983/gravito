@@ -897,7 +897,7 @@ export class QueueService {
       persistence.countLogs(filters),
     ])
 
-    return { logs, total }
+    return { logs: logs as unknown as ArchivedLogRecord[], total }
   }
 
   /**
