@@ -94,20 +94,7 @@ async function buildInParallel() {
       process.exit(1)
     }
   }
-
-  if (!isDtsOnly) {
-    const indexPath = 'dist/index.js'
-    const indexCode = await readFile(indexPath, 'utf8')
-    const exportsPhoton = /(?:^|\n)\s*Photon,\s*/m.test(indexCode)
-    const importsPhoton = /from ['"]\.\/photon\.js['"]/.test(indexCode)
-
-    // Bun multi-entry ESM builds can emit `Photon` in the export list without importing it.
-    if (exportsPhoton && !importsPhoton) {
-      await writeFile(indexPath, `import { Photon } from "./photon.js";\n${indexCode}`)
-    }
-  }
 }
-
 // Execute parallel build
 await buildInParallel()
 
