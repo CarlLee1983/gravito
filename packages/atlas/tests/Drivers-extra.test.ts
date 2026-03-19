@@ -140,6 +140,9 @@ describe('PostgresDriver', () => {
       async connect() {
         return client
       }
+      async query(sql: string, params?: unknown[]) {
+        return client.query(sql, params)
+      }
       async end() {
         ended = true
       }
@@ -191,6 +194,9 @@ describe('PostgresDriver', () => {
     class FakePool {
       async connect() {
         return client
+      }
+      async query(sql: string, params?: unknown[]) {
+        return client.query(sql, params)
       }
       async end() {}
     }

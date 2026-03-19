@@ -111,17 +111,24 @@ describe('Driver Mock Tests', () => {
     })
 
     it('should execute query via pool client', async () => {
-      mockClient.query.mockResolvedValue({ rows: [{ id: 1 }], rowCount: 1 })
+      mockPool.query.mockResolvedValue({
+        rows: [{ id: 1 }],
+        rowCount: 1,
+        fields: [{ name: 'id', dataTypeID: 23 }],
+      })
 
       const result = await driver.query('SELECT 1')
 
-      expect(mockClient.query).toHaveBeenCalled()
+      expect(mockPool.query).toHaveBeenCalled()
       expect(result.rows).toHaveLength(1)
-      expect(mockClient.release).toHaveBeenCalled()
     })
 
     it('should handle write operations', async () => {
-      mockClient.query.mockResolvedValue({ rowCount: 1, rows: [{ id: 100 }] })
+      mockPool.query.mockResolvedValue({
+        rowCount: 1,
+        rows: [{ id: 100 }],
+        fields: [{ name: 'id', dataTypeID: 23 }],
+      })
       const result = await driver.execute('INSERT INTO...')
       expect(result.affectedRows).toBe(1)
       expect(result.insertId).toBe(100)
@@ -130,7 +137,7 @@ describe('Driver Mock Tests', () => {
     it('should normalize postgres errors', async () => {
       const dbError = new Error('Unique violation')
       ;(dbError as any).code = '23505'
-      mockClient.query.mockRejectedValue(dbError)
+      mockPool.query.mockRejectedValue(dbError)
 
       try {
         await driver.query('INSERT...')
