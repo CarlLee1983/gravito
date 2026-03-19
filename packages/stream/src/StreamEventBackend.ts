@@ -103,7 +103,7 @@ export class StreamEventBackend implements EventBackend {
    */
   private buildJobOptions(task: EventTask): JobPushOptions {
     const options: JobPushOptions = {}
-    const taskOptions = task.options as StreamEventOptions
+    const taskOptions = (task.options as StreamEventOptions | undefined) ?? {}
 
     // Map priority if present
     if (taskOptions.priority) {
@@ -156,7 +156,7 @@ export class StreamEventBackend implements EventBackend {
    */
   private applyRetryStrategy(job: SystemEventJob, task: EventTask): void {
     const strategy = this.config.retryStrategy ?? 'bull'
-    const taskOptions = task.options as StreamEventOptions
+    const taskOptions = (task.options as StreamEventOptions | undefined) ?? {}
 
     if (strategy === 'bull' || strategy === 'hybrid') {
       // Let Bull Queue handle retries with exponential backoff
