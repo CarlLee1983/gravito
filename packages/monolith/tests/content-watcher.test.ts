@@ -58,8 +58,8 @@ describe('ContentWatcher', () => {
     const manager = new ContentManager(new LocalDriver(TMP_DIR))
     manager.defineCollection('docs', { path: 'docs' })
 
-    const watcher = new ContentWatcher(manager, TMP_DIR, { debounceMs: 30 })
-    const unrefCalls: Timeout[] = []
+    const watcher = new ContentWatcher(manager, TMP_DIR, { debounceMs: 50 })
+    let unrefCalled = false
     const originalSetTimeout = global.setTimeout
 
     // Spy on setTimeout to track unref calls
@@ -68,7 +68,7 @@ describe('ContentWatcher', () => {
       const originalUnref = tid.unref?.bind(tid)
       if (originalUnref) {
         tid.unref = () => {
-          unrefCalls.push(tid)
+          unrefCalled = true
           return originalUnref()
         }
       }
@@ -77,12 +77,23 @@ describe('ContentWatcher', () => {
 
     try {
       watcher.watch('docs')
-      await writeFile(join(TMP_DIR, 'docs', 'en', 'test.md'), '# Changed Again')
 
-      // Wait for fs.watch event and debounce + unref to complete
-      await new Promise((resolve) => originalSetTimeout(resolve, 300))
+      // Write multiple files to ensure fs.watch triggers at least once
+      await writeFile(join(TMP_DIR, 'docs', 'en', 'test.md'), '# Changed 1')
+      await new Promise((resolve) => originalSetTimeout(resolve, 10))
+      await writeFile(join(TMP_DIR, 'docs', 'en', 'test.md'), '# Changed 2')
+      await new Promise((resolve) => originalSetTimeout(resolve, 10))
+      await writeFile(join(TMP_DIR, 'docs', 'en', 'test.md'), '# Changed 3')
 
-      expect(unrefCalls.length).toBeGreaterThan(0)
+      // Poll for unref to be called (fs.watch may trigger asynchronously)
+      for (let i = 0; i < 150; i++) {
+        if (unrefCalled) {
+          break
+        }
+        await new Promise((resolve) => originalSetTimeout(resolve, 20))
+      }
+
+      expect(unrefCalled).toBe(true)
     } finally {
       global.setTimeout = originalSetTimeout
       watcher.close()
