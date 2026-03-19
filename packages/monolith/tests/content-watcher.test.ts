@@ -68,11 +68,12 @@ describe('ContentWatcher', () => {
       const timerInfo = { timer: tid, unrefCalled: false }
       timersCreated.push(timerInfo)
 
-      const originalUnref = tid.unref?.bind(tid)
-      if (originalUnref) {
-        tid.unref = () => {
+      // Replace unref to track when it's called
+      const originalUnref = tid.unref
+      if (originalUnref && typeof originalUnref === 'function') {
+        tid.unref = function (this: Timeout) {
           timerInfo.unrefCalled = true
-          return originalUnref()
+          return originalUnref.call(this)
         }
       }
       return tid
@@ -82,16 +83,17 @@ describe('ContentWatcher', () => {
       const watcher = new ContentWatcher(manager, TMP_DIR, { debounceMs: 50 })
       watcher.watch('docs')
 
-      // Trigger multiple file writes to ensure at least one debounce timer is created
-      for (let i = 0; i < 5; i++) {
+      // Trigger multiple file writes to ensure debounce timer is created and unref is called
+      for (let i = 0; i < 8; i++) {
         await writeFile(join(TMP_DIR, 'docs', 'en', 'test.md'), `# Changed ${i}`)
-        await new Promise((resolve) => originalSetTimeout(resolve, 15))
+        // Wait between writes to trigger separate debounce events
+        await new Promise((resolve) => originalSetTimeout(resolve, 25))
       }
 
-      // Wait for debounce and timer cleanup
-      await new Promise((resolve) => originalSetTimeout(resolve, 500))
+      // Wait for final debounce to complete and ensure cleanup
+      await new Promise((resolve) => originalSetTimeout(resolve, 300))
 
-      // Check that at least one timer had unref called
+      // Verify that at least one timer was created with unref called
       const timerWithUnref = timersCreated.find((info) => info.unrefCalled)
       expect(timerWithUnref).toBeDefined()
       expect(timerWithUnref?.unrefCalled).toBe(true)
