@@ -58,23 +58,29 @@ describe('ContentWatcher', () => {
     const manager = new ContentManager(new LocalDriver(TMP_DIR))
     manager.defineCollection('docs', { path: 'docs' })
 
-    const watcher = new ContentWatcher(manager, TMP_DIR, { debounceMs: 100 })
+    const watcher = new ContentWatcher(manager, TMP_DIR, { debounceMs: 50 })
     const handle = { unref: mock(() => {}) }
     const originalSetTimeout = global.setTimeout
-    global.setTimeout = ((fn: () => void) => {
-      fn()
-      return handle as any
+    global.setTimeout = ((fn: () => void, delay?: number) => {
+      const tid = originalSetTimeout(fn, delay)
+      // Attach unref mock to the real timer handle
+      Object.defineProperty(tid, 'unref', {
+        value: handle.unref,
+        writable: true,
+      })
+      return tid
     }) as typeof setTimeout
 
     try {
       watcher.watch('docs')
       await writeFile(join(TMP_DIR, 'docs', 'en', 'test.md'), '# Changed Again')
 
-      for (let i = 0; i < 20; i++) {
+      // Wait up to 2 seconds for debounce + unref to be called
+      for (let i = 0; i < 100; i++) {
         if (handle.unref.mock.calls.length > 0) {
           break
         }
-        await new Promise((resolve) => originalSetTimeout(resolve, 10))
+        await new Promise((resolve) => originalSetTimeout(resolve, 20))
       }
 
       expect(handle.unref).toHaveBeenCalled()
