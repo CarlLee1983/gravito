@@ -58,10 +58,12 @@ describe('ContentWatcher', () => {
     const manager = new ContentManager(new LocalDriver(TMP_DIR))
     manager.defineCollection('docs', { path: 'docs' })
 
-    // Prime cache with initial content
-    await manager.find('docs', 'test')
+    // Prime cache with initial content to ensure we have something to invalidate
+    const content = await manager.find('docs', 'test')
+    expect(content).toBeDefined()
     // @ts-expect-error
     const initialCacheSize = manager.cache.size
+    expect(initialCacheSize).toBeGreaterThan(0)
 
     const watcher = new ContentWatcher(manager, TMP_DIR, { debounceMs: 100 })
     watcher.watch('docs')
@@ -70,11 +72,11 @@ describe('ContentWatcher', () => {
     await writeFile(join(TMP_DIR, 'docs', 'en', 'test.md'), '# Changed')
 
     // Wait for debounce to trigger and cache to be invalidated
-    // This implicitly verifies that timers work and process events
+    // This verifies that file watching and debounce work correctly
     let cleared = false
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 80; i++) {
       // @ts-expect-error
-      if (manager.cache.size < initialCacheSize) {
+      if (manager.cache.size === 0) {
         cleared = true
         break
       }
@@ -82,8 +84,7 @@ describe('ContentWatcher', () => {
     }
 
     // The fact that cache was invalidated proves the debounce timer worked
-    // unref() is implementation detail - the important behavior is that
-    // the event loop is not blocked by lingering timers
+    // and the file system watcher event was processed correctly
     expect(cleared).toBe(true)
 
     watcher.close()
