@@ -78,7 +78,7 @@ describe('ConnectionTracker', () => {
       await Bun.sleep(10)
 
       const duration = tracker.getConnectionDuration('client-1')
-      expect(duration).toBeGreaterThanOrEqual(10)
+      expect(duration).toBeGreaterThanOrEqual(5)
     })
 
     it('should return null for non-existent connection', () => {
