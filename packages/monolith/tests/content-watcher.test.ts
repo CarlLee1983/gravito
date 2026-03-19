@@ -58,49 +58,37 @@ describe('ContentWatcher', () => {
     const manager = new ContentManager(new LocalDriver(TMP_DIR))
     manager.defineCollection('docs', { path: 'docs' })
 
-    // Store all timers created to verify unref is called
-    const timersCreated: Array<{ timer: Timeout; unrefCalled: boolean }> = []
-    const originalSetTimeout = global.setTimeout
+    const watcher = new ContentWatcher(manager, TMP_DIR, { debounceMs: 5000 })
+    watcher.watch('docs')
 
-    // Spy on setTimeout to track unref calls
-    global.setTimeout = ((fn: () => void, delay?: number) => {
-      const tid = originalSetTimeout(fn, delay)
-      const timerInfo = { timer: tid, unrefCalled: false }
-      timersCreated.push(timerInfo)
+    // Write file to trigger debounce timer creation
+    await writeFile(join(TMP_DIR, 'docs', 'en', 'test.md'), '# Changed')
 
-      // Replace unref to track when it's called
-      const originalUnref = tid.unref
-      if (originalUnref && typeof originalUnref === 'function') {
-        tid.unref = function (this: Timeout) {
-          timerInfo.unrefCalled = true
-          return originalUnref.call(this)
+    // Poll for debounce timer and verify it was unref'd
+    // We need to wait for FSWatcher event + timer creation, which can be slow in CI
+    let foundUnrefTimer = false
+    let timerMapHasContent = false
+    for (let i = 0; i < 200; i++) {
+      // @ts-expect-error - accessing private property for testing
+      const timers = watcher.debounceTimers as Map<string, ReturnType<typeof setTimeout>>
+      if (timers.size > 0) {
+        timerMapHasContent = true
+        // Check if timer has been unref'd (hasRef() returns false after unref)
+        for (const timer of timers.values()) {
+          if (typeof timer.hasRef === 'function' && !timer.hasRef()) {
+            foundUnrefTimer = true
+            break
+          }
         }
+        if (foundUnrefTimer) break
       }
-      return tid
-    }) as typeof setTimeout
-
-    try {
-      const watcher = new ContentWatcher(manager, TMP_DIR, { debounceMs: 50 })
-      watcher.watch('docs')
-
-      // Trigger multiple file writes to ensure debounce timer is created and unref is called
-      for (let i = 0; i < 8; i++) {
-        await writeFile(join(TMP_DIR, 'docs', 'en', 'test.md'), `# Changed ${i}`)
-        // Wait between writes to trigger separate debounce events
-        await new Promise((resolve) => originalSetTimeout(resolve, 25))
-      }
-
-      // Wait for final debounce to complete and ensure cleanup
-      await new Promise((resolve) => originalSetTimeout(resolve, 300))
-
-      // Verify that at least one timer was created with unref called
-      const timerWithUnref = timersCreated.find((info) => info.unrefCalled)
-      expect(timerWithUnref).toBeDefined()
-      expect(timerWithUnref?.unrefCalled).toBe(true)
-
-      watcher.close()
-    } finally {
-      global.setTimeout = originalSetTimeout
+      await new Promise((r) => setTimeout(r, 25))
     }
+
+    // Verify that debounce timer was created and unref'd
+    expect(timerMapHasContent).toBe(true)
+    expect(foundUnrefTimer).toBe(true)
+
+    watcher.close()
   })
 })
