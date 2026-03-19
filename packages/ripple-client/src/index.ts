@@ -36,10 +36,28 @@
  * @module @gravito/ripple-client
  */
 
+import {
+  Channel as ChannelImpl,
+  PresenceChannel as PresenceChannelImpl,
+  PrivateChannel as PrivateChannelImpl,
+} from './Channel'
+import type { ConnectionState } from './RippleClient'
+import {
+  createRippleClient as createRippleClientImpl,
+  RippleClient as RippleClientImpl,
+} from './RippleClient'
+
+const Channel = ChannelImpl
+const PresenceChannel = PresenceChannelImpl
+const PrivateChannel = PrivateChannelImpl
+const createRippleClient = createRippleClientImpl
+const RippleClient = RippleClientImpl
+
 // Channels
-export { Channel, PresenceChannel, PrivateChannel } from './Channel'
+export { Channel, PresenceChannel, PrivateChannel }
 // Core
-export { type ConnectionState, createRippleClient, RippleClient } from './RippleClient'
+export { createRippleClient, RippleClient }
+export type { ConnectionState }
 
 // Types
 export type {

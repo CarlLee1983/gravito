@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from 'clsx'
 import { Activity, Cpu } from 'lucide-react'
-import type { PulseNodeMeta } from '../shared/types'
 import { twMerge } from 'tailwind-merge'
+import type { PulseNodeMeta } from '../shared/types'
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
