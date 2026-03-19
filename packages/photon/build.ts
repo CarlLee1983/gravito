@@ -1,4 +1,4 @@
-import { rm } from 'node:fs/promises'
+import { readFile, rm, writeFile } from 'node:fs/promises'
 import { build } from 'bun'
 
 const isDtsOnly = process.argv.includes('--dts-only')
@@ -28,6 +28,7 @@ async function buildInParallel() {
       const buildResult = await build({
         entrypoints: [
           'src/index.ts',
+          'src/photon.ts',
           'src/native.ts',
           'src/client.ts',
           'src/logger.ts',
@@ -58,7 +59,7 @@ async function buildInParallel() {
         root: 'src',
         format: 'esm',
         target: 'node',
-        splitting: false,
+        splitting: true,
         minify: process.env.NODE_ENV === 'production',
         sourcemap: 'external',
         external: ['@gravito/core', '@gravito/photon', 'hono', '@hono/zod-openapi', 'zod', 'cborg'],
@@ -91,6 +92,18 @@ async function buildInParallel() {
   for (const result of results) {
     if (result !== 0) {
       process.exit(1)
+    }
+  }
+
+  if (!isDtsOnly) {
+    const indexPath = 'dist/index.js'
+    const indexCode = await readFile(indexPath, 'utf8')
+    const exportsPhoton = /(?:^|\n)\s*Photon,\s*/m.test(indexCode)
+    const importsPhoton = /from ['"]\.\/photon\.js['"]/.test(indexCode)
+
+    // Bun multi-entry ESM builds can emit `Photon` in the export list without importing it.
+    if (exportsPhoton && !importsPhoton) {
+      await writeFile(indexPath, `import { Photon } from "./photon.js";\n${indexCode}`)
     }
   }
 }

@@ -70,4 +70,4 @@ export * from './middleware-adapter'
  */
 export * from './openapi'
 // Export main Photon application class and types
-export { Photon } from './photon'
+export { Photon } from './photon.js'

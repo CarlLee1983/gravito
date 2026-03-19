@@ -63,8 +63,13 @@ export class Photon {
     return this
   }
 
-  use(path: string, ...middleware: GravitoMiddleware[]): this {
-    this.adapter.use(path, ...middleware)
+  use(pathOrMiddleware: string | GravitoMiddleware, ...middleware: GravitoMiddleware[]): this {
+    if (typeof pathOrMiddleware === 'string') {
+      this.adapter.use(pathOrMiddleware, ...middleware)
+      return this
+    }
+
+    this.adapter.useGlobal(pathOrMiddleware, ...middleware)
     return this
   }
 
@@ -122,5 +127,9 @@ export class Photon {
 
   get native(): BunNativeAdapter {
     return this.adapter
+  }
+
+  get router() {
+    return (this.adapter as any).router
   }
 }
