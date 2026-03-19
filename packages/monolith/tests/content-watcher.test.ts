@@ -58,17 +58,20 @@ describe('ContentWatcher', () => {
     const manager = new ContentManager(new LocalDriver(TMP_DIR))
     manager.defineCollection('docs', { path: 'docs' })
 
-    const watcher = new ContentWatcher(manager, TMP_DIR, { debounceMs: 50 })
-    let unrefCalled = false
+    // Store all timers created to verify unref is called
+    const timersCreated: Array<{ timer: Timeout; unrefCalled: boolean }> = []
     const originalSetTimeout = global.setTimeout
 
     // Spy on setTimeout to track unref calls
     global.setTimeout = ((fn: () => void, delay?: number) => {
       const tid = originalSetTimeout(fn, delay)
+      const timerInfo = { timer: tid, unrefCalled: false }
+      timersCreated.push(timerInfo)
+
       const originalUnref = tid.unref?.bind(tid)
       if (originalUnref) {
         tid.unref = () => {
-          unrefCalled = true
+          timerInfo.unrefCalled = true
           return originalUnref()
         }
       }
@@ -76,27 +79,26 @@ describe('ContentWatcher', () => {
     }) as typeof setTimeout
 
     try {
+      const watcher = new ContentWatcher(manager, TMP_DIR, { debounceMs: 50 })
       watcher.watch('docs')
 
-      // Write multiple files to ensure fs.watch triggers at least once
-      await writeFile(join(TMP_DIR, 'docs', 'en', 'test.md'), '# Changed 1')
-      await new Promise((resolve) => originalSetTimeout(resolve, 10))
-      await writeFile(join(TMP_DIR, 'docs', 'en', 'test.md'), '# Changed 2')
-      await new Promise((resolve) => originalSetTimeout(resolve, 10))
-      await writeFile(join(TMP_DIR, 'docs', 'en', 'test.md'), '# Changed 3')
-
-      // Poll for unref to be called (fs.watch may trigger asynchronously)
-      for (let i = 0; i < 150; i++) {
-        if (unrefCalled) {
-          break
-        }
-        await new Promise((resolve) => originalSetTimeout(resolve, 20))
+      // Trigger multiple file writes to ensure at least one debounce timer is created
+      for (let i = 0; i < 5; i++) {
+        await writeFile(join(TMP_DIR, 'docs', 'en', 'test.md'), `# Changed ${i}`)
+        await new Promise((resolve) => originalSetTimeout(resolve, 15))
       }
 
-      expect(unrefCalled).toBe(true)
+      // Wait for debounce and timer cleanup
+      await new Promise((resolve) => originalSetTimeout(resolve, 500))
+
+      // Check that at least one timer had unref called
+      const timerWithUnref = timersCreated.find((info) => info.unrefCalled)
+      expect(timerWithUnref).toBeDefined()
+      expect(timerWithUnref?.unrefCalled).toBe(true)
+
+      watcher.close()
     } finally {
       global.setTimeout = originalSetTimeout
-      watcher.close()
     }
   })
 })
