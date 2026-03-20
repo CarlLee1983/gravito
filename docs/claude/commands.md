@@ -40,11 +40,8 @@ bun run typecheck
 # 執行所有包的測試
 bun run test
 
-# 含覆蓋率報告
+# 含覆蓋率報告（CI 模式）
 bun run test:coverage
-
-# CI 模式（嚴格檢查）
-bun run test:ci
 
 # 單一包的測試
 cd packages/<package-name>
@@ -74,6 +71,14 @@ bun run check:fix
 
 # 格式化代碼（Biome）
 bun run format
+
+# 完整品質檢查（檔案大小 + side effects + 錯誤類）
+bun run quality
+
+# 個別品質檢查
+bun run quality:file-size        # 檔案大小檢查
+bun run quality:sideeffects      # Side effects 檢查
+bun run quality:error-classes    # 錯誤類檢查
 ```
 
 ## 版本管理與發佈
@@ -141,8 +146,8 @@ bun run launchpad:compose
 # 直接執行 CI 測試（本地模擬）
 bun run ci:test
 
-# 使用 act 工具（需要 Docker）
-bun run ci:test:act
+# CI 模擬（bash 腳本）
+bun run ci:simulate
 ```
 
 ---
