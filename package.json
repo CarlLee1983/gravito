@@ -25,6 +25,8 @@
     "ci:publish": "bun scripts/ci-publish.js",
     "pub:beta": "bun scripts/ci-publish.js --tag beta",
     "pub:snapshot": "bun scripts/ci-publish.js --tag snapshot",
+    "pub": "bun scripts/publish-all.ts",
+    "pub:dry": "bun scripts/publish-all.ts --dry-run",
     "launchpad:up": "bun scripts/start-launchpad.ts",
     "launchpad:compose": "docker-compose -f docker-compose.launchpad.yml up --build -d",
     "ci:simulate": "bash scripts/ci-simulation.sh",
