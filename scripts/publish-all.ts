@@ -4,7 +4,7 @@
  * 發布所有套件到 NPM
  *
  * 使用方式：
- *   bun run scripts/publish-all.ts [--dry-run] [--skip-build] [--skip-test]
+ *   bun run scripts/publish-all.ts [--dry-run] [--skip-build] [--skip-test] [--otp=<code>]
  *
  * 改造說明（Bun Shell 版本）：
  *   原版使用 node:child_process 的 exec/spawn + promisify 手動封裝，
@@ -26,6 +26,9 @@ const PACKAGES_DIR = join(process.cwd(), 'packages')
 const DRY_RUN = process.argv.includes('--dry-run')
 const SKIP_BUILD = process.argv.includes('--skip-build')
 const SKIP_TEST = process.argv.includes('--skip-test')
+
+// 解析 --otp=<code> 參數
+const OTP = process.argv.find((arg) => arg.startsWith('--otp='))?.split('=')[1]
 
 interface PackageInfo {
   name: string
@@ -259,8 +262,14 @@ async function publishPackage(pkg: PackageInfo): Promise<boolean> {
 
     // 使用 Bun Shell 組合 npm publish 命令並支援互動模式
     // 對於 alpha/beta 版本，使用對應的 tag
-    const result =
-      isBeta || isAlpha
+    // 如果提供了 OTP，則添加到 npm publish 命令中
+    const result = OTP
+      ? isBeta || isAlpha
+        ? await $`npm publish --access public --tag ${versionTag} --otp=${OTP}`
+            .cwd(pkg.path)
+            .nothrow()
+        : await $`npm publish --access public --otp=${OTP}`.cwd(pkg.path).nothrow()
+      : isBeta || isAlpha
         ? await $`npm publish --access public --tag ${versionTag}`.cwd(pkg.path).nothrow()
         : await $`npm publish --access public`.cwd(pkg.path).nothrow()
 
