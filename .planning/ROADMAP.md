@@ -153,7 +153,7 @@ TEST-01, TEST-02, TEST-03, TYPE-01, TYPE-02, TYPE-03, DEPS-01, DEPS-02, DEPS-03,
 
 | Phase | Duration | Start | Status |
 |-------|----------|-------|--------|
-| 1. 快速掃描 | 1-2 days | 2026-03-24 | Pending |
+| 1. 快速掃描 | 1/1 | Complete   | 2026-03-24 |
 | 2. 結果評估 | 1 day | TBD | Pending |
 | 3+. 後續 | TBD | TBD | Pending |
 
