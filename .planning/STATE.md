@@ -2,22 +2,22 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 01
-status: executing
-last_updated: "2026-03-24T14:37:01.192Z"
+current_phase: 02 (next)
+status: completed
+last_updated: "2026-03-24T15:01:51.429Z"
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
+  total_plans: 2
+  completed_plans: 2
 ---
 
 # Project State: Gravito-Core 健全性驗證
 
 **Project:** Gravito-Core 健全性驗證
-**Status:** Phase 01 Complete — Ready for Phase 02
-**Current Phase:** 02 (next)
-**Last Updated:** 2026-03-24 14:35:00 UTC
+**Status:** Phase 01-02 Complete — Gap closure done
+**Current Phase:** 02 (next - atlas implicit dependencies)
+**Last Updated:** 2026-03-24 15:00:00 UTC
 
 ## Project Reference
 
@@ -42,6 +42,13 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 - **下一步**：Phase 2A — 修復 photon/signal dist bundles + 4 個隱式依賴
 
 ### Completed Work
+
+✅ **Phase 01-02: Gap Closure — Photon/Signal dist bundles** (2026-03-24)
+
+- CRIT-01 resolved: photon dist/index.js importable (20 exports, Photon class accessible)
+- CRIT-02 resolved: signal dist/index.mjs + dist/index.cjs importable (20 exports each, OrbitSignal accessible)
+- Root cause: Bun v1.3.10 bundler bug; photon fixed via post-build patch; signal switched to tsup
+- Commit: e3a182f6
 
 ✅ **Phase 1: 快速掃描驗證** (2026-03-24)
 
@@ -95,6 +102,8 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 | Phase 1 發現: rebuild photon/signal dist 優先於其他工作 | 2026-03-24 | ✓ Done |
 | Phase 1 發現: 修復 4 個隱式 atlas 依賴（fortify/graphql/pulse/spectrum） | 2026-03-24 | ✓ Done |
 | Phase 1 發現: Hono Phase 4-5 等 Phase 2A 完成後再繼續 | 2026-03-24 | ✓ Done |
+| Plan 01-02: Bun v1.3.10 bundler bug — photon 用 post-build patch；signal 改用 tsup | 2026-03-24 | ✓ Done |
+| Plan 01-02: dist/ 在 .gitignore 中 — 必須修 build.ts 才能永久修復，不可 commit dist 文件 | 2026-03-24 | ✓ Done |
 
 ---
 
@@ -125,13 +134,8 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 
 ### 立即行動 (Phase 2A)
 
-1. **[READY]** Rebuild photon dist bundle — fix "Photon not declared" error
-   - Command: `bun run build --filter=@gravito/photon`
-   - Estimated: 15 minutes
-
-2. **[READY]** Rebuild signal dist bundle — fix MJS/CJS lazy-load errors
-   - Command: `bun run build --filter=@gravito/signal`
-   - Estimated: 15 minutes
+1. **[DONE]** Rebuild photon dist bundle — CRIT-01 resolved ✅ (commit e3a182f6)
+2. **[DONE]** Rebuild signal dist bundle — CRIT-02 resolved ✅ (commit e3a182f6)
 
 3. **[READY]** Fix 4 implicit atlas dependencies
    - Packages: fortify, graphql, pulse, spectrum

@@ -28,9 +28,9 @@
 ### 核心模組可運作性
 
 - [ ] **CORE-01**: Core 包能初始化、不崩潰
-- [ ] **CORE-02**: Photon HTTP 引擎能啟動、接收請求
+- [x] **CORE-02**: Photon HTTP 引擎能啟動、接收請求
 - [ ] **CORE-03**: Atlas ORM 能連接、執行基本查詢
-- [ ] **CORE-04**: Signal 事件總線能發佈/訂閱
+- [x] **CORE-04**: Signal 事件總線能發佈/訂閱
 
 ### 端到端流程驗證
 
@@ -86,9 +86,9 @@
 | DEPS-02 | Phase 1 | Pending |
 | DEPS-03 | Phase 1 | Pending |
 | CORE-01 | Phase 1 | Pending |
-| CORE-02 | Phase 1 | Pending |
+| CORE-02 | Phase 1 | Complete |
 | CORE-03 | Phase 1 | Pending |
-| CORE-04 | Phase 1 | Pending |
+| CORE-04 | Phase 1 | Complete |
 | E2E-01 | Phase 1 | Pending |
 | E2E-02 | Phase 1 | Pending |
 | REPORT-01 | Phase 1 | Pending |
