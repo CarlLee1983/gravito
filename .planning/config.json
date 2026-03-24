@@ -1,0 +1,18 @@
+{
+  "project_name": "gravito-core-health-check",
+  "project_type": "verification",
+  "description": "快速掃描驗證 gravito-core 60 個包的健全性",
+  "workflow": "gsd",
+  "mode": "YOLO",
+  "commit_docs": true,
+  "default_model": "sonnet",
+  "planner_model": "sonnet",
+  "executor_model": "sonnet",
+  "verifier_model": "sonnet",
+  "research_enabled": false,
+  "discussion_enabled": false,
+  "plan_checking_enabled": false,
+  "created_at": "2026-03-24T08:51:37Z",
+  "branching_strategy": "main",
+  "output_location": ".planning"
+}
