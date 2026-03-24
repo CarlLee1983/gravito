@@ -32,6 +32,11 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 - ROADMAP.md 規劃 6 個潛在階段
 - 代碼庫映射已完成（7 個文檔）
 
+✅ **Phase 3 Context 討論** (2026-03-24)
+- `03-CONTEXT.md` 建立 — 修復策略、優先級、驗證方式確定
+- 8 個實作決策已鎖定（D-01 至 D-08）
+- 預設修復順序：按影響範圍排序（最寬松優先）
+
 ### Blockers
 
 無已知阻擋項。所有工具和環境已準備。
@@ -45,7 +50,8 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 | 初始化 | ✅ Done | 2026-03-24 | 2026-03-24 | System |
 | Phase 1: 快速掃描 | ⏳ Pending | 2026-03-24 | TBD | TBD |
 | Phase 2: 結果評估 | ⏳ Pending | TBD | TBD | TBD |
-| 後續 Phase | ⏳ Pending | TBD | TBD | TBD |
+| Phase 3: Fix Critical (條件性) | 🎯 Context Ready | 2026-03-24 | TBD | TBD |
+| Phase 4+: 後續 | ⏳ Pending | TBD | TBD | TBD |
 
 ---
 
@@ -138,8 +144,9 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 | 2026-03-24 | 代碼庫映射完成 | 7 個結構化文檔生成 |
 | 2026-03-24 | 深度提問 | 驗證目標明確 |
 | 2026-03-24 | 項目初始化 | PROJECT.md、REQUIREMENTS.md、ROADMAP.md 生成 |
+| 2026-03-24 | Phase 3 討論 | 修復策略、優先級、驗證方式、並行度確定 |
 
 ---
 
 **Last Updated:** 2026-03-24
-**Next Update Trigger:** Phase 1 開始或完成時
+**Next Update Trigger:** Phase 1 開始時 或 Phase 2 完成時（決定是否啟動 Phase 3）
