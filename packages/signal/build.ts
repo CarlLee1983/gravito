@@ -1,6 +1,5 @@
-import { cp, type Dirent, mkdir, readdir, rm } from 'node:fs/promises'
+import { cp, copyFile, type Dirent, mkdir, readdir, rm } from 'node:fs/promises'
 import { basename } from 'node:path'
-import { build } from 'bun'
 
 const isDtsOnly = process.argv.includes('--dts-only')
 const _pkgName = basename(import.meta.dirname) // "signal"
@@ -28,6 +27,68 @@ const externalDeps = [
   'uglify-js', // CJS 內 conditional export 被 bundle 成無效 ESM，改為 external
 ]
 
+/**
+ * Build ESM and CJS bundles using tsup (via bunx).
+ *
+ * Note: Bun bundler v1.3.10 has a bug where splitting: false with dynamic
+ * imports from external dependencies causes the bundler to emit only partial
+ * content in the output file (e.g. only mjml-templates.ts content, ~1.5KB
+ * instead of the expected ~3MB bundle). tsup (esbuild-based) does not have
+ * this issue.
+ *
+ * tsup outputs CJS as 'index.js'; we rename it to 'index.cjs' to match the
+ * package.json exports: { require: './dist/index.cjs' } convention.
+ */
+async function buildWithTsup(): Promise<number> {
+  const externalFlags = externalDeps.flatMap(dep => ['--external', dep])
+
+  const proc = Bun.spawn(
+    [
+      'bunx',
+      'tsup',
+      'src/index.ts',
+      '--format',
+      'esm,cjs',
+      '--no-dts',
+      '--no-splitting',
+      '--outDir',
+      'dist',
+      ...externalFlags,
+    ],
+    {
+      stdout: 'inherit',
+      stderr: 'inherit',
+      cwd: import.meta.dirname,
+    }
+  )
+  const exitCode = await proc.exited
+
+  if (exitCode !== 0) {
+    console.error('❌ tsup build failed')
+    return 1
+  }
+
+  // tsup outputs:
+  //   dist/index.mjs  (ESM - correct name)
+  //   dist/index.js   (CJS - needs renaming to index.cjs)
+  // package.json exports.require points to dist/index.cjs
+  const indexJsExists = await Bun.file('dist/index.js').exists()
+  const cjsExists = await Bun.file('dist/index.cjs').exists()
+
+  if (indexJsExists && !cjsExists) {
+    await copyFile('dist/index.js', 'dist/index.cjs')
+    console.log('  ✓ Created dist/index.cjs from tsup CJS output')
+  }
+
+  const esmExists = await Bun.file('dist/index.mjs').exists()
+  if (!esmExists) {
+    console.error('❌ dist/index.mjs not found after tsup build')
+    return 1
+  }
+
+  return 0
+}
+
 async function buildInParallel() {
   const tasks: Promise<number>[] = []
   const tempDir = isDtsOnly ? 'dist' : '.tsc-temp'
@@ -35,47 +96,12 @@ async function buildInParallel() {
   if (!isDtsOnly) {
     await rm(tempDir, { recursive: true, force: true })
 
-    // Task 1: bun build ESM
-    const esmPromise = (async () => {
-      const buildResult = await build({
-        entrypoints: ['src/index.ts'],
-        outdir: 'dist',
-        format: 'esm',
-        target: 'node',
-        splitting: false,
-        sourcemap: 'external',
-        external: externalDeps,
-        naming: '[dir]/[name].mjs',
-      })
-
-      if (!buildResult.success) {
-        console.error('❌ ESM build failed:', buildResult.logs)
-        return 1
-      }
-      return 0
-    })()
-    tasks.push(esmPromise)
-
-    // Task 2: bun build CJS
-    const cjsPromise = (async () => {
-      const cjsResult = await build({
-        entrypoints: ['src/index.ts'],
-        outdir: 'dist',
-        format: 'cjs',
-        target: 'node',
-        splitting: false,
-        sourcemap: 'external',
-        naming: '[dir]/[name].cjs',
-        external: externalDeps,
-      })
-
-      if (!cjsResult.success) {
-        console.error('❌ CJS build failed:', cjsResult.logs)
-        return 1
-      }
-      return 0
-    })()
-    tasks.push(cjsPromise)
+    // Task 1: tsup build (ESM + CJS)
+    // Uses tsup instead of bun build due to Bun v1.3.10 bundler bug:
+    // bun build splitting:false emits only partial content (~1.5KB) when
+    // the entry module has dynamic imports from external packages.
+    const bundlePromise = buildWithTsup()
+    tasks.push(bundlePromise)
   }
 
   // Task 3: tsc 生成型別宣告（使用 tsconfig.build.json + noCheck）

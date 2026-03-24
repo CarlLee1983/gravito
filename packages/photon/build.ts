@@ -8,6 +8,34 @@ if (!isDtsOnly) {
   await rm('dist', { recursive: true, force: true })
 }
 
+/**
+ * Workaround for Bun bundler bug in v1.3.10:
+ * When using splitting: true with multiple entrypoints, bun build may emit
+ * dist/index.js that exports symbols (e.g. Photon) without importing them
+ * from their corresponding chunk files.
+ *
+ * This post-build patch detects missing imports in dist/index.js and adds them.
+ * Specifically: Photon is defined in dist/photon.js but missing from dist/index.js imports.
+ */
+async function patchPhotonIndexImport() {
+  const indexPath = 'dist/index.js'
+  const content = await readFile(indexPath, 'utf-8')
+
+  // Check if Photon is exported but not imported
+  const hasPhotonExport = content.includes('  Photon,') || content.includes('  Photon\n')
+  const hasPhotonImport = content.includes('import { Photon }') || content.includes('import{Photon}')
+
+  if (hasPhotonExport && !hasPhotonImport) {
+    // Insert import after the last chunk import line
+    const patched = content.replace(
+      'import"./chunk-v0bahtg2.js";',
+      'import"./chunk-v0bahtg2.js";\nimport { Photon } from "./photon.js";'
+    )
+    await writeFile(indexPath, patched, 'utf-8')
+    console.log('  ✓ Patched dist/index.js: added missing Photon import from photon.js')
+  }
+}
+
 // Parallel build: JS/TS and type declarations can run simultaneously
 // since they output to different directories
 async function buildInParallel() {
@@ -97,5 +125,10 @@ async function buildInParallel() {
 }
 // Execute parallel build
 await buildInParallel()
+
+// Apply post-build patch for Bun v1.3.10 bundler bug (missing Photon import in index.js)
+if (!isDtsOnly) {
+  await patchPhotonIndexImport()
+}
 
 console.log('✅ Photon build completed')
