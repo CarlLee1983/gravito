@@ -11,78 +11,34 @@
 
 ```
 [Phase 1: 快速掃描] → [Phase 2: 結果評估] → [Decision Point]
-                                            ├─→ Fix Critical
-                                            ├─→ Hono Phase 4-5
-                                            └─→ Full Audit
+                                            ├─→ Phase 2B: 修復 High Issues
+                                            ├─→ Phase 2C: 後續規劃
+                                            └─→ Phase 3+: Hono 遷移 / 衛星驗證
 ```
 
 ---
 
 ## Phase 1: 快速掃描驗證 (1-2 days)
 
+✅ **COMPLETE** — 2026-03-24
+
 驗證 60 個包的基本健全性，識別阻擋性問題。
 
-### Goals
+### Results
 
-- ✓ 執行完整測試套件，0 failures
-- ✓ TypeScript 類型檢查通過
-- ✓ 驗證核心模組可用
-- ✓ 生成驗證報告
+- **Health Score:** 78/100
+- **Test Results:** 11,556 pass / 162 fail / 207 skip / 0 type errors / 0 circular deps
+- **Deliverables:**
+  - `HEALTH_CHECK_REPORT.md` — Baseline health score and detailed analysis
+  - `ISSUES_PRIORITIZED.md` — 2 Critical, 9 High, 2 Medium, 4 Low issues
+  - `NEXT_STEPS.md` — Recommended fix sequence and risk assessment
 
-### Deliverables
+### Key Findings
 
-- `HEALTH_CHECK_REPORT.md` — 驗證結果詳細報告
-- `ISSUES_PRIORITIZED.md` — 問題清單（Critical、High、Medium）
-- `NEXT_STEPS.md` — 建議的後續行動
-
-### Success Criteria
-
-- [ ] 所有 60 個包 `bun test` 通過
-- [ ] `bun run typecheck` 0 errors（或明確記錄已知抑制）
-- [ ] 無新循環依賴
-- [ ] 4 個關鍵模組可初始化
-- [ ] 2 個 E2E 路徑可執行
-- [ ] 報告已生成並評估
-
-### Requirements Covered
-
-TEST-01, TEST-02, TEST-03, TYPE-01, TYPE-02, TYPE-03, DEPS-01, DEPS-02, DEPS-03, CORE-01, CORE-02, CORE-03, CORE-04, E2E-01, E2E-02, REPORT-01, REPORT-02, REPORT-03
-
-### Milestones
-
-1. **掃描準備** (30 min)
-   - 建立驗證腳本
-   - 準備測試環境
-
-2. **執行掃描** (1-2 hours)
-   - 執行 `bun test` — 記錄結果
-   - 執行 `bun run typecheck` — 記錄錯誤/抑制
-   - 驗證依賴圖
-   - 測試關鍵模組
-
-3. **E2E 驗證** (1 hour)
-   - 驗證框架初始化流程
-   - 驗證基本 HTTP + DB 流程
-
-4. **報告生成** (1-2 hours)
-   - 收集所有結果
-   - 分析問題
-   - 優先級排序
-   - 寫出建議
-
-### Owner
-
-待分配（通常為 executor agent）
-
-### Blockers
-
-無已知阻擋項。所有依賴（codebase map、工具）已就位。
-
-### Notes
-
-- 快速掃描不包括完整性能、文檔或安全審計
-- 現有 Hono Phase 2-3 工作已完成，不在此驗證範圍
-- 衛星模組（RBAC、Catalog、Commerce）在後續階段驗證
+- **Critical (2):** photon/signal dist bundles broken (Bun v1.3.10 bundler issue) — **FIXED in Phase 2A**
+- **High (9):** Implicit dependencies (4 pkgs), middleware tests (1), test failures (launchpad/monolith/scaffold)
+- **Medium (2):** JWT module, Galaxy showcase
+- **Low (4):** StaticLink, CSRF helpers, and 207 skipped environment tests
 
 ---
 
@@ -90,72 +46,74 @@ TEST-01, TEST-02, TEST-03, TYPE-01, TYPE-02, TYPE-03, DEPS-01, DEPS-02, DEPS-03,
 
 根據 Phase 1 報告，評估結果並決策後續行動。
 
-### Goals
+### Phase 2A: Critical Fixes & Implicit Dependencies (IN PROGRESS)
 
-- 理解驗證結果的影響
-- 優先排序發現的問題
-- 明確後續路徑
+**Plan:** `.planning/phases/02-1-day/02-PLAN.md`
 
-### Decision Points
+**Scope:**
+- Verify photon/signal dist bundles fixed (commit e3a182f6)
+- Fix 4 implicit atlas dependencies (fortify, graphql, pulse, spectrum)
+- Re-run full test suite + typecheck verification
+- Create DECISION_SUMMARY.md with strategic assessment
 
-**如果所有檢查通過 ✅:**
-- ✓ 框架穩定
-- → Proceed with Hono Phase 4-5 遷移規劃
-- → 衛星驗證（RBAC、Catalog、Commerce）
+**Timeline:** 1-2 hours (automation + verification)
 
-**如果有 Critical 問題 🔴:**
-- ✗ 需要修復才能進行遷移
-- → Phase 3: Fix Critical Issues
-- → 修復後重新驗證
+**Success Criteria:**
+- [ ] Photon/Signal dist imports verified (all exports accessible)
+- [ ] 4 implicit dependencies fixed and resolved
+- [ ] Test suite: No new failures introduced
+- [ ] TypeCheck: 0 errors
+- [ ] DECISION_SUMMARY.md created with Phase 2B/2C sequencing
 
-**如果有 High 問題 🟡:**
-- ⚠️ 理想情況下應修復
-- → 與 Hono 遷移平行執行修復
-- → 或優先修復後再遷移（視業務優先級）
+### Phase 2B: High-Priority Fixes (PLANNED)
 
-### Deliverables
+Investigation and fixing of remaining 8 High-priority issues:
+- Orbit middleware isolation tests (core package)
+- Test failure root causes (launchpad: 35, monolith: 21, scaffold: 15)
+- Estimated: 1-2 weeks depending on investigation depth
 
-- `DECISION_SUMMARY.md` — 決策與推理
-- 更新的 `PROJECT.md` — 反映驗證結果
-- 後續行動計畫
+### Phase 2C: Backlog & Deferred Issues (PLANNED)
 
-### Success Criteria
-
-- [ ] 評估完成
-- [ ] 決策已記錄
-- [ ] 下一個 Phase 明確
+Medium/Low priority issues deferred to future:
+- JWT module (5 failures)
+- Galaxy showcase (6 failures)
+- Banking CQRS (6 timeouts)
+- StaticLink (9 failures)
+- CSRF helpers (2 failures)
+- 207 skipped environment tests
+- 22 production @ts-expect-error suppressions
 
 ---
 
-## Future Phases (Post-Decision)
+## Future Phases (Post-Phase 2 Decision)
 
-根據 Phase 2 結果，可能的路徑：
+根據 Phase 2 結果，決定後續優先級：
 
-### Phase 3: Fix Critical Issues (If Needed)
+### Phase 3: Continue Hono Migration Phase 4-5 (CONDITIONAL)
 
-修復 Critical 優先級的問題。
+**Condition:** Phase 2B complete and test baseline ≥90/100 health score
 
-### Phase 4: Hono Migration Phase 4-5
+**Scope:** Execute remaining Hono Phase 4-5 dependency removal (if Phase 2B succeeds)
 
-執行 Hono 依賴移除的後續階段（如果基線通過）。
+### Phase 4: Satellite Verification (OPTIONAL)
 
-### Phase 5: Satellite Verification (Optional)
+**Scope:** Full validation of Satellite modules (RBAC, Catalog, Commerce)
 
-完整驗證衛星模組（RBAC、Catalog、Commerce）。
+### Phase 5: Full Audit (OPTIONAL)
 
-### Phase 6: Full Audit (Optional)
-
-完整的性能、文檔、安全審計（如果資源允許）。
+**Scope:** Performance, documentation, security audit (if resources permit)
 
 ---
 
 ## Timeline
 
-| Phase | Duration | Start | Status |
-|-------|----------|-------|--------|
-| 1. 快速掃描 | 1/1 | Complete   | 2026-03-24 |
-| 2. 結果評估 | 1 day | TBD | Pending |
-| 3+. 後續 | TBD | TBD | Pending |
+| Phase | Duration | Status | Completion |
+|-------|----------|--------|------------|
+| 1. 快速掃描 | 1-2 days | ✅ Complete | 2026-03-24 |
+| 2A. Critical Fixes | 1-2 hours | 🔄 In Progress | TBD |
+| 2B. High Fixes | 1-2 weeks | ⏳ Planned | TBD |
+| 2C. Backlog | Deferred | ⏳ Deferred | TBD |
+| 3+. Hono/Satellites | TBD | 🎯 Conditional | TBD |
 
 ---
 
@@ -163,12 +121,13 @@ TEST-01, TEST-02, TEST-03, TYPE-01, TYPE-02, TYPE-03, DEPS-01, DEPS-02, DEPS-03,
 
 驗證工作的成功指標：
 
-| 指標 | 目標 | 基線 |
-|------|------|------|
-| 測試通過率 | 100% | TBD |
-| 類型檢查錯誤 | 0 | TBD |
-| 循環依賴 | 0 新增 | TBD |
-| E2E 路徑可用 | 100% (2/2) | TBD |
+| 指標 | Phase 1 Baseline | Phase 2 Target | 說明 |
+|------|-----------------|----------------|------|
+| 測試通過率 | 96.9% (11,556/11,925) | ≥99% (11,750+/11,925) | Phase 2A: 162 failures → 50 failures → Phase 2B: ≤20 (env-only) |
+| 類型檢查錯誤 | 0 (83/83 pkgs) | 0 (maintain) | TypeScript strict mode maintained |
+| 循環依賴 | 0 | 0 (maintain) | No new circular dependencies |
+| Health Score | 78/100 | ≥90/100 | Incremental improvement per phase |
+| 隱式依賴 | 4 | 0 | Fixed in Phase 2A |
 
 ---
 
@@ -178,6 +137,7 @@ TEST-01, TEST-02, TEST-03, TYPE-01, TYPE-02, TYPE-03, DEPS-01, DEPS-02, DEPS-03,
 - ✓ 代碼庫映射（CODEBASE MAP）
 - ✓ 項目上下文（PROJECT.md）
 - ✓ 需求定義（REQUIREMENTS.md）
+- ✓ Phase 1 掃描 & 初步修復
 
 **假設：**
 - Bun、npm、Git 已安裝並可用
@@ -185,10 +145,20 @@ TEST-01, TEST-02, TEST-03, TYPE-01, TYPE-02, TYPE-03, DEPS-01, DEPS-02, DEPS-03,
 - 無環境變數或密鑰問題
 
 **風險：**
-- 如果發現大量問題，Phase 1 可能超時
-- 環境問題可能阻擋執行
+- Phase 2B 調查可能需要深度架構分析（middleware 隔離、異步上下文）
+- 某些失敗可能需要設計變更（非單純 bug 修復）
 
 ---
 
-**Last updated:** 2026-03-24 after project initialization
-**Next review:** After Phase 1 completion
+## Decision Gates
+
+**Before Phase 2B:** Confirm Phase 2A complete (dist bundles working, implicit deps fixed)
+
+**Before Phase 3:** Confirm Phase 2B complete (health score ≥90/100) OR explicit decision to defer High issues
+
+**Before Hono Phase 4-5:** Must complete Phase 2A + Phase 2B (stable baseline required)
+
+---
+
+**Last updated:** 2026-03-24 after Phase 2 planning
+**Next review:** After Phase 2A execution completion
