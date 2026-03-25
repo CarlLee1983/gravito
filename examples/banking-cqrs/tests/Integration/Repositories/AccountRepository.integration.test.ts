@@ -6,7 +6,6 @@ import { AtlasAccountRepository } from '../../../src/Infrastructure/Persistence/
 
 describe('AtlasAccountRepository - Integration', () => {
   let repository: AtlasAccountRepository
-
   beforeAll(async () => {
     // Set up in-memory SQLite connection for tests
     DB.addConnection('default', {
@@ -29,10 +28,26 @@ describe('AtlasAccountRepository - Integration', () => {
   })
 
   afterAll(async () => {
-    await DB.disconnect('default')
+    try {
+      await DB.disconnect('default')
+    } catch (_e) {
+      // Ignore disconnect errors in parallel test environments
+    }
   })
 
   beforeEach(async () => {
+    // Ensure table exists (in case the connection was reset by another concurrent test file)
+    await DB.raw(`
+      CREATE TABLE IF NOT EXISTS accounts (
+        id TEXT PRIMARY KEY,
+        owner_name TEXT NOT NULL,
+        balance INTEGER NOT NULL DEFAULT 0,
+        currency TEXT NOT NULL DEFAULT 'TWD',
+        status TEXT NOT NULL DEFAULT 'active',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `)
     // Clean table between tests
     await DB.raw('DELETE FROM accounts')
     repository = new AtlasAccountRepository()

@@ -5,7 +5,6 @@ import { AtlasTransactionRepository } from '../../../src/Infrastructure/Persiste
 
 describe('AtlasTransactionRepository - Integration', () => {
   let repository: AtlasTransactionRepository
-
   beforeAll(async () => {
     // Set up in-memory SQLite connection for tests
     // Use a unique connection name to avoid conflicts with account tests
@@ -44,10 +43,39 @@ describe('AtlasTransactionRepository - Integration', () => {
   })
 
   afterAll(async () => {
-    await DB.disconnect('default')
+    try {
+      await DB.disconnect('default')
+    } catch (_e) {
+      // Ignore disconnect errors in parallel test environments
+    }
   })
 
   beforeEach(async () => {
+    // Ensure tables exist (in case connection was reset by another concurrent test file)
+    await DB.raw(`
+      CREATE TABLE IF NOT EXISTS accounts (
+        id TEXT PRIMARY KEY,
+        owner_name TEXT NOT NULL,
+        balance INTEGER NOT NULL DEFAULT 0,
+        currency TEXT NOT NULL DEFAULT 'TWD',
+        status TEXT NOT NULL DEFAULT 'active',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `)
+    await DB.raw(`
+      CREATE TABLE IF NOT EXISTS transactions (
+        id TEXT PRIMARY KEY,
+        account_id TEXT NOT NULL,
+        type TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        balance_after INTEGER NOT NULL,
+        currency TEXT NOT NULL DEFAULT 'TWD',
+        reference_id TEXT,
+        description TEXT,
+        created_at TEXT NOT NULL
+      )
+    `)
     // Clean between tests
     await DB.raw('DELETE FROM transactions')
     repository = new AtlasTransactionRepository()
