@@ -42,7 +42,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 
 **Phase 2A: Critical Fixes & Implicit Dependencies** (1 day)
 
-- ⏳ IN PROGRESS — 2026-03-25
+- ✅ COMPLETE — 2026-03-25
 - **Task 1 (DONE):** Created DECISION_SUMMARY.md — Strategic assessment locked (D-01 through D-07)
 - **Task 2 (DONE):** Fixed 3 implicit @gravito/atlas dependencies (fortify/graphql/spectrum)
 - **Task 3 (DONE):** Full test suite verification — 11,925 tests / 163 fail / 0 type errors
@@ -52,7 +52,24 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
   - Signal dist/index.cjs: ✅ 20 exports, OrbitSignal accessible
   - TypeCheck: ✅ 83/83 packages pass, 0 errors
   - bun install: ✅ All dependencies resolved cleanly
-- **Next Step:** Human verification checkpoint for Phase 2A completion
+- **Status:** Ready for Phase 2B (High-priority fixes) or Phase 3 (if Critical issues remain)
+
+**Phase 3-01: Critical Issues Assessment & Decision Gate** (✅ COMPLETE)
+
+- ✅ COMPLETE — 2026-03-25
+- **Task 1 (DONE):** Assessed Critical issues status and made Phase 3 go/no-go decision
+- **Assessment Results:**
+  - Phase 1 Critical issues: CRIT-01 (photon dist), CRIT-02 (signal dist) — both FIXED ✓
+  - Phase 2A Critical issues: Implicit atlas deps (3 packages) — FIXED ✓
+  - **Remaining Critical issues: 0 (ZERO)**
+- **Phase 2B Status:** ⏳ Pending (not yet executed)
+- **Phase 3 Decision:** ✅ SKIP Phase 3 (preliminary) — contingent on Phase 2B results
+  - If Phase 2B discovers 0 new Critical issues: Skip Phase 3, proceed to Phase 4
+  - If Phase 2B discovers 1+ Critical issues: Activate Phase 3-02 serial fix execution
+- **Deliverables:**
+  - CRITICAL_ISSUES_ASSESSMENT.md — Complete assessment with contingency notes
+  - 03-01-SUMMARY.md — Execution summary and results
+- **Health Score:** Phase 2A achieved 85/100 (+7 from Phase 1 baseline of 78/100)
 
 ### Completed Work
 
@@ -105,8 +122,10 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 |-------|--------|-------|-----|-------|
 | 初始化 | ✅ Done | 2026-03-24 | 2026-03-24 | System |
 | Phase 1: 快速掃描 | ✅ Done | 2026-03-24 | 2026-03-24 | Agent |
-| Phase 2: 結果評估 | ⏳ Pending | TBD | TBD | TBD |
-| Phase 3: Fix Critical (條件性) | 🎯 Context Ready | 2026-03-24 | TBD | TBD |
+| Phase 2A: Critical Fixes | ✅ Done | 2026-03-25 | 2026-03-25 | Agent |
+| Phase 3-01: Decision Gate | ✅ Done | 2026-03-25 | 2026-03-25 | Agent |
+| Phase 2B: High Fixes | ⏳ Planned | TBD | TBD | TBD |
+| Phase 3-02: Fix Critical (條件性) | 🎯 Ready (conditional) | TBD | TBD | TBD |
 | Phase 4+: 後續 | ⏳ Pending | TBD | TBD | TBD |
 
 ---
@@ -170,6 +189,12 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
    - TypeCheck: 0 errors (83/83 packages pass)
    - Install: Clean resolution, no errors
 
+### Phase 3-01: Decision Gate Completed ✅
+
+**Decision:** Phase 3 SKIPPED (preliminary) — 0 Critical issues post-Phase 2A
+**Contingency:** Awaiting Phase 2B completion to finalize decision
+**Deliverables:** CRITICAL_ISSUES_ASSESSMENT.md, 03-01-SUMMARY.md
+
 ### Phase 2B: Pending Investigation (After Phase 2A Approval)
 
 1. **[PENDING]** Investigate orbit middleware isolation skipped tests
@@ -180,11 +205,20 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 3. **[PENDING]** Fix monolith logging infrastructure (21 test failures)
 4. **[PENDING]** Fix scaffold code generators (15 test failures)
 
+### Phase 3-02: Serial Fix Execution (Conditional)
+
+**Status:** Ready to activate IF Phase 2B discovers Critical issues
+
+- Only activates if Phase 2B investigation reveals Critical-priority issues
+- Will use serial fix approach (one at a time) with full verification gates
+- Plans ready in `.planning/phases/03-fix-critical-issues-if-needed/03-02-PLAN.md`
+
 ### 後續決策點
 
 - Phase 2B: Fix launchpad/monolith/scaffold failing tests (~35+21+15 failures)
-- Phase 2C: Fix Banking CQRS, Atlas integration, JWT module tests
-- Phase 3: Continue Hono migration Phase 4-5 (only after Phase 2A complete)
+- Phase 3 Decision: SKIP Phase 3-02 (if no new Critical issues) OR PROCEED Phase 3-02 (if Phase 2B finds Critical issues)
+- Phase 2C: Fix Banking CQRS, Atlas integration, JWT module tests (deferred, Medium/Low priority)
+- Phase 4: Continue Hono migration Phase 4-5 (only after Phase 3 gate closes)
 
 ---
 
@@ -225,5 +259,5 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 
 ---
 
-**Last Updated:** 2026-03-24
-**Next Update Trigger:** Phase 1 開始時 或 Phase 2 完成時（決定是否啟動 Phase 3）
+**Last Updated:** 2026-03-25 (Phase 3-01 decision gate completed)
+**Next Update Trigger:** Phase 2B 完成時（決定是否啟動 Phase 3-02 或 Phase 4）
