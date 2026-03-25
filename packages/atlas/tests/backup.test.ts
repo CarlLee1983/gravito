@@ -70,12 +70,12 @@ mock.module('@gravito/core', () => ({
   }),
 }))
 
-// 模擬 node:fs/promises mkdir
-mock.module('node:fs/promises', () => ({
-  mkdir: jest.fn().mockResolvedValue(undefined),
-  writeFile: mockRuntimeWriteFile,
-  readFile: mockRuntimeReadFile,
-}))
+// Note: mock.module for node:fs/promises was removed because it leaked into other test files
+// in parallel test execution (compactor.test.ts, jsonl-logger.test.ts etc. all failed
+// with ENOENT because their mkdir calls were intercepted by the mock).
+// DatabaseBackupService only uses mkdir() from node:fs/promises for directory creation;
+// all actual file I/O goes through getRuntimeAdapter() which is mocked via @gravito/core above.
+// Using the real mkdir() with OS temp directories is safe and correct for these integration tests.
 
 // ============ 測試主體 ============
 
