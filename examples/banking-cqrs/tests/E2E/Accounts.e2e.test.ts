@@ -4,16 +4,20 @@ import { describe, expect, it } from 'bun:test'
  * E2E Tests for Banking CQRS API
  *
  * These tests verify complete user journeys through the API.
- * Run with: bun test tests/E2E/
+ * Run with: BANKING_E2E_ENABLED=true bun test tests/E2E/
  *
  * **Prerequisites:**
- * - Start server: bun run dev
- * - Server running on http://localhost:3000
+ * - Start server: bun run dev (server at http://localhost:3000)
+ * - Set environment variable: BANKING_E2E_ENABLED=true
  *
+ * @note These tests are skipped in automated runs unless BANKING_E2E_ENABLED=true
  * @note In a real project, use Playwright or Supertest for API testing
  */
 
-describe('Banking CQRS API - E2E Tests', () => {
+// Skip E2E tests unless server is explicitly available (prevents 5s timeouts in CI)
+const isE2eEnabled = process.env.BANKING_E2E_ENABLED === 'true'
+
+describe.skipIf(!isE2eEnabled)('Banking CQRS API - E2E Tests', () => {
   const API_BASE = 'http://localhost:3000/api'
 
   /**
