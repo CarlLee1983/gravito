@@ -11,6 +11,8 @@ import { afterEach, beforeEach, describe, expect, it, jest, mock } from 'bun:tes
 import type { ProcessingStatus } from '../src/types'
 
 // ============ Mock 設定 ============
+// Use dependency injection instead of mock.module('@gravito/core') to prevent
+// mock leakage into other test files during parallel execution.
 
 const mockArchiveCreate = jest.fn(async (entries: Record<string, unknown>) => {
   return new TextEncoder().encode(JSON.stringify(Object.keys(entries)))
@@ -23,19 +25,20 @@ const mockReadFile = jest.fn(async (path: string): Promise<Uint8Array> => {
   }
   return new TextEncoder().encode(`content of ${path}`)
 })
-mock.module('@gravito/core', () => ({
-  getArchiveAdapter: () => ({
-    create: mockArchiveCreate,
-    extract: jest.fn(async () => 0),
-    list: jest.fn(async () => new Map()),
-    readFile: jest.fn(async () => null),
-  }),
-  getRuntimeAdapter: () => ({
-    writeFile: mockWriteFile,
-    readFile: mockReadFile,
-    readFileAsBlob: jest.fn(async () => new Blob([])),
-  }),
-}))
+
+// Mock adapters passed via constructor (no module-level mocking needed)
+const mockArchiveAdapter = {
+  create: mockArchiveCreate,
+  extract: jest.fn(async () => 0),
+  list: jest.fn(async () => new Map()),
+  readFile: jest.fn(async () => null),
+}
+
+const mockRuntimeAdapter = {
+  writeFile: mockWriteFile,
+  readFile: mockReadFile,
+  readFileAsBlob: jest.fn(async () => new Blob([])),
+}
 
 // 模擬 @gravito/nebula StorageProvider
 mock.module('@gravito/nebula', () => ({}))
@@ -112,7 +115,11 @@ describe('ForgeService - 歸檔功能', () => {
         makeStatus('job-003', 'completed', 'output-003.jpg') as ProcessingStatus
       )
 
-      const service = new ForgeService({ statusStore })
+      const service = new ForgeService({
+        statusStore,
+        archive: mockArchiveAdapter,
+        runtime: mockRuntimeAdapter,
+      })
       const outputPath = '/tmp/results.tar.gz'
 
       const result = await service.packageProcessingResults(
@@ -139,7 +146,7 @@ describe('ForgeService - 歸檔功能', () => {
     })
 
     it('沒有設定 statusStore 時應拋出錯誤', async () => {
-      const service = new ForgeService() // 無 statusStore
+      const service = new ForgeService({ archive: mockArchiveAdapter, runtime: mockRuntimeAdapter }) // 無 statusStore
 
       await expect(
         service.packageProcessingResults(['job-001'], '/tmp/output.tar.gz')
@@ -158,7 +165,11 @@ describe('ForgeService - 歸檔功能', () => {
         makeStatus('job-003', 'completed', 'output-003.jpg') as ProcessingStatus
       )
 
-      const service = new ForgeService({ statusStore })
+      const service = new ForgeService({
+        statusStore,
+        archive: mockArchiveAdapter,
+        runtime: mockRuntimeAdapter,
+      })
 
       const result = await service.packageProcessingResults(
         ['job-001', 'job-002', 'job-003'],
@@ -182,7 +193,11 @@ describe('ForgeService - 歸檔功能', () => {
       await statusStore.set(makeStatus('job-pending', 'pending') as ProcessingStatus)
       // job-missing 不存在於 store
 
-      const service = new ForgeService({ statusStore })
+      const service = new ForgeService({
+        statusStore,
+        archive: mockArchiveAdapter,
+        runtime: mockRuntimeAdapter,
+      })
       const outputPath = '/tmp/partial-results.tar.gz'
 
       const result = await service.packageProcessingResults(
@@ -209,7 +224,11 @@ describe('ForgeService - 歸檔功能', () => {
       const status = makeStatus('job-download', 'completed', 'result.mp4')
       await statusStore.set(status as ProcessingStatus)
 
-      const service = new ForgeService({ statusStore })
+      const service = new ForgeService({
+        statusStore,
+        archive: mockArchiveAdapter,
+        runtime: mockRuntimeAdapter,
+      })
       const outputDir = '/tmp/downloads'
 
       const results = await service.downloadResults('job-download', outputDir)
@@ -227,7 +246,11 @@ describe('ForgeService - 歸檔功能', () => {
 
     it('作業不存在時應拋出錯誤', async () => {
       const statusStore = new MemoryStatusStore()
-      const service = new ForgeService({ statusStore })
+      const service = new ForgeService({
+        statusStore,
+        archive: mockArchiveAdapter,
+        runtime: mockRuntimeAdapter,
+      })
 
       await expect(service.downloadResults('nonexistent-job', '/tmp/downloads')).rejects.toThrow(
         /作業不存在/
@@ -238,7 +261,11 @@ describe('ForgeService - 歸檔功能', () => {
       const statusStore = new MemoryStatusStore()
       await statusStore.set(makeStatus('job-processing', 'processing') as ProcessingStatus)
 
-      const service = new ForgeService({ statusStore })
+      const service = new ForgeService({
+        statusStore,
+        archive: mockArchiveAdapter,
+        runtime: mockRuntimeAdapter,
+      })
 
       await expect(service.downloadResults('job-processing', '/tmp/downloads')).rejects.toThrow(
         /尚未完成/

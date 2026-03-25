@@ -48,6 +48,14 @@ export interface ProcessingJob {
 }
 
 /**
+ * Configuration schema for the ForgeService (extended with injectable adapters)
+ */
+export interface ForgeServiceAdapters {
+  archive?: RuntimeArchiveAdapter
+  runtime?: ReturnType<typeof getRuntimeAdapter>
+}
+
+/**
  * Central service for orchestrating file processing workflows
  */
 export class ForgeService {
@@ -59,16 +67,18 @@ export class ForgeService {
   private concurrency: number
   private activeTasks = 0
   private waitingTasks: (() => void)[] = []
-  private runtime = getRuntimeAdapter()
-  private archive: RuntimeArchiveAdapter = getArchiveAdapter()
+  private readonly runtime: ReturnType<typeof getRuntimeAdapter>
+  private readonly archive: RuntimeArchiveAdapter
 
-  constructor(config: ForgeServiceConfig = {}) {
+  constructor(config: ForgeServiceConfig & ForgeServiceAdapters = {}) {
     this.videoProcessor = new VideoProcessor(config.video)
     this.imageProcessor = new ImageProcessor(config.image)
     this.storage = config.storage
     this.statusStore = config.statusStore
     this.minAvailableSpace = config.minAvailableSpace
     this.concurrency = config.concurrency || Infinity
+    this.archive = config.archive ?? getArchiveAdapter()
+    this.runtime = config.runtime ?? getRuntimeAdapter()
   }
 
   async process(
