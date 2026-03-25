@@ -89,7 +89,7 @@ describe('L1CacheManager', () => {
       cache.set('product:2', { id: 2 }, 300)
       cache.set('user:1', { id: 1 }, 300)
 
-      const deleted = cache.deletePattern('product:.*')
+      const deleted = await cache.deletePattern('product:.*')
       expect(deleted).toBe(2)
       expect(await cache.get('product:1')).toBeNull()
       expect(await cache.get('user:1')).toBeDefined()

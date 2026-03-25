@@ -4,7 +4,7 @@
  * 驗證 EventQueue 和 EventDeduplicator 的 6 項優化
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import { EventPriority } from '../events'
 import { EventDeduplicator } from '../events/EventDeduplicator'
 import { EventQueue } from '../events/EventQueue'

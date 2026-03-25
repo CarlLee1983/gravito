@@ -4,7 +4,7 @@
  * 驗證 BackpressureManager 優化的效果
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import { EventPriority } from '../events'
 import { BackpressureManager, BackpressureState } from '../events/BackpressureManager'
 
