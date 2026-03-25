@@ -1,23 +1,23 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
+milestone: v1.3.10
 milestone_name: milestone
-current_phase: 03
-status: planning
-last_updated: "2026-03-24T15:05:25.395Z"
+current_phase: 02
+status: executing
+last_updated: "2026-03-25T02:58:58.558Z"
 progress:
-  total_phases: 6
+  total_phases: 8
   completed_phases: 1
-  total_plans: 2
+  total_plans: 3
   completed_plans: 2
 ---
 
 # Project State: Gravito-Core 健全性驗證
 
 **Project:** Gravito-Core 健全性驗證
-**Status:** Ready to plan
-**Current Phase:** 03
-**Last Updated:** 2026-03-24 15:00:00 UTC
+**Status:** Executing Phase 02
+**Current Phase:** 02
+**Last Updated:** 2026-03-25 (Phase 2A execution)
 
 ## Project Reference
 
@@ -25,7 +25,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 
 **Core Value:** 確保 gravito-core 框架的核心穩定性 — 所有包都能通過測試、編譯無誤、無循環依賴
 
-**Current Focus:** Phase 01 — 1-2-days
+**Current Focus:** Phase 02 — 1-day
 
 ---
 
@@ -39,9 +39,30 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 - 健全性評分：78/100
 - 結果：11,556 tests pass, 162 fail, 0 type errors, 0 circular deps
 - HEALTH_CHECK_REPORT.md + ISSUES_PRIORITIZED.md + NEXT_STEPS.md 生成
-- **下一步**：Phase 2A — 修復 photon/signal dist bundles + 4 個隱式依賴
+
+**Phase 2A: Critical Fixes & Implicit Dependencies** (1 day)
+
+- ⏳ IN PROGRESS — 2026-03-25
+- **Task 1 (DONE):** Created DECISION_SUMMARY.md — Strategic assessment locked (D-01 through D-07)
+- **Task 2 (DONE):** Fixed 3 implicit @gravito/atlas dependencies (fortify/graphql/spectrum)
+- **Task 3 (DONE):** Full test suite verification — 11,925 tests / 163 fail / 0 type errors
+- **Verification Results:**
+  - Photon dist/index.js: ✅ 20 exports, Photon class accessible
+  - Signal dist/index.mjs: ✅ 20 exports, OrbitSignal accessible
+  - Signal dist/index.cjs: ✅ 20 exports, OrbitSignal accessible
+  - TypeCheck: ✅ 83/83 packages pass, 0 errors
+  - bun install: ✅ All dependencies resolved cleanly
+- **Next Step:** Human verification checkpoint for Phase 2A completion
 
 ### Completed Work
+
+✅ **Phase 2A: Decision Summary & Implicit Dependencies** (2026-03-25)
+
+- Task 1: DECISION_SUMMARY.md created with Phase 2A/2B/2C strategy (sequential bundles approach)
+- Task 2: Fixed 3 implicit @gravito/atlas dependencies in fortify/graphql/spectrum packages
+- Task 3: Verified full test suite (11,925 tests), typecheck (0 errors), bun install (clean)
+- Commit d06de248: Fix implicit atlas dependencies
+- Commit ebcde32c: Create DECISION_SUMMARY.md with strategic decisions
 
 ✅ **Phase 01-02: Gap Closure — Photon/Signal dist bundles** (2026-03-24)
 
@@ -132,19 +153,32 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 
 ## Next Steps
 
-### 立即行動 (Phase 2A)
+### Phase 2A Completed Tasks (✅ DONE)
 
-1. **[DONE]** Rebuild photon dist bundle — CRIT-01 resolved ✅ (commit e3a182f6)
-2. **[DONE]** Rebuild signal dist bundle — CRIT-02 resolved ✅ (commit e3a182f6)
+1. **[DONE]** Verify photon/signal dist bundles importable ✅
+   - Photon: 20 exports, Photon class accessible
+   - Signal: 20 exports each (ESM + CJS), OrbitSignal accessible
 
-3. **[READY]** Fix 4 implicit atlas dependencies
-   - Packages: fortify, graphql, pulse, spectrum
-   - Add `"@gravito/atlas": "workspace:*"` to each package.json
-   - Estimated: 30 minutes
+2. **[DONE]** Fix 3 implicit atlas dependencies ✅
+   - fortify: Added @gravito/atlas to dependencies
+   - graphql: Moved @gravito/atlas from devDependencies to dependencies
+   - spectrum: Moved @gravito/atlas from devDependencies to dependencies
+   - Commit: d06de248
 
-4. **[READY]** Investigate orbit middleware isolation skipped tests
+3. **[DONE]** Full test suite & typecheck verification ✅
+   - Tests: 11,925 tests / 163 fail / 207 skip (similar to baseline)
+   - TypeCheck: 0 errors (83/83 packages pass)
+   - Install: Clean resolution, no errors
+
+### Phase 2B: Pending Investigation (After Phase 2A Approval)
+
+1. **[PENDING]** Investigate orbit middleware isolation skipped tests
    - File: packages/core/tests/orbit-middleware-isolation.test.ts
    - Estimated: 2-4 hours
+
+2. **[PENDING]** Fix launchpad SEO route scanners (35 test failures)
+3. **[PENDING]** Fix monolith logging infrastructure (21 test failures)
+4. **[PENDING]** Fix scaffold code generators (15 test failures)
 
 ### 後續決策點
 
