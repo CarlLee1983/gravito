@@ -9,9 +9,9 @@
 
 ### 測試驗證
 
-- [ ] **TEST-01**: 所有 60 個包執行 `bun test` 通過，無 failures
-- [ ] **TEST-02**: 總測試覆蓋率統計並記錄基線
-- [ ] **TEST-03**: 識別任何 flaky 或被跳過的測試
+- [x] **TEST-01**: 所有 60 個包執行 `bun test` 通過，無 failures
+- [x] **TEST-02**: 總測試覆蓋率統計並記錄基線
+- [x] **TEST-03**: 識別任何 flaky 或被跳過的測試
 
 ### 類型檢查
 
@@ -23,7 +23,7 @@
 
 - [ ] **DEPS-01**: 驗證包依賴圖無循環依賴
 - [ ] **DEPS-02**: 檢查隱式依賴（來自 CONCERNS.md 識別的 4 個）
-- [ ] **DEPS-03**: 驗證 workspace 依賴解析正確
+- [x] **DEPS-03**: 驗證 workspace 依賴解析正確
 
 ### 核心模組可運作性
 
@@ -76,15 +76,15 @@
 
 | 需求 | 階段 | 狀態 |
 |------|------|------|
-| TEST-01 | Phase 1 | Pending |
-| TEST-02 | Phase 1 | Pending |
-| TEST-03 | Phase 1 | Pending |
+| TEST-01 | Phase 1 | Complete |
+| TEST-02 | Phase 1 | Complete |
+| TEST-03 | Phase 1 | Complete |
 | TYPE-01 | Phase 1 | Pending |
 | TYPE-02 | Phase 1 | Pending |
 | TYPE-03 | Phase 1 | Pending |
 | DEPS-01 | Phase 1 | Pending |
 | DEPS-02 | Phase 1 | Pending |
-| DEPS-03 | Phase 1 | Pending |
+| DEPS-03 | Phase 1 | Complete |
 | CORE-01 | Phase 1 | Pending |
 | CORE-02 | Phase 1 | Complete |
 | CORE-03 | Phase 1 | Pending |
