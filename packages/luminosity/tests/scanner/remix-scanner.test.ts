@@ -4,14 +4,15 @@ import { join } from 'node:path'
 import { RemixScanner } from '../../src/scanner/adapters/RemixScanner'
 
 describe('RemixScanner', () => {
-  const tmpDir = join(process.cwd(), 'tests', '.tmp-remix', 'app', 'routes')
+  const tmpBase = join(import.meta.dir, '.tmp-remix')
+  const tmpDir = join(tmpBase, 'app', 'routes')
 
   beforeEach(async () => {
     await mkdir(tmpDir, { recursive: true })
   })
 
   afterEach(async () => {
-    await rm(join(process.cwd(), 'tests', '.tmp-remix'), { recursive: true, force: true })
+    await rm(tmpBase, { recursive: true, force: true })
   })
 
   async function createRouteFile(name: string) {

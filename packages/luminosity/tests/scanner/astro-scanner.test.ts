@@ -4,14 +4,15 @@ import { join } from 'node:path'
 import { AstroScanner } from '../../src/scanner/adapters/AstroScanner'
 
 describe('AstroScanner', () => {
-  const tmpDir = join(process.cwd(), 'tests', '.tmp-astro', 'src', 'pages')
+  const tmpBase = join(import.meta.dir, '.tmp-astro')
+  const tmpDir = join(tmpBase, 'src', 'pages')
 
   beforeEach(async () => {
     await mkdir(tmpDir, { recursive: true })
   })
 
   afterEach(async () => {
-    await rm(join(process.cwd(), 'tests', '.tmp-astro'), { recursive: true, force: true })
+    await rm(tmpBase, { recursive: true, force: true })
   })
 
   async function createPage(path: string, content = '---') {

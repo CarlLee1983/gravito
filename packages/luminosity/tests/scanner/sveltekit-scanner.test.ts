@@ -4,14 +4,15 @@ import { join } from 'node:path'
 import { SvelteKitScanner } from '../../src/scanner/adapters/SvelteKitScanner'
 
 describe('SvelteKitScanner', () => {
-  const tmpDir = join(process.cwd(), 'tests', '.tmp-svelte', 'src', 'routes')
+  const tmpBase = join(import.meta.dir, '.tmp-svelte')
+  const tmpDir = join(tmpBase, 'src', 'routes')
 
   beforeEach(async () => {
     await mkdir(tmpDir, { recursive: true })
   })
 
   afterEach(async () => {
-    await rm(join(process.cwd(), 'tests', '.tmp-svelte'), { recursive: true, force: true })
+    await rm(tmpBase, { recursive: true, force: true })
   })
 
   async function createPage(path: string) {
