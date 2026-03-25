@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
+import { DB } from '@gravito/atlas'
 import { Account } from '../../../src/Domain/Account/Account'
 import { Money } from '../../../src/Domain/Shared/Money'
 import { AtlasAccountRepository } from '../../../src/Infrastructure/Persistence/AtlasAccountRepository'
@@ -6,8 +7,34 @@ import { AtlasAccountRepository } from '../../../src/Infrastructure/Persistence/
 describe('AtlasAccountRepository - Integration', () => {
   let repository: AtlasAccountRepository
 
+  beforeAll(async () => {
+    // Set up in-memory SQLite connection for tests
+    DB.addConnection('default', {
+      driver: 'sqlite',
+      database: ':memory:',
+    })
+
+    // Create accounts table
+    await DB.raw(`
+      CREATE TABLE IF NOT EXISTS accounts (
+        id TEXT PRIMARY KEY,
+        owner_name TEXT NOT NULL,
+        balance INTEGER NOT NULL DEFAULT 0,
+        currency TEXT NOT NULL DEFAULT 'TWD',
+        status TEXT NOT NULL DEFAULT 'active',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `)
+  })
+
+  afterAll(async () => {
+    await DB.disconnect('default')
+  })
+
   beforeEach(async () => {
-    // Initialize repository (uses in-memory SQLite)
+    // Clean table between tests
+    await DB.raw('DELETE FROM accounts')
     repository = new AtlasAccountRepository()
   })
 
@@ -101,6 +128,6 @@ describe('AtlasAccountRepository - Integration', () => {
   })
 
   afterEach(async () => {
-    // Cleanup (in-memory database is automatically cleaned)
+    // Data cleaned in beforeEach; in-memory DB persists for the test suite lifecycle
   })
 })

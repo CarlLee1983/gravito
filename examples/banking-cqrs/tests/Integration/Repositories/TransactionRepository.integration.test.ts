@@ -1,11 +1,55 @@
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
+import { DB } from '@gravito/atlas'
 import { Transaction } from '../../../src/Domain/Transaction/Transaction'
 import { AtlasTransactionRepository } from '../../../src/Infrastructure/Persistence/AtlasTransactionRepository'
 
 describe('AtlasTransactionRepository - Integration', () => {
   let repository: AtlasTransactionRepository
 
+  beforeAll(async () => {
+    // Set up in-memory SQLite connection for tests
+    // Use a unique connection name to avoid conflicts with account tests
+    DB.addConnection('default', {
+      driver: 'sqlite',
+      database: ':memory:',
+    })
+
+    // Create accounts table (required as FK target for transactions)
+    await DB.raw(`
+      CREATE TABLE IF NOT EXISTS accounts (
+        id TEXT PRIMARY KEY,
+        owner_name TEXT NOT NULL,
+        balance INTEGER NOT NULL DEFAULT 0,
+        currency TEXT NOT NULL DEFAULT 'TWD',
+        status TEXT NOT NULL DEFAULT 'active',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `)
+
+    // Create transactions table
+    await DB.raw(`
+      CREATE TABLE IF NOT EXISTS transactions (
+        id TEXT PRIMARY KEY,
+        account_id TEXT NOT NULL,
+        type TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        balance_after INTEGER NOT NULL,
+        currency TEXT NOT NULL DEFAULT 'TWD',
+        reference_id TEXT,
+        description TEXT,
+        created_at TEXT NOT NULL
+      )
+    `)
+  })
+
+  afterAll(async () => {
+    await DB.disconnect('default')
+  })
+
   beforeEach(async () => {
+    // Clean between tests
+    await DB.raw('DELETE FROM transactions')
     repository = new AtlasTransactionRepository()
   })
 
@@ -23,15 +67,14 @@ describe('AtlasTransactionRepository - Integration', () => {
   })
 
   it('should retrieve transactions in reverse chronological order', async () => {
+    // Create and save transactions with delays so created_at timestamps differ
     const tx1 = Transaction.create('txn-001', 'acc-456', 'deposit', 10000, 10000, 'TWD')
-    const tx2 = Transaction.create('txn-002', 'acc-456', 'withdrawal', 5000, 5000, 'TWD')
-    const tx3 = Transaction.create('txn-003', 'acc-456', 'deposit', 15000, 20000, 'TWD')
-
-    // Add small delay to ensure different timestamps
     await repository.save(tx1)
-    await new Promise((resolve) => setTimeout(resolve, 10))
+    await new Promise((resolve) => setTimeout(resolve, 15))
+    const tx2 = Transaction.create('txn-002', 'acc-456', 'withdrawal', 5000, 5000, 'TWD')
     await repository.save(tx2)
-    await new Promise((resolve) => setTimeout(resolve, 10))
+    await new Promise((resolve) => setTimeout(resolve, 15))
+    const tx3 = Transaction.create('txn-003', 'acc-456', 'deposit', 15000, 20000, 'TWD')
     await repository.save(tx3)
 
     const retrieved = await repository.findByAccountId('acc-456')

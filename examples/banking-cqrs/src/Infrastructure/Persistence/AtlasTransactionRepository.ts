@@ -156,7 +156,8 @@ export class AtlasTransactionRepository implements ITransactionRepository {
       .where('account_id', accountId)
       .orderBy('created_at', 'desc')
       .limit(limit)
-      .offset(offset)) as any[]
+      .offset(offset)
+      .get()) as any[]
 
     return rows.map(
       (row) =>
@@ -194,10 +195,7 @@ export class AtlasTransactionRepository implements ITransactionRepository {
   async countByAccountId(accountId: string, trx?: any): Promise<number> {
     const queryBuilder = trx ? trx.table('transactions') : DB.table('transactions')
 
-    const result = (await queryBuilder
-      .where('account_id', accountId)
-      .count('* as count')
-      .first()) as any
-    return result?.count ?? 0
+    const count = await queryBuilder.where('account_id', accountId).count()
+    return typeof count === 'number' ? count : 0
   }
 }
