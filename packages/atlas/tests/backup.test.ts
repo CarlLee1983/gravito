@@ -2,15 +2,18 @@
  * @fileoverview DatabaseBackupService 測試
  */
 
-import { afterAll, beforeAll, describe, expect, it, jest, mock } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, it, jest } from 'bun:test'
 import { randomUUID } from 'node:crypto'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import { DB, Schema } from '../src'
 
 // ============ Mock 設定 ============
+// Use dependency injection instead of mock.module('@gravito/core') to prevent
+// mock leakage into other test files during parallel execution.
+// (Prior approach with mock.module caused LocalStore, nebula, and other packages
+// to fail because @gravito/core was replaced with an incomplete stub.)
 
-// 模擬 @gravito/core 的 getArchiveAdapter 與 getRuntimeAdapter
 const mockArchiveCreate = jest.fn(async (_entries: Record<string, unknown>) => {
   return new TextEncoder().encode('mock-tar-gz-data')
 })
@@ -57,25 +60,18 @@ const mockRuntimeReadFile = jest.fn(async (filePath: string): Promise<Uint8Array
   return new TextEncoder().encode('fake-archive-binary')
 })
 
-mock.module('@gravito/core', () => ({
-  getArchiveAdapter: () => ({
-    create: mockArchiveCreate,
-    extract: jest.fn(async () => 0),
-    list: jest.fn(async () => new Map()),
-    readFile: mockArchiveReadFile,
-  }),
-  getRuntimeAdapter: () => ({
-    writeFile: mockRuntimeWriteFile,
-    readFile: mockRuntimeReadFile,
-  }),
-}))
+// Mock adapters passed via constructor (no module-level mocking needed)
+const mockArchiveAdapter = {
+  create: mockArchiveCreate,
+  extract: jest.fn(async () => 0),
+  list: jest.fn(async () => new Map()),
+  readFile: mockArchiveReadFile,
+}
 
-// Note: mock.module for node:fs/promises was removed because it leaked into other test files
-// in parallel test execution (compactor.test.ts, jsonl-logger.test.ts etc. all failed
-// with ENOENT because their mkdir calls were intercepted by the mock).
-// DatabaseBackupService only uses mkdir() from node:fs/promises for directory creation;
-// all actual file I/O goes through getRuntimeAdapter() which is mocked via @gravito/core above.
-// Using the real mkdir() with OS temp directories is safe and correct for these integration tests.
+const mockRuntimeAdapter = {
+  writeFile: mockRuntimeWriteFile,
+  readFile: mockRuntimeReadFile,
+}
 
 // ============ 測試主體 ============
 
@@ -131,7 +127,8 @@ describe('DatabaseBackupService', () => {
     tmpDir = path.join(os.tmpdir(), `atlas-backup-test-${randomUUID()}`)
     const backupPath = path.join(tmpDir, 'backup.tar.gz')
 
-    const service = new DatabaseBackupService('backup_test')
+    // Inject mock adapters via constructor (no module mocking needed)
+    const service = new DatabaseBackupService('backup_test', mockArchiveAdapter, mockRuntimeAdapter)
     const result = await service.backup(backupPath)
 
     expect(result.outputPath).toBe(backupPath)
@@ -147,7 +144,7 @@ describe('DatabaseBackupService', () => {
     await DB.connection('backup_test').table('users').delete()
     await DB.connection('backup_test').table('posts').delete()
 
-    const service = new DatabaseBackupService('backup_test')
+    const service = new DatabaseBackupService('backup_test', mockArchiveAdapter, mockRuntimeAdapter)
     await service.restore(backupPath)
 
     // 驗證資料已還原
@@ -160,7 +157,8 @@ describe('DatabaseBackupService', () => {
 
   it('T3: exportSchemaAsMigration - 生成 migration 檔案', async () => {
     const outputDir = path.join(tmpDir, 'migrations')
-    const service = new DatabaseBackupService('backup_test')
+    // T3 uses real FS for schema export (no archive/runtime mock needed)
+    const service = new DatabaseBackupService('backup_test', mockArchiveAdapter, mockRuntimeAdapter)
     const filePath = await service.exportSchemaAsMigration('initial', outputDir)
 
     expect(filePath).toContain(outputDir)
@@ -169,7 +167,7 @@ describe('DatabaseBackupService', () => {
 
   it('T4: 錯誤處理 - 無效備份檔案應拋出錯誤', async () => {
     const invalidPath = path.join(tmpDir, 'nonexistent.tar.gz')
-    const service = new DatabaseBackupService('backup_test')
+    const service = new DatabaseBackupService('backup_test', mockArchiveAdapter, mockRuntimeAdapter)
     await expect(service.restore(invalidPath)).rejects.toThrow()
   })
 })

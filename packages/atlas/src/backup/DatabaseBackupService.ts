@@ -94,10 +94,15 @@ interface BackupManifest {
  */
 export class DatabaseBackupService {
   private readonly archive: RuntimeArchiveAdapter
-  private readonly runtime = getRuntimeAdapter()
+  private readonly runtime: ReturnType<typeof getRuntimeAdapter>
 
-  constructor(private readonly connectionName?: string) {
-    this.archive = getArchiveAdapter()
+  constructor(
+    private readonly connectionName?: string,
+    archive?: RuntimeArchiveAdapter,
+    runtime?: ReturnType<typeof getRuntimeAdapter>
+  ) {
+    this.archive = archive ?? getArchiveAdapter()
+    this.runtime = runtime ?? getRuntimeAdapter()
   }
 
   /**
