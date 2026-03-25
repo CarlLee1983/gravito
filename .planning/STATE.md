@@ -4,12 +4,12 @@ milestone: v1.3.10
 milestone_name: milestone
 current_phase: 02
 status: executing
-last_updated: "2026-03-25T02:58:58.558Z"
+last_updated: "2026-03-25T12:35:00.000Z"
 progress:
   total_phases: 8
   completed_phases: 1
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State: Gravito-Core 健全性驗證
@@ -62,16 +62,38 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
   - Phase 1 Critical issues: CRIT-01 (photon dist), CRIT-02 (signal dist) — both FIXED ✓
   - Phase 2A Critical issues: Implicit atlas deps (3 packages) — FIXED ✓
   - **Remaining Critical issues: 0 (ZERO)**
-- **Phase 2B Status:** ⏳ Pending (not yet executed)
-- **Phase 3 Decision:** ✅ SKIP Phase 3 (preliminary) — contingent on Phase 2B results
-  - If Phase 2B discovers 0 new Critical issues: Skip Phase 3, proceed to Phase 4
-  - If Phase 2B discovers 1+ Critical issues: Activate Phase 3-02 serial fix execution
+- **Phase 2B: High-Priority Investigations** (✅ COMPLETE)
+
+- ✅ COMPLETE — 2026-03-25
+- **Task 1 (DONE):** Investigated orbit middleware isolation skipped tests → documented as known limitation
+- **Task 2 (DONE):** Investigated luminosity SEO route scanners → root cause identified (test infrastructure)
+- **Task 3 (DONE):** Investigated luminosity logging infrastructure → root cause identified (file operations)
+- **Task 4 (DONE):** Investigated scaffold code generators → root cause identified (path resolution)
+- **Task 5 (DONE):** Created comprehensive investigation reports (02-02-INVESTIGATIONS.md, 02-02-SUMMARY.md)
+- **Key Finding:** Most failures are TEST INFRASTRUCTURE issues, not production bugs
+- **Phase 3 Decision:** ✅ SKIP Phase 3 — 0 new Critical issues discovered
+  - Orbit routing: Known limitation, documented
+  - Other issues: Test infrastructure, deferred to Phase 2C
+  - Proceed to Phase 4 (Hono migration) or Phase 2C (backlog) per priority
+- **Health Score:** Phase 2B achieved ~88/100 (+3 from Phase 2A baseline of 85/100)
 - **Deliverables:**
   - CRITICAL_ISSUES_ASSESSMENT.md — Complete assessment with contingency notes
   - 03-01-SUMMARY.md — Execution summary and results
 - **Health Score:** Phase 2A achieved 85/100 (+7 from Phase 1 baseline of 78/100)
 
 ### Completed Work
+
+✅ **Phase 2B: High-Priority Investigations** (2026-03-25)
+
+- Task 1: Investigated orbit middleware isolation → documented as known limitation
+- Task 2: Investigated luminosity SEO route scanners → test infrastructure root cause identified
+- Task 3: Investigated luminosity logging infrastructure → file operations root cause identified
+- Task 4: Investigated scaffold code generators → path resolution root cause identified
+- Task 5: Created comprehensive investigation reports (02-02-INVESTIGATIONS.md, 02-02-SUMMARY.md)
+- Commit: 6c397e44 (document Orbit middleware isolation known limitation)
+- Key Finding: Phase 1 package assessment had errors; actual issues in luminosity not launchpad/monolith
+- Phase 3 Decision: SKIP (no new Critical issues discovered)
+- Health Score: ~88/100 (+3 from Phase 2A baseline)
 
 ✅ **Phase 2A: Decision Summary & Implicit Dependencies** (2026-03-25)
 
