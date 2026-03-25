@@ -5,7 +5,7 @@ import { ModuleGenerator } from '../src/tools/ModuleGenerator'
 import type { ModuleGenerationContext } from '../src/tools/ModuleGeneratorTypes'
 
 describe('ModuleGenerator', () => {
-  const testProjectDir = './test-module-gen-project'
+  const testProjectDir = path.join(import.meta.dir, '.tmp-module-gen-project')
   const modulesDir = path.join(testProjectDir, 'src', 'Modules')
 
   beforeEach(() => {
