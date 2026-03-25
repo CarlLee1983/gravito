@@ -5,7 +5,7 @@
  * 目標改進：10-15%
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import { BatchSubmitter, createBatchSubmitter } from '../../events/BatchSubmitter.js'
 import type { CacheEvent } from '../../events/types.js'
 import { CacheEventType, EventPriority, EventSource } from '../../events/types.js'

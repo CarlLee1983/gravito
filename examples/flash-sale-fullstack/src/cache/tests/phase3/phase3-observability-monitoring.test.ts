@@ -5,7 +5,7 @@
  * 支持生產環境的監控和告警
  */
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'bun:test'
 import { createAsyncEventPath } from '../../events/AsyncEventPath.js'
 import { createBatchSubmitter } from '../../events/BatchSubmitter.js'
 import { EventQueue } from '../../events/EventQueue.js'

@@ -6,7 +6,7 @@
  * 目標：確保 35-45% 性能改進在實際場景中可達成
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import { type AsyncEventPath, createAsyncEventPath } from '../../events/AsyncEventPath.js'
 import { type BatchSubmitter, createBatchSubmitter } from '../../events/BatchSubmitter.js'
 import { EventDeduplicator } from '../../events/EventDeduplicator.js'

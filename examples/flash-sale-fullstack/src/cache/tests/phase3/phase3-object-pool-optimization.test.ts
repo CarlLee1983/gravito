@@ -6,7 +6,7 @@
  * 預期測試數：15+ 個
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import { type CacheEventPool, createCacheEventPool } from '../../events/ObjectPool.js'
 
 describe('CacheEventPool', () => {

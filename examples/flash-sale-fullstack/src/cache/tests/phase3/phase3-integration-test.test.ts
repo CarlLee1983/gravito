@@ -4,7 +4,7 @@
  * 驗證對象池在實際事件聚合流程中的集成效果
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import { EventAggregator } from '../../events/EventAggregator.js'
 import { CacheEventType, createCacheEvent, EventSource } from '../../events/types.js'
 

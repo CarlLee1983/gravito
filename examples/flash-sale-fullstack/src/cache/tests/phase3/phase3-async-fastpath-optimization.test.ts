@@ -5,7 +5,7 @@
  * 目標改進：5-10%
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import { type AsyncEventPath, createAsyncEventPath } from '../../events/AsyncEventPath.js'
 import type { CacheEvent } from '../../events/types.js'
 import { CacheEventType, createCacheEvent, EventPriority } from '../../events/types.js'
