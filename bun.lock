@@ -713,7 +713,7 @@
     },
     "packages/atlas": {
       "name": "@gravito/atlas",
-      "version": "2.5.2",
+      "version": "2.5.3",
       "bin": {
         "orbit": "dist/cli.js",
       },
@@ -856,7 +856,7 @@
     },
     "packages/create-gravito-app": {
       "name": "create-gravito-app",
-      "version": "1.1.5",
+      "version": "1.1.6",
       "bin": {
         "create-gravito-app": "index.js",
       },
@@ -998,6 +998,7 @@
       "name": "@gravito/fortify",
       "version": "3.1.2",
       "dependencies": {
+        "@gravito/atlas": "workspace:*",
         "otplib": "^13.1.1",
         "qrcode": "^1.5.4",
       },
@@ -1074,11 +1075,12 @@
     },
     "packages/graphql": {
       "name": "@gravito/graphql",
-      "version": "1.1.2",
+      "version": "1.1.3",
       "dependencies": {
         "@envelop/depth-limit": "^7.1.0",
         "@envelop/response-cache": "^9.1.0",
         "@graphql-yoga/plugin-apq": "^3.18.0",
+        "@gravito/atlas": "workspace:*",
         "dataloader": "^2.2.3",
         "graphql": "^16.8.1",
         "graphql-complexity-validation": "^1.0.4",
@@ -1087,7 +1089,6 @@
         "graphql-yoga": "^5.1.1",
       },
       "devDependencies": {
-        "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
         "@types/node": "^20.11.0",
         "bun-types": "latest",
@@ -1101,7 +1102,7 @@
     },
     "packages/gravito": {
       "name": "gravito",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "bin": {
         "gravito": "bin/gravito.js",
       },
@@ -1334,7 +1335,7 @@
     },
     "packages/monolith": {
       "name": "@gravito/monolith",
-      "version": "3.2.2",
+      "version": "3.2.3",
       "dependencies": {
         "@gravito/mass": "^3.0.3",
         "@octokit/rest": "^22.0.1",
@@ -1405,7 +1406,7 @@
     },
     "packages/orbit-cloudflare": {
       "name": "@gravito/orbit-cloudflare",
-      "version": "1.0.4",
+      "version": "1.0.5",
       "devDependencies": {
         "@cloudflare/workers-types": "^4.20250109.0",
         "@gravito/core": "workspace:*",
@@ -1418,7 +1419,7 @@
     },
     "packages/photon": {
       "name": "@gravito/photon",
-      "version": "1.1.3",
+      "version": "1.1.4",
       "dependencies": {
         "@gravito/core": "^2.0.6",
         "cborg": "^4.3.2",
@@ -1453,7 +1454,7 @@
     },
     "packages/prism": {
       "name": "@gravito/prism",
-      "version": "3.1.2",
+      "version": "3.1.3",
       "devDependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/photon": "workspace:*",
@@ -1567,7 +1568,7 @@
     },
     "packages/ripple": {
       "name": "@gravito/ripple",
-      "version": "4.0.2",
+      "version": "4.0.3",
       "devDependencies": {
         "@gravito/core": "workspace:*",
         "@types/ws": "^8.18.1",
@@ -1595,7 +1596,7 @@
     },
     "packages/ripple-client": {
       "name": "@gravito/ripple-client",
-      "version": "4.0.0-alpha.2",
+      "version": "4.0.0-alpha.3",
       "devDependencies": {
         "@types/node": "latest",
         "@types/react": "^19.0.0",
@@ -1613,7 +1614,7 @@
     },
     "packages/scaffold": {
       "name": "@gravito/scaffold",
-      "version": "4.1.1",
+      "version": "4.1.2",
       "dependencies": {
         "handlebars": "^4.7.8",
       },
@@ -1690,8 +1691,10 @@
     "packages/spectrum": {
       "name": "@gravito/spectrum",
       "version": "3.0.3",
-      "devDependencies": {
+      "dependencies": {
         "@gravito/atlas": "workspace:*",
+      },
+      "devDependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/photon": "workspace:*",
         "@opentelemetry/api": "^1.9.0",
@@ -1718,7 +1721,7 @@
     },
     "packages/stasis": {
       "name": "@gravito/stasis",
-      "version": "3.2.3",
+      "version": "3.2.4",
       "devDependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/photon": "workspace:*",
@@ -1733,7 +1736,7 @@
     },
     "packages/stream": {
       "name": "@gravito/stream",
-      "version": "2.1.1",
+      "version": "2.1.2",
       "dependencies": {
         "@aws-sdk/client-sqs": "^3.955.0",
         "@gravito/atlas": "^2.5.2",
@@ -1754,7 +1757,7 @@
     },
     "packages/support-chat-widget": {
       "name": "@gravito/support-chat-widget",
-      "version": "0.2.3",
+      "version": "0.2.4",
       "dependencies": {
         "@gravito/ripple-client": "workspace:*",
         "clsx": "^2.1.1",
@@ -1791,7 +1794,7 @@
     },
     "packages/zenith": {
       "name": "@gravito/zenith",
-      "version": "1.1.5",
+      "version": "1.1.6",
       "bin": {
         "zenith": "dist/bin.js",
         "flux-console": "dist/bin.js",

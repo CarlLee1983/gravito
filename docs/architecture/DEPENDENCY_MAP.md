@@ -1,6 +1,6 @@
 # Gravito 模組依賴關係圖（代碼層級分析 v2）
 
-> 自動生成於：2026-03-07T06:48:17.245Z
+> 自動生成於：2026-03-24T14:29:18.243Z
 > 分析方式：Bun.Transpiler.scanImports()（代碼層級，相比 v1 更精確）
 
 ## 摘要統計
@@ -32,65 +32,65 @@ graph TB
   %% Gravito 模組依賴關係圖（代碼層級分析 v2）
 
   %% 節點定義
-  impulse["impulse<br/><small>v1.1.1</small>"]
-  flare["flare<br/><small>v4.0.1</small>"]
-  signal["signal<br/><small>v3.1.0</small>"]
-  launchpad-dashboard["launchpad-dashboard<br/><small>v0.1.1</small>"]
-  orbit-cloudflare["orbit-cloudflare<br/><small>v1.0.2</small>"]
-  scaffold["scaffold<br/><small>v4.0.0</small>"]
-  pulsar["pulsar<br/><small>v3.0.2</small>"]
-  atlas["atlas<br/><small>v2.0.0</small>"]
-  spectrum["spectrum<br/><small>v3.0.2</small>"]
-  quark["quark<br/><small>v1.0.0</small>"]
-  beam["beam<br/><small>v1.0.0</small>"]
-  photon["photon<br/><small>v1.1.0</small>"]
-  site["site<br/><small>v1.0.0-beta.1</small>"]
-  nebula-s3["nebula-s3<br/><small>v2.0.0</small>"]
-  radiance["radiance<br/><small>v1.0.4</small>"]
+  impulse["impulse<br/><small>v1.1.2</small>"]
+  flare["flare<br/><small>v4.0.2</small>"]
+  signal["signal<br/><small>v3.1.2</small>"]
+  launchpad-dashboard["launchpad-dashboard<br/><small>v0.1.2</small>"]
+  orbit-cloudflare["orbit-cloudflare<br/><small>v1.0.5</small>"]
+  scaffold["scaffold<br/><small>v4.1.2</small>"]
+  pulsar["pulsar<br/><small>v3.0.3</small>"]
+  atlas["atlas<br/><small>v2.5.3</small>"]
+  spectrum["spectrum<br/><small>v3.0.3</small>"]
+  quark["quark<br/><small>v1.0.2</small>"]
+  beam["beam<br/><small>v1.0.1</small>"]
+  photon["photon<br/><small>v1.1.4</small>"]
+  site["site<br/><small>v1.0.0-beta.2</small>"]
+  nebula-s3["nebula-s3<br/><small>v2.0.1</small>"]
+  radiance["radiance<br/><small>v1.0.5</small>"]
   luminosity-adapter-express["luminosity-adapter-express<br/><small>v1.0.2</small>"]
-  gravito["gravito<br/><small>v1.0.1</small>"]
-  graphql["graphql<br/><small>v1.1.1</small>"]
-  forge["forge<br/><small>v3.0.3</small>"]
-  luminosity-adapter-photon["luminosity-adapter-photon<br/><small>v1.0.2</small>"]
-  resilience["resilience<br/><small>v1.0.0</small>"]
-  impulse-bridge["impulse-bridge<br/><small>v2.0.1</small>"]
-  launchpad["launchpad<br/><small>v1.3.2</small>"]
-  ether["ether<br/><small>v1.0.0</small>"]
-  zenith["zenith<br/><small>v1.1.3</small>"]
+  gravito["gravito<br/><small>v1.0.4</small>"]
+  graphql["graphql<br/><small>v1.1.3</small>"]
+  forge["forge<br/><small>v3.0.4</small>"]
+  luminosity-adapter-photon["luminosity-adapter-photon<br/><small>v1.0.3</small>"]
+  resilience["resilience<br/><small>v1.0.2</small>"]
+  impulse-bridge["impulse-bridge<br/><small>v2.0.3</small>"]
+  launchpad["launchpad<br/><small>v1.3.4</small>"]
+  ether["ether<br/><small>v1.0.1</small>"]
+  zenith["zenith<br/><small>v1.1.6</small>"]
   freeze-vue["freeze-vue<br/><small>v1.0.0</small>"]
-  sentinel["sentinel<br/><small>v4.0.1</small>"]
-  freeze-react["freeze-react<br/><small>v1.0.0</small>"]
-  horizon["horizon<br/><small>v3.2.1</small>"]
-  pulse["pulse<br/><small>v3.3.1</small>"]
-  ripple["ripple<br/><small>v4.0.1</small>"]
-  xenon["xenon<br/><small>v1.0.0</small>"]
-  stasis["stasis<br/><small>v3.2.0</small>"]
-  nova["nova<br/><small>v1.0.0</small>"]
-  ion["ion<br/><small>v4.0.1</small>"]
-  cosmos["cosmos<br/><small>v3.2.1</small>"]
-  dark-matter["dark-matter<br/><small>v1.1.1</small>"]
-  prism["prism<br/><small>v3.1.1</small>"]
-  luminosity["luminosity<br/><small>v2.0.0</small>"]
-  quasar["quasar<br/><small>v1.3.0</small>"]
-  stream["stream<br/><small>v2.1.0</small>"]
-  constellation["constellation<br/><small>v3.1.1</small>"]
-  astral["astral<br/><small>v1.0.2</small>"]
-  nebula["nebula<br/><small>v4.1.1</small>"]
-  flux["flux<br/><small>v3.0.2</small>"]
-  enterprise["enterprise<br/><small>v1.0.4</small>"]
-  chromatic["chromatic<br/><small>v1.0.0</small>"]
-  fortify["fortify<br/><small>v3.1.1</small>"]
-  core["core<br/><small>v2.0.0</small>"]
-  monolith["monolith<br/><small>v3.2.1</small>"]
+  sentinel["sentinel<br/><small>v4.0.2</small>"]
+  freeze-react["freeze-react<br/><small>v1.0.1</small>"]
+  horizon["horizon<br/><small>v3.2.2</small>"]
+  pulse["pulse<br/><small>v3.4.2</small>"]
+  ripple["ripple<br/><small>v4.0.3</small>"]
+  xenon["xenon<br/><small>v1.0.1</small>"]
+  stasis["stasis<br/><small>v3.2.4</small>"]
+  nova["nova<br/><small>v1.0.2</small>"]
+  ion["ion<br/><small>v4.0.3</small>"]
+  cosmos["cosmos<br/><small>v3.2.2</small>"]
+  dark-matter["dark-matter<br/><small>v1.1.2</small>"]
+  prism["prism<br/><small>v3.1.3</small>"]
+  luminosity["luminosity<br/><small>v2.0.2</small>"]
+  quasar["quasar<br/><small>v1.3.2</small>"]
+  stream["stream<br/><small>v2.1.2</small>"]
+  constellation["constellation<br/><small>v3.1.3</small>"]
+  astral["astral<br/><small>v1.0.3</small>"]
+  nebula["nebula<br/><small>v4.1.3</small>"]
+  flux["flux<br/><small>v3.0.3</small>"]
+  enterprise["enterprise<br/><small>v1.0.6</small>"]
+  chromatic["chromatic<br/><small>v1.0.1</small>"]
+  fortify["fortify<br/><small>v3.1.2</small>"]
+  core["core<br/><small>v2.0.6</small>"]
+  monolith["monolith<br/><small>v3.2.3</small>"]
   luminosity-cli["luminosity-cli<br/><small>v1.0.2</small>"]
-  echo["echo<br/><small>v3.1.1</small>"]
-  freeze["freeze<br/><small>v1.0.0-beta.6</small>"]
-  create-gravito-app["create-gravito-app<br/><small>v1.1.3</small>"]
-  support-chat-widget["support-chat-widget<br/><small>v0.2.1</small>"]
-  monitor["monitor<br/><small>v3.1.1</small>"]
-  mass["mass<br/><small>v3.0.2</small>"]
-  ripple-client["ripple-client<br/><small>v4.0.0-alpha.1</small>"]
-  plasma["plasma<br/><small>v2.0.0</small>"]
+  echo["echo<br/><small>v3.1.2</small>"]
+  freeze["freeze<br/><small>v1.0.0-beta.8</small>"]
+  create-gravito-app["create-gravito-app<br/><small>v1.1.6</small>"]
+  support-chat-widget["support-chat-widget<br/><small>v0.2.4</small>"]
+  monitor["monitor<br/><small>v3.1.2</small>"]
+  mass["mass<br/><small>v3.0.3</small>"]
+  ripple-client["ripple-client<br/><small>v4.0.0-alpha.3</small>"]
+  plasma["plasma<br/><small>v2.0.3</small>"]
 
   %% 依賴關係
   impulse --> core
@@ -291,67 +291,67 @@ graph TB
 
 | 套件 | 版本 | 代碼依賴 | Peer | 可選 | 隱式 | 被依賴 | 掃描檔案 |
 |------|------|---------|------|------|------|--------|----------|
-| `@gravito/astral` | v1.0.2 | 1 | 0 | 0 | 0 | 0 | 10 |
-| `@gravito/atlas` | v2.0.0 | 1 | 0 | 0 | 0 | 6 | 124 |
-| `@gravito/beam` | v1.0.0 | 1 | 1 | 0 | 0 | 0 | 11 |
-| `@gravito/chromatic` | v1.0.0 | 0 | 0 | 0 | 0 | 1 | 13 |
-| `@gravito/constellation` | v3.1.1 | 2 | 1 | 0 | 0 | 0 | 29 |
-| `@gravito/core` | v2.0.0 | 0 | 0 | 0 | 0 | 26 | 161 |
-| `@gravito/cosmos` | v3.2.1 | 0 | 2 | 0 | 0 | 1 | 17 |
-| `@gravito/create-gravito-app` | v1.1.3 | 0 | 0 | 0 | 0 | 0 | 2 |
-| `@gravito/dark-matter` | v1.1.1 | 0 | 0 | 0 | 0 | 0 | 9 |
-| `@gravito/echo` | v3.1.1 | 0 | 1 | 0 | 0 | 0 | 44 |
-| `@gravito/enterprise` | v1.0.4 | 0 | 0 | 0 | 0 | 1 | 9 |
-| `@gravito/ether` | v1.0.0 | 0 | 1 | 0 | 0 | 0 | 17 |
-| `@gravito/flare` | v4.0.1 | 1 | 3 | 0 | 0 | 0 | 24 |
-| `@gravito/flux` | v3.0.2 | 1 | 1 | 0 | 0 | 0 | 41 |
-| `@gravito/forge` | v3.0.3 | 2 | 3 | 0 | 0 | 0 | 26 |
-| `@gravito/fortify` | v3.1.1 | 4 | 4 | 0 | **1** ⚠️ | 0 | 52 |
-| `@gravito/freeze` | v1.0.0-beta.6 | 0 | 0 | 0 | 0 | 2 | 8 |
-| `@gravito/freeze-react` | v1.0.0 | 2 | 0 | 0 | 0 | 0 | 5 |
+| `@gravito/astral` | v1.0.3 | 1 | 0 | 0 | 0 | 0 | 10 |
+| `@gravito/atlas` | v2.5.3 | 1 | 0 | 0 | 0 | 6 | 122 |
+| `@gravito/beam` | v1.0.1 | 1 | 1 | 0 | 0 | 0 | 11 |
+| `@gravito/chromatic` | v1.0.1 | 0 | 0 | 0 | 0 | 1 | 13 |
+| `@gravito/constellation` | v3.1.3 | 2 | 1 | 0 | 0 | 0 | 29 |
+| `@gravito/core` | v2.0.6 | 0 | 0 | 0 | 0 | 26 | 161 |
+| `@gravito/cosmos` | v3.2.2 | 0 | 2 | 0 | 0 | 1 | 17 |
+| `@gravito/create-gravito-app` | v1.1.6 | 0 | 0 | 0 | 0 | 0 | 2 |
+| `@gravito/dark-matter` | v1.1.2 | 0 | 0 | 0 | 0 | 0 | 9 |
+| `@gravito/echo` | v3.1.2 | 0 | 1 | 0 | 0 | 0 | 44 |
+| `@gravito/enterprise` | v1.0.6 | 0 | 0 | 0 | 0 | 1 | 9 |
+| `@gravito/ether` | v1.0.1 | 0 | 1 | 0 | 0 | 0 | 17 |
+| `@gravito/flare` | v4.0.2 | 1 | 3 | 0 | 0 | 0 | 24 |
+| `@gravito/flux` | v3.0.3 | 1 | 1 | 0 | 0 | 0 | 41 |
+| `@gravito/forge` | v3.0.4 | 2 | 3 | 0 | 0 | 0 | 26 |
+| `@gravito/fortify` | v3.1.2 | 4 | 4 | 0 | **1** ⚠️ | 0 | 52 |
+| `@gravito/freeze` | v1.0.0-beta.8 | 0 | 0 | 0 | 0 | 2 | 8 |
+| `@gravito/freeze-react` | v1.0.1 | 2 | 0 | 0 | 0 | 0 | 5 |
 | `@gravito/freeze-vue` | v1.0.0 | 1 | 0 | 0 | 0 | 0 | 3 |
-| `@gravito/graphql` | v1.1.1 | 1 | 1 | 0 | **1** ⚠️ | 0 | 23 |
-| `@gravito/gravito` | v1.0.1 | 0 | 0 | 0 | 0 | 0 | 0 |
-| `@gravito/horizon` | v3.2.1 | 1 | 2 | 0 | 0 | 0 | 14 |
-| `@gravito/impulse` | v1.1.1 | 1 | 1 | 0 | 0 | 0 | 23 |
-| `@gravito/impulse-bridge` | v2.0.1 | 0 | 2 | 0 | 0 | 0 | 1 |
-| `@gravito/ion` | v4.0.1 | 1 | 2 | 0 | 0 | 0 | 4 |
-| `@gravito/launchpad` | v1.3.2 | 5 | 0 | 0 | 0 | 0 | 18 |
-| `@gravito/launchpad-dashboard` | v0.1.1 | 1 | 0 | 0 | 0 | 0 | 4 |
-| `@gravito/luminosity` | v2.0.0 | 1 | 0 | 0 | 0 | 3 | 54 |
+| `@gravito/graphql` | v1.1.3 | 1 | 1 | 0 | **1** ⚠️ | 0 | 23 |
+| `@gravito/gravito` | v1.0.4 | 0 | 0 | 0 | 0 | 0 | 1 |
+| `@gravito/horizon` | v3.2.2 | 1 | 2 | 0 | 0 | 0 | 14 |
+| `@gravito/impulse` | v1.1.2 | 1 | 1 | 0 | 0 | 0 | 23 |
+| `@gravito/impulse-bridge` | v2.0.3 | 0 | 2 | 0 | 0 | 0 | 1 |
+| `@gravito/ion` | v4.0.3 | 1 | 2 | 0 | 0 | 0 | 4 |
+| `@gravito/launchpad` | v1.3.4 | 5 | 0 | 0 | 0 | 0 | 18 |
+| `@gravito/launchpad-dashboard` | v0.1.2 | 1 | 0 | 0 | 0 | 0 | 4 |
+| `@gravito/luminosity` | v2.0.2 | 1 | 0 | 0 | 0 | 3 | 54 |
 | `@gravito/luminosity-adapter-express` | v1.0.2 | 1 | 0 | 0 | 0 | 0 | 2 |
-| `@gravito/luminosity-adapter-photon` | v1.0.2 | 1 | 1 | 0 | 0 | 0 | 2 |
+| `@gravito/luminosity-adapter-photon` | v1.0.3 | 1 | 1 | 0 | 0 | 0 | 2 |
 | `@gravito/luminosity-cli` | v1.0.2 | 1 | 0 | 0 | 0 | 0 | 11 |
-| `@gravito/mass` | v3.0.2 | 0 | 1 | 0 | 0 | 1 | 8 |
-| `@gravito/monitor` | v3.1.1 | 0 | 2 | 0 | 0 | 0 | 15 |
-| `@gravito/monolith` | v3.2.1 | 2 | 1 | 0 | 0 | 1 | 11 |
-| `@gravito/nebula` | v4.1.1 | 1 | 1 | 0 | 0 | 0 | 8 |
-| `@gravito/nebula-s3` | v2.0.0 | 0 | 1 | 0 | 0 | 0 | 2 |
-| `@gravito/nova` | v1.0.0 | 0 | 2 | 0 | 0 | 2 | 10 |
-| `@gravito/orbit-cloudflare` | v1.0.2 | 0 | 1 | 0 | 0 | 0 | 1 |
-| `@gravito/photon` | v1.1.0 | 1 | 0 | 0 | 0 | 4 | 39 |
-| `@gravito/plasma` | v2.0.0 | 0 | 0 | 0 | 0 | 2 | 17 |
-| `@gravito/prism` | v3.1.1 | 1 | 2 | 0 | 0 | 1 | 24 |
-| `@gravito/pulsar` | v3.0.2 | 2 | 2 | 0 | 0 | 0 | 7 |
-| `@gravito/pulse` | v3.3.1 | 4 | 1 | 0 | **1** ⚠️ | 0 | 21 |
-| `@gravito/quark` | v1.0.0 | 1 | 1 | 0 | 0 | 0 | 7 |
-| `@gravito/quasar` | v1.3.0 | 1 | 0 | 0 | 0 | 1 | 90 |
-| `@gravito/radiance` | v1.0.4 | 0 | 0 | 0 | 0 | 0 | 9 |
-| `@gravito/resilience` | v1.0.0 | 1 | 1 | 0 | 0 | 0 | 37 |
-| `@gravito/ripple` | v4.0.1 | 0 | 1 | 0 | 0 | 1 | 39 |
-| `@gravito/ripple-client` | v4.0.0-alpha.1 | 0 | 0 | 0 | 0 | 2 | 8 |
-| `@gravito/scaffold` | v4.0.0 | 0 | 1 | 0 | 0 | 1 | 27 |
-| `@gravito/sentinel` | v4.0.1 | 2 | 2 | 0 | 0 | 1 | 27 |
-| `@gravito/signal` | v3.1.0 | 2 | 3 | 0 | 0 | 1 | 34 |
-| `@gravito/site` | v1.0.0-beta.1 | 3 | 0 | 0 | 0 | 0 | 1 |
-| `@gravito/spectrum` | v3.0.2 | 2 | 2 | 0 | **1** ⚠️ | 0 | 6 |
-| `@gravito/stasis` | v3.2.0 | 2 | 2 | 0 | 0 | 1 | 18 |
-| `@gravito/stream` | v2.1.0 | 2 | 0 | 0 | 0 | 3 | 74 |
-| `@gravito/support-chat-widget` | v0.2.1 | 1 | 0 | 0 | 0 | 0 | 29 |
-| `@gravito/xenon` | v1.0.0 | 0 | 0 | 0 | 0 | 0 | 12 |
-| `@gravito/zenith` | v1.1.3 | 4 | 0 | 0 | 0 | 0 | 38 |
+| `@gravito/mass` | v3.0.3 | 0 | 1 | 0 | 0 | 1 | 8 |
+| `@gravito/monitor` | v3.1.2 | 0 | 2 | 0 | 0 | 0 | 15 |
+| `@gravito/monolith` | v3.2.3 | 2 | 1 | 0 | 0 | 1 | 11 |
+| `@gravito/nebula` | v4.1.3 | 1 | 1 | 0 | 0 | 0 | 8 |
+| `@gravito/nebula-s3` | v2.0.1 | 0 | 1 | 0 | 0 | 0 | 2 |
+| `@gravito/nova` | v1.0.2 | 0 | 2 | 0 | 0 | 2 | 10 |
+| `@gravito/orbit-cloudflare` | v1.0.5 | 0 | 1 | 0 | 0 | 0 | 1 |
+| `@gravito/photon` | v1.1.4 | 1 | 0 | 0 | 0 | 4 | 39 |
+| `@gravito/plasma` | v2.0.3 | 0 | 0 | 0 | 0 | 2 | 16 |
+| `@gravito/prism` | v3.1.3 | 1 | 2 | 0 | 0 | 1 | 24 |
+| `@gravito/pulsar` | v3.0.3 | 2 | 2 | 0 | 0 | 0 | 7 |
+| `@gravito/pulse` | v3.4.2 | 4 | 1 | 0 | **1** ⚠️ | 0 | 22 |
+| `@gravito/quark` | v1.0.2 | 1 | 1 | 0 | 0 | 0 | 7 |
+| `@gravito/quasar` | v1.3.2 | 1 | 0 | 0 | 0 | 1 | 90 |
+| `@gravito/radiance` | v1.0.5 | 0 | 0 | 0 | 0 | 0 | 9 |
+| `@gravito/resilience` | v1.0.2 | 1 | 1 | 0 | 0 | 0 | 37 |
+| `@gravito/ripple` | v4.0.3 | 0 | 1 | 0 | 0 | 1 | 39 |
+| `@gravito/ripple-client` | v4.0.0-alpha.3 | 0 | 0 | 0 | 0 | 2 | 8 |
+| `@gravito/scaffold` | v4.1.2 | 0 | 1 | 0 | 0 | 1 | 33 |
+| `@gravito/sentinel` | v4.0.2 | 2 | 2 | 0 | 0 | 1 | 27 |
+| `@gravito/signal` | v3.1.2 | 2 | 3 | 0 | 0 | 1 | 34 |
+| `@gravito/site` | v1.0.0-beta.2 | 3 | 0 | 0 | 0 | 0 | 1 |
+| `@gravito/spectrum` | v3.0.3 | 2 | 2 | 0 | **1** ⚠️ | 0 | 6 |
+| `@gravito/stasis` | v3.2.4 | 2 | 2 | 0 | 0 | 1 | 18 |
+| `@gravito/stream` | v2.1.2 | 2 | 0 | 0 | 0 | 3 | 74 |
+| `@gravito/support-chat-widget` | v0.2.4 | 1 | 0 | 0 | 0 | 0 | 30 |
+| `@gravito/xenon` | v1.0.1 | 0 | 0 | 0 | 0 | 0 | 12 |
+| `@gravito/zenith` | v1.1.6 | 4 | 0 | 0 | 0 | 0 | 38 |
 
 ---
 
 *此文件由 `scripts/generate-dependency-graph.ts` v2 自動生成（代碼層級分析）*
-*最後更新：2026-03-07T06:48:17.246Z*
+*最後更新：2026-03-24T14:29:18.244Z*

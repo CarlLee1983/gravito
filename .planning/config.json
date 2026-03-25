@@ -2,7 +2,9 @@
   "project_name": "gravito-core-health-check",
   "project_type": "verification",
   "description": "快速掃描驗證 gravito-core 60 個包的健全性",
-  "workflow": "gsd",
+  "workflow": {
+    "_auto_chain_active": false
+  },
   "mode": "YOLO",
   "commit_docs": true,
   "default_model": "sonnet",
