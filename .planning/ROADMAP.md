@@ -10,10 +10,11 @@
 驗證 gravito-core 60 個包的健全性。快速掃描建立基線，為後續決策（Hono Phase 4-5、修復優先級）奠定基礎。
 
 ```
-[Phase 1: 快速掃描] → [Phase 2: 結果評估] → [Decision Point]
-                                            ├─→ Phase 2B: 修復 High Issues
-                                            ├─→ Phase 2C: 後續規劃
-                                            └─→ Phase 3+: Hono 遷移 / 衛星驗證
+[Phase 1: 快速掃描] → [Phase 2A: Critical Fixes] → [Phase 3 Decision Gate]
+                                                  ├─→ Phase 3: Fix Critical (if needed)
+                                                  ├─→ Phase 2B: 修復 High Issues
+                                                  ├─→ Phase 2C: 後續規劃
+                                                  └─→ Phase 4+: Hono 遷移 / 衛星驗證
 ```
 
 ---
@@ -94,21 +95,85 @@ Medium/Low priority issues deferred to future:
 
 ---
 
-## Future Phases (Post-Phase 2 Decision)
+## Phase 3: Fix Critical Issues (IF Needed) - CONDITIONAL
 
-根據 Phase 2 結果，決定後續優先級：
+**Status:** 🎯 Planning Complete (2026-03-25) — Awaiting execution trigger
 
-### Phase 3: Continue Hono Migration Phase 4-5 (CONDITIONAL)
+**Condition:** Activates ONLY if Critical issues remain after Phase 2B completion
 
-**Condition:** Phase 2B complete and test baseline ≥90/100 health score
+**Plans:**
+- `03-01-PLAN.md` — Critical issues assessment & decision gate (Wave 1)
+- `03-02-PLAN.md` — Serial fix execution for Critical issues (Wave 1, conditional)
 
-**Scope:** Execute remaining Hono Phase 4-5 dependency removal (if Phase 2B succeeds)
+### Scope
 
-### Phase 4: Satellite Verification (OPTIONAL)
+- ✅ Assess all Critical priority issues from Phase 1 & Phase 2B
+- ✅ If 0 Critical issues: SKIP Phase 3, proceed directly to Phase 4
+- ✅ If 1+ Critical issues: Execute serial fixes with full verification gates
+- ❌ NOT included: High/Medium/Low priority issues (Phase 4+)
+
+### Timeline (IF ACTIVATED)
+
+| Activity | Duration |
+|----------|----------|
+| 03-01: Decision gate | 1 hour |
+| 03-02: Fix execution | 45 min × N issues |
+| Total (if needed) | 2-3 days |
+
+### Success Criteria
+
+- [ ] All Phase 1 & Phase 2B Critical issues identified and catalogued
+- [ ] Each Critical issue receives serial fix attempt (one at a time)
+- [ ] Every fix verified: Full test suite + typecheck (per D-02)
+- [ ] No new test failures from any fix (regression gate per D-04)
+- [ ] FIXES_VERIFIED.md generated with final status
+- [ ] Health score improved (78/100 → target ≥90/100)
+
+### Key Decisions (from 03-CONTEXT.md)
+
+- **D-01:** Fix by impact scope (widest first)
+- **D-02:** Full verification after each fix (no shortcuts)
+- **D-03:** Fix ALL Critical issues (no deferral)
+- **D-04:** Rollback if regression detected
+- **D-05:** Serial execution (one at a time, no parallel)
+- **D-06:** Document each fix with root cause
+- **D-07:** Serial with Phase 4 (don't overlap planning)
+- **D-08:** Claude discretion on specific fix approach
+
+### Decision Gate Logic
+
+```
+IF (Critical issues remaining after Phase 2B) = 0
+  → SKIP Phase 3
+  → Proceed to Phase 4 planning
+ELSE
+  → EXECUTE Phase 3-01 (assessment)
+  → EXECUTE Phase 3-02 (serial fixes)
+  → GENERATE FIXES_VERIFIED.md
+  → PROCEED to Phase 4 planning
+```
+
+---
+
+## Future Phases (Post-Phase 3 Decision)
+
+根據 Phase 3 結果（或跳過 Phase 3），決定後續優先級：
+
+### Phase 4: Continue with High-Priority Issues or Hono Migration (CONDITIONAL)
+
+**Condition:** Phase 3 complete (or skipped if no Critical issues)
+
+**Options:**
+1. **Phase 4A (If Phase 2B found High issues):** Continue High-priority fixes (launchpad, monolith, scaffold)
+2. **Phase 4B (If Phase 2B complete or deferred):** Begin Hono Phase 4-5 migration planning
+
+**Scope:** Execute remaining work based on Phase 2B/3 decisions
+
+### Phase 5: Satellite Verification (OPTIONAL)
 
 **Scope:** Full validation of Satellite modules (RBAC, Catalog, Commerce)
 
-### Phase 5: Full Audit (OPTIONAL)
+### Phase 6: Full Audit (OPTIONAL)
 
 **Scope:** Performance, documentation, security audit (if resources permit)
 
@@ -120,9 +185,10 @@ Medium/Low priority issues deferred to future:
 |-------|----------|--------|------------|
 | 1. 快速掃描 | 1-2 days | ✅ Complete | 2026-03-24 |
 | 2A. Critical Fixes | 4 hours | ✅ Complete | 2026-03-25 |
+| 3. Critical Issues (if needed) | 2-3 days | 🎯 Planned | TBD (conditional) |
 | 2B. High Fixes | 1-2 weeks | ⏳ Planned | TBD |
 | 2C. Backlog | Deferred | ⏳ Deferred | TBD |
-| 3+. Hono/Satellites | TBD | 🎯 Conditional | TBD |
+| 4+. Hono/Satellites | TBD | 🎯 Conditional | TBD |
 
 ---
 
@@ -130,13 +196,13 @@ Medium/Low priority issues deferred to future:
 
 驗證工作的成功指標：
 
-| 指標 | Phase 1 Baseline | Phase 2A Result | Phase 2B Target | 說明 |
-|------|-----------------|----------------|-----------------|------|
-| 測試通過率 | 96.9% (11,556/11,925) | 97.0% (11,656/11,925) | ≥99% (11,750+/11,925) | Phase 2A improved; Phase 2B target: ≤20 failures (env-only) |
-| 失敗測試數 | 162 failures | 163 failures | ≤20 failures | Minimal increase in Phase 2A; major reduction in Phase 2B |
+| 指標 | Phase 1 Baseline | Phase 2A Result | Phase 3 Target | 說明 |
+|------|-----------------|----------------|----------------|------|
+| 測試通過率 | 96.9% (11,556/11,925) | 97.0% (11,656/11,925) | ≥99% (11,750+/11,925) | Phase 2A improved; Phase 3 target: fix Critical issues |
+| 失敗測試數 | 162 failures | 163 failures | ≤20 failures | Phase 2A neutral; Phase 3 should reduce (if issues fixed) |
 | 類型檢查錯誤 | 0 (83/83 pkgs) | 0 (83/83 pkgs) | 0 (maintain) | TypeScript strict mode maintained |
 | 循環依賴 | 0 | 0 | 0 (maintain) | No new circular dependencies introduced |
-| Health Score | 78/100 | ~85/100 | ≥90/100 | Phase 2A: +7 pts; Phase 2B: +5 pts target |
+| Health Score | 78/100 | ~85/100 | ≥90/100 | Phase 2A: +7 pts; Phase 3: +5-10 pts target |
 | 隱式依賴 | 4 packages | 0 packages | 0 | Fixed in Phase 2A (3 actual packages) |
 
 ---
@@ -148,27 +214,42 @@ Medium/Low priority issues deferred to future:
 - ✓ 項目上下文（PROJECT.md）
 - ✓ 需求定義（REQUIREMENTS.md）
 - ✓ Phase 1 掃描 & 初步修復
+- ✓ Phase 2A execution (Critical fixes)
+- ✓ Phase 3 planning (contingent plans)
 
 **假設：**
 - Bun、npm、Git 已安裝並可用
 - 當前環境可執行測試和編譯
 - 無環境變數或密鑰問題
+- Phase 2B will complete before Phase 3 execution
 
 **風險：**
 - Phase 2B 調查可能需要深度架構分析（middleware 隔離、異步上下文）
 - 某些失敗可能需要設計變更（非單純 bug 修復）
+- Phase 3 Critical issues (if any) may require complex fixes
 
 ---
 
 ## Decision Gates
 
-**Before Phase 2B:** Confirm Phase 2A complete (dist bundles working, implicit deps fixed)
+**After Phase 2A (✅ PASSED):**
+- Confirm Phase 2A complete (dist bundles working, implicit deps fixed)
+- Health score improved (78/100 → 85/100)
 
-**Before Phase 3:** Confirm Phase 2B complete (health score ≥90/100) OR explicit decision to defer High issues
+**Before Phase 3 Execution (TBD):**
+- Assess all Critical issues from Phase 1 & Phase 2B (03-01 task)
+- Decide: Skip Phase 3 (0 Critical) OR Proceed (1+ Critical)
 
-**Before Hono Phase 4-5:** Must complete Phase 2A + Phase 2B (stable baseline required)
+**Before Phase 4 Planning (TBD):**
+- Must complete Phase 3 (if activated) OR confirm skip decision
+- Generate FIXES_VERIFIED.md or confirm zero Critical issues
+- Stable baseline (≥85/100 health score)
+
+**Before Hono Phase 4-5 (D-07 decision):**
+- Must complete Phase 3 fully (or skip decision confirmed)
+- Phase 4 planning deferred until Phase 3 gate closes
 
 ---
 
-**Last updated:** 2026-03-24 after Phase 2 planning
-**Next review:** After Phase 2A execution completion
+**Last updated:** 2026-03-25 after Phase 3 planning
+**Next review:** When Phase 3-01 decision gate executes (after Phase 2B or explicit trigger)
