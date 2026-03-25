@@ -72,6 +72,7 @@
     "directory": "packages/fortify"
   },
   "dependencies": {
+    "@gravito/atlas": "workspace:*",
     "otplib": "^13.1.1",
     "qrcode": "^1.5.4"
   }

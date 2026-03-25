@@ -40,6 +40,9 @@
     "@gravito/core": "^2.0.0",
     "@gravito/photon": "^1.1.0"
   },
+  "dependencies": {
+    "@gravito/atlas": "workspace:*"
+  },
   "devDependencies": {
     "bun-types": "latest",
     "@opentelemetry/api": "^1.9.0",
@@ -48,7 +51,6 @@
     "@opentelemetry/resources": "^1.29.0",
     "@opentelemetry/semantic-conventions": "^1.28.0",
     "@gravito/core": "workspace:*",
-    "@gravito/atlas": "workspace:*",
     "@gravito/photon": "workspace:*",
     "@types/node": "latest",
     "tsup": "^8.0.0",
