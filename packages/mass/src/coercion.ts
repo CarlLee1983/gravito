@@ -2,7 +2,6 @@ import type { GravitoContext, GravitoMiddleware } from '@gravito/core'
 import type { Static, TBoolean, TInteger, TNumber, TSchema } from '@sinclair/typebox'
 import { Type } from '@sinclair/typebox'
 import { Value } from '@sinclair/typebox/value'
-import type { Context as HonoContext } from 'hono'
 
 /**
  * String to Number Coercion Helper.
@@ -300,34 +299,34 @@ export function validateWithCoercion<T extends TSchema>(
   hook?: (result: unknown, c: GravitoContext) => Response | Promise<Response> | undefined
 ): GravitoMiddleware {
   return async (ctx: GravitoContext, next) => {
-    // Handle both Hono native context and Gravito wrapped context
-    const honoCtx = (ctx.native || ctx) as HonoContext
+    // Use GravitoContext directly
+    const nativeCtx = ctx as GravitoContext
     let data: unknown
 
     switch (source) {
       case 'json':
         try {
-          data = await honoCtx.req.json()
+          data = await nativeCtx.req.json()
         } catch (_error) {
           const errorRes = await hook?.({ success: false }, ctx)
-          return errorRes || honoCtx.json({ error: 'Invalid JSON' }, 400)
+          return errorRes || nativeCtx.json({ error: 'Invalid JSON' }, 400)
         }
         break
 
       case 'query':
-        data = honoCtx.req.query()
+        data = nativeCtx.req.queries()
         break
 
       case 'param':
-        data = honoCtx.req.param()
+        data = nativeCtx.req.params()
         break
 
       case 'form':
         try {
-          data = await honoCtx.req.parseBody()
+          data = await nativeCtx.req.parseBody()
         } catch (_error) {
           const errorRes = await hook?.({ success: false }, ctx)
-          return errorRes || honoCtx.json({ error: 'Invalid form data' }, 400)
+          return errorRes || nativeCtx.json({ error: 'Invalid form data' }, 400)
         }
         break
 
@@ -347,14 +346,14 @@ export function validateWithCoercion<T extends TSchema>(
       const errors = Array.from(Value.Errors(schema, data))
       const result = { success: false, errors }
       const errorRes = await hook?.(result, ctx)
-      return errorRes || honoCtx.json({ error: 'Validation failed' }, 400)
+      return errorRes || nativeCtx.json({ error: 'Validation failed' }, 400)
     }
 
     // Store validated data in context
     const validated = data as Static<T>
 
     // Use Hono's native request.valid() method to store validated data
-    ;(honoCtx.req as any).valid = (target: string) => {
+    ;(nativeCtx.req as any).valid = (target: string) => {
       if (target === source) {
         return validated
       }
