@@ -2,21 +2,21 @@
 gsd_state_version: 1.0
 milestone: v1.3.10
 milestone_name: milestone
-current_phase: 05 (Phase 5: Satellite Verification - COMPLETE)
-status: phase_5_complete
-last_updated: "2026-03-26T13:30:00.000Z"
+current_phase: 04B-5
+status: executing
+last_updated: "2026-03-26T12:27:10Z"
 progress:
-  total_phases: 10
-  completed_phases: 5
-  total_plans: 16
-  completed_plans: 16
+  total_phases: 13
+  completed_phases: 7
+  total_plans: 22
+  completed_plans: 23
 ---
 
 # Project State: Gravito-Core 健全性驗證
 
 **Project:** Gravito-Core 健全性驗證
-**Status:** Phase 5 in Progress — Satellite Verification Audits
-**Current Phase:** 05 (Phase 5: Satellite Verification)
+**Status:** Executing Phase 04B-5
+**Current Phase:** 04B-5
 **Last Updated:** 2026-03-26 (Phase 5-01 RBAC fix and audit complete)
 
 ## Project Reference
@@ -25,7 +25,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 
 **Core Value:** 確保 gravito-core 框架的核心穩定性 — 所有包都能通過測試、編譯無誤、無循環依賴
 
-**Current Focus:** Phase 4B planning complete — Hono Migration roadmap and Phase 4B-1 execution plan ready
+**Current Focus:** Phase 04B-5 — RPC Client Strategy
 
 ---
 
@@ -501,3 +501,20 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
   - **Summary:** `.planning/phases/04B-4-platform-adapter-decision/04B-4-02-SUMMARY.md`
 
 - **Status:** Ready for Phase 4B-3 (Hono native engine implementation)
+
+**Phase 4B-5: RPC Client Strategy** (✅ PLAN 01 COMPLETE — 2026-03-26)
+
+- **Plan 04B-5-01 (DONE):** Formalize RPC client deprecation strategy
+  - ✅ COMPLETE — 2026-03-26 — 12:23-12:27 UTC (3 minutes)
+  - Updated client.ts: @deprecated v2.0 with Removal target: v3.0 per D-05
+  - Narrowed export from `export *` to `export { hc }` (only what beam needs)
+  - Added hono@^4.12.0 as optional peerDependency per D-06
+  - Auto-fixed: exports test updated to verify hc-only export + removed unused import
+  - **Verification:**
+    - ✅ Photon tests: 288/288 pass, 0 fail
+    - ✅ Beam tests: 163/163 pass, 0 fail
+    - ✅ TypeCheck: 83/83 packages pass, 0 errors
+    - ✅ Health baseline: 93/100 maintained
+  - **Commits:** 945d9c1f (client.ts JSDoc), bbcef90f (package.json peerDep), 5e2285df (test fix), 13f03ad0 (unused import)
+  - **Summary:** `.planning/phases/04B-5-rpc-client-strategy/04B-5-01-SUMMARY.md`
+  - **Decisions:** Narrow client.ts to export { hc } only; add hono as optional peerDependency
