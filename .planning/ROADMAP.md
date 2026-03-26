@@ -391,3 +391,38 @@ Plans:
 ---
 
 **Phase 4B-4 through 4B-6:** Planning deferred pending Phase 4B-3 execution completion
+
+### Phase 4B-4: Platform Adapter Decision (✅ PLANNING COMPLETE)
+
+**Status:** 📋 PLANNING COMPLETE — 2026-03-26
+
+**Goal:** Add @deprecated notices to optional Cloudflare/Deno/Vercel platform adapter sub-paths targeting v2.0 deprecation and v3.0 removal
+
+**Plans:** 2 plans created
+- [x] 04B-4-01-PLAN.md — Refine @deprecated JSDoc in three adapter modules (cloudflare, deno, vercel)
+- [x] 04B-4-02-PLAN.md — Verify adapter exports, add tests, validate health baseline
+
+**Decisions Locked:**
+- **D-04:** Keep adapters as @deprecated optional sub-paths (not removing, not replacing natively) (LOCKED)
+- **D-05:** Update package.json exports with explicit sub-path entries (LOCKED)
+
+**Wave Structure:**
+- Wave 1: 04B-4-01 (refine adapter JSDoc) — independent, no dependencies
+- Wave 2: 04B-4-02 (verify exports, add tests) — depends on 04B-4-01
+
+**Expected Timeline:** 1 day execution
+
+**Scope:**
+1. **Cloudflare adapter:** Add @deprecated v2.0 with v3.0 removal target to cloudflare.ts JSDoc
+2. **Deno adapter:** Add @deprecated v2.0 with v3.0 removal target to deno.ts JSDoc
+3. **Vercel adapter:** Add @deprecated v2.0 with v3.0 removal target to vercel.ts JSDoc
+4. **Tests:** Add comprehensive sub-path export tests to exports.test.ts
+5. **Verification:** Full typecheck and test suite verification
+
+**Baseline:** Health 93/100 | 99.7% test pass | 0 TypeScript errors
+
+**Key Insight:** Adapters already exist in source with partial @deprecated notices. Phase 4B-4 refines them to match locked deprecation strategy (D-04, D-05). Package.json exports already configured with sub-path entries. This is a refinement phase, not a creation phase.
+
+---
+
+**Phase 4B-5 onwards:** Planning deferred pending Phase 4B-4 execution completion
