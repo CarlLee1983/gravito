@@ -334,3 +334,60 @@ Plans:
 
 **Last updated:** 2026-03-26 after Phase 4B planning complete
 **Next review:** When Phase 4B-1 execution begins
+
+### Phase 4B-2: JWT Native Implementation (✅ EXECUTION COMPLETE)
+
+**Status:** ✅ COMPLETE — 2026-03-26
+
+**Goal:** Replace hono/jwt with native JWT middleware using jose library
+
+**Plan:** 04B-2-01-PLAN.md
+
+**Completion Results:**
+- ✅ Fixed 2 TypeScript errors in exports.test.ts (unused Hono import, missing GravitoContext type)
+- ✅ Converted trie-router.ts to type-only stub
+- ✅ Marked verifyWithJwks as @deprecated
+- ✅ Updated cross-package sentinel JWT verify calls (3-param → 2-param)
+
+**Timeline:** ~8 minutes execution
+
+**Verification:**
+- TypeCheck: 0 errors (83/83 packages) ✅
+- Photon tests: 284/284 pass ✅
+- Health: 93/100 maintained ✅
+
+**Deliverables:** 04B-2-01-SUMMARY.md, 4 commits (0de149a8, a3ba5095, 72e436cd, ceaa1bb3)
+
+**Baseline:** Health 93/100 | 99.7% test pass | 0 TypeScript errors
+
+### Phase 4B-3: External Package Type Cleanup (⏳ PLANNING COMPLETE)
+
+**Status:** 📋 PLANNING COMPLETE — 2026-03-26
+
+**Goal:** Eliminate type-only Hono references from @gravito/mass, @gravito/beam, and @gravito/zenith packages
+
+**Plans:** 3 plans created
+- [ ] 04B-3-01-PLAN.md — @gravito/mass HonoContext → GravitoContext replacement
+- [ ] 04B-3-02-PLAN.md — @gravito/beam RPC type system assessment (keep as type-only per D-02)
+- [ ] 04B-3-03-PLAN.md — @gravito/zenith Hono dependency verification and removal
+
+**Decisions Locked:**
+- **D-01:** Replace HonoContext with GravitoContext in mass/coercion.ts (LOCKED)
+- **D-02:** Keep hono/client as type-only peerDependency in @gravito/photon (LOCKED)
+- **D-03:** Verify zenith Hono usage and remove if unused (LOCKED)
+
+**Wave Structure:**
+- Wave 1: All 3 plans parallel (no dependencies, independent packages)
+
+**Expected Timeline:** 0.5 week execution (2-3 days)
+
+**Scope:**
+1. **mass:** Replace HonoContext type import with GravitoContext (validateWithCoercion middleware)
+2. **beam:** Document Hono usage as type-only, add @deprecated JSDoc targeting v3.0
+3. **zenith:** Audit source for Hono imports, remove unused dependency from package.json
+
+**Baseline:** Health 93/100 | 99.7% test pass | 0 TypeScript errors
+
+---
+
+**Phase 4B-4 through 4B-6:** Planning deferred pending Phase 4B-3 execution completion
