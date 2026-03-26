@@ -1,0 +1,22 @@
+{
+  "production": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
+  "all_dependencies": {
+    "critical": 1,
+    "high": 20,
+    "medium": 15,
+    "low": 3
+  },
+  "remediation_status": "No production critical vulnerabilities",
+  "timestamp": "2026-03-26T14:41:44.977Z",
+  "scanner": "bun audit v1.3.10",
+  "details": {
+    "all_packages_audited": 14,
+    "production_affected_packages": 5,
+    "note": "Production classification based on direct usage in @gravito core packages"
+  }
+}

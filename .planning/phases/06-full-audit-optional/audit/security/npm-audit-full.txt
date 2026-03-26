@@ -1,0 +1,133 @@
+[0m[1mbun audit [0m[2mv1.3.10 (30e609e0)[0m
+tar  <7.5.7
+  workspace:@gravito/pulse › giget
+  workspace:@gravito/example-rest-api › bcrypt
+  high: node-tar Vulnerable to Arbitrary File Creation/Overwrite via Hardlink Path Traversal - https://github.com/advisories/GHSA-34x7-hfp2-rc4v
+  high: node-tar is Vulnerable to Arbitrary File Overwrite and Symlink Poisoning via Insufficient Path Sanitization - https://github.com/advisories/GHSA-8qq5-rm4j-mr97
+  high: Arbitrary File Read/Write via Hardlink Target Escape Through Symlink Chain in node-tar Extraction - https://github.com/advisories/GHSA-83g3-92jg-28cx
+  high: tar has Hardlink Path Traversal via Drive-Relative Linkpath - https://github.com/advisories/GHSA-qffp-2rhf-9h96
+  high: node-tar Symlink Path Traversal via Drive-Relative Linkpath - https://github.com/advisories/GHSA-9ppj-qmqm-q256
+  high: Race Condition in node-tar Path Reservations via Unicode Ligature Collisions on macOS APFS - https://github.com/advisories/GHSA-r6q2-hw4h-h46w
+
+svelte  >=5.53.0 <5.53.5
+  workspace:my-gravito-static-site › svelte
+  workspace:my-gravito-static-site › @inertiajs/svelte
+  workspace:my-gravito-static-site › @sveltejs/vite-plugin-svelte
+  workspace:my-gravito-static-site › @testing-library/svelte
+  workspace:my-gravito-static-site › svelte-check
+  moderate: Svelte: XSS via HTML Comment Injection in SSR Error Boundary Hydration Markers - https://github.com/advisories/GHSA-qgvg-pr8v-6rr3
+  moderate: Svelte vulnerable to XSS during SSR with contenteditable `bind:innerText` and `bind:textContent` - https://github.com/advisories/GHSA-phwv-c562-gvmh
+
+html-minifier  <=4.0.0
+  mjml › mjml-core › html-minifier
+  high: kangax html-minifier REDoS vulnerability - https://github.com/advisories/GHSA-pfq8-rq6v-vf5m
+
+happy-dom  <20.0.0
+  workspace:@gravito/support-chat-widget › happy-dom
+  workspace:@gravito/example-rest-api › vitest
+  critical: Happy DOM: VM Context Escape can lead to Remote Code Execution - https://github.com/advisories/GHSA-37j7-fg3j-429f
+
+minimatch  >=9.0.0 <9.0.6
+  workspace:@gravito/atlas › typedoc
+  workspace:atlas-site › vue-tsc
+  mjml › mjml-cli › glob › minimatch
+  workspace:@gravito/support-chat-widget › @vitest/coverage-v8
+  workspace:@gravito/example-rest-api › bcrypt
+  workspace:my-gravito-static-site › svelte-check
+  high: minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern - https://github.com/advisories/GHSA-3ppc-4f35-3m26
+  high: minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments - https://github.com/advisories/GHSA-7r86-cg39-jmmj
+  high: minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments - https://github.com/advisories/GHSA-7r86-cg39-jmmj
+  high: minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions - https://github.com/advisories/GHSA-23c5-xmqv-rm74
+  high: minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions - https://github.com/advisories/GHSA-23c5-xmqv-rm74
+  high: minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions - https://github.com/advisories/GHSA-23c5-xmqv-rm74
+
+mjml  <=4.18.0
+  (direct dependency)
+  moderate: MJML allows mj-include directory traversal due to an incomplete fix for CVE-2020-12827 - https://github.com/advisories/GHSA-45h5-66jx-r2wf
+
+yaml  >=2.0.0 <2.8.3
+  (direct dependency)
+  workspace:@gravito/atlas › typedoc
+  workspace:atlas-site › vite
+  workspace:@gravito-examples/flash-sale-fullstack › @opentelemetry/sdk-node
+  workspace:@gravito/photon › @hono/zod-openapi
+  workspace:atlas-site › tailwindcss
+  workspace:@gravito/astral › tsup
+  workspace:my-gravito-static-site › svelte-check
+  moderate: yaml is vulnerable to Stack Overflow via deeply nested YAML collections - https://github.com/advisories/GHSA-48c2-rrv3-qjmp
+
+flatted  <3.4.0
+  workspace:my-gravito-static-site › @vitest/ui
+  high: flatted vulnerable to unbounded recursion DoS in parse() revive phase - https://github.com/advisories/GHSA-25h7-pfq9-p65f
+  high: Prototype Pollution via parse() in NodeJS flatted - https://github.com/advisories/GHSA-rf6f-7fwh-wjgh
+
+hono  <4.12.4
+  (direct dependency)
+  workspace:route-scanner-test › hono
+  workspace:@gravito/photon › hono
+  workspace:@gravito/photon › @hono/zod-openapi
+  moderate: Hono Vulnerable to Cookie Attribute Injection via Unsanitized domain and path in setCookie() - https://github.com/advisories/GHSA-5pq2-9x2x-5p6w
+  moderate: Hono Vulnerable to SSE Control Field Injection via CR/LF in writeSSE() - https://github.com/advisories/GHSA-p6xx-57qc-3wxr
+  high: Hono vulnerable to arbitrary file access via serveStatic vulnerability  - https://github.com/advisories/GHSA-q5qw-h33p-qvwr
+  moderate: Hono vulnerable to Prototype Pollution possible through __proto__ key allowed in parseBody({ dot: true }) - https://github.com/advisories/GHSA-v8w9-8mx6-g223
+
+esbuild  <=0.24.2
+  workspace:@gravito/astral › tsup
+  workspace:atlas-site › vite
+  moderate: esbuild enables any website to send any requests to the development server and read the response - https://github.com/advisories/GHSA-67mh-4wv8-2f99
+
+@tootallnate/once  <3.0.1
+  workspace:my-gravito-static-site › jsdom
+  workspace:@gravito/constellation › @google-cloud/storage
+  low: @tootallnate/once vulnerable to Incorrect Control Flow Scoping - https://github.com/advisories/GHSA-vpq2-c234-7xj6
+
+elysia  <1.4.26
+  (direct dependency)
+  high: Elysia has a string URL format ReDoS - https://github.com/advisories/GHSA-f45g-68q3-5w8x
+  moderate: Elysia Cookie Value Prototype Pollution - https://github.com/advisories/GHSA-8hq9-phh3-p2wp
+
+fast-xml-parser  >=5.0.0 <5.3.8
+  workspace:@gravito/constellation › @google-cloud/storage
+  workspace:@gravito/constellation › @aws-sdk/client-s3
+  workspace:@gravito/signal › @aws-sdk/client-ses
+  workspace:@gravito/flare › @aws-sdk/client-sns
+  workspace:@gravito/quasar › @aws-sdk/client-sqs
+  low: fast-xml-parser has stack overflow in XMLBuilder with preserveOrder - https://github.com/advisories/GHSA-fj3w-jwp8-x2g3
+  high: fast-xml-parser affected by numeric entity expansion bypassing all entity expansion limits (incomplete fix for CVE-2026-26278) - https://github.com/advisories/GHSA-8gc5-j5rx-235r
+  moderate: Entity Expansion Limits Bypassed When Set to Zero Due to JavaScript Falsy Evaluation in fast-xml-parser - https://github.com/advisories/GHSA-jp2q-39xq-3w4g
+
+file-type  >=13.0.0 <21.3.1
+  elysia › file-type
+  moderate: file-type affected by infinite loop in ASF parser on malformed input with zero-size sub-header - https://github.com/advisories/GHSA-5v7r-6r5c-r473
+  moderate: file-type: ZIP Decompression Bomb DoS via [Content_Types].xml entry - https://github.com/advisories/GHSA-j47w-4g3g-c36v
+
+devalue  <5.6.4
+  workspace:my-gravito-static-site › svelte
+  moderate: devalue has prototype pollution in devalue.parse and devalue.unflatten - https://github.com/advisories/GHSA-cfw5-2vxh-hr84
+  low: Sveltejs devalue's `devalue.parse` and `devalue.unflatten` emit objects with `__proto__` own properties - https://github.com/advisories/GHSA-mwv9-gp5h-frr4
+
+picomatch  <2.3.2
+  @envelop/rate-limiter › picomatch
+  workspace:atlas-site › vite
+  workspace:@gravito/example-rest-api › vitest
+  workspace:@gravito/atlas › jscodeshift
+  workspace:atlas-site › tailwindcss
+  workspace:my-gravito-static-site › @vitest/ui
+  workspace:@gravito/astral › tsup
+  workspace:example-ecommerce-mvc › unocss
+  workspace:my-gravito-static-site › svelte-check
+  workspace:image-verification-example › @changesets/cli
+  mjml › mjml-cli › chokidar › readdirp › picomatch
+  moderate: Picomatch: Method Injection in POSIX Character Classes causes incorrect Glob Matching - https://github.com/advisories/GHSA-3v7f-55p6-f55p
+  moderate: Picomatch: Method Injection in POSIX Character Classes causes incorrect Glob Matching - https://github.com/advisories/GHSA-3v7f-55p6-f55p
+  high: Picomatch has a ReDoS vulnerability via extglob quantifiers - https://github.com/advisories/GHSA-c2c7-rcm5-vvqj
+  high: Picomatch has a ReDoS vulnerability via extglob quantifiers - https://github.com/advisories/GHSA-c2c7-rcm5-vvqj
+
+39 vulnerabilities (1 critical, 20 high, 15 moderate, 3 low)
+
+To update all dependencies to the latest compatible versions:
+  bun update
+
+To update all dependencies to the latest versions (including breaking changes):
+  bun update --latest
+

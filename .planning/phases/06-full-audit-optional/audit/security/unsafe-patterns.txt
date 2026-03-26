@@ -1,0 +1,175 @@
+Unsafe Pattern Scan - 2026-03-26
+
+=== eval() Usage ===
+
+eval() usage in production code:
+Found in production code:
+packages/plasma/dist/clients/BunRedisClient.d.ts:120:    eval(script: string, numKeys: number, ...args: string[]): Promise<unknown>;
+packages/plasma/dist/types/index.d.ts:416:    eval(script: string, numKeys: number, ...args: string[]): Promise<unknown>;
+packages/plasma/dist/index.js:1140:  async eval(script, numKeys, ...args) {
+packages/plasma/dist/index.js:1456:        return await this.client.eval(script.lua, numKeys, ...keys, ...args);
+packages/plasma/dist/index.js:2271:  static async eval(script, numKeys, ...args) {
+packages/plasma/dist/index.js:2272:    return await manager.getDefault().eval(script, numKeys, ...args);
+packages/plasma/dist/Redis.d.ts:480:    static eval(script: string, numKeys: number, ...args: string[]): Promise<unknown>;
+packages/plasma/src/clients/BunRedisClient.ts:642:  async eval(script: string, numKeys: number, ...args: string[]): Promise<unknown> {
+packages/plasma/src/types/index.ts:461:  eval(script: string, numKeys: number, ...args: string[]): Promise<unknown>
+packages/plasma/src/ScriptRegistry.ts:122:        return await this.client.eval(script.lua, numKeys, ...keys, ...args)
+packages/plasma/src/Redis.ts:747:  static async eval(script: string, numKeys: number, ...args: string[]): Promise<unknown> {
+packages/plasma/src/Redis.ts:748:    return await manager.getDefault().eval(script, numKeys, ...args)
+packages/core/dist/compat/async-local-storage.js:58:          return eval("require")("node:async_hooks").AsyncLocalStorage;
+packages/core/dist/compat/crypto.js:54:      return eval("require")("node:crypto");
+packages/core/dist/index.browser.js:58:          return eval("require")("node:async_hooks").AsyncLocalStorage;
+packages/core/dist/index.browser.js:97:      return eval("require")("node:crypto");
+packages/core/dist/index.browser.js:2863:  const fs = await eval('import("node:fs/promises")');
+packages/core/dist/index.browser.js:2864:  const path = await eval('import("node:path")');
+packages/core/dist/index.browser.js:2901:      const pathMod = await eval('import("node:path")');
+packages/core/dist/index.browser.js:2910:  const fs = await eval('import("node:fs/promises")');
+packages/core/dist/index.browser.js:6499:        cpuCores = Math.max(1, eval("require")("node:os").cpus().length);
+packages/core/dist/index.js:1459:          return eval("require")("node:async_hooks").AsyncLocalStorage;
+packages/core/dist/index.js:1498:      return eval("require")("node:crypto");
+packages/core/dist/index.js:4923:  const fs = await eval('import("node:fs/promises")');
+packages/core/dist/index.js:4924:  const path = await eval('import("node:path")');
+packages/core/dist/index.js:4961:      const pathMod = await eval('import("node:path")');
+packages/core/dist/index.js:4970:  const fs = await eval('import("node:fs/promises")');
+packages/core/dist/index.js:12747:        cpuCores = Math.max(1, eval("require")("node:os").cpus().length);
+packages/core/node_modules/@types/node/vm.d.ts:542:     * the JavaScript [`eval()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval) function to run the same code:
+packages/core/node_modules/@types/node/vm.d.ts:552:     * const evalResult = eval('localVar = "eval";');
+packages/core/node_modules/@types/node/vm.d.ts:558:     * [`eval()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval) _does_ have access to the
+packages/core/node_modules/@types/node/vm.d.ts:559:     * local scope, so the value `localVar` is changed. In this way `vm.runInThisContext()` is much like an [indirect `eval()` call](https://es5.github.io/#x10.4.2), e.g.`(0,eval)('code')`.
+packages/core/node_modules/@types/node/repl.d.ts:40:         * **Default:** an async wrapper for the JavaScript `eval()` function. An `eval` function can
+packages/core/node_modules/@types/node/repl.d.ts:222:         * for the JavaScript `eval()` function.
+packages/core/src/compat/crypto.ts:17:      return eval('require')('node:crypto')
+packages/core/src/compat/async-local-storage.ts:24:          return eval('require')('node:async_hooks').AsyncLocalStorage
+packages/core/src/runtime/archive.ts:167:  const fs = await eval('import("node:fs/promises")')
+packages/core/src/runtime/archive.ts:169:  const path = await eval('import("node:path")')
+packages/core/src/runtime/archive.ts:224:      const pathMod = await eval('import("node:path")')
+packages/core/src/runtime/archive.ts:236:  const fs = await eval('import("node:fs/promises")')
+packages/core/src/events/WorkerPool.ts:60:        cpuCores = Math.max(1, eval('require')('node:os').cpus().length)
+packages/flux/dist/index.node.d.ts:294:    eval(script: string, keys: string[], args: (string | number)[]): Promise<unknown>;
+packages/flux/dist/chunk-M2ZRQRF4.js:3329:    const result = await this.client.eval(REFRESH_LOCK_SCRIPT, [key], [owner, effectiveTtl]);
+packages/flux/dist/chunk-M2ZRQRF4.js:3352:    const result = await this.client.eval(RELEASE_LOCK_SCRIPT, [key], [owner]);
+packages/flux/src/core/RedisLockProvider.ts:47:  eval(script: string, keys: string[], args: (string | number)[]): Promise<unknown>
+packages/flux/src/core/RedisLockProvider.ts:190:    const result = await this.client.eval(REFRESH_LOCK_SCRIPT, [key], [owner, effectiveTtl])
+packages/flux/src/core/RedisLockProvider.ts:216:    const result = await this.client.eval(RELEASE_LOCK_SCRIPT, [key], [owner])
+packages/constellation/dist/index.js:2057:      await this.options.client.eval(script, 1, key, this.lockId);
+packages/constellation/dist/index.d.ts:1608:    eval(script: string, numKeys: number, ...args: string[]): Promise<number>;
+packages/constellation/src/locks/RedisLock.ts:40:  eval(script: string, numKeys: number, ...args: string[]): Promise<number>
+packages/constellation/src/locks/RedisLock.ts:441:      await this.options.client.eval(script, 1, key, this.lockId)
+packages/stream/dist/drivers/RedisDriver.d.ts:32:    eval(script: string, numKeys: number, ...args: (string | number)[]): Promise<unknown>;
+packages/stream/src/locks/DistributedLock.ts:200:      await this.client.eval(script, 1, key, this.lockId)
+packages/stream/src/locks/DistributedLock.ts:241:        const result = await this.client.eval(script, 1, key, this.lockId, ttlSeconds)
+packages/stream/src/drivers/RedisDriver.d.ts:28:    eval(script: string, numKeys: number, ...args: (string | number)[]): Promise<any>;
+packages/stream/src/drivers/RedisDriver.ts:32:  eval(script: string, numKeys: number, ...args: (string | number)[]): Promise<unknown>
+packages/stream/src/drivers/RedisDriver.ts:594:      const result = await this.client.eval(script, keys.length, ...keys, Date.now().toString())
+packages/quasar/dist/index.js:2007:        await this.redis.eval(script, 1, this.lockKey, this.nodeId);
+packages/quasar/src/utils/LeaderElection.ts:123:        await this.redis.eval(script, 1, this.lockKey, this.nodeId)
+packages/stasis/dist/index.js:1481:    const result = await client.eval(luaScript, 1, normalized, "tag:");
+packages/stasis/dist/index.js:1527:    await client.eval(luaScript, 1, taggedKey, "tag:");
+packages/stasis/dist/index.js:1577:        await evalClient.eval(luaScript, 1, lockKey, owner);
+packages/stasis/dist/index.js:1589:        const result = await evalClient.eval(luaScript, 1, lockKey, owner, extensionSeconds.toString());
+packages/stasis/src/stores/RedisStore.ts:150:      eval(script: string, numKeys: number, ...args: string[]): Promise<number>
+packages/stasis/src/stores/RedisStore.ts:153:    const result = await client.eval(luaScript, 1, normalized, 'tag:')
+packages/stasis/src/stores/RedisStore.ts:224:      eval(script: string, numKeys: number, ...args: string[]): Promise<number>
+packages/stasis/src/stores/RedisStore.ts:227:    await client.eval(luaScript, 1, taggedKey, 'tag:')
+packages/stasis/src/stores/RedisStore.ts:300:          eval(script: string, numKeys: number, ...args: string[]): Promise<number>
+packages/stasis/src/stores/RedisStore.ts:303:        await evalClient.eval(luaScript, 1, lockKey, owner)
+packages/stasis/src/stores/RedisStore.ts:317:          eval(script: string, numKeys: number, ...args: string[]): Promise<number>
+packages/stasis/src/stores/RedisStore.ts:320:        const result = await evalClient.eval(
+packages/cli/dist/index.js:1940:  const fs = await eval('import("node:fs/promises")');
+packages/cli/dist/index.js:1941:  const path = await eval('import("node:path")');
+packages/cli/dist/index.js:1978:      const pathMod = await eval('import("node:path")');
+packages/cli/dist/index.js:1987:  const fs = await eval('import("node:fs/promises")');
+packages/cli/dist/index.js:26654:      ctorRegistry["%AsyncIteratorPrototype%"] = Object.getPrototypeOf(Object.getPrototypeOf(globalObject.eval("(async function* () {})").prototype));
+packages/zenith/dist/bin.js:17426:      ctorRegistry["%AsyncIteratorPrototype%"] = Object.getPrototypeOf(Object.getPrototypeOf(globalObject.eval("(async function* () {})").prototype));
+packages/zenith/dist/bin.js:79354:      var mod = eval("quire".replace(/^/, "re"))(moduleName);
+packages/zenith/dist/bin.js:86494:      const result = await this.client.eval(script, keys.length, ...keys, Date.now().toString());
+packages/zenith/dist/bin.js:124022:      await this.client.eval(script, 1, key, this.lockId);
+packages/zenith/dist/bin.js:124048:        const result = await this.client.eval(script, 1, key, this.lockId, ttlSeconds);
+packages/zenith/dist/bin.js:141997:        await this.redis.eval(script, 1, this.lockKey, this.nodeId);
+packages/zenith/dist/bin.js:144513:    const movedCount = await this.redis.eval(script, 2, delayKey, key);
+packages/zenith/dist/bin.js:144639:    const result = await this.redis.eval(script, 2, delayKey, key, jobRaw);
+packages/zenith/dist/server/index.js:17425:      ctorRegistry["%AsyncIteratorPrototype%"] = Object.getPrototypeOf(Object.getPrototypeOf(globalObject.eval("(async function* () {})").prototype));
+packages/zenith/dist/server/index.js:79353:      var mod = eval("quire".replace(/^/, "re"))(moduleName);
+packages/zenith/dist/server/index.js:86493:      const result = await this.client.eval(script, keys.length, ...keys, Date.now().toString());
+packages/zenith/dist/server/index.js:124021:      await this.client.eval(script, 1, key, this.lockId);
+packages/zenith/dist/server/index.js:124047:        const result = await this.client.eval(script, 1, key, this.lockId, ttlSeconds);
+packages/zenith/dist/server/index.js:141996:        await this.redis.eval(script, 1, this.lockKey, this.nodeId);
+packages/zenith/dist/server/index.js:144512:    const movedCount = await this.redis.eval(script, 2, delayKey, key);
+packages/zenith/dist/server/index.js:144638:    const result = await this.redis.eval(script, 2, delayKey, key, jobRaw);
+packages/zenith/src/server/services/QueueService.ts:311:    const movedCount = (await this.redis.eval(script, 2, delayKey, key)) as number
+packages/zenith/src/server/services/QueueService.ts:539:    const result = await this.redis.eval(script, 2, delayKey, key, jobRaw)
+packages/photon/dist/middleware/ratelimit-redis.d.ts:10:    eval(script: string, numKeys: number, ...args: (string | number)[]): Promise<unknown[]>;
+packages/photon/dist/middleware/ratelimit-redis.d.ts:70:     * @param client - Redis client instance (must support .eval(), compatible with ioredis or node-redis)
+packages/photon/dist/chunk-vb17gga4.js:13:      throw new Error("Redis client must support eval() method");
+packages/photon/dist/chunk-vb17gga4.js:31:    const result = await this.client.eval(luaScript, 1, fullKey, this.config.windowMs);
+packages/photon/dist/chunk-vb17gga4.js:33:      throw new Error("Redis client eval() returned an unexpected result");
+packages/photon/.tsc-temp/middleware/ratelimit-redis.d.ts:10:    eval(script: string, numKeys: number, ...args: (string | number)[]): Promise<unknown[]>;
+packages/photon/.tsc-temp/middleware/ratelimit-redis.d.ts:65:     * @param client - Redis client instance (must support .eval(), compatible with ioredis or node-redis)
+packages/photon/src/middleware/ratelimit-redis.ts:11:  eval(script: string, numKeys: number, ...args: (string | number)[]): Promise<unknown[]>
+packages/photon/src/middleware/ratelimit-redis.ts:86:   * @param client - Redis client instance (must support .eval(), compatible with ioredis or node-redis)
+packages/photon/src/middleware/ratelimit-redis.ts:100:      throw new Error('Redis client must support eval() method')
+packages/photon/src/middleware/ratelimit-redis.ts:125:    const result = await this.client.eval(luaScript, 1, fullKey, this.config.windowMs)
+packages/photon/src/middleware/ratelimit-redis.ts:127:      throw new Error('Redis client eval() returned an unexpected result')
+
+eval() usage in test/build files:
+Count: 6
+(Acceptable in test files)
+
+=== Function() Constructor Usage ===
+
+Found in production code:
+packages/monolith/signal/src/index.js:30140:    let templateFn = new Function(`return ${template}`)();
+packages/monolith/signal/src/index.js:32678:    return /Function(?:Expression|Declaration)$|Method$/.test(node.type);
+packages/monolith/signal/src/index.js:37605:      return new Function(`return (${exp.content})`)();
+packages/monolith/signal/src/index.js:48631:    const render = new Function("Vue", code)(runtimeDom__namespace);
+packages/monolith/signal/src/index.js:50263:    return compileCache[cacheKey] = Function("require", code)(fakeRequire);
+packages/monolith/signal/src/index.js:50775:    const render = new Function("Vue", code)(runtimeDom__namespace);
+packages/stream/src/workers/bun-job-executor.ts:175:  const fn = new Function(`return (${source})`)()
+packages/stream/src/workers/job-executor.ts:159:  const fn = new Function(`return (${source})`)()
+packages/cosmos/signal/src/index.js:30140:    let templateFn = new Function(`return ${template}`)();
+packages/cosmos/signal/src/index.js:32678:    return /Function(?:Expression|Declaration)$|Method$/.test(node.type);
+packages/cosmos/signal/src/index.js:37605:      return new Function(`return (${exp.content})`)();
+packages/cosmos/signal/src/index.js:48631:    const render = new Function("Vue", code)(runtimeDom__namespace);
+packages/cosmos/signal/src/index.js:50263:    return compileCache[cacheKey] = Function("require", code)(fakeRequire);
+packages/cosmos/signal/src/index.js:50775:    const render = new Function("Vue", code)(runtimeDom__namespace);
+packages/cli/signal/src/index.js:30140:    let templateFn = new Function(`return ${template}`)();
+packages/cli/signal/src/index.js:32678:    return /Function(?:Expression|Declaration)$|Method$/.test(node.type);
+packages/cli/signal/src/index.js:37605:      return new Function(`return (${exp.content})`)();
+packages/cli/signal/src/index.js:48631:    const render = new Function("Vue", code)(runtimeDom__namespace);
+packages/cli/signal/src/index.js:50263:    return compileCache[cacheKey] = Function("require", code)(fakeRequire);
+packages/cli/signal/src/index.js:50775:    const render = new Function("Vue", code)(runtimeDom__namespace);
+packages/zenith/dist/bin.js:80286:        return Function(source)();
+packages/zenith/dist/bin.js:137907:  new Function("");
+packages/zenith/dist/bin.js:138343:      let readObject2 = structure.read = new Function("r", "return function(){return " + (currentUnpackr.freezeData ? "Object.freeze" : "") + "({" + structure.map((key) => key === "__proto__" ? "__proto_:r()" : validName.test(key) ? key + ":r()" : "[" + JSON.stringify(key) + "]:r()").join(",") + "})}")(read);
+packages/zenith/dist/bin.js:140056:  new Function("");
+packages/zenith/dist/bin.js:140680:      let toObject = new Function(...args, "var c=this;return function(s){var o=new c();" + objectLiteralProperties.join(";") + ";return o;}").apply(fullConstruct, properties.map((prop) => prop.get));
+packages/zenith/dist/server/index.js:80285:        return Function(source)();
+packages/zenith/dist/server/index.js:137906:  new Function("");
+packages/zenith/dist/server/index.js:138342:      let readObject2 = structure.read = new Function("r", "return function(){return " + (currentUnpackr.freezeData ? "Object.freeze" : "") + "({" + structure.map((key) => key === "__proto__" ? "__proto_:r()" : validName.test(key) ? key + ":r()" : "[" + JSON.stringify(key) + "]:r()").join(",") + "})}")(read);
+packages/zenith/dist/server/index.js:140055:  new Function("");
+packages/zenith/dist/server/index.js:140679:      let toObject = new Function(...args, "var c=this;return function(s){var o=new c();" + objectLiteralProperties.join(";") + ";return o;}").apply(fullConstruct, properties.map((prop) => prop.get));
+packages/graphql/dist/index.js:1572:    var root = freeGlobal || freeSelf || Function("return this")();
+packages/site/signal/src/index.js:30140:    let templateFn = new Function(`return ${template}`)();
+packages/site/signal/src/index.js:32678:    return /Function(?:Expression|Declaration)$|Method$/.test(node.type);
+packages/site/signal/src/index.js:37605:      return new Function(`return (${exp.content})`)();
+packages/site/signal/src/index.js:48631:    const render = new Function("Vue", code)(runtimeDom__namespace);
+packages/site/signal/src/index.js:50263:    return compileCache[cacheKey] = Function("require", code)(fakeRequire);
+packages/site/signal/src/index.js:50775:    const render = new Function("Vue", code)(runtimeDom__namespace);
+packages/atlas/dist/cli.js:11531:        const result = await new Function("Atlas", `return ${script}`)(exports_src);
+packages/atlas/src/commands/TinkerCommand.ts:36:        const result = await new Function('Atlas', `return ${script}`)(Atlas)
+packages/signal/dist/index.js:513:    var root = freeGlobal || freeSelf || Function("return this")();
+
+Function() constructor in test/build files:
+None found
+
+=== Other Unsafe Patterns ===
+
+Dynamic code execution: None found
+Serialized object evaluation: None found
+
+Overall Assessment: FAIL (production code contains eval/Function)
+
+Recommendations:
+- Avoid eval and Function() in production code
+- Use safer alternatives: JSON.parse, function factories, module imports
+- Use in test files is acceptable but should be minimized
