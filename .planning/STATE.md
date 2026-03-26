@@ -17,7 +17,7 @@ progress:
 **Project:** Gravito-Core 健全性驗證
 **Status:** Phase 5 in Progress — Satellite Verification Audits
 **Current Phase:** 05 (Phase 5: Satellite Verification)
-**Last Updated:** 2026-03-26 (Phase 5-03 Commerce audit complete)
+**Last Updated:** 2026-03-26 (Phase 5-01 RBAC fix and audit complete)
 
 ## Project Reference
 
@@ -126,6 +126,24 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 - **Commits:** 0de149a8, a3ba5095, 72e436cd, ceaa1bb3
 - **Summary:** `.planning/phases/04B-2-jwt-native-implementation/04B-2-01-SUMMARY.md`
 - **Status:** Ready for Phase 4B-3
+
+**Phase 5-01: RBAC Satellite Fix & Five-Dimension Audit** (✅ EXECUTION COMPLETE — 2026-03-26)
+
+- ✅ COMPLETE — 2026-03-26 — ~45 minutes
+- **Plan 05-01-01 (DONE):** RBAC ServiceProvider test fix (6 failing tests → all passing)
+  1. Fixed container parameter passing in RbacServiceProvider.test.ts (6 call sites)
+  2. Added MockContainer.bind() method to match production interface
+  3. Fixed ServiceProvider lifecycle: `new RbacServiceProvider()` + `setCore(core)`
+- **Plan 05-01-02 (DONE):** RBAC five-dimension audit completed
+  1. **Dimension 1 - Test Coverage:** GREEN (110/110 pass, 27 test files, 100% pass rate)
+  2. **Dimension 2 - Integration Health:** GREEN (0 circular deps, 0 cross-satellite imports)
+  3. **Dimension 3 - Type Safety:** YELLOW (0 errors, acceptable IoC patterns with `any`)
+  4. **Dimension 4 - API Stability:** GREEN (stable v0.1.0 pre-release)
+  5. **Dimension 5 - Hono Readiness:** GREEN (zero Hono/photon imports, full GravitoContext abstraction)
+- **Verification:** ✅ All 110 tests pass, 0 type errors, health baseline (93/100) maintained
+- **Commits:** acde550 (test fix), 111d7c05 (SUMMARY.md)
+- **Summary:** `.planning/phases/05-satellite-verification/05-01-SUMMARY.md`
+- **Status:** Ready for Phase 5-02 (Catalog audit)
 
 ---
 
