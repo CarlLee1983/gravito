@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.3.10
-milestone_name: Framework Stabilization & Hono Migration
-current_phase: 06
-status: archived
-last_updated: "2026-03-26T15:45:00.000Z"
+milestone: v1.4.0
+milestone_name: Documentation Enhancement — JSDoc Coverage
+current_phase: 00
+status: planning
+last_updated: "2026-03-27T10:00:00.000Z"
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 32
-  completed_plans: 32
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State: Gravito-Core 健全性驗證

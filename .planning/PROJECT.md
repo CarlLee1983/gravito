@@ -120,27 +120,48 @@
 
 ---
 
-## Next Milestone: v1.4.0 (PLANNING)
+## Milestone: v1.4.0 (ACTIVE)
 
-**Status:** 📋 Ready to start
+**Status:** 📋 **PLANNING** — 2026-03-27
+**Duration:** 1 week (2026-03-27 to 2026-04-02)
+**Focus:** JSDoc Coverage Enhancement
 
-### Recommended Priorities (from v1.3.10 audit)
+### Scope
 
-1. **Documentation Enhancement** (Priority 1 — 8 hours)
-   - Improve JSDoc coverage in Core + Signal packages → target 90%
-   - Core currently at 27% (gap: 11 undocumented exports)
-   - Signal currently at 60% (gap: ~5 undocumented exports)
+**Primary Goal:** Improve JSDoc documentation coverage in Core + Signal packages
 
-2. **Security Pattern Documentation** (Priority 2)
-   - Document unsafe patterns (eval, Function usage)
-   - Justify continued usage vs. deprecation timeline
+| Package | Baseline | Target | Gap | Status |
+|---------|----------|--------|-----|--------|
+| **Core** | 27% | 90%+ | 11 exports | 🔄 Planning |
+| **Signal** | 60% | 90%+ | ~5 exports | 🔄 Planning |
+| **Photon** | 100% | 100% | — | ✅ Benchmark |
 
-3. **Bundle Optimization** (Priority 3 — Optional)
-   - Long-duration performance testing
-   - Optional size optimizations
+### Phase Timeline
 
-**To start v1.4.0:** Use `/gsd:new-milestone v1.4.0`
+- **Phase 1** (3 days): Core package JSDoc coverage (27% → 90%+)
+- **Phase 2** (2 days): Signal package JSDoc coverage (60% → 90%+)
+- **Phase 3** (1 day): Verification & quality audit
+
+**Requirements:** `.planning/REQUIREMENTS.md`
+**Roadmap:** `.planning/ROADMAP.md`
+
+### Why This Focus (from v1.3.10 audit)
+
+✅ **Highest impact improvement** for developer experience
+✅ **Clear measurement criteria** (JSDoc coverage tool)
+✅ **No framework changes** (documentation-only)
+✅ **Realistic 1-week timeline** (8-10 hours work)
+✅ **Unblocks next priorities:** Obsidian vault, API reference generation
+
+### Deferred to v1.5.0
+- Security pattern documentation (Priority 2 from v1.3.10)
+- Obsidian vault setup
+- Example improvements
+- API reference generation
+- Bundle optimization (Optional)
+
+**To start Phase 1:** Use `/gsd:plan-phase 1`
 
 ---
 
-*Last updated: 2026-03-26 (milestone completion & archival)*
+*Last updated: 2026-03-27 (v1.4.0 planning initialized)*
