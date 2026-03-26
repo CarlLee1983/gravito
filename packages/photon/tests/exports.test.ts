@@ -47,8 +47,10 @@ describe('photon exports', () => {
   })
 
   it('re-exports hono router helpers', () => {
-    expect(keys(regExpRouterExports)).toEqual(keys(honoRegExpRouter))
-    expect(keys(trieRouterExports)).toEqual(keys(honoTrieRouter))
+    // Note: regExpRouter and trieRouter are deprecated (type-only stubs for backwards compatibility)
+    // Runtime exports are empty by design
+    expect(Object.keys(regExpRouterExports).length).toBe(0)
+    expect(Object.keys(trieRouterExports).length).toBe(0)
   })
 })
 

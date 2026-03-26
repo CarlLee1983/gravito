@@ -1,22 +1,14 @@
 /**
- * @deprecated v2.0 - Hono compatibility layer, will be removed
+ * @deprecated v2.0 - Removed in favor of RadixRouter
  *
- * This module re-exports Hono utilities for backwards compatibility.
- * For v2.0+, please use:
- * - Native Bun APIs for server functionality
- * - Gravito native implementations where available
- * - Custom implementations for app-specific needs
+ * RegExp Router — replaced by native RadixRouter in @gravito/core
  *
- * Removal timeline: v2.0 (2026 Q3)
- * Migration guide: See MIGRATION.md
+ * This module is deprecated and will be removed in v2.0.
+ * Use RadixRouter from @gravito/core/adapters instead.
  *
- * ---
- *
- * RegExp Router for Photon.
- *
- * A router implementation using regular expressions for pattern matching.
- * Used internally by Photon for complex route patterns.
- *
+ * @see {@link https://github.com/gravito-framework/core}
  * @public
  */
-export * from 'hono/router/reg-exp-router'
+
+// Type-only export for backwards compatibility (no runtime)
+export type { Router } from 'hono/router'
