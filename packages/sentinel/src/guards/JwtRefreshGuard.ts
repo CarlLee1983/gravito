@@ -97,7 +97,7 @@ export class JwtRefreshGuard<User extends Authenticatable = Authenticatable>
     }
 
     try {
-      const payload = await verify(token, this.config.secret, this.config.algo ?? 'HS256')
+      const payload = await verify(token, this.config.secret)
       if (payload?.type !== 'access' || !payload.sub) {
         return null
       }
@@ -199,11 +199,7 @@ export class JwtRefreshGuard<User extends Authenticatable = Authenticatable>
    */
   async refreshTokens(refreshToken: string): Promise<JwtTokenPair | null> {
     try {
-      const payload = await verify(
-        refreshToken,
-        this.config.refreshSecret ?? this.config.secret,
-        this.config.algo ?? 'HS256'
-      )
+      const payload = await verify(refreshToken, this.config.refreshSecret ?? this.config.secret)
 
       if (payload?.type !== 'refresh' || !payload.sub) {
         return null
