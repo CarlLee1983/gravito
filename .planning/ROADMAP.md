@@ -171,11 +171,29 @@ Plans:
 - `.planning/phases/04-continue-with-high-priority-issues-or-hono-migration-conditional/04-02-SUMMARY.md`
 - `.planning/phases/04-continue-with-high-priority-issues-or-hono-migration-conditional/04-03-SUMMARY.md`
 
-### Phase 4B: Hono Migration (PENDING)
+### Phase 4B: Hono Migration (PLANNED)
 
-**Condition:** Phase 4A complete
+**Status:** PLANNED — 2026-03-26
 
-**Scope:** Begin Hono Phase 4-5 migration planning
+**Goal:** Execute Hono compat shim migration — remove/replace 12 photon compat shims, fix 3 external type dependencies, maintain health score >= 90/100
+
+**Plans:** 2 plans
+
+Plans:
+- [ ] 04B-01-PLAN.md — Migration roadmap creation (MIGRATION_ROADMAP.md)
+- [ ] 04B-02-PLAN.md — Phase 4B-1 execution plan (easy compat shim replacements)
+
+**Sub-phases (2-3 weeks execution):**
+- Phase 4B-1: Easy compat shim replacements (http-exception, routers, logger, websocket) — Week 1
+- Phase 4B-2: JWT native implementation (jose/Bun crypto) — Week 1-2
+- Phase 4B-3: External package type cleanup (mass, beam, zenith) — Week 2
+- Phase 4B-4: Platform adapter decision (cloudflare/deno/vercel) — Week 2
+- Phase 4B-5: RPC client strategy (beam hono/client) — Week 2-3
+- Phase 4B-6: OpenAPI scoping and final cleanup — Week 3
+
+**Key Finding:** Research revealed migration scope is far smaller than originally estimated. Only 12 compat shim files in photon + 3 external files need work. Core packages (core, atlas, signal, stream, luminosity) are already Hono-free.
+
+**Baseline:** Health 93/100 | 99.7% test pass | 0 TypeScript errors | 0 circular deps
 
 ### Phase 5: Satellite Verification (OPTIONAL)
 
@@ -197,7 +215,7 @@ Plans:
 | 3. Critical Issues (if needed) | 2-3 days | ✅ SKIPPED | 2026-03-25 |
 | 2C. Medium/Low Fixes | ~4 hours | ✅ Complete | 2026-03-26 |
 | 4A. Intermittent Test Fixes | ~3 hours | ✅ Complete | 2026-03-26 |
-| 4B. Hono Migration | TBD | ⏳ Ready to Plan | TBD |
+| 4B. Hono Migration | 2-3 weeks | PLANNED | TBD |
 
 ---
 
@@ -228,7 +246,8 @@ Plans:
 - ✓ Phase 2B execution (High priority investigations)
 - ✓ Phase 3 decision gate (SKIP decision made)
 - ✓ Phase 2C execution (Medium/Low fixes)
-- ✓ Phase 4A planning (3 plans created)
+- ✓ Phase 4A execution (Intermittent test fixes)
+- ✓ Phase 4B planning (2 plans created)
 
 **假設：**
 - Bun、npm、Git 已安裝並可用
@@ -266,7 +285,13 @@ Plans:
 - Health score 93/100 achieved (target was ≥90/100) ✅
 - Framework ready for Phase 4B Hono migration ✅
 
+**After Phase 4B Planning (✅ PASSED — 2026-03-26):**
+- Migration roadmap created with 6 sub-phases
+- Phase 4B-1 execution plan ready
+- Backwards compatibility strategy locked (D-02)
+- Risk assessment completed
+
 ---
 
-**Last updated:** 2026-03-26 after Phase 4A execution complete
-**Next review:** When Phase 4B planning begins
+**Last updated:** 2026-03-26 after Phase 4B planning complete
+**Next review:** When Phase 4B-1 execution begins
