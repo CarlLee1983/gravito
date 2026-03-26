@@ -32,6 +32,10 @@ import {
  * @param options - Optional configuration for the client (headers, credentials, etc.).
  * @returns A fully typed Beam client proxy for your API.
  *
+ * @deprecated v3.0 — Beam's RPC type system will migrate to native implementation.
+ * Currently uses Hono's type inference for type safety. In v3.0+, a native RPC type system
+ * will replace this dependency, eliminating the requirement for hono/client types.
+ *
  * @example
  * ```typescript
  * import { createBeam } from '@gravito/beam'

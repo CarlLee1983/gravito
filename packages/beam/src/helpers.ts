@@ -15,6 +15,9 @@ import type { BeamOptions } from './types'
  * @param options - Other Beam configuration options (excluding headers)
  * @returns An authenticated Beam client
  *
+ * @deprecated v3.0 — Part of Beam's RPC type system, will be updated when native RPC types
+ * are available in v3.0+.
+ *
  * @example
  * ```typescript
  * // Static token
