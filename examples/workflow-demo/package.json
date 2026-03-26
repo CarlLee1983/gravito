@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@gravito/atlas": "workspace:*",
+    "@gravito/photon": "workspace:*",
     "@gravito/pulse": "workspace:*",
     "@gravito/core": "workspace:*"
   },
