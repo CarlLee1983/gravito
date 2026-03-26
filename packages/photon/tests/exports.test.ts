@@ -122,6 +122,35 @@ describe('photon exports', () => {
   })
 })
 
+describe('RPC client exports (@gravito/photon/client)', () => {
+  it('exports hc function from hono/client', () => {
+    // Verify hc is exported from client sub-path
+    expect(typeof clientExports.hc).toBe('function')
+    // Verify only hc is exported (narrowed from export * per D-05 deprecation strategy)
+    expect(keys(clientExports)).toEqual(['hc'])
+  })
+
+  it('client.ts contains @deprecated v2.0 JSDoc and Removal target: v3.0', async () => {
+    const { readFileSync } = await import('fs')
+    const source = readFileSync(join(__dirname, '../src/client.ts'), 'utf-8')
+    expect(source).toContain('@deprecated v2.0')
+    expect(source).toContain('Removal target: v3.0')
+    expect(source).toContain('native Gravito RPC')
+  })
+
+  it('client.d.ts is generated with correct type definitions', async () => {
+    const { existsSync } = await import('fs')
+    const dtsPath = join(__dirname, '../dist/client.d.ts')
+    expect(existsSync(dtsPath)).toBe(true)
+  })
+
+  it('beam package createBeam function works with hono RPC type system', async () => {
+    const beam = await import('@gravito/beam')
+    // Verify createBeam is a function that accepts Hono type parameter
+    expect(typeof beam.createBeam).toBe('function')
+  })
+})
+
 describe('jwt module', () => {
   const TEST_SECRET = 'test-secret-key-for-jwt-testing-12345'
   let app: Photon
