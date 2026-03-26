@@ -477,20 +477,27 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 - **Commits:** 162cfd92
 - **Summary:** `.planning/phases/05-satellite-verification/05-04-SUMMARY.md`
 
-**Phase 4B-4: Platform Adapter Decision** (✅ PLAN COMPLETE — 2026-03-26)
+**Phase 4B-4: Platform Adapter Decision** (✅ BOTH PLANS COMPLETE — 2026-03-26)
 
-- ✅ COMPLETE — 2026-03-26 — 08:50-08:52 UTC (2 minutes)
 - **Plan 04B-4-01 (DONE):** Refine @deprecated JSDoc in three Hono platform adapters
-  1. Cloudflare Workers/Pages adapter — updated JSDoc with v2.0 deprecation and v3.0 removal target
-  2. Deno Deploy adapter — updated JSDoc with v2.0 deprecation and v3.0 removal target
-  3. Vercel Edge Functions adapter — updated JSDoc with v2.0 deprecation and v3.0 removal target
-- **Changes:** 3 adapter files updated (cloudflare.ts, deno.ts, vercel.ts)
-- **Verification:**
-  - ✅ TypeCheck: 83/83 packages pass, 0 errors
-  - ✅ Photon tests: 284/284 pass, 0 fail
-  - ✅ Build: Photon package builds successfully
-  - ✅ All adapter export paths working (backwards compatible)
-  - ✅ Health baseline: 93/100 maintained
-- **Commits:** d6af079c (adapter JSDoc), 2b5f806c (SUMMARY.md)
-- **Summary:** `.planning/phases/04B-4-platform-adapter-decision/04B-4-01-SUMMARY.md`
+  - ✅ COMPLETE — 2026-03-26 — 08:50-08:52 UTC (2 minutes)
+  - Cloudflare Workers/Pages adapter — updated JSDoc with v2.0 deprecation and v3.0 removal target
+  - Deno Deploy adapter — updated JSDoc with v2.0 deprecation and v3.0 removal target
+  - Vercel Edge Functions adapter — updated JSDoc with v2.0 deprecation and v3.0 removal target
+  - **Commits:** d6af079c (adapter JSDoc), 2b5f806c (SUMMARY.md)
+  - **Summary:** `.planning/phases/04B-4-platform-adapter-decision/04B-4-01-SUMMARY.md`
+
+- **Plan 04B-4-02 (DONE):** Verify adapter sub-path exports work correctly, add comprehensive tests
+  - ✅ COMPLETE — 2026-03-26 — 17:00-17:05 UTC (12 minutes)
+  - Added 4 comprehensive adapter sub-path export verification tests to exports.test.ts
+  - Tests verify: Cloudflare (serveStatic, getConnInfo, handle), Deno (serveStatic, getConnInfo, upgradeWebSocket), Vercel (handle, getConnInfo)
+  - Tests verify: All adapters contain @deprecated v2.0 and Removal target: v3.0 JSDoc notices
+  - **Verification:**
+    - ✅ Photon tests: 288/288 pass, 0 fail (includes 4 new adapter tests)
+    - ✅ TypeCheck: 83/83 packages pass, 0 errors
+    - ✅ Health baseline: 93/100 maintained
+    - ✅ All adapter sub-path exports discoverable via package.json
+  - **Commits:** af728824 (adapter tests), f26cbeaf (SUMMARY.md)
+  - **Summary:** `.planning/phases/04B-4-platform-adapter-decision/04B-4-02-SUMMARY.md`
+
 - **Status:** Ready for Phase 4B-3 (Hono native engine implementation)
