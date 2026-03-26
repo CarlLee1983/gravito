@@ -197,7 +197,7 @@ export async function adaptHonoMessageEvent(honoEvent: HonoWSMessageEvent): Prom
  * @example
  * ```typescript
  * import { Photon } from '@gravito/photon'
- * import { upgradeWebSocket } from '@gravito/photon/bun'
+ * // For Bun runtime, use Bun.serve() directly or @gravito/core BunNativeAdapter
  * import { defineWSHandler } from '@gravito/photon/middleware/websocket'
  *
  * interface ChatMessage { text: string; user: string }

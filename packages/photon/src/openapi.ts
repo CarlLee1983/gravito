@@ -1,20 +1,22 @@
 /**
- * @deprecated v2.0 - Hono compatibility layer, will be removed
+ * OpenAPI schema generation using Hono + Zod.
  *
- * This module re-exports Hono utilities for backwards compatibility.
- * For v2.0+, please use:
- * - Native Bun APIs for server functionality
- * - Gravito native implementations where available
- * - Custom implementations for app-specific needs
+ * Provides PhotonOpenAPI class (extends OpenAPIHono) for defining
+ * typed OpenAPI routes with Zod schema validation.
  *
- * Removal timeline: v2.0 (2026 Q3)
- * Migration guide: See MIGRATION.md
+ * @deprecated v2.0 — OpenAPI path has explicit Hono dependency
  *
- * ---
+ * Removal target: v3.0
  *
- * @file packages/photon/src/openapi.ts
- * @module @gravito/photon/openapi
- * @description OpenAPI (Swagger) integration for Photon
+ * In v3.0+, this module will be replaced with a native Gravito OpenAPI
+ * generator that doesn't require Hono dependencies. v2.0 and v2.x users
+ * can continue using this for OpenAPI schema generation.
+ *
+ * Usage: import { PhotonOpenAPI } from '@gravito/photon/openapi'
+ *
+ * @see {@link https://hono.dev/snippets/zod-openapi} Hono OpenAPI integration
+ *
+ * @packageDocumentation
  */
 
 import type { RouteConfig } from '@hono/zod-openapi'
