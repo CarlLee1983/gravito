@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test'
+import { beforeEach, describe, expect, it } from 'bun:test'
 import { MongoGrammar } from '../src/grammar/MongoGrammar'
 import { NullGrammar } from '../src/grammar/NullGrammar'
 
@@ -20,8 +20,13 @@ function makeQuery(overrides: Record<string, unknown> = {}) {
 }
 
 describe('MongoGrammar', () => {
+  let grammar: MongoGrammar
+
+  beforeEach(() => {
+    grammar = new MongoGrammar()
+  })
+
   it('compiles select/insert/update/delete into protocol', () => {
-    const grammar = new MongoGrammar()
     const id = '507f1f77bcf86cd799439011'
     const query = makeQuery({
       wheres: [
@@ -57,7 +62,6 @@ describe('MongoGrammar', () => {
   })
 
   it('compiles aggregate count and json path', () => {
-    const grammar = new MongoGrammar()
     const query = makeQuery()
 
     const count = JSON.parse(

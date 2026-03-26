@@ -1,4 +1,4 @@
-import { describe, expect, mock, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import { bodySizeLimit } from '../../../src/middleware/security/body-size-limit'
 import { cors } from '../../../src/middleware/security/cors'
 import { csrfProtection, getCsrfToken } from '../../../src/middleware/security/csrf'
@@ -153,6 +153,14 @@ describe('securityHeaders middleware', () => {
 })
 
 describe('csrf helpers', () => {
+  beforeEach(() => {
+    // Ensure fresh state for each test — no shared mock or context bleeding between workers
+  })
+
+  afterEach(() => {
+    mock.restore()
+  })
+
   test('returns existing csrf token from cookie', () => {
     const ctx = makeContext({ headers: { Cookie: 'gravito_csrf=token123' } }) as any
     const token = getCsrfToken(ctx)
