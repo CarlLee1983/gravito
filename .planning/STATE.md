@@ -302,5 +302,17 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 
 ---
 
-**Last Updated:** 2026-03-25 (Phase 3-01 decision gate completed)
-**Next Update Trigger:** Phase 2B 完成時（決定是否啟動 Phase 3-02 或 Phase 4）
+**Last Updated:** 2026-03-26 (Phase 4-01 completed)
+**Next Update Trigger:** Phase 4-02 開始時
+
+---
+
+## Phase 4-01: JWT/CSRF/MongoGrammar Test Isolation (✅ COMPLETE)
+
+- ✅ COMPLETE — 2026-03-26
+- **Task 1 (DONE):** Added beforeEach/afterEach isolation to jwt module describe block in exports.test.ts
+- **Task 2 (DONE):** Added beforeEach/afterEach to csrf helpers describe block in middleware-extra.test.ts
+- **Task 2 (DONE):** Added beforeEach with fresh MongoGrammar instance in Grammar-extra.integration.test.ts
+- **Final:** 32 tests across 3 files — all pass with 0 fail; 0 TypeScript errors
+- **Commits:** 8b0e0246, 2d59f433
+- **Summary:** `.planning/phases/04-continue-with-high-priority-issues-or-hono-migration-conditional/04-01-SUMMARY.md`
