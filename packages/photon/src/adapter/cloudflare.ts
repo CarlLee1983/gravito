@@ -1,25 +1,25 @@
 /**
- * @deprecated v2.0 - Hono compatibility layer, will be removed
+ * @deprecated v2.0 — Hono Cloudflare Workers adapter (optional path)
  *
- * This module re-exports Hono utilities for backwards compatibility.
- * For v2.0+, please use:
- * - Native Bun APIs for server functionality
- * - Gravito native implementations where available
- * - Custom implementations for app-specific needs
+ * Removal target: v3.0
  *
- * Removal timeline: v2.0 (2026 Q3)
- * Migration guide: See MIGRATION.md
+ * In v3.0+, this module will be replaced with a native Gravito platform
+ * adapter system. v2.0 and v2.x users can continue using this adapter.
+ *
+ * Use: import { ... } from '@gravito/photon/adapters/cloudflare'
  *
  * ---
  *
  * @gravito/photon - Cloudflare Workers/Pages 適配器
  *
- * 提供 Photon 應用程式在 Cloudflare Workers 和 Cloudflare Pages Functions 上的執行支援。
+ * 提供 Photon 應用程式在 Cloudflare Workers 和 Cloudflare Pages
+ * Functions 上的執行支援。
  *
  * @example Cloudflare Workers 用法
  * ```typescript
  * import { Photon } from '@gravito/photon'
- * import { serveStatic, upgradeWebSocket } from '@gravito/photon/adapter/cloudflare'
+ * import { serveStatic, upgradeWebSocket } from
+ * '@gravito/photon/adapter/cloudflare'
  *
  * const app = new Photon()
  * app.get('/', (c) => c.text('Hello from Cloudflare Workers!'))

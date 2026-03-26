@@ -1,14 +1,12 @@
 /**
- * @deprecated v2.0 - Hono compatibility layer, will be removed
+ * @deprecated v2.0 — Hono Vercel adapter (optional path)
  *
- * This module re-exports Hono utilities for backwards compatibility.
- * For v2.0+, please use:
- * - Native Bun APIs for server functionality
- * - Gravito native implementations where available
- * - Custom implementations for app-specific needs
+ * Removal target: v3.0
  *
- * Removal timeline: v2.0 (2026 Q3)
- * Migration guide: See MIGRATION.md
+ * In v3.0+, this module will be replaced with a native Gravito platform
+ * adapter system. v2.0 and v2.x users can continue using this adapter.
+ *
+ * Use: import { ... } from '@gravito/photon/adapters/vercel'
  *
  * ---
  *
@@ -23,7 +21,9 @@
  * import { handle } from '@gravito/photon/adapter/vercel'
  *
  * const app = new Photon()
- * app.get('/api/hello', (c) => c.json({ message: 'Hello from Vercel Edge!' }))
+ * app.get('/api/hello',
+ *   (c) => c.json({ message: 'Hello from Vercel Edge!' })
+ * )
  *
  * export default handle(app)
  * ```
