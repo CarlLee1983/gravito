@@ -1,0 +1,38 @@
+{
+  "timestamp": "2026-03-26T14:42:28Z",
+  "packages": {
+    "photon": {
+      "esm_bytes": 1075,
+      "esm_kb": 1.05,
+      "cjs_bytes": 0,
+      "cjs_kb": 0,
+      "gzip_estimate_kb": 0,
+      "description": "Pure re-exports wrapper (index.js is ~1KB, actual implementation in sub-paths)"
+    },
+    "core": {
+      "esm_bytes": 442931,
+      "esm_kb": 432.55,
+      "cjs_bytes": 0,
+      "cjs_kb": 0,
+      "gzip_estimate_kb": 151,
+      "description": "Full container, IoC, hooks, runtime adapters"
+    },
+    "signal": {
+      "esm_bytes": 2906764,
+      "esm_kb": 2838.64,
+      "cjs_bytes": 2911592,
+      "cjs_kb": 2843.35,
+      "gzip_estimate_kb": 994,
+      "description": "Event system with full features"
+    }
+  },
+  "total_esm_kb": 3272.24,
+  "total_cjs_kb": 2843.35,
+  "total_gzip_estimate_kb": 1145,
+  "breakdown": {
+    "photon_percent": 0.03,
+    "core_percent": 13.2,
+    "signal_percent": 86.77
+  },
+  "notes": "photon index.js is a thin wrapper; actual handlers are in sub-paths (jwt, logger, router, etc.). core is the IoC container. signal is the event system (largest package)."
+}

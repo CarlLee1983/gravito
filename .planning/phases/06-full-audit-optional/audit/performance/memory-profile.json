@@ -1,0 +1,14 @@
+{
+  "startup_time_ms": 0.01,
+  "startup_min_ms": 0.0,
+  "startup_max_ms": 0.02,
+  "startup_avg_ms": 0.01,
+  "rss_baseline_mb": 55.66,
+  "heap_used_mb": 1.46,
+  "heap_total_mb": 2.74,
+  "gc_time_ms": 0.5,
+  "containers_created_in_test": 100,
+  "memory_growth_during_load_mb": 0.28,
+  "memory_growth_percent": 0.5,
+  "timestamp": "2026-03-26T14:42:10Z"
+}
