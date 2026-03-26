@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
 import { Hono } from 'hono'
 import * as honoBun from 'hono/bun'
 import * as honoClient from 'hono/client'
@@ -54,6 +54,15 @@ describe('photon exports', () => {
 
 describe('jwt module', () => {
   const TEST_SECRET = 'test-secret-key-for-jwt-testing-12345'
+  let app: Hono
+
+  beforeEach(() => {
+    app = new Hono()
+  })
+
+  afterEach(() => {
+    mock.restore()
+  })
 
   it('exports all expected functions', async () => {
     const jwtExports = await import('../src/jwt')
@@ -124,8 +133,6 @@ describe('jwt module', () => {
 
   it('works as middleware to protect routes', async () => {
     const { jwt } = await import('../src/jwt')
-
-    const app = new Hono()
 
     // Protected route
     app.use('/protected/*', jwt({ secret: TEST_SECRET, alg: 'HS256' }))
