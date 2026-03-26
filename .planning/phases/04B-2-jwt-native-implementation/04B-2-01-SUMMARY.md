@@ -84,6 +84,17 @@ None — plan executed exactly as written.
 |------|------|---------|
 | 1 | `0de149a8` | fix(04B-2): resolve TypeScript errors and convert trie-router to type-only stub |
 | 2 | `a3ba5095` | fix(04B-2): mark verifyWithJwks as @deprecated with updated JSDoc |
+| Fix | `72e436cd` | fix(04B-2): update sentinel JWT verify calls to match new 2-param signature |
+
+## Additional Cross-Package Fixes
+
+During phase verification, a typecheck issue was discovered in the @gravito/sentinel package that uses the new JWT API. The sentinel JWT guards were calling `verify(token, secret, algo)` with 3 parameters, but the new native JWT implementation only accepts 2 parameters (algorithm is now extracted from the JWT header by jose).
+
+**Fixed files:**
+- packages/sentinel/src/guards/JwtGuard.ts (line 79-82)
+- packages/sentinel/src/guards/JwtRefreshGuard.ts (lines 100, 202-205)
+
+**Impact:** All sentinel tests continue to pass; zero regressions. The new implementation is more robust as algorithm validation is handled transparently by jose.
 
 ## Health Score
 
