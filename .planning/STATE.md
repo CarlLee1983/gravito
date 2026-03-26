@@ -106,20 +106,26 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 - **Commits:** 8b0e0246, 2d59f433, 01c853a7, 604aceeb, 7c4f08cf
 - **Summary:** `.planning/phases/04-continue-with-high-priority-issues-or-hono-migration-conditional/04-03-SUMMARY.md`
 
-**Phase 4B: Hono Migration Planning** (✅ PLAN COMPLETE)
+**Phase 4B-1: Easy Compat Shim Replacements** (✅ PLAN COMPLETE — 2026-03-26)
 
 - ✅ COMPLETE — 2026-03-26
-- **Plan 04B-01 (DONE):** Create comprehensive MIGRATION_ROADMAP.md with 6 sub-phases
-- **Plan 04B-02 (READY):** Phase 4B-1 execution plan (easy compat shim replacements)
+- **Scope:** Create comprehensive MIGRATION_ROADMAP.md with 6 sub-phases
 - **Roadmap:** `.planning/phases/04B-hono-migration-pending/MIGRATION_ROADMAP.md` (835 lines)
-- **Scope:** 12 photon compat shim files + 3 external package type refs
 - **Timeline:** 2-3 weeks execution (6 sub-phases: 4B-1 through 4B-6)
 - **Baseline:** Health 93/100, 99.7% test pass, 0 TypeScript errors
-- **Key Finding:** Research revealed core packages already Hono-free; only compat shims remain
-- **Wave Structure:** 4 waves with parallel execution paths (respects dependencies)
-- **Backwards Compat:** 4 patterns documented (Type Alias Bridge, Function Delegation, Re-export Bridge, Sub-path Scoping)
-- **Risk Assessment:** 6 identified risks with mitigation strategies
-- **Success Criteria:** 10 verification points for Phase 4B completion
+
+**Phase 4B-2: JWT Native Implementation** (✅ EXECUTION COMPLETE — 2026-03-26)
+
+- ✅ COMPLETE — 2026-03-26 — 07:21-07:29 UTC (8 minutes)
+- **Plan 04B-2-01 (DONE):** JWT native implementation cleanup (3 issues resolved)
+  1. Fixed 2 TypeScript errors in exports.test.ts (unused Hono import, missing GravitoContext type)
+  2. Converted trie-router.ts to type-only stub (matches reg-exp-router pattern)
+  3. Marked verifyWithJwks as @deprecated
+- **Cross-Package Fix:** Updated sentinel JWT verify calls from 3-param to 2-param signature
+- **Verification:** ✅ TypeCheck 0 errors (83/83), Photon 284/284 pass, Health 93/100
+- **Commits:** 0de149a8, a3ba5095, 72e436cd, ceaa1bb3
+- **Summary:** `.planning/phases/04B-2-jwt-native-implementation/04B-2-01-SUMMARY.md`
+- **Status:** Ready for Phase 4B-3
 
 ---
 
@@ -346,8 +352,8 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 
 ---
 
-**Last Updated:** 2026-03-26 (Phase 4A complete — all 3 plans executed)
-**Next Update Trigger:** Phase 4B planning begins
+**Last Updated:** 2026-03-26 (Phase 4B-2 execution complete)
+**Next Update Trigger:** Phase 4B-3 execution begins
 
 ---
 
