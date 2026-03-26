@@ -2,22 +2,22 @@
 gsd_state_version: 1.0
 milestone: v1.3.10
 milestone_name: milestone
-current_phase: 03
-status: planning
-last_updated: "2026-03-26T01:37:55.998Z"
+current_phase: 04
+status: complete
+last_updated: "2026-03-26T01:56:00.000Z"
 progress:
   total_phases: 10
-  completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  completed_phases: 4
+  total_plans: 10
+  completed_plans: 10
 ---
 
 # Project State: Gravito-Core 健全性驗證
 
 **Project:** Gravito-Core 健全性驗證
-**Status:** Ready to plan
-**Current Phase:** 03
-**Last Updated:** 2026-03-25 (Phase 2A execution)
+**Status:** Phase 4A Complete — Ready for Phase 4B (Hono Migration)
+**Current Phase:** 04 (Phase 4A COMPLETE)
+**Last Updated:** 2026-03-26 (Phase 4A execution complete)
 
 ## Project Reference
 
@@ -25,7 +25,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 
 **Core Value:** 確保 gravito-core 框架的核心穩定性 — 所有包都能通過測試、編譯無誤、無循環依賴
 
-**Current Focus:** Phase 02 — 1-day
+**Current Focus:** Phase 04A complete — Phase 4B (Hono Migration) ready to plan
 
 ---
 
@@ -94,6 +94,19 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 - **Health Score:** Phase 2C achieved ~90/100 (+2 from Phase 2B baseline of 88/100)
 - **Commits:** e127bf00, dd668d8a, e13045da, cfb47e8d
 - **Summary:** `.planning/phases/02-1-day/02-03-SUMMARY.md`
+
+**Phase 4A: Eliminate Intermittent Test Failures** (✅ COMPLETE)
+
+- ✅ COMPLETE — 2026-03-26
+- **Plan 04-01 (DONE):** JWT, CSRF, MongoGrammar concurrency isolation (beforeEach/afterEach hooks)
+- **Plan 04-02 (DONE):** Banking CQRS DB isolation, WebhookPlugin mock cleanup, flash-sale timing, workflow-demo imports
+- **Plan 04-03 (DONE):** 3x consecutive full suite verification — 40-41 fail (variance=1), D-05 gate PASSED
+- **Final:** 11,666 pass / 40 fail / 219 skip (99.7% pass rate); 0 TypeScript errors
+- **Health Score:** Phase 4A achieved ~93/100 (+3 from Phase 2C baseline of 90/100)
+- **Commits:** 8b0e0246, 2d59f433, 01c853a7, 604aceeb, 7c4f08cf
+- **Summary:** `.planning/phases/04-continue-with-high-priority-issues-or-hono-migration-conditional/04-03-SUMMARY.md`
+
+---
 
 ### Completed Work
 
@@ -167,9 +180,11 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 | Phase 1: 快速掃描 | ✅ Done | 2026-03-24 | 2026-03-24 | Agent |
 | Phase 2A: Critical Fixes | ✅ Done | 2026-03-25 | 2026-03-25 | Agent |
 | Phase 3-01: Decision Gate | ✅ Done | 2026-03-25 | 2026-03-25 | Agent |
-| Phase 2B: High Fixes | ⏳ Planned | TBD | TBD | TBD |
-| Phase 3-02: Fix Critical (條件性) | 🎯 Ready (conditional) | TBD | TBD | TBD |
-| Phase 4+: 後續 | ⏳ Pending | TBD | TBD | TBD |
+| Phase 2B: High Fixes | ✅ Done | 2026-03-25 | 2026-03-25 | Agent |
+| Phase 2C: Medium/Low Fixes | ✅ Done | 2026-03-26 | 2026-03-26 | Agent |
+| Phase 3-02: Fix Critical (條件性) | ✅ SKIPPED | 2026-03-25 | 2026-03-25 | Agent |
+| Phase 4A: Intermittent Test Fixes | ✅ Done | 2026-03-26 | 2026-03-26 | Agent |
+| Phase 4B: Hono Migration | ⏳ Ready to Plan | TBD | TBD | TBD |
 
 ---
 
@@ -256,12 +271,22 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 - Will use serial fix approach (one at a time) with full verification gates
 - Plans ready in `.planning/phases/03-fix-critical-issues-if-needed/03-02-PLAN.md`
 
-### 後續決策點
+### Next Steps
 
-- Phase 2B: Fix launchpad/monolith/scaffold failing tests (~35+21+15 failures)
-- Phase 3 Decision: SKIP Phase 3-02 (if no new Critical issues) OR PROCEED Phase 3-02 (if Phase 2B finds Critical issues)
-- Phase 2C: Fix Banking CQRS, Atlas integration, JWT module tests (deferred, Medium/Low priority)
-- Phase 4: Continue Hono migration Phase 4-5 (only after Phase 3 gate closes)
+- **Phase 4A: COMPLETE** ✅
+  - Health score: 93/100 achieved
+  - 40 intermittent failures documented as concurrency artifacts (all pass in isolation)
+  - D-05 stability gate: PASSED (variance ≤1 across 3 consecutive runs)
+
+- **Phase 4B: Ready to Plan** — Hono Migration
+  - All preconditions met: TypeCheck 0 errors, test pass rate 99.7%, health score 93/100
+  - Begin planning Hono Phase 4-5 migration (remove Hono dependency from photon)
+  - Reference: `.planning/DECISION_SUMMARY.md` D-06 for migration strategy
+
+- **Phase 5+: Optional**
+  - Satellite verification (RBAC, Catalog, Commerce)
+  - Remaining 40 parallel test isolation fixes (require per-process DB isolation)
+  - Full performance/security audit
 
 ---
 
@@ -302,8 +327,8 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 
 ---
 
-**Last Updated:** 2026-03-26 (Phase 4-01 completed)
-**Next Update Trigger:** Phase 4-02 開始時
+**Last Updated:** 2026-03-26 (Phase 4A complete — all 3 plans executed)
+**Next Update Trigger:** Phase 4B planning begins
 
 ---
 
