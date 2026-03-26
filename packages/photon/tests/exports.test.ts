@@ -28,8 +28,11 @@ describe('photon exports', () => {
     expect(keys(bunExports)).toEqual(keys(honoBun))
   })
 
-  it('re-exports hono/client helpers', () => {
-    expect(keys(clientExports)).toEqual(keys(honoClient))
+  it('exports hc from hono/client (RPC client, @deprecated v2.0 → removal v3.0)', () => {
+    // Note: client.ts exports only hc (not export *) per D-05 deprecation strategy.
+    // Full hono/client re-export narrowed to hc-only as part of v3.0 migration plan.
+    expect(typeof clientExports.hc).toBe('function')
+    expect(keys(clientExports)).toEqual(['hc'])
   })
 
   it('exports native logger function', () => {
