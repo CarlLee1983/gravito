@@ -476,3 +476,21 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
   - Phase 5B: Readiness assessment complete, GO recommendation with pre-work notes
 - **Commits:** 162cfd92
 - **Summary:** `.planning/phases/05-satellite-verification/05-04-SUMMARY.md`
+
+**Phase 4B-4: Platform Adapter Decision** (✅ PLAN COMPLETE — 2026-03-26)
+
+- ✅ COMPLETE — 2026-03-26 — 08:50-08:52 UTC (2 minutes)
+- **Plan 04B-4-01 (DONE):** Refine @deprecated JSDoc in three Hono platform adapters
+  1. Cloudflare Workers/Pages adapter — updated JSDoc with v2.0 deprecation and v3.0 removal target
+  2. Deno Deploy adapter — updated JSDoc with v2.0 deprecation and v3.0 removal target
+  3. Vercel Edge Functions adapter — updated JSDoc with v2.0 deprecation and v3.0 removal target
+- **Changes:** 3 adapter files updated (cloudflare.ts, deno.ts, vercel.ts)
+- **Verification:**
+  - ✅ TypeCheck: 83/83 packages pass, 0 errors
+  - ✅ Photon tests: 284/284 pass, 0 fail
+  - ✅ Build: Photon package builds successfully
+  - ✅ All adapter export paths working (backwards compatible)
+  - ✅ Health baseline: 93/100 maintained
+- **Commits:** d6af079c (adapter JSDoc), 2b5f806c (SUMMARY.md)
+- **Summary:** `.planning/phases/04B-4-platform-adapter-decision/04B-4-01-SUMMARY.md`
+- **Status:** Ready for Phase 4B-3 (Hono native engine implementation)
