@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.3.10
 milestone_name: milestone
 current_phase: 04B-5
-status: executing
-last_updated: "2026-03-26T12:27:10Z"
+status: complete
+last_updated: "2026-03-26T12:32:00Z"
 progress:
   total_phases: 13
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 22
-  completed_plans: 23
+  completed_plans: 24
 ---
 
 # Project State: Gravito-Core 健全性驗證
@@ -502,7 +502,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 
 - **Status:** Ready for Phase 4B-3 (Hono native engine implementation)
 
-**Phase 4B-5: RPC Client Strategy** (✅ PLAN 01 COMPLETE — 2026-03-26)
+**Phase 4B-5: RPC Client Strategy** (✅ BOTH PLANS COMPLETE — 2026-03-26)
 
 - **Plan 04B-5-01 (DONE):** Formalize RPC client deprecation strategy
   - ✅ COMPLETE — 2026-03-26 — 12:23-12:27 UTC (3 minutes)
@@ -518,3 +518,16 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
   - **Commits:** 945d9c1f (client.ts JSDoc), bbcef90f (package.json peerDep), 5e2285df (test fix), 13f03ad0 (unused import)
   - **Summary:** `.planning/phases/04B-5-rpc-client-strategy/04B-5-01-SUMMARY.md`
   - **Decisions:** Narrow client.ts to export { hc } only; add hono as optional peerDependency
+
+- **Plan 04B-5-02 (DONE):** Verify RPC client exports and validate full framework health
+  - ✅ COMPLETE — 2026-03-26 — 12:29-12:32 UTC (3 minutes)
+  - Added dedicated `RPC client exports` describe block to exports.test.ts (4 new tests)
+  - Tests: hc export, JSDoc deprecation assertion, dist/client.d.ts existence, beam integration
+  - **Verification:**
+    - ✅ Photon tests: 292/292 pass, 0 fail (4 new tests added)
+    - ✅ Beam tests: 163/163 pass, 0 fail
+    - ✅ TypeCheck: 83/83 packages pass, 0 errors
+    - ✅ Health baseline: 93/100 maintained
+  - **Commits:** 3bb850db (RPC client export tests)
+  - **Summary:** `.planning/phases/04B-5-rpc-client-strategy/04B-5-02-SUMMARY.md`
+  - **Status:** Phase 04B-5 COMPLETE
