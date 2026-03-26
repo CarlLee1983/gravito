@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'bun:test'
 import type {
+  NativeWSContext,
   TypedWSContext,
   TypedWSHandler,
   WSEvents,
   WSHandlerConfig,
 } from '../src/middleware/websocket'
-import { defineWebSocketHelper, defineWSHandler, WSContext } from '../src/middleware/websocket'
+import { defineWebSocketHelper, defineWSHandler } from '../src/middleware/websocket'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 測試輔助：建立 mock WSContext
@@ -18,13 +19,13 @@ function createMockWSContext(
     readyState: 0 | 1 | 2 | 3
     url: string
   }>
-): WSContext {
-  return new WSContext({
+): NativeWSContext {
+  return {
     send: overrides?.send ?? (() => {}),
     close: overrides?.close ?? (() => {}),
     readyState: overrides?.readyState ?? 1,
-    url: overrides?.url ?? 'ws://localhost/ws',
-  })
+    url: overrides?.url ? new URL(overrides.url) : null,
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -36,9 +37,8 @@ describe('WebSocket Middleware - Re-exports', () => {
     expect(typeof defineWebSocketHelper).toBe('function')
   })
 
-  it('應正確 re-export WSContext 類別', () => {
-    expect(WSContext).toBeDefined()
-    expect(typeof WSContext).toBe('function')
+  it('應正確 export defineWSHandler 函式', () => {
+    expect(typeof defineWSHandler).toBe('function')
   })
 })
 
@@ -102,7 +102,7 @@ describe('defineWSHandler - onOpen', () => {
     })
 
     const events = factory(null) as Required<WSEvents>
-    const mockRawWs = createMockWSContext()
+    const mockRawWs = createMockWSContext() as any
     events.onOpen(new Event('open'), mockRawWs)
 
     expect(receivedWs).not.toBeNull()

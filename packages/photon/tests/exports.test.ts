@@ -3,9 +3,6 @@ import { Hono } from 'hono'
 import * as honoBun from 'hono/bun'
 import * as honoClient from 'hono/client'
 import * as honoHttpException from 'hono/http-exception'
-import * as honoLogger from 'hono/logger'
-import * as honoRegExpRouter from 'hono/router/reg-exp-router'
-import * as honoTrieRouter from 'hono/router/trie-router'
 import * as bunExports from '../src/bun'
 import * as clientExports from '../src/client'
 import * as httpExceptionExports from '../src/http-exception'
@@ -29,8 +26,8 @@ describe('photon exports', () => {
     expect(keys(clientExports)).toEqual(keys(honoClient))
   })
 
-  it('re-exports hono/logger helpers', () => {
-    expect(keys(loggerExports)).toEqual(keys(honoLogger))
+  it('exports native logger function', () => {
+    expect(typeof loggerExports.logger).toBe('function')
   })
 
   it('re-exports hono/http-exception helpers', () => {

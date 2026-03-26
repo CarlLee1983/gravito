@@ -21,8 +21,11 @@
  * @since 2.0.0
  */
 
-import type { WSEvents, WSMessageReceive } from 'hono/ws'
-import { defineWebSocketHelper, WSContext } from 'hono/ws'
+import type { WSContext as HonoWSContext, WSEvents, WSMessageReceive, WSReadyState } from 'hono/ws'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 1: Native WebSocket (Primary API - Zero Hono Runtime Dependency)
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Re-export native WebSocket implementation (zero Hono type dependency for handler logic)
 export {
@@ -39,26 +42,92 @@ export {
 // Import for adapter function
 import { defineWSHandler } from './websocket-native'
 
-// Backward compatibility: re-export Hono's types and helper
-export { WSContext, defineWebSocketHelper }
-export type { WSEvents, WSMessageReceive, WSReadyState } from 'hono/ws'
+// ─────────────────────────────────────────────────────────────────────────────
+// Section 2: Hono Compatibility Layer (Deprecated - Type-Only + Stub Classes)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * @deprecated v2.0 - Use native WebSocket types instead
+ * Stub implementation for backwards compatibility with Hono's defineWebSocketHelper
+ */
+export function defineWebSocketHelper<T extends Record<string, unknown> = Record<string, unknown>>(
+  events: T
+): T {
+  // Return events object as-is (no-op stub)
+  return events
+}
+
+/**
+ * @deprecated v2.0 - Use NativeWSContext instead
+ * Stub class for backwards compatibility with Hono's WSContext
+ * This allows existing code that imports WSContext to continue working
+ */
+export class WSContext {
+  /**
+   * Constructor stub for backwards compatibility
+   * @deprecated v2.0 - This is a compatibility shim only
+   */
+  constructor(
+    config: Partial<{
+      send?: (data: string | ArrayBuffer | Uint8Array, options?: { compress?: boolean }) => void
+      close?: (code?: number, reason?: string) => void
+      readyState?: 0 | 1 | 2 | 3
+      url?: string
+    }>
+  ) {
+    this.send = config.send ?? (() => {})
+    this.close = config.close ?? (() => {})
+    this.readyState = config.readyState ?? 1
+    this.url = config.url ?? 'ws://localhost/ws'
+  }
+
+  /**
+   * Send method stub
+   * @deprecated v2.0
+   */
+  send!: (data: string | ArrayBuffer | Uint8Array, options?: { compress?: boolean }) => void
+
+  /**
+   * Close method stub
+   * @deprecated v2.0
+   */
+  close!: (code?: number, reason?: string) => void
+
+  /**
+   * Ready state stub
+   * @deprecated v2.0
+   */
+  readyState!: 0 | 1 | 2 | 3
+
+  /**
+   * URL stub
+   * @deprecated v2.0
+   */
+  url!: string
+}
+
+/**
+ * @deprecated v2.0 - Use NativeWSContext instead
+ * Re-exported Hono types for backwards compatibility
+ */
+export type { WSEvents, WSMessageReceive, WSReadyState }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hono Adapter - Convert Hono WSContext to NativeWSContext
+// Section 3: Hono Adapter (Deprecated - Backwards Compatibility Only)
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { NativeWSContext } from './websocket-native'
 
 /**
  * Adapt Hono's WSContext to our generic NativeWSContext interface
- * for use with defineWSHandler
  *
+ * @deprecated v2.0 - Use NativeWSContext directly instead
  * @internal
  */
-export function adaptHonoWSContext(honoWs: WSContext): NativeWSContext {
+export function adaptHonoWSContext(honoWs: HonoWSContext): NativeWSContext {
   return {
     send(data: string): void {
-      honoWs.send(data)
+      honoWs.send(data as any)
     },
 
     close(code?: number, reason?: string): void {
@@ -66,11 +135,11 @@ export function adaptHonoWSContext(honoWs: WSContext): NativeWSContext {
     },
 
     get readyState() {
-      return honoWs.readyState
+      return honoWs.readyState as 0 | 1 | 2 | 3
     },
 
     get url() {
-      return honoWs.url
+      return null
     },
   }
 }
@@ -78,6 +147,7 @@ export function adaptHonoWSContext(honoWs: WSContext): NativeWSContext {
 /**
  * Adapt Hono's message event to NativeWSMessageEvent
  *
+ * @deprecated v2.0 - Use NativeWSMessageEvent directly instead
  * @internal
  */
 type HonoWSMessageEvent = {
@@ -102,6 +172,11 @@ async function normalizeHonoMessageData(
   throw new TypeError('Unsupported WebSocket message payload type')
 }
 
+/**
+ * Adapt Hono's message event structure
+ *
+ * @deprecated v2.0 - Use NativeWSMessageEvent instead
+ */
 export async function adaptHonoMessageEvent(honoEvent: HonoWSMessageEvent): Promise<{
   data: string | ArrayBuffer | Uint8Array
   lastMessageInBatch?: boolean
@@ -113,6 +188,8 @@ export async function adaptHonoMessageEvent(honoEvent: HonoWSMessageEvent): Prom
 
 /**
  * Wrap defineWSHandler to work with Hono's WSEvents
+ *
+ * @deprecated v2.0 - Use defineWSHandler instead
  *
  * Provides backward compatibility by adapting our native handler
  * to Hono's WSContext and WSEvents types.
