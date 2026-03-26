@@ -206,9 +206,25 @@ Plans:
 
 **Baseline:** Health 93/100 | 99.7% test pass | 0 TypeScript errors | 0 circular deps
 
-### Phase 5: Satellite Verification (OPTIONAL)
+### Phase 5: Satellite Verification
 
-**Scope:** Full validation of Satellite modules (RBAC, Catalog, Commerce)
+**Status:** In Progress
+
+**Goal:** Validate all Satellite modules (RBAC, Catalog, Commerce) against core framework stability and assess Hono migration readiness
+
+**Plans:** 4 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Fix RBAC test failures + RBAC five-dimension audit
+- [ ] 05-02-PLAN.md — Catalog five-dimension audit
+- [ ] 05-03-PLAN.md — Commerce five-dimension audit + cross-satellite dependency verification
+- [ ] 05-04-PLAN.md — Consolidated assessment + Phase 5B readiness decision
+
+**Wave Structure:**
+- Wave 1: 05-01, 05-02, 05-03 (parallel — each satellite independently)
+- Wave 2: 05-04 (depends on all Wave 1 plans)
+
+**Baseline:** Health 93/100 | 99.7% test pass | 0 TypeScript errors
 
 ### Phase 6: Full Audit (OPTIONAL)
 
