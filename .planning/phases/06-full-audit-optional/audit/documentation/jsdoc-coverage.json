@@ -1,0 +1,38 @@
+{
+  "packages": {
+    "photon": {
+      "total_items": 1,
+      "documented_items": 1,
+      "coverage_percent": 100,
+      "status": "GREEN",
+      "undocumented_items": []
+    },
+    "core": {
+      "total_items": 15,
+      "documented_items": 4,
+      "coverage_percent": 27,
+      "status": "RED",
+      "undocumented_items": []
+    },
+    "signal": {
+      "total_items": 5,
+      "documented_items": 3,
+      "coverage_percent": 60,
+      "status": "YELLOW",
+      "undocumented_items": []
+    }
+  },
+  "summary": {
+    "total_coverage_percent": 38,
+    "packages_below_80_percent": [
+      {
+        "package": "core",
+        "coverage": 27
+      },
+      {
+        "package": "signal",
+        "coverage": 60
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "total_packages": 60,
+  "packages_with_readme": 59,
+  "packages_without_readme": 1,
+  "coverage_percent": 98,
+  "missing_packages": [
+    "official-landing"
+  ],
+  "notes": "README files verified across all 60 core framework packages. 59 packages (98%) have README.md. Only official-landing lacks a README (non-core package)."
+}

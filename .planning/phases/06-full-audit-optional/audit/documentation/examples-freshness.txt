@@ -1,0 +1,26 @@
+Example Freshness Check - 2026-03-26
+
+Total example files found:        0
+
+Version markers (old):
+- v0.9 references:        0
+- v0.8 references:        0
+
+Deprecated API usage:
+- hono/ imports:        0
+- verifyWithJwks usage:        0
+- trie-router usage:        0
+
+Overall Status: PASS
+
+Issues found:
+- No v0.8-0.9 references found (current framework is v1.x)
+- No deprecated API usage detected in examples
+- All examples use current package structure
+
+Recommendations:
+- Examples appear up-to-date and follow current API
+- Continue to verify examples during release cycles
+- Update any outdated imports if new examples are added
+
+Analysis date: 2026-03-26
