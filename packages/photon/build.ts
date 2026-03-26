@@ -23,7 +23,8 @@ async function patchPhotonIndexImport() {
 
   // Check if Photon is exported but not imported
   const hasPhotonExport = content.includes('  Photon,') || content.includes('  Photon\n')
-  const hasPhotonImport = content.includes('import { Photon }') || content.includes('import{Photon}')
+  const hasPhotonImport =
+    content.includes('import { Photon }') || content.includes('import{Photon}')
 
   if (hasPhotonExport && !hasPhotonImport) {
     // Insert import after the last chunk import line
@@ -60,7 +61,6 @@ async function buildInParallel() {
           'src/native.ts',
           'src/client.ts',
           'src/logger.ts',
-          'src/bun.ts',
           'src/jwt.ts',
           'src/http-exception.ts',
           'src/openapi.ts',

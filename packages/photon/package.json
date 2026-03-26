@@ -37,15 +37,15 @@
       "types": "./dist/logger.d.ts",
       "default": "./dist/logger.js"
     },
-    "./bun": {
-      "bun": "./dist/bun.js",
-      "types": "./dist/bun.d.ts",
-      "default": "./dist/bun.js"
-    },
     "./jwt": {
       "bun": "./dist/jwt.js",
       "types": "./dist/jwt.d.ts",
       "default": "./dist/jwt.js"
+    },
+    "./openapi": {
+      "bun": "./dist/openapi.js",
+      "types": "./dist/openapi.d.ts",
+      "default": "./dist/openapi.js"
     },
     "./middleware/binary": {
       "bun": "./dist/middleware/binary.js",
@@ -141,7 +141,6 @@
   "dependencies": {
     "@gravito/core": "^2.0.6",
     "cborg": "^4.3.2",
-    "hono": "^4.12.2",
     "jose": "^6.2.2",
     "zod": "^4.3.6"
   },
@@ -149,14 +148,10 @@
     "@hono/zod-openapi": "^1.2.0"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^1.0.0",
-    "hono": "^4.12.0"
+    "@opentelemetry/api": "^1.0.0"
   },
   "peerDependenciesMeta": {
     "@opentelemetry/api": {
-      "optional": true
-    },
-    "hono": {
       "optional": true
     }
   },
