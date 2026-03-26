@@ -242,22 +242,17 @@ export function jwt(options: JwtOptions): GravitoMiddleware {
 }
 
 /**
+ * @deprecated Not implemented in native JWT. Use verify() with explicit secret.
+ *
  * Verify a JWT using a JSON Web Key Set (JWKS).
+ * This function is a stub for backwards API compatibility.
+ * Will be implemented in a future version if OIDC provider support is needed.
  *
- * Fetches public keys from a JWKS endpoint and uses them to verify the token.
- * Ideal for OIDC providers (Auth0, Cognito, Google, etc.).
- *
- * @param token - The JWT string to verify
+ * @param _token - The JWT string to verify
  * @param _options - JWKS configuration (jwksUri required)
- * @returns The verified payload
- * @throws Error if JWKS fetch fails or verification fails
+ * @returns Never returns - always throws
+ * @throws {Error} Always throws - not yet implemented
  *
- * @example
- * ```typescript
- * const payload = await verifyWithJwks(token, {
- *   jwksUri: 'https://example.com/.well-known/jwks.json'
- * })
- * ```
  * @public
  */
 export async function verifyWithJwks(
