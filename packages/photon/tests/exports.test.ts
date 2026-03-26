@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { GravitoContext } from '@gravito/core'
 import { HttpException } from '@gravito/core'
 import * as honoBun from 'hono/bun'
@@ -10,6 +12,10 @@ import { Photon } from '../src/index'
 import * as loggerExports from '../src/logger'
 import * as regExpRouterExports from '../src/router/reg-exp-router'
 import * as trieRouterExports from '../src/router/trie-router'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+const projectRoot = join(__dirname, '../../..')
 
 const keys = (mod: Record<string, unknown>) => Object.keys(mod).sort()
 
@@ -49,6 +55,68 @@ describe('photon exports', () => {
     // Runtime exports are empty by design
     expect(Object.keys(regExpRouterExports).length).toBe(0)
     expect(Object.keys(trieRouterExports).length).toBe(0)
+  })
+
+  describe('adapter sub-paths', () => {
+    it('re-exports Cloudflare Workers adapter via ./adapter/cloudflare', async () => {
+      const { readFileSync } = await import('fs')
+      // Verify built dist file exists and contains the expected exports
+      const cloudflareJs = readFileSync(
+        join(projectRoot, 'packages/photon/dist/adapter/cloudflare.js'),
+        'utf-8'
+      )
+      expect(cloudflareJs).toContain('serveStatic')
+      expect(cloudflareJs).toContain('getConnInfo')
+      expect(cloudflareJs).toContain('handle')
+    })
+
+    it('re-exports Deno adapter via ./adapter/deno', async () => {
+      const { readFileSync } = await import('fs')
+      // Verify built dist file exists and contains the expected exports
+      const denoJs = readFileSync(
+        join(projectRoot, 'packages/photon/dist/adapter/deno.js'),
+        'utf-8'
+      )
+      expect(denoJs).toContain('serveStatic')
+      expect(denoJs).toContain('getConnInfo')
+      expect(denoJs).toContain('upgradeWebSocket')
+    })
+
+    it('re-exports Vercel adapter via ./adapter/vercel', async () => {
+      const { readFileSync } = await import('fs')
+      // Verify built dist file exists and contains the expected exports
+      const vercelJs = readFileSync(
+        join(projectRoot, 'packages/photon/dist/adapter/vercel.js'),
+        'utf-8'
+      )
+      expect(vercelJs).toContain('handle')
+      expect(vercelJs).toContain('getConnInfo')
+    })
+
+    it('marks all adapters as @deprecated in JSDoc', async () => {
+      // This is a static check — verify that the source files contain
+      // the @deprecated notices that users will see in their IDE
+      const { readFileSync } = await import('fs')
+      const cloudflareSource = readFileSync(
+        join(projectRoot, 'packages/photon/src/adapter/cloudflare.ts'),
+        'utf-8'
+      )
+      const denoSource = readFileSync(
+        join(projectRoot, 'packages/photon/src/adapter/deno.ts'),
+        'utf-8'
+      )
+      const vercelSource = readFileSync(
+        join(projectRoot, 'packages/photon/src/adapter/vercel.ts'),
+        'utf-8'
+      )
+
+      expect(cloudflareSource).toContain('@deprecated v2.0')
+      expect(cloudflareSource).toContain('Removal target: v3.0')
+      expect(denoSource).toContain('@deprecated v2.0')
+      expect(denoSource).toContain('Removal target: v3.0')
+      expect(vercelSource).toContain('@deprecated v2.0')
+      expect(vercelSource).toContain('Removal target: v3.0')
+    })
   })
 })
 
