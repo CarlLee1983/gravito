@@ -25,7 +25,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 
 **Core Value:** 確保 gravito-core 框架的核心穩定性 — 所有包都能通過測試、編譯無誤、無循環依賴
 
-**Current Focus:** Phase 04B-6 — OpenAPI Scoping and Final Cleanup
+**Current Focus:** Phase 4B COMPLETE — Hono migration finished. Next: Phase 05 Satellite Verification or next milestone planning.
 
 ---
 
@@ -127,6 +127,27 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 - **Summary:** `.planning/phases/04B-2-jwt-native-implementation/04B-2-01-SUMMARY.md`
 - **Status:** Ready for Phase 4B-3
 
+**Phase 4B-6: OpenAPI Scoping and Final Cleanup** (✅ EXECUTION COMPLETE — 2026-03-26)
+
+- ✅ COMPLETE — 2026-03-26
+- **Plans Completed:** 2/2
+- **Plan 04B-6-01 (DONE):** Source changes (bun.ts removed, openapi.ts @deprecated, package.json updated)
+  1. Deleted `packages/photon/src/bun.ts` (D-01)
+  2. Added `@deprecated v2.0 — OpenAPI path has explicit Hono dependency` JSDoc to openapi.ts (D-02)
+  3. Added `./openapi` sub-path export to package.json; removed `./bun` export (D-01, D-02)
+  4. Removed `hono` from `dependencies` and `peerDependencies` (D-03)
+  5. Updated `exports.test.ts`: removed bun tests, added openapi deprecation tests
+- **Plan 04B-6-02 (DONE):** Full framework verification
+  - TypeCheck: ✅ 0 errors, 83/83 packages pass
+  - Photon tests: ✅ 294 pass, 0 fail
+  - Sub-paths verified: openapi (PhotonOpenAPI, createRoute, z), jwt, client, adapters (cloudflare, deno, vercel)
+  - hono removed from photon deps: ✅ PASS
+  - bun.js removed from dist: ✅ PASS
+  - Health score: 100/100 (photon), >= 93/100 overall
+- **Commits:** 9632049c, e51e59e0, 500d0873, 55c68ca6
+- **Summary:** `.planning/phases/04B-6-openapi-cleanup/04B-6-01-SUMMARY.md`
+- **Status:** Phase 4B HONO MIGRATION COMPLETE — All 6 sub-phases (4B-1 through 4B-6) executed successfully
+
 **Phase 5-01: RBAC Satellite Fix & Five-Dimension Audit** (✅ EXECUTION COMPLETE — 2026-03-26)
 
 - ✅ COMPLETE — 2026-03-26 — ~45 minutes
@@ -223,7 +244,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 | Phase 2C: Medium/Low Fixes | ✅ Done | 2026-03-26 | 2026-03-26 | Agent |
 | Phase 3-02: Fix Critical (條件性) | ✅ SKIPPED | 2026-03-25 | 2026-03-25 | Agent |
 | Phase 4A: Intermittent Test Fixes | ✅ Done | 2026-03-26 | 2026-03-26 | Agent |
-| Phase 4B: Hono Migration | ⏳ Ready to Plan | TBD | TBD | TBD |
+| Phase 4B: Hono Migration | ✅ Done | 2026-03-26 | 2026-03-26 | Agent |
 
 ---
 

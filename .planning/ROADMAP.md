@@ -427,27 +427,42 @@ Plans:
 
 **Phase 4B-5 onwards:** Planning deferred pending Phase 4B-4 execution completion
 
-### Phase 4B-6: OpenAPI Scoping and Final Cleanup (PLANNING COMPLETE)
+### Phase 4B-6: OpenAPI Scoping and Final Cleanup (COMPLETE)
 
-**Status:** PLANNING COMPLETE -- 2026-03-26
+**Status:** COMPLETE -- 2026-03-26
 
 **Goal:** Scope @hono/zod-openapi to /openapi sub-path, remove bun.ts, remove hono from dependencies, final health check
 
 **Plans:** 2 plans created
 
 Plans:
-- [ ] 04B-6-01-PLAN.md -- OpenAPI scoping + bun.ts removal + dependency cleanup
-- [ ] 04B-6-02-PLAN.md -- Full verification and health check
+- [x] 04B-6-01-PLAN.md -- OpenAPI scoping + bun.ts removal + dependency cleanup
+- [x] 04B-6-02-PLAN.md -- Full verification and health check
 
 **Decisions Locked:**
-- **D-01 (Phase 04B-6):** Remove bun.ts entirely from photon (LOCKED)
-- **D-02 (Phase 04B-6):** Scope @hono/zod-openapi to /openapi sub-path with @deprecated v2.0 (LOCKED)
-- **D-03 (Phase 04B-6):** Remove hono from dependencies and peerDependencies (LOCKED)
+- **D-01 (Phase 04B-6):** Remove bun.ts entirely from photon (LOCKED, COMPLETE)
+- **D-02 (Phase 04B-6):** Scope @hono/zod-openapi to /openapi sub-path with @deprecated v2.0 (LOCKED, COMPLETE)
+- **D-03 (Phase 04B-6):** Remove hono from dependencies and peerDependencies (LOCKED, COMPLETE)
 
 **Wave Structure:**
-- Wave 1: 04B-6-01 (source changes + config + tests) -- independent
-- Wave 2: 04B-6-02 (verification + documentation) -- depends on 04B-6-01
+- Wave 1: 04B-6-01 (source changes + config + tests) -- COMPLETE
+- Wave 2: 04B-6-02 (verification + documentation) -- COMPLETE
 
-**Expected Timeline:** 1-2 days execution
+**Verification:** TypeCheck 0 errors (83/83), photon 294 pass, health 100/100
 
-**Baseline:** Health 93/100 | 99.7% test pass | 0 TypeScript errors
+**Baseline:** Health 100/100 | 294/294 photon tests pass | 0 TypeScript errors
+
+---
+
+### HONO MIGRATION COMPLETE
+
+Phase 4B (4B-1 through 4B-6) successfully completed. All 12 photon compat shims addressed. hono removed from main dependencies.
+
+**Summary of Phase 4B-6 changes:**
+- Deleted `packages/photon/src/bun.ts` (re-exported `hono/bun`, no migration path)
+- Scoped `@hono/zod-openapi` to `./openapi` sub-path with `@deprecated v2.0` JSDoc
+- Removed `hono` from `dependencies` and `peerDependencies`
+- Added `./openapi` sub-path export to `package.json`
+- Updated `exports.test.ts`: removed bun tests, added openapi deprecation tests
+
+**Commits:** 9632049c, e51e59e0, 500d0873, 55c68ca6
