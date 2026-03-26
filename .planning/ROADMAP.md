@@ -146,8 +146,8 @@
 **Plans:** 3 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — JWT/CSRF/MongoGrammar concurrency isolation fixes
-- [ ] 04-02-PLAN.md — Banking DB isolation, WebhookPlugin fetch mock, flash-sale timing
+- [x] 04-01-PLAN.md — JWT/CSRF/MongoGrammar concurrency isolation fixes
+- [x] 04-02-PLAN.md — Banking DB isolation, WebhookPlugin fetch mock, flash-sale timing
 - [ ] 04-03-PLAN.md — Full verification (3x consecutive runs) and health score assessment
 
 **Scope:**
