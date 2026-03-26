@@ -572,6 +572,12 @@ describe('TrendPlugin', () => {
 describe('WebhookPlugin', () => {
   let plugin: WebhookPlugin
 
+  afterEach(() => {
+    // Ensure fetch mock is always restored even if a test throws before its
+    // own fetchMock.mockRestore() call, preventing leaks to other tests.
+    mock.restore()
+  })
+
   it('should have name "webhook"', () => {
     plugin = new WebhookPlugin({ webhooks: [] })
     expect(plugin.name).toBe('webhook')

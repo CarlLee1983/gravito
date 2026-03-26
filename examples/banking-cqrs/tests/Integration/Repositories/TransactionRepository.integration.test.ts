@@ -6,40 +6,13 @@ import { AtlasTransactionRepository } from '../../../src/Infrastructure/Persiste
 describe('AtlasTransactionRepository - Integration', () => {
   let repository: AtlasTransactionRepository
   beforeAll(async () => {
-    // Set up in-memory SQLite connection for tests
-    // Use a unique connection name to avoid conflicts with account tests
+    // Set up in-memory SQLite connection for tests.
+    // Re-establishing in beforeEach is the primary isolation mechanism;
+    // this beforeAll provides the initial connection for the describe block.
     DB.addConnection('default', {
       driver: 'sqlite',
       database: ':memory:',
     })
-
-    // Create accounts table (required as FK target for transactions)
-    await DB.raw(`
-      CREATE TABLE IF NOT EXISTS accounts (
-        id TEXT PRIMARY KEY,
-        owner_name TEXT NOT NULL,
-        balance INTEGER NOT NULL DEFAULT 0,
-        currency TEXT NOT NULL DEFAULT 'TWD',
-        status TEXT NOT NULL DEFAULT 'active',
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL
-      )
-    `)
-
-    // Create transactions table
-    await DB.raw(`
-      CREATE TABLE IF NOT EXISTS transactions (
-        id TEXT PRIMARY KEY,
-        account_id TEXT NOT NULL,
-        type TEXT NOT NULL,
-        amount INTEGER NOT NULL,
-        balance_after INTEGER NOT NULL,
-        currency TEXT NOT NULL DEFAULT 'TWD',
-        reference_id TEXT,
-        description TEXT,
-        created_at TEXT NOT NULL
-      )
-    `)
   })
 
   afterAll(async () => {
@@ -51,6 +24,15 @@ describe('AtlasTransactionRepository - Integration', () => {
   })
 
   beforeEach(async () => {
+    // Re-establish the 'default' connection before every test to prevent
+    // contamination from other test files (e.g. ecommerce-mvc/setup.ts) that
+    // also call DB.addConnection('default', ...) on the same singleton in the
+    // same bun worker process.
+    DB.addConnection('default', {
+      driver: 'sqlite',
+      database: ':memory:',
+    })
+
     // Ensure tables exist (in case connection was reset by another concurrent test file)
     await DB.raw(`
       CREATE TABLE IF NOT EXISTS accounts (

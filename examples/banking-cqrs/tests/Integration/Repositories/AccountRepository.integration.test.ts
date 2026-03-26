@@ -8,23 +8,12 @@ describe('AtlasAccountRepository - Integration', () => {
   let repository: AtlasAccountRepository
   beforeAll(async () => {
     // Set up in-memory SQLite connection for tests
+    // Re-establishing in beforeEach is the primary isolation mechanism;
+    // this beforeAll provides the initial connection for the describe block.
     DB.addConnection('default', {
       driver: 'sqlite',
       database: ':memory:',
     })
-
-    // Create accounts table
-    await DB.raw(`
-      CREATE TABLE IF NOT EXISTS accounts (
-        id TEXT PRIMARY KEY,
-        owner_name TEXT NOT NULL,
-        balance INTEGER NOT NULL DEFAULT 0,
-        currency TEXT NOT NULL DEFAULT 'TWD',
-        status TEXT NOT NULL DEFAULT 'active',
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL
-      )
-    `)
   })
 
   afterAll(async () => {
@@ -36,6 +25,15 @@ describe('AtlasAccountRepository - Integration', () => {
   })
 
   beforeEach(async () => {
+    // Re-establish the 'default' connection before every test to prevent
+    // contamination from other test files (e.g. ecommerce-mvc/setup.ts) that
+    // also call DB.addConnection('default', ...) on the same singleton in the
+    // same bun worker process.
+    DB.addConnection('default', {
+      driver: 'sqlite',
+      database: ':memory:',
+    })
+
     // Ensure table exists (in case the connection was reset by another concurrent test file)
     await DB.raw(`
       CREATE TABLE IF NOT EXISTS accounts (
