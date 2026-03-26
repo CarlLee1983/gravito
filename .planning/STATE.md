@@ -2,21 +2,21 @@
 gsd_state_version: 1.0
 milestone: v1.3.10
 milestone_name: milestone
-current_phase: 05
-status: planning
-last_updated: "2026-03-26T12:32:59.688Z"
+current_phase: 04B-6
+status: complete
+last_updated: "2026-03-26T13:27:29Z"
 progress:
-  total_phases: 13
+  total_phases: 14
   completed_phases: 8
-  total_plans: 22
-  completed_plans: 24
+  total_plans: 24
+  completed_plans: 25
 ---
 
 # Project State: Gravito-Core 健全性驗證
 
 **Project:** Gravito-Core 健全性驗證
-**Status:** Ready to plan
-**Current Phase:** 05
+**Status:** Executing Phase 04B-6
+**Current Phase:** 04B-6
 **Last Updated:** 2026-03-26 (Phase 5-01 RBAC fix and audit complete)
 
 ## Project Reference
@@ -25,7 +25,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
 
 **Core Value:** 確保 gravito-core 框架的核心穩定性 — 所有包都能通過測試、編譯無誤、無循環依賴
 
-**Current Focus:** Phase 04B-5 — RPC Client Strategy
+**Current Focus:** Phase 04B-6 — OpenAPI Scoping and Final Cleanup
 
 ---
 
@@ -501,6 +501,23 @@ See: `.planning/PROJECT.md` (updated 2026-03-24)
   - **Summary:** `.planning/phases/04B-4-platform-adapter-decision/04B-4-02-SUMMARY.md`
 
 - **Status:** Ready for Phase 4B-3 (Hono native engine implementation)
+
+**Phase 4B-6: OpenAPI Scoping and Final Hono Cleanup** (✅ PLAN 01 COMPLETE — 2026-03-26)
+
+- ✅ COMPLETE — 2026-03-26 — 13:25-13:27 UTC (~2 minutes)
+- **Plan 04B-6-01 (DONE):** Remove bun.ts, scope openapi to sub-path, remove hono dependency
+  1. **D-01:** Deleted `src/bun.ts` — Hono bun re-export removed; users use Bun.serve() directly
+  2. **D-02:** Updated `src/openapi.ts` with `@deprecated v2.0 — OpenAPI path has explicit Hono dependency`, Removal target: v3.0
+  3. **D-02:** Added `./openapi` sub-path to package.json exports
+  4. **D-01:** Removed `./bun` sub-path from package.json exports
+  5. **D-03:** Removed `hono` from dependencies AND peerDependencies/peerDependenciesMeta
+  6. **Auto-fix:** Updated websocket.ts JSDoc example to remove @gravito/photon/bun reference
+  7. **Test update:** exports.test.ts — removed bun test, added 3 OpenAPI deprecation tests
+- **Verification:** ✅ Photon 294/294 pass, 0 fail; Health baseline 93/100 maintained
+- **Commits:** 9632049c (bun.ts removal + openapi JSDoc), e51e59e0 (package.json cleanup), 500d0873 (test update)
+- **Summary:** `.planning/phases/04B-6-openapi-cleanup/04B-6-01-SUMMARY.md`
+- **Key decisions:** D-01 (remove bun.ts), D-02 (scope openapi sub-path), D-03 (remove hono from all deps)
+- **Status:** Phase 04B-6 COMPLETE — Hono migration fully finalized
 
 **Phase 4B-5: RPC Client Strategy** (✅ BOTH PLANS COMPLETE — 2026-03-26)
 
