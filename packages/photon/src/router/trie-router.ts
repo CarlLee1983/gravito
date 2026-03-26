@@ -1,22 +1,14 @@
 /**
- * @deprecated v2.0 - Hono compatibility layer, will be removed
+ * @deprecated v2.0 - Removed in favor of native RadixRouter
  *
- * This module re-exports Hono utilities for backwards compatibility.
- * For v2.0+, please use:
- * - Native Bun APIs for server functionality
- * - Gravito native implementations where available
- * - Custom implementations for app-specific needs
+ * Trie Router — replaced by native RadixRouter in @gravito/core
  *
- * Removal timeline: v2.0 (2026 Q3)
- * Migration guide: See MIGRATION.md
+ * This module is deprecated and will be removed in v2.0.
+ * Use RadixRouter from @gravito/core/adapters instead.
  *
- * ---
- *
- * Trie Router for Photon.
- *
- * A high-performance router implementation using a Radix Tree (Trie).
- * This is the default and fastest router for Photon.
- *
+ * @see {@link https://github.com/gravito-framework/core}
  * @public
  */
-export * from 'hono/router/trie-router'
+
+// Type-only export for backwards compatibility (no runtime)
+export type { Router } from 'hono/router'

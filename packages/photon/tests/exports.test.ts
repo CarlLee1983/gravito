@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
+import type { GravitoContext } from '@gravito/core'
 import { HttpException } from '@gravito/core'
-import { Hono } from 'hono'
 import * as honoBun from 'hono/bun'
 import * as honoClient from 'hono/client'
 import * as bunExports from '../src/bun'
@@ -136,10 +136,10 @@ describe('jwt module', () => {
 
     // Protected route
     app.use('/protected/*', jwt({ secret: TEST_SECRET }))
-    app.get('/protected/data', (c) => c.json({ secret: 'data' }))
+    app.get('/protected/data', (c: GravitoContext) => c.json({ secret: 'data' }))
 
     // Public route
-    app.get('/public', (c) => c.json({ message: 'public' }))
+    app.get('/public', (c: GravitoContext) => c.json({ message: 'public' }))
 
     // Test public route
     const publicRes = await app.request('/public')
