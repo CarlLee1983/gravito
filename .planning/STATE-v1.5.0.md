@@ -74,7 +74,7 @@ Remove type-only Hono references from @gravito/mass, @gravito/beam, @gravito/zen
 ---
 
 ### Phase 3: Platform Adapters Review
-**Status:** ⏳ READY FOR PLANNING
+**Status:** ⏳ READY FOR EXECUTION
 **Timeline:** 2026-04-02 to 2026-04-04 (2–3 days)
 **Dependency:** Phase 2 complete ✅
 
@@ -96,7 +96,7 @@ Audit and decide on cloudflare, deno, vercel adapters
 ---
 
 ### Phase 4: RPC Client Strategy
-**Status:** ⏳ READY FOR PLANNING
+**Status:** ⏳ READY FOR EXECUTION
 **Timeline:** 2026-04-04 to 2026-04-05 (1–2 days)
 **Parallel:** Independent
 
@@ -129,6 +129,27 @@ Scope and finalize @hono/zod-openapi usage
 - [ ] Decide: keep, move to adapter, or remove
 - [ ] Implement changes
 - [ ] Document decision
+
+**Success Gate:**
+- TypeScript: 0 errors
+- Tests: 100% pass
+- Strategy documented
+
+---
+
+### Phase 5: OpenAPI Cleanup
+**Status:** ⏳ READY FOR EXECUTION
+**Timeline:** 2026-04-05 to 2026-04-06 (1–2 days)
+**Dependency:** Phase 4 complete
+
+**Objective:**
+Audit @hono/zod-openapi usage and decide: keep, remove, or relocate
+
+**Sub-Tasks:**
+- Audit OpenAPI usage
+- Decide strategy (keep / remove / adapter)
+- Implement decision
+- Verify tests pass
 
 **Success Gate:**
 - TypeScript: 0 errors
