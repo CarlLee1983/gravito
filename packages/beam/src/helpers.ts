@@ -9,14 +9,14 @@ import type { BeamOptions } from './types'
  * A convenience function for creating a client that automatically attaches a Bearer token.
  * The token can be a static string or a dynamic function, supporting token refresh on each request.
  *
- * @template T - Photon application type
+ * @template T - Photon application type (compatible with Hono type system)
  * @param baseUrl - Base URL of the API server
  * @param getToken - Function to retrieve the token (supports sync or async)
  * @param options - Other Beam configuration options (excluding headers)
  * @returns An authenticated Beam client
  *
- * @deprecated v3.0 — Part of Beam's RPC type system, will be updated when native RPC types
- * are available in v3.0+.
+ * @deprecated v3.0 — Part of Beam's RPC type system. Will be updated when native RPC types
+ * are available in v3.0+, removing the Hono type dependency.
  *
  * @example
  * ```typescript

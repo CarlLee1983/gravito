@@ -28,13 +28,18 @@ import {
  *   - `AppType`: `typeof app` - For direct route definitions.
  *   - `AppRoutes`: `ReturnType<typeof createApp>` - For modular app.route() chains.
  *
+ * ### Hono Type Dependency
+ * Beam currently relies on Hono's type inference system (`Hono<any, any, any>`) for type safety.
+ * Hono is an optional peer dependency — you can provide your own Hono instance or use a compatible
+ * type-compatible interface. This allows flexibility in how you define your backend types.
+ *
  * @param baseUrl - The root URL of your API server (e.g., `'http://localhost:3000'`).
  * @param options - Optional configuration for the client (headers, credentials, etc.).
  * @returns A fully typed Beam client proxy for your API.
  *
  * @deprecated v3.0 — Beam's RPC type system will migrate to native implementation.
- * Currently uses Hono's type inference for type safety. In v3.0+, a native RPC type system
- * will replace this dependency, eliminating the requirement for hono/client types.
+ * In v3.0+, a native RPC type system will replace the Hono type dependency, providing
+ * better type inference without requiring external frameworks.
  *
  * @example
  * ```typescript

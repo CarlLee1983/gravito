@@ -37,7 +37,13 @@
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "@gravito/photon": "^1.1.0"
+    "@gravito/photon": "^1.1.0",
+    "hono": "^4.12.0"
+  },
+  "peerDependenciesMeta": {
+    "hono": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"
