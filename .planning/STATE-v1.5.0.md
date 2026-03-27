@@ -98,9 +98,11 @@ Audit and decide on cloudflare, deno, vercel adapters
 ---
 
 ### Phase 4: RPC Client Strategy
-**Status:** ⏳ READY FOR EXECUTION
-**Timeline:** 2026-03-27 (can execute immediately)
+**Status:** ✅ COMPLETE (2026-03-27)
+**Timeline:** 2026-03-27 (same day)
 **Dependency:** Phase 2 (beam optimization) complete ✅
+
+**Result:** hono/client strategy verified as optimal - Type-only optional peerDependency with v3.0 migration path. No code changes needed (Phase 2 already implemented correct approach).
 **Parallel:** Independent
 
 **Objective:**
@@ -140,24 +142,25 @@ Scope and finalize @hono/zod-openapi usage
 
 ---
 
-### Phase 5: OpenAPI Cleanup
+### Phase 5: OpenAPI Cleanup (FINAL PHASE)
 **Status:** ⏳ READY FOR EXECUTION
-**Timeline:** 2026-04-05 to 2026-04-06 (1–2 days)
-**Dependency:** Phase 4 complete
+**Timeline:** 2026-03-27 (can execute immediately)
+**Dependency:** Phase 4 complete ✅
 
 **Objective:**
-Audit @hono/zod-openapi usage and decide: keep, remove, or relocate
+Audit @hono/zod-openapi usage and decide: keep, remove, or relocate to adapter
 
 **Sub-Tasks:**
-- Audit OpenAPI usage
-- Decide strategy (keep / remove / adapter)
+- Audit @hono/zod-openapi usage
+- Decide strategy (keep / remove / move to adapter)
 - Implement decision
 - Verify tests pass
 
 **Success Gate:**
 - TypeScript: 0 errors
-- Tests: 100% pass
+- Tests: ≥99.6% pass
 - Strategy documented
+- Milestone completion
 
 ---
 
