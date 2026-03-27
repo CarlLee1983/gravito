@@ -284,6 +284,7 @@ export type {
   WorkerStats,
 } from './events'
 
+// Event system implementations (see types above)
 export {
   BackpressureManager,
   BackpressureState,
@@ -317,6 +318,7 @@ export type {
   QueueDepthCallback,
 } from './events/observability'
 
+// Event observability implementations (see types above)
 export {
   EventMetrics,
   EventTracer,
@@ -635,12 +637,15 @@ export {
  * @public
  */
 export type { DLQManagerFilter, DLQRecord, DLQStats, RetryPolicy } from './reliability'
+
+// DLQ implementations (see types above)
 export {
   DeadLetterQueueManager,
   getDefaultRetryPolicy,
   getPresetRetryPolicy,
   RetryEngine,
 } from './reliability'
+
 /**
  * Service provider for application bootstrap and service registration.
  *
