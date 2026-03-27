@@ -1,13 +1,13 @@
 {
   "version": "1.0",
   "baseUrl": "https://example.com",
-  "buildTime": 1774588788409,
+  "buildTime": 1774600994823,
   "pages": {
     "/": {
       "path": "/",
       "hash": "aafd934e169f2a90",
       "sourceHash": "44136fa355b3678a",
-      "lastBuilt": 1774588788409,
+      "lastBuilt": 1774600994823,
       "size": 17
     }
   }

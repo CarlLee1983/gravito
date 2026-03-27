@@ -1,187 +1,60 @@
 ---
-# Roadmap: v1.4.0 - Documentation Enhancement (JSDoc Coverage)
+title: Gravito-Core Roadmap
+status: between-milestones
+last_completed: v1.4.0
+last_updated: 2026-03-27
+---
 
-**Project:** Gravito-Core v1.4.0
-**Focus:** JSDoc Coverage Improvement for Core + Signal packages
-**Duration:** 1 week (2026-03-27 to 2026-04-02)
-**Status:** ✅ COMPLETE (Actual: 4 hours on 2026-03-27)
+# Roadmap: Gravito-Core
+
+## Milestones
+
+### ✅ v1.3.10 — Framework Stabilization & Hono Migration
+**Shipped:** 2026-03-26
+**Phases:** 12 phases | **Plans:** 28 | **Status:** Complete
+**Focus:** Health audit, Hono removal, satellite verification
+
+See: `.planning/milestones/v1.3.10-ROADMAP.md`
 
 ---
 
-## Milestone Overview
+### ✅ v1.4.0 — Documentation Enhancement (JSDoc Coverage)
+**Shipped:** 2026-03-27
+**Phases:** 3 phases | **Plans:** 7 | **Status:** Complete
+**Focus:** Core + Signal JSDoc coverage 27%/60% → 100%
 
-**v1.4.0 - JSDoc Coverage Enhancement**
+**Achievement:**
+- @gravito/core: 27% → 100% JSDoc coverage (+73 pp)
+- @gravito/signal: 60% → 100% JSDoc coverage (+40 pp)
+- Combined quality score: 98.8/100 (exceeds Photon benchmark)
 
-Improve JSDoc documentation coverage in Core and Signal packages from 27%/60% → 90%+ to enhance developer experience and IDE autocomplete.
-
-### Baseline (from v1.3.10 audit)
-- **Core JSDoc Coverage:** 27% (11 undocumented exports)
-- **Signal JSDoc Coverage:** 60% (~5 undocumented exports)
-- **Photon JSDoc Coverage:** 100% (quality benchmark)
-- **Target:** 90%+ coverage in both packages
-
-### Key Goals
-✅ Document all public exports with descriptions + types + examples
-✅ Maintain Photon quality standard (descriptions, @param/@returns, @example)
-✅ 0 TypeScript errors maintained (83/83 packages)
-✅ 99.7%+ test pass rate maintained
-✅ Automated coverage verification
+See: `.planning/milestones/v1.4.0-ROADMAP.md`
 
 ---
 
-## Phase Structure
+### 🚧 v1.5.0 — Knowledge Base & Type System Enhancement (PLANNING)
+**Timeline:** 1-2 weeks (2026-03-28 to 2026-04-10)
+**Focus:** Obsidian vault, example improvements, API reference generation
 
-### Phase 1: Core Package JSDoc Coverage (3 days)
+**Planned Phases:**
+- Phase 1: Obsidian Vault Setup — Knowledge management integration
+- Phase 2: Example Improvements — Usage patterns and tutorials
+- Phase 3: API Reference Generation — Automated docs from JSDoc
+- Phase 4: Additional Packages — Extend JSDoc to Atlas, Stream, Event
+- Phase 5: Cross-Phase Integration Tests — Verify knowledge base connectivity
 
-**Goal:** Improve @gravito/core JSDoc from 27% → 90%+
-
-**Scope:**
-- Identify 11 undocumented public exports in Core
-- Write JSDoc blocks following Photon style guide
-- Include descriptions, @param/@returns, @example for utilities
-- Add @see cross-references to related modules
-- Verify type accuracy
-
-**Success Criteria:**
-- [x] ≥10 of 11 exports documented (90%+ coverage)
-- [x] All JSDoc blocks have descriptions + types
-- [x] Complex functions have @example tags
-- [x] Type accuracy verified (@param/@returns match signatures)
-- [x] 0 TypeScript errors
-- [x] Tests pass (99.7%+)
-
-**Timeline:** 3 days (2026-03-27 to 2026-03-29)
-
-### Phase 2: Signal Package JSDoc Coverage (2 days)
-
-**Goal:** Improve @gravito/signal JSDoc from 60% → 90%+
-
-**Scope:**
-- Identify ~5 undocumented public exports
-- Write JSDoc blocks consistent with Core improvements
-- Apply same quality standard (Photon benchmark)
-- Cross-link to Core/event-bus references
-
-**Success Criteria:**
-- [x] ≥4 of 5 exports documented (90%+ coverage)
-- [x] All blocks follow Core style
-- [x] Type accuracy verified
-- [x] 0 TypeScript errors
-- [x] Tests pass (99.7%+)
-
-**Timeline:** 2 days (2026-03-30 to 2026-03-31)
-
-### Phase 3: Verification & Quality Audit (1 day)
-
-**Goal:** Verify coverage targets met, audit documentation quality
-
-**Scope:**
-- Run automated JSDoc coverage measurement (≥90%)
-- Manual review sample (50% of new blocks)
-- Type accuracy validation
-- Cross-reference checking (@see links valid)
-- Generate before/after coverage report
-
-**Success Criteria:**
-- [x] Core: ≥90% coverage confirmed
-- [x] Signal: ≥90% coverage confirmed
-- [x] Quality audit passed (100% have descriptions)
-- [x] Type accuracy verified
-- [x] Final report documenting improvements
-
-**Timeline:** 1 day (2026-04-01 to 2026-04-02)
+**Next Steps:** `/gsd:new-milestone` to define detailed requirements and roadmap
 
 ---
 
-## High-Level Timeline
+## Current Project State
 
-```
-Phase 1: Core JSDoc      [█]     1.5h (Actual: 2026-03-27, vs 12-16h planned)
-Phase 2: Signal JSDoc    [█]     2.5h (Actual: 2026-03-27, vs 8-12h planned)
-Phase 3: Verification    [█]     1h   (Actual: 2026-03-27, vs 4-6h planned)
-────────────────────────────────────────────────────────────────
-Total Duration:          [███]   4h total (Actual vs 1 week planned)
-Status:                  ✅ COMPLETE
-```
+**Last Milestone:** v1.4.0 ✅ Complete
+**Framework Status:** Production Ready (100/100 health)
+**Next Action:** Plan v1.5.0 or address deferred priorities
+
+See: `.planning/PROJECT.md` for full project context
 
 ---
 
-## Key Metrics
-
-### Coverage Target (FINAL RESULTS)
-| Package | Baseline | Target | Final | Status |
-|---------|----------|--------|-------|--------|
-| **Core** | 27% | 90%+ | 100% (59/59) | ✅ EXCEEDED |
-| **Signal** | 60% | 90%+ | 100% (23/23) | ✅ EXCEEDED |
-| **Photon** | 100% | 100% | 100% | ✅ Reference |
-
-### Quality Standards (from Photon benchmark)
-- Description: 1-2 sentences per export
-- @param/@returns: Type + description for each parameter
-- @example: Included for non-trivial utilities
-- @see: Cross-references to related modules
-- @deprecated: Noted for Hono-related exports
-
----
-
-## Risks & Mitigations
-
-| Risk | Impact | Mitigation |
-|------|--------|-----------|
-| Large number of exports | Phase 1 overrun | Focus on 11 exports only, parallel pair review |
-| Type accuracy issues | Rework required | Automated type checking (@param/@returns vs source) |
-| Inconsistency with Photon | Quality mismatch | Use Photon as checklist, manual audit |
-| Type system changes during Phase 1 | Rework needed | Freeze Core/Signal APIs until Phase 3 complete |
-
----
-
-## Dependencies & Assumptions
-
-✓ **Dependencies Met:**
-- v1.3.10 framework stable (93/100 health, 99.7% tests)
-- 0 TypeScript errors (83/83 packages)
-- Photon JSDoc quality available as reference
-
-✓ **Assumptions:**
-- No breaking API changes during v1.4.0
-- JSDoc coverage tool available (typedoc/similar)
-- Photon style guide is maintained standard
-- No major framework refactoring concurrent with Phase 1-3
-
----
-
-## Success Criteria (Milestone-level)
-
-✅ **ALL must be true for v1.4.0 completion:**
-
-1. [x] **Core package:** ≥90% JSDoc coverage (≥10 of 11 exports)
-2. [x] **Signal package:** ≥90% JSDoc coverage (≥4 of 5 exports)
-3. [x] **Quality:** All new JSDoc blocks have descriptions + @param/@returns
-4. [x] **Type accuracy:** @param/@returns types match signatures
-5. [x] **Style consistency:** All blocks follow Photon style guide
-6. [x] **Examples:** Complex utilities have @example tags
-7. [x] **Verification:** Automated coverage measurement confirms ≥90%
-8. [x] **Framework stability:** 0 TypeScript errors, 99.7%+ test pass rate
-
----
-
-## What's Next
-
-After v1.4.0 completion:
-
-**v1.5.0 (Recommended priorities):**
-- Obsidian vault setup (knowledge management)
-- Example improvements (usage documentation)
-- API reference generation (automated from JSDoc)
-- Additional packages (Atlas, Stream, Event, etc.)
-
-**Optional before v1.5.0:**
-- Security pattern documentation (from v1.3.10 Priority 2)
-- Bundle optimization (from v1.3.10 Priority 3)
-
----
-
-**Final Metrics:** Health 100/100 (↑7 pts) | 99.7% test pass | 0 TypeScript errors
-**Completed:** 2026-03-27 (4 hours total)
-**Status:** ✅ COMPLETE - v1.4.0 CERTIFIED FOR RELEASE
-**Quality Score:** 99.3/100 (milestone average)
+*Last updated: 2026-03-27 after v1.4.0 completion*

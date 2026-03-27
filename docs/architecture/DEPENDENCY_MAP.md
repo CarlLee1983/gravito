@@ -1,13 +1,13 @@
 # Gravito 模組依賴關係圖（代碼層級分析 v2）
 
-> 自動生成於：2026-03-24T14:29:18.243Z
+> 自動生成於：2026-03-27T08:45:54.439Z
 > 分析方式：Bun.Transpiler.scanImports()（代碼層級，相比 v1 更精確）
 
 ## 摘要統計
 
 - **總套件數**：59
 - **代碼依賴邊數**：62（v2 新增：從實際 import 掃描）
-- **隱式依賴數**：4（需要修復！）
+- **隱式依賴數**：1（需要修復！）
 - **外部依賴數**：26
 - **循環依賴**：0 個
 - **孤立套件**：38 個
@@ -20,10 +20,7 @@
 
 | 套件 | 隱式依賴 |
 |------|----------|
-| `@gravito/fortify` | `@gravito/atlas` |
-| `@gravito/graphql` | `@gravito/atlas` |
 | `@gravito/pulse` | `@gravito/atlas` |
-| `@gravito/spectrum` | `@gravito/atlas` |
 
 ## 依賴關係圖
 
@@ -212,10 +209,7 @@ graph TB
   mass -.peer.-> core
 
   %% 隱式依賴（警告：package.json 未聲明）
-  spectrum -. IMPLICIT .-> atlas
-  graphql -. IMPLICIT .-> atlas
   pulse -. IMPLICIT .-> atlas
-  fortify -. IMPLICIT .-> atlas
 
   %% 樣式
   classDef core fill:#ffd700,stroke:#333,stroke-width:3px
@@ -306,11 +300,11 @@ graph TB
 | `@gravito/flare` | v4.0.2 | 1 | 3 | 0 | 0 | 0 | 24 |
 | `@gravito/flux` | v3.0.3 | 1 | 1 | 0 | 0 | 0 | 41 |
 | `@gravito/forge` | v3.0.4 | 2 | 3 | 0 | 0 | 0 | 26 |
-| `@gravito/fortify` | v3.1.2 | 4 | 4 | 0 | **1** ⚠️ | 0 | 52 |
+| `@gravito/fortify` | v3.1.2 | 4 | 4 | 0 | 0 | 0 | 52 |
 | `@gravito/freeze` | v1.0.0-beta.8 | 0 | 0 | 0 | 0 | 2 | 8 |
 | `@gravito/freeze-react` | v1.0.1 | 2 | 0 | 0 | 0 | 0 | 5 |
 | `@gravito/freeze-vue` | v1.0.0 | 1 | 0 | 0 | 0 | 0 | 3 |
-| `@gravito/graphql` | v1.1.3 | 1 | 1 | 0 | **1** ⚠️ | 0 | 23 |
+| `@gravito/graphql` | v1.1.3 | 1 | 1 | 0 | 0 | 0 | 23 |
 | `@gravito/gravito` | v1.0.4 | 0 | 0 | 0 | 0 | 0 | 1 |
 | `@gravito/horizon` | v3.2.2 | 1 | 2 | 0 | 0 | 0 | 14 |
 | `@gravito/impulse` | v1.1.2 | 1 | 1 | 0 | 0 | 0 | 23 |
@@ -329,7 +323,7 @@ graph TB
 | `@gravito/nebula-s3` | v2.0.1 | 0 | 1 | 0 | 0 | 0 | 2 |
 | `@gravito/nova` | v1.0.2 | 0 | 2 | 0 | 0 | 2 | 10 |
 | `@gravito/orbit-cloudflare` | v1.0.5 | 0 | 1 | 0 | 0 | 0 | 1 |
-| `@gravito/photon` | v1.1.4 | 1 | 0 | 0 | 0 | 4 | 39 |
+| `@gravito/photon` | v1.1.4 | 1 | 0 | 0 | 0 | 4 | 37 |
 | `@gravito/plasma` | v2.0.3 | 0 | 0 | 0 | 0 | 2 | 16 |
 | `@gravito/prism` | v3.1.3 | 1 | 2 | 0 | 0 | 1 | 24 |
 | `@gravito/pulsar` | v3.0.3 | 2 | 2 | 0 | 0 | 0 | 7 |
@@ -344,7 +338,7 @@ graph TB
 | `@gravito/sentinel` | v4.0.2 | 2 | 2 | 0 | 0 | 1 | 27 |
 | `@gravito/signal` | v3.1.2 | 2 | 3 | 0 | 0 | 1 | 34 |
 | `@gravito/site` | v1.0.0-beta.2 | 3 | 0 | 0 | 0 | 0 | 1 |
-| `@gravito/spectrum` | v3.0.3 | 2 | 2 | 0 | **1** ⚠️ | 0 | 6 |
+| `@gravito/spectrum` | v3.0.3 | 2 | 2 | 0 | 0 | 0 | 6 |
 | `@gravito/stasis` | v3.2.4 | 2 | 2 | 0 | 0 | 1 | 18 |
 | `@gravito/stream` | v2.1.2 | 2 | 0 | 0 | 0 | 3 | 74 |
 | `@gravito/support-chat-widget` | v0.2.4 | 1 | 0 | 0 | 0 | 0 | 30 |
@@ -354,4 +348,4 @@ graph TB
 ---
 
 *此文件由 `scripts/generate-dependency-graph.ts` v2 自動生成（代碼層級分析）*
-*最後更新：2026-03-24T14:29:18.244Z*
+*最後更新：2026-03-27T08:45:54.440Z*
