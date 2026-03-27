@@ -1,0 +1,6 @@
+Timestamp,Operation,Avg Latency (ms),Max Latency (ms),Min Latency (ms),Throughput (ops/sec),Memory Delta (bytes),Sample Count
+2026-03-27T07:53:29.859Z,"Role Resolution (findRoleById)",0.0006,0.015,0.0005,946895.27,0,1000
+2026-03-27T07:53:29.859Z,"Permission Check (checkPermissionExists)",0.0034,0.4798,0.0012,285184.66,0,1000
+2026-03-27T07:53:29.859Z,"Permission Grant (updateRole)",0.001,0.028,0.0001,750939.05,0,500
+2026-03-27T07:53:29.859Z,"Role Creation (createRole)",0.0013,0.0319,0.0003,608180.02,0,500
+2026-03-27T07:53:29.859Z,"Bulk Role Listing (listAllRoles)",0.007,0.226,0.002,139355.03,0,500
