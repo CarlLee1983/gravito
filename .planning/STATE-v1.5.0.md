@@ -52,9 +52,9 @@ Replace `packages/photon/src/jwt.ts` implementation from hono/jwt to native jose
 ---
 
 ### Phase 2: External Package Type Cleanup
-**Status:** ⏳ READY FOR PLANNING
+**Status:** ⏳ READY FOR EXECUTION
 **Timeline:** 2026-04-01 to 2026-04-03 (2–3 days)
-**Dependency:** Phase 1 complete
+**Dependency:** Phase 1 complete ✅
 
 **Objective:**
 Remove type-only Hono references from @gravito/mass, @gravito/beam, @gravito/zenith
