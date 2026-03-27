@@ -164,4 +164,48 @@
 
 ---
 
-*Last updated: 2026-03-27 (v1.4.0 planning initialized)*
+## Milestone: v1.5.0 (PLANNING)
+
+**Status:** 📋 **PLANNING** — 2026-03-27
+**Duration:** 1.5–2 weeks (2026-03-27 to 2026-04-09)
+**Focus:** Hono Dependency Removal & Type System Enhancement
+
+### Scope
+
+**Primary Goal:** Complete remaining Hono dependency removal and finalize type system
+
+| Work Item | Baseline | Target | Status |
+|-----------|----------|--------|--------|
+| **JWT Implementation** | hono/jwt re-export | Native jose | 🔄 Planning |
+| **Type Cleanup** | HonoContext in mass/beam/zenith | GravitoContext | 🔄 Planning |
+| **Platform Adapters** | TBD usage | Clean/documented | 🔄 Planning |
+| **RPC Client** | TBD strategy | Documented + implemented | 🔄 Planning |
+| **OpenAPI** | @hono/zod-openapi scoped | Decision made | 🔄 Planning |
+
+### Phase Timeline
+
+- **Phase 1** (3–4 days): JWT Native Implementation (jose)
+- **Phase 2** (2–3 days): External Package Type Cleanup (mass/beam/zenith)
+- **Phase 3** (2–3 days): Platform Adapters Review (cloudflare/deno/vercel)
+- **Phase 4** (1–2 days): RPC Client Strategy (hono/client)
+- **Phase 5** (1–2 days): OpenAPI Cleanup (@hono/zod-openapi)
+
+### Success Criteria
+
+✅ All phases complete
+✅ TypeCheck: 0 errors (83/83)
+✅ Test pass rate: ≥99.6%
+✅ Health score: ≥93/100
+✅ Zero Hono runtime references (except strategic type-only)
+✅ API compatibility: 100% backwards compatible
+
+### Documents
+
+- **Requirements:** `.planning/REQUIREMENTS-v1.5.0.md`
+- **Roadmap:** `.planning/ROADMAP-v1.5.0.md`
+
+**To start Phase 1:** Use `/gsd:plan-phase 1` after this planning approval
+
+---
+
+*Last updated: 2026-03-27 (v1.5.0 planning initialized)*
