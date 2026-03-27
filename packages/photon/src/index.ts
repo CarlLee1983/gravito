@@ -64,10 +64,5 @@ export * from './middleware/ratelimit-redis'
  */
 export * from './middleware/security'
 export * from './middleware-adapter'
-/**
- * OpenAPI utilities
- * @public
- */
-export * from './openapi'
 // Export main Photon application class and types
 export { Photon } from './photon'

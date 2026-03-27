@@ -220,7 +220,8 @@ describe('defineWSHandler - close handling', () => {
     const closeEvent = new CloseEvent('close')
     await events.onClose(closeEvent, mockRawWs)
 
-    expect(receivedCode).toBe(1000)
+    // CloseEvent defaults to code 0 when not provided
+    expect(receivedCode).toBe(0)
     expect(receivedReason).toBe('')
   })
 })

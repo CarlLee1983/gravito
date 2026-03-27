@@ -128,7 +128,7 @@ describe('defineWSHandler - onMessage', () => {
     const events = factory(null) as Required<WSEvents>
     const mockRawWs = createMockWSContext()
     const event = new MessageEvent('message', { data: '{"value":42}' })
-    events.onMessage(event, mockRawWs)
+    events.onMessage(event, mockRawWs as any)
 
     expect(received).toEqual({ value: 42 })
   })
@@ -148,7 +148,7 @@ describe('defineWSHandler - onMessage', () => {
     const events = factory(null) as Required<WSEvents>
     const mockRawWs = createMockWSContext()
     const event = new MessageEvent('message', { data: 'not-json' })
-    events.onMessage(event, mockRawWs)
+    events.onMessage(event, mockRawWs as any)
 
     expect(received).toBe('not-json')
   })
@@ -168,7 +168,7 @@ describe('defineWSHandler - onMessage', () => {
     const events = factory(null) as Required<WSEvents>
     const mockRawWs = createMockWSContext()
     const event = new MessageEvent('message', { data: '{"value":1}' })
-    events.onMessage(event, mockRawWs)
+    events.onMessage(event, mockRawWs as any)
 
     // 即使是 JSON 字串，text 模式也不解析
     expect(received).toBe('{"value":1}')
@@ -186,7 +186,7 @@ describe('defineWSHandler - onMessage', () => {
     const mockRawWs = createMockWSContext()
     const event = new MessageEvent('message', { data: 'invalid{json' })
 
-    expect(() => events.onMessage(event, mockRawWs)).toThrow()
+    expect(() => events.onMessage(event, mockRawWs as any)).toThrow()
   })
 
   it('應傳入 TypedWSContext 給 onMessage', () => {
@@ -200,7 +200,7 @@ describe('defineWSHandler - onMessage', () => {
 
     const events = factory(null) as Required<WSEvents>
     const mockRawWs = createMockWSContext()
-    events.onMessage(new MessageEvent('message', { data: 'hello' }), mockRawWs)
+    events.onMessage(new MessageEvent('message', { data: 'hello' }), mockRawWs as any)
 
     expect(receivedWs).not.toBeNull()
   })
@@ -225,7 +225,7 @@ describe('defineWSHandler - onClose', () => {
     const events = factory(null) as Required<WSEvents>
     const mockRawWs = createMockWSContext()
     const event = new CloseEvent('close', { code: 1001, reason: 'Going Away' })
-    events.onClose(event, mockRawWs)
+    events.onClose(event, mockRawWs as any)
 
     expect(receivedCode).toBe(1001)
     expect(receivedReason).toBe('Going Away')
@@ -246,7 +246,7 @@ describe('defineWSHandler - onClose', () => {
     const mockRawWs = createMockWSContext()
     // CloseEvent 不傳 code 和 reason，CloseEvent.code 預設為 0
     const event = new CloseEvent('close')
-    events.onClose(event, mockRawWs)
+    events.onClose(event, mockRawWs as any)
 
     // CloseEvent 不帶 code 時預設為 0
     expect(receivedCode).toBe(0)
@@ -271,7 +271,7 @@ describe('defineWSHandler - onError', () => {
     const events = factory(null) as Required<WSEvents>
     const mockRawWs = createMockWSContext()
     const errorEvent = new Event('error')
-    events.onError(errorEvent, mockRawWs)
+    events.onError(errorEvent, mockRawWs as any)
 
     expect(receivedEvent).not.toBeNull()
     expect((receivedEvent as Event).type).toBe('error')
@@ -296,7 +296,7 @@ describe('TypedWSContext - send 方法', () => {
     const mockRawWs = createMockWSContext({
       send: (data) => sentData.push(data as string),
     })
-    events.onOpen(new Event('open'), mockRawWs)
+    events.onOpen(new Event('open'), mockRawWs as any)
 
     expect(sentData).toContain('hello')
   })
@@ -314,7 +314,7 @@ describe('TypedWSContext - send 方法', () => {
     const mockRawWs = createMockWSContext({
       send: (data) => sentData.push(data as string),
     })
-    events.onOpen(new Event('open'), mockRawWs)
+    events.onOpen(new Event('open'), mockRawWs as any)
 
     expect(sentData[0]).toBe('{"status":"ok"}')
   })
@@ -330,7 +330,7 @@ describe('TypedWSContext - send 方法', () => {
 
     const events = factory(null) as Required<WSEvents>
     const mockRawWs = createMockWSContext({ readyState: 1 })
-    events.onOpen(new Event('open'), mockRawWs)
+    events.onOpen(new Event('open'), mockRawWs as any)
 
     expect(contextReadyState).toBe(1)
   })
@@ -354,7 +354,7 @@ describe('TypedWSContext - send 方法', () => {
         closeReason = reason
       },
     })
-    events.onOpen(new Event('open'), mockRawWs)
+    events.onOpen(new Event('open'), mockRawWs as any)
 
     expect(closeCalled).toBe(true)
     expect(closeCode).toBe(1000)

@@ -257,23 +257,3 @@ describe('jwt module', () => {
     expect(body.secret).toBe('data')
   })
 })
-
-describe('OpenAPI exports', () => {
-  it('exports PhotonOpenAPI class from openapi sub-path', async () => {
-    const openapi = await import('../src/openapi')
-    expect(openapi.PhotonOpenAPI).toBeDefined()
-    expect(typeof openapi.PhotonOpenAPI).toBe('function')
-  })
-
-  it('exports createRoute and z helpers', async () => {
-    const openapi = await import('../src/openapi')
-    expect(openapi.createRoute).toBeDefined()
-    expect(openapi.z).toBeDefined()
-  })
-
-  it('has @deprecated v2.0 JSDoc in source', async () => {
-    const src = await Bun.file(join(__dirname, '../src/openapi.ts')).text()
-    expect(src).toContain('@deprecated v2.0')
-    expect(src).toContain('Removal target: v3.0')
-  })
-})

@@ -63,7 +63,6 @@ async function buildInParallel() {
           'src/logger.ts',
           'src/jwt.ts',
           'src/http-exception.ts',
-          'src/openapi.ts',
           'src/middleware/binary.ts',
           'src/middleware/circuit-breaker.ts',
           'src/middleware/htmx.ts',
@@ -90,7 +89,7 @@ async function buildInParallel() {
         splitting: true,
         minify: process.env.NODE_ENV === 'production',
         sourcemap: 'external',
-        external: ['@gravito/core', '@gravito/photon', 'hono', '@hono/zod-openapi', 'zod', 'cborg'],
+        external: ['@gravito/core', '@gravito/photon', 'hono', 'zod', 'cborg'],
       })
 
       if (!buildResult.success) {
