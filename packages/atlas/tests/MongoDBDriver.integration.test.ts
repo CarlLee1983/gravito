@@ -88,4 +88,19 @@ describe('MongoDBDriver', () => {
     expect(result.affectedRows).toBe(1)
     expect(result.insertId).toBe('1')
   })
+
+  it('mapDocument should not mutate the original document', () => {
+    const original = {
+      _id: { toString: () => '507f1f77bcf86cd799439011' },
+      name: 'test',
+    } as Record<string, unknown>
+    const originalKeys = Object.keys(original)
+
+    const mapped = (driver as any).mapDocument(original)
+
+    expect(Object.keys(original)).toEqual(originalKeys)
+    expect('id' in original).toBe(false)
+    expect(mapped.id).toBe('507f1f77bcf86cd799439011')
+    expect(mapped._id).toBeDefined()
+  })
 })

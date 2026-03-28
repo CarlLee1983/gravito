@@ -199,9 +199,8 @@ export class MongoDBDriver implements DriverContract {
 
   private mapDocument(doc: Record<string, unknown>): Record<string, unknown> {
     if (doc._id) {
-      doc.id = doc._id.toString()
-      // Keep _id or remove? Best to keep for native usage
+      return { ...doc, id: doc._id.toString() }
     }
-    return doc
+    return { ...doc }
   }
 }
