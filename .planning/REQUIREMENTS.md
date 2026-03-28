@@ -17,12 +17,12 @@ Requirements for v2.0.0 major release. Each maps to roadmap phases.
 
 - [x] **RESL-01**: 通用 `withRetry<T>()` utility 支援指數退避、jitter、Retryable/Terminal 分類
 - [x] **RESL-02**: 合併 3 個重複的 CircuitBreaker 實作為統一的 `@gravito/resilience` CB
-- [ ] **RESL-03**: `withResilience()` 組合 API 正確包裝 retry + CB + timeout
+- [x] **RESL-03**: `withResilience()` 組合 API 正確包裝 retry + CB + timeout
 
 ### Orbit Integration
 
-- [ ] **INTG-01**: Circuit breaker 整合至 atlas DB 連線池
-- [ ] **INTG-02**: Circuit breaker 整合至 plasma Redis 客戶端
+- [x] **INTG-01**: Circuit breaker 整合至 atlas DB 連線池
+- [x] **INTG-02**: Circuit breaker 整合至 plasma Redis 客戶端
 - [ ] **INTG-03**: atlas、plasma、stream、signal、beam 註冊 `core:shutdown` handler 含 deadline
 - [ ] **INTG-04**: 所有 Orbit 包向 `@gravito/monitor` 註冊健康檢查
 - [ ] **INTG-05**: `OrbitDegradationManager` 在 CB open 時返回 typed fallback 而非拋出錯誤
@@ -66,9 +66,9 @@ Deferred to next release. Tracked but not in current roadmap.
 | ERRM-03 | Phase 16 | Complete |
 | RESL-01 | Phase 17 | Complete |
 | RESL-02 | Phase 17 | Complete |
-| RESL-03 | Phase 17 | Pending |
-| INTG-01 | Phase 18 | Pending |
-| INTG-02 | Phase 18 | Pending |
+| RESL-03 | Phase 17 | Complete |
+| INTG-01 | Phase 18 | Complete |
+| INTG-02 | Phase 18 | Complete |
 | INTG-03 | Phase 18 + 19 | Pending |
 | INTG-04 | Phase 19 | Pending |
 | INTG-05 | Phase 20 | Pending |
