@@ -68,13 +68,14 @@ Plans:
   3. atlas and plasma both have a `ResiliencePolicy` configured with appropriate defaults (atlas: retry 3x + CB; plasma: CB only, fast-fail)
   4. atlas, plasma, and signal register `core:shutdown` handlers with a configurable deadline; the process does not hang indefinitely on graceful shutdown
   5. Contract tests for atlas and plasma assert on `.code` and `.status` fields and pass before and after migration
-**Plans:** 5 plans
+**Plans:** 6 plans
 Plans:
 - [ ] 18-01-PLAN.md — Core prerequisites: DatabaseException + CacheException abstract classes
 - [ ] 18-02-PLAN.md — Plasma migration: RedisError -> CacheException, CB wiring, shutdown deadline
 - [ ] 18-03-PLAN.md — Signal migration: MailTransportError -> InfrastructureException, withRetry, shutdown
 - [ ] 18-04-PLAN.md — Photon CB swap: internal CB replaced with @gravito/resilience, Retry-After header
-- [ ] 18-05-PLAN.md — Atlas migration: error hierarchy, ORM errors, shutdown handler, resilience policy
+- [ ] 18-05-PLAN.md — Atlas migration: error hierarchy, ORM errors, shutdown handler, resilience wiring
+- [ ] 18-06-PLAN.md — Global 10s shutdown timeout in PlanetCore (D-10)
 
 ### Phase 19: Secondary Orbit Migration
 **Goal**: All remaining Orbit packages throw from the GravitoException hierarchy, register health checks, and complete graceful shutdown wiring
@@ -106,7 +107,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 16. Core Error Model Foundation | 3/3 | Complete    | 2026-03-28 |
 | 17. Resilience Infrastructure | 2/3 | Complete    | 2026-03-28 |
-| 18. Foundation Orbit Migration | 0/5 | Not started | - |
+| 18. Foundation Orbit Migration | 0/6 | Not started | - |
 | 19. Secondary Orbit Migration | 0/? | Not started | - |
 | 20. Integration Verification & Graceful Degradation | 0/? | Not started | - |
 
@@ -132,18 +133,6 @@ Plans:
 | RELS-01 | Phase 20 | Version bumps to 2.0.0 for all modified packages |
 
 **Coverage: 14/14 requirements mapped**
-
----
-
-## Key Risks & Mitigations
-
-| Risk | Mitigation | Phase |
-|------|-----------|-------|
-| instanceof breaks across ESM/CJS | Object.setPrototypeOf in all new error constructors; cross-boundary test in Phase 16 | 16 |
-| Tests pass while structural contracts broken | Contract test scaffolding asserting .code/.status before any migration | 16 |
-| Double-retry on atlas transactionWithRetry | withRetry idempotency gate; never wrap atlas.transactionWithRetry externally | 17 |
-| fortify FortifyError hierarchy conflict | Compatibility analysis before Phase 19 batch 4c migration | 19 |
-| Silent degradation masking bugs | NODE_ENV=test gate throws instead of returning fallback | 17, 20 |
 
 ---
 *Roadmap created: 2026-03-28*
