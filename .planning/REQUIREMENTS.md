@@ -1,133 +1,86 @@
----
-milestone: v1.4.0
-title: Documentation Enhancement — JSDoc Coverage
-focus: Core & Signal Package Documentation
-timeline: 1 week (2026-03-27 to 2026-04-02)
-status: active
----
+# Requirements: Gravito-Core v2.0.0
 
-# v1.4.0 Requirements — JSDoc Coverage Enhancement
+**Defined:** 2026-03-28
+**Core Value:** 穩定可靠的核心基礎設施 — core 及所有 Orbit 包必須具備 production-ready 的錯誤處理與韌性機制
 
-**Milestone:** v1.4.0 - Documentation Enhancement
-**Duration:** 1 week (2026-03-27 to 2026-04-02)
-**Focus:** Improve JSDoc coverage in Core + Signal packages to 90%+
-**Status:** ACTIVE
+## v2.0.0 Requirements
 
-## Problem Statement
+Requirements for v2.0.0 major release. Each maps to roadmap phases.
 
-v1.3.10 audit identified documentation gaps:
-- **Core package:** 27% JSDoc coverage (11 undocumented exports) — PRIMARY GAP
-- **Signal package:** 60% JSDoc coverage (~5 undocumented exports) — SECONDARY GAP
-- **Photon package:** 100% JSDoc coverage ✅ (benchmark for quality)
+### Error Model
 
-This gap impacts:
-- **New developer onboarding** — Unclear API purpose/usage
-- **IDE autocomplete** — Incomplete type hints in editors
-- **Type safety** — Missing parameter/return type documentation
-- **Maintenance** — Undocumented design decisions
+- [ ] **ERRM-01**: 所有 Orbit 包的 Error 類別繼承 GravitoException，消除 bare `throw new Error()`
+- [ ] **ERRM-02**: 每個 Orbit 包定義結構化錯誤碼命名空間（如 `db.connection_failed`、`redis.timeout`）
+- [ ] **ERRM-03**: 所有錯誤正確傳播 cause 欄位，保留完整錯誤鏈
 
-## Core Requirements
+### Resilience Primitives
 
-### R-1: @gravito/core JSDoc Coverage
-- [x] **Target:** Increase JSDoc coverage from 27% → 90%+ (minimum 10 of 11 undocumented exports)
-- [x] **Scope:** Document all public exports (types, interfaces, functions, classes, constants)
-- [x] **Quality Bar:** Match Photon JSDoc style (descriptions + @param/@returns + @example where applicable)
-- [x] **Validation:** Automated JSDoc coverage measurement (typedoc/tsc)
+- [ ] **RESL-01**: 通用 `withRetry<T>()` utility 支援指數退避、jitter、Retryable/Terminal 分類
+- [ ] **RESL-02**: 合併 3 個重複的 CircuitBreaker 實作為統一的 `@gravito/resilience` CB
+- [ ] **RESL-03**: `withResilience()` 組合 API 正確包裝 retry + CB + timeout
 
-**Deliverables:**
-- All public exports have JSDoc blocks with:
-  - Brief description (1-2 sentences)
-  - @param/@returns tags (if applicable)
-  - @example tag (for complex utilities)
-  - Type references (where helpful)
+### Orbit Integration
 
-### R-2: @gravito/signal JSDoc Coverage
-- [x] **Target:** Increase JSDoc coverage from 60% → 90%+ (minimum 4 of 5 undocumented exports)
-- [x] **Scope:** Document remaining undocumented exports
-- [x] **Quality Bar:** Consistent with Core improvements
-- [x] **Validation:** Automated coverage measurement
+- [ ] **INTG-01**: Circuit breaker 整合至 atlas DB 連線池
+- [ ] **INTG-02**: Circuit breaker 整合至 plasma Redis 客戶端
+- [ ] **INTG-03**: atlas、plasma、stream、signal、beam 註冊 `core:shutdown` handler 含 deadline
+- [ ] **INTG-04**: 所有 Orbit 包向 `@gravito/monitor` 註冊健康檢查
+- [ ] **INTG-05**: `OrbitDegradationManager` 在 CB open 時返回 typed fallback 而非拋出錯誤
 
-**Deliverables:**
-- All public exports have complete JSDoc blocks
-- Consistency with Core package patterns
+### Full Migration
 
-### R-3: Quality & Consistency Standards
-- [x] **Use Photon as benchmark:** 100% coverage, clear descriptions, practical examples
-- [x] **Type safety:** Proper @param/@returns with type annotations
-- [x] **Practical examples:** @example tags for non-trivial functions
-- [x] **Cross-references:** @see tags linking related modules
-- [x] **Deprecation notices:** @deprecated tags where applicable (e.g., Hono-related exports)
+- [ ] **MIGR-01**: ~50 個 Orbit 包全量採用新錯誤模型（分批遷移）
+- [ ] **MIGR-02**: 所有現有測試適配新錯誤類型（contract tests 先行）
 
-### R-4: Verification & Audit
-- [x] **Automated measurement:** Script to verify coverage (target ≥90%)
-- [x] **Manual review:** Sample 50% of documented exports for quality
-- [x] **Type accuracy:** Validate @param/@returns types match source
-- [x] **Link checking:** Verify @see cross-references are valid
-- [x] **Report:** Coverage report + before/after metrics
+### Release
 
-## Success Criteria
+- [ ] **RELS-01**: 每個被修改的 Orbit 包更新 package.json 版本號（major bump to 2.0.0）
 
-✅ **All of the following must be true:**
+## v2.1.0 Requirements
 
-1. **Core package:** ≥90% JSDoc coverage (at least 10 of 11 exports documented)
-2. **Signal package:** ≥90% JSDoc coverage (at least 4 of 5 exports documented)
-3. **Quality:** 100% of new JSDoc blocks have descriptions + types
-4. **Consistency:** All blocks follow Photon style guide (no variations)
-5. **Type safety:** @param/@returns types match actual signatures
-6. **Examples:** Complex functions have @example tags
-7. **Verification:** Automated coverage script confirms ≥90%
-8. **Testing:** 0 TypeScript errors, test suite passes (99.7%+)
+Deferred to next release. Tracked but not in current roadmap.
 
-## Scope
+### Advanced Resilience
 
-### In Scope ✅
-- JSDoc blocks for all public exports (types, functions, classes, interfaces)
-- @param/@returns documentation with proper types
-- @example tags for utilities and non-trivial functions
-- Quality audit and coverage measurement
-- README updates if needed to reference new documentation
+- **ADVR-01**: Request-scoped error context enrichment — 自動 trace ID / user context 傳播
+- **ADVR-02**: Per-Orbit error namespace registry — `ErrorRegistry.register(namespace, codes)` for documentation generation
+- **ADVR-03**: Idempotency key propagation for HTTP retries — 關鍵用於 commerce/payment 流程
 
-### Out of Scope ❌
-- Obsidian vault setup (deferred to v1.5.0)
-- Example improvements (deferred to v1.5.0)
-- API reference generation (deferred to v1.5.0)
-- Internal/private export documentation (only public API)
-- Full refactoring of existing JSDoc (only gaps)
+## Out of Scope
 
-## Assumptions
+| Feature | Reason |
+|---------|--------|
+| 性能優化 | v1.5.2 optimization roadmap 已規劃，與錯誤處理無關 |
+| Satellite 業務邏輯改造 | 本次僅改造 Orbit 層，Satellite 自然受益於統一錯誤模型 |
+| Obsidian 文檔庫 | 文檔工作暫緩，優先處理核心穩定性 |
+| neverthrow / Effect-TS | 需重寫全部 call sites，不適合 brownfield 50+ 包遷移 |
+| 全局 try/catch wrapper | Anti-pattern：靜默吞錯誤，破壞 TypeScript 類型窄化 |
+| 單一全局 Circuit Breaker | Anti-pattern：一個慢服務觸發所有服務斷路 |
 
-- **Photon package JSDoc quality** is the target standard (100% coverage, clear + concise)
-- **JSDoc coverage tool** can be measured with typedoc or similar automation
-- **No breaking changes** to Core/Signal APIs (documentation-only)
-- **Type system is stable** (no major type rewrites needed)
+## Traceability
 
-## Dependencies
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| ERRM-01 | TBD | Pending |
+| ERRM-02 | TBD | Pending |
+| ERRM-03 | TBD | Pending |
+| RESL-01 | TBD | Pending |
+| RESL-02 | TBD | Pending |
+| RESL-03 | TBD | Pending |
+| INTG-01 | TBD | Pending |
+| INTG-02 | TBD | Pending |
+| INTG-03 | TBD | Pending |
+| INTG-04 | TBD | Pending |
+| INTG-05 | TBD | Pending |
+| MIGR-01 | TBD | Pending |
+| MIGR-02 | TBD | Pending |
+| RELS-01 | TBD | Pending |
 
-- ✓ v1.3.10 milestone complete (framework stable)
-- ✓ 0 TypeScript errors maintained
-- ✓ 99.7%+ test pass rate maintained
-- ✓ No API changes (documentation only)
-
-## Timeline Estimate
-
-| Phase | Duration | Focus |
-|-------|----------|-------|
-| Phase 1 | 3 days | Core package (27% → 90%) |
-| Phase 2 | 2 days | Signal package (60% → 90%) |
-| Phase 3 | 1 day | Verification, audit, reporting |
-| **Total** | **~1 week** | **90%+ coverage + quality audit** |
-
-## Recommendations for Future Milestones
-
-**v1.5.0 (After JSDoc completion):**
-- Obsidian vault setup + cross-linking
-- Example improvements for Core/Signal
-- API reference generation from JSDoc
-- Other packages (Atlas, Stream, Event, etc.)
+**Coverage:**
+- v2.0.0 requirements: 14 total
+- Mapped to phases: 0 (pending roadmap)
+- Unmapped: 14 ⚠️
 
 ---
-
-**Framework Status:** STABLE, PRODUCTION-READY (v1.3.10 baseline maintained)
-
-**Last updated:** 2026-03-27
-**Next phase:** Phase 1 execution starts with /gsd:plan-phase 1
+*Requirements defined: 2026-03-28*
+*Last updated: 2026-03-28 after initial definition*
