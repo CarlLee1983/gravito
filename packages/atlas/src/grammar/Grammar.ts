@@ -356,6 +356,15 @@ export abstract class Grammar implements GrammarContract {
       keyParts.push('')
     }
 
+    if (query.unions && query.unions.length > 0) {
+      const unions = query.unions
+        .map((u) => `${u.all ? 'all' : 'distinct'}:${this.getStructuralKey(u.query)}`)
+        .join('|')
+      keyParts.push(unions)
+    } else {
+      keyParts.push('')
+    }
+
     keyParts.push(query.limit !== undefined ? `L${query.limit}` : 'X')
     keyParts.push(query.offset !== undefined ? `O${query.offset}` : 'X')
 
