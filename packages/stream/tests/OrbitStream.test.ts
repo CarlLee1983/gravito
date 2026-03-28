@@ -23,7 +23,7 @@ describe('OrbitStream', () => {
         container: { instance: mock(() => {}), make: mock(() => null) },
         adapter: { use: mock(() => {}) },
         logger: { info: mock(() => {}) },
-        hooks: { setBackend: mock(() => {}) },
+        hooks: { setBackend: mock(() => {}), doAction: mock(() => {}) },
       }
 
       orbit.install(mockCore)
@@ -43,7 +43,7 @@ describe('OrbitStream', () => {
           post: mock(() => {}),
         },
         logger: { info: mock(() => {}) },
-        hooks: { setBackend: mock(() => {}) },
+        hooks: { setBackend: mock(() => {}), doAction: mock(() => {}) },
       }
 
       orbit.install(mockCore)
@@ -61,7 +61,7 @@ describe('OrbitStream', () => {
           post: mock(() => {}),
         },
         logger: { info: mock(() => {}) },
-        hooks: { setBackend: mock(() => {}) },
+        hooks: { setBackend: mock(() => {}), doAction: mock(() => {}) },
       }
 
       orbit.install(mockCore)
@@ -83,7 +83,7 @@ describe('OrbitStream', () => {
         container: { instance: mock(() => {}), make: mock(() => null) },
         adapter: { use: mock(() => {}) },
         logger: { info: mock(() => {}) },
-        hooks: { setBackend: mock(() => {}) },
+        hooks: { setBackend: mock(() => {}), doAction: mock(() => {}) },
       }
 
       orbit.install(mockCore)
@@ -107,7 +107,7 @@ describe('OrbitStream', () => {
           }),
         },
         logger: { info: mock(() => {}) },
-        hooks: { setBackend: mock(() => {}) },
+        hooks: { setBackend: mock(() => {}), doAction: mock(() => {}) },
       }
 
       orbit.install(mockCore)
@@ -139,7 +139,7 @@ describe('OrbitStream', () => {
           }),
         },
         logger: { info: mock(() => {}) },
-        hooks: { setBackend: mock(() => {}) },
+        hooks: { setBackend: mock(() => {}), doAction: mock(() => {}) },
       }
 
       orbit.install(mockCore)
@@ -173,7 +173,7 @@ describe('OrbitStream', () => {
           }),
         },
         logger: { info: mock(() => {}) },
-        hooks: { setBackend: mock(() => {}) },
+        hooks: { setBackend: mock(() => {}), doAction: mock(() => {}) },
       }
 
       orbit.install(mockCore)
@@ -205,7 +205,7 @@ describe('OrbitStream', () => {
         container: { instance: mock(() => {}), make: mock(() => null) },
         adapter: { use: mock(() => {}) },
         logger: { info: mock(() => {}) },
-        hooks: { setBackend: mock(() => {}) },
+        hooks: { setBackend: mock(() => {}), doAction: mock(() => {}) },
       }
 
       orbit.install(mockCore)

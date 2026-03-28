@@ -162,6 +162,22 @@ export class OrbitStream implements GravitoOrbit {
 
     core.logger.info('[OrbitStream] Installed')
 
+    // Register shutdown handler with 5s deadline (INTG-03)
+    core.hooks.doAction('core:shutdown', async () => {
+      const DEADLINE_MS = 5000
+      const deadline = new Promise<void>((_, reject) =>
+        setTimeout(
+          () => reject(new Error('[OrbitStream] Shutdown deadline exceeded (5s)')),
+          DEADLINE_MS
+        )
+      )
+      try {
+        await Promise.race([this.stopWorker(), deadline])
+      } catch (err) {
+        core.logger.warn('[OrbitStream] Forced shutdown:', err)
+      }
+    })
+
     // Replace default event backend with Stream backend
     if (this.queueManager) {
       const backend = new StreamEventBackend(this.queueManager)
