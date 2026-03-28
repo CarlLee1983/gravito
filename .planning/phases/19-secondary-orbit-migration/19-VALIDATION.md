@@ -2,7 +2,7 @@
 phase: 19
 slug: secondary-orbit-migration
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-03-28
 ---
@@ -54,10 +54,10 @@ created: 2026-03-28
 
 ## Wave 0 Requirements
 
-- [ ] `packages/core/src/exceptions/AuthException.ts` — needed by Batch 1 (fortify, sentinel)
-- [ ] `packages/core/src/exceptions/QueueException.ts` — needed by Batch 3 (flux, conduit)
-- [ ] `packages/core/src/exceptions/StreamException.ts` — needed by Batch 2 (stream, beam)
-- [ ] `packages/core/src/exceptions/StorageException.ts` — needed by Batch 4 (nebula-*)
+- [ ] `packages/core/src/exceptions/AuthException.ts` — needed by Batch 1 (fortify) and Batch 5 (sentinel)
+- [ ] `packages/core/src/exceptions/QueueException.ts` — needed by Batch 1 (quasar, flux)
+- [ ] `packages/core/src/exceptions/StreamException.ts` — needed by Batch 1 (stream)
+- [ ] `packages/core/src/exceptions/StorageException.ts` — needed by Batch 2 (constellation, nebula, nebula-s3, stasis, freeze)
 
 ---
 
@@ -69,7 +69,7 @@ created: 2026-03-28
 | MIGR-02 | All existing tests pass after migration | Regression | `bun run test` (root) |
 | MIGR-02 | Contract: each error satisfies .code, .status, instanceof | Contract test | `cd packages/<name> && bun test --testPathPattern contract` |
 | INTG-04 | Health registry returns per-Orbit status | Contract test | `cd packages/monitor && bun test` |
-| INTG-03 | stream/beam shutdown completes within deadline | Contract test | `cd packages/stream && bun test --testPathPattern shutdown` |
+| INTG-03 | stream/beam shutdown completes within deadline | Contract test | `cd packages/stream && bun test --testPathPattern shutdown` and `cd packages/beam && bun test --testPathPattern shutdown` |
 
 ---
 
