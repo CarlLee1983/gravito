@@ -126,6 +126,7 @@ export class BunSQLPreparedStatementManager {
     evictions: 0,
     executions: 0,
   }
+  private statementCounter = 0
 
   constructor(
     private readonly client: BunSQLClient,
@@ -285,17 +286,16 @@ export class BunSQLPreparedStatementManager {
   }
 
   /**
-   * Generate a unique statement name from SQL hash
+   * Generate a unique statement name using monotonic counter
    * @private
    */
   private generateStatementName(sql: string): string {
-    // Simple hash function for consistency
-    let hash = 0
-    for (let i = 0; i < sql.length; i++) {
-      const char = sql.charCodeAt(i)
-      hash = (hash << 5) - hash + char
-      hash = hash & hash
+    const existing = this.sqlToName.get(sql)
+    if (existing) {
+      return existing
     }
-    return `stmt_${Math.abs(hash).toString(36)}`
+    const name = `stmt_${++this.statementCounter}`
+    this.sqlToName.set(sql, name)
+    return name
   }
 }

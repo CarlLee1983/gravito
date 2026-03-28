@@ -82,6 +82,31 @@ describe('BunSQLPreparedStatementManager', () => {
       expect(name1).not.toBe(name2)
       expect(mockClient.prepare).toHaveBeenCalledTimes(2)
     })
+
+    it('應該為不同 SQL 生成唯一的遞增計數器名稱', async () => {
+      const sqlStatements = [
+        'SELECT * FROM users WHERE id = ?',
+        'SELECT * FROM posts WHERE id = ?',
+        'SELECT * FROM comments WHERE id = ?',
+        'UPDATE users SET name = ? WHERE id = ?',
+        'DELETE FROM posts WHERE id = ?',
+      ]
+
+      const names: string[] = []
+      for (const sql of sqlStatements) {
+        const name = await manager.prepare(sql)
+        names.push(name)
+      }
+
+      // 驗證所有名稱都是唯一的
+      const uniqueNames = new Set(names)
+      expect(uniqueNames.size).toBe(sqlStatements.length)
+
+      // 驗證名稱格式為 stmt_N（遞增計數器）
+      for (let i = 0; i < names.length; i++) {
+        expect(names[i]).toBe(`stmt_${i + 1}`)
+      }
+    })
   })
 
   describe('execute()', () => {
