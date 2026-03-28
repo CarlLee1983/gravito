@@ -1,9 +1,11 @@
+import { InfrastructureException } from '@gravito/core'
+import { MailErrorCodes, type MailErrorCode as MailErrorCodeType } from './errors/codes'
+
 /**
- * Mail transport error codes.
+ * Mail transport error codes (legacy enum — kept for backward compat).
+ * New code should use MailErrorCodes from './errors/codes' instead.
  *
- * Categorizes common failure modes in the mail delivery process to allow
- * for programmatic handling (e.g., retries on rate limits).
- *
+ * @deprecated Use MailErrorCodes from './errors/codes'
  * @public
  * @since 3.1.0
  */
@@ -22,11 +24,28 @@ export enum MailErrorCode {
   UNKNOWN = 'UNKNOWN',
 }
 
+// Map legacy enum to new mail.* namespaced codes for backward compat
+const legacyToNewCode: Record<MailErrorCode, string> = {
+  [MailErrorCode.CONNECTION_FAILED]: MailErrorCodes.CONNECTION_FAILED,
+  [MailErrorCode.AUTH_FAILED]: MailErrorCodes.AUTH_FAILED,
+  [MailErrorCode.RECIPIENT_REJECTED]: MailErrorCodes.RECIPIENT_REJECTED,
+  [MailErrorCode.MESSAGE_REJECTED]: MailErrorCodes.MESSAGE_REJECTED,
+  [MailErrorCode.RATE_LIMIT]: MailErrorCodes.RATE_LIMIT,
+  [MailErrorCode.UNKNOWN]: MailErrorCodes.UNKNOWN,
+}
+
+// Transient codes that should be retried (connection issues and rate limits)
+const RETRYABLE_CODES = new Set<string>([
+  MailErrorCodes.CONNECTION_FAILED,
+  MailErrorCodes.RATE_LIMIT,
+])
+
 /**
  * Error class for mail transport failures.
  *
- * Provides structured error information for mail sending failures,
- * including error codes and original cause tracking for debugging.
+ * Extends InfrastructureException for unified error handling across Gravito.
+ * Carries a `retryable` flag indicating whether the operation can be retried,
+ * and preserves backward compat with the legacy MailErrorCode enum via `.legacyCode`.
  *
  * @example
  * ```typescript
@@ -40,12 +59,20 @@ export enum MailErrorCode {
  * @public
  * @since 3.1.0
  */
-export class MailTransportError extends Error {
+export class MailTransportError extends InfrastructureException {
+  /**
+   * Legacy enum code — preserved for backward compat with callers that switch on MailErrorCode.
+   * @deprecated Prefer checking `.code` (mail.* namespaced string) instead.
+   */
+  public readonly legacyCode: MailErrorCode
+
   /**
    * Create a new mail transport error.
    *
+   * Accepts both the legacy MailErrorCode enum and new mail.* namespaced string codes.
+   *
    * @param message - Human-readable error message
-   * @param code - Categorized error code
+   * @param code - Categorized error code (legacy enum or new mail.* string)
    * @param cause - Original error that caused this failure
    *
    * @example
@@ -55,13 +82,32 @@ export class MailTransportError extends Error {
    */
   constructor(
     message: string,
-    public readonly code: MailErrorCode,
-    public readonly cause?: Error
+    code: MailErrorCode | MailErrorCodeType = MailErrorCode.UNKNOWN,
+    cause?: Error
   ) {
-    super(message)
+    // Resolve the new-style mail.* namespaced code
+    const newCode =
+      typeof code === 'string' && code.startsWith('mail.')
+        ? code
+        : legacyToNewCode[code as MailErrorCode] ?? MailErrorCodes.UNKNOWN
+
+    super(502, newCode, {
+      message,
+      cause,
+      retryable: RETRYABLE_CODES.has(newCode),
+    })
+
     this.name = 'MailTransportError'
 
-    // Maintain proper stack trace in V8 environments
+    // Resolve legacy enum code from the new-style code (for backward compat)
+    this.legacyCode =
+      typeof code === 'string' && code.startsWith('mail.')
+        ? ((Object.entries(legacyToNewCode).find(([, v]) => v === code)?.[0] as MailErrorCode) ??
+          MailErrorCode.UNKNOWN)
+        : (code as MailErrorCode)
+
+    // Per Pitfall 5: setPrototypeOf FIRST ensures instanceof works across ESM/CJS boundaries
+    Object.setPrototypeOf(this, new.target.prototype)
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, MailTransportError)
     }
