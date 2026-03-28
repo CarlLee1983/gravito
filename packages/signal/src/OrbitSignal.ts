@@ -7,6 +7,21 @@ import { LogTransport } from './transports/LogTransport'
 import { MemoryTransport } from './transports/MemoryTransport'
 import type { MailConfig, Message } from './types'
 
+/** Interface for transports that support graceful close */
+interface Closeable {
+  close(): Promise<void> | void
+}
+
+/** Type guard — avoids `as any` when checking for optional close() method */
+function isCloseable(obj: unknown): obj is Closeable {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'close' in obj &&
+    typeof (obj as Record<string, unknown>).close === 'function'
+  )
+}
+
 /**
  * OrbitSignal - Mail service orbit for Gravito framework.
  *
@@ -263,6 +278,39 @@ export class OrbitSignal implements GravitoOrbit {
           return c.json({ error: 'Webhook processing failed' }, 500)
         }
       })
+    }
+
+    // 6. Register shutdown hook with 5s deadline enforcement (D-09: signal = 5s)
+    core.hooks.doAction('core:shutdown', async () => {
+      const DEADLINE_MS = 5000
+      const deadline = new Promise<void>((_, reject) =>
+        setTimeout(
+          () => reject(new Error('[OrbitSignal] Shutdown deadline exceeded (5s)')),
+          DEADLINE_MS
+        )
+      )
+      try {
+        await Promise.race([this.cleanup(), deadline])
+      } catch (err) {
+        core.logger.warn('[OrbitSignal] Forced shutdown:', err)
+      }
+    })
+  }
+
+  /**
+   * Gracefully release transport and dev resources.
+   *
+   * Called during shutdown. Detects closeable transports via type narrowing (no `as any`).
+   */
+  private async cleanup(): Promise<void> {
+    // Release dev mailbox reference
+    if (this.devMailbox) {
+      this.devMailbox = undefined
+    }
+    // Close transport if it supports graceful shutdown (e.g. SmtpTransport.close())
+    const transport = this.config.transport
+    if (isCloseable(transport)) {
+      await transport.close()
     }
   }
 

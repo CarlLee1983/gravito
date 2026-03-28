@@ -15,13 +15,16 @@ describe('OrbitSignal Webhooks', () => {
 
     const handlers: any[] = []
     const mockCore = {
-      logger: { info: mock(), error: mock() },
+      logger: { info: mock(), error: mock(), warn: mock() },
       container: { instance: mock() },
       adapter: {
         use: mock(),
         post: mock((path, handler) => {
           handlers.push({ path, handler })
         }),
+      },
+      hooks: {
+        doAction: mock(() => {}),
       },
     } as unknown as PlanetCore
 
