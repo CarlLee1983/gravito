@@ -1,4 +1,5 @@
-import { beforeAll, describe, expect, it } from 'bun:test'
+import { beforeAll, describe, expect, it, test } from 'bun:test'
+import { Connection } from '../src/connection/Connection'
 import { DB } from '../src/DB'
 import { QueryBuilder } from '../src/query/QueryBuilder'
 
@@ -32,6 +33,26 @@ describe('DB', () => {
     DB.clearQueryLog()
     expect(DB.getQueryLog()).toHaveLength(0)
     DB.debug(false)
+  })
+
+  test('_reset should clear all static state', async () => {
+    DB.debug(true)
+    expect(Connection.queryListeners.length).toBeGreaterThan(0)
+
+    await DB._reset()
+
+    expect(Connection.queryListeners.length).toBe(0)
+    expect((DB as any).shardingManagers.size).toBe(0)
+    expect((DB as any)._queryLog.length).toBe(0)
+    expect((DB as any)._debug).toBe(false)
+    expect((DB as any).queryListener).toBeUndefined()
+
+    // Restore connection for subsequent tests
+    DB.addConnection(CONNECTION_NAME, {
+      driver: 'sqlite',
+      database: ':memory:',
+      useNativeDriver: false,
+    })
   })
 
   it('should handle pretend mode', async () => {

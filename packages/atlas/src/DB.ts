@@ -751,5 +751,15 @@ export class DB {
     await DB.manager.disconnectAll()
     DB.manager = new ConnectionManager()
     DB.initialized = false
+    DB.shardingManagers.clear()
+    DB._debug = false
+    DB._queryLog = []
+    if (DB.queryListener) {
+      const index = Connection.queryListeners.indexOf(DB.queryListener)
+      if (index !== -1) {
+        Connection.queryListeners.splice(index, 1)
+      }
+      DB.queryListener = undefined
+    }
   }
 }
