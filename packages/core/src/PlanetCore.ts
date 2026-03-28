@@ -217,6 +217,13 @@ export class PlanetCore {
   private isShuttingDown = false
 
   /**
+   * Global shutdown timeout in milliseconds (D-10).
+   * If the entire shutdown sequence does not complete within this limit,
+   * a warning is logged and shutdown is force-completed so the process can exit.
+   */
+  private static readonly GLOBAL_SHUTDOWN_TIMEOUT = 10_000
+
+  /**
    * Initialize observability asynchronously (metrics, tracing, Prometheus).
    * This is called from constructor but doesn't block initialization.
    *
@@ -451,18 +458,34 @@ export class PlanetCore {
     this.isShuttingDown = true
     this.logger.debug('🛑 Application shutdown started')
 
-    // Call onShutdown in reverse order (LIFO)
-    for (const provider of [...this.providers].reverse()) {
-      if (provider.onShutdown) {
-        try {
-          this.logger.debug(`  onShutdown: ${provider.constructor.name}`)
-          await provider.onShutdown(this)
-        } catch (error) {
-          this.logger.error(`Error during shutdown of ${provider.constructor.name}:`, error)
+    const shutdownSequence = async () => {
+      // Call onShutdown in reverse order (LIFO)
+      for (const provider of [...this.providers].reverse()) {
+        if (provider.onShutdown) {
+          try {
+            this.logger.debug(`  onShutdown: ${provider.constructor.name}`)
+            await provider.onShutdown(this)
+          } catch (error) {
+            this.logger.error(`Error during shutdown of ${provider.constructor.name}:`, error)
+          }
         }
       }
     }
 
+    const globalDeadline = new Promise<void>((_, reject) =>
+      setTimeout(
+        () => reject(new Error('[PlanetCore] Global shutdown timeout exceeded (10s)')),
+        PlanetCore.GLOBAL_SHUTDOWN_TIMEOUT
+      )
+    )
+
+    try {
+      await Promise.race([shutdownSequence(), globalDeadline])
+    } catch (err) {
+      this.logger.warn('[PlanetCore] Forced shutdown after global timeout:', err)
+    }
+
+    // Always fire the shutdown hook, even if the global timeout fired
     this.hooks.doAction('app:shutdown', this)
     this.logger.debug('✅ Application shutdown complete')
   }
