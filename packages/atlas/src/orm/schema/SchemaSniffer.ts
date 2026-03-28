@@ -42,9 +42,10 @@ export class SchemaSniffer {
    */
   private async sniffSQLite(table: string): Promise<TableSchema> {
     const connection = DB.connection(this.connectionName)
+    const validatedTable = this.validateTableName(table)
 
     // Get columns
-    const columnsResult = await connection.raw(`PRAGMA table_info('${table}')`)
+    const columnsResult = await connection.raw(`PRAGMA table_info('${validatedTable}')`)
 
     const columns = new Map<string, ColumnSchema>()
     const primaryKey: string[] = []
@@ -103,10 +104,11 @@ export class SchemaSniffer {
 
     // Check indexes for UNIQUE
     try {
-      const indexesResult = await connection.raw(`PRAGMA index_list('${table}')`)
+      const indexesResult = await connection.raw(`PRAGMA index_list('${validatedTable}')`)
       for (const idx of indexesResult.rows as any[]) {
         if (idx.unique === 1 && idx.origin === 'u') {
-          const info = await connection.raw(`PRAGMA index_info('${idx.name}')`)
+          const validatedIndexName = this.validateTableName(idx.name)
+          const info = await connection.raw(`PRAGMA index_info('${validatedIndexName}')`)
           if (info.rows.length === 1) {
             const colName = (info.rows[0] as any).name
             const col = columns.get(colName)
@@ -204,8 +206,9 @@ export class SchemaSniffer {
    */
   private async sniffMySQL(table: string): Promise<TableSchema> {
     const connection = DB.connection(this.connectionName)
+    const validatedTable = this.validateTableName(table)
 
-    const columnsResult = await connection.raw(`SHOW COLUMNS FROM \`${table}\``)
+    const columnsResult = await connection.raw(`SHOW COLUMNS FROM \`${validatedTable}\``)
 
     const columns = new Map<string, ColumnSchema>()
     const primaryKey: string[] = []
@@ -405,5 +408,18 @@ export class SchemaSniffer {
     }
     // For ReadWriteConnectionConfig, use the write config driver
     return config.write.driver ?? 'postgres'
+  }
+
+  /**
+   * Validate table name to prevent SQL injection
+   * Only allows alphanumeric characters and underscores
+   */
+  private validateTableName(name: string): string {
+    if (!/^[\w]+$/.test(name)) {
+      throw new Error(
+        `Invalid table name: "${name}". Only alphanumeric and underscore characters are allowed.`
+      )
+    }
+    return name
   }
 }
