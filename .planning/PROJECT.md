@@ -50,6 +50,7 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 - Test pass rate: 99.7%+, 3000+ tests
 - TypeScript strict mode, 0 errors
 - 已有 @gravito/resilience 包（可能包含部分基礎）
+- Phase 16 完成 — 統一錯誤模型基礎已建立（GravitoException 三層階層 + 4 Orbit ErrorCodes + 52 contract tests）
 
 **v2.0.0 決策：**
 - 允許 breaking changes — 重新設計錯誤處理
@@ -71,7 +72,7 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 | v2.0.0 major version | 錯誤模型重新設計需要 breaking changes | ✓ 已確認 |
 | 全量 Orbit 包改造 | 局部改造會導致不一致，全量確保品質統一 | ✓ 已確認 |
 | 錯誤處理為最高優先 | Production 穩定性是下游所有功能的基礎 | ✓ 已確認 |
-| 統一錯誤模型先行 | 先建立標準，再逐步改造各包 | — 待實施 |
+| 統一錯誤模型先行 | 先建立標準，再逐步改造各包 | ✓ Phase 16 完成 |
 
 ---
 
@@ -329,4 +330,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-28 after v2.0.0 milestone started*
+*Last updated: 2026-03-28 after Phase 16 (Core Error Model Foundation) complete*
