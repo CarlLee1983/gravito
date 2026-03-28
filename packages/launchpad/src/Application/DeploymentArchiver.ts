@@ -8,6 +8,8 @@
 import { mkdir } from 'node:fs/promises'
 import type { RuntimeArchiveAdapter } from '@gravito/core'
 import { getArchiveAdapter, getRuntimeAdapter } from '@gravito/core'
+import { LaunchpadError } from '../errors/LaunchpadError'
+import { LaunchpadErrorCodes } from '../errors/codes'
 import type { IDockerAdapter, IRocketRepository } from '../Domain/Interfaces'
 
 // ============ 公開介面 ============
@@ -92,7 +94,9 @@ export class DeploymentArchiver {
   async backupDeployment(rocketId: string, outputPath: string): Promise<void> {
     const rocket = await this.rocketRepo.findById(rocketId)
     if (!rocket) {
-      throw new Error(`[DeploymentArchiver] Rocket 不存在：${rocketId}`)
+      throw new LaunchpadError(404, LaunchpadErrorCodes.ROCKET_NOT_FOUND, {
+        message: `[DeploymentArchiver] Rocket 不存在：${rocketId}`,
+      })
     }
 
     // 列出容器 /app 目錄的所有檔案
@@ -154,7 +158,9 @@ export class DeploymentArchiver {
   async restoreDeployment(rocketId: string, backupPath: string): Promise<void> {
     const rocket = await this.rocketRepo.findById(rocketId)
     if (!rocket) {
-      throw new Error(`[DeploymentArchiver] Rocket 不存在：${rocketId}`)
+      throw new LaunchpadError(404, LaunchpadErrorCodes.ROCKET_NOT_FOUND, {
+        message: `[DeploymentArchiver] Rocket 不存在：${rocketId}`,
+      })
     }
 
     // 讀取備份資料
@@ -162,7 +168,9 @@ export class DeploymentArchiver {
     try {
       archiveData = await this.runtime.readFile(backupPath)
     } catch {
-      throw new Error(`[DeploymentArchiver] 備份檔案不存在或無法讀取：${backupPath}`)
+      throw new LaunchpadError(404, LaunchpadErrorCodes.DEPLOYMENT_BACKUP_NOT_FOUND, {
+        message: `[DeploymentArchiver] 備份檔案不存在或無法讀取：${backupPath}`,
+      })
     }
 
     // 提取到臨時目錄
@@ -200,7 +208,9 @@ export class DeploymentArchiver {
   ): Promise<void> {
     const rocket = await this.rocketRepo.findById(rocketId)
     if (!rocket) {
-      throw new Error(`[DeploymentArchiver] Rocket 不存在：${rocketId}`)
+      throw new LaunchpadError(404, LaunchpadErrorCodes.ROCKET_NOT_FOUND, {
+        message: `[DeploymentArchiver] Rocket 不存在：${rocketId}`,
+      })
     }
 
     // 根據選項決定排除清單

@@ -1,3 +1,6 @@
+import { HorizonError } from '../errors/HorizonError'
+import { HorizonErrorCodes } from '../errors/codes'
+
 /**
  * Parses and validates a 24-hour time string.
  *
@@ -6,7 +9,7 @@
  *
  * @param time - Time string in "HH:mm" format.
  * @returns Object containing validated hour and minute as integers.
- * @throws {Error} If the format is invalid or values are out of bounds.
+ * @throws {HorizonError} If the format is invalid or values are out of bounds.
  *
  * @example
  * ```typescript
@@ -21,14 +24,18 @@ export function parseTime(time: string): { hour: number; minute: number } {
   const match = time.match(timePattern)
 
   if (!match) {
-    throw new Error(`Invalid time format: "${time}". Expected HH:mm (24-hour format, 00:00-23:59)`)
+    throw new HorizonError(422, HorizonErrorCodes.INVALID_TIME_FORMAT, {
+      message: `Invalid time format: "${time}". Expected HH:mm (24-hour format, 00:00-23:59)`,
+    })
   }
 
   const hour = Number.parseInt(match[1], 10)
   const minute = Number.parseInt(match[2], 10)
 
   if (hour > 23) {
-    throw new Error(`Invalid time format: "${time}". Expected HH:mm (24-hour format, 00:00-23:59)`)
+    throw new HorizonError(422, HorizonErrorCodes.INVALID_TIME_FORMAT, {
+      message: `Invalid time format: "${time}". Expected HH:mm (24-hour format, 00:00-23:59)`,
+    })
   }
 
   return { hour, minute }
@@ -38,12 +45,12 @@ export function parseTime(time: string): { hour: number; minute: number } {
  * Validates that a value is a valid cron minute field.
  *
  * @param minute - Numeric value to validate.
- * @throws {Error} If the minute is not an integer between 0 and 59.
+ * @throws {HorizonError} If the minute is not an integer between 0 and 59.
  *
  * @example
  * ```typescript
  * validateMinute(45); // OK
- * validateMinute(60); // throws Error
+ * validateMinute(60); // throws HorizonError
  * ```
  *
  * @internal
@@ -51,7 +58,9 @@ export function parseTime(time: string): { hour: number; minute: number } {
  */
 export function validateMinute(minute: number): void {
   if (!Number.isInteger(minute) || minute < 0 || minute > 59) {
-    throw new Error(`Invalid minute: ${minute}. Expected integer 0-59`)
+    throw new HorizonError(422, HorizonErrorCodes.INVALID_MINUTE, {
+      message: `Invalid minute: ${minute}. Expected integer 0-59`,
+    })
   }
 }
 
@@ -59,12 +68,12 @@ export function validateMinute(minute: number): void {
  * Validates that a value is a valid cron day-of-week field.
  *
  * @param dayOfWeek - Numeric day index (0-6, where 0 is Sunday).
- * @throws {Error} If the index is not an integer between 0 and 6.
+ * @throws {HorizonError} If the index is not an integer between 0 and 6.
  *
  * @example
  * ```typescript
  * validateDayOfWeek(0); // Sunday (OK)
- * validateDayOfWeek(7); // throws Error
+ * validateDayOfWeek(7); // throws HorizonError
  * ```
  *
  * @internal
@@ -72,7 +81,9 @@ export function validateMinute(minute: number): void {
  */
 export function validateDayOfWeek(dayOfWeek: number): void {
   if (!Number.isInteger(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
-    throw new Error(`Invalid day of week: ${dayOfWeek}. Expected 0-6 (Sunday=0, Saturday=6)`)
+    throw new HorizonError(422, HorizonErrorCodes.INVALID_DAY_OF_WEEK, {
+      message: `Invalid day of week: ${dayOfWeek}. Expected 0-6 (Sunday=0, Saturday=6)`,
+    })
   }
 }
 
@@ -80,12 +91,12 @@ export function validateDayOfWeek(dayOfWeek: number): void {
  * Validates that a value is a valid cron day-of-month field.
  *
  * @param dayOfMonth - Numeric day (1-31).
- * @throws {Error} If the day is not an integer between 1 and 31.
+ * @throws {HorizonError} If the day is not an integer between 1 and 31.
  *
  * @example
  * ```typescript
  * validateDayOfMonth(31); // OK
- * validateDayOfMonth(32); // throws Error
+ * validateDayOfMonth(32); // throws HorizonError
  * ```
  *
  * @internal
@@ -93,6 +104,8 @@ export function validateDayOfWeek(dayOfWeek: number): void {
  */
 export function validateDayOfMonth(dayOfMonth: number): void {
   if (!Number.isInteger(dayOfMonth) || dayOfMonth < 1 || dayOfMonth > 31) {
-    throw new Error(`Invalid day of month: ${dayOfMonth}. Expected 1-31`)
+    throw new HorizonError(422, HorizonErrorCodes.INVALID_DAY_OF_MONTH, {
+      message: `Invalid day of month: ${dayOfMonth}. Expected 1-31`,
+    })
   }
 }

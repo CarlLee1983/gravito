@@ -1,4 +1,6 @@
 import { AggregateRoot } from '@gravito/enterprise'
+import { LaunchpadError } from '../errors/LaunchpadError'
+import { LaunchpadErrorCodes } from '../errors/codes'
 import {
   MissionAssigned,
   RefurbishmentCompleted,
@@ -54,7 +56,9 @@ export class Rocket extends AggregateRoot<string> {
    */
   public assignMission(mission: Mission): void {
     if (this._status !== RocketStatus.IDLE) {
-      throw new Error(`無法指派任務：火箭 ${this.id} 狀態為 ${this._status}，非 IDLE`)
+      throw new LaunchpadError(422, LaunchpadErrorCodes.ROCKET_INVALID_STATE, {
+        message: `無法指派任務：火箭 ${this.id} 狀態為 ${this._status}，非 IDLE`,
+      })
     }
 
     this._status = RocketStatus.PREPARING
@@ -67,7 +71,9 @@ export class Rocket extends AggregateRoot<string> {
    */
   public ignite(): void {
     if (this._status !== RocketStatus.PREPARING) {
-      throw new Error(`無法點火：火箭 ${this.id} 尚未進入 PREPARING 狀態`)
+      throw new LaunchpadError(422, LaunchpadErrorCodes.ROCKET_INVALID_STATE, {
+        message: `無法點火：火箭 ${this.id} 尚未進入 PREPARING 狀態`,
+      })
     }
 
     this._status = RocketStatus.ORBITING
@@ -79,7 +85,9 @@ export class Rocket extends AggregateRoot<string> {
    */
   public splashDown(): void {
     if (this._status !== RocketStatus.ORBITING) {
-      throw new Error(`無法降落：火箭 ${this.id} 不在運行軌道上`)
+      throw new LaunchpadError(422, LaunchpadErrorCodes.ROCKET_INVALID_STATE, {
+        message: `無法降落：火箭 ${this.id} 不在運行軌道上`,
+      })
     }
 
     this._status = RocketStatus.REFURBISHING
@@ -91,7 +99,9 @@ export class Rocket extends AggregateRoot<string> {
    */
   public finishRefurbishment(): void {
     if (this._status !== RocketStatus.REFURBISHING) {
-      throw new Error(`無法完成翻新：火箭 ${this.id} 不在 REFURBISHING 狀態`)
+      throw new LaunchpadError(422, LaunchpadErrorCodes.ROCKET_INVALID_STATE, {
+        message: `無法完成翻新：火箭 ${this.id} 不在 REFURBISHING 狀態`,
+      })
     }
 
     this._status = RocketStatus.IDLE
@@ -118,7 +128,9 @@ export class Rocket extends AggregateRoot<string> {
    */
   public replaceContainer(newContainerId: string): void {
     if (this._status !== RocketStatus.REFURBISHING) {
-      throw new Error(`無法替換容器：火箭 ${this.id} 不在 REFURBISHING 狀態`)
+      throw new LaunchpadError(422, LaunchpadErrorCodes.ROCKET_CONTAINER_REPLACE_FAILED, {
+        message: `無法替換容器：火箭 ${this.id} 不在 REFURBISHING 狀態`,
+      })
     }
     this._containerId = newContainerId
     this._assignedDomain = null // 清除域名映射

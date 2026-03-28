@@ -1,3 +1,5 @@
+import { HorizonError } from './errors/HorizonError'
+import { HorizonErrorCodes } from './errors/codes'
 import { SimpleCronParser } from './SimpleCronParser'
 
 interface CacheEntry {
@@ -51,7 +53,9 @@ export class CronParser {
       })
       return interval.next().toDate()
     } catch (_err) {
-      throw new Error(`Invalid cron expression: ${expression}`)
+      throw new HorizonError(422, HorizonErrorCodes.CRON_PARSE_ERROR, {
+        message: `Invalid cron expression: ${expression}`,
+      })
     }
   }
 

@@ -1,5 +1,7 @@
 import type { HookManager, Logger } from '@gravito/core'
 import { CronParser } from './CronParser'
+import { HorizonError } from './errors/HorizonError'
+import { HorizonErrorCodes } from './errors/codes'
 import type { LockManager } from './locks'
 import { Process } from './process'
 import { type ScheduledTask, TaskSchedule } from './TaskSchedule'
@@ -89,7 +91,9 @@ export class SchedulerManager {
     const task = new TaskSchedule(name, async () => {
       const result = await Process.run(command)
       if (!result.success) {
-        throw new Error(`Command failed: ${result.stderr || result.stdout}`)
+        throw new HorizonError(500, HorizonErrorCodes.COMMAND_FAILED, {
+          message: `Command failed: ${result.stderr || result.stdout}`,
+        })
       }
     })
     task.setCommand(command)

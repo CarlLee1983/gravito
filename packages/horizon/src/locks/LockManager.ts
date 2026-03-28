@@ -1,4 +1,6 @@
 import type { CacheManager } from '@gravito/stasis'
+import { HorizonError } from '../errors/HorizonError'
+import { HorizonErrorCodes } from '../errors/codes'
 import { CacheLockStore } from './CacheLockStore'
 import type { LockStore } from './LockStore'
 import { MemoryLockStore } from './MemoryLockStore'
@@ -39,7 +41,9 @@ export class LockManager {
       this.store = new MemoryLockStore()
     } else if (driver === 'cache') {
       if (!context?.cache) {
-        throw new Error('CacheManager is required for cache lock driver')
+        throw new HorizonError(422, HorizonErrorCodes.LOCK_DRIVER_REQUIRED, {
+          message: 'CacheManager is required for cache lock driver',
+        })
       }
       this.store = new CacheLockStore(context.cache)
     } else {

@@ -1,4 +1,6 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react'
+import { ZenithError } from '../../errors/ZenithError'
+import { ZenithErrorCodes } from '../../errors/codes'
 
 /**
  * Represents a system notification in the Zenith dashboard.
@@ -44,7 +46,9 @@ const NotificationContext = createContext<NotificationContextType | null>(null)
 export function useNotifications() {
   const context = useContext(NotificationContext)
   if (!context) {
-    throw new Error('useNotifications must be used within a NotificationProvider')
+    throw new ZenithError(500, ZenithErrorCodes.CONTEXT_MISSING, {
+      message: 'useNotifications must be used within a NotificationProvider',
+    })
   }
   return context
 }

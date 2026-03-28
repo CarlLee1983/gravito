@@ -1,3 +1,6 @@
+import { HorizonError } from './errors/HorizonError'
+import { HorizonErrorCodes } from './errors/codes'
+
 /**
  * Lightweight, zero-dependency cron parser for standard expressions.
  *
@@ -29,7 +32,9 @@ export class SimpleCronParser {
   static isDue(expression: string, timezone = 'UTC', date: Date = new Date()): boolean {
     const parts = expression.trim().split(/\s+/)
     if (parts.length !== 5) {
-      throw new Error(`Invalid cron expression: ${expression}`)
+      throw new HorizonError(422, HorizonErrorCodes.CRON_PARSE_ERROR, {
+        message: `Invalid cron expression: ${expression}`,
+      })
     }
 
     const targetDate = this.getDateInTimezone(date, timezone)
@@ -113,11 +118,16 @@ export class SimpleCronParser {
     try {
       const tzDate = new Date(date.toLocaleString('en-US', { timeZone: timezone }))
       if (Number.isNaN(tzDate.getTime())) {
-        throw new Error()
+        throw new HorizonError(422, HorizonErrorCodes.INVALID_TIMEZONE, {
+          message: `Invalid timezone: ${timezone}`,
+        })
       }
       return tzDate
-    } catch {
-      throw new Error(`Invalid timezone: ${timezone}`)
+    } catch (err) {
+      if (err instanceof HorizonError) throw err
+      throw new HorizonError(422, HorizonErrorCodes.INVALID_TIMEZONE, {
+        message: `Invalid timezone: ${timezone}`,
+      })
     }
   }
 }

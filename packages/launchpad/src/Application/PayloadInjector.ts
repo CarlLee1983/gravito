@@ -1,4 +1,6 @@
 import type { IDockerAdapter, IGitAdapter } from '../Domain/Interfaces'
+import { LaunchpadError } from '../errors/LaunchpadError'
+import { LaunchpadErrorCodes } from '../errors/codes'
 import type { Rocket } from '../Domain/Rocket'
 
 /**
@@ -18,7 +20,9 @@ export class PayloadInjector {
 
   async deploy(rocket: Rocket): Promise<void> {
     if (!rocket.currentMission) {
-      throw new Error(`Rocket ${rocket.id} 沒有指派任務，無法部署`)
+      throw new LaunchpadError(422, LaunchpadErrorCodes.DEPLOYMENT_NO_MISSION, {
+        message: `Rocket ${rocket.id} 沒有指派任務，無法部署`,
+      })
     }
 
     const { repoUrl, branch } = rocket.currentMission
@@ -75,7 +79,9 @@ export class PayloadInjector {
     }
 
     if (installRes.exitCode !== 0) {
-      throw new Error(`安裝依賴失敗: ${installRes.stderr}`)
+      throw new LaunchpadError(500, LaunchpadErrorCodes.DEPENDENCY_INSTALL_FAILED, {
+        message: `安裝依賴失敗: ${installRes.stderr}`,
+      })
     }
 
     console.log(`[PayloadInjector] 點火！`)

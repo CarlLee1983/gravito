@@ -1,4 +1,6 @@
 import type { Redis } from 'ioredis'
+import { ZenithError } from '../../errors/ZenithError'
+import { ZenithErrorCodes } from '../../errors/codes'
 import type { GlobalStats, QueueStats, WorkerReport } from './QueueService'
 
 export class QueueMetricsCollector {
@@ -122,7 +124,9 @@ export class QueueMetricsCollector {
     const data = await this.redis.get(`flux_console:worker:${workerId}`)
 
     if (!data) {
-      throw new Error(`Worker ${workerId} not found`)
+      throw new ZenithError(404, ZenithErrorCodes.WORKER_NOT_FOUND, {
+        message: `Worker ${workerId} not found`,
+      })
     }
 
     return JSON.parse(data) as WorkerReport

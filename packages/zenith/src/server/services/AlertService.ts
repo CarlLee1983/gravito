@@ -1,6 +1,8 @@
 import { EventEmitter } from 'node:events'
 import { Redis } from 'ioredis'
 import nodemailer from 'nodemailer'
+import { ZenithError } from '../../errors/ZenithError'
+import { ZenithErrorCodes } from '../../errors/codes'
 import type { AlertConfig, AlertEvent, AlertRule, PulseNode } from '../../shared/types'
 import type { MonitoringWorker, QueueStats } from './QueueService'
 
@@ -275,7 +277,9 @@ export class AlertService {
     })
 
     if (!res.ok) {
-      throw new Error(`Failed to send to ${platform}: ${await res.text()}`)
+      throw new ZenithError(500, ZenithErrorCodes.ALERT_SEND_FAILED, {
+        message: `Failed to send to ${platform}: ${await res.text()}`,
+      })
     }
   }
 

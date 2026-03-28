@@ -1,4 +1,6 @@
 import type { ActionCallback } from '@gravito/core'
+import { HorizonError } from './errors/HorizonError'
+import { HorizonErrorCodes } from './errors/codes'
 import {
   parseTime,
   validateDayOfMonth,
@@ -162,20 +164,22 @@ export class TaskSchedule {
     const parts = expression.trim().split(/\s+/)
 
     if (parts.length !== 5) {
-      throw new Error(
-        `Invalid cron expression: "${expression}". ` +
-          `Expected 5 parts (minute hour day month weekday), got ${parts.length}.`
-      )
+      throw new HorizonError(422, HorizonErrorCodes.CRON_PARSE_ERROR, {
+        message:
+          `Invalid cron expression: "${expression}". ` +
+          `Expected 5 parts (minute hour day month weekday), got ${parts.length}.`,
+      })
     }
 
     const pattern = /^[0-9,\-/*?L#A-Za-z]+$/
 
     for (let i = 0; i < 5; i++) {
       if (!pattern.test(parts[i])) {
-        throw new Error(
-          `Invalid cron expression: "${expression}". ` +
-            `Part ${i + 1} ("${parts[i]}") contains invalid characters.`
-        )
+        throw new HorizonError(422, HorizonErrorCodes.CRON_PARSE_ERROR, {
+          message:
+            `Invalid cron expression: "${expression}". ` +
+            `Part ${i + 1} ("${parts[i]}") contains invalid characters.`,
+        })
       }
     }
 
@@ -339,10 +343,11 @@ export class TaskSchedule {
     try {
       new Date().toLocaleString('en-US', { timeZone: timezone })
     } catch {
-      throw new Error(
-        `Invalid timezone: "${timezone}". ` +
-          'See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for valid values.'
-      )
+      throw new HorizonError(422, HorizonErrorCodes.INVALID_TIMEZONE, {
+        message:
+          `Invalid timezone: "${timezone}". ` +
+          'See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for valid values.',
+      })
     }
     this.task.timezone = timezone
     return this
@@ -434,7 +439,9 @@ export class TaskSchedule {
    */
   timeout(ms: number): this {
     if (ms <= 0) {
-      throw new Error('Timeout must be a positive number')
+      throw new HorizonError(422, HorizonErrorCodes.INVALID_TIMEOUT, {
+        message: 'Timeout must be a positive number',
+      })
     }
     this.task.timeout = ms
     return this
@@ -450,10 +457,14 @@ export class TaskSchedule {
    */
   retry(attempts = 3, delayMs = 1000): this {
     if (attempts < 0) {
-      throw new Error('Retry attempts must be non-negative')
+      throw new HorizonError(422, HorizonErrorCodes.INVALID_RETRY_ATTEMPTS, {
+        message: 'Retry attempts must be non-negative',
+      })
     }
     if (delayMs < 0) {
-      throw new Error('Retry delay must be non-negative')
+      throw new HorizonError(422, HorizonErrorCodes.INVALID_RETRY_DELAY, {
+        message: 'Retry delay must be non-negative',
+      })
     }
     this.task.retries = attempts
     this.task.retryDelay = delayMs

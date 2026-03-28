@@ -1,5 +1,7 @@
 import { mkdir } from 'node:fs/promises'
 import { getRuntimeAdapter } from '@gravito/core'
+import { LaunchpadError } from '../../errors/LaunchpadError'
+import { LaunchpadErrorCodes } from '../../errors/codes'
 import type { IGitAdapter } from '../../Domain/Interfaces'
 
 /**
@@ -34,7 +36,9 @@ export class ShellGitAdapter implements IGitAdapter {
 
     const exitCode = await proc.exited
     if (exitCode !== 0) {
-      throw new Error('Git Clone Failed')
+      throw new LaunchpadError(500, LaunchpadErrorCodes.GIT_CLONE_FAILED, {
+        message: 'Git Clone Failed',
+      })
     }
 
     return targetDir

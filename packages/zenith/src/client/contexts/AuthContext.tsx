@@ -1,4 +1,6 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react'
+import { ZenithError } from '../../errors/ZenithError'
+import { ZenithErrorCodes } from '../../errors/codes'
 
 interface AuthContextType {
   isAuthenticated: boolean
@@ -20,7 +22,9 @@ const AuthContext = createContext<AuthContextType | null>(null)
 export function useAuth() {
   const context = useContext(AuthContext)
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider')
+    throw new ZenithError(500, ZenithErrorCodes.CONTEXT_MISSING, {
+      message: 'useAuth must be used within an AuthProvider',
+    })
   }
   return context
 }

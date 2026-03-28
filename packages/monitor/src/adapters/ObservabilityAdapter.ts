@@ -14,6 +14,8 @@ import type {
   TracingSpan,
   WorkerMetricsProvider,
 } from '@gravito/core'
+import { MonitorError } from '../errors/MonitorError'
+import { MonitorErrorCodes } from '../errors/codes'
 import { getMeter, getOpenTelemetrySDK, getTracer } from '../opentelemetry'
 
 /**
@@ -188,9 +190,10 @@ export class ObservabilityAdapterFactory {
     // Ensure OTel is initialized
     const sdk = getOpenTelemetrySDK()
     if (!sdk) {
-      throw new Error(
-        'OpenTelemetry SDK not initialized. Call setupOpenTelemetry() first or use monitor.start()'
-      )
+      throw new MonitorError(500, MonitorErrorCodes.SDK_NOT_INITIALIZED, {
+        message:
+          'OpenTelemetry SDK not initialized. Call setupOpenTelemetry() first or use monitor.start()',
+      })
     }
 
     const provider: ObservabilityProvider = {}

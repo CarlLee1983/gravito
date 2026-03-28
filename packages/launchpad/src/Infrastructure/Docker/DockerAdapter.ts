@@ -1,5 +1,7 @@
 import { getRuntimeAdapter } from '@gravito/core'
 import { Shell } from '@gravito/nova'
+import { LaunchpadError } from '../../errors/LaunchpadError'
+import { LaunchpadErrorCodes } from '../../errors/codes'
 import type { IDockerAdapter } from '../../Domain/Interfaces'
 
 /**
@@ -90,7 +92,9 @@ export class DockerAdapter implements IDockerAdapter {
     }
 
     if (exitCode !== 0) {
-      throw new Error(`Docker 容器建立失敗: ${stderr || stdout}`)
+      throw new LaunchpadError(500, LaunchpadErrorCodes.DOCKER_BUILD_FAILED, {
+        message: `Docker 容器建立失敗: ${stderr || stdout}`,
+      })
     }
 
     return containerId
@@ -141,11 +145,15 @@ export class DockerAdapter implements IDockerAdapter {
     // 我們取第一行並提取端口
     const firstLine = stdout.split('\n')[0] ?? ''
     if (!firstLine) {
-      throw new Error(`無法獲取容器映射端口: ${stdout}`)
+      throw new LaunchpadError(500, LaunchpadErrorCodes.DOCKER_PORT_MAPPING_FAILED, {
+        message: `無法獲取容器映射端口: ${stdout}`,
+      })
     }
     const match = firstLine.match(/:(\d+)$/)
     if (!match?.[1]) {
-      throw new Error(`無法獲取容器映射端口: ${stdout}`)
+      throw new LaunchpadError(500, LaunchpadErrorCodes.DOCKER_PORT_MAPPING_FAILED, {
+        message: `無法獲取容器映射端口: ${stdout}`,
+      })
     }
     return Number.parseInt(match[1], 10)
   }
@@ -155,7 +163,9 @@ export class DockerAdapter implements IDockerAdapter {
     const exitCode = await proc.exited
     if (exitCode && exitCode !== 0) {
       const stderr = await new Response(proc.stderr ?? null).text()
-      throw new Error(stderr || 'Docker copy failed')
+      throw new LaunchpadError(500, LaunchpadErrorCodes.DOCKER_COPY_FAILED, {
+        message: stderr || 'Docker copy failed',
+      })
     }
   }
 
