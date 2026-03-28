@@ -3,6 +3,7 @@ export class NPlusOneDetector {
   private static timeframe = 1000
   private static threshold = 5
   private static enabled = process.env.NODE_ENV !== 'production'
+  private static readonly MAX_ENTRIES = 500
 
   static track(tableName: string, sql: string, structureKey: string): void {
     if (!this.enabled) {
@@ -12,17 +13,19 @@ export class NPlusOneDetector {
     const now = Date.now()
     const signature = `${tableName}:${structureKey}`
 
-    const stats = this.queryCounts.get(signature) || { count: 0, lastAt: now }
-
-    if (now - stats.lastAt > this.timeframe) {
-      stats.count = 1
-      stats.lastAt = now
-    } else {
-      stats.count++
-      stats.lastAt = now
+    if (this.queryCounts.size >= this.MAX_ENTRIES && !this.queryCounts.has(signature)) {
+      this.evictStale(now)
     }
 
-    this.queryCounts.set(signature, stats)
+    const existing = this.queryCounts.get(signature)
+
+    if (!existing || now - existing.lastAt > this.timeframe) {
+      this.queryCounts.set(signature, { count: 1, lastAt: now })
+    } else {
+      this.queryCounts.set(signature, { count: existing.count + 1, lastAt: now })
+    }
+
+    const stats = this.queryCounts.get(signature)!
 
     if (stats.count === this.threshold) {
       this.warn(tableName, sql, stats.count)
@@ -35,6 +38,25 @@ export class NPlusOneDetector {
 
   static setEnabled(enabled: boolean): void {
     this.enabled = enabled
+  }
+
+  private static evictStale(now: number): void {
+    const staleThreshold = now - this.timeframe * 2
+
+    for (const [key, stats] of this.queryCounts) {
+      if (stats.lastAt < staleThreshold) {
+        this.queryCounts.delete(key)
+      }
+    }
+
+    if (this.queryCounts.size >= this.MAX_ENTRIES) {
+      const evictCount = Math.floor(this.MAX_ENTRIES * 0.25)
+      const entries = [...this.queryCounts.entries()].sort((a, b) => a[1].lastAt - b[1].lastAt)
+
+      for (let i = 0; i < evictCount && i < entries.length; i++) {
+        this.queryCounts.delete(entries[i][0])
+      }
+    }
   }
 
   private static warn(tableName: string, sql: string, count: number): void {
