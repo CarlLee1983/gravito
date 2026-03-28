@@ -1022,8 +1022,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Returns the first record matching the query.
    */
   async first(): Promise<T | null> {
-    this.limit(1)
-    const results = await this.get()
+    const results = await (this.clone() as QueryBuilder<T>).limit(1).get()
     return results[0] ?? null
   }
 
@@ -1061,8 +1060,8 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Retrieves a single column value from the first matching record.
    */
   async value<V = unknown>(column: string): Promise<V | null> {
-    this.limit(1)
-    const compiled = this.select(column).getCompiledQuery()
+    const cloned = (this.clone() as QueryBuilder<T>).limit(1).select(column)
+    const compiled = cloned.getCompiledQuery()
     const sql = this.grammar.compileSelect(compiled)
 
     const rows = await this.connection.values<[V]>(sql, compiled.bindings)

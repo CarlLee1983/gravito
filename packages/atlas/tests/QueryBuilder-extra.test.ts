@@ -182,3 +182,36 @@ describe('QueryBuilder execution', () => {
     expect(upserted).toBe(1)
   })
 })
+
+describe('QueryBuilder immutability', () => {
+  it('first() does not mutate the original builder limit', async () => {
+    const builder = makeBuilder(async () => ({ rows: [{ id: 1, name: 'Ada' }], rowCount: 1 }))
+
+    const sqlBefore = builder.toSql()
+    await builder.first()
+    const sqlAfter = builder.toSql()
+
+    expect(sqlAfter).toBe(sqlBefore)
+    expect(sqlAfter).not.toContain('LIMIT')
+  })
+
+  it('value() does not mutate the original builder select or limit', async () => {
+    const builder = makeBuilder(async (sql) => {
+      if (sql.includes('"name"')) {
+        return { rows: [{ name: 'Ada' }], rowCount: 1 }
+      }
+      return { rows: [{ id: 1, name: 'Ada' }], rowCount: 1 }
+    })
+
+    builder.select('id', 'name')
+    const sqlBefore = builder.toSql()
+
+    await builder.value('name')
+    const sqlAfter = builder.toSql()
+
+    expect(sqlAfter).toBe(sqlBefore)
+    expect(sqlAfter).not.toContain('LIMIT')
+    expect(sqlAfter).toContain('"id"')
+    expect(sqlAfter).toContain('"name"')
+  })
+})
