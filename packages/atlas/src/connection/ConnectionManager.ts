@@ -3,6 +3,8 @@
  * @description Manages multiple database connections
  */
 
+import { withResilience } from '@gravito/resilience'
+import { atlasResiliencePolicy } from '../resilience'
 import { AtlasObservability } from '../observability'
 import {
   type AdaptivePoolConfig,
@@ -311,13 +313,17 @@ export class ConnectionManager {
   /**
    * Reconnect to a connection.
    * This will disconnect the existing connection and create a new one.
+   * Wrapped with withResilience to apply CB + retry + timeout at connection level (INTG-01).
+   * NOTE: Do NOT wrap transactionWithRetry with this — it handles deadlock retry internally (D-06).
    *
    * @param name - Optional connection name.
    * @returns The new connection instance.
    */
   async reconnect(name?: string): Promise<ConnectionContract> {
-    await this.disconnect(name)
-    return this.connection(name)
+    return withResilience(async () => {
+      await this.disconnect(name)
+      return this.connection(name)
+    }, atlasResiliencePolicy)
   }
 
   private async cleanupIdleConnections(): Promise<void> {
