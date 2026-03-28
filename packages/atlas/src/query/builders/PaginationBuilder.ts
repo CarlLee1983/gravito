@@ -161,23 +161,30 @@ export class PaginationBuilder<T = Record<string, unknown>> {
     callback: (results: T[]) => Promise<undefined | boolean>
   ): Promise<void> {
     let page = 1
-    let count: number
 
-    do {
-      const results = await this.paginate(size, page)
-      count = results.data.length
+    // biome-ignore lint/correctness/noConstantCondition: intentional pagination loop
+    while (true) {
+      const results = await this.queryBuilder
+        .clone()
+        .limit(size)
+        .offset((page - 1) * size)
+        .get()
 
-      if (count === 0) {
+      if (results.length === 0) {
         break
       }
 
-      const result = await callback(results.data)
+      const result = await callback(results)
 
       if (result === false) {
         break
       }
 
+      if (results.length < size) {
+        break
+      }
+
       page++
-    } while (count === size)
+    }
   }
 }
