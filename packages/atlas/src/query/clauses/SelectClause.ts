@@ -34,6 +34,9 @@ export class SelectClause {
    * ```
    */
   addRaw(expression: string, bindings: unknown[] = []): void {
+    if (this.columns.length === 1 && this.columns[0] === '*') {
+      this.columns = []
+    }
     this.columns.push(expression)
     this.bindings.push(...bindings)
   }

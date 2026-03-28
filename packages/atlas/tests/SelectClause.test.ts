@@ -27,7 +27,23 @@ describe('SelectClause', () => {
     clause.addRaw('COUNT(*) as total', [1])
     expect(clause.getColumns()).toContain('COUNT(*) as total')
     expect(clause.getBindings()).toEqual([1])
-    expect(clause.toSQL()).toBe('SELECT *, COUNT(*) as total')
+    expect(clause.toSQL()).toBe('SELECT COUNT(*) as total')
+  })
+
+  it('addRaw should clear default * column', () => {
+    const clause = new SelectClause()
+    clause.addRaw('COUNT(*) as total')
+    const sql = clause.toSQL()
+    expect(sql).not.toContain('"*"')
+    expect(sql).not.toContain('*, ')
+    expect(sql).toContain('COUNT(*) as total')
+  })
+
+  it('addRaw should append to explicitly set columns without clearing them', () => {
+    const clause = new SelectClause()
+    clause.setColumns('id', 'name')
+    clause.addRaw('COUNT(*) as total')
+    expect(clause.toSQL()).toBe('SELECT "id", "name", COUNT(*) as total')
   })
 
   it('should escape columns correctly', () => {
