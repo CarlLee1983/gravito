@@ -29,7 +29,7 @@ Requirements for v2.0.0 major release. Each maps to roadmap phases.
 
 ### Full Migration
 
-- [ ] **MIGR-01**: ~50 個 Orbit 包全量採用新錯誤模型（分批遷移）
+- [x] **MIGR-01**: ~50 個 Orbit 包全量採用新錯誤模型（分批遷移）
 - [ ] **MIGR-02**: 所有現有測試適配新錯誤類型（contract tests 先行）
 
 ### Release
@@ -72,7 +72,7 @@ Deferred to next release. Tracked but not in current roadmap.
 | INTG-03 | Phase 18 + 19 | Complete |
 | INTG-04 | Phase 19 | Pending |
 | INTG-05 | Phase 20 | Pending |
-| MIGR-01 | Phase 19 | Pending |
+| MIGR-01 | Phase 19 | Complete |
 | MIGR-02 | Phase 19 | Pending |
 | RELS-01 | Phase 20 | Pending |
 
