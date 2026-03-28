@@ -147,9 +147,9 @@ export class MutationBuilder<T = Record<string, unknown>> {
       const allBindings = [...values, ...this.getBindings()]
 
       const compiled = this.getCompiledQuery()
-      compiled.bindings = allBindings
+      const updatedCompiled = { ...compiled, bindings: allBindings }
 
-      const sql = this.grammar.compileUpdate(compiled, data as Record<string, unknown>)
+      const sql = this.grammar.compileUpdate(updatedCompiled, data as Record<string, unknown>)
 
       if (span) {
         span.setAttribute('db.statement', sql)
