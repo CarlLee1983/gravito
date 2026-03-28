@@ -1,5 +1,54 @@
 # @gravito/atlas
 
+## 2.6.0
+
+### Minor Changes
+
+- **BREAKING: Redis/MongoDB transaction methods now throw** instead of being silent no-ops. Use `getRawClient()` for native transaction support.
+
+### Bug Fixes (29 fixes across 3 severity levels)
+
+#### CRITICAL (10)
+- **fix: QueryBuilder `first()`/`value()`/`pluck()` no longer mutate builder state** — use internal `clone()` to prevent side effects on reuse
+- **fix: `runWithAutoProvisioning` recursion depth limit** — prevents stack overflow with max 3 retries
+- **fix: `MutationBuilder.update` no longer mutates `CompiledQuery.bindings`** — uses spread to create new object
+- **fix: ORM `_attributes` immutability** — replaced all `Object.assign` with spread in `HasPersistence`
+- **fix: `MAX(pk)` race condition removed** — replaced with `LAST_INSERT_ID()` / `currval()` per driver
+- **fix: Unified 3 diverging cast implementations** into single `TypeCaster` source of truth; fixed `setAttribute` cast-before-mark order
+- **fix: BunSQL PreparedStatement hash collision** — replaced djb2 hash with monotonic counter
+- **fix: MongoDB `mapDocument` immutability** — returns new object via spread
+- **fix: `disconnect()` now cleans up replica pool connections** — prevents TCP connection leaks
+- **fix: `DB._reset()` now clears all static state** — prevents test pollution
+
+#### HIGH (10)
+- **fix: `PaginationBuilder.paginate()` no longer mutates builder** — uses `clone()`
+- **fix: `WhereClause.clone()` recursive deep copy** for nested conditions
+- **chore: Deleted unused `SubqueryBuilder` dead code** (125 lines removed)
+- **fix: `NPlusOneDetector` bounded memory** — MAX_ENTRIES=500 with stale eviction
+- **fix: `Repository.update()` uses `fill()`** instead of `Object.assign` to ensure Proxy/casting
+- **fix: `_studlyCache` gradual eviction** — evicts oldest 25% instead of full clear
+- **fix: Redis/MongoDB transaction methods throw** descriptive errors instead of silent no-ops
+- **fix: SQLite drivers only call `last_insert_rowid()` after INSERT** — eliminates redundant query on SELECT
+- **fix: `PostgresGrammar` uses `compileBaseInsert()`** instead of fragile `.replace()` for RETURNING
+- **fix: Removed redundant Proxy from `Connection` constructor** — single Proxy in `ConnectionManager`
+
+#### MEDIUM (9)
+- **fix: `orderByRaw` no longer forces `ASC` direction** — raw expressions output as-is
+- **fix: `SelectClause.addRaw()` clears default `*`** — prevents `SELECT *, expr`
+- **fix: `crossJoin` omits ON clause** — produces valid `CROSS JOIN "table"`
+- **fix: `DirtyTracker` always uses deep comparison for arrays** — prevents false dirty on JSON/JSONB columns
+- **fix: Grammar cache key includes `unions`** — prevents cache collision for UNION queries
+- **fix: `SchemaSniffer` validates table names** — prevents PRAGMA SQL injection
+- **fix: `chunk()` uses `limit/offset` directly** — eliminates redundant `COUNT(*)` per page
+- **fix: `transactionWithRetry` preserves error cause** — original error available via `error.cause`
+- **fix: `PoolHealthChecker` guards against `stats.max=0`** — prevents NaN from division by zero
+
+## 2.5.3
+
+### Patch Changes
+
+- Stability and performance improvements.
+
 ## 2.4.0
 
 ### Minor Changes
