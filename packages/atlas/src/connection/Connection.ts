@@ -64,28 +64,6 @@ export class Connection implements ConnectionContract {
     this.grammar = this.createGrammar()
     this.tracer = (config as BaseConnectionConfig).tracer
     this.metrics = (config as BaseConnectionConfig).metrics
-
-    // Proxy driver methods (e.g. redis.set, mongodb.collection)
-    // biome-ignore lint/correctness/noConstructorReturn: This proxy is intentional for dynamic driver method access
-    return new Proxy(this, {
-      get(target: Connection, prop: string | symbol) {
-        if (prop in target) {
-          return Reflect.get(target, prop)
-        }
-        // Fallback to driver if method exists there
-        if (
-          typeof prop === 'string' &&
-          target.driver &&
-          typeof (target.driver as unknown as Record<string, unknown>)[prop] === 'function'
-        ) {
-          // biome-ignore lint/complexity/noBannedTypes: We need to bind a generic function
-          return ((target.driver as unknown as Record<string, unknown>)[prop] as Function).bind(
-            target.driver
-          )
-        }
-        return undefined
-      },
-    })
   }
 
   /**
