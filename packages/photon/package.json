@@ -135,6 +135,7 @@
   },
   "dependencies": {
     "@gravito/core": "^2.0.6",
+    "@gravito/resilience": "workspace:*",
     "cborg": "^4.3.2",
     "jose": "^6.2.2",
     "zod": "^4.3.6"

@@ -27,7 +27,6 @@
   },
   "devDependencies": {
     "@gravito/core": "workspace:*",
-    "@gravito/photon": "workspace:*",
     "@opentelemetry/api": "^1.9.0",
     "bun-types": "latest",
     "tsup": "^8.5.1",

@@ -1431,6 +1431,7 @@
       "version": "1.1.4",
       "dependencies": {
         "@gravito/core": "^2.0.6",
+        "@gravito/resilience": "workspace:*",
         "cborg": "^4.3.2",
         "jose": "^6.2.2",
         "zod": "^4.3.6",
@@ -1562,7 +1563,6 @@
       },
       "devDependencies": {
         "@gravito/core": "workspace:*",
-        "@gravito/photon": "workspace:*",
         "@opentelemetry/api": "^1.9.0",
         "bun-types": "latest",
         "tsup": "^8.5.1",
