@@ -180,6 +180,16 @@ export class PoolHealthChecker {
    * Evaluate pool health based on statistics
    */
   private evaluateHealth(connectionName: string, stats: PoolStats): PoolHealth {
+    // Guard against divide by zero
+    if (stats.max === 0) {
+      return {
+        status: 'degraded',
+        message: `Pool "${connectionName}" has max=0 connections configured`,
+        stats,
+        lastCheck: new Date(),
+      }
+    }
+
     const utilization = stats.active / stats.max
     const pendingRatio = stats.pending / stats.max
 
