@@ -24,6 +24,13 @@ export class PostgresGrammar extends Grammar {
   }
 
   /**
+   * Build the base INSERT SQL without any RETURNING clause
+   */
+  private compileBaseInsert(query: CompiledQuery, values: Record<string, unknown>[]): string {
+    return super.compileInsert(query, values)
+  }
+
+  /**
    * Compile INSERT and return ID using RETURNING clause
    */
   compileInsertGetId(
@@ -31,8 +38,7 @@ export class PostgresGrammar extends Grammar {
     values: Record<string, unknown>,
     primaryKey: string
   ): string {
-    // Use base class compileInsert to avoid double RETURNING clause
-    const insertSql = super.compileInsert(query, [values])
+    const insertSql = this.compileBaseInsert(query, [values])
     return `${insertSql} RETURNING ${this.wrapColumn(primaryKey)}`
   }
 
@@ -40,17 +46,7 @@ export class PostgresGrammar extends Grammar {
    * Compile INSERT with RETURNING clause for PostgreSQL
    */
   override compileInsert(query: CompiledQuery, values: Record<string, unknown>[]): string {
-    const baseSql = super.compileInsert(query, values)
-    // PostgreSQL supports RETURNING for all inserts
-    return `${baseSql} RETURNING *`
-  }
-
-  /**
-   * Compile UPDATE with RETURNING clause for PostgreSQL
-   */
-  override compileUpdate(query: CompiledQuery, values: Record<string, unknown>): string {
-    const baseSql = super.compileUpdate(query, values)
-    return baseSql
+    return `${this.compileBaseInsert(query, values)} RETURNING *`
   }
 
   /**
@@ -69,7 +65,7 @@ export class PostgresGrammar extends Grammar {
     uniqueBy: string[],
     update: string[]
   ): string {
-    const insertSql = super.compileInsert(query, values).replace(' RETURNING *', '')
+    const insertSql = this.compileBaseInsert(query, values)
     const conflictColumns = uniqueBy.map((col) => this.wrapColumn(col)).join(', ')
 
     if (update.length === 0) {
