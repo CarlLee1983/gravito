@@ -595,8 +595,10 @@ export class DB {
           originalError?: { code?: unknown }
           name?: unknown
         }
-        const errorCode = dbError.code || dbError.originalError?.code
-        const errorCodeString = typeof errorCode === 'string' ? errorCode : undefined
+        // Prefer originalError.code (driver-level code) over the structured GravitoException code (e.g. 'db.query_failed')
+        // to detect driver-specific deadlock codes like '40P01', 'ER_LOCK_DEADLOCK', etc.
+        const driverCode = dbError.originalError?.code ?? dbError.code
+        const errorCodeString = typeof driverCode === 'string' ? driverCode : undefined
         const isRetryable =
           dbError.name === 'StaleModelError' ||
           (errorCodeString &&
