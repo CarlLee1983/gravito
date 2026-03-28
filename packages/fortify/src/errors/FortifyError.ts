@@ -1,13 +1,23 @@
+import { AuthException } from '@gravito/core'
 import { type ErrorCode, ErrorCodes } from './codes'
 
-export class FortifyError extends Error {
+export class FortifyError extends AuthException {
+  /** @deprecated Use .status instead */
+  public get httpStatus(): number {
+    return this.status
+  }
+
+  public readonly details?: unknown
+
   constructor(
-    public readonly code: ErrorCode,
-    public readonly httpStatus: number = 422,
-    public readonly details?: unknown
+    code: ErrorCode,
+    httpStatus: number = 422,
+    details?: unknown
   ) {
-    super(code)
+    super(httpStatus, code, {})
     this.name = 'FortifyError'
+    this.details = details
+    Object.setPrototypeOf(this, new.target.prototype)
   }
 
   static invalidCredentials() {
