@@ -63,7 +63,7 @@ export abstract class BaseController {
   ): Response {
     const fortifyError = error instanceof FortifyError ? error : new FortifyError(error, 422)
 
-    const message = this.getErrorMessage(fortifyError.code)
+    const message = this.getErrorMessage(fortifyError.code as ErrorCode)
 
     if (this.config.jsonMode) {
       return c.json(

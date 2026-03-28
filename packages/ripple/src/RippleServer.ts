@@ -8,6 +8,7 @@
 
 import { ChannelManager, requiresAuth } from './channels'
 import { LocalDriver, NATSDriver, RedisDriver } from './drivers'
+import { RippleError, RippleErrorCodes } from './errors/RippleError'
 import { BunEngine } from './engines/BunEngine'
 import type { IRippleEngine, RippleSocket } from './engines/IRippleEngine'
 import { UWebSocketsEngine } from './engines/UWebSocketsEngine'
@@ -145,7 +146,7 @@ export class RippleServer {
           development: process.env.NODE_ENV === 'development',
         })
       default:
-        throw new Error(`Unsupported runtime: ${runtime}`)
+        throw new RippleError(RippleErrorCodes.UNSUPPORTED_RUNTIME, `Unsupported runtime: ${runtime}`)
     }
   }
 
@@ -241,7 +242,10 @@ export class RippleServer {
       })
     }
 
-    throw new Error('Current engine does not support HTTP upgrade')
+    throw new RippleError(
+      RippleErrorCodes.INVALID_OPERATION,
+      'Current engine does not support HTTP upgrade'
+    )
   }
 
   /**
@@ -253,7 +257,10 @@ export class RippleServer {
   getHandler(): WebSocketHandlerConfig {
     // For backward compatibility, we need to return Bun-specific handlers
     // This will only work if using BunEngine
-    throw new Error('getHandler() is deprecated in v5.0. Use init() to start the server instead.')
+    throw new RippleError(
+      RippleErrorCodes.INVALID_OPERATION,
+      'getHandler() is deprecated in v5.0. Use init() to start the server instead.'
+    )
   }
 
   private async handleOpen(ws: RippleSocket): Promise<void> {
@@ -774,7 +781,10 @@ export class RippleServer {
    */
   getWebSocketConfig() {
     if (!(this.engine instanceof BunEngine)) {
-      throw new Error('getWebSocketConfig() requires BunEngine. Use start() for other engines.')
+      throw new RippleError(
+        RippleErrorCodes.INVALID_OPERATION,
+        'getWebSocketConfig() requires BunEngine. Use start() for other engines.'
+      )
     }
     return (this.engine as BunEngine).getWebSocketConfig()
   }

@@ -1,3 +1,4 @@
+import { RippleError, RippleErrorCodes } from '../errors/RippleError'
 import type { RippleContext, RippleInterceptor } from '../types'
 
 /**
@@ -28,7 +29,7 @@ export class InterceptorManager {
 
     const dispatch = async (i: number): Promise<void> => {
       if (i <= index) {
-        throw new Error('next() called multiple times')
+        throw new RippleError(RippleErrorCodes.MIDDLEWARE_ERROR, 'next() called multiple times')
       }
       index = i
 

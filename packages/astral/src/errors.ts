@@ -1,26 +1,31 @@
+import { SystemException, type ExceptionOptions } from '@gravito/core'
 import type { ZodSchema } from 'zod'
 import type { AstralResource } from './types'
 
 /**
  * Base class for all Astral-related errors.
+ * Extends SystemException for unified error handling across Gravito.
  *
  * @public
  * @since 3.0.0
  */
-export class AstralError extends Error {
+export class AstralError extends SystemException {
   /**
    * Create a new AstralError.
    *
    * @param message - Error message.
    * @param code - Unique error code (e.g., 'ASTRAL_CONFIG_ERROR').
+   * @param options - Optional exception options (status, cause, etc.)
    */
   constructor(
     message: string,
-    public readonly code: string
+    code: string,
+    options: ExceptionOptions & { status?: number } = {}
   ) {
-    super(message)
+    const status = options.status ?? 500
+    super(status, code, { ...options, message })
     this.name = 'AstralError'
-    Object.setPrototypeOf(this, AstralError.prototype)
+    Object.setPrototypeOf(this, new.target.prototype)
   }
 }
 
@@ -41,7 +46,11 @@ export class AstralConfigError extends AstralError {
     message: string,
     public readonly field: string
   ) {
-    super(`Astral configuration error at '${field}': ${message}`, 'ASTRAL_CONFIG_ERROR')
+    super(
+      `Astral configuration error at '${field}': ${message}`,
+      'ASTRAL_CONFIG_ERROR',
+      { status: 500 }
+    )
     this.name = 'AstralConfigError'
     Object.setPrototypeOf(this, AstralConfigError.prototype)
   }
@@ -64,9 +73,12 @@ export class AstralSchemaError extends AstralError {
   constructor(
     message: string,
     public readonly schema: ZodSchema | any,
-    public readonly cause?: Error
+    cause?: Error
   ) {
-    super(`Schema conversion error: ${message}`, 'ASTRAL_SCHEMA_ERROR')
+    super(`Schema conversion error: ${message}`, 'ASTRAL_SCHEMA_ERROR', {
+      status: 500,
+      cause,
+    })
     this.name = 'AstralSchemaError'
     if (cause) {
       this.stack = `${this.stack}\nCaused by: ${cause.stack}`
@@ -97,7 +109,8 @@ export class AstralResourceError extends AstralError {
     const location = field ? ` at field '${field}'` : ''
     super(
       `Resource '${resource.path}' validation error${location}: ${message}`,
-      'ASTRAL_RESOURCE_ERROR'
+      'ASTRAL_RESOURCE_ERROR',
+      { status: 500 }
     )
     this.name = 'AstralResourceError'
     Object.setPrototypeOf(this, AstralResourceError.prototype)
@@ -124,7 +137,7 @@ export class AstralRouteError extends AstralError {
     public readonly method?: string
   ) {
     const methodStr = method ? ` [${method}]` : ''
-    super(`Route error${methodStr} '${path}': ${message}`, 'ASTRAL_ROUTE_ERROR')
+    super(`Route error${methodStr} '${path}': ${message}`, 'ASTRAL_ROUTE_ERROR', { status: 500 })
     this.name = 'AstralRouteError'
     Object.setPrototypeOf(this, AstralRouteError.prototype)
   }
@@ -147,9 +160,12 @@ export class AstralGenerationError extends AstralError {
   constructor(
     message: string,
     public readonly context?: Record<string, any>,
-    public readonly cause?: Error
+    cause?: Error
   ) {
-    super(`OpenAPI generation error: ${message}`, 'ASTRAL_GENERATION_ERROR')
+    super(`OpenAPI generation error: ${message}`, 'ASTRAL_GENERATION_ERROR', {
+      status: 500,
+      cause,
+    })
     this.name = 'AstralGenerationError'
     if (cause) {
       this.stack = `${this.stack}\nCaused by: ${cause.stack}`

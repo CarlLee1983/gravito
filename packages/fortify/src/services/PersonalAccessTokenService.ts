@@ -1,5 +1,7 @@
 import { timingSafeEqual } from 'node:crypto'
 import type { ConnectionContract } from '@gravito/atlas'
+import { FortifyError } from '../errors/FortifyError'
+import { ErrorCodes } from '../errors/codes'
 
 export interface PersonalAccessToken {
   id: number
@@ -53,7 +55,7 @@ export class PersonalAccessTokenService {
 
     const accessToken = await this.findById(id as any)
     if (!accessToken) {
-      throw new Error('Failed to create access token')
+      throw new FortifyError(ErrorCodes.INTERNAL_ERROR, 500)
     }
 
     const plainTextToken = `${id}|${plainToken}`

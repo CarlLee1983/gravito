@@ -1,3 +1,5 @@
+import { FortifyError } from '../../errors/FortifyError'
+import { ErrorCodes } from '../../errors/codes'
 import { AbstractProvider } from './AbstractProvider'
 import type { OAuthUser } from './types'
 
@@ -35,7 +37,11 @@ export class GoogleProvider extends AbstractProvider {
     })
 
     if (!tokenResponse.ok) {
-      throw new Error(`Failed to exchange token: ${await tokenResponse.text()}`)
+      throw new FortifyError(
+        ErrorCodes.OAUTH_AUTHENTICATION_FAILED,
+        401,
+        { message: `Failed to exchange token: ${await tokenResponse.text()}` }
+      )
     }
 
     const tokens = await tokenResponse.json()
@@ -45,7 +51,11 @@ export class GoogleProvider extends AbstractProvider {
     })
 
     if (!userResponse.ok) {
-      throw new Error(`Failed to fetch user info: ${await userResponse.text()}`)
+      throw new FortifyError(
+        ErrorCodes.OAUTH_AUTHENTICATION_FAILED,
+        401,
+        { message: `Failed to fetch user info: ${await userResponse.text()}` }
+      )
     }
 
     const user = await userResponse.json()

@@ -9,6 +9,7 @@
  */
 
 import { randomUUID } from 'node:crypto'
+import { RippleError, RippleErrorCodes } from '../errors/RippleError'
 import type { ClientData } from '../types'
 import type { IRippleEngine, RippleSocket } from './IRippleEngine'
 
@@ -186,13 +187,14 @@ export class UWebSocketsEngine implements IRippleEngine {
       // @ts-expect-error: uWebSockets.js is not installed locally
       this.uws = await import('uWebSockets.js')
     } catch (_error) {
-      throw new Error(
+      throw new RippleError(
+        RippleErrorCodes.DRIVER_ERROR,
         'uWebSockets.js is not installed. Install it with: npm install uWebSockets.js@uNetworking/uWebSockets.js#v20.44.0'
       )
     }
 
     if (!this.uws) {
-      throw new Error('Failed to load uWebSockets.js module')
+      throw new RippleError(RippleErrorCodes.DRIVER_ERROR, 'Failed to load uWebSockets.js module')
     }
 
     // Create uWebSockets.js app
@@ -295,7 +297,10 @@ export class UWebSocketsEngine implements IRippleEngine {
 
   broadcast(topic: string, data: string | Uint8Array, excludeSocketId?: string): void {
     if (!this.app) {
-      throw new Error('Engine not started. Call listen() first.')
+      throw new RippleError(
+        RippleErrorCodes.NOT_INITIALIZED,
+        'Engine not started. Call listen() first.'
+      )
     }
 
     // Note: uWebSockets.js doesn't support excluding specific sockets in native pub/sub
@@ -336,6 +341,9 @@ export class UWebSocketsEngine implements IRippleEngine {
    * uWebSockets.js handles upgrades internally via the ws() route.
    */
   upgrade(_req: Request, _data?: Record<string, unknown>): boolean {
-    throw new Error('upgrade() is not supported in uWebSocketsEngine. Use the ws() route instead.')
+    throw new RippleError(
+      RippleErrorCodes.INVALID_OPERATION,
+      'upgrade() is not supported in uWebSocketsEngine. Use the ws() route instead.'
+    )
   }
 }

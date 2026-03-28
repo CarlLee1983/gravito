@@ -1,4 +1,5 @@
 import type { Redis } from 'ioredis'
+import { QuasarError, QuasarErrorCodes } from '../errors/QuasarError'
 import type { QueueProbe, QueueSnapshot } from '../types'
 
 /**
@@ -42,13 +43,16 @@ export class BullMQProbe implements QueueProbe {
 
     const results = await pipeline.exec()
     if (!results) {
-      throw new Error('Redis pipeline failed')
+      throw new QuasarError(QuasarErrorCodes.PIPELINE_FAILED, 'Redis pipeline failed')
     }
 
     // Parse results
     // Each result is [err, value]
     if (!results[0] || !results[1] || !results[2] || !results[3]) {
-      throw new Error('Redis pipeline returned incomplete results')
+      throw new QuasarError(
+        QuasarErrorCodes.PIPELINE_INCOMPLETE,
+        'Redis pipeline returned incomplete results'
+      )
     }
     const [_waitErr, waiting] = results[0]
     const [_activeErr, active] = results[1]

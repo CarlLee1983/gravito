@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { RippleError, RippleErrorCodes } from '../errors/RippleError'
 import type { ClientMessage, ServerMessage } from '../types'
 import type { ISerializer } from './ISerializer'
 
@@ -80,7 +81,8 @@ export class ProtobufSerializer implements ISerializer {
     try {
       // 先檢查文件是否存在
       if (!existsSync(this.options.protoPath!)) {
-        throw new Error(
+        throw new RippleError(
+          RippleErrorCodes.NOT_INITIALIZED,
           `Proto file not found at: ${this.options.protoPath}\n` +
             `Working directory: ${process.cwd()}\n` +
             `Please ensure ripple.proto exists or provide a custom protoPath.`
@@ -91,7 +93,8 @@ export class ProtobufSerializer implements ISerializer {
       try {
         protobuf = await import('protobufjs')
       } catch (_importError) {
-        throw new Error(
+        throw new RippleError(
+          RippleErrorCodes.NOT_INITIALIZED,
           `'protobufjs' is not installed.\n` +
             `Install it with: npm install protobufjs\n` +
             `Or use JSON serializer instead: new RippleServer({ serializer: 'json' })`
@@ -103,10 +106,12 @@ export class ProtobufSerializer implements ISerializer {
       ServerMessageProto = protoRoot.lookupType('ripple.ServerMessage')
       this.initialized = true
     } catch (error) {
-      throw new Error(
+      throw new RippleError(
+        RippleErrorCodes.NOT_INITIALIZED,
         `Failed to initialize ProtobufSerializer: ${(error as Error).message}\n` +
           `Proto path attempted: ${this.options.protoPath}\n` +
-          `Ensure 'protobufjs' is installed or switch to JSON serializer.`
+          `Ensure 'protobufjs' is installed or switch to JSON serializer.`,
+        { cause: error }
       )
     }
   }
@@ -162,7 +167,10 @@ export class ProtobufSerializer implements ISerializer {
 
   private checkInitialized() {
     if (!this.initialized) {
-      throw new Error('ProtobufSerializer not initialized. Call init() first.')
+      throw new RippleError(
+        RippleErrorCodes.NOT_INITIALIZED,
+        'ProtobufSerializer not initialized. Call init() first.'
+      )
     }
   }
 
@@ -212,7 +220,10 @@ export class ProtobufSerializer implements ISerializer {
           },
         }
     }
-    throw new Error(`Unknown server message type: ${(msg as any).type}`)
+    throw new RippleError(
+      RippleErrorCodes.SERIALIZATION_FAILED,
+      `Unknown server message type: ${(msg as any).type}`
+    )
   }
 
   private fromProtoPayload(obj: any): ClientMessage {
@@ -257,7 +268,7 @@ export class ProtobufSerializer implements ISerializer {
       }
     }
 
-    throw new Error('Unknown client message payload')
+    throw new RippleError(RippleErrorCodes.SERIALIZATION_FAILED, 'Unknown client message payload')
   }
 
   private encodeData(data: unknown): Uint8Array {
@@ -271,7 +282,10 @@ export class ProtobufSerializer implements ISerializer {
       if (Buffer.isBuffer(data)) {
         return data
       }
-      throw new Error('In pure mode, data must be Uint8Array or Buffer')
+      throw new RippleError(
+        RippleErrorCodes.SERIALIZATION_FAILED,
+        'In pure mode, data must be Uint8Array or Buffer'
+      )
     }
 
     // In Hybrid mode, we put JSON string into bytes field for now

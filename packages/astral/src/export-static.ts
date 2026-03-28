@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { PlanetCore, RuntimeMarkdownAdapter } from '@gravito/core'
 import { archiveFromDirectory, getDefaultRuntimeAdapter, getMarkdownAdapter } from '@gravito/core'
+import { AstralError } from './errors'
 import { OpenApiGenerator } from './OpenApiGenerator'
 import type { AstralConfig, OpenApiDocument } from './types'
 
@@ -129,7 +130,7 @@ export async function generateStaticSite(config: StaticExportConfig): Promise<vo
     async function downloadFile(url: string, filename: string): Promise<string> {
       const resp = await fetch(url)
       if (!resp.ok) {
-        throw new Error(`Failed to download ${url}: ${resp.statusText}`)
+        throw new AstralError(`Failed to download ${url}: ${resp.statusText}`, 'ASTRAL_DOWNLOAD_ERROR')
       }
       const text = await resp.text()
       // Async write instead of synchronous

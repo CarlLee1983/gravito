@@ -1,4 +1,5 @@
 import { AgendaBridge } from '../bridges/AgendaBridge'
+import { QuasarError, QuasarErrorCodes } from '../errors/QuasarError'
 import { BeeQueueBridge } from '../bridges/BeeQueueBridge'
 import { BullBridge } from '../bridges/BullBridge'
 import { BullMQBridge } from '../bridges/BullMQBridge'
@@ -41,7 +42,10 @@ export class CorePlugin implements QuasarPlugin {
     )
     registry.registerBridge('generic', (redis, prefix, workerId, options) => {
       if (!options?.eventMapping) {
-        throw new Error('Generic bridge requires eventMapping option')
+        throw new QuasarError(
+          QuasarErrorCodes.INVALID_CONFIG,
+          'Generic bridge requires eventMapping option'
+        )
       }
       return new GenericBridge(
         redis,

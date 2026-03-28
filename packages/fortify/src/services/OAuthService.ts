@@ -1,3 +1,5 @@
+import { FortifyError } from '../errors/FortifyError'
+import { ErrorCodes } from '../errors/codes'
 import type { OAuthProvider } from './OAuth/types'
 
 export class OAuthService {
@@ -10,7 +12,7 @@ export class OAuthService {
   getProvider(name: string): OAuthProvider {
     const provider = this.providers.get(name)
     if (!provider) {
-      throw new Error(`OAuth provider '${name}' not found`)
+      throw new FortifyError(ErrorCodes.OAUTH_UNKNOWN_PROVIDER, 404, { name })
     }
     return provider
   }

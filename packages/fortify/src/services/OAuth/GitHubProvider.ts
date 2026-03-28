@@ -1,3 +1,5 @@
+import { FortifyError } from '../../errors/FortifyError'
+import { ErrorCodes } from '../../errors/codes'
 import { AbstractProvider } from './AbstractProvider'
 import type { OAuthUser } from './types'
 
@@ -34,13 +36,21 @@ export class GitHubProvider extends AbstractProvider {
     })
 
     if (!tokenResponse.ok) {
-      throw new Error(`Failed to exchange token: ${await tokenResponse.text()}`)
+      throw new FortifyError(
+        ErrorCodes.OAUTH_AUTHENTICATION_FAILED,
+        401,
+        { message: `Failed to exchange token: ${await tokenResponse.text()}` }
+      )
     }
 
     const tokens = await tokenResponse.json()
 
     if (tokens.error) {
-      throw new Error(`GitHub OAuth error: ${tokens.error_description || tokens.error}`)
+      throw new FortifyError(
+        ErrorCodes.OAUTH_AUTHENTICATION_FAILED,
+        401,
+        { message: `GitHub OAuth error: ${tokens.error_description || tokens.error}` }
+      )
     }
 
     const userResponse = await fetch('https://api.github.com/user', {
@@ -51,7 +61,11 @@ export class GitHubProvider extends AbstractProvider {
     })
 
     if (!userResponse.ok) {
-      throw new Error(`Failed to fetch user info: ${await userResponse.text()}`)
+      throw new FortifyError(
+        ErrorCodes.OAUTH_AUTHENTICATION_FAILED,
+        401,
+        { message: `Failed to fetch user info: ${await userResponse.text()}` }
+      )
     }
 
     const user = await userResponse.json()

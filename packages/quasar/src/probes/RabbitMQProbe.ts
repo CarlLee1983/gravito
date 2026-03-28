@@ -1,3 +1,4 @@
+import { QuasarError, QuasarErrorCodes } from '../errors/QuasarError'
 import type { QueueProbe, QueueSnapshot } from './types'
 
 export interface RabbitMQOptions {
@@ -30,7 +31,10 @@ export class RabbitMQProbe implements QueueProbe {
     try {
       const response = await fetch(url, { headers })
       if (!response.ok) {
-        throw new Error(`RabbitMQ API error: ${response.status} ${response.statusText}`)
+        throw new QuasarError(
+          QuasarErrorCodes.API_ERROR,
+          `RabbitMQ API error: ${response.status} ${response.statusText}`
+        )
       }
 
       const data = (await response.json()) as any
