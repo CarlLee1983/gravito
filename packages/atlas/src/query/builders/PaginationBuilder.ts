@@ -47,6 +47,7 @@ export class PaginationBuilder<T = Record<string, unknown>> {
     const total = await this.queryBuilder.clone().count()
 
     const data = await this.queryBuilder
+      .clone()
       .limit(perPage)
       .offset((page - 1) * perPage)
       .get()
