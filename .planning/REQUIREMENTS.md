@@ -24,7 +24,7 @@ Requirements for v2.0.0 major release. Each maps to roadmap phases.
 - [x] **INTG-01**: Circuit breaker 整合至 atlas DB 連線池
 - [x] **INTG-02**: Circuit breaker 整合至 plasma Redis 客戶端
 - [x] **INTG-03**: atlas、plasma、stream、signal、beam 註冊 `core:shutdown` handler 含 deadline
-- [ ] **INTG-04**: 所有 Orbit 包向 `@gravito/monitor` 註冊健康檢查
+- [x] **INTG-04**: 所有 Orbit 包向 `@gravito/monitor` 註冊健康檢查
 - [ ] **INTG-05**: `OrbitDegradationManager` 在 CB open 時返回 typed fallback 而非拋出錯誤
 
 ### Full Migration
@@ -70,7 +70,7 @@ Deferred to next release. Tracked but not in current roadmap.
 | INTG-01 | Phase 18 | Complete |
 | INTG-02 | Phase 18 | Complete |
 | INTG-03 | Phase 18 + 19 | Complete |
-| INTG-04 | Phase 19 | Pending |
+| INTG-04 | Phase 19 | Complete |
 | INTG-05 | Phase 20 | Pending |
 | MIGR-01 | Phase 19 | Complete |
 | MIGR-02 | Phase 19 | Complete |
