@@ -183,15 +183,31 @@ export class HasPersistence {
 
         if (lastId === undefined || lastId === 0) {
           if (driverName === 'sqlite') {
+            // SQLite: last_insert_rowid() is connection-scoped, safe for concurrent inserts
             const idRes = await conn.raw<{ id: number }>('SELECT last_insert_rowid() as id', [])
             lastId = idRes.rows[0]?.id
-          } else {
-            const maxResult = await conn
-              .table(targetTable)
-              .setModel(modelCtor)
-              .max(modelCtor.primaryKey)
-            lastId = maxResult ?? undefined
+          } else if (driverName === 'mysql' || driverName === 'mysql2') {
+            // MySQL: LAST_INSERT_ID() is connection-scoped, safe for concurrent inserts
+            const idRes = await conn.raw<{ id: number }>('SELECT LAST_INSERT_ID() as id', [])
+            lastId = idRes.rows[0]?.id
+          } else if (driverName === 'postgres' || driverName === 'bunsql') {
+            // PostgreSQL/BunSQL: currval() is session-scoped, safe for concurrent inserts.
+            // Uses pg_get_serial_sequence to look up the sequence name dynamically.
+            try {
+              const idRes = await conn.raw<{ id: number }>(
+                'SELECT currval(pg_get_serial_sequence($1, $2)) as id',
+                [targetTable, modelCtor.primaryKey]
+              )
+              lastId = idRes.rows[0]?.id
+            } catch {
+              // currval() fails if no value has been set in this session yet;
+              // in that case we cannot safely determine the ID.
+              lastId = undefined
+            }
           }
+          // NOTE: MAX(primaryKey) was intentionally removed — it is NOT concurrency-safe.
+          // Under concurrent inserts, two sessions can observe the same MAX value,
+          // leading to incorrect ID assignment. Use driver-specific session-scoped functions instead.
         }
 
         if (lastId) {
