@@ -207,9 +207,8 @@ async function verifyNpmAuth(): Promise<boolean> {
     const username = await $`npm whoami`.quiet().text()
     console.log(`✅ 已登入為: ${username.trim()}`)
 
-    console.log('\n準備進行瀏覽器驗證...')
-    console.log('   注意：發布第一個套件時，NPM 會自動打開瀏覽器進行驗證')
-    console.log('   請在瀏覽器中完成驗證（指紋、Face ID 等）')
+    console.log('\n使用瀏覽器驗證模式（--auth-type=web）')
+    console.log('   發布時會自動開啟瀏覽器，請完成驗證（指紋、Face ID 等）')
     console.log('   驗證成功後，後續套件會自動發布\n')
 
     return true
@@ -251,31 +250,32 @@ async function publishPackage(pkg: PackageInfo): Promise<boolean> {
   // 關於條件參數（--tag beta/alpha）：
   // 原版透過 args 陣列動態組合，Bun Shell 使用 if/else 分支，
   // 每個分支均獨立呼叫 $``，避免條件字串拼接的可讀性問題。
-  console.log(`  提示: 如果 NPM 要求驗證，請依照終端器指示操作（若有提示則會開啟瀏覽器驗證）`)
-
   try {
-    // 增加支援瀏覽器驗證的提示
-    console.log(`  💡 提示: 如果 NPM 要求驗證，請依照終端器指示操作（若有提示則會開啟瀏覽器驗證）`)
+    console.log(`  💡 發布時會開啟瀏覽器進行驗證，請在瀏覽器中完成確認`)
 
-    // 使用 Bun Shell 組合 npm publish 命令並支援互動模式
-    // 對於 alpha/beta 版本，使用對應的 tag
-    const result =
-      isBeta || isAlpha
-        ? await $`npm publish --access public --tag ${versionTag}`.cwd(pkg.path).nothrow()
-        : await $`npm publish --access public`.cwd(pkg.path).nothrow()
+    // 使用 Bun.spawn + stdio: 'inherit' 確保 npm 能啟動互動式瀏覽器驗證
+    const args = ['publish', '--access', 'public', '--auth-type=web']
+    if (isBeta || isAlpha) {
+      args.push('--tag', versionTag)
+    }
 
-    if (result.exitCode === 0) {
+    const proc = Bun.spawn(['npm', ...args], {
+      cwd: pkg.path,
+      stdio: ['inherit', 'inherit', 'inherit'],
+    })
+    const exitCode = await proc.exited
+
+    if (exitCode === 0) {
       console.log(`  ✅ ${pkg.name}@${pkg.version} 發布成功`)
       return true
     } else {
-      // 如果發布失敗，做最後一次確認是否是因為版本已存在（處理 npm view 的延遲或快取問題）
       const doubleCheck = await checkPackageExists(pkg)
       if (doubleCheck) {
         console.log(`  ${pkg.name}@${pkg.version} 發布失敗，但檢測到版本已存在，視為成功（跳過）。`)
         return true
       }
 
-      console.error(`  ❌ ${pkg.name}@${pkg.version} 發布失敗 (碼: ${result.exitCode})`)
+      console.error(`  ❌ ${pkg.name}@${pkg.version} 發布失敗 (碼: ${exitCode})`)
       return false
     }
   } catch (e: any) {
@@ -338,8 +338,7 @@ async function main() {
       process.exit(1)
     }
 
-    console.log('等待 3 秒後開始發布...')
-    console.log('   第一個套件發布時會觸發瀏覽器驗證\n')
+    console.log('等待 3 秒後開始發布（瀏覽器驗證模式）...\n')
     await new Promise((resolve) => setTimeout(resolve, 3000))
   }
 
