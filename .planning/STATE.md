@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v2.0.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-28T16:36:58.634Z"
+last_updated: "2026-03-28T16:42:41.726Z"
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 21
-  completed_plans: 15
+  completed_plans: 16
 ---
 
 # STATE: Gravito-Core v2.0.0
@@ -24,7 +24,7 @@ progress:
 ## Current Position
 
 Phase: 19 (secondary-orbit-migration) — EXECUTING
-Plan: 4 of 9
+Plan: 5 of 9
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Plan: 4 of 9
 | Phase 19 P01 | 3 | 2 tasks | 9 files |
 | Phase 19-secondary-orbit-migration P02 | 60 | 2 tasks | 23 files |
 | Phase 19 P04 | 525636min | 2 tasks | 35 files |
+| Phase 19 P03 | 25 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,9 @@ Plan: 4 of 9
 | withRetry requires explicit idempotent:true | atlas.transactionWithRetry already handles deadlock retry; double-wrapping = quadratic retries | 2026-03-28 |
 | Phase 18 validates pattern before Phase 19 batch | atlas+plasma are highest blast-radius; design flaws found here don't cascade to 40+ packages | 2026-03-28 |
 | OrbitDegradationManager in Phase 20 | Requires unified errors (P16) + wired CB (P18) + health reporting (P19); premature in P17 leads to silent failure anti-patterns | 2026-03-28 |
+| FluxError uses constructor adapter (message, code, context) | Preserve 13+ factory functions and existing tests while re-parenting to QueueException | 2026-03-29 |
+| BeamError keeps short string codes for backward compat | 163 existing tests assert NETWORK_ERROR/TIMEOUT/etc — BeamErrorCodes namespace is additive | 2026-03-29 |
+| registerBeamShutdown as standalone exported function | beam has no OrbitBeam.ts; standalone function allows INTG-03 wiring without Orbit wrapper | 2026-03-29 |
 
 ### Blockers
 
