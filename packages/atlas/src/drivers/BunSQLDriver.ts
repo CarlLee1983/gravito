@@ -127,12 +127,14 @@ export class BunSQLDriver implements DriverContract {
         const rows = stmt.all(...normalized) as T[]
 
         let lastInsertRowid: any
-        try {
-          // @ts-expect-error
-          const idRes = this.sqliteClient.query('SELECT last_insert_rowid() as id').get() as any
-          lastInsertRowid = idRes?.id
-        } catch {
-          /* ignore */
+        if (sql.trimStart().toUpperCase().startsWith('INSERT')) {
+          try {
+            // @ts-expect-error
+            const idRes = this.sqliteClient.query('SELECT last_insert_rowid() as id').get() as any
+            lastInsertRowid = idRes?.id
+          } catch {
+            /* ignore */
+          }
         }
 
         return { rows, rowCount: rows.length, insertId: lastInsertRowid }
