@@ -77,6 +77,11 @@ export interface OrderClause {
    * 排序方向
    */
   direction: OrderDirection
+
+  /**
+   * 是否為 raw 表達式（raw 表達式已包含方向，不應再附加 direction）
+   */
+  raw?: boolean
 }
 
 /**

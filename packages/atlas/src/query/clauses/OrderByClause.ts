@@ -39,10 +39,14 @@ export class OrderByClause {
    */
   orderByRaw(sql: string | Expression, bindings: unknown[] = []): void {
     if (sql instanceof Expression) {
-      this.orders.push({ column: sql.getValue(), direction: 'asc' })
+      this.orders.push({ column: sql.getValue(), direction: 'asc', raw: true })
       this.bindings.push(...sql.getBindings())
     } else {
-      this.orders.push({ column: new Expression(sql, bindings).getValue(), direction: 'asc' })
+      this.orders.push({
+        column: new Expression(sql, bindings).getValue(),
+        direction: 'asc',
+        raw: true,
+      })
       this.bindings.push(...bindings)
     }
   }
@@ -77,7 +81,10 @@ export class OrderByClause {
 
     const compiled = this.orders
       .map((order) => {
-        // Raw expressions are already handled in orderByRaw
+        // Raw expressions already contain direction; skip quoting and direction suffix
+        if (order.raw) {
+          return order.column
+        }
         const column = order.column.includes('(') ? order.column : `"${order.column}"`
         return `${column} ${order.direction.toUpperCase()}`
       })

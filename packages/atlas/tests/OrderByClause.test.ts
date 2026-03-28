@@ -24,18 +24,37 @@ describe('OrderByClause', () => {
     expect(clause.toSQL()).toBe('ORDER BY "priority" DESC, "name" ASC')
   })
 
-  it('should handle raw order by', () => {
+  it('should handle raw order by without appending direction', () => {
     const clause = new OrderByClause()
     clause.orderByRaw('FIELD(status, "active", "pending", "closed")')
-    expect(clause.toSQL()).toBe('ORDER BY FIELD(status, "active", "pending", "closed") ASC')
+    expect(clause.toSQL()).toBe('ORDER BY FIELD(status, "active", "pending", "closed")')
   })
 
-  it('should handle Expression in orderByRaw', () => {
+  it('should handle Expression in orderByRaw without appending direction', () => {
     const clause = new OrderByClause()
     const expr = new Expression('RAND(?)', [123])
     clause.orderByRaw(expr)
-    expect(clause.toSQL()).toBe('ORDER BY RAND(?) ASC')
+    expect(clause.toSQL()).toBe('ORDER BY RAND(?)')
     expect(clause.getBindings()).toEqual([123])
+  })
+
+  it('should not append direction for raw expressions containing explicit DESC', () => {
+    const clause = new OrderByClause()
+    clause.orderByRaw('score DESC')
+    expect(clause.toSQL()).toBe('ORDER BY score DESC')
+  })
+
+  it('should not append direction for raw expressions containing explicit ASC', () => {
+    const clause = new OrderByClause()
+    clause.orderByRaw('relevance ASC')
+    expect(clause.toSQL()).toBe('ORDER BY relevance ASC')
+  })
+
+  it('should mix raw and non-raw order clauses correctly', () => {
+    const clause = new OrderByClause()
+    clause.orderBy('created_at', 'desc')
+    clause.orderByRaw('score DESC')
+    expect(clause.toSQL()).toBe('ORDER BY "created_at" DESC, score DESC')
   })
 
   it('should reset state', () => {
