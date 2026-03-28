@@ -721,6 +721,7 @@
       },
       "dependencies": {
         "@gravito/core": "^2.0.6",
+        "@gravito/resilience": "workspace:*",
         "@opentelemetry/api": "^1.9.0",
         "@opentelemetry/semantic-conventions": "^1.39.0",
         "lru-cache": "^11.0.2",

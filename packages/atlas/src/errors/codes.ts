@@ -25,3 +25,17 @@ export const DatabaseErrorCodes = {
 } as const
 
 export type DatabaseErrorCode = (typeof DatabaseErrorCodes)[keyof typeof DatabaseErrorCodes]
+
+/**
+ * Structured error codes for @gravito/atlas ORM model operations.
+ * @public
+ */
+export const OrmErrorCodes = {
+  COLUMN_NOT_FOUND: 'db.column_not_found',
+  TYPE_MISMATCH: 'db.type_mismatch',
+  NULLABLE_CONSTRAINT: 'db.nullable_constraint',
+  MODEL_NOT_FOUND: 'db.model_not_found',
+  STALE_MODEL: 'db.stale_model',
+} as const
+
+export type OrmErrorCode = (typeof OrmErrorCodes)[keyof typeof OrmErrorCodes]

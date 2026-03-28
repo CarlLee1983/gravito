@@ -21,6 +21,9 @@ describe('OrbitAtlas', () => {
         info: mock(),
         warn: mock(),
       },
+      hooks: {
+        doAction: mock(),
+      },
     }
 
     await orbit.install(mockCore as any)

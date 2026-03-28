@@ -1,15 +1,18 @@
 /**
  * Model Errors
- * @description Custom error types for ORM model operations
+ * @description Custom error types for ORM model operations extending DatabaseException
  */
 
+import { DatabaseException } from '@gravito/core'
+import { OrmErrorCodes } from '../../errors/codes'
 import { findSimilar } from '../../utils/levenshtein'
 
 /**
- * Column Not Found Error
- * Thrown when accessing/setting a column that doesn't exist in schema
+ * Column Not Found Error.
+ * Thrown when accessing/setting a column that doesn't exist in schema.
+ * @public
  */
-export class ColumnNotFoundError extends Error {
+export class ColumnNotFoundError extends DatabaseException {
   constructor(
     public readonly table: string,
     public readonly column: string,
@@ -22,22 +25,24 @@ export class ColumnNotFoundError extends Error {
       const similar = findSimilar(column, availableColumns)
 
       if (similar.length > 0) {
-        message += `\n\n💡 Did you mean: ${similar.map((c) => `"${c}"`).join(', ')}?`
+        message += `\n\n Did you mean: ${similar.map((c) => `"${c}"`).join(', ')}?`
       }
 
-      message += `\n\n📋 Available columns:\n   ${availableColumns.join(', ')}`
+      message += `\n\n Available columns:\n   ${availableColumns.join(', ')}`
     }
 
-    super(message)
+    super(400, OrmErrorCodes.COLUMN_NOT_FOUND, { message, retryable: false })
     this.name = 'ColumnNotFoundError'
+    Object.setPrototypeOf(this, new.target.prototype)
   }
 }
 
 /**
- * Type Mismatch Error
- * Thrown when setting a value with incompatible type
+ * Type Mismatch Error.
+ * Thrown when setting a value with incompatible type.
+ * @public
  */
-export class TypeMismatchError extends Error {
+export class TypeMismatchError extends DatabaseException {
   constructor(
     public readonly table: string,
     public readonly column: string,
@@ -55,55 +60,62 @@ export class TypeMismatchError extends Error {
       message += `\n   Value: ${valuePreview}`
     }
 
-    message += `\n\n💡 Tip: Check your model's casts configuration or ensure the value matches the expected type.`
+    message += `\n\n Tip: Check your model's casts configuration or ensure the value matches the expected type.`
 
-    super(message)
+    super(400, OrmErrorCodes.TYPE_MISMATCH, { message, retryable: false })
     this.name = 'TypeMismatchError'
+    Object.setPrototypeOf(this, new.target.prototype)
   }
 }
 
 /**
- * Nullable Constraint Error
- * Thrown when setting null on a non-nullable column
+ * Nullable Constraint Error.
+ * Thrown when setting null on a non-nullable column.
+ * @public
  */
-export class NullableConstraintError extends Error {
+export class NullableConstraintError extends DatabaseException {
   constructor(
     public readonly table: string,
     public readonly column: string
   ) {
     const message =
       `Column "${column}" on table "${table}" cannot be null.\n\n` +
-      `💡 Tip: Either provide a non-null value or modify the column definition to allow null values.`
+      ` Tip: Either provide a non-null value or modify the column definition to allow null values.`
 
-    super(message)
+    super(400, OrmErrorCodes.NULLABLE_CONSTRAINT, { message, retryable: false })
     this.name = 'NullableConstraintError'
+    Object.setPrototypeOf(this, new.target.prototype)
   }
 }
 
 /**
- * Model Not Found Error
- * Thrown when a model is not found in the database
+ * Model Not Found Error.
+ * Thrown when a model is not found in the database.
+ * NOTE: Distinct from core's ModelNotFoundException (if any).
+ * @public
  */
-export class ModelNotFoundError extends Error {
+export class ModelNotFoundError extends DatabaseException {
   constructor(
     public readonly model: string,
     public readonly key: unknown
   ) {
     const message =
       `${model} with key "${key}" not found.\n\n` +
-      `💡 Tip: Use findOrFail() if you want to throw an error when a model is not found, ` +
+      ` Tip: Use findOrFail() if you want to throw an error when a model is not found, ` +
       `or check the key value and ensure the record exists in the database.`
 
-    super(message)
+    super(404, OrmErrorCodes.MODEL_NOT_FOUND, { message, retryable: false })
     this.name = 'ModelNotFoundError'
+    Object.setPrototypeOf(this, new.target.prototype)
   }
 }
 
 /**
- * Stale Model Error
- * Thrown when an optimistic lock check fails (concurrent update)
+ * Stale Model Error.
+ * Thrown when an optimistic lock check fails (concurrent update).
+ * @public
  */
-export class StaleModelError extends Error {
+export class StaleModelError extends DatabaseException {
   constructor(
     public readonly model: string,
     public readonly key: unknown
@@ -112,7 +124,8 @@ export class StaleModelError extends Error {
       `Stale model "${model}" with key "${key}".\n\n` +
       `The record has been modified by another process since it was loaded.`
 
-    super(message)
+    super(409, OrmErrorCodes.STALE_MODEL, { message, retryable: true })
     this.name = 'StaleModelError'
+    Object.setPrototypeOf(this, new.target.prototype)
   }
 }
