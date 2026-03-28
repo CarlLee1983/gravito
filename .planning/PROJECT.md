@@ -1,79 +1,77 @@
-# Gravito-Core Obsidian 文檔保管庫
+# Gravito-Core Framework
 
 ## What This Is
 
-為 gravito-core 框架的 60 個包構建一個結構良好的 Obsidian vault。通過清晰的入門路徑、核心概念解說、實際使用範例和模組依賴圖，讓新開發者、內部專家、使用者和客戶都能有效地理解和使用每個模組。
+Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Architecture 建構。包含 PlanetCore 微核心、50+ Orbit 基礎設施包、15 個 Satellite 業務領域外掛。目標是為 Bun runtime 上的 TypeScript 應用提供 production-ready 的全棧解決方案。
 
 ## Core Value
 
-**一個統一的文檔入口** — 無論是新開發者快速上手、專家深度參考、還是使用者查詢功能，都能在結構化的 Obsidian vault 中找到所需信息。
+**穩定可靠的核心基礎設施** — core 及所有 Orbit 包必須具備 production-ready 的錯誤處理、韌性機制和一致的 API 行為，讓下游 Satellite 和應用能安心依賴。
+
+## Current Milestone: v2.0.0 Core & Orbit Resilience
+
+**Goal:** 建立統一的錯誤處理模型與韌性機制，讓 core 及全部 Orbit 包達到 production-ready 成熟度
+
+**Target features:**
+- 統一錯誤模型 — 一致的錯誤類型、錯誤碼、錯誤傳播機制（跨所有 Orbit 包）
+- Graceful Degradation — Orbit 包失敗時系統優雅降級，不崩潰
+- Retry + Circuit Breaker — 外部依賴（DB、Redis、HTTP）的重試、斷路器、超時機制
+- 全量 Orbit 包改造 — core + ~50 個 Orbit 包統一採用新錯誤模型
 
 ## Requirements
 
 ### Validated
 
-- ✓ **@gravito/core JSDoc Coverage** (27% → 100%, v1.4.0) — All 59 exports documented with descriptions, types, and examples
-- ✓ **@gravito/signal JSDoc Coverage** (60% → 100%, v1.4.0) — All 23 exports documented with cross-references
-- ✓ **Quality & Consistency Standards** (v1.4.0) — Photon benchmark exceeded (98.8/100 score)
-- ✓ **Verification & Audit** (v1.4.0) — Automated coverage confirmed ≥90%, manual review passed
+- ✓ **Framework Health Stabilization** (v1.3.10) — Health score 78→93, test failures 162→41, Hono fully removed
+- ✓ **JSDoc Coverage** (v1.4.0) — Core 100%, Signal 100%, quality 98.8/100
+- ✓ **Hono Dependency Removal** (v1.5.0) — JWT native, type system unified, 3000+ tests passing
+- ✓ **Satellite Verification** (v1.5.1) — RBAC/Catalog/Commerce all 100% pass, integration verified
 
 ### Active
 
-- [ ] **Obsidian vault setup** — Knowledge management integration (v1.5.0)
-- [ ] **Example improvements** — Usage patterns and tutorials (v1.5.0)
-- [ ] **API reference generation** — Automated docs from JSDoc (v1.5.0)
-- [ ] **Additional packages** — Extend JSDoc to Atlas, Stream, Event, etc. (v1.5.0+)
-- [ ] **Core、Atlas、Photon 模組文檔** — 優先完成 3 個核心模組的完整文檔（概念、API、範例）
-- [ ] **一致的文檔結構** — 所有模組遵循統一的格式（概述、架構、核心概念、使用範例、常見模式）
-- [ ] **清晰的入門指南** — 按開發者角色分類的快速開始路徑（貢獻者、集成者、使用者）
-- [ ] **模組依賴關係圖** — 視覺化展示模組間的依賴和通信模式
-- [ ] **雙向鏈接和圖譜** — 充分利用 Obsidian 的知識圖譜功能，幫助讀者探索模組關係
-- [ ] **實戰範例和最佳實踐** — 每個模組至少 2-3 個實戰使用範例
-- [ ] **Obsidian vault 發佈** — 生成完整的 vault 檔案結構，供讀者直接在 Obsidian 中打開使用
+- [ ] 統一錯誤模型 — 一致的錯誤類型、錯誤碼、錯誤傳播（v2.0.0）
+- [ ] Graceful Degradation — Orbit 包失敗時系統優雅降級（v2.0.0）
+- [ ] Retry + Circuit Breaker — 外部依賴的重試、斷路器、超時（v2.0.0）
+- [ ] 全量 Orbit 包改造 — 統一採用新錯誤模型（v2.0.0）
 
 ### Out of Scope
 
-- API 完整參考生成 — 文檔專注於概念和使用，不做自動 API 參考生成
-- 性能文檔 — 性能優化留給後續專項工作
-- 完整的 60 個包文檔 — 首階段只覆蓋 core、atlas、photon 等核心模組；其餘模組分階段推進
-- 視頻教程 — 文檔形式以 markdown + 圖表為主
+- 性能優化 — 留給後續 milestone（v1.5.2 optimization roadmap 已規劃）
+- Obsidian 文檔庫 — 文檔工作暫緩，優先處理核心穩定性
+- Satellite 業務邏輯改造 — 本次僅改造 Orbit 層，Satellite 層後續跟進
+- UI/前端改造 — 不涉及前端包
 
 ## Context
 
-**Brownfield 環境：** gravito-core 已經運作多年，擁有 60 個核心包和 15 個衛星模組。
+**Brownfield 環境：** gravito-core 已運作多年，66 個核心包 + 15 個衛星模組。
 
-**當前痛點：**
-- 文檔結構混亂，信息散落在各處
-- 內容不完整，缺乏統一的深度
-- 書寫風格不一致，難以形成學習路徑
-- 新開發者入門指南缺失，上手曲線陡峭
+**當前狀態：**
+- Framework health: 100/100
+- Test pass rate: 99.7%+, 3000+ tests
+- TypeScript strict mode, 0 errors
+- 已有 @gravito/resilience 包（可能包含部分基礎）
 
-**目標讀者層次：**
-1. **新開發者 / 貢獻者** — 需要快速上手、了解基本概念和開發流程
-2. **內部經驗員工 / 領域專家** — 需要深度參考、架構決策文檔
-3. **使用者 / 客戶** — 需要了解功能、最佳實踐和常見問題解決
-
-**已有基礎：**
-- Gravito-Core 代碼庫完整可用
-- 部分模組已有基礎文檔
-- Obsidian 可作為編寫和發佈工具
+**v2.0.0 決策：**
+- 允許 breaking changes — 重新設計錯誤處理
+- Major version bump 明確標示不向後相容
+- 涵蓋 core + 全部 Orbit 包
 
 ## Constraints
 
-- **時間線**：1-2 週內完成 core、atlas、photon 三個核心模組的文檔 — 這是高優先級阻擋工作
-- **工具**：Obsidian CLI + 標準 markdown 格式 — 無複雜自動化需求
-- **讀者多元性**：文檔需要層次化，同時滿足新手和專家的不同需求
-- **範圍控制**：首階段聚焦 3 個核心模組，後續擴展到全部 60 個包
-- **可維護性**：文檔結構應便於持續更新和貢獻
+- **Breaking Changes**：v2.0.0 允許 breaking，但需提供遷移指南
+- **TypeScript Strict**：維持 noUnusedLocals/Parameters，零 as any
+- **測試覆蓋**：新錯誤模型需 80%+ 測試覆蓋率
+- **Satellite 隔離**：不直接修改 Satellite，Satellite 透過事件機制自然受益
+- **Runtime**：Bun 為主要目標 runtime
 
 ## Key Decisions
 
 | 決策 | 理由 | 結果 |
 |------|------|------|
-| 優先核心模組 | 3 個模組完成度高於 60 個模組完成度低 | ✓ 已選擇 |
-| Obsidian vault 發佈 | 充分利用雙向鏈接和圖譜，提升讀者體驗 | ✓ 已選擇 |
-| 層次化文檔設計 | 同時服務不同角色的讀者，避免單一風格 | ✓ 已選擇 |
-| 標準化結構 | 所有模組遵循一致格式，便於維護和擴展 | — 待實施 |
+| v2.0.0 major version | 錯誤模型重新設計需要 breaking changes | ✓ 已確認 |
+| 全量 Orbit 包改造 | 局部改造會導致不一致，全量確保品質統一 | ✓ 已確認 |
+| 錯誤處理為最高優先 | Production 穩定性是下游所有功能的基礎 | ✓ 已確認 |
+| 統一錯誤模型先行 | 先建立標準，再逐步改造各包 | — 待實施 |
 
 ---
 
@@ -313,4 +311,22 @@
 
 ---
 
-*Last updated: 2026-03-27 after v1.4.0 milestone completion (✅ v1.4.0 COMPLETE & CERTIFIED)*
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd:transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd:complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
+---
+*Last updated: 2026-03-28 after v2.0.0 milestone started*
