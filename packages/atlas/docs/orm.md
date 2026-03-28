@@ -47,7 +47,7 @@ const firstUser = await User.first()
 
 ## 💾 Persistence
 
-Atlas tracks changes to your models. When you call `.save()`, only the modified fields are sent to the database.
+Atlas tracks changes to your models via `DirtyTracker`. When you call `.save()`, only the modified fields are sent to the database.
 
 ```typescript
 const user = await User.find(1)
@@ -60,6 +60,31 @@ await user.save() // Only updates 'email'
 const user = new User()
 user.fill({ email: 'test@example.com' })
 await user.save()
+```
+
+### Type Casting
+
+All type casting is handled by a single `TypeCaster` module. Supported cast types: `integer`, `bigint`, `smallint`, `decimal`, `float`, `double`, `string`, `boolean`, `json`, `jsonb`, `date`, `datetime`, `timestamp`, `collection`.
+
+```typescript
+class Order extends Model {
+  static casts = {
+    amount: 'decimal',
+    metadata: 'json',
+    is_active: 'boolean',
+  }
+}
+```
+
+When setting attributes (via `fill()`, `setAttribute()`, or Proxy), values are cast **before** dirty tracking — ensuring consistent comparison and preventing false updates.
+
+### Repository Pattern
+
+The `Repository.update()` method uses `fill()` internally, ensuring all attribute changes go through the Proxy's set trap, casting, and dirty tracking.
+
+```typescript
+const repo = new ModelRepository(User)
+await repo.update(1, { name: 'Jane' }) // Uses fill(), not Object.assign
 ```
 
 ## 🔗 Relationships

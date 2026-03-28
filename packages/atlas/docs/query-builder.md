@@ -62,6 +62,36 @@ DB.table('users')
   .get()
 ```
 
+## 🔎 Result Methods
+
+Methods like `first()`, `value()`, and `pluck()` are safe to call without affecting the builder state. They internally clone the builder before applying `LIMIT` or `SELECT` modifications.
+
+```typescript
+const query = DB.table('users').where('active', true)
+
+// These do NOT mutate the original query
+const firstUser = await query.first()
+const name = await query.value('name')
+const names = await query.pluck('name')
+
+// Original query is still intact for reuse
+const count = await query.count()
+```
+
+### Pagination & Chunking
+
+`paginate()` and `chunk()` also clone internally, making them safe for reuse.
+
+```typescript
+// paginate() runs one COUNT + one SELECT per call
+const page = await DB.table('orders').paginate(20, 1)
+
+// chunk() uses limit/offset directly (no COUNT per page)
+await DB.table('orders').chunk(100, async (orders) => {
+  await processOrders(orders)
+})
+```
+
 ## 📡 Transactions
 
 Atlas supports nested transactions with automatic rollback on failure.
@@ -72,3 +102,5 @@ await DB.transaction(async (trx) => {
   await trx.table('logs').insert({ action: 'withdraw' })
 })
 ```
+
+> **Note:** Redis and MongoDB drivers do not support `beginTransaction()`/`commit()`/`rollback()`. Use `getRawClient()` for native transaction patterns.

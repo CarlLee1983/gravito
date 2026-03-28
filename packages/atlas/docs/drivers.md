@@ -64,6 +64,10 @@ class MongoUser extends Model {
 }
 ```
 
+> **Note (v2.6.0):** MongoDB `beginTransaction()`, `commit()`, and `rollback()` will throw an error. MongoDB transactions require a replica set — use `getRawClient()` for native session-based transactions.
+
 ## ⚡ Redis Support
 
 While mostly used for caching, Atlas can treat Redis as a primary data store for simple Key-Value models.
+
+> **Note (v2.6.0):** Redis `beginTransaction()`, `commit()`, and `rollback()` will throw an error. Use `getRawClient()` with `MULTI/EXEC` for atomic operations.
