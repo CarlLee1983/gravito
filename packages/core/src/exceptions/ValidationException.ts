@@ -1,4 +1,4 @@
-import { GravitoException } from './GravitoException'
+import { DomainException } from './DomainException'
 
 /**
  * Structure of a validation error
@@ -14,7 +14,7 @@ export interface ValidationError {
  * Exception thrown when data validation fails.
  * @public
  */
-export class ValidationException extends GravitoException {
+export class ValidationException extends DomainException {
   public readonly errors: ValidationError[]
   public redirectTo?: string
   public input?: unknown
@@ -24,6 +24,7 @@ export class ValidationException extends GravitoException {
       message,
       i18nKey: 'errors.validation.failed',
     })
+    this.name = 'ValidationException'
     this.errors = errors
   }
 
