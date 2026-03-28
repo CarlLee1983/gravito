@@ -54,4 +54,14 @@ describe('DirtyTracker', () => {
     expect(tracker.isDirty('name')).toBe(false)
     expect(tracker.isDirty('age')).toBe(true)
   })
+
+  it('isEqual should compare array contents deeply', () => {
+    const tracker = new DirtyTracker<any>()
+    tracker.sync({ tags: [{ id: 1 }, { id: 2 }] })
+    tracker.mark('tags', [{ id: 1 }, { id: 2 }])
+    expect(tracker.isDirty('tags')).toBe(false) // same content = not dirty
+
+    tracker.mark('tags', [{ id: 1 }, { id: 3 }])
+    expect(tracker.isDirty('tags')).toBe(true) // different content = dirty
+  })
 })

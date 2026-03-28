@@ -189,11 +189,8 @@ export class DirtyTracker<T extends Record<string, unknown>> {
       if (a.length !== b.length) {
         return false
       }
-      if (this.useDeepComparison) {
-        const deepEquals = getDeepEquals()
-        return a.every((val, idx) => deepEquals(val, b[idx]))
-      }
-      return a.every((val, idx) => val === b[idx])
+      const deepEquals = getDeepEquals()
+      return a.every((val, idx) => deepEquals(val, b[idx]))
     }
 
     if (a instanceof Map && b instanceof Map) {
