@@ -508,11 +508,19 @@ export abstract class Model {
         const columns = (model.constructor as any)[COLUMN_KEY]
         const isColumn = columns && typeof prop === 'string' && prop in columns
 
+        // Metadata properties that should not be tracked as attributes
+        const metadataProps = new Set(['tableName'])
+
         if (
           isColumn ||
           !(prop in target) ||
           (typeof prop === 'string' && prop in model._attributes)
         ) {
+          // Skip tracking metadata properties as attributes
+          if (typeof prop === 'string' && metadataProps.has(prop)) {
+            return Reflect.set(target, prop, value)
+          }
+
           model._setAttribute(prop as string, value)
           return true
         }

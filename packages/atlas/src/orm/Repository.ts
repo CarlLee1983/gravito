@@ -203,7 +203,7 @@ export abstract class ModelRepository<T extends Model> {
    */
   async update(id: unknown, attributes: Partial<T>): Promise<T> {
     const model = await this.findOrFail(id)
-    Object.assign(model, attributes)
+    model.fill(attributes as Record<string, unknown>)
     await model.save()
     return model
   }
