@@ -7,5 +7,6 @@
  * @since v1.1
  */
 
-export type { CircuitBreakerConfig, CircuitBreakerMetrics, CircuitBreakerState } from '../types'
+export type { CircuitBreakerConfig, CircuitBreakerMetrics } from '../types'
+export { CircuitBreakerState } from '../types'
 export { CircuitBreaker } from './CircuitBreaker'

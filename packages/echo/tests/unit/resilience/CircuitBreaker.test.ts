@@ -114,7 +114,7 @@ describe('CircuitBreaker', () => {
       })
       const breaker = new CircuitBreaker('test-service', {
         failureThreshold: 2,
-        openTimeout: 100, // 100ms
+        resetTimeout: 100, // 100ms
         onHalfOpen,
       })
 
@@ -148,7 +148,7 @@ describe('CircuitBreaker', () => {
     it('OPEN 狀態下應該拋出錯誤', async () => {
       const breaker = new CircuitBreaker('test-service', {
         failureThreshold: 2,
-        openTimeout: 10000, // 長時間不轉換
+        resetTimeout: 10000, // 長時間不轉換
       })
 
       // 開啟熔斷器
@@ -164,7 +164,7 @@ describe('CircuitBreaker', () => {
 
       // 應該立即拋出錯誤
       await expect(breaker.execute(async () => 'should not execute')).rejects.toThrow(
-        'Circuit breaker is OPEN for test-service'
+        'Circuit is OPEN for test-service'
       )
     })
   })
@@ -177,7 +177,7 @@ describe('CircuitBreaker', () => {
       const breaker = new CircuitBreaker('test-service', {
         failureThreshold: 2,
         successThreshold: 2,
-        openTimeout: 100,
+        resetTimeout: 100,
         onClose,
       })
 
@@ -209,7 +209,7 @@ describe('CircuitBreaker', () => {
       const breaker = new CircuitBreaker('test-service', {
         failureThreshold: 2,
         successThreshold: 3,
-        openTimeout: 100,
+        resetTimeout: 100,
       })
 
       // 開啟熔斷器
@@ -237,7 +237,7 @@ describe('CircuitBreaker', () => {
     it('HALF_OPEN 狀態下失敗應該重新開啟熔斷器', async () => {
       const breaker = new CircuitBreaker('test-service', {
         failureThreshold: 2,
-        openTimeout: 100,
+        resetTimeout: 100,
       })
 
       // 開啟熔斷器

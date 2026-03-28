@@ -45,10 +45,12 @@
   },
   "homepage": "https://github.com/gravito-framework/gravito#readme",
   "peerDependencies": {
-    "@gravito/core": "^2.0.0"
+    "@gravito/core": "^2.0.0",
+    "@gravito/resilience": "workspace:*"
   },
   "devDependencies": {
     "@gravito/core": "workspace:*",
+    "@gravito/resilience": "workspace:*",
     "bun-types": "latest",
     "typescript": "^5.9.3"
   },

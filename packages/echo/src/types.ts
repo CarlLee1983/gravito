@@ -1,3 +1,4 @@
+import type { CircuitBreakerState } from '@gravito/resilience'
 import type { DeadLetterQueue } from './dlq/DeadLetterQueue'
 import type { EchoLogger } from './observability/logging'
 import type { MetricsProvider } from './observability/metrics'
@@ -262,6 +263,7 @@ export interface RequestBufferConfig {
 
 /**
  * The current operational state of a circuit breaker.
+ * Re-exported from @gravito/resilience (canonical source per D-01).
  *
  * - `CLOSED`: Healthy state, allowing all requests through.
  * - `OPEN`: Failing state, blocking all requests to prevent cascading failure.
@@ -269,7 +271,7 @@ export interface RequestBufferConfig {
  *
  * @public
  */
-export type CircuitBreakerState = 'CLOSED' | 'OPEN' | 'HALF_OPEN'
+export { CircuitBreakerState } from '@gravito/resilience'
 
 /**
  * Resilience configuration for outgoing webhook delivery.

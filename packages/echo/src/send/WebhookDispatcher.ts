@@ -156,28 +156,40 @@ export class WebhookDispatcher {
     const host = new URL(url).host
 
     if (!this.circuitBreakers.has(host)) {
+      // Map echo's CircuitBreakerConfig to resilience's CircuitBreakerOptions.
+      // echo uses `openTimeout` while @gravito/resilience uses `resetTimeout`.
+      // Spread base config (excluding openTimeout and callbacks), then remap openTimeout
+      // to resetTimeout and wrap callbacks with logging.
+      const { openTimeout, ...baseConfig } = this.circuitBreakerConfig ?? {}
       const breaker = new CircuitBreaker(host, {
-        ...this.circuitBreakerConfig,
+        enabled: baseConfig.enabled,
+        failureThreshold: baseConfig.failureThreshold,
+        successThreshold: baseConfig.successThreshold,
+        windowSize: baseConfig.windowSize,
+        resetTimeout: openTimeout,
         onOpen: (name) => {
-          this.logger?.warn(`Circuit breaker OPEN for ${name}`, {
+          const target = name ?? host
+          this.logger?.warn(`Circuit breaker OPEN for ${target}`, {
             component: 'dispatcher',
-            host: name,
+            host: target,
           })
-          this.circuitBreakerConfig?.onOpen?.(name)
+          this.circuitBreakerConfig?.onOpen?.(target)
         },
         onHalfOpen: (name) => {
-          this.logger?.info(`Circuit breaker HALF_OPEN for ${name}`, {
+          const target = name ?? host
+          this.logger?.info(`Circuit breaker HALF_OPEN for ${target}`, {
             component: 'dispatcher',
-            host: name,
+            host: target,
           })
-          this.circuitBreakerConfig?.onHalfOpen?.(name)
+          this.circuitBreakerConfig?.onHalfOpen?.(target)
         },
         onClose: (name) => {
-          this.logger?.info(`Circuit breaker CLOSED for ${name}`, {
+          const target = name ?? host
+          this.logger?.info(`Circuit breaker CLOSED for ${target}`, {
             component: 'dispatcher',
-            host: name,
+            host: target,
           })
-          this.circuitBreakerConfig?.onClose?.(name)
+          this.circuitBreakerConfig?.onClose?.(target)
         },
       })
       this.circuitBreakers.set(host, breaker)
