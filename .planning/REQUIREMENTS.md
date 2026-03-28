@@ -61,26 +61,26 @@ Deferred to next release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ERRM-01 | TBD | Pending |
-| ERRM-02 | TBD | Pending |
-| ERRM-03 | TBD | Pending |
-| RESL-01 | TBD | Pending |
-| RESL-02 | TBD | Pending |
-| RESL-03 | TBD | Pending |
-| INTG-01 | TBD | Pending |
-| INTG-02 | TBD | Pending |
-| INTG-03 | TBD | Pending |
-| INTG-04 | TBD | Pending |
-| INTG-05 | TBD | Pending |
-| MIGR-01 | TBD | Pending |
-| MIGR-02 | TBD | Pending |
-| RELS-01 | TBD | Pending |
+| ERRM-01 | Phase 16 | Pending |
+| ERRM-02 | Phase 16 | Pending |
+| ERRM-03 | Phase 16 | Pending |
+| RESL-01 | Phase 17 | Pending |
+| RESL-02 | Phase 17 | Pending |
+| RESL-03 | Phase 17 | Pending |
+| INTG-01 | Phase 18 | Pending |
+| INTG-02 | Phase 18 | Pending |
+| INTG-03 | Phase 18 + 19 | Pending |
+| INTG-04 | Phase 19 | Pending |
+| INTG-05 | Phase 20 | Pending |
+| MIGR-01 | Phase 19 | Pending |
+| MIGR-02 | Phase 19 | Pending |
+| RELS-01 | Phase 20 | Pending |
 
 **Coverage:**
 - v2.0.0 requirements: 14 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 14 ⚠️
+- Mapped to phases: 14
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-28 after initial definition*
+*Last updated: 2026-03-28 after roadmap creation*
