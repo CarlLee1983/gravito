@@ -1,6 +1,10 @@
 import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { CacheManager } from './CacheManager'
 import type { CacheEventMode, CacheEvents } from './CacheRepository'
+
+type HealthRegistry = {
+  register: (name: string, fn: () => Promise<{ status: string; details?: Record<string, unknown> }>) => void
+}
 import { MarkovPredictor } from './prediction/AccessPredictor'
 import type { CacheStore } from './store'
 import { CircuitBreakerStore } from './stores/CircuitBreakerStore'
@@ -504,6 +508,18 @@ export class OrbitStasis implements GravitoOrbit {
     )
 
     this.manager = manager
+
+    // Health check registration (INTG-04)
+    const health = core.container.make('health') as HealthRegistry | null | undefined
+    if (health) {
+      const cacheManager = manager
+      health.register('stasis', async () => ({
+        status: cacheManager ? 'healthy' : 'unhealthy',
+        details: {
+          driver: resolvedConfig.default ?? 'memory',
+        },
+      }))
+    }
 
     core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       c.set(exposeAs, manager)

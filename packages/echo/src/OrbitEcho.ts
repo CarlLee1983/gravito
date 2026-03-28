@@ -1,6 +1,10 @@
 import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import { EchoError } from './errors/EchoError'
 import { EchoErrorCodes } from './errors/codes'
+
+type HealthRegistry = {
+  register: (name: string, fn: () => Promise<{ status: string; details?: Record<string, unknown> }>) => void
+}
 import { createRequestBufferMiddleware } from './middleware'
 import { WebhookReceiver } from './receive/WebhookReceiver'
 import { KeyRotationManager } from './rotation/KeyRotationManager'
@@ -142,6 +146,19 @@ export class OrbitEcho implements GravitoOrbit {
       c.set('echo', this)
       return await next()
     })
+
+    // Health check registration (INTG-04)
+    const health = core.container.make('health') as HealthRegistry | null | undefined
+    if (health) {
+      const hasDispatcher = !!this.dispatcher
+      health.register('echo', async () => ({
+        status: 'healthy',
+        details: {
+          dispatcher: hasDispatcher ? 'configured' : 'not-configured',
+          providers: Object.keys(this.echoConfig.providers ?? {}).length,
+        },
+      }))
+    }
 
     core.logger.info('[OrbitEcho] Webhook receiver and dispatcher registered')
   }

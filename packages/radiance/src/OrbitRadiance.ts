@@ -2,6 +2,10 @@ import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import { BroadcastManager } from './BroadcastManager'
 import { RadianceError } from './errors/RadianceError'
 import { RadianceErrorCodes } from './errors/codes'
+
+type HealthRegistry = {
+  register: (name: string, fn: () => Promise<{ status: string; details?: Record<string, unknown> }>) => void
+}
 import type { AblyDriverConfig } from './drivers/AblyDriver'
 import { AblyDriver } from './drivers/AblyDriver'
 import type { BroadcastDriver } from './drivers/BroadcastDriver'
@@ -171,6 +175,18 @@ export class OrbitRadiance implements GravitoOrbit {
           await manager.broadcast(event, channel, data, eventName)
         },
       })
+    }
+
+    // Health check registration (INTG-04)
+    const health = core.container.make('health') as HealthRegistry | null | undefined
+    if (health) {
+      const driverName = this.options.driver
+      health.register('radiance', async () => ({
+        status: 'healthy',
+        details: {
+          driver: driverName,
+        },
+      }))
     }
 
     core.logger.info(`[OrbitRadiance] Installed with ${this.options.driver} driver`)

@@ -4,6 +4,10 @@ import { BunSQLiteStorage } from '../storage/BunSQLiteStorage'
 import { MemoryStorage } from '../storage/MemoryStorage'
 import type { FluxConfig, FluxLogger, WorkflowStorage } from '../types'
 
+type HealthRegistry = {
+  register: (name: string, fn: () => Promise<{ status: string; details?: Record<string, unknown> }>) => void
+}
+
 /**
  * Configuration options for the OrbitFlux extension.
  *
@@ -167,6 +171,18 @@ export class OrbitFlux implements GravitoOrbit {
 
     // Register in core container
     core.container.instance(exposeAs!, this.engine)
+
+    // Health check registration (INTG-04)
+    const health = core.container.make('health') as HealthRegistry | null | undefined
+    if (health) {
+      const engine = this.engine
+      health.register('flux', async () => ({
+        status: engine ? 'healthy' : 'unhealthy',
+        details: {
+          storage: typeof storage === 'string' ? storage : 'custom',
+        },
+      }))
+    }
 
     core.logger.info(
       `[OrbitFlux] Initialized (Storage: ${typeof storage === 'string' ? storage : 'custom'})`

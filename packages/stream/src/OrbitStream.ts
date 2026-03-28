@@ -6,6 +6,10 @@ import { QueueManager } from './QueueManager'
 import { StreamEventBackend } from './StreamEventBackend'
 import type { QueueConfig } from './types'
 
+type HealthRegistry = {
+  register: (name: string, fn: () => Promise<{ status: string; details?: Record<string, unknown> }>) => void
+}
+
 interface SignalEmitter {
   emit(event: string, payload: unknown): void
 }
@@ -183,6 +187,18 @@ export class OrbitStream implements GravitoOrbit {
       const backend = new StreamEventBackend(this.queueManager)
       core.hooks.setBackend(backend)
       core.logger.info('[OrbitStream] HookManager backend switched to StreamEventBackend')
+    }
+
+    // Health check registration (INTG-04)
+    const health = core.container.make('health') as HealthRegistry | null | undefined
+    if (health) {
+      const qm = this.queueManager
+      health.register('stream', async () => ({
+        status: qm ? 'healthy' : 'unhealthy',
+        details: {
+          driver: this.options.default ?? 'unknown',
+        },
+      }))
     }
 
     if (this.options.dashboard) {
