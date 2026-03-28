@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test'
+import { TableNotFoundError } from '../src/errors'
 import { PostgresGrammar } from '../src/grammar/PostgresGrammar'
 import { QueryBuilder, RecordNotFoundError } from '../src/query/QueryBuilder'
 import type { ConnectionContract, DriverContract, QueryResult } from '../src/types'
@@ -180,6 +181,82 @@ describe('QueryBuilder execution', () => {
 
     const upserted = await builder.upsert({ id: 1 }, 'id')
     expect(upserted).toBe(1)
+  })
+})
+
+describe('QueryBuilder runWithAutoProvisioning depth limit', () => {
+  // Expose the protected method via subclass
+  class TestableBuilder<T = Record<string, unknown>> extends QueryBuilder<T> {
+    public runProvision<R>(fn: () => Promise<R>, depth?: number): Promise<R> {
+      return this.runWithAutoProvisioning(fn, depth)
+    }
+
+    public setModelClass(modelClass: any) {
+      ;(this as any).modelClass = modelClass
+    }
+  }
+
+  function makeTestablBuilder() {
+    const grammar = new PostgresGrammar()
+    const driver: DriverContract = {
+      getDriverName: () => 'postgres',
+      connect: async () => {},
+      disconnect: async () => {},
+      isConnected: () => true,
+      query: async () => ({ rows: [], rowCount: 0 }),
+      execute: async () => ({ affectedRows: 0 }),
+      beginTransaction: async () => {},
+      commit: async () => {},
+      rollback: async () => {},
+      inTransaction: () => false,
+    }
+    const connection: ConnectionContract = {
+      getName: () => 'test',
+      getDriver: () => driver,
+      getConfig: () => ({ driver: 'postgres' as const, database: 'test' }),
+      table: <U>(_name: string) => new TestableBuilder<U>(connection, grammar, _name),
+      raw: async () => ({ rows: [], rowCount: 0 }),
+      values: async () => [],
+      transaction: async <U>(callback: (conn: ConnectionContract) => Promise<U>) =>
+        callback(connection),
+      disconnect: async () => {},
+      getTracer: () => undefined,
+    }
+    return new TestableBuilder<T>(connection, grammar, 'events')
+  }
+
+  it('throws when depth reaches MAX_PROVISION_DEPTH (3)', async () => {
+    const builder = makeTestablBuilder()
+    // Set a modelClass with partitionTemplate so the catch branch is taken
+    builder.setModelClass({ partitionTemplate: () => {} })
+
+    // fn always throws TableNotFoundError to force repeated provisioning attempts
+    const alwaysMissing = () =>
+      Promise.reject(new TableNotFoundError('no such table: events', new Error(), '', []))
+
+    await expect(builder.runProvision(alwaysMissing, 3)).rejects.toThrow(
+      'runWithAutoProvisioning exceeded maximum recursion depth'
+    )
+  })
+
+  it('throws immediately at depth=3 without executing fn', async () => {
+    const builder = makeTestablBuilder()
+    let fnCalled = false
+
+    await expect(
+      builder.runProvision(async () => {
+        fnCalled = true
+        return 'result'
+      }, 3)
+    ).rejects.toThrow('runWithAutoProvisioning exceeded maximum recursion depth (3)')
+
+    expect(fnCalled).toBe(false)
+  })
+
+  it('succeeds at depth=0 when fn resolves normally', async () => {
+    const builder = makeTestablBuilder()
+    const result = await builder.runProvision(async () => 'ok')
+    expect(result).toBe('ok')
   })
 })
 

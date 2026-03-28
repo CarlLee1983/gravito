@@ -112,12 +112,25 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   protected _withDeferred = false
 
   /**
+   * Maximum recursion depth for auto-provisioning retries.
+   */
+  private static readonly MAX_PROVISION_DEPTH = 3
+
+  /**
    * Internal helper to execute operations with automatic partition provisioning.
    *
    * @param fn - The operation to execute.
+   * @param depth - Current recursion depth (used to prevent infinite loops).
    * @returns The operation result.
    */
-  protected async runWithAutoProvisioning<R>(fn: () => Promise<R>): Promise<R> {
+  protected async runWithAutoProvisioning<R>(fn: () => Promise<R>, depth = 0): Promise<R> {
+    if (depth >= QueryBuilder.MAX_PROVISION_DEPTH) {
+      throw new Error(
+        `runWithAutoProvisioning exceeded maximum recursion depth (${QueryBuilder.MAX_PROVISION_DEPTH}). ` +
+          'Table provisioning failed to resolve the missing table after repeated attempts.'
+      )
+    }
+
     try {
       return await fn()
     } catch (error: any) {
@@ -150,7 +163,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
         )
 
         // Retry the operation recursively to handle cases where multiple tables are missing
-        return await this.runWithAutoProvisioning(fn)
+        return await this.runWithAutoProvisioning(fn, depth + 1)
       }
       throw error
     }
