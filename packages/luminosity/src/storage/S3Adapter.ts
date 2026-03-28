@@ -1,3 +1,5 @@
+import { LuminosityError } from '../errors/LuminosityError'
+import { LuminosityErrorCodes } from '../errors/codes'
 import type { StorageAdapter } from './adapter'
 
 /**
@@ -97,7 +99,10 @@ export class S3Adapter implements StorageAdapter {
       // In Node environment with AWS SDK v3:
       return await response.Body.transformToString()
     } catch (e) {
-      throw new Error(`Failed to read ${path}: ${e}`)
+      throw new LuminosityError(503, LuminosityErrorCodes.STORAGE_READ_FAILED, {
+        message: `Failed to read ${path}: ${e}`,
+        retryable: true,
+      })
     }
   }
 

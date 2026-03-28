@@ -1,6 +1,8 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { Painter as pc } from '@gravito/chromatic'
+import { CliError } from '../errors/CliError'
+import { CliErrorCodes } from '../errors/codes'
 
 /**
  * Cache named routes to a JSON manifest file.
@@ -24,7 +26,9 @@ export async function routeCache(options: { entry: string; output?: string }) {
     const core = module.default?.core || module.core
 
     if (!core?.router?.exportNamedRoutes) {
-      throw new Error('Could not find core.router.exportNamedRoutes().')
+      throw new CliError(500, CliErrorCodes.ROUTE_EXPORT_NOT_FOUND, {
+        message: 'Could not find core.router.exportNamedRoutes().',
+      })
     }
 
     const manifest = core.router.exportNamedRoutes()

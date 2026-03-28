@@ -1,5 +1,7 @@
 import { existsSync } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
+import { LuminosityError } from '../errors/LuminosityError'
+import { LuminosityErrorCodes } from '../errors/codes'
 import type { SeoConfig } from '../types'
 
 /**
@@ -54,9 +56,11 @@ export class ConfigLoader {
     }
 
     if (!targetPath) {
-      throw new Error(
-        `[GravitoSeo] Config file not found. Please create 'gravito.seo.config.ts' or pass a path.`
-      )
+      throw new LuminosityError(404, LuminosityErrorCodes.CONFIG_INVALID, {
+        message:
+          `[GravitoSeo] Config file not found. Please create 'gravito.seo.config.ts' or pass a path.`,
+        retryable: false,
+      })
     }
 
     try {
@@ -69,30 +73,45 @@ export class ConfigLoader {
       return config as SeoConfig
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
-      throw new Error(`[GravitoSeo] Failed to load config from ${targetPath}: ${message}`)
+      throw new LuminosityError(500, LuminosityErrorCodes.CONFIG_INVALID, {
+        message: `[GravitoSeo] Failed to load config from ${targetPath}: ${message}`,
+        retryable: false,
+      })
     }
   }
 
   private validate(config: unknown): void {
     if (!config || typeof config !== 'object') {
-      throw new Error('Config must be an object')
+      throw new LuminosityError(422, LuminosityErrorCodes.CONFIG_INVALID, {
+        message: 'Config must be an object',
+        retryable: false,
+      })
     }
 
     const raw = config as Record<string, unknown>
 
     const mode = raw.mode
     if (mode !== 'dynamic' && mode !== 'cached' && mode !== 'incremental') {
-      throw new Error('Config missing "mode"')
+      throw new LuminosityError(422, LuminosityErrorCodes.CONFIG_MISSING_MODE, {
+        message: 'Config missing "mode"',
+        retryable: false,
+      })
     }
 
     const baseUrl = raw.baseUrl
     if (typeof baseUrl !== 'string' || baseUrl.trim().length === 0) {
-      throw new Error('Config missing "baseUrl"')
+      throw new LuminosityError(422, LuminosityErrorCodes.CONFIG_MISSING_BASE_URL, {
+        message: 'Config missing "baseUrl"',
+        retryable: false,
+      })
     }
 
     const resolvers = raw.resolvers
     if (!Array.isArray(resolvers)) {
-      throw new Error('Config missing "resolvers"')
+      throw new LuminosityError(422, LuminosityErrorCodes.CONFIG_MISSING_RESOLVERS, {
+        message: 'Config missing "resolvers"',
+        retryable: false,
+      })
     }
   }
 }

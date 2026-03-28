@@ -10,6 +10,8 @@
 
 import { getMarkdownAdapter } from '@gravito/core'
 import type { HelperFunction } from '../engine/TemplateEngine'
+import { PrismError } from '../errors/PrismError'
+import { PrismErrorCodes } from '../errors/codes'
 import { Sanitizer } from '../security/Sanitizer'
 
 /**
@@ -32,7 +34,9 @@ export function createMarkdownHelper(): HelperFunction {
     const contentArg = args.content
 
     if (contentArg === undefined || contentArg === null) {
-      throw new Error('Markdown helper requires "content" parameter')
+      throw new PrismError(422, PrismErrorCodes.HELPER_MISSING_PARAM, {
+        message: 'Markdown helper requires "content" parameter',
+      })
     }
 
     const markdown = String(contentArg).trim()

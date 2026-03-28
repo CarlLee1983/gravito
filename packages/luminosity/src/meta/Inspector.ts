@@ -1,3 +1,6 @@
+import { LuminosityError } from '../errors/LuminosityError'
+import { LuminosityErrorCodes } from '../errors/codes'
+
 /**
  * Represents a summarized view of a page's SEO metadata.
  *
@@ -58,13 +61,19 @@ export class MetaInspector {
     try {
       const response = await fetch(url)
       if (!response.ok) {
-        throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`)
+        throw new LuminosityError(response.status, LuminosityErrorCodes.SEO_FETCH_FAILED, {
+          message: `Failed to fetch ${url}: ${response.status} ${response.statusText}`,
+          retryable: true,
+        })
       }
       const html = await response.text()
       return this.parse(html, url)
     } catch (error) {
       if (error instanceof Error) {
-        throw new Error(`Inspection failed: ${error.message}`)
+        throw new LuminosityError(500, LuminosityErrorCodes.SEO_INSPECTION_FAILED, {
+          message: `Inspection failed: ${error.message}`,
+          retryable: false,
+        })
       }
       throw error
     }

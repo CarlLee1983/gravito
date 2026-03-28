@@ -17,6 +17,8 @@
  */
 
 import { getEscapeHtml } from '@gravito/core'
+import { PrismError } from '../errors/PrismError'
+import { PrismErrorCodes } from '../errors/codes'
 import type { ImageCDNLoader } from './ImageCDNLoader'
 
 /**
@@ -159,7 +161,9 @@ export class ImageService {
 
     // Validate required properties
     if (!alt || alt.trim() === '') {
-      throw new Error('Image alt attribute is required for accessibility')
+      throw new PrismError(422, PrismErrorCodes.IMAGE_ALT_REQUIRED, {
+        message: 'Image alt attribute is required for accessibility',
+      })
     }
 
     const attributes: Record<string, string> = {}

@@ -2,6 +2,8 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { Painter as pc } from '@gravito/chromatic'
+import { CliError } from '../errors/CliError'
+import { CliErrorCodes } from '../errors/codes'
 
 interface VersionCheckResult {
   isLatest: boolean
@@ -104,7 +106,9 @@ export class VersionChecker {
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
+        throw new CliError(response.status, CliErrorCodes.HTTP_ERROR, {
+          message: `HTTP ${response.status}`,
+        })
       }
 
       const data = await response.json()

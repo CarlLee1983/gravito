@@ -1,4 +1,6 @@
 import type { HelperFunction } from '../engine/TemplateEngine'
+import { PrismError } from '../errors/PrismError'
+import { PrismErrorCodes } from '../errors/codes'
 import { type ImageOptions, ImageService } from '../image/ImageService'
 
 /**
@@ -20,10 +22,14 @@ export function createImageHelper(): HelperFunction {
   return (args: Record<string, string | number | boolean>): string => {
     // Validate required parameters
     if (!args.src || typeof args.src !== 'string') {
-      throw new Error('Image helper requires "src" parameter')
+      throw new PrismError(422, PrismErrorCodes.IMAGE_SRC_REQUIRED, {
+        message: 'Image helper requires "src" parameter',
+      })
     }
     if (!args.alt || typeof args.alt !== 'string') {
-      throw new Error('Image helper requires "alt" parameter for accessibility')
+      throw new PrismError(422, PrismErrorCodes.IMAGE_ALT_REQUIRED, {
+        message: 'Image helper requires "alt" parameter for accessibility',
+      })
     }
 
     // Build ImageOptions

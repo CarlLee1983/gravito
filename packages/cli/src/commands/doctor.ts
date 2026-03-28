@@ -3,6 +3,8 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { Painter as pc } from '@gravito/chromatic'
 import { getRuntimeAdapter } from '@gravito/core'
+import { CliError } from '../errors/CliError'
+import { CliErrorCodes } from '../errors/codes'
 
 /**
  * Options for the Gravito Doctor diagnostic command.
@@ -293,7 +295,9 @@ async function checkPortConfig(context: DoctorContext): Promise<DoctorResult> {
       fixCommand: 'Add `PORT=3000` (or your preferred port) to .env',
       autoFix: async () => {
         if (!context.envPath) {
-          throw new Error('No .env file path is available to write PORT')
+          throw new CliError(422, CliErrorCodes.ENV_WRITE_FAILED, {
+            message: 'No .env file path is available to write PORT',
+          })
         }
         await fs.appendFile(context.envPath, '\nPORT=3000\n')
         await context.refreshEnv()

@@ -17,6 +17,8 @@ import path from 'node:path'
 import { cancel, intro, isCancel, note, outro, select, spinner, text } from '@clack/prompts'
 import { Painter as pc } from '@gravito/chromatic'
 import { getRuntimeAdapter } from '@gravito/core'
+import { CliError } from './errors/CliError'
+import { CliErrorCodes } from './errors/codes'
 import {
   DependencyValidator,
   EnvironmentDetector,
@@ -1019,18 +1021,24 @@ function validateEntryPath(entryFile: string): string {
 
   // 確保路徑在專案目錄內
   if (!resolved.startsWith(projectRoot)) {
-    throw new Error(`Entry file must be within the project directory. Attempted path: ${resolved}`)
+    throw new CliError(422, CliErrorCodes.ENTRY_FILE_OUTSIDE_PROJECT, {
+      message: `Entry file must be within the project directory. Attempted path: ${resolved}`,
+    })
   }
 
   // 驗證檔案存在
   if (!existsSync(resolved)) {
-    throw new Error(`Entry file not found: ${resolved}`)
+    throw new CliError(404, CliErrorCodes.ENTRY_FILE_NOT_FOUND, {
+      message: `Entry file not found: ${resolved}`,
+    })
   }
 
   // 驗證檔案副檔名
   const ext = path.extname(resolved)
   if (!['.ts', '.js', '.mts', '.mjs'].includes(ext)) {
-    throw new Error(`Invalid entry file type: ${ext}. Supported types: .ts, .js, .mts, .mjs`)
+    throw new CliError(422, CliErrorCodes.ENTRY_FILE_INVALID_TYPE, {
+      message: `Invalid entry file type: ${ext}. Supported types: .ts, .js, .mts, .mjs`,
+    })
   }
 
   return resolved

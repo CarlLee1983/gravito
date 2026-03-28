@@ -1,5 +1,7 @@
 import { writeFile } from 'node:fs/promises'
 import { getCompressionAdapter } from '@gravito/core'
+import { LuminosityError } from '../errors/LuminosityError'
+import { LuminosityErrorCodes } from '../errors/codes'
 import type { StorageAdapter } from './adapter'
 import { FileSystemAdapter } from './FileSystemAdapter'
 
@@ -73,7 +75,10 @@ export class LogRotator {
   async rotate(snapshotPath: string): Promise<string> {
     // Check if snapshot exists
     if (!(await this.adapter.exists(snapshotPath))) {
-      throw new Error(`Snapshot not found: ${snapshotPath}`)
+      throw new LuminosityError(404, LuminosityErrorCodes.STORAGE_SNAPSHOT_NOT_FOUND, {
+        message: `Snapshot not found: ${snapshotPath}`,
+        retryable: false,
+      })
     }
 
     // Generate backup filename with timestamp

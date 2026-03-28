@@ -1,6 +1,8 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { Painter as pc } from '@gravito/chromatic'
+import { CliError } from '../errors/CliError'
+import { CliErrorCodes } from '../errors/codes'
 import { AtlasMigrationDriver } from './AtlasMigrationDriver'
 import { DrizzleMigrationDriver } from './DrizzleMigrationDriver'
 import type { MigrationDriver, MigrationResult } from './MigrationDriver'
@@ -207,16 +209,22 @@ export async function dbDeploy(options: {
     const core = entry.default?.core || entry.core
 
     if (!core) {
-      throw new Error('Could not find core instance')
+      throw new CliError(500, CliErrorCodes.COMMAND_NOT_FOUND, {
+        message: 'Could not find core instance',
+      })
     }
 
     const db = core.container.make('db')
     if (!db) {
-      throw new Error('Database service not found')
+      throw new CliError(404, CliErrorCodes.DATABASE_SERVICE_NOT_FOUND, {
+        message: 'Database service not found',
+      })
     }
 
     if (typeof db.deploy !== 'function') {
-      throw new Error('Database service does not support deploy()')
+      throw new CliError(422, CliErrorCodes.DATABASE_NO_DEPLOY, {
+        message: 'Database service does not support deploy()',
+      })
     }
 
     const result = await db.deploy({
@@ -257,7 +265,9 @@ export async function schemaLock(options: { entry?: string; lockPath?: string })
     const core = entry.default?.core || entry.core
 
     if (!core) {
-      throw new Error('Could not find core instance to access SchemaRegistry')
+      throw new CliError(500, CliErrorCodes.COMMAND_NOT_FOUND, {
+        message: 'Could not find core instance to access SchemaRegistry',
+      })
     }
 
     const { Model, SchemaRegistry } = await import('@gravito/atlas')
@@ -315,7 +325,9 @@ export async function schemaRefresh(options: { entry?: string }) {
     const core = entry.default?.core || entry.core
 
     if (!core) {
-      throw new Error('Could not find core instance')
+      throw new CliError(500, CliErrorCodes.COMMAND_NOT_FOUND, {
+        message: 'Could not find core instance',
+      })
     }
 
     const { SchemaRegistry } = await import('@gravito/atlas')
@@ -347,12 +359,16 @@ async function runSeeder(filepath: string) {
     const core = entry.default?.core || entry.core
 
     if (!core) {
-      throw new Error('Could not find core instance')
+      throw new CliError(500, CliErrorCodes.COMMAND_NOT_FOUND, {
+        message: 'Could not find core instance',
+      })
     }
 
     const db = core.container.make('db')
     if (!db) {
-      throw new Error('Database service not found')
+      throw new CliError(404, CliErrorCodes.DATABASE_SERVICE_NOT_FOUND, {
+        message: 'Database service not found',
+      })
     }
 
     // Import and run seeder

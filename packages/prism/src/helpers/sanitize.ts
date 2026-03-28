@@ -1,4 +1,6 @@
 import type { HelperFunction } from '../engine/TemplateEngine'
+import { PrismError } from '../errors/PrismError'
+import { PrismErrorCodes } from '../errors/codes'
 import { Sanitizer } from '../security/Sanitizer'
 
 export function createSanitizeHelper(): HelperFunction {
@@ -11,7 +13,9 @@ export function createSanitizeHelper(): HelperFunction {
     const htmlArg = args.html ?? args.content
 
     if (!htmlArg) {
-      throw new Error('Sanitize helper requires "html" or "content" parameter')
+      throw new PrismError(422, PrismErrorCodes.HELPER_MISSING_PARAM, {
+        message: 'Sanitize helper requires "html" or "content" parameter',
+      })
     }
 
     let html: string

@@ -15,6 +15,8 @@
  */
 
 import { getEscapeHtml, getMarkdownAdapter } from '@gravito/core'
+import { PrismError } from '../errors/PrismError'
+import { PrismErrorCodes } from '../errors/codes'
 import { Sanitizer } from '../security/Sanitizer'
 
 /**
@@ -254,7 +256,9 @@ export class TemplateCompiler {
     depth = 0
   ): string {
     if (depth > 10) {
-      throw new Error('Maximum include depth exceeded')
+      throw new PrismError(500, PrismErrorCodes.TEMPLATE_MAX_INCLUDE_DEPTH, {
+        message: 'Maximum include depth exceeded',
+      })
     }
 
     const regex = /(?:\{\{\s*include\s+['"](.+?)['"]\s*\}\}|@include\s*\(\s*['"](.+?)['"]\s*\))/g
@@ -278,7 +282,9 @@ export class TemplateCompiler {
     depth = 0
   ): string {
     if (depth > 10) {
-      throw new Error('Maximum component depth exceeded')
+      throw new PrismError(500, PrismErrorCodes.TEMPLATE_MAX_COMPONENT_DEPTH, {
+        message: 'Maximum component depth exceeded',
+      })
     }
 
     let result = template
@@ -420,9 +426,10 @@ export class TemplateCompiler {
   private processMarkdownBlocks(template: string, data: Record<string, unknown>): string {
     // 檢測未結束的 @markdown 區塊
     if (UNCLOSED_MARKDOWN_REGEX.test(template)) {
-      throw new Error(
-        'Unclosed @markdown block detected. Every @markdown must have a matching @endmarkdown.'
-      )
+      throw new PrismError(422, PrismErrorCodes.TEMPLATE_COMPILE_ERROR, {
+        message:
+          'Unclosed @markdown block detected. Every @markdown must have a matching @endmarkdown.',
+      })
     }
 
     const sanitizer = new Sanitizer()

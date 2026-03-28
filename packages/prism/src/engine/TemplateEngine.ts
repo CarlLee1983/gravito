@@ -2,6 +2,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { type CacheOptions, TemplateCache } from '../core/TemplateCache'
 import { type HelperFunction, type RenderContext, TemplateCompiler } from '../core/TemplateCompiler'
+import { PrismError } from '../errors/PrismError'
+import { PrismErrorCodes } from '../errors/codes'
 
 export type { CacheOptions }
 export type { HelperFunction, RenderContext }
@@ -225,7 +227,9 @@ export class TemplateEngine {
 
     const path = resolve(this.viewsDir, `${name}.html`)
     if (!existsSync(path)) {
-      throw new Error(`View not found: ${path}`)
+      throw new PrismError(404, PrismErrorCodes.VIEW_NOT_FOUND, {
+        message: `View not found: ${path}`,
+      })
     }
 
     const content = readFileSync(path, 'utf-8')

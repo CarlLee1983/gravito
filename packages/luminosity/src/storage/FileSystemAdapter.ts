@@ -1,6 +1,8 @@
 import { existsSync } from 'node:fs'
 import { appendFile, mkdir, readFile, rename, stat, unlink, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
+import { LuminosityError } from '../errors/LuminosityError'
+import { LuminosityErrorCodes } from '../errors/codes'
 import type { StorageAdapter } from './adapter'
 
 /**
@@ -44,7 +46,10 @@ export class FileSystemAdapter implements StorageAdapter {
    */
   async read(path: string): Promise<string> {
     if (!existsSync(path)) {
-      throw new Error(`File not found: ${path}`)
+      throw new LuminosityError(404, LuminosityErrorCodes.STORAGE_FILE_NOT_FOUND, {
+        message: `File not found: ${path}`,
+        retryable: false,
+      })
     }
     return readFile(path, 'utf-8')
   }

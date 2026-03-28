@@ -1,3 +1,6 @@
+import { LuminosityError } from '../errors/LuminosityError'
+import { LuminosityErrorCodes } from '../errors/codes'
+
 /**
  * Rate limiter using Token Bucket algorithm.
  *
@@ -176,7 +179,10 @@ export function createRateLimiter(config: RateLimitConfig): RateLimiter {
   }
 
   if (!Number.isFinite(effectiveRate)) {
-    throw new Error('At least one rate limit must be specified')
+    throw new LuminosityError(422, LuminosityErrorCodes.SUBMIT_RATE_LIMIT_MISSING, {
+      message: 'At least one rate limit must be specified',
+      retryable: false,
+    })
   }
 
   return new RateLimiter(Math.ceil(burstCapacity), effectiveRate)

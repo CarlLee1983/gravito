@@ -7,6 +7,8 @@ import path from 'node:path'
 import { confirm, note, spinner } from '@clack/prompts'
 import { Painter as pc } from '@gravito/chromatic'
 import { getRuntimeAdapter } from '@gravito/core'
+import { CliError } from '../errors/CliError'
+import { CliErrorCodes } from '../errors/codes'
 
 /**
  * Command to install and configure the Spectrum debug dashboard.
@@ -49,7 +51,9 @@ export async function addSpectrumCommand() {
     const proc = runtime.spawn(installCmd, { cwd, stdout: 'inherit', stderr: 'inherit' })
     const exitCode = await proc.exited
     if (exitCode !== 0) {
-      throw new Error('Installation failed')
+      throw new CliError(500, CliErrorCodes.INSTALL_FAILED, {
+        message: 'Installation failed',
+      })
     }
     s.stop('Package installed!')
   } catch (err) {

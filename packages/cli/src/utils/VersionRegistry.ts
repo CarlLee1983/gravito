@@ -2,6 +2,8 @@ import { existsSync } from 'node:fs'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import { CliError } from '../errors/CliError'
+import { CliErrorCodes } from '../errors/codes'
 
 /**
  * 版本註冊表
@@ -189,7 +191,9 @@ export class VersionRegistry {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
+      throw new CliError(response.status, CliErrorCodes.HTTP_ERROR, {
+        message: `HTTP ${response.status}`,
+      })
     }
 
     const data = await response.json()

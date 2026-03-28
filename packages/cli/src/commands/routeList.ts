@@ -1,5 +1,7 @@
 import path from 'node:path'
 import { Painter as pc } from '@gravito/chromatic'
+import { CliError } from '../errors/CliError'
+import { CliErrorCodes } from '../errors/codes'
 
 /**
  * Check if a value is a plain object record.
@@ -90,7 +92,9 @@ export async function routeList(options: { entry: string }) {
     const photonApp: PhotonAppLike | null = isPhotonAppLike(appCandidate) ? appCandidate : null
 
     if (!photonApp) {
-      throw new Error('Could not look up Photon app instance in entry file.')
+      throw new CliError(500, CliErrorCodes.APP_INSTANCE_NOT_FOUND, {
+        message: 'Could not look up Photon app instance in entry file.',
+      })
     }
 
     console.log(pc.bold(`\n📍 Registered Routes`))

@@ -1,4 +1,6 @@
 import { join } from 'node:path'
+import { LuminosityError } from '../../errors/LuminosityError'
+import { LuminosityErrorCodes } from '../../errors/codes'
 import type { SitemapEntry } from '../../interfaces'
 import type { StorageAdapter } from '../../storage/adapter'
 import { Compactor } from '../../storage/Compactor'
@@ -33,7 +35,10 @@ export class IncrementalStrategy implements SeoStrategy {
 
   constructor(config: SeoConfig) {
     if (!config.incremental) {
-      throw new Error('Config missing "incremental" settings for IncrementalStrategy')
+      throw new LuminosityError(422, LuminosityErrorCodes.CONFIG_MISSING_INCREMENTAL, {
+        message: 'Config missing "incremental" settings for IncrementalStrategy',
+        retryable: false,
+      })
     }
 
     const logDir = config.incremental.logDir

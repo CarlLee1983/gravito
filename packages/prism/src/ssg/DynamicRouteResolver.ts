@@ -1,3 +1,6 @@
+import { PrismError } from '../errors/PrismError'
+import { PrismErrorCodes } from '../errors/codes'
+
 /**
  * DynamicRouteResolver - Utilities for resolving dynamic route patterns.
  *
@@ -88,14 +91,18 @@ export class DynamicRouteResolver {
 
     result = result.replace(/\[\.\.\.([^\]]+)\]/g, (_, key) => {
       if (!params[key]) {
-        throw new Error(`Missing catch-all param: ${key} for pattern ${pattern}`)
+        throw new PrismError(422, PrismErrorCodes.ROUTE_MISSING_CATCH_ALL_PARAM, {
+          message: `Missing catch-all param: ${key} for pattern ${pattern}`,
+        })
       }
       return params[key]
     })
 
     result = result.replace(/\[([^\]]+)\]/g, (_, key) => {
       if (!params[key]) {
-        throw new Error(`Missing param: ${key} for pattern ${pattern}`)
+        throw new PrismError(422, PrismErrorCodes.ROUTE_MISSING_PARAM, {
+          message: `Missing param: ${key} for pattern ${pattern}`,
+        })
       }
       return params[key]
     })

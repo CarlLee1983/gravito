@@ -1,3 +1,5 @@
+import { LuminosityError } from '../errors/LuminosityError'
+import { LuminosityErrorCodes } from '../errors/codes'
 import { RobotsBuilder } from '../robots/RobotsBuilder'
 import type { SeoConfig } from '../types'
 import type { SeoStrategy } from './interfaces'
@@ -39,7 +41,10 @@ export class SeoEngine {
         this.strategy = new IncrementalStrategy(config)
         break
       default:
-        throw new Error(`[GravitoSeo] Unknown mode: ${config.mode}`)
+        throw new LuminosityError(422, LuminosityErrorCodes.SEO_UNKNOWN_MODE, {
+          message: `[GravitoSeo] Unknown mode: ${config.mode}`,
+          retryable: false,
+        })
     }
   }
 

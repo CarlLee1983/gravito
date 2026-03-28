@@ -3,6 +3,8 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { cancel, isCancel, text } from '@clack/prompts'
 import { Painter as pc } from '@gravito/chromatic'
+import { CliError } from '../errors/CliError'
+import { CliErrorCodes } from '../errors/codes'
 import { Scaffold } from '@gravito/scaffold'
 
 /**
@@ -153,7 +155,9 @@ export class MakeCommand {
       const stubContent = await this.readStub(stubName)
 
       if (!stubContent) {
-        throw new Error(`Stub template [${stubName}] could not be located in any search path.`)
+        throw new CliError(404, CliErrorCodes.STUB_NOT_FOUND, {
+          message: `Stub template [${stubName}] could not be located in any search path.`,
+        })
       }
 
       const normalizedName = this.normalizeName(type, resolvedName)
@@ -319,7 +323,9 @@ export class MakeCommand {
     // Get paths for current architecture
     const paths = architecturePaths[this.architecture]
     if (!paths || !paths[type]) {
-      throw new Error(`Unknown type: ${type} for architecture: ${this.architecture}`)
+      throw new CliError(422, CliErrorCodes.UNKNOWN_TYPE, {
+        message: `Unknown type: ${type} for architecture: ${this.architecture}`,
+      })
     }
 
     return path.join(cwd, paths[type])
@@ -391,9 +397,9 @@ export class MakeCommand {
     try {
       await fs.access(filepath)
       // If access succeeds, the file already exists
-      throw new Error(
-        `Integrity Error: A file already exists at ${filepath}. Action aborted to prevent data loss.`
-      )
+      throw new CliError(409, CliErrorCodes.MAKE_FAILED, {
+        message: `Integrity Error: A file already exists at ${filepath}. Action aborted to prevent data loss.`,
+      })
     } catch (err: unknown) {
       const error = err as NodeJS.ErrnoException
       // ENOENT is expected; any other error code indicates a different system fault

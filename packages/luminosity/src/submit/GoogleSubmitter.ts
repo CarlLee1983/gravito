@@ -1,3 +1,5 @@
+import { LuminosityError } from '../errors/LuminosityError'
+import { LuminosityErrorCodes } from '../errors/codes'
 import { createRateLimiter, type RateLimitConfig, type RateLimiter } from './RateLimiter'
 
 /**
@@ -113,12 +115,17 @@ export class GoogleSubmitter {
     if (this.config.serviceAccountPath) {
       // In a real implementation, we'd use fs.readFile here
       // For now, this is a placeholder for the structure
-      throw new Error(
-        'serviceAccountPath requires fs module. Use serviceAccountCredentials in browser/edge environments.'
-      )
+      throw new LuminosityError(422, LuminosityErrorCodes.CONFIG_CREDENTIALS_MISSING, {
+        message:
+          'serviceAccountPath requires fs module. Use serviceAccountCredentials in browser/edge environments.',
+        retryable: false,
+      })
     }
 
-    throw new Error('Either serviceAccountPath or serviceAccountCredentials must be provided')
+    throw new LuminosityError(422, LuminosityErrorCodes.CONFIG_CREDENTIALS_MISSING, {
+      message: 'Either serviceAccountPath or serviceAccountCredentials must be provided',
+      retryable: false,
+    })
   }
 
   /**
@@ -243,7 +250,10 @@ export class GoogleSubmitter {
     }
 
     if (!this.credentials) {
-      throw new Error('Credentials not initialized')
+      throw new LuminosityError(500, LuminosityErrorCodes.SUBMIT_CREDENTIALS_NOT_INIT, {
+        message: 'Credentials not initialized',
+        retryable: false,
+      })
     }
 
     // Create JWT
@@ -263,12 +273,18 @@ export class GoogleSubmitter {
 
     if (!response.ok) {
       const error = await response.text()
-      throw new Error(`Failed to get access token: ${error}`)
+      throw new LuminosityError(503, LuminosityErrorCodes.SUBMIT_TOKEN_FAILED, {
+        message: `Failed to get access token: ${error}`,
+        retryable: true,
+      })
     }
 
     const data = await response.json()
     if (!data.access_token) {
-      throw new Error('Response from Google OAuth did not contain an access token')
+      throw new LuminosityError(502, LuminosityErrorCodes.SUBMIT_TOKEN_MISSING, {
+        message: 'Response from Google OAuth did not contain an access token',
+        retryable: true,
+      })
     }
 
     const token = data.access_token as string
@@ -286,7 +302,10 @@ export class GoogleSubmitter {
    */
   private async createJWT(): Promise<string> {
     if (!this.credentials) {
-      throw new Error('Credentials not initialized')
+      throw new LuminosityError(500, LuminosityErrorCodes.SUBMIT_CREDENTIALS_NOT_INIT, {
+        message: 'Credentials not initialized',
+        retryable: false,
+      })
     }
 
     const now = Math.floor(Date.now() / 1000)
@@ -319,9 +338,11 @@ export class GoogleSubmitter {
     // - Node.js: crypto.sign() with private key
     // - Browser/Edge: SubtleCrypto.sign()
     // - Or a library like 'jsonwebtoken' or 'jose'
-    throw new Error(
-      'JWT signing requires crypto implementation. Use a library like "jose" or "jsonwebtoken".'
-    )
+    throw new LuminosityError(500, LuminosityErrorCodes.SUBMIT_REQUEST_FAILED, {
+      message:
+        'JWT signing requires crypto implementation. Use a library like "jose" or "jsonwebtoken".',
+      retryable: false,
+    })
   }
 
   /**
