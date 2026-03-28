@@ -186,11 +186,11 @@ export class HasPersistence {
             // SQLite: last_insert_rowid() is connection-scoped, safe for concurrent inserts
             const idRes = await conn.raw<{ id: number }>('SELECT last_insert_rowid() as id', [])
             lastId = idRes.rows[0]?.id
-          } else if (driverName === 'mysql' || driverName === 'mysql2') {
+          } else if (driverName === 'mysql' || driverName === 'mariadb') {
             // MySQL: LAST_INSERT_ID() is connection-scoped, safe for concurrent inserts
             const idRes = await conn.raw<{ id: number }>('SELECT LAST_INSERT_ID() as id', [])
             lastId = idRes.rows[0]?.id
-          } else if (driverName === 'postgres' || driverName === 'bunsql') {
+          } else if (driverName === 'postgres') {
             // PostgreSQL/BunSQL: currval() is session-scoped, safe for concurrent inserts.
             // Uses pg_get_serial_sequence to look up the sequence name dynamically.
             try {
