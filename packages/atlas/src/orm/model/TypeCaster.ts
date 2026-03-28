@@ -41,22 +41,36 @@ export function castAttribute(_key: string, value: unknown, type: string): unkno
     case 'int':
     case 'integer':
     case 'number':
+    case 'smallint':
       return typeof value === 'string' ? parseFloat(value) : Number(value)
+
+    case 'bigint':
+      if (typeof value === 'bigint') return value
+      if (typeof value === 'string') {
+        const num = Number(value)
+        return Number.isSafeInteger(num) ? num : BigInt(value)
+      }
+      return Number(value)
+
+    case 'decimal':
+      if (typeof value === 'string') return value
+      return String(value)
 
     case 'real':
     case 'float':
     case 'double':
-      return parseFloat(String(value))
+      return typeof value === 'string' ? parseFloat(value) : Number(value)
 
     case 'string':
       return String(value)
 
     case 'bool':
     case 'boolean':
-      return [true, 1, '1', 'true', 'on', 'yes'].includes(value as any)
+      return [true, 1, '1', 'true', 'on', 'yes'].includes(value as string | number | boolean)
 
     case 'object':
     case 'json':
+    case 'jsonb':
       if (typeof value === 'object' && value !== null) {
         return value
       }
@@ -70,6 +84,7 @@ export function castAttribute(_key: string, value: unknown, type: string): unkno
       return Array.isArray(value) ? value : [value]
 
     case 'date':
+    case 'time':
     case 'datetime':
       if (value instanceof Date) {
         return value

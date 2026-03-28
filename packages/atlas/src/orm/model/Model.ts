@@ -23,6 +23,7 @@ import {
 } from './errors'
 import * as relationshipResolver from './relationships'
 import { getRelationships } from './relationships'
+import { castAttribute, getExpectedJSTypes, getJSType } from './TypeCaster'
 
 /**
  * Model attributes type
@@ -634,16 +635,7 @@ export abstract class Model {
    * @returns A string representing the type.
    */
   private _getJSType(value: unknown): string {
-    if (value === null) {
-      return 'null'
-    }
-    if (Array.isArray(value)) {
-      return 'array'
-    }
-    if (value instanceof Date) {
-      return 'date'
-    }
-    return typeof value
+    return getJSType(value)
   }
 
   /**
@@ -654,57 +646,8 @@ export abstract class Model {
    * @param type - The target type identifier.
    * @returns The casted value.
    */
-  private _castAttribute(_key: string, value: unknown, type: string): unknown {
-    if (value === null || value === undefined) {
-      return value
-    }
-
-    switch (type) {
-      case 'int':
-      case 'integer':
-      case 'number':
-        return typeof value === 'string' ? parseFloat(value) : Number(value)
-
-      case 'real':
-      case 'float':
-      case 'double':
-        return typeof value === 'string' ? parseFloat(value) : (value as number)
-
-      case 'string':
-        return String(value)
-
-      case 'bool':
-      case 'boolean':
-        return [true, 1, '1', 'true', 'on', 'yes'].includes(value as any)
-
-      case 'object':
-      case 'json':
-        if (typeof value === 'object') {
-          return value
-        }
-        try {
-          return JSON.parse(value as string)
-        } catch (_e) {
-          return value
-        }
-
-      case 'collection':
-        return Array.isArray(value) ? value : [value]
-
-      case 'date':
-      case 'datetime':
-        if (value instanceof Date) {
-          return value
-        }
-        return new Date(value as string | number)
-
-      case 'timestamp':
-        return value instanceof Date
-          ? value.getTime()
-          : new Date(value as string | number).getTime()
-    }
-
-    return value
+  private _castAttribute(key: string, value: unknown, type: string): unknown {
+    return castAttribute(key, value, type)
   }
 
   /**
@@ -714,28 +657,7 @@ export abstract class Model {
    * @returns An array of acceptable JavaScript types.
    */
   private _getExpectedJSTypes(columnType: ColumnType): string[] {
-    const typeMap: Record<ColumnType, string[]> = {
-      string: ['string'],
-      text: ['string'],
-      integer: ['number'],
-      bigint: ['number', 'bigint'],
-      smallint: ['number'],
-      decimal: ['number', 'string'],
-      float: ['number'],
-      boolean: ['boolean'],
-      date: ['string', 'date'],
-      time: ['string'],
-      datetime: ['string', 'date'],
-      timestamp: ['string', 'date', 'number'],
-      json: ['object', 'array', 'string'],
-      jsonb: ['object', 'array', 'string'],
-      uuid: ['string'],
-      binary: ['string', 'object'],
-      enum: ['string'],
-      unknown: ['string', 'number', 'boolean', 'object'],
-    }
-
-    return typeMap[columnType] ?? typeMap.unknown
+    return getExpectedJSTypes(columnType)
   }
 
   /**

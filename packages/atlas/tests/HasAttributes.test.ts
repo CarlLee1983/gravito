@@ -73,6 +73,11 @@ describe('HasAttributes', () => {
     expect((model as any)._getExpectedJSTypes('integer')).toEqual(['number'])
     expect((model as any)._getExpectedJSTypes('string')).toEqual(['string'])
     expect((model as any)._getExpectedJSTypes('boolean')).toEqual(['boolean'])
-    expect((model as any)._getExpectedJSTypes('unknown')).toEqual(['string'])
+    expect((model as any)._getExpectedJSTypes('unknown')).toEqual([
+      'string',
+      'number',
+      'boolean',
+      'object',
+    ])
   })
 })

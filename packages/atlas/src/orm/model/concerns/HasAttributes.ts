@@ -3,6 +3,7 @@ import type { ColumnType, TableSchema } from '../../schema/types'
 import { DirtyTracker } from '../DirtyTracker'
 import { COLUMN_KEY } from '../decorators'
 import { ColumnNotFoundError, NullableConstraintError, TypeMismatchError } from '../errors'
+import { castAttribute, getExpectedJSTypes, getJSType } from '../TypeCaster'
 
 export type ModelAttributes = Record<string, unknown>
 
@@ -11,22 +12,6 @@ export type ModelAttributes = Record<string, unknown>
  * @description Provides attribute management functionality including getting/setting, casting, and dirty tracking.
  */
 export class HasAttributes {
-  /**
-   * Static schema registry for JIT validation.
-   * @internal
-   */
-  public static schemaRegistry?: any
-
-  /**
-   * Static error classes for validation.
-   * @internal
-   */
-  public static validationErrors?: {
-    ColumnNotFoundError: any
-    NullableConstraintError: any
-    TypeMismatchError: any
-  }
-
   /**
    * Model attributes storage
    * @internal
@@ -78,12 +63,12 @@ export class HasAttributes {
   setAttribute(key: string, value: unknown): void {
     const modelCtor = this.constructor as any
 
-    // Mark dirty
-    this._dirtyTracker.mark(key, value)
-
-    // Cast value before setting
+    // Cast value before marking dirty and setting
     const type = modelCtor.casts?.[key]
     const castedValue = type ? this._castAttribute(key, value, type) : value
+
+    // Mark dirty with casted value
+    this._dirtyTracker.mark(key, castedValue)
 
     // Set value
     this._attributes[key] = castedValue
@@ -160,16 +145,7 @@ export class HasAttributes {
    * @internal
    */
   protected _getJSType(value: unknown): string {
-    if (value === null) {
-      return 'null'
-    }
-    if (Array.isArray(value)) {
-      return 'array'
-    }
-    if (value instanceof Date) {
-      return 'date'
-    }
-    return typeof value
+    return getJSType(value)
   }
 
   /**
@@ -181,55 +157,8 @@ export class HasAttributes {
    * @returns The casted value
    * @internal
    */
-  protected _castAttribute(_key: string, value: unknown, type: string): unknown {
-    if (value === null || value === undefined) {
-      return value
-    }
-
-    switch (type) {
-      case 'integer':
-      case 'bigint':
-      case 'smallint':
-      case 'decimal':
-      case 'float':
-        return typeof value === 'string' ? parseFloat(value) : Number(value)
-
-      case 'string':
-        return String(value)
-
-      case 'boolean':
-        return [true, 1, '1', 'true', 'on', 'yes'].includes(value as string | number | boolean)
-
-      case 'json':
-      case 'jsonb':
-        if (typeof value === 'object') {
-          return value
-        }
-        try {
-          return JSON.parse(value as string)
-        } catch (_e) {
-          return value
-        }
-
-      case 'collection':
-        // Placeholder for Collection support
-        return Array.isArray(value) ? value : [value]
-
-      case 'date':
-      case 'time':
-      case 'datetime':
-        if (value instanceof Date) {
-          return value
-        }
-        return new Date(value as string | number)
-
-      case 'timestamp':
-        return value instanceof Date
-          ? value.getTime()
-          : new Date(value as string | number).getTime()
-    }
-
-    return value
+  protected _castAttribute(key: string, value: unknown, type: string): unknown {
+    return castAttribute(key, value, type)
   }
 
   /**
@@ -240,28 +169,7 @@ export class HasAttributes {
    * @internal
    */
   protected _getExpectedJSTypes(columnType: ColumnType): string[] {
-    const typeMap: Record<ColumnType, string[]> = {
-      string: ['string'],
-      text: ['string'],
-      integer: ['number'],
-      bigint: ['number', 'string'],
-      smallint: ['number'],
-      decimal: ['number', 'string'],
-      float: ['number'],
-      boolean: ['boolean'],
-      date: ['date', 'string'],
-      time: ['string'],
-      datetime: ['date', 'string'],
-      timestamp: ['number', 'date'],
-      json: ['object', 'string'],
-      jsonb: ['object', 'string'],
-      uuid: ['string'],
-      binary: ['string'],
-      enum: ['string'],
-      unknown: ['string'],
-    }
-
-    return typeMap[columnType] || ['string']
+    return getExpectedJSTypes(columnType)
   }
 
   /**
