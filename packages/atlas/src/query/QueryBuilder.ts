@@ -792,7 +792,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   crossJoin(table: string): this {
     this.ensureOwnState()
-    this.joinManager.cross(table, '', '', '')
+    this.joinManager.cross(table)
     return this
   }
 

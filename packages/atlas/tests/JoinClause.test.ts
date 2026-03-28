@@ -28,10 +28,10 @@ describe('JoinManager', () => {
     expect(manager.toSQL()).toBe('RIGHT JOIN "orders" ON "users.id" = "orders.user_id"')
   })
 
-  it('should add cross join', () => {
+  it('should add cross join without ON clause', () => {
     const manager = new JoinManager()
-    manager.cross('regions', 'users.region_id', '=', 'regions.id')
-    expect(manager.toSQL()).toBe('CROSS JOIN "regions" ON "users.region_id" = "regions.id"')
+    manager.cross('regions')
+    expect(manager.toSQL()).toBe('CROSS JOIN "regions"')
   })
 
   it('should handle multiple joins', () => {

@@ -69,12 +69,9 @@ export class JoinManager {
    * Add a CROSS JOIN condition
    *
    * @param table - Table to join
-   * @param first - First column for the ON condition
-   * @param operator - Join operator
-   * @param second - Second column for the ON condition
    */
-  cross(table: string, first: string, operator: string, second: string): void {
-    this.add('cross', table, first, operator, second)
+  cross(table: string): void {
+    this.add('cross', table, '', '', '')
   }
 
   /**
@@ -100,13 +97,14 @@ export class JoinManager {
       .map((join) => {
         const type = join.type.toUpperCase()
         const table = join.table.includes('(') ? join.table : `"${join.table}"`
+
+        if (join.type === 'cross') {
+          return `${type} JOIN ${table}`
+        }
+
         const first = join.first.includes('(') ? join.first : `"${join.first}"`
         const second = join.second.includes('(') ? join.second : `"${join.second}"`
 
-        // CROSS JOINs usually don't have ON clauses in standard SQL if they are pure cross products,
-        // but here we are passing first/operator/second.
-        // If it's a true CROSS JOIN, the API shouldn't require first/op/second, but the add() method does.
-        // We'll stick to the current implementation.
         return `${type} JOIN ${table} ON ${first} ${join.operator} ${second}`
       })
       .join(' ')
