@@ -183,7 +183,7 @@ export class PoolHealthChecker {
     // Guard against divide by zero
     if (stats.max === 0) {
       return {
-        status: 'degraded',
+        status: 'warning',
         message: `Pool "${connectionName}" has max=0 connections configured`,
         stats,
         lastCheck: new Date(),
