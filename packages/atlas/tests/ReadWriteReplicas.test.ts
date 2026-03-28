@@ -4,6 +4,7 @@
  */
 
 import { describe, expect, it } from 'bun:test'
+import { ConnectionManager } from '../src/connection/ConnectionManager'
 import { ReplicaConnectionPool } from '../src/connection/ReplicaConnectionPool'
 import type { ConnectionContract } from '../src/types'
 
@@ -147,5 +148,116 @@ describe('ReplicaConnectionPool', () => {
       expect(disconnected).toContain('r2')
       expect(disconnected.length).toBe(3)
     })
+  })
+})
+
+// ============================================================================
+// ConnectionManager: disconnect() replica pool cleanup
+// ============================================================================
+
+describe('ConnectionManager.disconnect() - replica pool cleanup', () => {
+  /**
+   * Build a ConnectionManager with a pre-registered read/write replica config,
+   * but bypass real DB by injecting mock connections directly into internal maps.
+   *
+   * We test the disconnect() method to ensure both the write connection AND the
+   * replica pool are removed, preventing TCP connection leaks.
+   */
+  function makeTrackedMock(name: string, log: string[]): ConnectionContract {
+    return {
+      ...makeMockConnection(name),
+      disconnect: async () => {
+        log.push(name)
+      },
+    } as unknown as ConnectionContract
+  }
+
+  it('cleans up replica pool from replicaPools map after disconnect()', async () => {
+    const manager = new ConnectionManager()
+    manager.stopCleanup()
+
+    const disconnected: string[] = []
+    const writeConn = makeTrackedMock('write', disconnected)
+    const read1 = makeTrackedMock('read1', disconnected)
+    const read2 = makeTrackedMock('read2', disconnected)
+
+    // Inject connections directly into internal maps (bypassing DB driver)
+    const pool = new ReplicaConnectionPool(writeConn, [read1, read2])
+    // @ts-expect-error - access private maps for test setup
+    manager.connections.set('default', writeConn)
+    // @ts-expect-error - access private maps for test setup
+    manager.replicaPools.set('default', pool)
+    // @ts-expect-error - access private maps for test setup
+    manager.lastUsed.set('default', Date.now())
+
+    // Verify initial state
+    // @ts-expect-error - access private maps for test setup
+    expect(manager.replicaPools.has('default')).toBe(true)
+    // @ts-expect-error - access private maps for test setup
+    expect(manager.connections.has('default')).toBe(true)
+    // @ts-expect-error - access private maps for test setup
+    expect(manager.lastUsed.has('default')).toBe(true)
+
+    await manager.disconnect()
+
+    // After disconnect, write + all replicas should have been disconnected
+    expect(disconnected).toContain('write')
+    expect(disconnected).toContain('read1')
+    expect(disconnected).toContain('read2')
+    expect(disconnected.length).toBe(3)
+
+    // All maps should be cleaned up
+    // @ts-expect-error - access private maps for test setup
+    expect(manager.replicaPools.has('default')).toBe(false)
+    // @ts-expect-error - access private maps for test setup
+    expect(manager.connections.has('default')).toBe(false)
+    // @ts-expect-error - access private maps for test setup
+    expect(manager.lastUsed.has('default')).toBe(false)
+  })
+
+  it('cleans up replica pool for named connection', async () => {
+    const manager = new ConnectionManager()
+    manager.stopCleanup()
+
+    const disconnected: string[] = []
+    const writeConn = makeTrackedMock('write', disconnected)
+    const readConn = makeTrackedMock('read1', disconnected)
+    const pool = new ReplicaConnectionPool(writeConn, [readConn])
+
+    // @ts-expect-error - access private maps for test setup
+    manager.connections.set('primary', writeConn)
+    // @ts-expect-error - access private maps for test setup
+    manager.replicaPools.set('primary', pool)
+    // @ts-expect-error - access private maps for test setup
+    manager.lastUsed.set('primary', Date.now())
+
+    await manager.disconnect('primary')
+
+    expect(disconnected).toContain('write')
+    expect(disconnected).toContain('read1')
+    // @ts-expect-error - access private maps for test setup
+    expect(manager.replicaPools.has('primary')).toBe(false)
+    // @ts-expect-error - access private maps for test setup
+    expect(manager.lastUsed.has('primary')).toBe(false)
+  })
+
+  it('does not error when disconnecting a connection without replica pool', async () => {
+    const manager = new ConnectionManager()
+    manager.stopCleanup()
+
+    const disconnected: string[] = []
+    const conn = makeTrackedMock('standalone', disconnected)
+
+    // @ts-expect-error - access private maps for test setup
+    manager.connections.set('default', conn)
+    // @ts-expect-error - access private maps for test setup
+    manager.lastUsed.set('default', Date.now())
+
+    // No replica pool set — should not throw
+    await expect(manager.disconnect()).resolves.toBeUndefined()
+
+    expect(disconnected).toContain('standalone')
+    // @ts-expect-error - access private maps for test setup
+    expect(manager.lastUsed.has('default')).toBe(false)
   })
 })

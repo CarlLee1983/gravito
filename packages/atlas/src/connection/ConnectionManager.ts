@@ -279,12 +279,22 @@ export class ConnectionManager {
    */
   async disconnect(name?: string): Promise<void> {
     const connectionName = name ?? this.defaultConnectionName
-    const connection = this.connections.get(connectionName)
 
-    if (connection) {
-      await connection.disconnect()
-      this.connections.delete(connectionName)
+    // If a replica pool exists, let it handle disconnecting write + all replicas together
+    const replicaPool = this.replicaPools.get(connectionName)
+    if (replicaPool) {
+      await replicaPool.disconnectAll()
+      this.replicaPools.delete(connectionName)
+    } else {
+      // Standard single-connection mode: disconnect directly
+      const connection = this.connections.get(connectionName)
+      if (connection) {
+        await connection.disconnect()
+      }
     }
+
+    this.connections.delete(connectionName)
+    this.lastUsed.delete(connectionName)
   }
 
   /**
