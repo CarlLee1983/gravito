@@ -86,13 +86,13 @@ Plans:
   2. Contract tests for all migrated packages pass asserting `.code`, `.status`, and `instanceof` — the test suite does not regress (all tests that passed before migration still pass after)
   3. stream and beam register `core:shutdown` handlers with deadline enforcement alongside atlas, plasma, and signal
   4. All major Orbit packages appear in `@gravito/monitor` health registry — a health check request returns per-Orbit `healthy`/`degraded`/`unhealthy` status
-**Plans:** 7/9 plans executed
+**Plans:** 8/9 plans executed
 Plans:
 - [x] 19-01-PLAN.md — Core intermediate exception classes (AuthException, QueueException, StorageException, StreamException)
 - [x] 19-02-PLAN.md — Batch 1a: fortify, astral, quasar, ripple error class re-parenting
 - [x] 19-03-PLAN.md — Batch 1b: flux + beam migration with shutdown handler
 - [x] 19-04-PLAN.md — Batch 1c: stream migration (81 throws, ErrorCategorizer, shutdown)
-- [ ] 19-05-PLAN.md — Batch 2: Storage packages (constellation, nebula, nebula-s3, stasis, freeze, dark-matter, pulsar, forge)
+- [x] 19-05-PLAN.md — Batch 2: Storage packages (constellation, nebula, nebula-s3, stasis, freeze, dark-matter, pulsar, forge)
 - [x] 19-06-PLAN.md — Batch 3: Communication packages (echo, flare, radiance, quark, graphql, impulse, impulse-bridge, monolith)
 - [x] 19-07-PLAN.md — Batch 4: DevOps packages (horizon, monitor, zenith, launchpad, cli, luminosity, prism)
 - [x] 19-08-PLAN.md — Batch 5: LOW packages (cosmos, sentinel + 5 exempt)
@@ -118,7 +118,7 @@ Plans:
 | 16. Core Error Model Foundation | 3/3 | Complete    | 2026-03-28 |
 | 17. Resilience Infrastructure | 2/3 | Complete    | 2026-03-28 |
 | 18. Foundation Orbit Migration | 6/6 | Complete    | 2026-03-28 |
-| 19. Secondary Orbit Migration | 7/9 | In Progress|  |
+| 19. Secondary Orbit Migration | 8/9 | In Progress|  |
 | 20. Integration Verification & Graceful Degradation | 0/? | Not started | - |
 
 ---
