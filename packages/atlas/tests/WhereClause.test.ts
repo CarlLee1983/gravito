@@ -102,4 +102,43 @@ describe('WhereClause', () => {
     expect(clause.getWheres()).toHaveLength(1)
     expect(cloned.getWheres()).toHaveLength(2)
   })
+
+  it('should deep copy doubly-nested conditions on clone', () => {
+    // Build a doubly-nested structure: outer nested → inner nested → basic
+    const innerCondition = {
+      type: 'basic' as const,
+      column: 'role',
+      operator: '=' as const,
+      value: 'admin',
+      boolean: 'and' as const,
+    }
+    const innerNested = {
+      type: 'nested' as const,
+      boolean: 'and' as const,
+      conditions: [innerCondition],
+    }
+
+    const clause = new WhereClause()
+    clause.add('active', '=', true)
+    clause.addNested([innerNested])
+
+    const cloned = clause.clone()
+
+    // Mutate the clone's doubly-nested inner array
+    const clonedOuter = cloned.getWheres()[1]
+    const clonedInnerNested = clonedOuter.conditions![0]
+    clonedInnerNested.conditions!.push({
+      type: 'basic',
+      column: 'level',
+      operator: '>',
+      value: 5,
+      boolean: 'or',
+    })
+
+    // Original inner conditions must remain untouched
+    const originalOuter = clause.getWheres()[1]
+    const originalInnerNested = originalOuter.conditions![0]
+    expect(originalInnerNested.conditions).toHaveLength(1)
+    expect(clonedInnerNested.conditions).toHaveLength(2)
+  })
 })

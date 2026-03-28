@@ -395,14 +395,16 @@ export class WhereClause {
    */
   clone(): WhereClause {
     const clone = new WhereClause()
-    // We need a deep copy if we modify the condition objects, but we generally don't.
-    // However, nested arrays should be copied.
-    clone.wheres = this.wheres.map((w) => {
+    clone.wheres = this.deepCopyWheres(this.wheres)
+    return clone
+  }
+
+  private deepCopyWheres(wheres: WhereCondition[]): WhereCondition[] {
+    return wheres.map((w) => {
       if (w.type === 'nested' && w.conditions) {
-        return { ...w, conditions: [...w.conditions] }
+        return { ...w, conditions: this.deepCopyWheres(w.conditions) }
       }
       return { ...w }
     })
-    return clone
   }
 }
