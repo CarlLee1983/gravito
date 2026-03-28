@@ -45,6 +45,7 @@ export * from './PasswordBroker'
 export * from './providers/CallbackSocialUserProvider'
 export * from './providers/CallbackUserProvider'
 export * from './RedisTokenBlacklist'
+export * from './errors'
 
 /**
  * Options for configuring the OrbitSentinel service.

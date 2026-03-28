@@ -5,6 +5,8 @@
  */
 
 import type { TranslationMap } from '../I18nService'
+import { CosmosError } from '../errors/CosmosError'
+import { CosmosErrorCodes } from '../errors/codes'
 import type { LoaderConfig, TranslationLoader, TranslationLoaderChain } from './TranslationLoader'
 
 /**
@@ -186,7 +188,9 @@ export class RemoteLoader implements TranslationLoaderChain {
 
       // 處理錯誤狀態碼
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new CosmosError(response.status, CosmosErrorCodes.HTTP_ERROR, {
+          message: `HTTP error! status: ${response.status}`,
+        })
       }
 
       const data = (await response.json()) as TranslationMap

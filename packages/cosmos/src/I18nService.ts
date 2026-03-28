@@ -7,6 +7,8 @@
 import type { GravitoMiddleware } from '@gravito/core'
 import { LRUCache } from 'lru-cache'
 import { type HMRConfig, HMRWatcher } from './HMRWatcher'
+import { CosmosError } from './errors/CosmosError'
+import { CosmosErrorCodes } from './errors/codes'
 import { loadLocale } from './loader'
 import type { TranslationLoader } from './loaders/TranslationLoader'
 
@@ -816,7 +818,9 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
       case 'empty':
         return ''
       case 'throw':
-        throw new Error(`Missing translation: ${key}`)
+        throw new CosmosError(500, CosmosErrorCodes.MISSING_TRANSLATION, {
+          message: `Missing translation: ${key}`,
+        })
       default:
         return key
     }

@@ -21,6 +21,8 @@
 
 import { readdir, readFile } from 'node:fs/promises'
 import { join, parse } from 'node:path'
+import { CosmosError } from './errors/CosmosError'
+import { CosmosErrorCodes } from './errors/codes'
 
 /**
  * 偵測 Bun 運行時是否原生支援 JSON5 解析
@@ -56,10 +58,11 @@ async function parseJson5(content: string): Promise<unknown> {
     const json5 = json5Module.default ?? json5Module
     return (json5 as { parse: (text: string) => unknown }).parse(content)
   } catch {
-    throw new Error(
-      '[Cosmos] JSON5 parsing requires either Bun v1.2+ or the `json5` npm package. ' +
-        'Please install it: bun add json5'
-    )
+    throw new CosmosError(500, CosmosErrorCodes.UNSUPPORTED_FORMAT, {
+      message:
+        '[Cosmos] JSON5 parsing requires either Bun v1.2+ or the `json5` npm package. ' +
+        'Please install it: bun add json5',
+    })
   }
 }
 

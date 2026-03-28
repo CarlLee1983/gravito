@@ -1,5 +1,7 @@
 import type { GravitoContext } from '@gravito/core'
 import type { Authenticatable } from '../contracts/Authenticatable'
+import { SentinelError } from '../errors/SentinelError'
+import { SentinelErrorCodes } from '../errors/codes'
 import type { StatefulGuard } from '../contracts/Guard'
 import type { SessionRepository } from '../contracts/SessionRepository'
 import type { UserProvider } from '../contracts/UserProvider'
@@ -228,7 +230,9 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
    */
   async logoutOtherDevices(currentPassword?: string): Promise<void> {
     if (!this.sessionRepository) {
-      throw new Error('SessionRepository is not configured.')
+      throw new SentinelError(500, SentinelErrorCodes.SESSION_REPO_NOT_CONFIGURED, {
+        message: 'SessionRepository is not configured.',
+      })
     }
 
     const user = await this.user()
@@ -242,7 +246,9 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
         password: currentPassword,
       })
       if (!valid) {
-        throw new Error('Invalid password.')
+        throw new SentinelError(401, SentinelErrorCodes.INVALID_PASSWORD, {
+          message: 'Invalid password.',
+        })
       }
     }
 
@@ -262,7 +268,9 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
    */
   async logoutAllDevices(): Promise<void> {
     if (!this.sessionRepository) {
-      throw new Error('SessionRepository is not configured.')
+      throw new SentinelError(500, SentinelErrorCodes.SESSION_REPO_NOT_CONFIGURED, {
+        message: 'SessionRepository is not configured.',
+      })
     }
 
     const user = await this.user()

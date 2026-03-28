@@ -5,6 +5,8 @@
  */
 
 import type { TranslationMap } from '../I18nService'
+import { CosmosError } from '../errors/CosmosError'
+import { CosmosErrorCodes } from '../errors/codes'
 import type { LoaderConfig, TranslationLoader, TranslationLoaderChain } from './TranslationLoader'
 
 /**
@@ -219,7 +221,9 @@ export class EdgeKVLoader implements TranslationLoaderChain {
    */
   async put(locale: string, translations: TranslationMap): Promise<void> {
     if (!this.storage.put) {
-      throw new Error('[EdgeKVLoader] Storage does not support put operation')
+      throw new CosmosError(500, CosmosErrorCodes.KV_PUT_UNSUPPORTED, {
+        message: '[EdgeKVLoader] Storage does not support put operation',
+      })
     }
 
     const key = this.buildKey(locale)
@@ -239,7 +243,9 @@ export class EdgeKVLoader implements TranslationLoaderChain {
    */
   async delete(locale: string): Promise<void> {
     if (!this.storage.delete) {
-      throw new Error('[EdgeKVLoader] Storage does not support delete operation')
+      throw new CosmosError(500, CosmosErrorCodes.KV_DELETE_UNSUPPORTED, {
+        message: '[EdgeKVLoader] Storage does not support delete operation',
+      })
     }
 
     const key = this.buildKey(locale)

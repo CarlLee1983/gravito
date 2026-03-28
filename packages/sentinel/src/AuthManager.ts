@@ -1,5 +1,7 @@
 import { AuthenticationException, type GravitoContext } from '@gravito/core'
 import type { Authenticatable } from './contracts/Authenticatable'
+import { SentinelError } from './errors/SentinelError'
+import { SentinelErrorCodes } from './errors/codes'
 import type { Guard, StatefulGuard } from './contracts/Guard'
 import type { UserProvider } from './contracts/UserProvider'
 import { JwtGuard } from './guards/JwtGuard'
@@ -197,7 +199,9 @@ export class AuthManager {
     const config = this.config.guards[name]
 
     if (!config) {
-      throw new Error(`Auth guard [${name}] is not defined.`)
+      throw new SentinelError(500, SentinelErrorCodes.GUARD_NOT_DEFINED, {
+        message: `Auth guard [${name}] is not defined.`,
+      })
     }
 
     if (config.driver === 'session') {
@@ -216,16 +220,22 @@ export class AuthManager {
       const providerName = config.provider
       const provider = providerName ? this.createUserProvider(providerName) : undefined
       if (!provider && providerName) {
-        throw new Error(`User provider [${providerName}] not found for guard [${name}].`)
+        throw new SentinelError(500, SentinelErrorCodes.PROVIDER_NOT_FOUND, {
+          message: `User provider [${providerName}] not found for guard [${name}].`,
+        })
       }
       const creator = this.customGuardCreators.get(config.driver)
       if (!creator) {
-        throw new Error(`Custom guard creator for [${config.driver}] not found.`)
+        throw new SentinelError(500, SentinelErrorCodes.GUARD_CREATOR_NOT_FOUND, {
+          message: `Custom guard creator for [${config.driver}] not found.`,
+        })
       }
       return creator(this.ctx, name, config, provider)
     }
 
-    throw new Error(`Auth driver [${config.driver}] for guard [${name}] is not supported.`)
+    throw new SentinelError(500, SentinelErrorCodes.GUARD_DRIVER_UNSUPPORTED, {
+      message: `Auth driver [${config.driver}] for guard [${name}] is not supported.`,
+    })
   }
 
   /**
@@ -311,7 +321,9 @@ export class AuthManager {
     const config = this.config.providers[providerName]
 
     if (!config) {
-      throw new Error(`User provider [${providerName}] is not defined.`)
+      throw new SentinelError(500, SentinelErrorCodes.PROVIDER_NOT_DEFINED, {
+        message: `User provider [${providerName}] is not defined.`,
+      })
     }
 
     let provider: UserProvider | null = null
@@ -334,9 +346,9 @@ export class AuthManager {
     }
 
     if (!provider) {
-      throw new Error(
-        `Auth provider driver [${config.driver}] for [${providerName}] is not supported or not registered.`
-      )
+      throw new SentinelError(500, SentinelErrorCodes.PROVIDER_DRIVER_UNSUPPORTED, {
+        message: `Auth provider driver [${config.driver}] for [${providerName}] is not supported or not registered.`,
+      })
     }
 
     this.resolvedProviders.set(providerName, provider)

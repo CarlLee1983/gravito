@@ -17,6 +17,8 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { TranslationMap } from '../I18nService'
+import { CosmosError } from '../errors/CosmosError'
+import { CosmosErrorCodes } from '../errors/codes'
 import { detectRuntime } from '../runtime/detector'
 import type { LoaderConfig, TranslationLoader, TranslationLoaderChain } from './TranslationLoader'
 
@@ -95,10 +97,11 @@ async function parseJson5Content(content: string): Promise<unknown> {
     const json5 = json5Module.default ?? json5Module
     return (json5 as { parse: (text: string) => unknown }).parse(content)
   } catch {
-    throw new Error(
-      '[Json5Loader] JSON5 parsing requires either Bun v1.2+ (native support) ' +
-        'or the `json5` npm package. Please install it: bun add json5'
-    )
+    throw new CosmosError(500, CosmosErrorCodes.UNSUPPORTED_FORMAT, {
+      message:
+        '[Json5Loader] JSON5 parsing requires either Bun v1.2+ (native support) ' +
+        'or the `json5` npm package. Please install it: bun add json5',
+    })
   }
 }
 
@@ -145,10 +148,11 @@ export class Json5Loader implements TranslationLoaderChain {
     // 運行時檢查
     const runtime = detectRuntime()
     if (runtime === 'edge') {
-      throw new Error(
-        '[Json5Loader] This loader requires Node.js and cannot run in Edge Runtime. ' +
-          'Use MemoryLoader, RemoteLoader, or EdgeKVLoader instead.'
-      )
+      throw new CosmosError(500, CosmosErrorCodes.EDGE_RUNTIME_UNSUPPORTED, {
+        message:
+          '[Json5Loader] This loader requires Node.js and cannot run in Edge Runtime. ' +
+          'Use MemoryLoader, RemoteLoader, or EdgeKVLoader instead.',
+      })
     }
 
     this.name = config.name ?? 'Json5Loader'

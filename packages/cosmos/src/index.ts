@@ -94,3 +94,6 @@ export * from './loaders/VercelKVLoader'
 // Runtime utilities
 export * from './runtime/detector'
 export * from './runtime/path-utils'
+
+// Errors
+export * from './errors'
