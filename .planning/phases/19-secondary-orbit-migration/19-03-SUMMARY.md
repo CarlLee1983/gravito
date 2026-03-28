@@ -142,3 +142,15 @@ Each task was committed atomically:
 ---
 *Phase: 19-secondary-orbit-migration*
 *Completed: 2026-03-29*
+
+## Self-Check: PASSED
+
+- FOUND: packages/flux/src/errors.ts (extends QueueException)
+- FOUND: packages/beam/src/errors.ts (extends InfrastructureException)
+- FOUND: packages/flux/tests/contract/flux-errors.contract.test.ts
+- FOUND: packages/beam/tests/contract/beam-errors.contract.test.ts
+- FOUND: packages/beam/tests/contract/beam-shutdown.contract.test.ts
+- FOUND: .planning/phases/19-secondary-orbit-migration/19-03-SUMMARY.md
+- FOUND commit: 5734f9e1 (feat(19-03): migrate FluxError to extend QueueException)
+- FOUND commit: 8660b4bc (feat(19-03): migrate BeamError to InfrastructureException + wire shutdown handler)
+- Tests: 649 pass, 0 fail (flux + beam combined)
