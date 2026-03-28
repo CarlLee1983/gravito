@@ -1,3 +1,5 @@
+import { FlareError } from '../errors/FlareError'
+import { FlareErrorCodes } from '../errors/codes'
 import type { Notification } from '../Notification'
 import type { AbortableSendOptions, Notifiable, NotificationChannel } from '../types'
 import { TimeoutChannel } from './TimeoutChannel'
@@ -40,7 +42,10 @@ export class SlackChannel implements NotificationChannel {
         options?: AbortableSendOptions
       ) => {
         if (!notification.toSlack) {
-          throw new Error('Notification does not implement toSlack method')
+          throw new FlareError(
+            FlareErrorCodes.NOTIFICATION_METHOD_NOT_IMPLEMENTED,
+            'Notification does not implement toSlack method'
+          )
         }
 
         const slackMessage = notification.toSlack(notifiable)
@@ -62,7 +67,10 @@ export class SlackChannel implements NotificationChannel {
         })
 
         if (!response.ok) {
-          throw new Error(`Failed to send Slack notification: ${response.statusText}`)
+          throw new FlareError(
+            FlareErrorCodes.SEND_FAILED,
+            `Failed to send Slack notification: ${response.statusText}`
+          )
         }
       },
     }

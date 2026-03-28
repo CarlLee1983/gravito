@@ -39,6 +39,10 @@
  */
 
 export type { DeadLetterEvent, DeadLetterQueue } from './dlq/DeadLetterQueue'
+// Errors
+export { EchoError } from './errors/EchoError'
+export { EchoErrorCodes } from './errors/codes'
+export type { EchoErrorCode } from './errors/codes'
 // DLQ
 export { MemoryDeadLetterQueue } from './dlq/MemoryDeadLetterQueue'
 // Middleware

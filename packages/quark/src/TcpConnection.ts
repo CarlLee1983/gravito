@@ -3,6 +3,8 @@
  * @module @gravito/quark/TcpConnection
  */
 
+import { QuarkError } from './errors/QuarkError'
+import { QuarkErrorCodes } from './errors/codes'
 import type { ITcpConnection } from './types'
 import { ConnectionState } from './types'
 
@@ -44,7 +46,10 @@ export class TcpConnection implements ITcpConnection {
    */
   send(data: string | Uint8Array): boolean {
     if (this.state !== ConnectionState.CONNECTED) {
-      throw new Error(`Cannot send data in ${this.state} state`)
+      throw new QuarkError(
+        QuarkErrorCodes.INVALID_STATE,
+        `Cannot send data in ${this.state} state`
+      )
     }
 
     const buffer = typeof data === 'string' ? Buffer.from(data, 'utf-8') : data

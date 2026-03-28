@@ -5,6 +5,10 @@
  */
 
 export { BroadcastChannel } from './channels/BroadcastChannel'
+// Errors
+export { FlareError } from './errors/FlareError'
+export { FlareErrorCodes } from './errors/codes'
+export type { FlareErrorCode } from './errors/codes'
 export { DatabaseChannel } from './channels/DatabaseChannel'
 export type { MailChannelConfig } from './channels/MailChannel'
 export { MailChannel } from './channels/MailChannel'

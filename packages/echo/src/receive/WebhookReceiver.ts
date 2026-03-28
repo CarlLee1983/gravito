@@ -7,6 +7,8 @@
  */
 
 import type { GravitoContext } from '@gravito/core'
+import { EchoError } from '../errors/EchoError'
+import { EchoErrorCodes } from '../errors/codes'
 import { ConsoleEchoLogger, type EchoLogger } from '../observability/logging'
 import {
   EchoMetrics,
@@ -176,7 +178,10 @@ export class WebhookReceiver {
     const ProviderClass = this.providerTypes.get(type)
 
     if (!ProviderClass) {
-      throw new Error(`Unknown provider type: ${type}`)
+      throw new EchoError(
+        EchoErrorCodes.UNKNOWN_PROVIDER,
+        `Unknown provider type: ${type}`
+      )
     }
 
     const provider = new ProviderClass({ tolerance: options?.tolerance })
@@ -202,14 +207,20 @@ export class WebhookReceiver {
     options?: { type?: string; tolerance?: number }
   ): this {
     if (!this.keyRotationManager) {
-      throw new Error('KeyRotationManager must be set before using key rotation')
+      throw new EchoError(
+        EchoErrorCodes.KEY_ROTATION_NOT_SET,
+        'KeyRotationManager must be set before using key rotation'
+      )
     }
 
     const type = options?.type ?? name
     const ProviderClass = this.providerTypes.get(type)
 
     if (!ProviderClass) {
-      throw new Error(`Unknown provider type: ${type}`)
+      throw new EchoError(
+        EchoErrorCodes.UNKNOWN_PROVIDER,
+        `Unknown provider type: ${type}`
+      )
     }
 
     // Register keys with rotation manager
@@ -218,7 +229,10 @@ export class WebhookReceiver {
     // Get primary key for initial registration
     const primaryKey = this.keyRotationManager.getPrimaryKey(name)
     if (!primaryKey) {
-      throw new Error(`No primary key found for provider ${name}`)
+      throw new EchoError(
+        EchoErrorCodes.NO_PRIMARY_KEY,
+        `No primary key found for provider ${name}`
+      )
     }
 
     const provider = new ProviderClass({ tolerance: options?.tolerance })

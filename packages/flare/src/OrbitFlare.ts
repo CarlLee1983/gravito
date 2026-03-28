@@ -1,4 +1,6 @@
 import type { GravitoOrbit, PlanetCore } from '@gravito/core'
+import { FlareError } from './errors/FlareError'
+import { FlareErrorCodes } from './errors/codes'
 import { BroadcastChannel } from './channels/BroadcastChannel'
 import { DatabaseChannel } from './channels/DatabaseChannel'
 import { MailChannel } from './channels/MailChannel'
@@ -86,27 +88,33 @@ export class OrbitFlare implements GravitoOrbit {
     if (options.enableSlack) {
       const slack = options.channels?.slack as { webhookUrl?: string } | undefined
       if (!slack?.webhookUrl) {
-        throw new Error(
+        throw new FlareError(
+          FlareErrorCodes.INVALID_CONFIG,
           '[OrbitFlare] Slack channel enabled but webhookUrl not provided. ' +
             'Configure channels.slack.webhookUrl or set enableSlack to false.'
         )
       }
       if (!this.isValidUrl(slack.webhookUrl)) {
-        throw new Error(`[OrbitFlare] Invalid Slack webhook URL: ${slack.webhookUrl}`)
+        throw new FlareError(
+          FlareErrorCodes.INVALID_CONFIG,
+          `[OrbitFlare] Invalid Slack webhook URL: ${slack.webhookUrl}`
+        )
       }
     }
 
     if (options.enableSms) {
       const sms = options.channels?.sms as { provider?: string } | undefined
       if (!sms?.provider) {
-        throw new Error(
+        throw new FlareError(
+          FlareErrorCodes.INVALID_CONFIG,
           '[OrbitFlare] SMS channel enabled but provider not specified. ' +
             'Configure channels.sms.provider or set enableSms to false.'
         )
       }
       const supportedProviders = ['twilio', 'aws-sns']
       if (!supportedProviders.includes(sms.provider)) {
-        throw new Error(
+        throw new FlareError(
+          FlareErrorCodes.UNSUPPORTED_PROVIDER,
           `[OrbitFlare] Unsupported SMS provider: ${sms.provider}. ` +
             `Supported providers: ${supportedProviders.join(', ')}`
         )

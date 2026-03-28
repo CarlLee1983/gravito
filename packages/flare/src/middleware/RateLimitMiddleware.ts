@@ -7,6 +7,8 @@
  * @packageDocumentation
  */
 
+import { FlareError } from '../errors/FlareError'
+import { FlareErrorCodes } from '../errors/codes'
 import type { Notification } from '../Notification'
 import type { Notifiable } from '../types'
 import { type ChannelMiddleware, MiddlewarePriority } from '../types/middleware'
@@ -281,7 +283,8 @@ export class RateLimitMiddleware implements ChannelMiddleware {
       if (bucket) {
         const allowed = bucket.tryConsume()
         if (!allowed) {
-          throw new Error(
+          throw new FlareError(
+            FlareErrorCodes.RATE_LIMIT_EXCEEDED,
             `Rate limit exceeded for channel '${channel}' (${window}ly limit). ` +
               `Please try again later.`
           )

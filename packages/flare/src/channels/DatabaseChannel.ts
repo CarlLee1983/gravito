@@ -1,3 +1,5 @@
+import { FlareError } from '../errors/FlareError'
+import { FlareErrorCodes } from '../errors/codes'
 import type { Notification } from '../Notification'
 import type { AbortableSendOptions, Notifiable, NotificationChannel } from '../types'
 import { TimeoutChannel } from './TimeoutChannel'
@@ -48,7 +50,10 @@ export class DatabaseChannel implements NotificationChannel {
         _options?: AbortableSendOptions
       ) => {
         if (!notification.toDatabase) {
-          throw new Error('Notification does not implement toDatabase method')
+          throw new FlareError(
+            FlareErrorCodes.NOTIFICATION_METHOD_NOT_IMPLEMENTED,
+            'Notification does not implement toDatabase method'
+          )
         }
 
         const dbNotification = notification.toDatabase(notifiable)

@@ -7,6 +7,8 @@
  */
 
 import type { DeadLetterQueue } from '../dlq/DeadLetterQueue'
+import { EchoError } from '../errors/EchoError'
+import { EchoErrorCodes } from '../errors/codes'
 import type { EchoLogger } from '../observability/logging'
 import {
   EchoMetrics,
@@ -347,7 +349,7 @@ export class WebhookDispatcher {
     }
 
     if (!lastResult) {
-      throw new Error('No delivery attempts were made')
+      throw new EchoError(EchoErrorCodes.NO_DELIVERY_ATTEMPTS, 'No delivery attempts were made')
     }
 
     return lastResult

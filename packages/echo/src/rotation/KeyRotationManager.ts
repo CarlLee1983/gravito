@@ -8,6 +8,8 @@
  * @since v1.2
  */
 
+import { EchoError } from '../errors/EchoError'
+import { EchoErrorCodes } from '../errors/codes'
 import type { KeyRotationConfig, ProviderKeyEntry } from '../types'
 
 /**
@@ -95,7 +97,10 @@ export class KeyRotationManager {
     // Validate primary key presence and uniqueness
     const primaryKeys = keys.filter((k) => k.isPrimary)
     if (primaryKeys.length !== 1) {
-      throw new Error(`Provider ${providerName} must have exactly one primary key`)
+      throw new EchoError(
+        EchoErrorCodes.NO_PRIMARY_KEY,
+        `Provider ${providerName} must have exactly one primary key`
+      )
     }
 
     // Sort by activation date descending (newest first)

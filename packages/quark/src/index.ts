@@ -8,6 +8,10 @@
  * @packageDocumentation
  */
 
+// Errors
+export { QuarkError } from './errors/QuarkError'
+export { QuarkErrorCodes } from './errors/codes'
+export type { QuarkErrorCode } from './errors/codes'
 // Integration
 export { OrbitQuark } from './OrbitQuark'
 // Protocols

@@ -1,3 +1,5 @@
+import { FlareError } from '../errors/FlareError'
+import { FlareErrorCodes } from '../errors/codes'
 import type { Notification } from '../Notification'
 import type { AbortableSendOptions, Notifiable, NotificationChannel } from '../types'
 import { TimeoutChannel } from './TimeoutChannel'
@@ -43,7 +45,10 @@ export class MailChannel implements NotificationChannel {
         _options?: AbortableSendOptions
       ) => {
         if (!notification.toMail) {
-          throw new Error('Notification does not implement toMail method')
+          throw new FlareError(
+            FlareErrorCodes.NOTIFICATION_METHOD_NOT_IMPLEMENTED,
+            'Notification does not implement toMail method'
+          )
         }
 
         const message = notification.toMail(notifiable)

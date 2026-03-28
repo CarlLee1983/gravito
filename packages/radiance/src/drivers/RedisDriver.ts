@@ -1,3 +1,5 @@
+import { RadianceError } from '../errors/RadianceError'
+import { RadianceErrorCodes } from '../errors/codes'
 import type { BroadcastDriver } from './BroadcastDriver'
 
 /**
@@ -96,7 +98,8 @@ export class RedisDriver implements BroadcastDriver {
     data: Record<string, unknown>
   ): Promise<void> {
     if (!this.redis) {
-      throw new Error(
+      throw new RadianceError(
+        RadianceErrorCodes.CONNECTION_ERROR,
         'Redis client not set. Please install a Redis client and call setRedisClient()'
       )
     }

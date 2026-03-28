@@ -25,6 +25,10 @@
 
 export type { ChannelAuthorizationCallback } from './BroadcastManager'
 export { BroadcastManager } from './BroadcastManager'
+// Errors
+export { RadianceError } from './errors/RadianceError'
+export { RadianceErrorCodes } from './errors/codes'
+export type { RadianceErrorCode } from './errors/codes'
 export type { Channel } from './channels/Channel'
 export {
   PresenceChannel,

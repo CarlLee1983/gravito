@@ -1,4 +1,6 @@
 import { createHtmlRenderCallbacks, getMarkdownAdapter } from '@gravito/core'
+import { FlareError } from '../errors/FlareError'
+import { FlareErrorCodes } from '../errors/codes'
 import { Notification } from '../Notification'
 import type { MailMessage, Notifiable, SlackMessage } from '../types'
 
@@ -48,7 +50,7 @@ export abstract class TemplatedNotification extends Notification {
   // Auto-implement toSlack
   toSlack(_notifiable: Notifiable): SlackMessage {
     if (!this.slackTemplate) {
-      throw new Error('slackTemplate not defined')
+      throw new FlareError(FlareErrorCodes.TEMPLATE_NOT_DEFINED, 'slackTemplate not defined')
     }
     const template = this.slackTemplate()
     return {
@@ -101,7 +103,10 @@ export abstract class TemplatedNotification extends Notification {
     if ('email' in notifiable && typeof (notifiable as any).email === 'string') {
       return (notifiable as any).email
     }
-    throw new Error('Notifiable does not have an email property')
+    throw new FlareError(
+      FlareErrorCodes.NOTIFIABLE_MISSING_EMAIL,
+      'Notifiable does not have an email property'
+    )
   }
 }
 

@@ -5,6 +5,8 @@
 
 import { randomUUID } from 'node:crypto'
 import { TcpConnection } from './TcpConnection'
+import { QuarkError } from './errors/QuarkError'
+import { QuarkErrorCodes } from './errors/codes'
 import type { ITcpConnection, ITcpServer, TcpServerConfig } from './types'
 
 /**
@@ -71,7 +73,7 @@ export class TcpServer implements ITcpServer {
    */
   async listen(): Promise<void> {
     if (this.server !== null) {
-      throw new Error('Server is already listening')
+      throw new QuarkError(QuarkErrorCodes.ALREADY_LISTENING, 'Server is already listening')
     }
 
     try {

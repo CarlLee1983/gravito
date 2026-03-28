@@ -3,6 +3,8 @@
  * @module @gravito/quark/protocols/FrameProtocol
  */
 
+import { QuarkError } from '../errors/QuarkError'
+import { QuarkErrorCodes } from '../errors/codes'
 import type { FrameProtocolConfig } from '../types'
 
 /**
@@ -46,11 +48,11 @@ export class FrameProtocol {
     }
 
     if (this.config.headerSize !== 2 && this.config.headerSize !== 4) {
-      throw new Error('headerSize must be 2 or 4')
+      throw new QuarkError(QuarkErrorCodes.INVALID_CONFIG, 'headerSize must be 2 or 4')
     }
 
     if (this.config.byteOrder !== 'big' && this.config.byteOrder !== 'little') {
-      throw new Error("byteOrder must be 'big' or 'little'")
+      throw new QuarkError(QuarkErrorCodes.INVALID_CONFIG, "byteOrder must be 'big' or 'little'")
     }
   }
 
@@ -69,7 +71,10 @@ export class FrameProtocol {
     const frameLength = this.readLength(data)
 
     if (frameLength < 0 || frameLength > this.config.maxFrameSize) {
-      throw new Error(`Invalid frame size: ${frameLength}`)
+      throw new QuarkError(
+        QuarkErrorCodes.INVALID_FRAME,
+        `Invalid frame size: ${frameLength}`
+      )
     }
 
     const totalLength = this.config.headerSize + frameLength
@@ -95,7 +100,10 @@ export class FrameProtocol {
     const payload = typeof data === 'string' ? Buffer.from(data, this.config.encoding) : data
 
     if (payload.length > this.config.maxFrameSize) {
-      throw new Error(`Data exceeds max frame size: ${payload.length}`)
+      throw new QuarkError(
+        QuarkErrorCodes.FRAME_TOO_LARGE,
+        `Data exceeds max frame size: ${payload.length}`
+      )
     }
 
     const frame = new Uint8Array(this.config.headerSize + payload.length)

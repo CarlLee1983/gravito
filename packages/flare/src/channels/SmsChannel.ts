@@ -1,3 +1,5 @@
+import { FlareError } from '../errors/FlareError'
+import { FlareErrorCodes } from '../errors/codes'
 import type { Notification } from '../Notification'
 import type { AbortableSendOptions, Notifiable, NotificationChannel, SmsMessage } from '../types'
 import { TimeoutChannel } from './TimeoutChannel'
@@ -47,7 +49,10 @@ export class SmsChannel implements NotificationChannel {
         options?: AbortableSendOptions
       ) => {
         if (!notification.toSms) {
-          throw new Error('Notification does not implement toSms method')
+          throw new FlareError(
+            FlareErrorCodes.NOTIFICATION_METHOD_NOT_IMPLEMENTED,
+            'Notification does not implement toSms method'
+          )
         }
 
         const smsMessage = notification.toSms(notifiable)
@@ -61,7 +66,10 @@ export class SmsChannel implements NotificationChannel {
             await this.sendViaAwsSns(smsMessage, options?.signal)
             break
           default:
-            throw new Error(`Unsupported SMS provider: ${this.config.provider}`)
+            throw new FlareError(
+              FlareErrorCodes.UNSUPPORTED_PROVIDER,
+              `Unsupported SMS provider: ${this.config.provider}`
+            )
         }
       },
     }
@@ -87,7 +95,10 @@ export class SmsChannel implements NotificationChannel {
    */
   private async sendViaTwilio(message: SmsMessage, signal?: AbortSignal): Promise<void> {
     if (!this.config.apiKey || !this.config.apiSecret) {
-      throw new Error('Twilio API key and secret are required')
+      throw new FlareError(
+        FlareErrorCodes.CREDENTIALS_MISSING,
+        'Twilio API key and secret are required'
+      )
     }
 
     const accountSid = this.config.apiKey
@@ -112,7 +123,7 @@ export class SmsChannel implements NotificationChannel {
 
     if (!response.ok) {
       const error = await response.text()
-      throw new Error(`Failed to send SMS via Twilio: ${error}`)
+      throw new FlareError(FlareErrorCodes.SEND_FAILED, `Failed to send SMS via Twilio: ${error}`)
     }
   }
 
@@ -129,7 +140,8 @@ export class SmsChannel implements NotificationChannel {
       SNSClient = awsSns.SNSClient
       PublishCommand = awsSns.PublishCommand
     } catch {
-      throw new Error(
+      throw new FlareError(
+        FlareErrorCodes.UNSUPPORTED_PROVIDER,
         'AWS SNS SMS requires @aws-sdk/client-sns. ' +
           'Install it with: bun add @aws-sdk/client-sns'
       )
@@ -166,7 +178,10 @@ export class SmsChannel implements NotificationChannel {
       await client.send(command, { abortSignal: signal })
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error))
-      throw new Error(`Failed to send SMS via AWS SNS: ${err.message}`)
+      throw new FlareError(
+        FlareErrorCodes.SEND_FAILED,
+        `Failed to send SMS via AWS SNS: ${err.message}`
+      )
     }
   }
 }

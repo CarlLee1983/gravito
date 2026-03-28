@@ -1,3 +1,5 @@
+import { RadianceError } from '../errors/RadianceError'
+import { RadianceErrorCodes } from '../errors/codes'
 import type { BroadcastDriver } from './BroadcastDriver'
 
 /**
@@ -74,7 +76,10 @@ export class AblyDriver implements BroadcastDriver {
 
     if (!response.ok) {
       const error = await response.text()
-      throw new Error(`Failed to broadcast via Ably: ${error}`)
+      throw new RadianceError(
+        RadianceErrorCodes.BROADCAST_FAILED,
+        `Failed to broadcast via Ably: ${error}`
+      )
     }
   }
 

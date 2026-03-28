@@ -1,5 +1,7 @@
 import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import { BroadcastManager } from './BroadcastManager'
+import { RadianceError } from './errors/RadianceError'
+import { RadianceErrorCodes } from './errors/codes'
 import type { AblyDriverConfig } from './drivers/AblyDriver'
 import { AblyDriver } from './drivers/AblyDriver'
 import type { BroadcastDriver } from './drivers/BroadcastDriver'
@@ -146,7 +148,10 @@ export class OrbitRadiance implements GravitoOrbit {
         break
       }
       default:
-        throw new Error(`Unsupported broadcast driver: ${this.options.driver}`)
+        throw new RadianceError(
+          RadianceErrorCodes.UNSUPPORTED_DRIVER,
+          `Unsupported broadcast driver: ${this.options.driver}`
+        )
     }
 
     manager.setDriver(driver)

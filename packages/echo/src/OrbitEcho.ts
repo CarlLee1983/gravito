@@ -1,4 +1,6 @@
 import type { GravitoOrbit, PlanetCore } from '@gravito/core'
+import { EchoError } from './errors/EchoError'
+import { EchoErrorCodes } from './errors/codes'
 import { createRequestBufferMiddleware } from './middleware'
 import { WebhookReceiver } from './receive/WebhookReceiver'
 import { KeyRotationManager } from './rotation/KeyRotationManager'
@@ -208,7 +210,10 @@ export class OrbitEcho implements GravitoOrbit {
     newKey: Omit<ProviderKeyEntry, 'isPrimary'>
   ): Promise<void> {
     if (!this.keyRotationManager) {
-      throw new Error('Key rotation is not enabled')
+      throw new EchoError(
+        EchoErrorCodes.KEY_ROTATION_NOT_ENABLED,
+        'Key rotation is not enabled'
+      )
     }
 
     await this.keyRotationManager.rotatePrimaryKey(providerName, newKey)

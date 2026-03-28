@@ -1,3 +1,6 @@
+import { FlareError } from '../errors/FlareError'
+import { FlareErrorCodes } from '../errors/codes'
+
 /**
  * 序列化檢查結果介面
  */
@@ -133,7 +136,8 @@ export function assertSerializable(obj: unknown): void {
   const result = checkSerializable(obj)
 
   if (!result.serializable) {
-    throw new Error(
+    throw new FlareError(
+      FlareErrorCodes.SERIALIZATION_FAILED,
       `物件包含不可序列化的屬性:\n` +
         `問題路徑: ${result.problematicPaths.join(', ')}\n` +
         `詳細資訊:\n${result.warnings.join('\n')}`

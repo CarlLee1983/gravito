@@ -1,3 +1,5 @@
+import { RadianceError } from '../errors/RadianceError'
+import { RadianceErrorCodes } from '../errors/codes'
 import type { BroadcastDriver } from './BroadcastDriver'
 
 /**
@@ -114,7 +116,10 @@ export class PusherDriver implements BroadcastDriver {
 
     if (!response.ok) {
       const error = await response.text()
-      throw new Error(`Failed to broadcast via Pusher: ${error}`)
+      throw new RadianceError(
+        RadianceErrorCodes.BROADCAST_FAILED,
+        `Failed to broadcast via Pusher: ${error}`
+      )
     }
   }
 
