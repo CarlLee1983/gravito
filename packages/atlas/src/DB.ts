@@ -578,6 +578,7 @@ export class DB {
   ): Promise<T> {
     const { maxRetries = 5, baseDelay = 100, maxDelay = 30000 } = options
     let attempts = 0
+    let lastError: unknown
 
     const delay = (ms: number) => new Promise((res) => setTimeout(res, ms))
 
@@ -588,6 +589,7 @@ export class DB {
           return await callback(conn, attempts)
         }, connectionName)
       } catch (error: unknown) {
+        lastError = error
         const dbError = error as {
           code?: unknown
           originalError?: { code?: unknown }
@@ -616,7 +618,7 @@ export class DB {
       }
     }
 
-    throw new Error('Transaction failed after exceeding max retries')
+    throw new Error('Transaction failed after exceeding max retries', { cause: lastError })
   }
 
   /**
