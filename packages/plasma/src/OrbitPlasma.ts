@@ -155,9 +155,20 @@ export class OrbitPlasma implements GravitoOrbit {
 
     core.logger.info(`[OrbitPlasma] Installed (Exposed as: ${exposeAs})`)
 
-    // Register shutdown hook
+    // Register shutdown hook with 3s deadline enforcement (D-09)
     core.hooks.doAction('core:shutdown', async () => {
-      await this.disconnect()
+      const DEADLINE_MS = 3000
+      const deadline = new Promise<void>((_, reject) =>
+        setTimeout(
+          () => reject(new Error('[OrbitPlasma] Shutdown deadline exceeded (3s)')),
+          DEADLINE_MS
+        )
+      )
+      try {
+        await Promise.race([this.disconnect(), deadline])
+      } catch (err) {
+        core.logger.warn('[OrbitPlasma] Forced shutdown:', err)
+      }
     })
   }
 

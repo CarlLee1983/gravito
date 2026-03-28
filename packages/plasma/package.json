@@ -38,7 +38,8 @@
   "author": "Gravito Team",
   "license": "MIT",
   "dependencies": {
-    "@gravito/core": "^2.0.6"
+    "@gravito/core": "^2.0.6",
+    "@gravito/resilience": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.5.1",

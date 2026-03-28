@@ -1,6 +1,18 @@
 import { EventEmitter } from 'node:events'
+import { withResilience, type ResiliencePolicy } from '@gravito/resilience'
 import { RedisError } from '../errors'
 import { CacheErrorCodes } from '../errors/codes'
+
+/**
+ * Circuit breaker + timeout policy for plasma Redis connections (D-04: CB only, no retry).
+ * - failureThreshold: 3 consecutive failures open the circuit
+ * - resetTimeout: 15s before attempting half-open
+ * - timeout: 2s per connect attempt
+ */
+const plasmaPolicy: ResiliencePolicy = {
+  circuitBreaker: { name: 'plasma-redis', failureThreshold: 3, resetTimeout: 15_000 },
+  timeout: 2000,
+}
 import type {
   PipelineResult,
   RedisClientContract,
@@ -81,40 +93,17 @@ export class BunRedisClient implements RedisClientContract {
     this.client = new RedisClientClass(url, options) as unknown as RedisClient
 
     try {
-      await this.retryWithBackoff(async () => {
+      await withResilience(async () => {
         if (this.client) {
           await this.client.connect()
         }
-      })
+      }, plasmaPolicy)
 
       this.connected = true
       this.emitter.emit('connect')
       this.emitter.emit('ready')
     } catch (error) {
       throw this.handleException(error, 'CONNECT')
-    }
-  }
-
-  private async retryWithBackoff(operation: () => Promise<void>): Promise<void> {
-    const maxRetries = this.config.maxRetries ?? 10
-    const baseDelay = this.config.retryDelay ?? 100
-    let attempt = 0
-
-    while (true) {
-      try {
-        await operation()
-        return
-      } catch (error) {
-        attempt++
-        if (attempt > maxRetries) {
-          throw error
-        }
-        const delay = Math.min(baseDelay * 2 ** (attempt - 1), 3000) + Math.random() * 100
-        await new Promise((resolve) => {
-          const timer = setTimeout(resolve, delay)
-          timer.unref?.()
-        })
-      }
     }
   }
 
@@ -189,7 +178,7 @@ export class BunRedisClient implements RedisClientContract {
   buildClientOptions(): RedisClientOptions {
     const options: RedisClientOptions = {
       connectionTimeout: this.config.connectTimeout ?? 10000,
-      maxRetries: 1,
+      maxRetries: 0,
       autoReconnect: true,
       enableOfflineQueue: true,
       enableAutoPipelining: true,
