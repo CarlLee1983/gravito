@@ -86,7 +86,17 @@ Plans:
   2. Contract tests for all migrated packages pass asserting `.code`, `.status`, and `instanceof` — the test suite does not regress (all tests that passed before migration still pass after)
   3. stream and beam register `core:shutdown` handlers with deadline enforcement alongside atlas, plasma, and signal
   4. All major Orbit packages appear in `@gravito/monitor` health registry — a health check request returns per-Orbit `healthy`/`degraded`/`unhealthy` status
-**Plans**: TBD
+**Plans:** 9 plans
+Plans:
+- [ ] 19-01-PLAN.md — Core intermediate exception classes (AuthException, QueueException, StorageException, StreamException)
+- [ ] 19-02-PLAN.md — Batch 1a: fortify, astral, quasar, ripple error class re-parenting
+- [ ] 19-03-PLAN.md — Batch 1b: flux + beam migration with shutdown handler
+- [ ] 19-04-PLAN.md — Batch 1c: stream migration (81 throws, ErrorCategorizer, shutdown)
+- [ ] 19-05-PLAN.md — Batch 2: Storage packages (constellation, nebula, nebula-s3, stasis, freeze, dark-matter, pulsar, forge)
+- [ ] 19-06-PLAN.md — Batch 3: Communication packages (echo, flare, radiance, quark, graphql, impulse, impulse-bridge, monolith)
+- [ ] 19-07-PLAN.md — Batch 4: DevOps packages (horizon, monitor, zenith, launchpad, cli, luminosity, prism)
+- [ ] 19-08-PLAN.md — Batch 5: LOW packages (cosmos, sentinel + 5 exempt)
+- [ ] 19-09-PLAN.md — Health check registration for all I/O Orbits (INTG-04)
 
 ### Phase 20: Integration Verification & Graceful Degradation
 **Goal**: The full system — Orbits plus Satellites — behaves correctly under the new error model, and the circuit-open path returns typed fallbacks instead of throwing
@@ -108,7 +118,7 @@ Plans:
 | 16. Core Error Model Foundation | 3/3 | Complete    | 2026-03-28 |
 | 17. Resilience Infrastructure | 2/3 | Complete    | 2026-03-28 |
 | 18. Foundation Orbit Migration | 6/6 | Complete    | 2026-03-28 |
-| 19. Secondary Orbit Migration | 0/? | Not started | - |
+| 19. Secondary Orbit Migration | 0/9 | Planned     | - |
 | 20. Integration Verification & Graceful Degradation | 0/? | Not started | - |
 
 ---
