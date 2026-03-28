@@ -74,3 +74,5 @@ export class ConnectionError extends DatabaseError {
     this.name = 'ConnectionError'
   }
 }
+
+export * from './codes'

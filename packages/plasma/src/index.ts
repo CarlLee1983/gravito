@@ -12,6 +12,8 @@ export { OrbitPlasma } from './OrbitPlasma'
 export { Redis } from './Redis'
 export { RedisManager } from './RedisManager'
 
+export * from './errors/codes'
+
 // Type exports
 export type {
   PipelineResult,
