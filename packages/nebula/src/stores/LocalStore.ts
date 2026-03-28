@@ -7,6 +7,8 @@ import {
   runtimeStatFull,
 } from '@gravito/core'
 import type { PutOptions, StorageItem, StorageMetadata, StorageStore } from '../store'
+import { NebulaError } from '../errors/NebulaError'
+import { NebulaErrorCodes } from '../errors/codes'
 
 /**
  * LocalStore implements storage on the local filesystem.
@@ -54,7 +56,9 @@ export class LocalStore implements StorageStore {
   async copy(from: string, to: string): Promise<void> {
     const data = await this.get(from)
     if (!data) {
-      throw new Error(`[LocalStore] Source file not found: ${from}`)
+      throw new NebulaError(404, NebulaErrorCodes.COPY_SOURCE_NOT_FOUND, {
+        message: `[LocalStore] Source file not found: ${from}`,
+      })
     }
     await this.put(to, data)
   }
@@ -65,10 +69,11 @@ export class LocalStore implements StorageStore {
   }
 
   list(_prefix = ''): AsyncIterable<StorageItem> {
-    throw new Error(
-      '[LocalStore] list() is not yet implemented. ' +
-        'Requires RuntimeAdapter.readDir() support in @gravito/core.'
-    )
+    throw new NebulaError(501, NebulaErrorCodes.OPERATION_NOT_SUPPORTED, {
+      message:
+        '[LocalStore] list() is not yet implemented. ' +
+        'Requires RuntimeAdapter.readDir() support in @gravito/core.',
+    })
   }
 
   async getMetadata(key: string): Promise<StorageMetadata | null> {
@@ -107,7 +112,11 @@ export class LocalStore implements StorageStore {
       await writer.end()
     } catch (error) {
       reader.releaseLock()
-      throw new Error(`[LocalStore] Failed to write stream: ${error}`)
+      throw new NebulaError(503, NebulaErrorCodes.WRITE_STREAM_FAILED, {
+        message: `[LocalStore] Failed to write stream: ${error}`,
+        cause: error instanceof Error ? error : undefined,
+        retryable: true,
+      })
     }
   }
 
@@ -129,7 +138,9 @@ export class LocalStore implements StorageStore {
     const runtime = this.runtime
     const archiveData = await runtime.readFile(archivePath)
     if (!archiveData || archiveData.length === 0) {
-      throw new Error(`[LocalStore] Backup file not found or empty: ${archivePath}`)
+      throw new NebulaError(404, NebulaErrorCodes.FILE_NOT_FOUND, {
+        message: `[LocalStore] Backup file not found or empty: ${archivePath}`,
+      })
     }
     const rootDir = resolve(this.rootDir)
     const tempDir = `${rootDir}.restore-${Date.now()}`
@@ -172,7 +183,9 @@ export class LocalStore implements StorageStore {
 
   private normalizeKey(key: string): string {
     if (!key || key.includes('\0')) {
-      throw new Error('[LocalStore] Invalid storage key: empty or contains null byte.')
+      throw new NebulaError(400, NebulaErrorCodes.INVALID_STORAGE_KEY, {
+        message: '[LocalStore] Invalid storage key: empty or contains null byte.',
+      })
     }
     const normalized = normalize(key).replace(/^[/\\]+/, '')
     if (
@@ -182,7 +195,9 @@ export class LocalStore implements StorageStore {
       normalized.startsWith(`.${sep}`) ||
       isAbsolute(normalized)
     ) {
-      throw new Error('[LocalStore] Invalid storage key: path traversal attempt.')
+      throw new NebulaError(400, NebulaErrorCodes.INVALID_STORAGE_KEY, {
+        message: '[LocalStore] Invalid storage key: path traversal attempt.',
+      })
     }
     return normalized.replace(/\\/g, '/')
   }
@@ -193,7 +208,9 @@ export class LocalStore implements StorageStore {
     const resolved = resolve(root, normalized)
     const rootPrefix = root.endsWith(sep) ? root : `${root}${sep}`
     if (!resolved.startsWith(rootPrefix) && resolved !== root) {
-      throw new Error('[LocalStore] Invalid storage key: resolved path outside root.')
+      throw new NebulaError(400, NebulaErrorCodes.INVALID_STORAGE_KEY, {
+        message: '[LocalStore] Invalid storage key: resolved path outside root.',
+      })
     }
     return resolved
   }

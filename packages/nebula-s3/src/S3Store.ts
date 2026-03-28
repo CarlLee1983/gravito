@@ -6,6 +6,8 @@ import type {
   StorageMetadata,
   StorageStore,
 } from '@gravito/nebula'
+import { NebulaS3Error } from './errors/NebulaS3Error'
+import { NebulaS3ErrorCodes } from './errors/codes'
 
 /**
  * S3StoreOptions 定義 S3 儲存驅動的配置選項
@@ -184,7 +186,9 @@ export class S3Store implements StorageStore {
   async copy(from: string, to: string): Promise<void> {
     const data = await this.get(from)
     if (!data) {
-      throw new Error(`[S3Store] Source file not found: ${from}`)
+      throw new NebulaS3Error(404, NebulaS3ErrorCodes.COPY_SOURCE_NOT_FOUND, {
+        message: `[S3Store] Source file not found: ${from}`,
+      })
     }
 
     await this.put(to, data)
@@ -245,13 +249,17 @@ export class S3Store implements StorageStore {
     // We need to copy the object with new metadata
     const existingMeta = await this.getMetadata(key)
     if (!existingMeta) {
-      throw new Error(`[S3Store] File not found: ${key}`)
+      throw new NebulaS3Error(404, NebulaS3ErrorCodes.FILE_NOT_FOUND, {
+        message: `[S3Store] File not found: ${key}`,
+      })
     }
 
     // Get the object content
     const data = await this.get(key)
     if (!data) {
-      throw new Error(`[S3Store] File not found: ${key}`)
+      throw new NebulaS3Error(404, NebulaS3ErrorCodes.FILE_NOT_FOUND, {
+        message: `[S3Store] File not found: ${key}`,
+      })
     }
 
     // Merge metadata
@@ -307,7 +315,11 @@ export class S3Store implements StorageStore {
       // biome-ignore lint/suspicious/noExplicitAny: Bun S3 API
       await (this.s3 as any).file(key).write(stream)
     } catch (error) {
-      throw new Error(`[S3Store] Failed to write stream: ${error}`)
+      throw new NebulaS3Error(503, NebulaS3ErrorCodes.WRITE_STREAM_FAILED, {
+        message: `[S3Store] Failed to write stream: ${error}`,
+        cause: error instanceof Error ? error : undefined,
+        retryable: true,
+      })
     }
   }
 
@@ -367,7 +379,11 @@ export class S3Store implements StorageStore {
         count: items.length,
       }
     } catch (error) {
-      throw new Error(`[S3Store] Failed to list objects: ${error}`)
+      throw new NebulaS3Error(503, NebulaS3ErrorCodes.LIST_FAILED, {
+        message: `[S3Store] Failed to list objects: ${error}`,
+        cause: error instanceof Error ? error : undefined,
+        retryable: true,
+      })
     }
   }
 }

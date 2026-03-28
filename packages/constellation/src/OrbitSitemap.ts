@@ -1,4 +1,6 @@
 import type { GravitoContext, GravitoOrbit, PlanetCore } from '@gravito/core'
+import { ConstellationError } from './errors/ConstellationError'
+import { ConstellationErrorCodes } from './errors/codes'
 import { IncrementalGenerator } from './core/IncrementalGenerator'
 import { ProgressTracker } from './core/ProgressTracker'
 import { SitemapGenerator } from './core/SitemapGenerator'
@@ -278,7 +280,9 @@ export class OrbitSitemap implements GravitoOrbit {
    */
   async generate(): Promise<void> {
     if (this.mode !== 'static') {
-      throw new Error('generate() can only be called in static mode')
+      throw new ConstellationError(400, ConstellationErrorCodes.STATIC_MODE_REQUIRED, {
+        message: 'generate() can only be called in static mode',
+      })
     }
 
     const opts = this.options as StaticSitemapOptions
@@ -331,13 +335,17 @@ export class OrbitSitemap implements GravitoOrbit {
    */
   async generateIncremental(since?: Date): Promise<void> {
     if (this.mode !== 'static') {
-      throw new Error('generateIncremental() can only be called in static mode')
+      throw new ConstellationError(400, ConstellationErrorCodes.STATIC_MODE_REQUIRED, {
+        message: 'generateIncremental() can only be called in static mode',
+      })
     }
 
     const opts = this.options as StaticSitemapOptions
 
     if (!opts.incremental?.enabled || !opts.incremental.changeTracker) {
-      throw new Error('Incremental generation is not enabled or changeTracker is not configured')
+      throw new ConstellationError(400, ConstellationErrorCodes.INCREMENTAL_NOT_CONFIGURED, {
+        message: 'Incremental generation is not enabled or changeTracker is not configured',
+      })
     }
 
     let storage = opts.storage
@@ -374,7 +382,9 @@ export class OrbitSitemap implements GravitoOrbit {
     onError?: (error: Error) => void
   }): Promise<string> {
     if (this.mode !== 'static') {
-      throw new Error('generateAsync() can only be called in static mode')
+      throw new ConstellationError(400, ConstellationErrorCodes.STATIC_MODE_REQUIRED, {
+        message: 'generateAsync() can only be called in static mode',
+      })
     }
 
     const opts = this.options as StaticSitemapOptions

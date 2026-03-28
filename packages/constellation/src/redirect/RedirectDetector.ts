@@ -1,4 +1,6 @@
 import type { RedirectRule } from '../types'
+import { ConstellationError } from '../errors/ConstellationError'
+import { ConstellationErrorCodes } from '../errors/codes'
 
 /**
  * Options for automatic redirect detection via HTTP probes.
@@ -294,7 +296,9 @@ export class RedirectDetector {
 
   private assertSafeIdentifier(identifier: string): string {
     if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(identifier)) {
-      throw new Error(`Invalid database identifier: ${identifier}`)
+      throw new ConstellationError(400, ConstellationErrorCodes.INVALID_DATABASE_IDENTIFIER, {
+        message: `Invalid database identifier: ${identifier}`,
+      })
     }
     return identifier
   }

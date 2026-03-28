@@ -7,6 +7,8 @@
 import type { Transform } from 'node:stream'
 import { createGzip } from 'node:zlib'
 import { getCompressionAdapter } from '@gravito/core'
+import { ConstellationError } from '../errors/ConstellationError'
+import { ConstellationErrorCodes } from '../errors/codes'
 
 /**
  * Compression configuration.
@@ -45,7 +47,9 @@ export async function compressToBuffer(
 ): Promise<Buffer> {
   const level = config?.level ?? 6
   if (level < 1 || level > 9) {
-    throw new Error(`Invalid compression level: ${level}. Must be between 1 and 9.`)
+    throw new ConstellationError(400, ConstellationErrorCodes.INVALID_COMPRESSION_LEVEL, {
+      message: `Invalid compression level: ${level}. Must be between 1 and 9.`,
+    })
   }
 
   // 收集所有 chunk，再一次性壓縮（消除串流回調複雜度）
@@ -78,7 +82,9 @@ export async function compressToBuffer(
 export function createCompressionStream(config?: CompressionConfig): Transform {
   const level = config?.level ?? 6
   if (level < 1 || level > 9) {
-    throw new Error(`Invalid compression level: ${level}. Must be between 1 and 9.`)
+    throw new ConstellationError(400, ConstellationErrorCodes.INVALID_COMPRESSION_LEVEL, {
+      message: `Invalid compression level: ${level}. Must be between 1 and 9.`,
+    })
   }
   return createGzip({ level })
 }

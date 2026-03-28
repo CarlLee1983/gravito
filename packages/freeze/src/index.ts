@@ -58,3 +58,5 @@ export {
   stripLocalePrefix,
 } from './path-utils'
 export * from './types'
+export { FreezeError } from './errors/FreezeError'
+export { FreezeErrorCodes, type FreezeErrorCode } from './errors/codes'

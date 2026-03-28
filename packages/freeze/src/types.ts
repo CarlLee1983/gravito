@@ -1,6 +1,8 @@
 /**
  * @gravito/freeze - Branded Types
  */
+import { FreezeError } from './errors/FreezeError'
+import { FreezeErrorCodes } from './errors/codes'
 
 /**
  * A string representing a validated locale identifier.
@@ -94,7 +96,9 @@ export function asLocale(value: string): Locale {
  */
 export function asAbsolutePath(value: string): AbsolutePath {
   if (!value.startsWith('/')) {
-    throw new Error(`Invalid absolute path: ${value}. Must start with '/'.`)
+    throw new FreezeError(400, FreezeErrorCodes.INVALID_ABSOLUTE_PATH, {
+      message: `Invalid absolute path: ${value}. Must start with '/'.`,
+    })
   }
   return value as AbsolutePath
 }

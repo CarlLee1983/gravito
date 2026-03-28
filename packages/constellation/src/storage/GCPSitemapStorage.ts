@@ -1,6 +1,8 @@
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import type { SitemapStorage, WriteStreamOptions } from '../types'
+import { ConstellationError } from '../errors/ConstellationError'
+import { ConstellationErrorCodes } from '../errors/codes'
 import { createCompressionStream, toGzipFilename } from '../utils/Compression'
 
 /**
@@ -83,9 +85,10 @@ export class GCPSitemapStorage implements SitemapStorage {
 
       return { client: this.storageClient, bucket: this.bucketInstance }
     } catch (error) {
-      throw new Error(
-        `Failed to load Google Cloud Storage. Please install @google-cloud/storage: ${error instanceof Error ? error.message : String(error)}`
-      )
+      throw new ConstellationError(503, ConstellationErrorCodes.STORAGE_READ_FAILED, {
+        message: `Failed to load Google Cloud Storage. Please install @google-cloud/storage: ${error instanceof Error ? error.message : String(error)}`,
+        cause: error,
+      })
     }
   }
 
@@ -354,7 +357,9 @@ export class GCPSitemapStorage implements SitemapStorage {
    */
   async switchVersion(filename: string, version: string): Promise<void> {
     if (this.shadowMode !== 'versioned') {
-      throw new Error('Version switching is only available in versioned mode')
+      throw new ConstellationError(400, ConstellationErrorCodes.VERSION_UNAVAILABLE, {
+        message: 'Version switching is only available in versioned mode',
+      })
     }
 
     const { bucket } = await this.getStorageClient()
@@ -365,7 +370,9 @@ export class GCPSitemapStorage implements SitemapStorage {
     // Check if version exists
     const [exists] = await versionedFile.exists()
     if (!exists) {
-      throw new Error(`Version ${version} not found for ${filename}`)
+      throw new ConstellationError(404, ConstellationErrorCodes.VERSION_NOT_FOUND, {
+        message: `Version ${version} not found for ${filename}`,
+      })
     }
 
     // Copy versioned file to main location

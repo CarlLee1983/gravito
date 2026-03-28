@@ -11,6 +11,9 @@
  * const key: CacheKey = 'user:123:profile';
  * ```
  */
+import { StasisError } from './errors/StasisError'
+import { StasisErrorCodes } from './errors/codes'
+
 export type CacheKey = string
 
 /**
@@ -68,7 +71,9 @@ export type CacheValue<T = unknown> = T | null
  */
 export function normalizeCacheKey(key: string): string {
   if (!key) {
-    throw new Error('Cache key cannot be empty.')
+    throw new StasisError(400, StasisErrorCodes.EMPTY_CACHE_KEY, {
+      message: 'Cache key cannot be empty.',
+    })
   }
   return key
 }

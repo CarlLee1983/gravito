@@ -8,6 +8,8 @@ import {
   normalizeCacheKey,
   ttlToExpiresAt,
 } from '../types'
+import { StasisError } from '../errors/StasisError'
+import { StasisErrorCodes } from '../errors/codes'
 
 /**
  * Options for configuring the `RedisStore`.
@@ -349,7 +351,9 @@ export class RedisStore implements CacheStore, TaggableStore {
 
         while (Date.now() <= deadline && attempt < maxRetries) {
           if (signal?.aborted) {
-            throw new Error(`Lock acquisition for '${name}' was aborted`)
+            throw new StasisError(409, StasisErrorCodes.LOCK_ABORTED, {
+              message: `Lock acquisition for '${name}' was aborted`,
+            })
           }
 
           if (await this.acquire()) {

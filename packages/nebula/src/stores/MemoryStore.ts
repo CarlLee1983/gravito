@@ -6,6 +6,8 @@ import type {
   StorageMetadata,
   StorageStore,
 } from '../store'
+import { NebulaError } from '../errors/NebulaError'
+import { NebulaErrorCodes } from '../errors/codes'
 
 interface MemoryFile {
   data: Blob
@@ -103,7 +105,9 @@ export class MemoryStore implements StorageStore {
   async copy(from: string, to: string): Promise<void> {
     const file = this.files.get(from)
     if (!file) {
-      throw new Error(`[MemoryStore] Source file not found: ${from}`)
+      throw new NebulaError(404, NebulaErrorCodes.COPY_SOURCE_NOT_FOUND, {
+        message: `[MemoryStore] Source file not found: ${from}`,
+      })
     }
 
     this.files.set(to, {
@@ -191,7 +195,11 @@ export class MemoryStore implements StorageStore {
       await this.put(key, blob)
     } catch (error) {
       reader.releaseLock()
-      throw new Error(`[MemoryStore] Failed to write stream: ${error}`)
+      throw new NebulaError(503, NebulaErrorCodes.WRITE_STREAM_FAILED, {
+        message: `[MemoryStore] Failed to write stream: ${error}`,
+        cause: error instanceof Error ? error : undefined,
+        retryable: true,
+      })
     }
   }
 
@@ -224,7 +232,9 @@ export class MemoryStore implements StorageStore {
   async setMetadata(key: string, metadata: Record<string, string>): Promise<void> {
     const file = this.files.get(key)
     if (!file) {
-      throw new Error(`[MemoryStore] File not found: ${key}`)
+      throw new NebulaError(404, NebulaErrorCodes.FILE_NOT_FOUND, {
+        message: `[MemoryStore] File not found: ${key}`,
+      })
     }
 
     // Merge new metadata with existing metadata

@@ -4,20 +4,30 @@ import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { getRuntimeAdapter, runtimeMkdir, runtimeReadText } from '@gravito/core'
 import type { SitemapStorage, WriteStreamOptions } from '../types'
+import { ConstellationError } from '../errors/ConstellationError'
+import { ConstellationErrorCodes } from '../errors/codes'
 import { createCompressionStream, toGzipFilename } from '../utils/Compression'
 
 function sanitizeFilename(filename: string): string {
   if (!filename) {
-    throw new Error('Invalid sitemap filename.')
+    throw new ConstellationError(400, ConstellationErrorCodes.INVALID_FILENAME, {
+      message: 'Invalid sitemap filename.',
+    })
   }
   if (filename.includes('\0')) {
-    throw new Error('Invalid sitemap filename.')
+    throw new ConstellationError(400, ConstellationErrorCodes.INVALID_FILENAME, {
+      message: 'Invalid sitemap filename.',
+    })
   }
   if (filename.includes('/') || filename.includes('\\')) {
-    throw new Error('Invalid sitemap filename.')
+    throw new ConstellationError(400, ConstellationErrorCodes.INVALID_FILENAME, {
+      message: 'Invalid sitemap filename.',
+    })
   }
   if (filename.includes('..')) {
-    throw new Error('Invalid sitemap filename.')
+    throw new ConstellationError(400, ConstellationErrorCodes.INVALID_FILENAME, {
+      message: 'Invalid sitemap filename.',
+    })
   }
   return filename
 }

@@ -53,3 +53,5 @@ export {
   fromGzipFilename,
   toGzipFilename,
 } from './utils/Compression'
+export { ConstellationError } from './errors/ConstellationError'
+export { ConstellationErrorCodes, type ConstellationErrorCode } from './errors/codes'

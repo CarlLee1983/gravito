@@ -1,4 +1,6 @@
 import type { SitemapStorage, WriteStreamOptions } from '../types'
+import { ConstellationError } from '../errors/ConstellationError'
+import { ConstellationErrorCodes } from '../errors/codes'
 import { compressToBuffer, toGzipFilename } from '../utils/Compression'
 
 /**
@@ -105,9 +107,10 @@ export class S3SitemapStorage implements SitemapStorage {
 
       return this.s3Client
     } catch (error) {
-      throw new Error(
-        `Failed to load AWS SDK. Please install @aws-sdk/client-s3: ${error instanceof Error ? error.message : String(error)}`
-      )
+      throw new ConstellationError(503, ConstellationErrorCodes.STORAGE_READ_FAILED, {
+        message: `Failed to load AWS SDK. Please install @aws-sdk/client-s3: ${error instanceof Error ? error.message : String(error)}`,
+        cause: error,
+      })
     }
   }
 
@@ -462,7 +465,9 @@ export class S3SitemapStorage implements SitemapStorage {
    */
   async switchVersion(filename: string, version: string): Promise<void> {
     if (this.shadowMode !== 'versioned') {
-      throw new Error('Version switching is only available in versioned mode')
+      throw new ConstellationError(400, ConstellationErrorCodes.VERSION_UNAVAILABLE, {
+        message: 'Version switching is only available in versioned mode',
+      })
     }
 
     const s3 = await this.getS3Client()
@@ -472,7 +477,9 @@ export class S3SitemapStorage implements SitemapStorage {
     // Check if version exists
     const exists = await this.exists(versionedKey.replace(this.prefix ? `${this.prefix}/` : '', ''))
     if (!exists) {
-      throw new Error(`Version ${version} not found for ${filename}`)
+      throw new ConstellationError(404, ConstellationErrorCodes.VERSION_NOT_FOUND, {
+        message: `Version ${version} not found for ${filename}`,
+      })
     }
 
     // Copy versioned file to main location

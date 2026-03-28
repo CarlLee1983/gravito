@@ -5,6 +5,8 @@ import { LocalStore } from './stores/LocalStore'
 import { MemoryStore } from './stores/MemoryStore'
 import { NullStore } from './stores/NullStore'
 import type { OrbitNebulaOptions, StorageHooks } from './types'
+import { NebulaError } from './errors/NebulaError'
+import { NebulaErrorCodes } from './errors/codes'
 
 export * from './StorageManager'
 export * from './StorageRepository'
@@ -13,6 +15,8 @@ export * from './stores/LocalStore'
 export * from './stores/MemoryStore'
 export * from './stores/NullStore'
 export * from './types'
+export { NebulaError } from './errors/NebulaError'
+export { NebulaErrorCodes, type NebulaErrorCode } from './errors/codes'
 
 /** @deprecated Use StorageStore instead */
 export type StorageProvider = StorageStore
@@ -61,9 +65,10 @@ export class OrbitNebula implements GravitoOrbit {
     const config = this.options || core.config.get('storage')
 
     if (!config) {
-      throw new Error(
-        '[OrbitNebula] Configuration is required. Please provide options or set "storage" in core config.'
-      )
+      throw new NebulaError(500, NebulaErrorCodes.MANAGER_NOT_INITIALIZED, {
+        message:
+          '[OrbitNebula] Configuration is required. Please provide options or set "storage" in core config.',
+      })
     }
 
     const { exposeAs = 'storage' } = config
@@ -117,7 +122,9 @@ export class OrbitNebula implements GravitoOrbit {
    */
   getStorage(): StorageManager {
     if (!this.manager) {
-      throw new Error('[OrbitNebula] StorageManager not initialized. Call install() first.')
+      throw new NebulaError(500, NebulaErrorCodes.MANAGER_NOT_INITIALIZED, {
+        message: '[OrbitNebula] StorageManager not initialized. Call install() first.',
+      })
     }
     return this.manager
   }
@@ -151,7 +158,9 @@ export class OrbitNebula implements GravitoOrbit {
         }
       }
 
-      throw new Error(`[OrbitNebula] Driver not configured for disk: ${name}`)
+      throw new NebulaError(500, NebulaErrorCodes.DRIVER_NOT_CONFIGURED, {
+        message: `[OrbitNebula] Driver not configured for disk: ${name}`,
+      })
     }
   }
 }

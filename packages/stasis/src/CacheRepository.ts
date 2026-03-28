@@ -8,6 +8,8 @@ import { sleep } from './locks'
 import type { CacheStore } from './store'
 import { isTaggableStore } from './store'
 import { TaggedStore } from './tagged-store'
+import { StasisError } from './errors/StasisError'
+import { StasisErrorCodes } from './errors/codes'
 import { type CacheKey, type CacheTtl, type CompressionOptions, normalizeCacheKey } from './types'
 
 export type { CacheEventMode, CacheEvents }
@@ -790,7 +792,9 @@ export class CacheRepository {
    */
   tags(tags: readonly string[]) {
     if (!isTaggableStore(this.store)) {
-      throw new Error('This cache store does not support tags.')
+      throw new StasisError(501, StasisErrorCodes.TAGS_NOT_SUPPORTED, {
+        message: 'This cache store does not support tags.',
+      })
     }
     return new CacheRepository(new TaggedStore(this.store, tags), this.options)
   }

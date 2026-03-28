@@ -11,6 +11,8 @@ import { PredictiveStore } from './stores/PredictiveStore'
 import { RedisStore } from './stores/RedisStore'
 import { TieredStore } from './stores/TieredStore'
 import type { CacheTtl } from './types'
+import { StasisError } from './errors/StasisError'
+import { StasisErrorCodes } from './errors/codes'
 
 export * from './CacheManager'
 export * from './CacheRepository'
@@ -25,6 +27,8 @@ export * from './stores/NullStore'
 export * from './stores/PredictiveStore'
 export * from './stores/RedisStore'
 export * from './stores/TieredStore'
+export { StasisError } from './errors/StasisError'
+export { StasisErrorCodes, type StasisErrorCode } from './errors/codes'
 export * from './types'
 
 /**
@@ -327,7 +331,9 @@ function createStoreFactory(config: OrbitCacheOptions): (name: string) => CacheS
         return new NullStore()
       }
       if (hasExplicitStores) {
-        throw new Error(`Cache store '${name}' is not defined.`)
+        throw new StasisError(404, StasisErrorCodes.STORE_NOT_FOUND, {
+          message: `Cache store '${name}' is not defined.`,
+        })
       }
       return new MemoryStore()
     }
@@ -355,7 +361,9 @@ function createStoreFactory(config: OrbitCacheOptions): (name: string) => CacheS
     if (storeConfig.driver === 'provider') {
       const provider = storeConfig.provider
       if (!provider) {
-        throw new Error(`Cache store '${name}' is missing a provider.`)
+        throw new StasisError(500, StasisErrorCodes.STORE_MISSING_PROVIDER, {
+          message: `Cache store '${name}' is missing a provider.`,
+        })
       }
       return {
         get: (key) => provider.get(key),
@@ -412,7 +420,9 @@ function createStoreFactory(config: OrbitCacheOptions): (name: string) => CacheS
       })
     }
 
-    throw new Error(`Unsupported cache driver '${(storeConfig as { driver?: string }).driver}'.`)
+    throw new StasisError(400, StasisErrorCodes.UNSUPPORTED_DRIVER, {
+      message: `Unsupported cache driver '${(storeConfig as { driver?: string }).driver}'.`,
+    })
   }
 }
 
@@ -506,7 +516,9 @@ export class OrbitStasis implements GravitoOrbit {
 
   getCache(): CacheManager {
     if (!this.manager) {
-      throw new Error('OrbitCache not installed yet.')
+      throw new StasisError(500, StasisErrorCodes.ORBIT_NOT_INSTALLED, {
+        message: 'OrbitCache not installed yet.',
+      })
     }
     return this.manager
   }
