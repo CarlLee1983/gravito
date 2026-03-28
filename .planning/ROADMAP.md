@@ -18,7 +18,7 @@ status: approved
 
 - [x] **Phase 16: Core Error Model Foundation** — Establish unified GravitoException hierarchy, ErrorCode registry, and contract test scaffolding (completed 2026-03-28)
 - [x] **Phase 17: Resilience Infrastructure** — Build withRetry, consolidate CircuitBreaker, implement withResilience composition API (completed 2026-03-28)
-- [ ] **Phase 18: Foundation Orbit Migration** — Migrate atlas, plasma, photon, signal to new error model with resilience wiring
+- [x] **Phase 18: Foundation Orbit Migration** — Migrate atlas, plasma, photon, signal to new error model with resilience wiring (completed 2026-03-28)
 - [ ] **Phase 19: Secondary Orbit Migration** — Migrate remaining ~40 Orbit packages in batches; register shutdown handlers and health checks
 - [ ] **Phase 20: Integration Verification & Graceful Degradation** — Satellite canary tests, OrbitDegradationManager, version bumps, migration guide
 
@@ -68,14 +68,14 @@ Plans:
   3. atlas and plasma both have a `ResiliencePolicy` configured with appropriate defaults (atlas: retry 3x + CB; plasma: CB only, fast-fail)
   4. atlas, plasma, and signal register `core:shutdown` handlers with a configurable deadline; the process does not hang indefinitely on graceful shutdown
   5. Contract tests for atlas and plasma assert on `.code` and `.status` fields and pass before and after migration
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans complete
 Plans:
 - [x] 18-01-PLAN.md — Core prerequisites: DatabaseException + CacheException abstract classes
 - [x] 18-02-PLAN.md — Plasma migration: RedisError -> CacheException, CB wiring, shutdown deadline
 - [x] 18-03-PLAN.md — Signal migration: MailTransportError -> InfrastructureException, withRetry, shutdown
 - [x] 18-04-PLAN.md — Photon CB swap: internal CB replaced with @gravito/resilience, Retry-After header
 - [x] 18-05-PLAN.md — Atlas migration: error hierarchy, ORM errors, shutdown handler, resilience wiring
-- [ ] 18-06-PLAN.md — Global 10s shutdown timeout in PlanetCore (D-10)
+- [x] 18-06-PLAN.md — Global 10s shutdown timeout in PlanetCore (D-10)
 
 ### Phase 19: Secondary Orbit Migration
 **Goal**: All remaining Orbit packages throw from the GravitoException hierarchy, register health checks, and complete graceful shutdown wiring
@@ -107,7 +107,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 16. Core Error Model Foundation | 3/3 | Complete    | 2026-03-28 |
 | 17. Resilience Infrastructure | 2/3 | Complete    | 2026-03-28 |
-| 18. Foundation Orbit Migration | 5/6 | In Progress|  |
+| 18. Foundation Orbit Migration | 6/6 | Complete   | 2026-03-28 |
 | 19. Secondary Orbit Migration | 0/? | Not started | - |
 | 20. Integration Verification & Graceful Degradation | 0/? | Not started | - |
 
