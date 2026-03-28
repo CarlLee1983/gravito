@@ -168,10 +168,10 @@ export class HasPersistence {
       if (Array.isArray(result) && result.length > 0) {
         const pk = result[0]
         if (typeof pk === 'object' && pk !== null) {
-          Object.assign((this as any)._attributes, pk)
+          ;(this as any)._attributes = { ...(this as any)._attributes, ...pk }
           lastId = (pk as any)[modelCtor.primaryKey]
         } else {
-          ;(this as any)._attributes[modelCtor.primaryKey] = pk
+          ;(this as any)._attributes = { ...(this as any)._attributes, [modelCtor.primaryKey]: pk }
           lastId = pk
         }
       } else {
@@ -195,7 +195,10 @@ export class HasPersistence {
         }
 
         if (lastId) {
-          ;(this as any)._attributes[modelCtor.primaryKey] = lastId
+          ;(this as any)._attributes = {
+            ...(this as any)._attributes,
+            [modelCtor.primaryKey]: lastId,
+          }
         }
       }
 
@@ -229,7 +232,7 @@ export class HasPersistence {
         .first()
 
       if (fullRecord) {
-        Object.assign((this as any)._attributes, fullRecord)
+        ;(this as any)._attributes = { ...(this as any)._attributes, ...fullRecord }
       }
 
       return this
@@ -568,7 +571,7 @@ export class HasPersistence {
       if (_attributes) {
         // row is a Model instance, we need to extract its _attributes
         const rowAttributes = (row as any)._attributes || row
-        Object.assign(_attributes, rowAttributes)
+        ;(this as any)._attributes = { ..._attributes, ...rowAttributes }
       }
 
       // Sync dirty tracker
