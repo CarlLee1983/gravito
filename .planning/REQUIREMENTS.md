@@ -9,9 +9,9 @@ Requirements for v2.0.0 major release. Each maps to roadmap phases.
 
 ### Error Model
 
-- [ ] **ERRM-01**: 所有 Orbit 包的 Error 類別繼承 GravitoException，消除 bare `throw new Error()`
+- [x] **ERRM-01**: 所有 Orbit 包的 Error 類別繼承 GravitoException，消除 bare `throw new Error()`
 - [ ] **ERRM-02**: 每個 Orbit 包定義結構化錯誤碼命名空間（如 `db.connection_failed`、`redis.timeout`）
-- [ ] **ERRM-03**: 所有錯誤正確傳播 cause 欄位，保留完整錯誤鏈
+- [x] **ERRM-03**: 所有錯誤正確傳播 cause 欄位，保留完整錯誤鏈
 
 ### Resilience Primitives
 
@@ -61,9 +61,9 @@ Deferred to next release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ERRM-01 | Phase 16 | Pending |
+| ERRM-01 | Phase 16 | Complete |
 | ERRM-02 | Phase 16 | Pending |
-| ERRM-03 | Phase 16 | Pending |
+| ERRM-03 | Phase 16 | Complete |
 | RESL-01 | Phase 17 | Pending |
 | RESL-02 | Phase 17 | Pending |
 | RESL-03 | Phase 17 | Pending |

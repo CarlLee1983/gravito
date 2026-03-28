@@ -1,8 +1,14 @@
 ---
+gsd_state_version: 1.0
 milestone: v2.0.0
-created: 2026-03-28
-last_updated: 2026-03-28
-status: active
+milestone_name: milestone
+status: unknown
+last_updated: "2026-03-28T11:53:37.782Z"
+progress:
+  total_phases: 5
+  completed_phases: 0
+  total_plans: 3
+  completed_plans: 2
 ---
 
 # STATE: Gravito-Core v2.0.0
@@ -17,19 +23,8 @@ status: active
 
 ## Current Position
 
-**Phase:** 16 — Core Error Model Foundation
-**Plan:** Not started
-**Status:** Planning complete, ready to execute
-
-**Progress:**
-```
-[Phase 16] [Phase 17] [Phase 18] [Phase 19] [Phase 20]
-[  TODO  ] [  TODO  ] [  TODO  ] [  TODO  ] [  TODO  ]
-```
-
-**Overall:** 0 / 5 phases complete
-
----
+Phase: 16 (core-error-model-foundation) — EXECUTING
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -43,6 +38,8 @@ status: active
 | Bare `throw new Error()` in Orbits | unknown | 0 | unknown |
 
 ---
+| Phase 16 P01 | 8 | 2 tasks | 10 files |
+| Phase 16-core-error-model-foundation P02 | 7 | 2 tasks | 9 files |
 
 ## Accumulated Context
 
