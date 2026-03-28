@@ -15,7 +15,7 @@ Requirements for v2.0.0 major release. Each maps to roadmap phases.
 
 ### Resilience Primitives
 
-- [ ] **RESL-01**: 通用 `withRetry<T>()` utility 支援指數退避、jitter、Retryable/Terminal 分類
+- [x] **RESL-01**: 通用 `withRetry<T>()` utility 支援指數退避、jitter、Retryable/Terminal 分類
 - [ ] **RESL-02**: 合併 3 個重複的 CircuitBreaker 實作為統一的 `@gravito/resilience` CB
 - [ ] **RESL-03**: `withResilience()` 組合 API 正確包裝 retry + CB + timeout
 
@@ -64,7 +64,7 @@ Deferred to next release. Tracked but not in current roadmap.
 | ERRM-01 | Phase 16 | Complete |
 | ERRM-02 | Phase 16 | Complete |
 | ERRM-03 | Phase 16 | Complete |
-| RESL-01 | Phase 17 | Pending |
+| RESL-01 | Phase 17 | Complete |
 | RESL-02 | Phase 17 | Pending |
 | RESL-03 | Phase 17 | Pending |
 | INTG-01 | Phase 18 | Pending |

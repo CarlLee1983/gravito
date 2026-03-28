@@ -52,9 +52,9 @@ Plans:
   3. All CircuitBreaker usage in the codebase points to a single `@gravito/resilience` implementation; `echo`'s duplicate CB is removed or re-exports from `@gravito/resilience`
   4. `withResilience(fn, policy)` correctly applies retry-inside-circuit-breaker order, throwing `CircuitOpenException` when the breaker is open
   5. In test environments (`NODE_ENV=test`), degraded state throws rather than returning silent fallback values
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 Plans:
-- [ ] 17-01-PLAN.md — Install cockatiel, create exception classes, implement withRetry with TDD
+- [x] 17-01-PLAN.md — Install cockatiel, create exception classes, implement withRetry with TDD
 - [ ] 17-02-PLAN.md — Consolidate echo and core/events CircuitBreaker duplicates
 - [ ] 17-03-PLAN.md — Implement withResilience composition API + update barrel exports
 
@@ -99,7 +99,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 16. Core Error Model Foundation | 3/3 | Complete    | 2026-03-28 |
-| 17. Resilience Infrastructure | 0/3 | Not started | - |
+| 17. Resilience Infrastructure | 1/3 | In Progress|  |
 | 18. Foundation Orbit Migration | 0/? | Not started | - |
 | 19. Secondary Orbit Migration | 0/? | Not started | - |
 | 20. Integration Verification & Graceful Degradation | 0/? | Not started | - |
