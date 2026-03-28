@@ -1,5 +1,6 @@
 import { EventEmitter } from 'node:events'
 import { RedisError } from '../errors'
+import { CacheErrorCodes } from '../errors/codes'
 import type {
   PipelineResult,
   RedisClientContract,
@@ -235,7 +236,7 @@ export class BunRedisClient implements RedisClientContract {
       return error
     }
     const message = error instanceof Error ? error.message : String(error)
-    return new RedisError(message, command, error)
+    return new RedisError(message, CacheErrorCodes.COMMAND_FAILED, command, error)
   }
 
   // ============================================================================
