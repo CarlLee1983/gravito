@@ -1,3 +1,4 @@
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { GroupRedisClient } from '../drivers/RedisDriver'
 
 /**
@@ -130,7 +131,10 @@ export class DistributedLock {
    */
   async acquire(key: string, options: LockOptions): Promise<boolean> {
     if (typeof this.client.set !== 'function') {
-      throw new Error('[DistributedLock] Redis client does not support SET command')
+      throw new StreamError(500, StreamErrorCodes.REDIS_SET_NOT_SUPPORTED, {
+        message: '[DistributedLock] Redis client does not support SET command',
+        retryable: false,
+      })
     }
 
     const ttlSeconds = Math.ceil(options.ttl / 1000)
@@ -184,7 +188,10 @@ export class DistributedLock {
     this.stopRefresh()
 
     if (typeof this.client.eval !== 'function') {
-      throw new Error('[DistributedLock] Redis client does not support EVAL command')
+      throw new StreamError(500, StreamErrorCodes.REDIS_EVAL_NOT_SUPPORTED, {
+        message: '[DistributedLock] Redis client does not support EVAL command',
+        retryable: false,
+      })
     }
 
     try {

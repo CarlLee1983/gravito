@@ -1,3 +1,4 @@
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { JobPushOptions, QueueStats, SerializedJob, TopicOptions } from '../types'
 import type { QueueDriver } from './QueueDriver'
 
@@ -151,7 +152,10 @@ export class BullMQDriver implements QueueDriver {
     this.debug = config.debug ?? false
 
     if (!this.queue) {
-      throw new Error('[BullMQDriver] Bull Queue instance is required.')
+      throw new StreamError(500, StreamErrorCodes.BULLMQ_QUEUE_REQUIRED, {
+        message: '[BullMQDriver] Bull Queue instance is required.',
+        retryable: false,
+      })
     }
   }
 

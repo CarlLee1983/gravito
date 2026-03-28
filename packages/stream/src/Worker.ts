@@ -1,3 +1,4 @@
+import { StreamError, StreamErrorCodes } from './errors'
 import type { Job } from './Job'
 import type { SerializedJob } from './types'
 import { SandboxedWorker, type SandboxedWorkerConfig } from './workers/SandboxedWorker'
@@ -170,7 +171,10 @@ export class Worker {
    */
   private async processSandboxed(job: Job): Promise<void> {
     if (!this.sandboxedWorker) {
-      throw new Error('Sandboxed worker not initialized')
+      throw new StreamError(500, StreamErrorCodes.WORKER_NOT_INITIALIZED, {
+        message: 'Sandboxed worker not initialized',
+        retryable: false,
+      })
     }
 
     // Serialize Job to SerializedJob
@@ -265,7 +269,10 @@ function serializeJobMethod(job: Job, methodName: 'handle'): string {
     return normalizeMethodSource(instanceMethod.toString(), methodName)
   }
 
-  throw new Error(`Job must implement ${methodName}()`)
+  throw new StreamError(500, StreamErrorCodes.WORKER_INVALID_METHOD, {
+    message: `Job must implement ${methodName}()`,
+    retryable: false,
+  })
 }
 
 function normalizeMethodSource(source: string, methodName: string): string {

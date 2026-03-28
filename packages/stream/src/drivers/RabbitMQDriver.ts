@@ -1,3 +1,4 @@
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { SerializedJob } from '../types'
 import { prepareJobForTransport } from './prepareJobForTransport'
 import type { QueueDriver } from './QueueDriver'
@@ -86,9 +87,11 @@ export class RabbitMQDriver implements QueueDriver {
     this.exchangeType = config.exchangeType ?? 'fanout'
 
     if (!this.connection) {
-      throw new Error(
-        '[RabbitMQDriver] RabbitMQ connection is required. Please provide a connection from amqplib.'
-      )
+      throw new StreamError(500, StreamErrorCodes.CONFIGURATION_ERROR, {
+        message:
+          '[RabbitMQDriver] RabbitMQ connection is required. Please provide a connection from amqplib.',
+        retryable: false,
+      })
     }
   }
 

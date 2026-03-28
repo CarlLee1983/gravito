@@ -1,5 +1,6 @@
 import type { CborAccelerator, NativeAcceleratorStatus } from '@gravito/core/ffi'
 import { NativeAccelerator } from '@gravito/core/ffi'
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { Job } from '../Job'
 import type { SerializedJob } from '../types'
 import type { JobSerializer } from './JobSerializer'
@@ -99,9 +100,11 @@ export class CborNativeSerializer implements JobSerializer {
     try {
       properties = this.accelerator.decode(bytes)
     } catch (err) {
-      throw new Error(
-        `Failed to decode CBOR data: ${err instanceof Error ? err.message : String(err)}`
-      )
+      throw new StreamError(500, StreamErrorCodes.SERIALIZATION_DECODE_ERROR, {
+        message: `Failed to decode CBOR data: ${err instanceof Error ? err.message : String(err)}`,
+        retryable: false,
+        cause: err instanceof Error ? err : new Error(String(err)),
+      })
     }
 
     const job: JobState = Object.create({})
@@ -151,9 +154,11 @@ export class CborNativeSerializer implements JobSerializer {
       try {
         return new Uint8Array(Buffer.from(data, 'base64'))
       } catch (err) {
-        throw new Error(
-          `Failed to decode Base64 data: ${err instanceof Error ? err.message : String(err)}`
-        )
+        throw new StreamError(500, StreamErrorCodes.SERIALIZATION_DECODE_ERROR, {
+          message: `Failed to decode Base64 data: ${err instanceof Error ? err.message : String(err)}`,
+          retryable: false,
+          cause: err instanceof Error ? err : new Error(String(err)),
+        })
       }
     }
 

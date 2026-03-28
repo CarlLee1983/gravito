@@ -1,6 +1,7 @@
 import path from 'node:path'
 import * as grpc from '@grpc/grpc-js'
 import * as protoLoader from '@grpc/proto-loader'
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { GrpcDriverConfig, JobPushOptions, QueueStats, SerializedJob } from '../types'
 import type { QueueDriver } from './QueueDriver'
 
@@ -117,13 +118,19 @@ export class GrpcDriver implements QueueDriver {
     const grpcEntries = grpcObject as Record<string, grpc.GrpcObject | grpc.ProtobufTypeDefinition>
     const packageObject = grpcEntries[packageName]
     if (!packageObject || typeof packageObject !== 'object') {
-      throw new Error(`Package '${packageName}' not found in proto definition at ${protoPath}`)
+      throw new StreamError(500, StreamErrorCodes.GRPC_PACKAGE_NOT_FOUND, {
+        message: `Package '${packageName}' not found in proto definition at ${protoPath}`,
+        retryable: false,
+      })
     }
 
     const serviceEntries = packageObject as Record<string, unknown>
     const Service = serviceEntries[serviceName]
     if (!Service) {
-      throw new Error(`Service '${serviceName}' not found in package '${packageName}'`)
+      throw new StreamError(500, StreamErrorCodes.GRPC_SERVICE_NOT_FOUND, {
+        message: `Service '${serviceName}' not found in package '${packageName}'`,
+        retryable: false,
+      })
     }
 
     const credentials = this.getCredentials(config)

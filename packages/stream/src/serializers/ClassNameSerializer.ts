@@ -1,3 +1,4 @@
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { Job } from '../Job'
 import type { SerializedJob } from '../types'
 import type { JobSerializer } from './JobSerializer'
@@ -96,18 +97,25 @@ export class ClassNameSerializer implements JobSerializer {
    */
   deserialize(serialized: SerializedJob): Job {
     if (serialized.type !== 'class') {
-      throw new Error('Invalid serialization type: expected "class"')
+      throw new StreamError(500, StreamErrorCodes.SERIALIZATION_INVALID_TYPE, {
+        message: 'Invalid serialization type: expected "class"',
+        retryable: false,
+      })
     }
 
     if (!serialized.className) {
-      throw new Error('Missing className in serialized job')
+      throw new StreamError(500, StreamErrorCodes.SERIALIZATION_MISSING_CLASS_NAME, {
+        message: 'Missing className in serialized job',
+        retryable: false,
+      })
     }
 
     const JobClass = this.jobClasses.get(serialized.className)
     if (!JobClass) {
-      throw new Error(
-        `Job class "${serialized.className}" is not registered. Please register it using serializer.register().`
-      )
+      throw new StreamError(500, StreamErrorCodes.SERIALIZATION_CLASS_NOT_REGISTERED, {
+        message: `Job class "${serialized.className}" is not registered. Please register it using serializer.register().`,
+        retryable: false,
+      })
     }
 
     const dataStr =

@@ -1,3 +1,5 @@
+import { StreamError, StreamErrorCodes } from '../errors'
+
 /**
  * Promise-based Semaphore，用於控制並發執行數量。
  *
@@ -24,7 +26,10 @@ export class ConcurrencyGate {
 
   constructor(private readonly limit: number) {
     if (limit < 0) {
-      throw new Error(`ConcurrencyGate limit must be >= 0, got ${limit}`)
+      throw new StreamError(500, StreamErrorCodes.CONCURRENCY_CONFIG_ERROR, {
+        message: `ConcurrencyGate limit must be >= 0, got ${limit}`,
+        retryable: false,
+      })
     }
   }
 

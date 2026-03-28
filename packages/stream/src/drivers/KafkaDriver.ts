@@ -1,3 +1,4 @@
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { SerializedJob, TopicOptions } from '../types'
 import type { QueueDriver } from './QueueDriver'
 
@@ -88,7 +89,10 @@ export class KafkaDriver implements QueueDriver {
     this.consumerGroupId = config.consumerGroupId ?? 'gravito-workers'
 
     if (!this.client) {
-      throw new Error('[KafkaDriver] Kafka client is required. Please install kafkajs package.')
+      throw new StreamError(500, StreamErrorCodes.KAFKA_CLIENT_REQUIRED, {
+        message: '[KafkaDriver] Kafka client is required. Please install kafkajs package.',
+        retryable: false,
+      })
     }
   }
 
@@ -153,7 +157,10 @@ export class KafkaDriver implements QueueDriver {
    */
   async pop(_queue: string): Promise<SerializedJob | null> {
     // Kafka is push-based; use subscribe() instead.
-    throw new Error('[KafkaDriver] Kafka uses push-based model. Use subscribe() instead of pop().')
+    throw new StreamError(500, StreamErrorCodes.KAFKA_PUSH_MODEL_ONLY, {
+      message: '[KafkaDriver] Kafka uses push-based model. Use subscribe() instead of pop().',
+      retryable: false,
+    })
   }
 
   /**

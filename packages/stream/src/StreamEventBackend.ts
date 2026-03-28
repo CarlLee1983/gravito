@@ -1,5 +1,6 @@
 import type { EventBackend, EventTask } from '@gravito/core'
 import type { EventOptions } from '@gravito/core/events/EventOptions'
+import { StreamError, StreamErrorCodes } from './errors'
 import type { QueueManager } from './QueueManager'
 import { SystemEventJob } from './SystemEventJob'
 import type { JobPushOptions } from './types'
@@ -129,7 +130,10 @@ export class StreamEventBackend implements EventBackend {
     if (this.config.circuitBreakerIntegration && this.config.getCircuitBreaker) {
       const breaker = this.config.getCircuitBreaker(task.hook)
       if (breaker?.getState?.() === 'OPEN') {
-        throw new Error(`Circuit breaker OPEN for event: ${task.hook}`)
+        throw new StreamError(503, StreamErrorCodes.CIRCUIT_BREAKER_OPEN, {
+          message: `Circuit breaker OPEN for event: ${task.hook}`,
+          retryable: true,
+        })
       }
     }
 

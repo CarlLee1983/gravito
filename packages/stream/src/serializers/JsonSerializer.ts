@@ -1,3 +1,4 @@
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { Job } from '../Job'
 import type { SerializedJob } from '../types'
 import type { JobSerializer } from './JobSerializer'
@@ -55,7 +56,10 @@ export class JsonSerializer implements JobSerializer {
    */
   deserialize(serialized: SerializedJob): Job {
     if (serialized.type !== 'json') {
-      throw new Error('Invalid serialization type: expected "json"')
+      throw new StreamError(500, StreamErrorCodes.SERIALIZATION_INVALID_TYPE, {
+        message: 'Invalid serialization type: expected "json"',
+        retryable: false,
+      })
     }
 
     const dataStr =

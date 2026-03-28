@@ -1,3 +1,4 @@
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { Job } from '../Job'
 import type { QueueManager } from '../QueueManager'
 import type { ConsumerStrategy } from './ConsumerStrategy'
@@ -39,7 +40,10 @@ export class PollingStrategy implements ConsumerStrategy {
 
   async start(): Promise<void> {
     if (this.running) {
-      throw new Error('PollingStrategy is already running')
+      throw new StreamError(409, StreamErrorCodes.CONSUMER_ALREADY_RUNNING, {
+        message: 'PollingStrategy is already running',
+        retryable: false,
+      })
     }
     this.running = true
     this.options.log('[PollingStrategy] Started')

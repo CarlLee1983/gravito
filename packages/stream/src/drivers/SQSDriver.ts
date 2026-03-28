@@ -1,3 +1,4 @@
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { SerializedJob } from '../types'
 import type { QueueDriver } from './QueueDriver'
 
@@ -66,9 +67,10 @@ export class SQSDriver implements QueueDriver {
     this.waitTimeSeconds = config.waitTimeSeconds ?? 20
 
     if (!this.client) {
-      throw new Error(
-        '[SQSDriver] SQS client is required. Please install @aws-sdk/client-sqs package.'
-      )
+      throw new StreamError(500, StreamErrorCodes.CONFIGURATION_ERROR, {
+        message: '[SQSDriver] SQS client is required. Please install @aws-sdk/client-sqs package.',
+        retryable: false,
+      })
     }
   }
 
@@ -311,7 +313,10 @@ export class SQSDriver implements QueueDriver {
    */
   async acknowledge(_messageId: string): Promise<void> {
     // SQS acknowledgements require a ReceiptHandle.
-    throw new Error('[SQSDriver] Use deleteMessage() with ReceiptHandle instead of acknowledge().')
+    throw new StreamError(500, StreamErrorCodes.SQS_USE_DELETE_MESSAGE, {
+      message: '[SQSDriver] Use deleteMessage() with ReceiptHandle instead of acknowledge().',
+      retryable: false,
+    })
   }
 
   /**

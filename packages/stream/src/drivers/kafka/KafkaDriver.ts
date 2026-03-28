@@ -1,3 +1,4 @@
+import { StreamError, StreamErrorCodes } from '../../errors'
 import type { JobPushOptions, QueueStats, SerializedJob, TopicOptions } from '../../types'
 import type { QueueDriver } from '../QueueDriver'
 import {
@@ -97,7 +98,10 @@ export class KafkaDriver implements QueueDriver {
   // 6B-1: Constructor & Config (~15 min)
   constructor(config: KafkaDriverFullConfig) {
     if (!config.client) {
-      throw new Error('KafkaDriver: client factory is required')
+      throw new StreamError(500, StreamErrorCodes.KAFKA_CLIENT_REQUIRED, {
+        message: 'KafkaDriver: client factory is required',
+        retryable: false,
+      })
     }
 
     this.config = {

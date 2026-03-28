@@ -1,3 +1,4 @@
+import { StreamError, StreamErrorCodes } from '../../errors'
 import type { BackpressureConfig } from './types'
 
 /**
@@ -26,7 +27,10 @@ export class BackpressureController {
     this.maxInFlight = config.maxInFlight ?? 10
 
     if (this.highWatermark <= this.lowWatermark) {
-      throw new Error('highWatermark must be greater than lowWatermark')
+      throw new StreamError(500, StreamErrorCodes.BACKPRESSURE_CONFIG_ERROR, {
+        message: 'highWatermark must be greater than lowWatermark',
+        retryable: false,
+      })
     }
   }
 

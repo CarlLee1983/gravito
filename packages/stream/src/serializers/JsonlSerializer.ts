@@ -1,3 +1,4 @@
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { Job } from '../Job'
 import type { SerializedJob } from '../types'
 import type { JobSerializer } from './JobSerializer'
@@ -133,7 +134,10 @@ export class JsonlSerializer implements JobSerializer {
    */
   deserialize(serialized: SerializedJob): Job {
     if (serialized.type !== 'jsonl') {
-      throw new Error(`Invalid serialization type: expected "jsonl", got "${serialized.type}"`)
+      throw new StreamError(500, StreamErrorCodes.SERIALIZATION_INVALID_TYPE, {
+        message: `Invalid serialization type: expected "jsonl", got "${serialized.type}"`,
+        retryable: false,
+      })
     }
 
     const dataStr =
@@ -145,9 +149,11 @@ export class JsonlSerializer implements JobSerializer {
     try {
       properties = JSON.parse(dataStr)
     } catch (err) {
-      throw new Error(
-        `JsonlSerializer: failed to parse JSON data: ${err instanceof Error ? err.message : String(err)}`
-      )
+      throw new StreamError(500, StreamErrorCodes.SERIALIZATION_PARSE_ERROR, {
+        message: `JsonlSerializer: failed to parse JSON data: ${err instanceof Error ? err.message : String(err)}`,
+        retryable: false,
+        cause: err instanceof Error ? err : new Error(String(err)),
+      })
     }
 
     const job = Object.create({}) as JobStateRecord
@@ -191,9 +197,11 @@ export class JsonlSerializer implements JobSerializer {
           try {
             return JSON.parse(line) as SerializedJob
           } catch (err) {
-            throw new Error(
-              `JsonlSerializer: failed to parse JSONL line: ${err instanceof Error ? err.message : String(err)}`
-            )
+            throw new StreamError(500, StreamErrorCodes.SERIALIZATION_PARSE_ERROR, {
+              message: `JsonlSerializer: failed to parse JSONL line: ${err instanceof Error ? err.message : String(err)}`,
+              retryable: false,
+              cause: err instanceof Error ? err : new Error(String(err)),
+            })
           }
         })
     }
@@ -224,7 +232,10 @@ export class JsonlSerializer implements JobSerializer {
       // 使用 Bun 原生 JSONL 增量解析器
       const result = (globalThis.Bun.JSONL as unknown as BunJsonlApi).parseChunk(chunk)
       if (result.error) {
-        throw new Error(`JsonlSerializer: failed to parse JSONL chunk: ${result.error.message}`)
+        throw new StreamError(500, StreamErrorCodes.SERIALIZATION_PARSE_ERROR, {
+          message: `JsonlSerializer: failed to parse JSONL chunk: ${result.error.message}`,
+          retryable: false,
+        })
       }
       for (const serialized of result.values as SerializedJob[]) {
         yield this.deserialize(serialized)
@@ -241,9 +252,11 @@ export class JsonlSerializer implements JobSerializer {
         try {
           serialized = JSON.parse(trimmed) as SerializedJob
         } catch (err) {
-          throw new Error(
-            `JsonlSerializer: failed to parse JSONL chunk line: ${err instanceof Error ? err.message : String(err)}`
-          )
+          throw new StreamError(500, StreamErrorCodes.SERIALIZATION_PARSE_ERROR, {
+            message: `JsonlSerializer: failed to parse JSONL chunk line: ${err instanceof Error ? err.message : String(err)}`,
+            retryable: false,
+            cause: err instanceof Error ? err : new Error(String(err)),
+          })
         }
         yield this.deserialize(serialized)
       }

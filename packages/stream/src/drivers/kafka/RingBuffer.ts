@@ -1,3 +1,5 @@
+import { StreamError, StreamErrorCodes } from '../../errors'
+
 /**
  * 固定容量環形緩衝區，提供 O(1) push 和 shift 操作。
  *
@@ -17,7 +19,10 @@ export class RingBuffer<T> {
 
   constructor(capacity: number) {
     if (capacity <= 0) {
-      throw new Error('RingBuffer capacity must be positive')
+      throw new StreamError(500, StreamErrorCodes.RING_BUFFER_CONFIG_ERROR, {
+        message: 'RingBuffer capacity must be positive',
+        retryable: false,
+      })
     }
     this.capacity = capacity
     this.items = new Array<T | undefined>(capacity)

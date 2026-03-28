@@ -12,6 +12,7 @@
  * @internal
  */
 
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { SerializedJob } from '../types'
 import { decodeJobFromTransfer } from './BinaryWorkerProtocol'
 
@@ -124,12 +125,18 @@ async function deserializeJob(serialized: SerializedJob): Promise<unknown> {
 
   if (serialized.type === 'class') {
     if (!serialized.className) {
-      throw new Error('Class serialization requires className')
+      throw new StreamError(500, StreamErrorCodes.SERIALIZATION_MISSING_CLASS_NAME, {
+        message: 'Class serialization requires className',
+        retryable: false,
+      })
     }
 
     const JobClass = jobClasses.get(serialized.className)
     if (!JobClass) {
-      throw new Error(`Job class "${serialized.className}" not registered in worker thread`)
+      throw new StreamError(500, StreamErrorCodes.SERIALIZATION_CLASS_NOT_REGISTERED, {
+        message: `Job class "${serialized.className}" not registered in worker thread`,
+        retryable: false,
+      })
     }
 
     const data = JSON.parse(serialized.data as string)
@@ -154,7 +161,10 @@ async function deserializeJob(serialized: SerializedJob): Promise<unknown> {
     return msgpack.decode(bytes)
   }
 
-  throw new Error(`Unknown serialization type: ${serialized.type}`)
+  throw new StreamError(500, StreamErrorCodes.SERIALIZATION_UNKNOWN_TYPE, {
+    message: `Unknown serialization type: ${serialized.type}`,
+    retryable: false,
+  })
 }
 
 function restoreSandboxedJob(value: unknown): unknown {
@@ -174,7 +184,10 @@ function restoreSandboxedJob(value: unknown): unknown {
 function compileMethod(source: string): (...args: unknown[]) => unknown {
   const fn = new Function(`return (${source})`)()
   if (typeof fn !== 'function') {
-    throw new Error('Failed to restore sandboxed job handler')
+    throw new StreamError(500, StreamErrorCodes.SERIALIZATION_RESTORE_FAILED, {
+      message: 'Failed to restore sandboxed job handler',
+      retryable: false,
+    })
   }
   return fn as (...args: unknown[]) => unknown
 }
@@ -195,7 +208,10 @@ function isExecutableJob(value: unknown): value is ExecutableJob {
 function parseClassRegistry(serialized: string): ClassRegistry {
   const parsed = JSON.parse(serialized)
   if (!parsed || typeof parsed !== 'object') {
-    throw new Error('Invalid class registry payload')
+    throw new StreamError(500, StreamErrorCodes.SERIALIZATION_INVALID_REGISTRY, {
+      message: 'Invalid class registry payload',
+      retryable: false,
+    })
   }
 
   return Object.fromEntries(
@@ -215,7 +231,10 @@ async function executeJob(serialized: SerializedJob): Promise<void> {
   const job = await deserializeJob(serialized)
 
   if (!isExecutableJob(job)) {
-    throw new Error('Job must have a handle() method')
+    throw new StreamError(500, StreamErrorCodes.SERIALIZATION_MISSING_HANDLE, {
+      message: 'Job must have a handle() method',
+      retryable: false,
+    })
   }
 
   await job.handle()

@@ -1,4 +1,7 @@
 import type { ErrorCategory } from './types'
+import { isRetryableCategory } from '../../errors'
+
+export { isRetryableCategory }
 
 /**
  * 根據錯誤訊息與型別分類 Kafka 操作錯誤。

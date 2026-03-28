@@ -1,5 +1,6 @@
 import { EventEmitter } from 'node:events'
 import type { ConsumerOptions } from '../Consumer'
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { QueueManager } from '../QueueManager'
 import { Worker } from '../Worker'
 import { ConcurrencyGate } from './ConcurrencyGate'
@@ -69,7 +70,10 @@ export class StreamingConsumer extends EventEmitter {
    */
   async start(): Promise<void> {
     if (this.running) {
-      throw new Error('Consumer is already running')
+      throw new StreamError(409, StreamErrorCodes.CONSUMER_ALREADY_RUNNING, {
+        message: 'Consumer is already running',
+        retryable: false,
+      })
     }
 
     this.running = true

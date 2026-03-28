@@ -1,5 +1,6 @@
 import { CronExpressionParser } from 'cron-parser'
 import type { GroupRedisClient } from './drivers/RedisDriver'
+import { StreamError, StreamErrorCodes } from './errors'
 import type { Job } from './Job'
 import { DistributedLock } from './locks/DistributedLock'
 import type { QueueManager } from './QueueManager'
@@ -186,7 +187,10 @@ export class Scheduler {
   private get client(): GroupRedisClient {
     const driver = this.manager.getDriver(this.manager.getDefaultConnection())
     if (!driver || !('client' in driver)) {
-      throw new Error('[Scheduler] Driver does not support Redis client access')
+      throw new StreamError(500, StreamErrorCodes.REDIS_CLIENT_ACCESS_NOT_SUPPORTED, {
+        message: '[Scheduler] Driver does not support Redis client access',
+        retryable: false,
+      })
     }
     return (driver as { client: GroupRedisClient }).client
   }
@@ -225,7 +229,10 @@ export class Scheduler {
 
     const client = this.client
     if (typeof client.pipeline !== 'function') {
-      throw new Error('[Scheduler] Redis client does not support pipeline')
+      throw new StreamError(500, StreamErrorCodes.REDIS_PIPELINE_NOT_SUPPORTED, {
+        message: '[Scheduler] Redis client does not support pipeline',
+        retryable: false,
+      })
     }
 
     const pipe = client.pipeline()
@@ -249,7 +256,10 @@ export class Scheduler {
   async remove(id: string): Promise<void> {
     const client = this.client
     if (typeof client.pipeline !== 'function') {
-      throw new Error('[Scheduler] Redis client does not support pipeline')
+      throw new StreamError(500, StreamErrorCodes.REDIS_PIPELINE_NOT_SUPPORTED, {
+        message: '[Scheduler] Redis client does not support pipeline',
+        retryable: false,
+      })
     }
 
     const pipe = client.pipeline()
@@ -266,7 +276,10 @@ export class Scheduler {
   async list(): Promise<ScheduledJobConfig[]> {
     const client = this.client
     if (typeof client.zrange !== 'function') {
-      throw new Error('[Scheduler] Redis client does not support zrange')
+      throw new StreamError(500, StreamErrorCodes.REDIS_ZRANGE_NOT_SUPPORTED, {
+        message: '[Scheduler] Redis client does not support zrange',
+        retryable: false,
+      })
     }
 
     const ids = await client.zrange(`${this.prefix}schedules`, 0, -1)
@@ -399,7 +412,10 @@ export class Scheduler {
   async tick(): Promise<number> {
     const client = this.client
     if (typeof client.zrangebyscore !== 'function') {
-      throw new Error('[Scheduler] Redis client does not support zrangebyscore')
+      throw new StreamError(500, StreamErrorCodes.REDIS_ZRANGEBYSCORE_NOT_SUPPORTED, {
+        message: '[Scheduler] Redis client does not support zrangebyscore',
+        retryable: false,
+      })
     }
 
     const now = Date.now()

@@ -1,3 +1,4 @@
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { PersistenceAdapter, SerializedJob } from '../types'
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -246,7 +247,10 @@ function cborDecodeValue(state: DecoderState): unknown {
     return obj
   }
 
-  throw new Error(`不支援的 CBOR major type: ${header.major}`)
+  throw new StreamError(500, StreamErrorCodes.SERIALIZATION_UNSUPPORTED_CBOR, {
+    message: `不支援的 CBOR major type: ${header.major}`,
+    retryable: false,
+  })
 }
 
 /**

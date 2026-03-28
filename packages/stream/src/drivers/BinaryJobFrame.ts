@@ -1,3 +1,4 @@
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { SerializedJob } from '../types'
 
 /**
@@ -239,9 +240,10 @@ export function encodeBinaryJobFrame(job: SerializedJob): Uint8Array {
   const metaBytes = encodeMetaFallback(meta)
 
   if (metaBytes.length > 0xffff) {
-    throw new Error(
-      `[BinaryJobFrame] Metadata size ${metaBytes.length} exceeds maximum of 65535 bytes`
-    )
+    throw new StreamError(500, StreamErrorCodes.BINARY_FRAME_INVALID, {
+      message: `[BinaryJobFrame] Metadata size ${metaBytes.length} exceeds maximum of 65535 bytes`,
+      retryable: false,
+    })
   }
 
   // 計算總大小並分配緩衝區
@@ -283,22 +285,28 @@ export function decodeBinaryJobFrame(data: Uint8Array | Buffer): SerializedJob {
 
   // 驗證 Magic bytes
   if (bytes.length < HEADER_SIZE) {
-    throw new Error(
-      `[BinaryJobFrame] Frame too short: ${bytes.length} bytes, minimum is ${HEADER_SIZE}`
-    )
+    throw new StreamError(500, StreamErrorCodes.BINARY_FRAME_DECODE_ERROR, {
+      message: `[BinaryJobFrame] Frame too short: ${bytes.length} bytes, minimum is ${HEADER_SIZE}`,
+      retryable: false,
+    })
   }
 
   if (bytes[0] !== MAGIC[0] || bytes[1] !== MAGIC[1]) {
-    throw new Error(
-      `[BinaryJobFrame] Invalid magic bytes: [${bytes[0]}, ${bytes[1]}], ` +
-        `expected [${MAGIC[0]}, ${MAGIC[1]}]`
-    )
+    throw new StreamError(500, StreamErrorCodes.BINARY_FRAME_INVALID, {
+      message:
+        `[BinaryJobFrame] Invalid magic bytes: [${bytes[0]}, ${bytes[1]}], ` +
+        `expected [${MAGIC[0]}, ${MAGIC[1]}]`,
+      retryable: false,
+    })
   }
 
   // 讀取 header
   const version = bytes[2]
   if (version !== VERSION) {
-    throw new Error(`[BinaryJobFrame] Unsupported version: ${version}, expected ${VERSION}`)
+    throw new StreamError(500, StreamErrorCodes.BINARY_FRAME_UNSUPPORTED_VERSION, {
+      message: `[BinaryJobFrame] Unsupported version: ${version}, expected ${VERSION}`,
+      retryable: false,
+    })
   }
 
   const flags = bytes[3]!
@@ -306,10 +314,12 @@ export function decodeBinaryJobFrame(data: Uint8Array | Buffer): SerializedJob {
 
   // 驗證資料長度
   if (bytes.length < HEADER_SIZE + metaLen) {
-    throw new Error(
-      `[BinaryJobFrame] Frame truncated: expected ${HEADER_SIZE + metaLen} bytes for header+meta, ` +
-        `got ${bytes.length}`
-    )
+    throw new StreamError(500, StreamErrorCodes.BINARY_FRAME_DECODE_ERROR, {
+      message:
+        `[BinaryJobFrame] Frame truncated: expected ${HEADER_SIZE + metaLen} bytes for header+meta, ` +
+        `got ${bytes.length}`,
+      retryable: false,
+    })
   }
 
   // 解析 metadata

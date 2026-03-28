@@ -1,6 +1,7 @@
 import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import type { ConsumerOptions } from './Consumer'
 import { Consumer } from './Consumer'
+import { StreamError, StreamErrorCodes } from './errors'
 import { QueueManager } from './QueueManager'
 import { StreamEventBackend } from './StreamEventBackend'
 import type { QueueConfig } from './types'
@@ -203,11 +204,17 @@ export class OrbitStream implements GravitoOrbit {
    */
   startWorker(options: ConsumerOptions): void {
     if (!this.queueManager) {
-      throw new Error('QueueManager not initialized. Call install() first.')
+      throw new StreamError(500, StreamErrorCodes.QUEUE_NOT_INITIALIZED, {
+        message: 'QueueManager not initialized. Call install() first.',
+        retryable: false,
+      })
     }
 
     if (this.consumer?.isRunning()) {
-      throw new Error('Worker is already running')
+      throw new StreamError(409, StreamErrorCodes.WORKER_ALREADY_RUNNING, {
+        message: 'Worker is already running',
+        retryable: false,
+      })
     }
 
     const consumerOptions: ConsumerOptions = {

@@ -1,3 +1,4 @@
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { QueueStats, SerializedJob } from '../types'
 import type { QueueDriver } from './QueueDriver'
 
@@ -94,9 +95,11 @@ export class DatabaseDriver implements QueueDriver {
     this.dbService = config.dbService!
 
     if (!this.dbService) {
-      throw new Error(
-        '[DatabaseDriver] dbService is required. Please provide a database service that implements DatabaseService interface.'
-      )
+      throw new StreamError(500, StreamErrorCodes.DATABASE_DRIVER_REQUIRED, {
+        message:
+          '[DatabaseDriver] dbService is required. Please provide a database service that implements DatabaseService interface.',
+        retryable: false,
+      })
     }
   }
 
@@ -214,7 +217,10 @@ export class DatabaseDriver implements QueueDriver {
           attempts: row.attempts,
         }
       } else {
-        throw new Error('Fallback')
+        throw new StreamError(500, StreamErrorCodes.DATABASE_FALLBACK, {
+          message: 'Fallback',
+          retryable: false,
+        })
       }
     } catch (_e) {
       // Fallback for old format
@@ -482,9 +488,10 @@ export class DatabaseDriver implements QueueDriver {
 
 function validateSqlIdentifier(value: string, field: string): string {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(value)) {
-    throw new Error(
-      `Invalid ${field}: "${value}". Only letters, numbers, and underscores are allowed.`
-    )
+    throw new StreamError(500, StreamErrorCodes.CONFIGURATION_ERROR, {
+      message: `Invalid ${field}: "${value}". Only letters, numbers, and underscores are allowed.`,
+      retryable: false,
+    })
   }
   return value
 }

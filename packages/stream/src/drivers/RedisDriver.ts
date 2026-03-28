@@ -1,3 +1,4 @@
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { JobPushOptions, QueueStats, SerializedJob } from '../types'
 import { decodeBinaryJobFrame, encodeBinaryJobFrame, isGravitoJobFrame } from './BinaryJobFrame'
 import { prepareJobForTransport } from './prepareJobForTransport'
@@ -282,9 +283,11 @@ export class RedisDriver implements QueueDriver {
     this.prefix = config.prefix ?? 'queue:'
 
     if (!this.client) {
-      throw new Error(
-        '[RedisDriver] Redis client is required. Please install ioredis or redis package.'
-      )
+      throw new StreamError(500, StreamErrorCodes.CONFIGURATION_ERROR, {
+        message:
+          '[RedisDriver] Redis client is required. Please install ioredis or redis package.',
+        retryable: false,
+      })
     }
 
     // Register Lua scripts if defineCommand is available (ioredis)
@@ -449,7 +452,10 @@ export class RedisDriver implements QueueDriver {
       if (this.isBinaryJob(job)) {
         const serialized = this.serializeJobForTransport(job, groupId)
         if (!serialized.isBinary) {
-          throw new Error('[RedisDriver] Expected binary transport payload for binary job')
+          throw new StreamError(500, StreamErrorCodes.REDIS_BINARY_PAYLOAD_EXPECTED, {
+            message: '[RedisDriver] Expected binary transport payload for binary job',
+            retryable: false,
+          })
         }
         const { buffer } = serialized
         // 使用 lpushBuffer 若可用，否則用一般 lpush（string）
@@ -1219,7 +1225,10 @@ export class RedisDriver implements QueueDriver {
    */
   async enableNotifications(): Promise<void> {
     if (!this.client.subscribe || !this.client.on) {
-      throw new Error('[RedisDriver] Client does not support pub/sub for reactive notifications')
+      throw new StreamError(500, StreamErrorCodes.REDIS_PUBSUB_NOT_SUPPORTED, {
+        message: '[RedisDriver] Client does not support pub/sub for reactive notifications',
+        retryable: false,
+      })
     }
     // Pub/sub is ready to use when onNotify is called
   }
@@ -1253,7 +1262,10 @@ export class RedisDriver implements QueueDriver {
     callback: (queue: string) => Promise<void>
   ): Promise<void> {
     if (!this.client.subscribe || !this.client.on) {
-      throw new Error('[RedisDriver] Client does not support pub/sub for reactive notifications')
+      throw new StreamError(500, StreamErrorCodes.REDIS_PUBSUB_NOT_SUPPORTED, {
+        message: '[RedisDriver] Client does not support pub/sub for reactive notifications',
+        retryable: false,
+      })
     }
 
     const queueList = Array.isArray(queues) ? queues : [queues]
@@ -1263,7 +1275,11 @@ export class RedisDriver implements QueueDriver {
     try {
       await this.client.subscribe(...channels)
     } catch (err) {
-      throw new Error(`[RedisDriver] Failed to subscribe to notifications: ${err}`)
+      throw new StreamError(503, StreamErrorCodes.REDIS_SUBSCRIBE_FAILED, {
+        message: `[RedisDriver] Failed to subscribe to notifications: ${err}`,
+        retryable: true,
+        cause: err instanceof Error ? err : new Error(String(err)),
+      })
     }
 
     // Set up message handler

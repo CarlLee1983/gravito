@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events'
+import { StreamError, StreamErrorCodes } from '../../errors'
 import type { ConsumerLifecycleState, LifecycleEvent } from './types'
 
 /**
@@ -34,7 +35,10 @@ export class ConsumerLifecycleManager extends EventEmitter {
    */
   async start(): Promise<void> {
     if (this.currentState !== 'idle') {
-      throw new Error(`Cannot start from state '${this.currentState}'`)
+      throw new StreamError(409, StreamErrorCodes.CONSUMER_LIFECYCLE_ERROR, {
+        message: `Cannot start from state '${this.currentState}'`,
+        retryable: false,
+      })
     }
 
     this.transition('starting')
@@ -53,7 +57,10 @@ export class ConsumerLifecycleManager extends EventEmitter {
    */
   async restart(): Promise<void> {
     if (this.currentState !== 'running') {
-      throw new Error(`Cannot restart from state '${this.currentState}'`)
+      throw new StreamError(409, StreamErrorCodes.CONSUMER_LIFECYCLE_ERROR, {
+        message: `Cannot restart from state '${this.currentState}'`,
+        retryable: false,
+      })
     }
 
     this.transition('restarting')

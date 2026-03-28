@@ -1,3 +1,4 @@
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { QueueStats, SerializedJob } from '../types'
 import type { QueueDriver } from './QueueDriver'
 
@@ -51,7 +52,10 @@ export class MemoryDriver implements QueueDriver {
 
     const q = this.queues.get(queue)!
     if (q.length >= this.maxSize) {
-      throw new Error(`[MemoryDriver] Queue '${queue}' is full (max size: ${this.maxSize})`)
+      throw new StreamError(503, StreamErrorCodes.MEMORY_QUEUE_FULL, {
+        message: `[MemoryDriver] Queue '${queue}' is full (max size: ${this.maxSize})`,
+        retryable: true,
+      })
     }
 
     q.push(job)

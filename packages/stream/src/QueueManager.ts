@@ -1,3 +1,4 @@
+import { StreamError, StreamErrorCodes } from './errors'
 import { MemoryDriver } from './drivers/MemoryDriver'
 import type { QueueDriver } from './drivers/QueueDriver'
 import type { Job } from './Job'
@@ -129,9 +130,11 @@ export class QueueManager {
         // Lazy-load DatabaseDriver
         const { DatabaseDriver } = require('./drivers/DatabaseDriver')
         if (!config.dbService) {
-          throw new Error(
-            '[QueueManager] DatabaseDriver requires dbService. Please provide a database service that implements DatabaseService interface.'
-          )
+          throw new StreamError(500, StreamErrorCodes.DATABASE_DRIVER_REQUIRED, {
+            message:
+              '[QueueManager] DatabaseDriver requires dbService. Please provide a database service that implements DatabaseService interface.',
+            retryable: false,
+          })
         }
         this.drivers.set(
           name,
@@ -147,9 +150,11 @@ export class QueueManager {
         // Lazy-load RedisDriver
         const { RedisDriver } = require('./drivers/RedisDriver')
         if (!config.client) {
-          throw new Error(
-            '[QueueManager] RedisDriver requires client. Please provide Redis client in connection config.'
-          )
+          throw new StreamError(500, StreamErrorCodes.CONFIGURATION_ERROR, {
+            message:
+              '[QueueManager] RedisDriver requires client. Please provide Redis client in connection config.',
+            retryable: false,
+          })
         }
         this.drivers.set(
           name,
@@ -165,9 +170,11 @@ export class QueueManager {
         // Lazy-load KafkaDriver
         const { KafkaDriver } = require('./drivers/KafkaDriver')
         if (!config.client) {
-          throw new Error(
-            '[QueueManager] KafkaDriver requires client. Please provide Kafka client in connection config.'
-          )
+          throw new StreamError(500, StreamErrorCodes.KAFKA_CLIENT_REQUIRED, {
+            message:
+              '[QueueManager] KafkaDriver requires client. Please provide Kafka client in connection config.',
+            retryable: false,
+          })
         }
         this.drivers.set(
           name,
@@ -183,9 +190,11 @@ export class QueueManager {
         // Lazy-load SQSDriver
         const { SQSDriver } = require('./drivers/SQSDriver')
         if (!config.client) {
-          throw new Error(
-            '[QueueManager] SQSDriver requires client. Please provide SQS client in connection config.'
-          )
+          throw new StreamError(500, StreamErrorCodes.CONFIGURATION_ERROR, {
+            message:
+              '[QueueManager] SQSDriver requires client. Please provide SQS client in connection config.',
+            retryable: false,
+          })
         }
         this.drivers.set(
           name,
@@ -203,9 +212,11 @@ export class QueueManager {
         // Lazy-load RabbitMQDriver
         const { RabbitMQDriver } = require('./drivers/RabbitMQDriver')
         if (!config.client) {
-          throw new Error(
-            '[QueueManager] RabbitMQDriver requires client. Please provide RabbitMQ connection/channel in connection config.'
-          )
+          throw new StreamError(500, StreamErrorCodes.CONFIGURATION_ERROR, {
+            message:
+              '[QueueManager] RabbitMQDriver requires client. Please provide RabbitMQ connection/channel in connection config.',
+            retryable: false,
+          })
         }
         this.drivers.set(
           name,
@@ -222,9 +233,11 @@ export class QueueManager {
         // Lazy-load BullMQDriver
         const { BullMQDriver } = require('./drivers/BullMQDriver')
         if (!config.queue) {
-          throw new Error(
-            '[QueueManager] BullMQDriver requires queue. Please provide Bull Queue instance in connection config.'
-          )
+          throw new StreamError(500, StreamErrorCodes.BULLMQ_QUEUE_REQUIRED, {
+            message:
+              '[QueueManager] BullMQDriver requires queue. Please provide Bull Queue instance in connection config.',
+            retryable: false,
+          })
         }
         this.drivers.set(
           name,
@@ -239,9 +252,10 @@ export class QueueManager {
       }
 
       default:
-        throw new Error(
-          `Driver "${driverType}" is not supported. Supported drivers: memory, database, redis, kafka, sqs, rabbitmq, bullmq`
-        )
+        throw new StreamError(500, StreamErrorCodes.DRIVER_NOT_FOUND, {
+          message: `Driver "${driverType}" is not supported. Supported drivers: memory, database, redis, kafka, sqs, rabbitmq, bullmq`,
+          retryable: false,
+        })
     }
   }
 
@@ -260,7 +274,10 @@ export class QueueManager {
   getDriver(connection: string): QueueDriver {
     const driver = this.drivers.get(connection)
     if (!driver) {
-      throw new Error(`Connection "${connection}" not found`)
+      throw new StreamError(500, StreamErrorCodes.CONNECTION_NOT_FOUND, {
+        message: `Connection "${connection}" not found`,
+        retryable: false,
+      })
     }
     return driver
   }
@@ -285,7 +302,10 @@ export class QueueManager {
     if (type) {
       const serializer = this.serializers.get(type)
       if (!serializer) {
-        throw new Error(`Serializer "${type}" not found`)
+        throw new StreamError(500, StreamErrorCodes.SERIALIZER_NOT_FOUND, {
+          message: `Serializer "${type}" not found`,
+          retryable: false,
+        })
       }
       return serializer
     }

@@ -12,6 +12,7 @@
  * @module workers/BinaryWorkerProtocol
  */
 
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { SerializedJob } from '../types'
 
 // ─── 協定常數 ─────────────────────────────────────────────────────────────────
@@ -104,7 +105,10 @@ export function encodeJobForTransfer(job: SerializedJob): ArrayBuffer {
 export function decodeJobFromTransfer(buffer: ArrayBuffer): SerializedJob {
   // 防禦性檢查：buffer 不應為空
   if (buffer.byteLength === 0) {
-    throw new Error('BinaryWorkerProtocol: 收到空的 ArrayBuffer，無法解碼 Job 資料')
+    throw new StreamError(500, StreamErrorCodes.BINARY_WORKER_EMPTY_BUFFER, {
+      message: 'BinaryWorkerProtocol: 收到空的 ArrayBuffer，無法解碼 Job 資料',
+      retryable: false,
+    })
   }
 
   // 步驟 1：建立 Uint8Array 視圖
@@ -119,16 +123,20 @@ export function decodeJobFromTransfer(buffer: ArrayBuffer): SerializedJob {
   try {
     parsed = JSON.parse(jsonStr)
   } catch (cause) {
-    throw new Error(
-      `BinaryWorkerProtocol: JSON 解析失敗 - ${cause instanceof Error ? cause.message : String(cause)}`
-    )
+    throw new StreamError(500, StreamErrorCodes.BINARY_WORKER_PROTOCOL_ERROR, {
+      message: `BinaryWorkerProtocol: JSON 解析失敗 - ${cause instanceof Error ? cause.message : String(cause)}`,
+      retryable: false,
+      cause: cause instanceof Error ? cause : new Error(String(cause)),
+    })
   }
 
   // 步驟 4：基本結構驗證（確保必要欄位存在）
   if (!isValidSerializedJob(parsed)) {
-    throw new Error(
-      'BinaryWorkerProtocol: 解碼結果不符合 SerializedJob 結構（缺少必要欄位 id、type 或 data）'
-    )
+    throw new StreamError(500, StreamErrorCodes.BINARY_WORKER_PROTOCOL_ERROR, {
+      message:
+        'BinaryWorkerProtocol: 解碼結果不符合 SerializedJob 結構（缺少必要欄位 id、type 或 data）',
+      retryable: false,
+    })
   }
 
   return parsed

@@ -1,3 +1,4 @@
+import { StreamError, StreamErrorCodes } from '../errors'
 import type { Job } from '../Job'
 import type { SerializedJob } from '../types'
 import type { JobSerializer } from './JobSerializer'
@@ -28,9 +29,11 @@ export class MessagePackSerializer implements JobSerializer {
     try {
       this.msgpack = require('@msgpack/msgpack') as MessagePackCodec
     } catch (_e) {
-      throw new Error(
-        'MessagePackSerializer requires @msgpack/msgpack. Please install it: bun add @msgpack/msgpack'
-      )
+      throw new StreamError(500, StreamErrorCodes.SERIALIZATION_MSGPACK_NOT_INSTALLED, {
+        message:
+          'MessagePackSerializer requires @msgpack/msgpack. Please install it: bun add @msgpack/msgpack',
+        retryable: false,
+      })
     }
   }
 
@@ -72,7 +75,10 @@ export class MessagePackSerializer implements JobSerializer {
    */
   deserialize(serialized: SerializedJob): Job {
     if (serialized.type !== 'msgpack') {
-      throw new Error('Invalid serialization type: expected "msgpack"')
+      throw new StreamError(500, StreamErrorCodes.SERIALIZATION_INVALID_TYPE, {
+        message: 'Invalid serialization type: expected "msgpack"',
+        retryable: false,
+      })
     }
 
     const buffer =
