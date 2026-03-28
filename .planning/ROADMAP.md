@@ -59,7 +59,7 @@ Plans:
 - [ ] 17-03-PLAN.md — Implement withResilience composition API + update barrel exports
 
 ### Phase 18: Foundation Orbit Migration
-**Goal**: The three highest-blast-radius Orbits (atlas, plasma, photon) fully adopt the unified error model and resilience wiring
+**Goal**: The four highest-blast-radius Orbits (atlas, plasma, photon, signal) fully adopt the unified error model and resilience wiring
 **Depends on**: Phase 17
 **Requirements**: INTG-01, INTG-02, INTG-03
 **Success Criteria** (what must be TRUE):
@@ -68,7 +68,13 @@ Plans:
   3. atlas and plasma both have a `ResiliencePolicy` configured with appropriate defaults (atlas: retry 3x + CB; plasma: CB only, fast-fail)
   4. atlas, plasma, and signal register `core:shutdown` handlers with a configurable deadline; the process does not hang indefinitely on graceful shutdown
   5. Contract tests for atlas and plasma assert on `.code` and `.status` fields and pass before and after migration
-**Plans**: TBD
+**Plans:** 5 plans
+Plans:
+- [ ] 18-01-PLAN.md — Core prerequisites: DatabaseException + CacheException abstract classes
+- [ ] 18-02-PLAN.md — Plasma migration: RedisError -> CacheException, CB wiring, shutdown deadline
+- [ ] 18-03-PLAN.md — Signal migration: MailTransportError -> InfrastructureException, withRetry, shutdown
+- [ ] 18-04-PLAN.md — Photon CB swap: internal CB replaced with @gravito/resilience, Retry-After header
+- [ ] 18-05-PLAN.md — Atlas migration: error hierarchy, ORM errors, shutdown handler, resilience policy
 
 ### Phase 19: Secondary Orbit Migration
 **Goal**: All remaining Orbit packages throw from the GravitoException hierarchy, register health checks, and complete graceful shutdown wiring
@@ -100,7 +106,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 16. Core Error Model Foundation | 3/3 | Complete    | 2026-03-28 |
 | 17. Resilience Infrastructure | 2/3 | Complete    | 2026-03-28 |
-| 18. Foundation Orbit Migration | 0/? | Not started | - |
+| 18. Foundation Orbit Migration | 0/5 | Not started | - |
 | 19. Secondary Orbit Migration | 0/? | Not started | - |
 | 20. Integration Verification & Graceful Degradation | 0/? | Not started | - |
 
