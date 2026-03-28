@@ -1,5 +1,7 @@
 import { createSqliteDatabase, type RuntimeSqliteDatabase } from '@gravito/core'
 import type { SessionId, SessionRecord, SessionStore } from '../types'
+import { PulsarError } from '../errors/PulsarError'
+import { PulsarErrorCodes } from '../errors/codes'
 
 /**
  * SQLite-based session store for persistent single-instance storage.
@@ -68,7 +70,9 @@ export class SqliteSessionStore implements SessionStore {
    */
   private init() {
     if (!this.db) {
-      throw new Error('[SqliteSessionStore] Database not initialized')
+      throw new PulsarError(500, PulsarErrorCodes.DATABASE_NOT_INITIALIZED, {
+        message: '[SqliteSessionStore] Database not initialized',
+      })
     }
     this.db.run(`
       CREATE TABLE IF NOT EXISTS "${this.tableName}" (

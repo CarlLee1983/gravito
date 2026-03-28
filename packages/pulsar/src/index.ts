@@ -28,6 +28,8 @@ export { MemorySessionStore } from './stores/MemorySessionStore'
 export { RedisSessionStore } from './stores/RedisSessionStore'
 export { SqliteSessionStore } from './stores/SqliteSessionStore'
 export * from './types'
+export { PulsarError } from './errors/PulsarError'
+export { PulsarErrorCodes, type PulsarErrorCode } from './errors/codes'
 
 declare module '@gravito/core' {
   interface GravitoVariables {

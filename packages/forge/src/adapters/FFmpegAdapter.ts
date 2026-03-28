@@ -5,6 +5,8 @@
 import { getRuntimeAdapter } from '@gravito/core'
 import type { ProcessingProgress } from '../types'
 import type { AdapterOptions, ProcessorAdapter } from './ProcessorAdapter'
+import { ForgeError } from '../errors/ForgeError'
+import { ForgeErrorCodes } from '../errors/codes'
 
 /**
  * FFmpeg adapter
@@ -30,7 +32,9 @@ export class FFmpegAdapter implements ProcessorAdapter {
     const { output, onProgress, timeout = 300000 } = options // Default 5 minutes
 
     if (!output) {
-      throw new Error('Output file path is required')
+      throw new ForgeError(400, ForgeErrorCodes.MISSING_OUTPUT_PATH, {
+        message: 'Output file path is required',
+      })
     }
 
     return new Promise((resolve, reject) => {

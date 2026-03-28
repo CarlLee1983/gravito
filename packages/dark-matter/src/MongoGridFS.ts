@@ -1,4 +1,6 @@
 import type { FilterDocument, GridFSFile, GridFSUploadOptions, GridFSUploadProgress } from './types'
+import { DarkMatterError } from './errors/DarkMatterError'
+import { DarkMatterErrorCodes } from './errors/codes'
 
 // biome-ignore lint/suspicious/noExplicitAny: MongoDB native database has complex types
 type NativeMongoDatabase = any
@@ -375,7 +377,10 @@ export class MongoGridFS {
       // Since we don't have the db instance stored, we assume initBucket finishes fast enough
       // or we throw if not ready.
       // Better approach: Store db and init on demand.
-      throw new Error('GridFS bucket not initialized. Please wait a moment after creation.')
+      throw new DarkMatterError(503, DarkMatterErrorCodes.GRIDFS_NOT_INITIALIZED, {
+        message: 'GridFS bucket not initialized. Please wait a moment after creation.',
+        retryable: true,
+      })
     }
   }
 }

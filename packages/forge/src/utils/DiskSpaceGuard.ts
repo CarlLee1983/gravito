@@ -4,6 +4,8 @@
 
 import { statfs } from 'node:fs/promises'
 import { dirname } from 'node:path'
+import { ForgeError } from '../errors/ForgeError'
+import { ForgeErrorCodes } from '../errors/codes'
 
 /**
  * Disk space info
@@ -75,9 +77,9 @@ export class DiskSpaceGuard {
     if (info.available < minimumBytes) {
       const availableMB = Math.round(info.available / 1024 / 1024)
       const requiredMB = Math.round(minimumBytes / 1024 / 1024)
-      throw new Error(
-        `Insufficient disk space in ${path}. Available: ${availableMB}MB, Required: ${requiredMB}MB`
-      )
+      throw new ForgeError(507, ForgeErrorCodes.DISK_SPACE_INSUFFICIENT, {
+        message: `Insufficient disk space in ${path}. Available: ${availableMB}MB, Required: ${requiredMB}MB`,
+      })
     }
   }
 }

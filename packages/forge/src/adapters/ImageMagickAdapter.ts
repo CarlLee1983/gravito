@@ -4,6 +4,8 @@
 
 import { getRuntimeAdapter } from '@gravito/core'
 import type { AdapterOptions, ProcessorAdapter } from './ProcessorAdapter'
+import { ForgeError } from '../errors/ForgeError'
+import { ForgeErrorCodes } from '../errors/codes'
 
 /**
  * ImageMagick adapter
@@ -31,7 +33,9 @@ export class ImageMagickAdapter implements ProcessorAdapter {
     const { output, onProgress, timeout = 60000 } = options // Default 1 minute
 
     if (!output) {
-      throw new Error('Output file path is required')
+      throw new ForgeError(400, ForgeErrorCodes.MISSING_OUTPUT_PATH, {
+        message: 'Output file path is required',
+      })
     }
 
     const command = this.useConvert ? 'convert' : this.magickPath

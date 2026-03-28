@@ -16,6 +16,8 @@ import type {
   SchemaValidationOptions,
   TransactionOptions,
 } from './types'
+import { DarkMatterError } from './errors/DarkMatterError'
+import { DarkMatterErrorCodes } from './errors/codes'
 
 /**
  * MongoDB Client
@@ -110,9 +112,11 @@ export class MongoClient implements MongoClientContract {
       }
     }
 
-    throw new Error(
-      `Failed to connect to MongoDB after ${config.maxRetries + 1} attempts: ${lastError?.message}`
-    )
+    throw new DarkMatterError(503, DarkMatterErrorCodes.CONNECTION_FAILED, {
+      message: `Failed to connect to MongoDB after ${config.maxRetries + 1} attempts: ${lastError?.message}`,
+      cause: lastError,
+      retryable: true,
+    })
   }
 
   /**
@@ -334,22 +338,26 @@ export class MongoClient implements MongoClientContract {
       const mongodb = await import('mongodb')
       return mongodb as unknown as MongoDBModule
     } catch {
-      throw new Error(
-        'MongoDB client requires the "mongodb" package. Please install it: bun add mongodb'
-      )
+      throw new DarkMatterError(500, DarkMatterErrorCodes.CONNECTION_FAILED, {
+        message: 'MongoDB client requires the "mongodb" package. Please install it: bun add mongodb',
+      })
     }
   }
 
   private getClient(): NativeMongoClient {
     if (!this.client) {
-      throw new Error('MongoDB client not connected. Call connect() first.')
+      throw new DarkMatterError(503, DarkMatterErrorCodes.NOT_CONNECTED, {
+        message: 'MongoDB client not connected. Call connect() first.',
+      })
     }
     return this.client
   }
 
   private getDatabase(): NativeMongoDatabase {
     if (!this.db) {
-      throw new Error('MongoDB client not connected. Call connect() first.')
+      throw new DarkMatterError(503, DarkMatterErrorCodes.NOT_CONNECTED, {
+        message: 'MongoDB client not connected. Call connect() first.',
+      })
     }
     return this.db
   }

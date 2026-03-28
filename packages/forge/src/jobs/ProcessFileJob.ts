@@ -9,6 +9,8 @@ import type { ForgeService } from '../ForgeService'
 import { ProcessingStatusManager } from '../status/ProcessingStatus'
 import type { StatusStore } from '../status/StatusStore'
 import type { FileInput, ProcessingProgress, ProcessOptions } from '../types'
+import { ForgeError } from '../errors/ForgeError'
+import { ForgeErrorCodes } from '../errors/codes'
 
 /**
  * Process file job data
@@ -66,11 +68,15 @@ export class ProcessFileJob extends Job {
     const { jobId, input, options, statusStore, storage, forgeService } = this.data
 
     if (!statusStore) {
-      throw new Error('Status store is required for ProcessFileJob')
+      throw new ForgeError(500, ForgeErrorCodes.STATUS_STORE_REQUIRED, {
+        message: 'Status store is required for ProcessFileJob',
+      })
     }
 
     if (!forgeService) {
-      throw new Error('Forge service is required for ProcessFileJob')
+      throw new ForgeError(500, ForgeErrorCodes.SERVICE_REQUIRED, {
+        message: 'Forge service is required for ProcessFileJob',
+      })
     }
 
     try {

@@ -111,6 +111,8 @@ export class OrbitForge implements GravitoOrbit {
   }
 }
 
+export { ForgeError } from './errors/ForgeError'
+export { ForgeErrorCodes, type ForgeErrorCode } from './errors/codes'
 export { FFmpegAdapter } from './adapters/FFmpegAdapter'
 export { ImageMagickAdapter } from './adapters/ImageMagickAdapter'
 export type { AdapterOptions, ProcessorAdapter } from './adapters/ProcessorAdapter'

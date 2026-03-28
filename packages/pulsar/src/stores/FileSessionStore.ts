@@ -2,6 +2,8 @@ import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { getRuntimeAdapter } from '@gravito/core'
 import type { SessionId, SessionRecord, SessionStore } from '../types'
+import { PulsarError } from '../errors/PulsarError'
+import { PulsarErrorCodes } from '../errors/codes'
 
 interface PersistedSessionFile {
   record: SessionRecord
@@ -63,11 +65,15 @@ export class FileSessionStore implements SessionStore {
     const sanitized = sessionId.replace(/[^a-zA-Z0-9_-]/g, '')
 
     if (sanitized.length === 0) {
-      throw new Error('Invalid session ID: no valid characters')
+      throw new PulsarError(400, PulsarErrorCodes.INVALID_SESSION_ID, {
+        message: 'Invalid session ID: no valid characters',
+      })
     }
 
     if (sanitized !== sessionId) {
-      throw new Error(`Invalid session ID: contains illegal characters`)
+      throw new PulsarError(400, PulsarErrorCodes.INVALID_SESSION_ID, {
+        message: 'Invalid session ID: contains illegal characters',
+      })
     }
 
     return sanitized

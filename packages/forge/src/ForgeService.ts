@@ -19,6 +19,8 @@ import type {
 } from './types'
 import { DiskSpaceGuard } from './utils/DiskSpaceGuard'
 import { sniffMimeType } from './utils/mime'
+import { ForgeError } from './errors/ForgeError'
+import { ForgeErrorCodes } from './errors/codes'
 
 /**
  * Configuration schema for the ForgeService
@@ -121,7 +123,9 @@ export class ForgeService {
 
   async processAsync(input: FileInput, _options: ProcessOptions = {}): Promise<ProcessingJob> {
     if (!this.statusStore) {
-      throw new Error('Status store is required for async processing')
+      throw new ForgeError(500, ForgeErrorCodes.STATUS_STORE_REQUIRED, {
+        message: 'Status store is required for async processing',
+      })
     }
     if (this.minAvailableSpace) {
       const processor = await this.getProcessor(input)
@@ -153,7 +157,9 @@ export class ForgeService {
     if (this.imageProcessor.supports(mimeType)) {
       return this.imageProcessor
     }
-    throw new Error(`Unsupported file type: ${mimeType}`)
+    throw new ForgeError(415, ForgeErrorCodes.UNSUPPORTED_MIME_TYPE, {
+      message: `Unsupported file type: ${mimeType}`,
+    })
   }
 
   private async getMimeType(input: FileInput): Promise<string> {
@@ -203,7 +209,9 @@ export class ForgeService {
     options: PackageResultsOptions = {}
   ): Promise<PackageResultsOutput> {
     if (!this.statusStore) {
-      throw new Error('[ForgeService] statusStore 未設定')
+      throw new ForgeError(500, ForgeErrorCodes.STATUS_STORE_REQUIRED, {
+        message: '[ForgeService] statusStore 未設定',
+      })
     }
     const entries: Record<string, string | Blob | ArrayBuffer | Uint8Array> = {}
     const errors: Array<{ jobId: string; error: string }> = []
@@ -246,11 +254,15 @@ export class ForgeService {
 
   async downloadResults(jobId: string, outputDir: string): Promise<readonly FileOutput[]> {
     if (!this.statusStore) {
-      throw new Error('[ForgeService] statusStore 未設定')
+      throw new ForgeError(500, ForgeErrorCodes.STATUS_STORE_REQUIRED, {
+        message: '[ForgeService] statusStore 未設定',
+      })
     }
     const status = await this.statusStore.get(jobId)
     if (!status || status.status !== 'completed' || !status.result) {
-      throw new Error(`[ForgeService] 作業不存在或尚未完成：${jobId}`)
+      throw new ForgeError(404, ForgeErrorCodes.JOB_NOT_FOUND, {
+        message: `[ForgeService] 作業不存在或尚未完成：${jobId}`,
+      })
     }
     const output = status.result
     const fileName = this.extractFileName(output)
@@ -261,7 +273,9 @@ export class ForgeService {
     } catch {}
     const fileData = await this.readOutputFile(output)
     if (!fileData) {
-      throw new Error(`[ForgeService] 無法讀取輸出檔案`)
+      throw new ForgeError(500, ForgeErrorCodes.OUTPUT_READ_FAILED, {
+        message: '[ForgeService] 無法讀取輸出檔案',
+      })
     }
     const localPath = `${outputDir}/${fileName}`
     await this.runtime.writeFile(localPath, fileData)

@@ -5,6 +5,8 @@
 
 import { MongoClient } from './MongoClient'
 import type { MongoClientContract, MongoConfig, MongoManagerConfig } from './types'
+import { DarkMatterError } from './errors/DarkMatterError'
+import { DarkMatterErrorCodes } from './errors/codes'
 
 /**
  * MongoDB Manager
@@ -72,7 +74,9 @@ export class MongoManager {
     if (!this.connections.has(connectionName)) {
       const config = this.configs.get(connectionName)
       if (!config) {
-        throw new Error(`MongoDB connection "${connectionName}" not configured`)
+        throw new DarkMatterError(500, DarkMatterErrorCodes.CONNECTION_NOT_CONFIGURED, {
+          message: `MongoDB connection "${connectionName}" not configured`,
+        })
       }
       this.connections.set(connectionName, new MongoClient(config))
     }

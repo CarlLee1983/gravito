@@ -4,6 +4,8 @@
  */
 
 // Main exports
+export { DarkMatterError } from './errors/DarkMatterError'
+export { DarkMatterErrorCodes, type DarkMatterErrorCode } from './errors/codes'
 export { Mongo } from './Mongo'
 export { MongoClient } from './MongoClient'
 export { MongoGridFS } from './MongoGridFS'

@@ -6,6 +6,8 @@ import type { Processor } from '../processors/Processor'
 import type { FileInput, FileOutput, ProcessOptions } from '../types'
 import { sniffMimeType } from '../utils/mime'
 import type { Pipeline, PipelineStep } from './Pipeline'
+import { ForgeError } from '../errors/ForgeError'
+import { ForgeErrorCodes } from '../errors/codes'
 
 /**
  * Base pipeline implementation
@@ -41,7 +43,9 @@ export class BasePipeline implements Pipeline {
       // Check if processor supports the current file type
       const mimeType = await this.getMimeType(currentInput)
       if (!step.processor.supports(mimeType)) {
-        throw new Error(`Processor does not support MIME type: ${mimeType}`)
+        throw new ForgeError(415, ForgeErrorCodes.UNSUPPORTED_MIME_TYPE, {
+          message: `Processor does not support MIME type: ${mimeType}`,
+        })
       }
 
       // Process the file

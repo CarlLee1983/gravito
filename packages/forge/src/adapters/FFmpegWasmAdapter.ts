@@ -1,6 +1,8 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg'
 import { fetchFile, toBlobURL } from '@ffmpeg/util'
 import type { AdapterOptions, ProcessorAdapter } from './ProcessorAdapter'
+import { ForgeError } from '../errors/ForgeError'
+import { ForgeErrorCodes } from '../errors/codes'
 
 /**
  * FFmpeg WASM adapter
@@ -67,10 +69,14 @@ export class FFmpegWasmAdapter implements ProcessorAdapter {
     const { input, output, onProgress } = options
 
     if (!input) {
-      throw new Error('Input file path is required for FFmpegWasmAdapter')
+      throw new ForgeError(400, ForgeErrorCodes.MISSING_INPUT_PATH, {
+        message: 'Input file path is required for FFmpegWasmAdapter',
+      })
     }
     if (!output) {
-      throw new Error('Output file path is required')
+      throw new ForgeError(400, ForgeErrorCodes.MISSING_OUTPUT_PATH, {
+        message: 'Output file path is required',
+      })
     }
 
     const ffmpeg = await this.load()
@@ -109,7 +115,9 @@ export class FFmpegWasmAdapter implements ProcessorAdapter {
     const data = await ffmpeg.readFile(outputFileName)
 
     if (typeof data === 'string') {
-      throw new Error('FFmpeg output is a string, expected Uint8Array')
+      throw new ForgeError(500, ForgeErrorCodes.UNEXPECTED_OUTPUT_TYPE, {
+        message: 'FFmpeg output is a string, expected Uint8Array',
+      })
     }
 
     await Bun.write(output, data)
