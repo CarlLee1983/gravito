@@ -16,7 +16,7 @@ status: approved
 
 ## Phases
 
-- [ ] **Phase 16: Core Error Model Foundation** — Establish unified GravitoException hierarchy, ErrorCode registry, and contract test scaffolding
+- [x] **Phase 16: Core Error Model Foundation** — Establish unified GravitoException hierarchy, ErrorCode registry, and contract test scaffolding (completed 2026-03-28)
 - [ ] **Phase 17: Resilience Infrastructure** — Build withRetry, consolidate CircuitBreaker, implement withResilience composition API
 - [ ] **Phase 18: Foundation Orbit Migration** — Migrate atlas, plasma, photon, signal to new error model with resilience wiring
 - [ ] **Phase 19: Secondary Orbit Migration** — Migrate remaining ~40 Orbit packages in batches; register shutdown handlers and health checks
@@ -36,11 +36,11 @@ status: approved
   3. Error chains are preserved end-to-end: wrapping a driver error in a `DatabaseException` retains the original `cause` at `e.cause`
   4. Cross-boundary `instanceof` test passes: error classes loaded via both ESM and CJS formats remain instanceof-compatible
   5. Contract test scaffolding exists and runs for every Orbit package, asserting `.code`, `.status`, and `instanceof` — not `.message` strings
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 - [x] 16-01-PLAN.md — Exception hierarchy: GravitoException setPrototypeOf + intermediate layers + re-parent existing exceptions
 - [x] 16-02-PLAN.md — ErrorCodes const objects for atlas, plasma, signal, quasar
-- [ ] 16-03-PLAN.md — Contract test scaffolding with assertGravitoException helper
+- [x] 16-03-PLAN.md — Contract test scaffolding with assertGravitoException helper
 
 ### Phase 17: Resilience Infrastructure
 **Goal**: Orbit packages have a single, composable API to add retry, circuit breaker, and timeout to any external I/O call
@@ -94,7 +94,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 16. Core Error Model Foundation | 2/3 | In Progress|  |
+| 16. Core Error Model Foundation | 3/3 | Complete   | 2026-03-28 |
 | 17. Resilience Infrastructure | 0/? | Not started | - |
 | 18. Foundation Orbit Migration | 0/? | Not started | - |
 | 19. Secondary Orbit Migration | 0/? | Not started | - |
