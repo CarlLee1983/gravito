@@ -71,6 +71,7 @@ export { DevMailbox, type MailboxEntry } from './dev/DevMailbox'
  * @public
  */
 export { MailErrorCode, MailTransportError } from './errors'
+export { MailErrorCodes } from './errors/codes'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mail Lifecycle Events

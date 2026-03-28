@@ -1,5 +1,6 @@
 export * as bridges from './bridges'
 export * from './CommandListener'
+export * from './errors'
 export * from './executors'
 export * from './health/HealthServer'
 export * from './metrics'
