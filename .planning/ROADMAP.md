@@ -17,7 +17,7 @@ status: approved
 ## Phases
 
 - [x] **Phase 16: Core Error Model Foundation** — Establish unified GravitoException hierarchy, ErrorCode registry, and contract test scaffolding (completed 2026-03-28)
-- [ ] **Phase 17: Resilience Infrastructure** — Build withRetry, consolidate CircuitBreaker, implement withResilience composition API
+- [x] **Phase 17: Resilience Infrastructure** — Build withRetry, consolidate CircuitBreaker, implement withResilience composition API (completed 2026-03-28)
 - [ ] **Phase 18: Foundation Orbit Migration** — Migrate atlas, plasma, photon, signal to new error model with resilience wiring
 - [ ] **Phase 19: Secondary Orbit Migration** — Migrate remaining ~40 Orbit packages in batches; register shutdown handlers and health checks
 - [ ] **Phase 20: Integration Verification & Graceful Degradation** — Satellite canary tests, OrbitDegradationManager, version bumps, migration guide
@@ -52,7 +52,7 @@ Plans:
   3. All CircuitBreaker usage in the codebase points to a single `@gravito/resilience` implementation; `echo`'s duplicate CB is removed or re-exports from `@gravito/resilience`
   4. `withResilience(fn, policy)` correctly applies retry-inside-circuit-breaker order, throwing `CircuitOpenException` when the breaker is open
   5. In test environments (`NODE_ENV=test`), degraded state throws rather than returning silent fallback values
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 - [x] 17-01-PLAN.md — Install cockatiel, create exception classes, implement withRetry with TDD
 - [x] 17-02-PLAN.md — Consolidate echo and core/events CircuitBreaker duplicates
@@ -99,7 +99,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 16. Core Error Model Foundation | 3/3 | Complete    | 2026-03-28 |
-| 17. Resilience Infrastructure | 2/3 | In Progress|  |
+| 17. Resilience Infrastructure | 2/3 | Complete    | 2026-03-28 |
 | 18. Foundation Orbit Migration | 0/? | Not started | - |
 | 19. Secondary Orbit Migration | 0/? | Not started | - |
 | 20. Integration Verification & Graceful Degradation | 0/? | Not started | - |
