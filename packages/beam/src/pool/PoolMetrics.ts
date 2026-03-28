@@ -3,6 +3,7 @@
  * @module @gravito/beam/pool
  */
 
+import { BeamError, BeamErrorCodes } from '../errors'
 import type { HostPoolMetrics, PoolMetricsSnapshot } from './types'
 
 /**
@@ -174,7 +175,11 @@ export class PoolMetricsCollector {
     }
     const metrics = this.hostMetrics.get(hostname)
     if (!metrics) {
-      throw new Error(`No metrics found for hostname: ${hostname}`)
+      throw new BeamError(
+        `No metrics found for hostname: ${hostname}`,
+        503,
+        BeamErrorCodes.NO_METRICS
+      )
     }
     return metrics
   }

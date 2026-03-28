@@ -33,14 +33,19 @@
   },
   "devDependencies": {
     "bun-types": "latest",
+    "@gravito/core": "workspace:*",
     "@gravito/photon": "^1.1.3",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
+    "@gravito/core": "^2.0.0",
     "@gravito/photon": "^1.1.0",
     "hono": "^4.12.0"
   },
   "peerDependenciesMeta": {
+    "@gravito/core": {
+      "optional": true
+    },
     "hono": {
       "optional": true
     }

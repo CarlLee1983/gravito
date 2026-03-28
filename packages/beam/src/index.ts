@@ -1,3 +1,4 @@
+import type { PlanetCore } from '@gravito/core'
 import { hc as beamClient } from '@gravito/photon/client'
 import type { Hono } from 'hono'
 import { BeamError, BeamNetworkError } from './errors'
@@ -186,8 +187,46 @@ function createEnhancedFetch(options: BeamOptions) {
  */
 export const createGravitoClient = createBeam
 
+/**
+ * Registers a graceful shutdown handler for a Beam connection pool (INTG-03).
+ *
+ * Hooks into `core:shutdown` to close the pool with a 5-second deadline,
+ * matching the pattern used by OrbitAtlas and OrbitPlasma.
+ *
+ * @param core - PlanetCore instance providing hooks and logger.
+ * @param pool - ConnectionPool instance to close on shutdown.
+ *
+ * @example
+ * ```typescript
+ * const pool = new ConnectionPool({ maxConnectionsPerHost: 10 })
+ * registerBeamShutdown(core, pool)
+ * ```
+ *
+ * @public
+ */
+export function registerBeamShutdown(
+  core: PlanetCore,
+  pool: { destroy?: () => Promise<void>; close?: () => Promise<void> }
+): void {
+  const shutdownFn = pool.destroy ?? pool.close
+  core.hooks.doAction('core:shutdown', async () => {
+    const DEADLINE_MS = 5000
+    const deadline = new Promise<void>((_, reject) =>
+      setTimeout(() => reject(new Error('[beam] Shutdown deadline exceeded (5s)')), DEADLINE_MS)
+    )
+    try {
+      if (shutdownFn) {
+        await Promise.race([shutdownFn.call(pool), deadline])
+      }
+    } catch (err) {
+      core.logger?.warn('[beam] Forced shutdown:', err)
+    }
+  })
+}
+
 export {
   BeamError,
+  BeamErrorCodes,
   BeamHttpError,
   BeamNetworkError,
   BeamPoolExhaustedError,

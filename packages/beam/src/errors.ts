@@ -1,22 +1,35 @@
+import { InfrastructureException, type InfrastructureExceptionOptions } from '@gravito/core'
+
+/**
+ * Namespace of dot-separated beam error codes per GravitoException convention.
+ */
+export const BeamErrorCodes = {
+  POOL_EXHAUSTED: 'beam.pool_exhausted',
+  CONNECTION_FAILED: 'beam.connection_failed',
+  TIMEOUT: 'beam.timeout',
+  NETWORK_ERROR: 'beam.network_error',
+  HTTP_ERROR: 'beam.http_error',
+  POOL_CLOSED: 'beam.pool_closed',
+  NO_POOL: 'beam.no_pool',
+  NO_METRICS: 'beam.no_metrics',
+} as const
+
 /**
  * Base Beam Error class
  *
- * Base class for all Beam related errors, providing a unified error format
+ * Base class for all Beam related errors, providing a unified error format.
+ * Extends InfrastructureException from @gravito/core for consistent error hierarchy.
  */
-export class BeamError extends Error {
+export class BeamError extends InfrastructureException {
   /**
    * @param message - Error message
-   * @param status - HTTP status code (optional)
-   * @param code - Error code (optional)
+   * @param status - HTTP status code (optional, defaults to 503)
+   * @param code - Error code (optional, defaults to 'beam.error')
    * @param cause - Original error (optional)
    */
-  constructor(
-    message: string,
-    public readonly status?: number,
-    public readonly code?: string,
-    public readonly cause?: unknown
-  ) {
-    super(message)
+  constructor(message: string, status?: number, code?: string, cause?: unknown) {
+    const options: InfrastructureExceptionOptions = { message, cause }
+    super(status ?? 503, code ?? 'beam.error', options)
     this.name = 'BeamError'
     // Fix prototype chain issue when extending Error in TypeScript
     Object.setPrototypeOf(this, new.target.prototype)

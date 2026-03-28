@@ -4,7 +4,7 @@
  */
 
 import { randomUUID } from 'node:crypto'
-import { BeamPoolExhaustedError } from '../errors'
+import { BeamError, BeamErrorCodes, BeamPoolExhaustedError } from '../errors'
 import { PoolEntry } from './PoolEntry'
 import { PoolHealthChecker } from './PoolHealthChecker'
 import { PoolMetricsCollector } from './PoolMetrics'
@@ -78,7 +78,7 @@ export class ConnectionPool {
   ): (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> {
     return async (input: RequestInfo | URL, init?: RequestInit) => {
       if (this.closed) {
-        throw new Error('Connection pool has been closed')
+        throw new BeamError('Connection pool has been closed', 503, BeamErrorCodes.POOL_CLOSED)
       }
 
       // Extract hostname from input URL
@@ -343,7 +343,7 @@ export class ConnectionPool {
     }
     const pool = this.pools.get(hostname)
     if (!pool) {
-      throw new Error(`No pool found for hostname: ${hostname}`)
+      throw new BeamError(`No pool found for hostname: ${hostname}`, 503, BeamErrorCodes.NO_POOL)
     }
     return pool
   }
