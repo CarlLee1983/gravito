@@ -67,8 +67,13 @@ export type {
 export { EventPriorityQueue } from './priority/EventPriorityQueue'
 export type { PriorityStatistics } from './priority/PriorityEscalationManager'
 export { PriorityEscalationManager } from './priority/PriorityEscalationManager'
+// === Exceptions ===
+export { CircuitOpenException } from './exceptions/CircuitOpenException'
+export { RetryExhaustedException } from './exceptions/RetryExhaustedException'
 // === Retry ===
 export { RetryScheduler } from './retry/RetryScheduler'
+export type { RetryOptions } from './retry/RetryOptions'
+export { withRetry } from './retry/withRetry'
 // === Worker Pool ===
 export { WorkerPool } from './worker/WorkerPool'
 export type { WorkerPoolConfig, WorkerPoolStats, WorkerStats } from './worker/WorkerPoolConfig'
