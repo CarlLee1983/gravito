@@ -52,6 +52,7 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 - 已有 @gravito/resilience 包（可能包含部分基礎）
 - Phase 16 完成 — 統一錯誤模型基礎已建立（GravitoException 三層階層 + 4 Orbit ErrorCodes + 52 contract tests）
 - Phase 17 完成 — 韌性基礎設施已建立（withRetry + CB 整合 + withResilience 組合 API，cockatiel 為底層實作）
+- Phase 18 完成 — 四大 Orbit 包（atlas, plasma, photon, signal）全面採用統一錯誤模型 + 韌性原語 + shutdown handler
 
 **v2.0.0 決策：**
 - 允許 breaking changes — 重新設計錯誤處理
@@ -331,4 +332,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-28 after Phase 17 (Resilience Infrastructure) complete*
+*Last updated: 2026-03-28 after Phase 18 (Foundation Orbit Migration) complete*
