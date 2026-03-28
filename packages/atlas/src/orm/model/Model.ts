@@ -239,7 +239,11 @@ export abstract class Model {
 
     // Prevent memory leaks by capping cache size (LRU-lite)
     if (Model._studlyCache.size > 5000) {
-      Model._studlyCache.clear()
+      const entries = [...Model._studlyCache.entries()]
+      const toRemove = entries.slice(0, Math.floor(entries.length / 4))
+      for (const [key] of toRemove) {
+        Model._studlyCache.delete(key)
+      }
     }
 
     const studly = prop.replace(/(?:^|_|(?=[A-Z]))(.)/g, (_, c) => c.toUpperCase())
