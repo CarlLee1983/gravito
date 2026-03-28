@@ -74,6 +74,9 @@ export { RetryExhaustedException } from './exceptions/RetryExhaustedException'
 export { RetryScheduler } from './retry/RetryScheduler'
 export type { RetryOptions } from './retry/RetryOptions'
 export { withRetry } from './retry/withRetry'
+// === Resilience Composition ===
+export { withResilience } from './resilience/withResilience'
+export type { ResiliencePolicy, InlineCBOptions } from './resilience/ResiliencePolicy'
 // === Worker Pool ===
 export { WorkerPool } from './worker/WorkerPool'
 export type { WorkerPoolConfig, WorkerPoolStats, WorkerStats } from './worker/WorkerPoolConfig'
