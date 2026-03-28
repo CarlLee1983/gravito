@@ -1,4 +1,5 @@
 import type { WorkflowFilter, WorkflowState, WorkflowStorage } from '../types'
+import { FluxError, FluxErrorCode } from '../errors'
 
 /**
  * Configuration options for the PostgreSQL storage adapter.
@@ -312,8 +313,10 @@ export class PostgreSQLStorage implements WorkflowStorage {
 
 function validateSqlIdentifier(value: string, field: string): string {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(value)) {
-    throw new Error(
-      `Invalid ${field}: "${value}". Only letters, numbers, and underscores are allowed.`
+    throw new FluxError(
+      `Invalid ${field}: "${value}". Only letters, numbers, and underscores are allowed.`,
+      FluxErrorCode.WORKFLOW_INVALID_INPUT,
+      { field, value }
     )
   }
   return value

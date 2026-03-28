@@ -1,3 +1,5 @@
+import { QueueException, type InfrastructureExceptionOptions } from '@gravito/core'
+
 /**
  * Standard error codes for FluxEngine operations.
  *
@@ -39,7 +41,33 @@ export enum FluxErrorCode {
 }
 
 /**
+ * Namespace of dot-separated flux error codes for use with FluxErrorCodes const.
+ * Maps enum values to `flux.*` namespace per GravitoException convention.
+ */
+export const FluxErrorCodes = {
+  WORKFLOW_NOT_FOUND: 'flux.workflow_not_found',
+  WORKFLOW_INVALID_INPUT: 'flux.workflow_invalid_input',
+  WORKFLOW_DEFINITION_CHANGED: 'flux.workflow_definition_changed',
+  WORKFLOW_NAME_MISMATCH: 'flux.workflow_name_mismatch',
+  INVALID_STATE_TRANSITION: 'flux.invalid_state_transition',
+  WORKFLOW_NOT_SUSPENDED: 'flux.workflow_not_suspended',
+  INVALID_STEP_INDEX: 'flux.invalid_step_index',
+  STEP_TIMEOUT: 'flux.step_timeout',
+  STEP_NOT_FOUND: 'flux.step_not_found',
+  CONCURRENT_MODIFICATION: 'flux.concurrent_modification',
+  EMPTY_WORKFLOW: 'flux.empty_workflow',
+  NO_RECOVERY_ACTION: 'flux.no_recovery_action',
+  INVALID_JSON_POINTER: 'flux.invalid_json_pointer',
+  INVALID_PATH_TRAVERSAL: 'flux.invalid_path_traversal',
+  CANNOT_REPLACE_ROOT: 'flux.cannot_replace_root',
+  CANNOT_REMOVE_ROOT: 'flux.cannot_remove_root',
+} as const
+
+/**
  * Base class for all errors thrown by the FluxEngine.
+ *
+ * Extends QueueException from @gravito/core, enabling consistent infrastructure
+ * error handling across the GravitoException hierarchy.
  *
  * Includes a machine-readable error code and optional context for debugging.
  *
@@ -54,21 +82,29 @@ export enum FluxErrorCode {
  * }
  * ```
  */
-export class FluxError extends Error {
+export class FluxError extends QueueException {
+  /**
+   * Additional metadata related to the error.
+   */
+  public readonly context?: Record<string, unknown>
+
   /**
    * Creates a new FluxError.
    *
    * @param message - Human-readable error description.
-   * @param code - Machine-readable error code.
+   * @param code - Machine-readable error code (FluxErrorCode enum value).
    * @param context - Additional metadata related to the error.
    */
   constructor(
     message: string,
-    public readonly code: FluxErrorCode,
-    public readonly context?: Record<string, unknown>
+    code: FluxErrorCode | string,
+    context?: Record<string, unknown>
   ) {
-    super(message)
+    const options: InfrastructureExceptionOptions = { message }
+    super(422, code, options)
     this.name = 'FluxError'
+    this.context = context
+    Object.setPrototypeOf(this, new.target.prototype)
   }
 }
 
