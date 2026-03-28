@@ -160,20 +160,25 @@ export class RedisDriver implements DriverContract {
     return this.client
   }
 
-  // Transactions (Redis MULTI/EXEC)
   async beginTransaction(): Promise<void> {
-    if (!this.client) {
-      await this.connect()
-    }
-    // In Redis, we just start a multi
+    throw new Error(
+      'Redis does not support transactions via beginTransaction(). ' +
+        'Use MULTI/EXEC directly via getRawClient().'
+    )
   }
 
   async commit(): Promise<void> {
-    // Implement via EXEC
+    throw new Error(
+      'Redis does not support transactions via commit(). ' +
+        'Use MULTI/EXEC directly via getRawClient().'
+    )
   }
 
   async rollback(): Promise<void> {
-    // Implement via DISCARD
+    throw new Error(
+      'Redis does not support transactions via rollback(). ' +
+        'Use MULTI/EXEC directly via getRawClient().'
+    )
   }
 
   inTransaction(): boolean {

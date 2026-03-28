@@ -184,14 +184,25 @@ export class MongoDBDriver implements DriverContract {
   }
 
   async beginTransaction(): Promise<void> {
-    // MongoDB transactions require replica sets.
-    // For now, no-op or throw warning?
-    // We'll leave as no-op to allow tests to run without crashing
+    throw new Error(
+      'MongoDB transactions require a replica set. ' +
+        'Use the native MongoDB client via getRawClient() for replica set transactions.'
+    )
   }
 
-  async commit(): Promise<void> {}
+  async commit(): Promise<void> {
+    throw new Error(
+      'MongoDB transactions require a replica set. ' +
+        'Use the native MongoDB client via getRawClient() for replica set transactions.'
+    )
+  }
 
-  async rollback(): Promise<void> {}
+  async rollback(): Promise<void> {
+    throw new Error(
+      'MongoDB transactions require a replica set. ' +
+        'Use the native MongoDB client via getRawClient() for replica set transactions.'
+    )
+  }
 
   inTransaction(): boolean {
     return false
