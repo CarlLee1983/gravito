@@ -214,4 +214,26 @@ describe('QueryBuilder immutability', () => {
     expect(sqlAfter).toContain('"id"')
     expect(sqlAfter).toContain('"name"')
   })
+
+  it('pluck() does not mutate the original builder select', async () => {
+    const builder = makeBuilder(async () => {
+      return {
+        rows: [
+          { id: 1, name: 'Ada' },
+          { id: 2, name: 'Bob' },
+        ],
+        rowCount: 2,
+      }
+    })
+
+    builder.select('id', 'name')
+    const sqlBefore = builder.toSql()
+
+    await builder.pluck('name')
+    const sqlAfter = builder.toSql()
+
+    expect(sqlAfter).toBe(sqlBefore)
+    expect(sqlAfter).toContain('"id"')
+    expect(sqlAfter).toContain('"name"')
+  })
 })

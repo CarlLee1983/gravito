@@ -1075,7 +1075,8 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Retrieves an array of values for a single column.
    */
   async pluck<V = unknown>(column: string): Promise<V[]> {
-    const compiled = this.select(column).getCompiledQuery()
+    const cloned = (this.clone() as QueryBuilder<T>).select(column)
+    const compiled = cloned.getCompiledQuery()
     const sql = this.grammar.compileSelect(compiled)
 
     const rows = await this.connection.values<[V]>(sql, compiled.bindings)
