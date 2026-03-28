@@ -8,6 +8,8 @@ import {
 } from '@gravito/core'
 import matter from 'gray-matter'
 import type { ContentDriver } from './driver/ContentDriver'
+import { MonolithError } from './errors/MonolithError'
+import { MonolithErrorCodes } from './errors/codes'
 
 /**
  * Represents a single content item (file).
@@ -122,7 +124,10 @@ export class ContentManager {
   async find(collectionName: string, slug: string, locale = 'en'): Promise<ContentItem | null> {
     const config = this.collections.get(collectionName)
     if (!config) {
-      throw new Error(`Collection '${collectionName}' not defined`)
+      throw new MonolithError(
+        MonolithErrorCodes.COLLECTION_NOT_DEFINED,
+        `Collection '${collectionName}' not defined`
+      )
     }
 
     const safeSlug = this.sanitizeSegment(slug)
@@ -182,7 +187,10 @@ export class ContentManager {
   async list(collectionName: string, locale = 'en'): Promise<ContentItem[]> {
     const config = this.collections.get(collectionName)
     if (!config) {
-      throw new Error(`Collection '${collectionName}' not defined`)
+      throw new MonolithError(
+        MonolithErrorCodes.COLLECTION_NOT_DEFINED,
+        `Collection '${collectionName}' not defined`
+      )
     }
 
     const safeLocale = this.sanitizeSegment(locale)

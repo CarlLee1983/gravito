@@ -1,4 +1,6 @@
 import { GraphQLScalarType, Kind, type ValueNode } from 'graphql'
+import { GraphqlError } from '../errors/GraphqlError'
+import { GraphqlErrorCodes } from '../errors/codes'
 
 /**
  * Parses a GraphQL AST node into a plain JavaScript value.
@@ -48,7 +50,10 @@ function parseLiteralValue(ast: ValueNode, variables?: Record<string, unknown> |
       return variables?.[ast.name.value]
 
     default:
-      throw new Error(`JSON Scalar: Unsupported AST node kind: ${ast.kind}`)
+      throw new GraphqlError(
+        GraphqlErrorCodes.UNSUPPORTED_AST_NODE,
+        `JSON Scalar: Unsupported AST node kind: ${ast.kind}`
+      )
   }
 }
 

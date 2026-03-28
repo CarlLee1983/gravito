@@ -1,3 +1,5 @@
+import { ImpulseError } from '../errors/ImpulseError'
+import { ImpulseErrorCodes } from '../errors/codes'
 import { type SchemaValidationResult, SchemaValidator } from './SchemaValidator'
 
 let SchemaCompilationCache: any
@@ -55,7 +57,10 @@ export class ValibotValidator extends SchemaValidator {
    */
   async validate(schema: unknown, data: unknown): Promise<SchemaValidationResult> {
     if (!this.canHandle(schema)) {
-      throw new Error('Invalid schema provided to ValibotValidator')
+      throw new ImpulseError(
+        ImpulseErrorCodes.INVALID_SCHEMA,
+        'Invalid schema provided to ValibotValidator'
+      )
     }
 
     const compilationCache = getSchemaCompilationCache()

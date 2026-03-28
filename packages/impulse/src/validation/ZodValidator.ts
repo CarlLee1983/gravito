@@ -1,4 +1,6 @@
 import type { z } from 'zod'
+import { ImpulseError } from '../errors/ImpulseError'
+import { ImpulseErrorCodes } from '../errors/codes'
 import { type SchemaValidationResult, SchemaValidator } from './SchemaValidator'
 
 let SchemaCompilationCache: any
@@ -44,7 +46,10 @@ export class ZodValidator extends SchemaValidator {
    */
   async validate(schema: unknown, data: unknown): Promise<SchemaValidationResult> {
     if (!this.canHandle(schema)) {
-      throw new Error('Invalid schema provided to ZodValidator')
+      throw new ImpulseError(
+        ImpulseErrorCodes.INVALID_SCHEMA,
+        'Invalid schema provided to ZodValidator'
+      )
     }
 
     const compilationCache = getSchemaCompilationCache()

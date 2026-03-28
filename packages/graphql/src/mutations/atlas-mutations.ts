@@ -1,4 +1,6 @@
 import { DB, type Model, type ModelStatic } from '@gravito/atlas'
+import { GraphqlError } from '../errors/GraphqlError'
+import { GraphqlErrorCodes } from '../errors/codes'
 
 export const AtlasMutationFactory = {
   create: async (model: ModelStatic<Model>, input: Record<string, unknown>) => {
@@ -23,7 +25,10 @@ export const AtlasMutationFactory = {
   ) => {
     const instance = await model.find(id)
     if (!instance) {
-      throw new Error(`${model.name} with ID ${id} not found`)
+      throw new GraphqlError(
+        GraphqlErrorCodes.NOT_FOUND,
+        `${model.name} with ID ${id} not found`
+      )
     }
     const instanceObj = instance as unknown as Record<string, unknown>
     if (typeof instanceObj.fill === 'function') {

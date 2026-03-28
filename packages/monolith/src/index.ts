@@ -75,6 +75,10 @@ export class OrbitMonolith implements GravitoOrbit {
 
 export { Schema } from '@gravito/mass'
 export * from './ContentManager'
+// Errors
+export { MonolithError } from './errors/MonolithError'
+export { MonolithErrorCodes } from './errors/codes'
+export type { MonolithErrorCode } from './errors/codes'
 export * from './Controller'
 export * from './driver/ContentDriver'
 export * from './driver/GitHubDriver'

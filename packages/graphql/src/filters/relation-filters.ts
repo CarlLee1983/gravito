@@ -1,3 +1,5 @@
+import { GraphqlError } from '../errors/GraphqlError'
+import { GraphqlErrorCodes } from '../errors/codes'
 import { applyFilter, applyLogicalOperators, type WhereCondition } from './operators'
 
 /**
@@ -136,7 +138,10 @@ export function applyRelationFilter(
         return
 
       default:
-        throw new Error(`Unsupported relation type: ${config.relationType}`)
+        throw new GraphqlError(
+          GraphqlErrorCodes.UNSUPPORTED_RELATION,
+          `Unsupported relation type: ${config.relationType}`
+        )
     }
 
     applyRecursiveFilters(subQuery, filter)

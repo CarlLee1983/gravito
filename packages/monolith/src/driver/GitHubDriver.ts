@@ -1,4 +1,6 @@
 import { Octokit } from '@octokit/rest'
+import { MonolithError } from '../errors/MonolithError'
+import { MonolithErrorCodes } from '../errors/codes'
 import type { ContentDriver } from './ContentDriver'
 
 export interface GitHubDriverOptions {
@@ -31,13 +33,13 @@ export class GitHubDriver implements ContentDriver {
       })
 
       if (Array.isArray(data) || !('content' in data)) {
-        throw new Error(`Path is not a file: ${path}`)
+        throw new MonolithError(MonolithErrorCodes.NOT_A_FILE, `Path is not a file: ${path}`)
       }
 
       return Buffer.from(data.content, 'base64').toString('utf-8')
     } catch (e: any) {
       if (e.status === 404) {
-        throw new Error(`File not found: ${path}`)
+        throw new MonolithError(MonolithErrorCodes.FILE_NOT_FOUND, `File not found: ${path}`)
       }
       throw e
     }

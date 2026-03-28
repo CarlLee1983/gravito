@@ -1,4 +1,6 @@
 import type { GravitoContext } from '@gravito/core'
+import { MonolithError } from './errors/MonolithError'
+import { MonolithErrorCodes } from './errors/codes'
 import { Sanitizer } from './Sanitizer.js'
 
 /**
@@ -15,7 +17,10 @@ export abstract class BaseController {
   async call(ctx: GravitoContext, method: string): Promise<Response> {
     const action = (this as any)[method] as (ctx: GravitoContext) => Promise<Response>
     if (typeof action !== 'function') {
-      throw new Error(`Method ${method} not found on controller`)
+      throw new MonolithError(
+        MonolithErrorCodes.METHOD_NOT_FOUND,
+        `Method ${method} not found on controller`
+      )
     }
 
     return await action.apply(this, [ctx])

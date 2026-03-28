@@ -34,6 +34,11 @@
 // Re-export zod for convenience
 export { z } from 'zod'
 
+// Errors
+export { ImpulseError } from './errors/ImpulseError'
+export { ImpulseErrorCodes } from './errors/codes'
+export type { ImpulseErrorCode } from './errors/codes'
+
 // Export core components
 export * from './core/BlueprintGenerator'
 export type { DataSource } from './core/DataExtractor'

@@ -622,6 +622,10 @@ export class OrbitGraphQL implements GravitoOrbit {
 
 export * from './atlas'
 export * from './dataloaders/atlas-loader'
+// Errors
+export { GraphqlError } from './errors/GraphqlError'
+export { GraphqlErrorCodes } from './errors/codes'
+export type { GraphqlErrorCode } from './errors/codes'
 
 // Module augmentation for GravitoVariables
 declare module '@gravito/core' {

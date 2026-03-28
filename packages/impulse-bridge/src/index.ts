@@ -1,5 +1,7 @@
 import type { GravitoContext } from '@gravito/core'
 import type { FormRequest } from '@gravito/impulse'
+export { ImpulseBridgeErrorCodes } from './errors/codes'
+export type { ImpulseBridgeErrorCode } from './errors/codes'
 
 /**
  * ImpulseBridge facilitates the synchronization of backend validation rules

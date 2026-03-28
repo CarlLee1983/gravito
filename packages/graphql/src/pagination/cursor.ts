@@ -3,6 +3,9 @@
  * 使用 Base64 編碼實現 opaque cursor
  */
 
+import { GraphqlError } from '../errors/GraphqlError'
+import { GraphqlErrorCodes } from '../errors/codes'
+
 export interface CursorData {
   id: unknown
   offset: number
@@ -41,21 +44,24 @@ export function decodeCursor(cursor: string): CursorData {
 
     // 驗證資料結構
     if (typeof data !== 'object' || data === null) {
-      throw new Error('Invalid cursor data structure')
+      throw new GraphqlError(GraphqlErrorCodes.INVALID_CURSOR, 'Invalid cursor data structure')
     }
 
     if (!('id' in data) || !('offset' in data)) {
-      throw new Error('Cursor missing required fields')
+      throw new GraphqlError(GraphqlErrorCodes.INVALID_CURSOR, 'Cursor missing required fields')
     }
 
     if (typeof data.offset !== 'number' || !Number.isFinite(data.offset) || data.offset < 0) {
-      throw new Error('Cursor offset must be a non-negative finite number')
+      throw new GraphqlError(
+        GraphqlErrorCodes.INVALID_CURSOR,
+        'Cursor offset must be a non-negative finite number'
+      )
     }
 
     return data as CursorData
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    throw new Error(`Failed to decode cursor: ${message}`)
+    throw new GraphqlError(GraphqlErrorCodes.INVALID_CURSOR, `Failed to decode cursor: ${message}`)
   }
 }
 

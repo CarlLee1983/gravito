@@ -1,3 +1,6 @@
+import { ImpulseError } from '../errors/ImpulseError'
+import { ImpulseErrorCodes } from '../errors/codes'
+
 /**
  * Schema validation result interface.
  */
@@ -188,7 +191,10 @@ export class SchemaCompilationCache {
       }
     }
 
-    throw new Error('Unsupported Valibot schema - no _run or parse method found')
+    throw new ImpulseError(
+      ImpulseErrorCodes.UNSUPPORTED_SCHEMA,
+      'Unsupported Valibot schema - no _run or parse method found'
+    )
   }
 
   /**

@@ -1,3 +1,5 @@
+import { ImpulseError } from '../errors/ImpulseError'
+import { ImpulseErrorCodes } from '../errors/codes'
 import type { SchemaValidator } from '../validation/SchemaValidator'
 
 /**
@@ -131,7 +133,10 @@ export class SchemaCache {
         return validator
       }
     }
-    throw new Error('Unsupported schema type. Use Zod or Valibot.')
+    throw new ImpulseError(
+      ImpulseErrorCodes.UNSUPPORTED_SCHEMA,
+      'Unsupported schema type. Use Zod or Valibot.'
+    )
   }
 
   /**
