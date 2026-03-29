@@ -99,6 +99,11 @@ export class BunNativeAdapter implements HttpAdapter {
       return true // Global wildcard
     }
 
+    // HTTP convention: use('/') means "match all paths" (global middleware)
+    if (pattern === '/') {
+      return true
+    }
+
     // Handle /api/* format
     if (pattern.endsWith('/*')) {
       const basePattern = pattern.slice(0, -2) // Remove /*
