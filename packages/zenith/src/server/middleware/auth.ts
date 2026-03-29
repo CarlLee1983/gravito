@@ -1,4 +1,3 @@
-import { timingSafeEqual } from 'node:crypto'
 import type { GravitoContext } from '@gravito/photon'
 
 type Context = GravitoContext
@@ -92,14 +91,12 @@ export function verifyPassword(password: string): boolean {
     return true // No password set, allow access
   }
 
-  const expected = Buffer.from(authPassword)
-  const actual = Buffer.from(password)
-
-  if (expected.length !== actual.length) {
-    return false
+  if (authPassword.length !== password.length) return false
+  let result = 0
+  for (let i = 0; i < authPassword.length; i++) {
+    result |= authPassword.charCodeAt(i) ^ password.charCodeAt(i)
   }
-
-  return timingSafeEqual(expected, actual)
+  return result === 0
 }
 
 /**

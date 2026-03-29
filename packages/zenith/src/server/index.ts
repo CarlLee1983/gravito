@@ -728,10 +728,9 @@ api.post('/queues/:name/purge', async (c: GravitoContext) => {
   }
 })
 
-api.get('/logs/stream', async (c: GravitoContext) => {
-  // Create SSE response with proper headers
-  const encoder = new TextEncoder()
+const sharedEncoder = new TextEncoder()
 
+api.get('/logs/stream', async (c: GravitoContext) => {
   let cleanup: (() => void) | undefined
 
   const readable = new ReadableStream({
@@ -741,7 +740,7 @@ api.get('/logs/stream', async (c: GravitoContext) => {
         const writeSSE = (event: string, data: string) => {
           let message = `event: ${event}\n`
           message += `data: ${data}\n\n`
-          controller.enqueue(encoder.encode(message))
+          controller.enqueue(sharedEncoder.encode(message))
         }
 
         // 1. Send history first
