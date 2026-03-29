@@ -9,6 +9,8 @@
  * @since 2.0.0
  */
 
+const sharedDecoder = new TextDecoder()
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Generic WebSocket Types (100% compatible with Hono's API)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -254,7 +256,7 @@ export function defineWSHandler<TIn = unknown, TOut = unknown>(
           parsedData = rawData as TIn
         } else if (parseMode === 'text') {
           const textData =
-            typeof rawData === 'string' ? rawData : new TextDecoder().decode(rawData as Uint8Array)
+            typeof rawData === 'string' ? rawData : sharedDecoder.decode(rawData as Uint8Array)
           parsedData = textData as TIn
         } else {
           // parseMode === 'json'
@@ -263,9 +265,9 @@ export function defineWSHandler<TIn = unknown, TOut = unknown>(
           if (typeof rawData === 'string') {
             stringData = rawData
           } else if (rawData instanceof ArrayBuffer) {
-            stringData = new TextDecoder().decode(rawData)
+            stringData = sharedDecoder.decode(rawData)
           } else if (rawData instanceof Uint8Array) {
-            stringData = new TextDecoder().decode(rawData)
+            stringData = sharedDecoder.decode(rawData)
           } else {
             stringData = String(rawData)
           }

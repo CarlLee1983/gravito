@@ -8,6 +8,8 @@
  * @since 2.0.0
  */
 
+const sharedDecoder = new TextDecoder()
+
 // Generic context type supporting both Hono and Gravito
 type SSEContext = {
   header(key: string, value: string): void
@@ -156,7 +158,7 @@ export class NativeSSEStreamingApi {
       throw new Error('SSE stream is closed')
     }
 
-    const text = typeof data === 'string' ? data : new TextDecoder().decode(data)
+    const text = typeof data === 'string' ? data : sharedDecoder.decode(data)
     const writer = this.writable.getWriter()
 
     try {

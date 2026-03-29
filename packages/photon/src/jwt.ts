@@ -40,12 +40,14 @@ export interface JwtOptions {
  */
 export type JwtFunction = (options: JwtOptions) => GravitoMiddleware
 
+const sharedEncoder = new TextEncoder()
+
 /**
  * Convert secret to Uint8Array for jose operations
  */
 function getSecretBytes(secret: string | Buffer | Uint8Array): Uint8Array {
   if (typeof secret === 'string') {
-    return new TextEncoder().encode(secret)
+    return sharedEncoder.encode(secret)
   }
   if (secret instanceof Buffer) {
     return new Uint8Array(secret)

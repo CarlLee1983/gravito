@@ -43,8 +43,9 @@ export interface StreamJSONLinesOptions {
  *
  * @public
  */
+const sharedEncoder = new TextEncoder()
+
 export class NativeStreamingApi {
-  private encoder = new TextEncoder()
   private isClosed = false
 
   constructor(private writable: WritableStream<Uint8Array>) {}
@@ -57,7 +58,7 @@ export class NativeStreamingApi {
       throw new Error('Stream is closed')
     }
 
-    const bytes = typeof data === 'string' ? this.encoder.encode(data) : data
+    const bytes = typeof data === 'string' ? sharedEncoder.encode(data) : data
     const writer = this.writable.getWriter()
 
     try {
