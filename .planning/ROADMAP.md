@@ -66,8 +66,10 @@ Plans:
   3. `setApp` is not present in the compiled output of index.ts or index.browser.ts — it is inaccessible to downstream consumers as a public import
   4. index.browser.ts exports the same named symbols as index.ts for the shared surface; differences are intentional and documented
   5. `bun run typecheck` at workspace root passes with zero new errors after export conversion
-**Plans**: TBD
-**UI hint**: no
+**Plans:** 2 plans
+Plans:
+- [ ] 23-01-PLAN.md — Capture d.ts baseline, convert 6 star exports to named exports, remove setApp from index.ts (MOD-01, MOD-02)
+- [ ] 23-02-PLAN.md — Sync index.browser.ts helper exports and run d.ts diff verification (MOD-03)
 
 ### Phase 24: Config Type Unification
 **Goal**: ApplicationConfig and GravitoConfig share a single source of truth for overlapping fields; boot() does not silently drop config fields that developers pass
@@ -111,7 +113,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 21. API Footgun Fixes | v2.1.0 | 3/3 | Complete    | 2026-03-29 |
 | 22. Exception Hierarchy Clarification | v2.1.0 | 1/1 | Complete    | 2026-03-29 |
-| 23. Named Export Conversion | v2.1.0 | 0/? | Not started | - |
+| 23. Named Export Conversion | v2.1.0 | 0/2 | Planning complete | - |
 | 24. Config Type Unification | v2.1.0 | 0/? | Not started | - |
 | 25. Container Type Improvement | v2.1.0 | 0/? | Not started | - |
 | 26. Documentation and Tooling | v2.1.0 | 0/? | Not started | - |
