@@ -34,7 +34,7 @@ Requirements for v2.0.0 major release. Each maps to roadmap phases.
 
 ### Release
 
-- [ ] **RELS-01**: 每個被修改的 Orbit 包更新 package.json 版本號（major bump to 2.0.0）
+- [x] **RELS-01**: 每個被修改的 Orbit 包更新 package.json 版本號（major bump to 2.0.0）
 
 ## v2.1.0 Requirements
 
@@ -74,7 +74,7 @@ Deferred to next release. Tracked but not in current roadmap.
 | INTG-05 | Phase 20 | Complete |
 | MIGR-01 | Phase 19 | Complete |
 | MIGR-02 | Phase 19 | Complete |
-| RELS-01 | Phase 20 | Pending |
+| RELS-01 | Phase 20 | Complete |
 
 **Coverage:**
 - v2.0.0 requirements: 14 total
