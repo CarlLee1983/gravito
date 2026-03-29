@@ -81,3 +81,6 @@ export type { ResiliencePolicy, InlineCBOptions } from './resilience/ResilienceP
 export { WorkerPool } from './worker/WorkerPool'
 export type { WorkerPoolConfig, WorkerPoolStats, WorkerStats } from './worker/WorkerPoolConfig'
 export { WorkerPoolMetrics } from './worker/WorkerPoolMetrics'
+// === Degradation ===
+export { OrbitDegradationManager } from './degradation/OrbitDegradationManager'
+export type { DegradedResult } from './degradation/DegradedResult'
