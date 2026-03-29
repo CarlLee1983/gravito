@@ -29,10 +29,14 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 
 ### Active
 
-- [ ] 統一錯誤模型 — 一致的錯誤類型、錯誤碼、錯誤傳播（v2.0.0）
-- [ ] Graceful Degradation — Orbit 包失敗時系統優雅降級（v2.0.0）
-- [ ] Retry + Circuit Breaker — 外部依賴的重試、斷路器、超時（v2.0.0）
-- [ ] 全量 Orbit 包改造 — 統一採用新錯誤模型（v2.0.0）
+(None — all v2.0.0 requirements validated)
+
+### Validated in v2.0.0
+
+- ✓ **統一錯誤模型** — GravitoException 三層階層 + ErrorCodes 命名空間 + contract tests（Phase 16-19）
+- ✓ **Graceful Degradation** — OrbitDegradationManager + DegradedResult<T> typed fallback（Phase 20）
+- ✓ **Retry + Circuit Breaker** — withRetry + withResilience + cockatiel CB（Phase 17-18）
+- ✓ **全量 Orbit 包改造** — 38 packages 遷移至 GravitoException，health check 註冊完成（Phase 19-20）
 
 ### Out of Scope
 
@@ -54,6 +58,7 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 - Phase 17 完成 — 韌性基礎設施已建立（withRetry + CB 整合 + withResilience 組合 API，cockatiel 為底層實作）
 - Phase 18 完成 — 四大 Orbit 包（atlas, plasma, photon, signal）全面採用統一錯誤模型 + 韌性原語 + shutdown handler
 - Phase 19 完成 — 全部剩餘 Orbit 包（~40 個）遷移至 GravitoException 階層，健康檢查註冊完成，stream/beam shutdown handler 已連線
+- Phase 20 完成 — OrbitDegradationManager + Satellite contract tests + 38 packages version bump + migration guide
 
 **v2.0.0 決策：**
 - 允許 breaking changes — 重新設計錯誤處理
@@ -333,4 +338,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-29 after Phase 19 (Secondary Orbit Migration) complete*
+*Last updated: 2026-03-29 after Phase 20 (Integration Verification & Graceful Degradation) complete — v2.0.0 milestone fully delivered*
