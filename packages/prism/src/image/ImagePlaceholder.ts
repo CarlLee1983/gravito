@@ -145,6 +145,6 @@ export function generateColorPlaceholder(color: string, width: number, height: n
     <rect width="100%" height="100%" fill="${color}"/>
   </svg>`
 
-  const base64 = Buffer.from(svg).toString('base64')
+  const base64 = btoa(svg)
   return `data:image/svg+xml;base64,${base64}`
 }
