@@ -16,7 +16,7 @@ status: approved
 
 ## Phases
 
-- [ ] **Phase 21: API Footgun Fixes** — Fix Router console.log, ModelNotFoundException string sentinel, boot() observabilityProvider, deprecated annotation, and skipped tests
+- [x] **Phase 21: API Footgun Fixes** — Fix Router console.log, ModelNotFoundException string sentinel, boot() observabilityProvider, deprecated annotation, and skipped tests (completed 2026-03-29)
 - [ ] **Phase 22: Exception Hierarchy Clarification** — Add JSDoc role separation for AuthException (abstract base) and AuthenticationException (concrete 401); no structural changes
 - [ ] **Phase 23: Named Export Conversion** — Convert 6 star exports to explicit named exports; remove setApp from public barrel; mirror index.browser.ts
 - [ ] **Phase 24: Config Type Unification** — ApplicationConfig extends Pick<GravitoConfig>; boot() forwards observabilityProvider without silent drop
@@ -37,11 +37,11 @@ status: approved
   3. Passing `observabilityProvider` to `PlanetCore.boot()` correctly forwards it; the config field is no longer silently dropped at runtime
   4. TypeScript IDEs show `core.services` with strikethrough (@deprecated); accessing it does not cause a type error but signals migration to the new API
   5. The two previously-skipped tests in orbit-middleware-isolation.test.ts pass — they exist to guard the behavior FIX-01 modifies
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 Plans:
-- [ ] 21-01-PLAN.md — Fix BunNativeAdapter.matchesPath and unskip orbit-middleware tests (FIX-05)
-- [ ] 21-02-PLAN.md — Remove Router console.log and replace string sentinel with ModelNotFoundException (FIX-01, FIX-02)
-- [ ] 21-03-PLAN.md — Forward observabilityProvider in boot() and verify @deprecated annotation (FIX-03, FIX-04)
+- [x] 21-01-PLAN.md — Fix BunNativeAdapter.matchesPath and unskip orbit-middleware tests (FIX-05)
+- [x] 21-02-PLAN.md — Remove Router console.log and replace string sentinel with ModelNotFoundException (FIX-01, FIX-02)
+- [x] 21-03-PLAN.md — Forward observabilityProvider in boot() and verify @deprecated annotation (FIX-03, FIX-04)
 
 ### Phase 22: Exception Hierarchy Clarification
 **Goal**: Developers reading the @gravito/core exception module understand the role of AuthException and AuthenticationException without guessing from names alone
@@ -107,7 +107,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 21. API Footgun Fixes | v2.1.0 | 0/3 | Planned | - |
+| 21. API Footgun Fixes | v2.1.0 | 3/3 | Complete   | 2026-03-29 |
 | 22. Exception Hierarchy Clarification | v2.1.0 | 0/? | Not started | - |
 | 23. Named Export Conversion | v2.1.0 | 0/? | Not started | - |
 | 24. Config Type Unification | v2.1.0 | 0/? | Not started | - |

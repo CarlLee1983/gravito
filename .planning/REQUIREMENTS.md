@@ -11,9 +11,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [ ] **FIX-01**: Router 路由註冊不在 stdout 輸出 console.log（Router.ts:610）
 - [ ] **FIX-02**: Router model() 使用自訂 ModelNotFoundException 取代 string sentinel 比對（Router.ts:436,475）
-- [ ] **FIX-03**: PlanetCore.boot() 正確傳遞 observabilityProvider 到 constructor（PlanetCore.ts:788-811）
-- [ ] **FIX-04**: core.services 屬性加上 TypeScript @deprecated 標註（PlanetCore.ts:203）
-- [ ] **FIX-05**: 修復 orbit-middleware-isolation.test.ts 中跳過的測試（必須在 FIX-01 之前完成）
+- [x] **FIX-03**: PlanetCore.boot() 正確傳遞 observabilityProvider 到 constructor（PlanetCore.ts:788-811）
+- [x] **FIX-04**: core.services 屬性加上 TypeScript @deprecated 標註（PlanetCore.ts:203）
+- [x] **FIX-05**: 修復 orbit-middleware-isolation.test.ts 中跳過的測試（必須在 FIX-01 之前完成）
 
 ### Exception 層級釐清
 
@@ -76,9 +76,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | FIX-01 | Phase 21 | Pending |
 | FIX-02 | Phase 21 | Pending |
-| FIX-03 | Phase 24 | Pending |
-| FIX-04 | Phase 21 | Pending |
-| FIX-05 | Phase 21 | Pending |
+| FIX-03 | Phase 24 | Complete |
+| FIX-04 | Phase 21 | Complete |
+| FIX-05 | Phase 21 | Complete |
 | EXC-01 | Phase 22 | Pending |
 | MOD-01 | Phase 23 | Pending |
 | MOD-02 | Phase 23 | Pending |
