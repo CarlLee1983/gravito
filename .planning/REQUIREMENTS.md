@@ -9,8 +9,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### API Footgun 修正
 
-- [ ] **FIX-01**: Router 路由註冊不在 stdout 輸出 console.log（Router.ts:610）
-- [ ] **FIX-02**: Router model() 使用自訂 ModelNotFoundException 取代 string sentinel 比對（Router.ts:436,475）
+- [x] **FIX-01**: Router 路由註冊不在 stdout 輸出 console.log（Router.ts:610）
+- [x] **FIX-02**: Router model() 使用自訂 ModelNotFoundException 取代 string sentinel 比對（Router.ts:436,475）
 - [x] **FIX-03**: PlanetCore.boot() 正確傳遞 observabilityProvider 到 constructor（PlanetCore.ts:788-811）
 - [x] **FIX-04**: core.services 屬性加上 TypeScript @deprecated 標註（PlanetCore.ts:203）
 - [x] **FIX-05**: 修復 orbit-middleware-isolation.test.ts 中跳過的測試（必須在 FIX-01 之前完成）
@@ -74,8 +74,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FIX-01 | Phase 21 | Pending |
-| FIX-02 | Phase 21 | Pending |
+| FIX-01 | Phase 21 | Complete |
+| FIX-02 | Phase 21 | Complete |
 | FIX-03 | Phase 24 | Complete |
 | FIX-04 | Phase 21 | Complete |
 | FIX-05 | Phase 21 | Complete |
