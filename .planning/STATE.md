@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.1.0
 milestone_name: Core DX 改進
-status: planning
+status: ready_to_plan
 last_updated: "2026-03-29T10:00:00.000Z"
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -18,29 +18,35 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** 穩定可靠的核心基礎設施
-**Current focus:** v2.1.0 Core DX 改進 — 定義需求中
+**Current focus:** Phase 21 — API Footgun Fixes
 
 ---
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-29 — Milestone v2.1.0 started
+Phase: 21 of 26 (API Footgun Fixes)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-03-29 — Roadmap created, 18/18 requirements mapped across 6 phases
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
-| Metric | Baseline (v2.0.0) | Target (v2.1.0) | Current |
-|--------|-------------------|-----------------|---------|
-| Health Score | 100/100 | 100/100 | 100/100 |
-| Test Pass Rate | 100% | 100% | 100% |
-| TypeScript Errors | 0 | 0 | 0 |
-| Circular Dependencies | 0 | 0 | 0 |
-| Public API `any` count | TBD | 0 | TBD |
-| README accuracy | ~60% | 100% | ~60% |
+**Velocity:**
+- Total plans completed: 0
+- Average duration: — min
+- Total execution time: — hours
 
----
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| - | - | - | - |
+
+**Recent Trend:** Not started
+
+*Updated after each plan completion*
 
 ## Accumulated Context
 
@@ -50,12 +56,12 @@ Last activity: 2026-03-29 — Milestone v2.1.0 started
 |----------|-----------|------|
 | v2.1.0 minor version | DX 改進不需 breaking changes，保持向下相容 | 2026-03-29 |
 | 聚焦 @gravito/core 包 | core 是所有下游包的基礎，DX 改善影響最大 | 2026-03-29 |
+| FIX-05 必須在 FIX-01 之前 | 跳過的測試是 Router console.log 的行為守衛 | 2026-03-29 |
+| AuthException 不刪除 | fortify/sentinel instanceof 鏈依賴此抽象基底類別 | 2026-03-29 |
+| Phase 23 前執行 module augmentation 掃描 | 14 個 orbit 包使用 declare module 增強，移除 export 會靜默破壞 | 2026-03-29 |
+| bun run typecheck 為每個 phase 的驗收閘 | 352 個 import 站點跨 38+ 下游包，只跑 per-package 不夠 | 2026-03-29 |
 
 ### Blockers
-
-None currently.
-
-### Open Questions
 
 None currently.
 
@@ -63,17 +69,19 @@ None currently.
 
 - v2.0.0 建立的 GravitoException 體系不受影響
 - 所有修改限於 packages/core/ 範圍內
-- 不涉及 Orbit 或 Satellite 包的修改
+- Phase 23 風險最高：star export 轉換需要完整符號清查
+- TYPE-01 (ApplicationConfig) 與 FIX-03 (boot() forwarding) 合併至 Phase 24 — 兩者同一根因
 
 ---
 
 ## Session Continuity
 
+Last session: 2026-03-29
+Stopped at: Roadmap written, requirements mapped, ready to plan Phase 21
+Resume file: None
+
 ### To resume this milestone:
 
 1. Check current phase: `cat .planning/STATE.md`
 2. Review roadmap: `cat .planning/ROADMAP.md`
-3. Run: `/gsd:plan-phase [N]`
-
----
-*State initialized: 2026-03-29*
+3. Run: `/gsd:plan-phase 21`

@@ -74,30 +74,30 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FIX-01 | Pending | Pending |
-| FIX-02 | Pending | Pending |
-| FIX-03 | Pending | Pending |
-| FIX-04 | Pending | Pending |
-| FIX-05 | Pending | Pending |
-| EXC-01 | Pending | Pending |
-| MOD-01 | Pending | Pending |
-| MOD-02 | Pending | Pending |
-| MOD-03 | Pending | Pending |
-| TYPE-01 | Pending | Pending |
-| TYPE-02 | Pending | Pending |
-| DOC-01 | Pending | Pending |
-| DOC-02 | Pending | Pending |
-| DOC-03 | Pending | Pending |
-| DOC-04 | Pending | Pending |
-| DOC-05 | Pending | Pending |
-| DOC-06 | Pending | Pending |
-| DOC-07 | Pending | Pending |
+| FIX-01 | Phase 21 | Pending |
+| FIX-02 | Phase 21 | Pending |
+| FIX-03 | Phase 24 | Pending |
+| FIX-04 | Phase 21 | Pending |
+| FIX-05 | Phase 21 | Pending |
+| EXC-01 | Phase 22 | Pending |
+| MOD-01 | Phase 23 | Pending |
+| MOD-02 | Phase 23 | Pending |
+| MOD-03 | Phase 23 | Pending |
+| TYPE-01 | Phase 24 | Pending |
+| TYPE-02 | Phase 25 | Pending |
+| DOC-01 | Phase 26 | Pending |
+| DOC-02 | Phase 26 | Pending |
+| DOC-03 | Phase 26 | Pending |
+| DOC-04 | Phase 26 | Pending |
+| DOC-05 | Phase 26 | Pending |
+| DOC-06 | Phase 26 | Pending |
+| DOC-07 | Phase 26 | Pending |
 
 **Coverage:**
 - v2.1.0 requirements: 18 total
-- Mapped to phases: 0 (pending roadmap creation)
-- Unmapped: 18 ⚠️
+- Mapped to phases: 18
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-29*
-*Last updated: 2026-03-29 after initial definition*
+*Last updated: 2026-03-29 after roadmap creation — traceability complete*
