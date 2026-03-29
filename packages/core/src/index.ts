@@ -389,7 +389,28 @@ export {
  *
  * @public
  */
-export * from './exceptions'
+export {
+  AuthenticationException,
+  AuthException,
+  AuthorizationException,
+  CacheException,
+  CircularDependencyException,
+  ConfigurationException,
+  DatabaseException,
+  DomainException,
+  type ExceptionOptions,
+  GravitoException,
+  HttpException,
+  InfrastructureException,
+  type InfrastructureExceptionOptions,
+  ModelNotFoundException,
+  QueueException,
+  StorageException,
+  StreamException,
+  SystemException,
+  type ValidationError,
+  ValidationException,
+} from './exceptions'
 
 /**
  * Global process error handler registration for uncaught exceptions and rejections.
@@ -482,7 +503,6 @@ export {
   logger,
   router,
   Str,
-  setApp,
   tap,
   throwIf,
   throwUnless,
@@ -493,19 +513,19 @@ export {
  * Helper utilities for data transformation and validation.
  * @public
  */
-export * from './helpers/data'
+export { dataGet, dataHas, dataSet, type DataPath, type PathSegment } from './helpers/data'
 
 /**
  * Error creation and handling helpers.
  * @public
  */
-export * from './helpers/errors'
+export { createErrorBag, type ErrorBag, errors, old } from './helpers/errors'
 
 /**
  * HTTP response building helpers.
  * @public
  */
-export * from './helpers/response'
+export { type ApiFailure, type ApiSuccess, fail, jsonFail, jsonSuccess, ok } from './helpers/response'
 
 /**
  * Cookie jar and cookie management utilities.
@@ -702,7 +722,7 @@ export { Event } from './types/events'
  * Testing utilities and test helpers for unit and integration tests.
  * @public
  */
-export * from './testing'
+export { createHttpTester, HttpTester, TestResponse } from './testing'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Runtime Adapters
@@ -871,4 +891,13 @@ export function defineConfig(config: GravitoConfig): GravitoConfig {
  * Bun platform-specific adapters and utilities.
  * @public
  */
-export * from './adapters/bun/index'
+export {
+  BunContext,
+  BunRequest,
+  BunWebSocketHandler,
+  NodeType,
+  RadixNode,
+  RadixRouter,
+  type RouteMatch,
+  type WebSocketRouteHandlers,
+} from './adapters/bun'
