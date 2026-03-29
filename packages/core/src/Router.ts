@@ -433,7 +433,7 @@ export class Router {
       ) {
         const instance = await (modelClass as { find: (id: string) => Promise<unknown> }).find(id)
         if (!instance) {
-          throw new Error('ModelNotFound') // Will be caught by 404 handler if we handle it
+          throw new ModelNotFoundException(param, String(id))
         }
         return instance
       }
@@ -471,10 +471,6 @@ export class Router {
           routeModels[param] = resolved
           hasResolvedModels = true
         } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : undefined
-          if (message === 'ModelNotFound') {
-            throw new ModelNotFoundException(param, value)
-          }
           throw err
         }
       }
@@ -607,7 +603,6 @@ export class Router {
   ): Route {
     // 1. Resolve Path
     const fullPath = (options.prefix || '') + path
-    console.log(`[Router] Registering ${method.toUpperCase()} ${fullPath}`)
 
     // 2. Determine if FormRequest or Middleware is provided
     let formRequestMiddleware: GravitoMiddleware | null = null

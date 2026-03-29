@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test'
+import { describe, expect, it, spyOn } from 'bun:test'
 import type { GravitoContext as Context, GravitoMiddleware } from '../src/index'
 import { PlanetCore } from '../src/PlanetCore'
 import { Router } from '../src/Router'
@@ -261,5 +261,37 @@ describe('Router', () => {
 
     // Unregistered route throws
     expect(() => router.url('unknown.route')).toThrow("Named route 'unknown.route' not found")
+  })
+})
+
+describe('API Footgun Fixes', () => {
+  it('should not log to console when registering routes', () => {
+    const core = new PlanetCore()
+    const spy = spyOn(console, 'log').mockImplementation(() => {})
+    try {
+      core.router.get('/test-silent', async (c) => c.text('ok'))
+      expect(spy).not.toHaveBeenCalled()
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  it('should throw ModelNotFoundException (not string sentinel) from model binding', async () => {
+    const core = new PlanetCore()
+    const { ModelNotFoundException } = await import('../src/exceptions/ModelNotFoundException')
+
+    // Create a mock model class whose find() returns null
+    const MockModel = {
+      find: async (_id: string) => null,
+    }
+
+    core.router.model('post', MockModel)
+    core.router.get('/posts/:post', async (c) => c.text('ok'))
+
+    const req = new Request('http://localhost:3000/posts/999')
+    const res = await core.adapter.fetch(req)
+
+    // ModelNotFoundException has status 404
+    expect(res.status).toBe(404)
   })
 })
