@@ -25,6 +25,7 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 **Active:** v2.1.0 Core DX 改進
 - Phase 21 ✓ API Footgun Fixes
 - Phase 22 ✓ Exception Hierarchy Clarification (JSDoc role separation)
+- Phase 23 ✓ Named Export Conversion (star re-exports → explicit named exports)
 
 ## Requirements
 
@@ -381,4 +382,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-29 after Phase 22 complete*
+*Last updated: 2026-03-30 after Phase 23 complete*
