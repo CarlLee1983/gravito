@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v2.0.0
 milestone_name: milestone
-status: unknown
-last_updated: "2026-03-29T00:36:50.073Z"
+status: complete
+last_updated: "2026-03-29T01:59:15.372Z"
 progress:
   total_phases: 5
   completed_phases: 5
@@ -15,9 +15,10 @@ progress:
 
 ## Project Reference
 
-**Core Value:** 穩定可靠的核心基礎設施 — core 及所有 Orbit 包必須具備 production-ready 的錯誤處理與韌性機制
-**Milestone Goal:** 建立統一的錯誤處理模型與韌性機制，讓 core 及全部 Orbit 包達到 production-ready 成熟度
-**Roadmap:** `.planning/ROADMAP-v2.0.0.md`
+See: .planning/PROJECT.md (updated 2026-03-29)
+
+**Core value:** 穩定可靠的核心基礎設施
+**Current focus:** v2.0.0 shipped — planning next milestone
 
 ---
 

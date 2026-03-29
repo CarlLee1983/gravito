@@ -8,15 +8,10 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 
 **穩定可靠的核心基礎設施** — core 及所有 Orbit 包必須具備 production-ready 的錯誤處理、韌性機制和一致的 API 行為，讓下游 Satellite 和應用能安心依賴。
 
-## Current Milestone: v2.0.0 Core & Orbit Resilience
+## Current State
 
-**Goal:** 建立統一的錯誤處理模型與韌性機制，讓 core 及全部 Orbit 包達到 production-ready 成熟度
-
-**Target features:**
-- 統一錯誤模型 — 一致的錯誤類型、錯誤碼、錯誤傳播機制（跨所有 Orbit 包）
-- Graceful Degradation — Orbit 包失敗時系統優雅降級，不崩潰
-- Retry + Circuit Breaker — 外部依賴（DB、Redis、HTTP）的重試、斷路器、超時機制
-- 全量 Orbit 包改造 — core + ~50 個 Orbit 包統一採用新錯誤模型
+**Shipped:** v2.0.0 Core & Orbit Resilience (2026-03-29)
+**Next Milestone:** TBD — run `/gsd:new-milestone` to define
 
 ## Requirements
 
@@ -29,7 +24,7 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 
 ### Active
 
-(None — all v2.0.0 requirements validated)
+(None — define next milestone requirements via `/gsd:new-milestone`)
 
 ### Validated in v2.0.0
 
@@ -49,40 +44,69 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 
 **Brownfield 環境：** gravito-core 已運作多年，66 個核心包 + 15 個衛星模組。
 
-**當前狀態：**
+**當前狀態（v2.0.0 shipped）：**
 - Framework health: 100/100
 - Test pass rate: 99.7%+, 3000+ tests
 - TypeScript strict mode, 0 errors
-- 已有 @gravito/resilience 包（可能包含部分基礎）
-- Phase 16 完成 — 統一錯誤模型基礎已建立（GravitoException 三層階層 + 4 Orbit ErrorCodes + 52 contract tests）
-- Phase 17 完成 — 韌性基礎設施已建立（withRetry + CB 整合 + withResilience 組合 API，cockatiel 為底層實作）
-- Phase 18 完成 — 四大 Orbit 包（atlas, plasma, photon, signal）全面採用統一錯誤模型 + 韌性原語 + shutdown handler
-- Phase 19 完成 — 全部剩餘 Orbit 包（~40 個）遷移至 GravitoException 階層，健康檢查註冊完成，stream/beam shutdown handler 已連線
-- Phase 20 完成 — OrbitDegradationManager + Satellite contract tests + 38 packages version bump + migration guide
+- 統一錯誤模型已全面部署 — GravitoException 三層階層覆蓋所有 Orbit 包
+- @gravito/resilience 提供 withRetry + withResilience + CircuitBreaker 組合 API
+- OrbitDegradationManager 實現 CB open 時的 typed fallback
+- 38 packages 已 major version bump（core 3.0.0, photon 2.0.0 等）
+- Migration guide: docs/migration/v2.0.0.md
 
-**v2.0.0 決策：**
-- 允許 breaking changes — 重新設計錯誤處理
-- Major version bump 明確標示不向後相容
-- 涵蓋 core + 全部 Orbit 包
+**Known tech debt（from v2.0.0 audit）：**
+- atlas grammar layer ~122 bare throws 未遷移（query-builder 路徑，非 I/O）
+- 19 packages dependencies 區塊版本號未更新（peerDeps 已正確）
+- 4 packages 無 GravitoOrbit.install() 無法自行註冊 health check
 
 ## Constraints
 
-- **Breaking Changes**：v2.0.0 允許 breaking，但需提供遷移指南
 - **TypeScript Strict**：維持 noUnusedLocals/Parameters，零 as any
-- **測試覆蓋**：新錯誤模型需 80%+ 測試覆蓋率
+- **測試覆蓋**：80%+ 測試覆蓋率
 - **Satellite 隔離**：不直接修改 Satellite，Satellite 透過事件機制自然受益
 - **Runtime**：Bun 為主要目標 runtime
+- **Error Model**：所有新 Orbit 代碼必須使用 GravitoException 階層（v2.0.0 established）
 
 ## Key Decisions
 
 | 決策 | 理由 | 結果 |
 |------|------|------|
-| v2.0.0 major version | 錯誤模型重新設計需要 breaking changes | ✓ 已確認 |
-| 全量 Orbit 包改造 | 局部改造會導致不一致，全量確保品質統一 | ✓ 已確認 |
-| 錯誤處理為最高優先 | Production 穩定性是下游所有功能的基礎 | ✓ 已確認 |
-| 統一錯誤模型先行 | 先建立標準，再逐步改造各包 | ✓ Phase 16 完成 |
+| v2.0.0 major version | 錯誤模型重新設計需要 breaking changes | ✓ Good — 明確標示不相容 |
+| 全量 Orbit 包改造 | 局部改造會導致不一致，全量確保品質統一 | ✓ Good — 38 packages 統一 |
+| 錯誤處理為最高優先 | Production 穩定性是下游所有功能的基礎 | ✓ Good — 基礎穩固 |
+| 統一錯誤模型先行（P16→P19） | 先建立標準，再逐步改造各包 | ✓ Good — 零迴歸 |
+| cockatiel 為唯一新依賴 | Zero deps, ESM+CJS, MIT, Bun-compatible | ✓ Good — 穩定可靠 |
+| contract tests 先行於遷移 | 避免 .message 字串斷言給假綠燈 | ✓ Good — 早期發現問題 |
+| Object.setPrototypeOf 所有錯誤構造函數 | ESM/CJS instanceof 相容 | ✓ Good — 跨邊界正確 |
+| atlas grammar bare throws 列為 tech debt | query-builder 路徑非 I/O，不影響韌性 | ⚠️ Revisit — 後續 milestone |
 
 ---
+
+## Milestone: v2.0.0 (COMPLETE)
+
+**Status:** ✅ **COMPLETE** — 2026-03-29
+**Duration:** 2 days (2026-03-28 → 2026-03-29)
+**Phases:** 5 (Phase 16-20), 25 plans, 157 commits
+**Scope:** 523 files changed, +30,542 / -1,963 LOC
+
+### Achievements
+
+- GravitoException 三層錯誤階層 + ErrorCodes 命名空間 — 統一 50+ Orbit 包
+- withRetry + withResilience 組合 API（cockatiel 底層）
+- 四大 Orbit（atlas, plasma, photon, signal）+ ~40 剩餘 Orbit 全面遷移
+- OrbitDegradationManager — typed DegradedResult<T> fallback
+- 38 packages major version bump + migration guide
+
+### Archive
+
+- [v2.0.0-ROADMAP.md](milestones/v2.0.0-ROADMAP.md)
+- [v2.0.0-REQUIREMENTS.md](milestones/v2.0.0-REQUIREMENTS.md)
+- [v2.0.0-MILESTONE-AUDIT.md](milestones/v2.0.0-MILESTONE-AUDIT.md)
+
+---
+
+<details>
+<summary>Earlier Milestones (v1.3.10 — v1.5.1)</summary>
 
 ## Milestone: v1.3.10 (COMPLETE)
 
@@ -318,6 +342,8 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 - **Roadmap:** `.planning/ROADMAP-v1.5.1.md`
 - **State:** `.planning/STATE-v1.5.1.md`
 
+</details>
+
 ---
 
 ## Evolution
@@ -338,4 +364,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-29 after Phase 20 (Integration Verification & Graceful Degradation) complete — v2.0.0 milestone fully delivered*
+*Last updated: 2026-03-29 after v2.0.0 milestone complete*
