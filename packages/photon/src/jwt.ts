@@ -153,12 +153,12 @@ export function decode(token: string): { header: JwtHeader; payload: JwtPayload 
       throw new Error('Invalid JWT format')
     }
 
-    // Decode header
-    const headerJson = Buffer.from(parts[0], 'base64').toString()
+    // Decode header (base64url → standard base64 → atob)
+    const headerJson = atob(parts[0].replace(/-/g, '+').replace(/_/g, '/'))
     const header = JSON.parse(headerJson) as JwtHeader
 
-    // Decode payload
-    const payloadJson = Buffer.from(parts[1], 'base64').toString()
+    // Decode payload (base64url → standard base64 → atob)
+    const payloadJson = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))
     const payload = JSON.parse(payloadJson) as JwtPayload
 
     return { header, payload }
