@@ -38,8 +38,8 @@ created: 2026-03-29
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 20-01-01 | 01 | 1 | INTG-05 | unit | `bun test packages/resilience/tests/satellite-contracts/degradation-manager.contract.test.ts` | ❌ W0 | ⬜ pending |
-| 20-01-02 | 01 | 1 | INTG-05 | unit | `bun test packages/resilience/tests/satellite-contracts/degradation-manager.contract.test.ts` | ❌ W0 | ⬜ pending |
+| 20-01-01 | 01 | 1 | INTG-05 | unit/tdd | `bun test packages/resilience/tests/degradation/OrbitDegradationManager.test.ts --timeout=10000` | ❌ W0 | ⬜ pending |
+| 20-01-02 | 01 | 1 | INTG-05 | unit | `bun test packages/resilience/tests/ --timeout=10000` | ❌ W0 | ⬜ pending |
 | 20-02-01 | 02 | 1 | D-10 | contract | `bun test packages/resilience/tests/satellite-contracts/error-instanceof.contract.test.ts` | ❌ W0 | ⬜ pending |
 | 20-02-02 | 02 | 1 | D-10 | contract | `bun test packages/resilience/tests/satellite-contracts/orbit-api-signatures.contract.test.ts` | ❌ W0 | ⬜ pending |
 | 20-03-01 | 03 | 2 | RELS-01 | smoke | `bun run version:check` | ✅ | ⬜ pending |
@@ -53,7 +53,7 @@ created: 2026-03-29
 
 - [ ] `packages/resilience/src/degradation/DegradedResult.ts` — interface definition
 - [ ] `packages/resilience/src/degradation/OrbitDegradationManager.ts` — INTG-05 implementation
-- [ ] `packages/resilience/tests/satellite-contracts/degradation-manager.contract.test.ts` — covers INTG-05
+- [ ] `packages/resilience/tests/degradation/OrbitDegradationManager.test.ts` — covers INTG-05 (TDD in Plan 20-01)
 - [ ] `packages/resilience/tests/satellite-contracts/error-instanceof.contract.test.ts` — covers D-10 error compat
 - [ ] `packages/resilience/tests/satellite-contracts/orbit-api-signatures.contract.test.ts` — covers D-10 API compat
 - [ ] `docs/migration/` directory — for RELS-01 documentation deliverable
