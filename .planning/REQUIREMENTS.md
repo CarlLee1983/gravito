@@ -17,7 +17,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Exception 層級釐清
 
-- [ ] **EXC-01**: AuthException（abstract base）和 AuthenticationException（concrete 401）的 JSDoc 清楚說明角色差異；保留兩個類別不刪除
+- [x] **EXC-01**: AuthException（abstract base）和 AuthenticationException（concrete 401）的 JSDoc 清楚說明角色差異；保留兩個類別不刪除
 
 ### 模組組織
 
@@ -79,7 +79,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FIX-03 | Phase 24 | Complete |
 | FIX-04 | Phase 21 | Complete |
 | FIX-05 | Phase 21 | Complete |
-| EXC-01 | Phase 22 | Pending |
+| EXC-01 | Phase 22 | Complete |
 | MOD-01 | Phase 23 | Pending |
 | MOD-02 | Phase 23 | Pending |
 | MOD-03 | Phase 23 | Pending |

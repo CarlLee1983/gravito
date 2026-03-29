@@ -17,7 +17,7 @@ status: approved
 ## Phases
 
 - [x] **Phase 21: API Footgun Fixes** — Fix Router console.log, ModelNotFoundException string sentinel, boot() observabilityProvider, deprecated annotation, and skipped tests (completed 2026-03-29)
-- [ ] **Phase 22: Exception Hierarchy Clarification** — Add JSDoc role separation for AuthException (abstract base) and AuthenticationException (concrete 401); no structural changes
+- [x] **Phase 22: Exception Hierarchy Clarification** — Add JSDoc role separation for AuthException (abstract base) and AuthenticationException (concrete 401); no structural changes (completed 2026-03-29)
 - [ ] **Phase 23: Named Export Conversion** — Convert 6 star exports to explicit named exports; remove setApp from public barrel; mirror index.browser.ts
 - [ ] **Phase 24: Config Type Unification** — ApplicationConfig extends Pick<GravitoConfig>; boot() forwards observabilityProvider without silent drop
 - [ ] **Phase 25: Container Type Improvement** — Add ServiceMap-keyed overload to Container.make() eliminating any in primary DI resolution path
@@ -52,9 +52,9 @@ Plans:
   2. The JSDoc on AuthenticationException states it is the concrete 401 Unauthorized implementation that should be thrown and caught
   3. Both classes remain in the codebase with no renames or deletions; fortify and sentinel instanceof chains are unaffected
   4. A developer reading only the hover tooltip in VS Code can distinguish which class to extend and which to throw
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
-- [ ] 22-01-PLAN.md — Add role-clarifying JSDoc to AuthException, AuthenticationException, and declaration file (EXC-01)
+- [x] 22-01-PLAN.md — Add role-clarifying JSDoc to AuthException, AuthenticationException, and declaration file (EXC-01)
 
 ### Phase 23: Named Export Conversion
 **Goal**: The public API surface of @gravito/core is explicit and auditable — every exported symbol is visible by name in index.ts rather than hidden behind star re-exports
@@ -110,7 +110,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 21. API Footgun Fixes | v2.1.0 | 3/3 | Complete    | 2026-03-29 |
-| 22. Exception Hierarchy Clarification | v2.1.0 | 0/1 | Planning complete | - |
+| 22. Exception Hierarchy Clarification | v2.1.0 | 1/1 | Complete   | 2026-03-29 |
 | 23. Named Export Conversion | v2.1.0 | 0/? | Not started | - |
 | 24. Config Type Unification | v2.1.0 | 0/? | Not started | - |
 | 25. Container Type Improvement | v2.1.0 | 0/? | Not started | - |
