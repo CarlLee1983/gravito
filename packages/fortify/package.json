@@ -1,7 +1,7 @@
 {
   "name": "@gravito/fortify",
   "sideEffects": false,
-  "version": "3.1.2",
+  "version": "4.0.0",
   "publishConfig": {
     "access": "public"
   },
@@ -45,10 +45,10 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "peerDependencies": {
-    "@gravito/sentinel": "^4.0.1",
-    "@gravito/core": "^2.0.0",
-    "@gravito/photon": "^1.1.0",
-    "@gravito/signal": "^3.1.0"
+    "@gravito/sentinel": "^5.0.0",
+    "@gravito/core": "^3.0.0",
+    "@gravito/photon": "^2.0.0",
+    "@gravito/signal": "^4.0.0"
   },
   "peerDependenciesMeta": {
     "@gravito/signal": {

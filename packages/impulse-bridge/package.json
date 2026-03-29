@@ -1,7 +1,7 @@
 {
   "name": "@gravito/impulse-bridge",
   "sideEffects": false,
-  "version": "2.0.3",
+  "version": "3.0.0",
   "publishConfig": {
     "access": "public"
   },
@@ -27,8 +27,8 @@
     "test": "bun test tests/ --timeout=10000"
   },
   "peerDependencies": {
-    "@gravito/core": "^2.0.0",
-    "@gravito/impulse": "^1.1.1"
+    "@gravito/core": "^3.0.0",
+    "@gravito/impulse": "^2.0.0"
   },
   "devDependencies": {
     "@gravito/core": "workspace:*",

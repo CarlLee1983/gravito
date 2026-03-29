@@ -1,7 +1,7 @@
 {
   "name": "@gravito/ripple",
   "sideEffects": false,
-  "version": "4.0.3",
+  "version": "5.0.0",
   "description": "Bun-native WebSocket broadcasting for Gravito. Channel-based real-time communication.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -46,7 +46,7 @@
   },
   "homepage": "https://github.com/gravito-framework/gravito#readme",
   "peerDependencies": {
-    "@gravito/core": "^2.0.0",
+    "@gravito/core": "^3.0.0",
     "ioredis": "^5.0.0",
     "nats": "^2.23.0",
     "protobufjs": "^8.0.0",

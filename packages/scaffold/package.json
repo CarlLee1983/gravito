@@ -43,7 +43,7 @@
     "bun-types": "latest"
   },
   "peerDependencies": {
-    "@gravito/core": "^2.0.0"
+    "@gravito/core": "^3.0.0"
   },
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",

@@ -1,7 +1,7 @@
 {
   "name": "@gravito/beam",
   "sideEffects": false,
-  "version": "1.0.1",
+  "version": "2.0.0",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -38,8 +38,8 @@
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "@gravito/core": "^2.0.0",
-    "@gravito/photon": "^1.1.0",
+    "@gravito/core": "^3.0.0",
+    "@gravito/photon": "^2.0.0",
     "hono": "^4.12.0"
   },
   "peerDependenciesMeta": {

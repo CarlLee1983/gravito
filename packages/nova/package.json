@@ -38,7 +38,7 @@
   "author": "Gravito Team",
   "license": "MIT",
   "peerDependencies": {
-    "@gravito/core": "^2.0.0",
+    "@gravito/core": "^3.0.0",
     "@gravito/chromatic": "^1.0.0"
   },
   "peerDependenciesMeta": {

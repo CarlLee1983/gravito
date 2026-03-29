@@ -1,7 +1,7 @@
 {
   "name": "@gravito/quasar",
   "sideEffects": false,
-  "version": "1.3.2",
+  "version": "2.0.0",
   "description": "Universal monitoring agent for Gravito Zenith with queue statistics (Probes) and real-time job tracking (Bridges)",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

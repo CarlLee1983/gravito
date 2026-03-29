@@ -1,7 +1,7 @@
 {
   "name": "@gravito/forge",
   "sideEffects": false,
-  "version": "3.0.4",
+  "version": "4.0.0",
   "publishConfig": {
     "access": "public"
   },
@@ -53,9 +53,9 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "peerDependencies": {
-    "@gravito/core": "^2.0.0",
-    "@gravito/nebula": "^4.1.1",
-    "@gravito/stream": "^2.1.0"
+    "@gravito/core": "^3.0.0",
+    "@gravito/nebula": "^5.0.0",
+    "@gravito/stream": "^3.0.0"
   },
   "peerDependenciesMeta": {
     "react": {

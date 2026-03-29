@@ -1,6 +1,6 @@
 {
   "name": "@gravito/cosmos",
-  "version": "3.2.2",
+  "version": "4.0.0",
   "description": "Internationalization orbit for Gravito framework",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -43,8 +43,8 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "peerDependencies": {
-    "@gravito/core": "^2.0.0",
-    "@gravito/photon": "^1.1.0"
+    "@gravito/core": "^3.0.0",
+    "@gravito/photon": "^2.0.0"
   },
   "devDependencies": {
     "@gravito/core": "workspace:*",

@@ -1,6 +1,6 @@
 {
   "name": "@gravito/quark",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "description": "Bun-native TCP server and client for Gravito. High-performance networking with frame protocols and backpressure management.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -43,7 +43,7 @@
   },
   "homepage": "https://github.com/gravito-framework/gravito#readme",
   "peerDependencies": {
-    "@gravito/core": "^2.0.0"
+    "@gravito/core": "^3.0.0"
   },
   "devDependencies": {
     "@gravito/core": "workspace:*",

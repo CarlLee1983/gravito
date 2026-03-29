@@ -1,7 +1,7 @@
 {
   "name": "@gravito/pulsar",
   "sideEffects": false,
-  "version": "3.0.3",
+  "version": "4.0.0",
   "publishConfig": {
     "access": "public"
   },
@@ -44,8 +44,8 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "peerDependencies": {
-    "@gravito/core": "^2.0.0",
-    "@gravito/plasma": "^2.0.0"
+    "@gravito/core": "^3.0.0",
+    "@gravito/plasma": "^3.0.0"
   },
   "devDependencies": {
     "@gravito/plasma": "workspace:*",

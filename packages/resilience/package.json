@@ -1,6 +1,6 @@
 {
   "name": "@gravito/resilience",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "description": "Event system resilience layer for Gravito (Circuit Breaker, DLQ, Backpressure, Worker Pool)",
   "license": "MIT",
   "type": "module",
@@ -17,7 +17,7 @@
     }
   },
   "peerDependencies": {
-    "@gravito/core": "^2.0.0",
+    "@gravito/core": "^3.0.0",
     "@opentelemetry/api": "^1.9.0"
   },
   "peerDependenciesMeta": {

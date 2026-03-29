@@ -1,7 +1,7 @@
 {
   "name": "@gravito/constellation",
   "sideEffects": false,
-  "version": "3.1.3",
+  "version": "4.0.0",
   "description": "Powerful sitemap generation for Gravito applications with dynamic/static support, sharding, and caching.",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -31,7 +31,7 @@
     "test:integration": "test $(find tests -name '*.integration.test.ts' 2>/dev/null | wc -l) -gt 0 && find tests -name '*.integration.test.ts' -print0 | xargs -0 bun test --timeout=10000 || echo 'No integration tests found'"
   },
   "peerDependencies": {
-    "@gravito/core": "^2.0.0"
+    "@gravito/core": "^3.0.0"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.956.0",

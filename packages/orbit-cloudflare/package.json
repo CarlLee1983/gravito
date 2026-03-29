@@ -29,7 +29,7 @@
     "test": "bun test tests/ --timeout=10000"
   },
   "peerDependencies": {
-    "@gravito/core": "^2.0.0"
+    "@gravito/core": "^3.0.0"
   },
   "devDependencies": {
     "@gravito/core": "workspace:*",

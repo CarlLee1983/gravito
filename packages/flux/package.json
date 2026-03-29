@@ -1,7 +1,7 @@
 {
   "name": "@gravito/flux",
   "sideEffects": false,
-  "version": "3.0.3",
+  "version": "4.0.0",
   "description": "Platform-agnostic workflow engine for Gravito",
   "type": "module",
   "main": "./dist/index.node.cjs",
@@ -50,7 +50,7 @@
     "test:integration": "test $(find tests -name '*.integration.test.ts' 2>/dev/null | wc -l) -gt 0 && find tests -name '*.integration.test.ts' -print0 | xargs -0 bun test --timeout=10000 || echo 'No integration tests found'"
   },
   "peerDependencies": {
-    "@gravito/core": "^2.0.0",
+    "@gravito/core": "^3.0.0",
     "pg": "^8.18.0"
   },
   "peerDependenciesMeta": {

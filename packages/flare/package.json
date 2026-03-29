@@ -1,7 +1,7 @@
 {
   "name": "@gravito/flare",
   "sideEffects": false,
-  "version": "4.0.2",
+  "version": "5.0.0",
   "publishConfig": {
     "access": "public"
   },
@@ -48,9 +48,9 @@
     "@aws-sdk/client-sns": "^3.734.0"
   },
   "peerDependencies": {
-    "@gravito/stream": "^2.1.0",
-    "@gravito/signal": "^3.1.0",
-    "@gravito/radiance": "^1.0.4"
+    "@gravito/stream": "^3.0.0",
+    "@gravito/signal": "^4.0.0",
+    "@gravito/radiance": "^2.0.0"
   },
   "devDependencies": {
     "bun-types": "latest",
