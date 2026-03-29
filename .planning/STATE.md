@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 21-02-PLAN.md
-last_updated: "2026-03-29T15:00:31.908Z"
+stopped_at: Phase 22 context gathered
+last_updated: "2026-03-29T15:11:01.749Z"
 progress:
   total_phases: 6
   completed_phases: 1
@@ -77,9 +77,9 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-03-29T14:57:19.489Z
-Stopped at: Completed 21-02-PLAN.md
-Resume file: None
+Last session: 2026-03-29T15:11:01.747Z
+Stopped at: Phase 22 context gathered
+Resume file: .planning/phases/22-exception-hierarchy-clarification/22-CONTEXT.md
 
 ### To resume this milestone:
 
