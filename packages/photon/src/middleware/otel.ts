@@ -8,19 +8,7 @@
  * @since 1.0.0
  */
 
-import { createRequire } from 'node:module'
-
 import type { GravitoContext, GravitoMiddleware } from '@gravito/core'
-
-// Runtime module loader (avoid static dependency)
-const createRequireLoader = () => {
-  try {
-    return createRequire(import.meta.url)
-  } catch {
-    // Fallback for environments that don't support import.meta.url
-    return null
-  }
-}
 
 // Type alias for convenience
 type Context = GravitoContext
@@ -124,34 +112,19 @@ const noopApi: OtelApi = {
 // 動態載入 @opentelemetry/api（避免硬依賴）
 // ─────────────────────────────────────────────────────────────────────────────
 
-let cachedApi: OtelApi | null = null
-let apiLoaded = false
+let otelApiPromise: Promise<OtelApi> | null = null
 
 /**
  * 嘗試動態載入 @opentelemetry/api
  * 若未安裝則返回 no-op 實作
  */
-function loadOtelApi(): OtelApi {
-  if (apiLoaded) {
-    return cachedApi ?? noopApi
+function getOtelApi(): Promise<OtelApi> {
+  if (!otelApiPromise) {
+    otelApiPromise = import('@opentelemetry/api')
+      .then((mod) => mod as unknown as OtelApi)
+      .catch(() => noopApi)
   }
-
-  apiLoaded = true
-
-  try {
-    const require = createRequireLoader()
-    if (!require) {
-      throw new Error('createRequire not available')
-    }
-    // Use createRequire for safe dynamic loading (no eval)
-    const api = require('@opentelemetry/api') as OtelApi
-    cachedApi = api
-    return api
-  } catch {
-    // @opentelemetry/api 未安裝，使用 no-op 實作
-    cachedApi = null
-    return noopApi
-  }
+  return otelApiPromise
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -225,10 +198,13 @@ export function otelMiddleware(config: OtelMiddlewareConfig = {}): GravitoMiddle
     traceIdHeader = 'X-Trace-Id',
   } = config
 
-  const otelApi = loadOtelApi()
-  const tracer = otelApi.trace.getTracer(serviceName, serviceVersion)
+  const initPromise = getOtelApi().then((api) => ({
+    api,
+    tracer: api.trace.getTracer(serviceName, serviceVersion),
+  }))
 
   const middleware: GravitoMiddleware = async (c, next) => {
+    const { api: otelApi, tracer } = await initPromise
     const path = new URL(c.req.url).pathname
 
     // 排除特定路徑
