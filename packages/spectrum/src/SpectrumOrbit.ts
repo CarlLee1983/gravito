@@ -13,6 +13,8 @@ import { MemoryStorage } from './storage/MemoryStorage'
 import type { SpectrumStorage } from './storage/types'
 import type { CapturedLog, CapturedRequest } from './types'
 
+const sharedEncoder = new TextEncoder()
+
 /**
  * Configuration options for the Spectrum observability orbit.
  *
@@ -410,7 +412,6 @@ export class SpectrumOrbit implements GravitoOrbit {
       wrap((_c) => {
         const { readable, writable } = new TransformStream()
         const writer = writable.getWriter()
-        const encoder = new TextEncoder()
 
         let isClosed = false
 
@@ -431,7 +432,7 @@ export class SpectrumOrbit implements GravitoOrbit {
             return
           }
           Promise.resolve()
-            .then(() => writer.write(encoder.encode(`data: ${payload}\n\n`)))
+            .then(() => writer.write(sharedEncoder.encode(`data: ${payload}\n\n`)))
             .catch(() => {
               cleanup()
             })
@@ -444,7 +445,7 @@ export class SpectrumOrbit implements GravitoOrbit {
             return
           }
           Promise.resolve()
-            .then(() => writer.write(encoder.encode(': heartbeat\n\n')))
+            .then(() => writer.write(sharedEncoder.encode(': heartbeat\n\n')))
             .catch(() => {
               cleanup()
             })
