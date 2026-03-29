@@ -207,6 +207,7 @@ export class NativeSSEStreamingApi {
    * Sleep utility (preserves Hono API compatibility)
    */
   async sleep(ms: number): Promise<void> {
+    if (typeof Bun !== 'undefined') return Bun.sleep(ms)
     return new Promise((resolve) => setTimeout(resolve, ms))
   }
 
