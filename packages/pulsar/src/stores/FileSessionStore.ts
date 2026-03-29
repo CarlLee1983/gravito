@@ -1,9 +1,12 @@
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { getRuntimeAdapter } from '@gravito/core'
-import type { SessionId, SessionRecord, SessionStore } from '../types'
-import { PulsarError } from '../errors/PulsarError'
+
+const sharedDecoder = new TextDecoder()
+
 import { PulsarErrorCodes } from '../errors/codes'
+import { PulsarError } from '../errors/PulsarError'
+import type { SessionId, SessionRecord, SessionStore } from '../types'
 
 interface PersistedSessionFile {
   record: SessionRecord
@@ -101,7 +104,7 @@ export class FileSessionStore implements SessionStore {
     }
     try {
       const content = await this.runtime.readFile(path)
-      const parsed = JSON.parse(new TextDecoder().decode(content)) as
+      const parsed = JSON.parse(sharedDecoder.decode(content)) as
         | SessionRecord
         | PersistedSessionFile
 

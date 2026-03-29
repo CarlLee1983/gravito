@@ -1,5 +1,3 @@
-import { randomBytes } from 'node:crypto'
-
 /**
  * Encodes bytes to URL-safe base64 string.
  *
@@ -9,8 +7,7 @@ import { randomBytes } from 'node:crypto'
  * @internal
  */
 export function base64Url(bytes: Uint8Array): string {
-  return Buffer.from(bytes)
-    .toString('base64')
+  return btoa(String.fromCharCode(...bytes))
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/g, '')
@@ -24,7 +21,7 @@ export function base64Url(bytes: Uint8Array): string {
  * @public
  */
 export function generateToken(): string {
-  return base64Url(randomBytes(32))
+  return base64Url(crypto.getRandomValues(new Uint8Array(32)))
 }
 
 /**
