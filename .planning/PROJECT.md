@@ -8,10 +8,21 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 
 **穩定可靠的核心基礎設施** — core 及所有 Orbit 包必須具備 production-ready 的錯誤處理、韌性機制和一致的 API 行為，讓下游 Satellite 和應用能安心依賴。
 
+## Current Milestone: v2.1.0 Core DX 改進
+
+**Goal:** 提升 @gravito/core 的開發者體驗 — 修正 API footgun、強化型別安全、同步文件與改善 onboarding 體驗
+
+**Target features:**
+- 修正 API Footgun（boot() 靜默丟棄 observabilityProvider、Router console.log 洩漏、Router ModelNotFound 字串比對、deprecated services 屬性清理）
+- 強化型別安全（消除公開 API 的 any、改善 GravitoVariables 核心屬性型別、統一 GravitoConfig 與 constructor options 型別）
+- 文件同步（README EventManager/HookManager API 修正、helpers 模組文件補充、中英文 JSDoc 統一）
+- Onboarding 改善（更新 examples/ 到 v2 API、補充 orbit/register/use 差異說明、新增 troubleshooting FAQ）
+- 模組組織清理（star export 收斂為 named export、AuthException/AuthenticationException 統一、@internal export 處理）
+
 ## Current State
 
 **Shipped:** v2.0.0 Core & Orbit Resilience (2026-03-29)
-**Next Milestone:** TBD — run `/gsd:new-milestone` to define
+**Active:** v2.1.0 Core DX 改進
 
 ## Requirements
 
@@ -24,7 +35,11 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 
 ### Active
 
-(None — define next milestone requirements via `/gsd:new-milestone`)
+- **API Footgun 修正** — boot() observabilityProvider 傳遞、Router console.log 移除、ModelNotFound 自訂 Exception
+- **型別安全強化** — 消除公開 API any、GravitoVariables 核心屬性具體型別、GravitoConfig 統一
+- **文件同步** — README API reference 更新、helpers 模組文件、JSDoc 語言統一
+- **Onboarding 改善** — v2 範例更新、orbit/register/use 說明、troubleshooting FAQ
+- **模組組織清理** — star export 收斂、Exception 命名統一、@internal 處理
 
 ### Validated in v2.0.0
 
@@ -364,4 +379,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-29 after v2.0.0 milestone complete*
+*Last updated: 2026-03-29 after v2.1.0 milestone started*
