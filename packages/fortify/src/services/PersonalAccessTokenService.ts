@@ -1,7 +1,6 @@
-import { timingSafeEqual } from 'node:crypto'
 import type { ConnectionContract } from '@gravito/atlas'
-import { FortifyError } from '../errors/FortifyError'
 import { ErrorCodes } from '../errors/codes'
+import { FortifyError } from '../errors/FortifyError'
 
 export interface PersonalAccessToken {
   id: number
@@ -147,9 +146,10 @@ export class PersonalAccessTokenService {
     return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
   }
 
+  private static readonly sharedEncoder = new TextEncoder()
+
   private async hashToken(plainToken: string): Promise<string> {
-    const encoder = new TextEncoder()
-    const data = encoder.encode(plainToken)
+    const data = PersonalAccessTokenService.sharedEncoder.encode(plainToken)
     const hashBuffer = await crypto.subtle.digest('SHA-256', data)
     const hashArray = Array.from(new Uint8Array(hashBuffer))
     return hashArray.map((byte) => byte.toString(16).padStart(2, '0')).join('')
@@ -161,7 +161,11 @@ export class PersonalAccessTokenService {
       return false
     }
 
-    return timingSafeEqual(Buffer.from(computedHash), Buffer.from(hashedToken))
+    let result = 0
+    for (let i = 0; i < computedHash.length; i++) {
+      result |= computedHash.charCodeAt(i) ^ hashedToken.charCodeAt(i)
+    }
+    return result === 0
   }
 
   private calculateExpiration(minutes?: number): Date | null {
