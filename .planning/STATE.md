@@ -1,14 +1,17 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.1.0
-milestone_name: Core DX 改進
-status: ready_to_plan
-last_updated: "2026-03-29T10:00:00.000Z"
+milestone_name: milestone
+status: planning
+stopped_at: Phase 21 context gathered
+last_updated: "2026-03-29T14:16:51.681Z"
+last_activity: 2026-03-29 — Roadmap created, 18/18 requirements mapped across 6 phases
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
+  percent: 0
 ---
 
 # STATE: Gravito-Core v2.1.0
@@ -34,6 +37,7 @@ Progress: [░░░░░░░░░░] 0%
 ## Performance Metrics
 
 **Velocity:**
+
 - Total plans completed: 0
 - Average duration: — min
 - Total execution time: — hours
@@ -76,9 +80,9 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-03-29
-Stopped at: Roadmap written, requirements mapped, ready to plan Phase 21
-Resume file: None
+Last session: 2026-03-29T14:16:51.677Z
+Stopped at: Phase 21 context gathered
+Resume file: .planning/phases/21-api-footgun-fixes/21-CONTEXT.md
 
 ### To resume this milestone:
 
