@@ -162,6 +162,7 @@ export async function executeWithRetry(
  * @param ms - Duration in milliseconds
  */
 function sleep(ms: number): Promise<void> {
+  if (typeof Bun !== 'undefined') return Bun.sleep(ms)
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 

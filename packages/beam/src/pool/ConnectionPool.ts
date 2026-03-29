@@ -3,7 +3,8 @@
  * @module @gravito/beam/pool
  */
 
-import { randomUUID } from 'node:crypto'
+const randomUUID = () => crypto.randomUUID()
+
 import { BeamError, BeamErrorCodes, BeamPoolExhaustedError } from '../errors'
 import { PoolEntry } from './PoolEntry'
 import { PoolHealthChecker } from './PoolHealthChecker'
