@@ -451,6 +451,7 @@ export class RedisLock implements SitemapLock {
    * @param ms - Duration to sleep in milliseconds
    */
   private sleep(ms: number): Promise<void> {
+    if (typeof Bun !== 'undefined') return Bun.sleep(ms)
     return new Promise((resolve) => setTimeout(resolve, ms))
   }
 }

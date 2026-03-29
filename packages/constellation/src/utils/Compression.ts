@@ -8,6 +8,9 @@ import type { Transform } from 'node:stream'
 import { createGzip } from 'node:zlib'
 import { getCompressionAdapter } from '@gravito/core'
 import { ConstellationError } from '../errors/ConstellationError'
+
+const sharedEncoder = new TextEncoder()
+
 import { ConstellationErrorCodes } from '../errors/codes'
 
 /**
@@ -58,7 +61,7 @@ export async function compressToBuffer(
     parts.push(chunk)
   }
 
-  const input = new TextEncoder().encode(parts.join(''))
+  const input = sharedEncoder.encode(parts.join(''))
   const adapter = getCompressionAdapter()
   const compressed = await adapter.gzip(input, { level })
   return Buffer.from(compressed)
