@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 22-01-PLAN.md
-last_updated: "2026-03-29T15:30:32.993Z"
+stopped_at: Phase 23 context gathered
+last_updated: "2026-03-29T15:43:06.302Z"
 progress:
   total_phases: 6
   completed_phases: 2
@@ -78,9 +78,9 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-03-29T15:28:31.719Z
-Stopped at: Completed 22-01-PLAN.md
-Resume file: None
+Last session: 2026-03-29T15:43:06.298Z
+Stopped at: Phase 23 context gathered
+Resume file: .planning/phases/23-named-export-conversion/23-CONTEXT.md
 
 ### To resume this milestone:
 
