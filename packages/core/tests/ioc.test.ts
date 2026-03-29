@@ -63,4 +63,30 @@ describe('PlanetCore IoC', () => {
     })
     expect(cfg.config?.foo).toBe('bar')
   })
+
+  it('should forward observabilityProvider from boot() to constructor', async () => {
+    const mockProvider = {
+      getTracer: () => ({
+        startSpan: () => ({ end: () => {}, setAttribute: () => {} }),
+      }),
+      getMeter: () => ({
+        createCounter: () => ({ add: () => {} }),
+        createHistogram: () => ({ record: () => {} }),
+      }),
+    }
+
+    const core = await PlanetCore.boot({
+      observabilityProvider: mockProvider as any,
+    })
+
+    expect(core.observabilityProvider).toBe(mockProvider)
+  })
+
+  it('should allow accessing deprecated services property without error', async () => {
+    const core = await PlanetCore.boot({})
+
+    // services is @deprecated but must still be accessible
+    expect(core.services).toBeInstanceOf(Map)
+    expect(core.services.size).toBe(0)
+  })
 })
