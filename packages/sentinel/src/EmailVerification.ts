@@ -110,11 +110,11 @@ export class EmailVerificationService {
   }
 
   private timingSafeEqual(a: string, b: string): boolean {
-    const bufA = Buffer.from(a)
-    const bufB = Buffer.from(b)
-    if (bufA.length !== bufB.length) {
-      return false
+    if (a.length !== b.length) return false
+    let result = 0
+    for (let i = 0; i < a.length; i++) {
+      result |= a.charCodeAt(i) ^ b.charCodeAt(i)
     }
-    return crypto.timingSafeEqual(bufA, bufB)
+    return result === 0
   }
 }

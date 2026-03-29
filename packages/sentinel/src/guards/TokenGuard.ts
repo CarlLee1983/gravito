@@ -91,9 +91,10 @@ export class TokenGuard<User extends Authenticatable = Authenticatable> implemen
     return this.userInstance
   }
 
+  private static readonly sharedEncoder = new TextEncoder()
+
   private async hashToken(token: string): Promise<string> {
-    const encoder = new TextEncoder()
-    const data = encoder.encode(token)
+    const data = TokenGuard.sharedEncoder.encode(token)
     const hashBuffer = await crypto.subtle.digest(
       TokenGuard.HASH_ALGORITHMS[this.hashAlgorithm],
       data
