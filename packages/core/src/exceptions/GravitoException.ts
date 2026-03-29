@@ -33,6 +33,7 @@ export abstract class GravitoException extends Error {
     if (options.i18nParams) {
       this.i18nParams = options.i18nParams
     }
+    Object.setPrototypeOf(this, new.target.prototype)
   }
 
   // Helper for i18n

@@ -1,4 +1,17 @@
 /**
+ * Event-system CircuitBreaker — standalone copy.
+ *
+ * NOTE: This is intentionally NOT a re-export from @gravito/resilience
+ * to avoid a circular dependency (core <-> resilience):
+ *   @gravito/core -> @gravito/resilience (peerDep of resilience -> core)
+ *
+ * The canonical CB implementation lives in @gravito/resilience.
+ * Keep this file in sync manually if the canonical CB API changes.
+ *
+ * Per D-02 decision recorded in 17-RESEARCH.md.
+ */
+
+/**
  * Circuit Breaker state enum.
  * @public
  */

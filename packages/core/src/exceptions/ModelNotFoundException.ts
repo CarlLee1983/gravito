@@ -14,6 +14,7 @@ export class ModelNotFoundException extends GravitoException {
       i18nKey: 'errors.model.not_found',
       i18nParams: { model, id: String(id ?? '') },
     })
+    this.name = 'ModelNotFoundException'
     this.model = model
     if (id !== undefined) {
       this.id = id
