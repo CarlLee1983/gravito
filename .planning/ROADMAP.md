@@ -110,7 +110,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 21. API Footgun Fixes | v2.1.0 | 3/3 | Complete    | 2026-03-29 |
-| 22. Exception Hierarchy Clarification | v2.1.0 | 1/1 | Complete   | 2026-03-29 |
+| 22. Exception Hierarchy Clarification | v2.1.0 | 1/1 | Complete    | 2026-03-29 |
 | 23. Named Export Conversion | v2.1.0 | 0/? | Not started | - |
 | 24. Config Type Unification | v2.1.0 | 0/? | Not started | - |
 | 25. Container Type Improvement | v2.1.0 | 0/? | Not started | - |
