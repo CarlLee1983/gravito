@@ -768,6 +768,7 @@ export class PlanetCore {
       ...(config.config && { config: config.config }),
       ...(config.adapter && { adapter: config.adapter }),
       ...(config.container && { container: config.container }),
+      ...(config.observabilityProvider && { observabilityProvider: config.observabilityProvider }),
     })
 
     if (config.orbits) {
