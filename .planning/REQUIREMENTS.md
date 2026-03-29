@@ -21,8 +21,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### 模組組織
 
-- [ ] **MOD-01**: 6 個 star export 轉為明確 named export（exceptions, helpers/data, helpers/errors, helpers/response, testing, adapters/bun）
-- [ ] **MOD-02**: setApp() 從 index.ts 和 index.browser.ts 公開 export 中移除
+- [x] **MOD-01**: 6 個 star export 轉為明確 named export（exceptions, helpers/data, helpers/errors, helpers/response, testing, adapters/bun）
+- [x] **MOD-02**: setApp() 從 index.ts 和 index.browser.ts 公開 export 中移除
 - [ ] **MOD-03**: index.browser.ts 與 index.ts named export 變更保持同步
 
 ### 型別改善
@@ -80,8 +80,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FIX-04 | Phase 21 | Complete |
 | FIX-05 | Phase 21 | Complete |
 | EXC-01 | Phase 22 | Complete |
-| MOD-01 | Phase 23 | Pending |
-| MOD-02 | Phase 23 | Pending |
+| MOD-01 | Phase 23 | Complete |
+| MOD-02 | Phase 23 | Complete |
 | MOD-03 | Phase 23 | Pending |
 | TYPE-01 | Phase 24 | Pending |
 | TYPE-02 | Phase 25 | Pending |
