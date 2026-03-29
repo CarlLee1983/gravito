@@ -1,206 +1,188 @@
 # Project Research Summary
 
-**Project:** Gravito v2.0.0 — Unified Error Handling & Resilience
-**Domain:** TypeScript/Bun monorepo framework hardening (brownfield, ~50 Orbit packages)
-**Researched:** 2026-03-28
+**Project:** @gravito/core v2.1.0 DX Improvements
+**Domain:** TypeScript monorepo framework — public API surface hardening
+**Researched:** 2026-03-29
 **Confidence:** HIGH
 
 ## Executive Summary
 
-Gravito is a mature Galaxy Architecture TypeScript framework with solid resilience primitives already in place — `CircuitBreaker`, `RetryScheduler`, `BackpressureManager`, `DeadLetterQueue`, and `HealthRegistry` all exist. The problem is scope: these tools are scoped exclusively to the event-bus system and are not wired into the 50 Orbit packages that interact with external services (databases, Redis, HTTP, SMTP, queues). In parallel, each Orbit package invents its own error types extending plain `Error`, creating ~10 incompatible error hierarchies that `@gravito/photon`'s `ErrorHandler` can only partially handle via duck-typing — producing generic 500 responses where structured 404/422/503 responses should appear.
+This is a DX improvement pass on an existing, production-ready framework — not a greenfield feature build. The codebase already has a solid foundation (TypeScript strict mode, Biome, Bun test, pre-commit hooks), but has accumulated specific API surface problems that degrade the developer experience for both internal contributors and external consumers: unconditional `console.log` in library code, brittle string-sentinel error throwing, confusingly-named exception classes, star exports that hide the true public API, and a config type that silently drops fields at runtime.
 
-The recommended approach is **extend and unify, not replace**. `GravitoException` already has the right shape (`status`, `code`, `i18nKey`, `cause`); the work is migrating all Orbit error classes to extend it, adding a centralized `ErrorCode` registry, and wrapping external I/O calls in a `ResiliencePolicy` facade backed by `cockatiel` (the one new dependency recommended — zero-dep, ESM+CJS, MIT, verified Bun-compatible). The build order is non-negotiable: core error model first, then resilience infrastructure, then high-blast-radius Orbits (atlas, plasma), then secondary Orbits in batches.
+The recommended approach is a phased, backwards-compatible cleanup in priority order: fix the most visible footguns first (console.log, string sentinel, deprecated API annotation), then consolidate the module organization (named exports, @internal hiding), then improve config type accuracy and exception clarity, and finally add tooling validation (publint, TypeDoc for core). Every change should be gated by `bun run typecheck` at workspace root — not just per-package — because 352 import sites across 38+ downstream packages are all affected by export surface changes to `@gravito/core`.
 
-The critical risks are: (1) `instanceof` breaking silently across ESM/CJS boundaries if `Object.setPrototypeOf` is omitted from new error constructors; (2) existing tests passing while structural contracts are broken because they assert on `.message` strings rather than `.code`/`.status`; (3) retry logic applied to non-idempotent DB operations causing duplicate writes. All three must be mitigated at Phase 1 with contract test scaffolding, prototype chain enforcement, and idempotency gates — before any per-package migration begins.
-
----
+The primary risk in this project is not any single code change but rather the combination of export refactoring across a large package graph without complete verification gates. The two most dangerous operations are: (1) removing any symbol from the public export surface that downstream packages re-export or augment via `declare module`, and (2) modifying `AuthException` without first confirming that `fortify` and `sentinel` `instanceof` checks remain intact. Both risks are fully preventable with the audit patterns documented in PITFALLS.md.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The framework already has everything needed except a general-purpose synchronous retry utility for DB/HTTP/Redis calls. The strategy is to add exactly one new dependency and extend existing code for the rest.
+The toolchain needs only two new devDependencies: `publint` (package export validation, zero runtime deps) and `typedoc@^0.28.18` (API docs for `@gravito/core`, which lacks it despite 100% JSDoc coverage). Everything else is configuration changes to existing tools — specifically, upgrading Biome's `noExplicitAny` from `warn` to `error` and enabling the `noConsole` rule scoped to `packages/core/src/` (excluding the CLI subtree).
 
 **Core technologies:**
-- `@gravito/core` `GravitoException` — unified error base; extend to add `InfrastructureException` and domain subclasses rather than importing any new error library
-- `@gravito/resilience` `CircuitBreaker` — reuse the existing full implementation; expose via a new `ResiliencePolicy` facade so Orbit packages don't call it directly
-- `@gravito/monitor` `HealthRegistry` — already supports `healthy`/`degraded`/`unhealthy` Kubernetes probes; wire Orbit packages into it via `registerOrbit()`
-- `cockatiel@^3.2.1` — the only new dependency; provides synchronous retry + timeout + bulkhead composition for DB/HTTP/Redis calls; zero dependencies, ESM+CJS, MIT
-- `@opentelemetry/api@^1.9.1` — already a peer dependency in 6 packages; extend usage to error span recording and trace ID propagation in error responses
+- **Biome 2.3.10** (already installed): upgrade `noExplicitAny` to `error`, add `noConsole` with override scope — fixes the enforcement gap that lets new `any` and debug `console.log` slip through CI
+- **publint ^0.3.18** (new, root devDep): validates `package.json` exports maps across all 50+ packages — catches the class of publish bugs where consumers get `Cannot find module` despite a clean build
+- **TypeDoc ^0.28.18** (new, per `@gravito/core` only): generates API reference from existing 100% JSDoc coverage; `excludeInternal: true` enforces the `@internal` boundary in generated output
+- **TypeScript 5.9.3** (already configured): no changes needed; `noUnusedLocals` and `noUnusedParameters` already ON
 
-**What NOT to use:** `neverthrow`/`ts-results` would require rewriting 50 package call sites; Effect-TS is 18 MB with production-reported interop friction; `opossum` requires Node-specific `EventEmitter` and is heavier than needed.
+Do NOT add: `@microsoft/api-extractor` (DTS rollup overhead not warranted), `type-coverage` (redundant with `noExplicitAny: error`), `knip` (50-package scope is too noisy for v2.1.0), ESLint (Biome already covers the lint surface).
 
 ### Expected Features
 
-**Must have (table stakes — v2.0.0):**
-- Unified error base class — all Orbit errors extend `GravitoException` hierarchy; `DatabaseError`, `RedisError`, `MassValidationError` etc. stop extending plain `Error`
-- Structured error code namespaces per Orbit — following `@gravito/fortify`'s `ErrorCodes` pattern (`db.*`, `redis.*`, `stream.*`)
-- General-purpose async retry utility — `withRetry(fn, options)` with exponential backoff + jitter, distinct from the BullMQ-based `RetryScheduler`
-- Circuit breaker wired to atlas (DB) and plasma (Redis) — the two highest-impact external dependencies
-- Graceful shutdown with deadline — atlas, plasma, stream, signal, beam all register `core:shutdown` handlers with configurable deadline enforcement
-- Orbit health check registration — structural wiring of all major Orbits into `@gravito/monitor`
+Research is against a DX improvement milestone with known, audited footguns. This is not a feature-discovery exercise — it is a prioritized fix list.
 
-**Should have (v2.1.0):**
-- Circuit breaker for beam (HTTP client)
-- `withResilience()` composition API — convenience wrapper combining retry + circuit breaker in correct order
-- Graceful degradation with fallback values — `OrbitDegradationManager` returning typed fallback data when circuit is open
-- Request-scoped error context enrichment — automatic trace ID and user context in every Orbit error
+**Must have (table stakes — v2.1.0):**
+- **Zero stdout in library code** — remove `Router.ts:610` console.log; every serious framework does this; one-line fix with disproportionate professional signal
+- **ModelNotFound as typed exception** — replace `throw new Error('ModelNotFound')` string sentinel (lines 436/475) with direct `throw new ModelNotFoundException(param, value)`; eliminates brittle string comparison
+- **AuthException vs AuthenticationException clarity** — JSDoc clarification that `AuthException` is abstract base, `AuthenticationException` is concrete 401; no file deletions
+- **`core.services` TypeScript `@deprecated` annotation** — IDE strikethrough prevents new devs from following the wrong pattern; JSDoc `@deprecated` already exists but TS decorator does not
+- **README API section sync** — audit EventManager/HookManager public methods against source; fix concrete discrepancies
+- **JSDoc language unification** — English-only consistency across public API (already 100% covered, language is inconsistent)
+- **orbit vs register vs use decision guide** — single doc section + JSDoc `@see` cross-references; top onboarding confusion point
 
-**Defer (v2.x+):**
-- Per-Orbit error namespace registry for documentation generation
-- Idempotency key propagation for HTTP retries (belongs in commerce Satellite, not framework layer)
-- Distributed tracing integration for circuit breaker events
+**Should have (v2.1.x follow-up):**
+- **Named export convergence** — convert `export * from './exceptions'`, `./helpers/data`, `./helpers/errors`, `./helpers/response`, `./testing`, `./adapters/bun/index` to explicit named exports
+- **Actionable error messages with `suggestion` field** — extend `GravitoException` constructor; apply to top 5 DI resolution errors
+- **Update 3-5 canonical examples** — `ecommerce-mvc`, `blog-mvc`, `auth-verification` to v2 API patterns
+
+**Defer (v2.2+):**
+- **Zero `any` in public generics** — 69 occurrences across 31 files; high complexity, generic threading risk; requires stabilized API surface first
+- **Troubleshooting FAQ** — 5-entry doc; requires stabilized API to write accurately
+- **TypeDoc API reference site** — useful once named exports are converged
 
 ### Architecture Approach
 
-The architecture change is layered: `@gravito/core` grows a new `InfrastructureException` branch in the exception hierarchy and a centralized `ErrorCode` namespace; `@gravito/resilience` gains a `ResiliencePolicy` interface + `ResiliencePolicyBuilder` + `GracefulDegradationManager` + a synchronous `RetryPolicy`; each Orbit package wraps its external I/O calls in its own `ResiliencePolicyDefaults` configuration and maps raw driver errors to the unified hierarchy at the Orbit boundary. Satellite packages require zero direct changes — they inherit better error behavior automatically via the event isolation already in place.
+All DX improvements are API surface changes and type-level changes — no file moves, no new directories. The existing structure is sound, and with 352 import sites across 38+ consumer packages, file moves carry high regression risk. The work is: (1) what gets exported and how (`index.ts` star to named), (2) what is hidden (`setApp` removed from public barrel), (3) type accuracy (`GravitoConfig` + `ApplicationConfig` via extension, `Container.make()` overload), and (4) exception documentation (JSDoc on `AuthException` / `AuthenticationException`).
 
-**Major components:**
-1. `ErrorCode` namespace + `InfrastructureException` branch (`@gravito/core`) — centralized type registry; all Orbit errors resolve here
-2. `ResiliencePolicy` interface + `ResiliencePolicyBuilder` + synchronous `RetryPolicy` (`@gravito/resilience`) — standard contract for wrapping any external I/O call; cockatiel backs the implementation
-3. `GracefulDegradationManager` (`@gravito/resilience`) — tracks Orbit health state, fires `orbit:degraded` hooks, coordinates fallback strategies via IoC injection
-4. Per-Orbit error adapters and resilience defaults (each Orbit package) — map raw driver exceptions to the unified hierarchy; configure default retry + circuit breaker policy for that service type
+**Major components and their DX state:**
+1. **`src/index.ts` (875-line barrel)** — 6 remaining star exports hide the true public API surface; target is explicit named export blocks for `exceptions`, `helpers/*`, `testing`, `adapters/bun`
+2. **`src/exceptions/`** — `AuthException` (abstract base) and `AuthenticationException` (concrete 401) coexist with confusingly similar names; both must be kept (fortify + sentinel extend/use both); fix is JSDoc only
+3. **`src/PlanetCore.ts`** — `GravitoConfig` missing `observabilityProvider` forwarding in `boot()` (confirmed line 788-811); `ApplicationConfig` duplicates `logger`/`config` fields; target is `ApplicationConfig extends Pick<GravitoConfig, ...>`
+4. **`src/Container.ts`** — `make()` returns `any`; target is overload signature for `ServiceMap`-keyed lookups; heavier generic refactor deferred
+5. **`src/helpers.ts`** — `setApp` is `@internal` bootstrap glue but is currently public-exported; must be removed from `index.ts` and `index.browser.ts` named export lists
+
+The `events` star export is intentional (broad legitimate API) and should NOT be converted. `@gravito/core/engine`, `/ffi`, `/compat` sub-path exports are clean and untouched.
 
 ### Critical Pitfalls
 
-1. **Dual circuit breaker fragmentation** — `@gravito/resilience` and `@gravito/echo` each have independent `CircuitBreaker` implementations with incompatible config APIs. Phase 1 must include a consolidation audit; `echo`'s implementation must be deprecated and re-exported from `@gravito/resilience` before any new resilience code is written.
+1. **Star export removal silently breaks downstream re-exports** — If any symbol is missing from the explicit named list, packages like `photon` that re-export from `@gravito/core` break at runtime without a core-level typecheck failure. Prevention: run `bun run typecheck` at workspace root (not per-package) after every export change; generate symbol inventory with `tsc --declaration --emitDeclarationOnly` and diff before/after.
 
-2. **`instanceof` breaks across ESM/CJS boundaries** — TypeScript error subclasses targeting ES5 silently break `instanceof` checks when the same class is loaded via both module formats. Every new error class constructor must call `Object.setPrototypeOf(this, ClassName.prototype)`. Reference implementation: `RippleError` already does this correctly. Add a cross-boundary integration test in Phase 1 before any package migration begins.
+2. **`GravitoVariables` module augmentation breaks if interface is hidden** — 14 orbit packages use `declare module '@gravito/core' { interface GravitoVariables { ... } }`. Moving `GravitoVariables` behind `@internal` makes all 14 augmentations silently target the wrong declaration. Prevention: run `grep -r "declare module '@gravito/core'" packages/` before any export cleanup; never make augmentable interfaces internal.
 
-3. **Tests pass while structural contracts are broken** — Existing tests assert on `.message` strings, not `.code`/`.status`/`instanceof`. A package can pass all its tests while producing the wrong HTTP status code for downstream consumers. Write contract tests asserting structured fields before migrating each package; run Satellite integration tests as the canary.
+3. **AuthException instanceof checks break if class is removed or renamed** — `FortifyError extends AuthException` and `SentinelError extends AuthException`; removing or aliasing `AuthException` away from the concrete class breaks catch blocks in both packages. Prevention: keep `AuthException` as abstract base; only add JSDoc; no structural changes.
 
-4. **Non-idempotent retry causing duplicate writes** — The new `withRetry` utility must require callers to declare `idempotent: true` explicitly. DB transaction retries must not be wrapped externally — `atlas.transactionWithRetry` already handles deadlock retry internally; double-wrapping produces quadratic retry attempts.
+4. **GravitoConfig changes not forwarded by `boot()`** — `defineConfig()` is a no-op identity function; `boot()` manually destructures config and already silently drops `observabilityProvider`. Adding new `GravitoConfig` fields without also updating `boot()` produces a type-clean but runtime-silent config drop. Prevention: pair every `GravitoConfig` field change with a `boot()` audit and an end-to-end propagation test.
 
-5. **Silent graceful degradation masking real bugs** — Returning empty fallback data instead of throwing makes integration tests produce false greens. In test environments, degradation must throw instead of returning fallback values (`process.env.NODE_ENV === 'test'` gate). All degraded fallbacks must produce `DegradedResult<T>` typed responses, not silent empty values.
-
----
+5. **Router console.log removal exposes skipped tests** — Two middleware isolation tests in `orbit-middleware-isolation.test.ts` are currently skipped; they likely relied on route registration logs for diagnosis. Prevention: re-enable and fix skipped tests before removing the log, not after.
 
 ## Implications for Roadmap
 
-Based on combined research, the dependency graph drives a 5-phase structure. Each phase is a prerequisite for the next; parallelization is possible within a phase but not across phases.
+Based on research, suggested phase structure (7 execution phases):
 
-### Phase 1: Core Error Model Foundation
+### Phase 1: API Footgun Fixes
 
-**Rationale:** The `GravitoException` hierarchy is the prerequisite for everything else — error codes, resilience policies, and the degradation manager all assume a common base type. The consolidation audit must also eliminate `echo`'s duplicate `CircuitBreaker` before new code is written. This phase must be completed before any per-package migration begins.
+**Rationale:** Highest-value, lowest-risk changes. Standalone fixes with no downstream type cascade risk. Produces immediate, visible DX improvement before touching the export surface.
+**Delivers:** Clean stdout in production, typed exception throwing, deprecated API annotation, foundation for exception hierarchy clarity
+**Addresses:** Router console.log removal, ModelNotFound string sentinel replacement, `core.services` TypeScript `@deprecated` annotation, skipped test re-enablement
+**Avoids:** Pitfall 5 (console.log removal masks broken tests) — fix skipped tests in the same phase
 
-**Delivers:** A unified error type system in `@gravito/core`; centralized `ErrorCode` registry; `InfrastructureException` + domain subclasses (`DatabaseException`, `CacheException`, `QueueException`, `CircuitOpenException`); consolidation of duplicate `CircuitBreaker` implementations; cross-boundary `instanceof` test harness; contract test scaffolding for all migrated packages.
+### Phase 2: Exception Hierarchy Clarification
 
-**Addresses:** Unified error base class (P1), structured error codes (P1)
+**Rationale:** Depends on Phase 1 (exception throwing stabilized). JSDoc-only changes — zero runtime risk. Must come before named export conversion so the export list reflects a clarified hierarchy.
+**Delivers:** Clear role separation between `AuthException` (abstract base) and `AuthenticationException` (concrete 401) via JSDoc; both classes retained
+**Addresses:** AuthException/AuthenticationException naming confusion feature
+**Avoids:** Pitfall 2 (instanceof breakage) — no structural changes, JSDoc only
 
-**Avoids:** Pitfalls 1 (dual circuit breaker), 2 (instanceof breakage), 3 (structural contract regressions), 6 (stale IoC error handler)
+### Phase 3: Module Organization — Named Export Conversion
 
-### Phase 2: Resilience Infrastructure
+**Rationale:** Highest structural risk; must come after Phases 1-2 so the exception and helper surfaces are stable before being enumerated. Requires full workspace typecheck gate.
+**Delivers:** Explicit named exports for `exceptions`, `helpers/*`, `testing`, `adapters/bun`; `setApp` removed from public barrel; `index.browser.ts` mirrored
+**Uses:** Symbol inventory audit (`tsc --declaration --emitDeclarationOnly`), `grep -r "declare module '@gravito/core'"` augmentation check
+**Avoids:** Pitfall 1 (missing symbols break downstream), Pitfall 4 (GravitoVariables augmentation), Pitfall 6 (name collisions between atlas/core exception names)
 
-**Rationale:** Orbit packages cannot adopt resilience wrapping until the `ResiliencePolicy` interface and synchronous `RetryPolicy` exist. Circuit breaker must throw `CircuitOpenException` (defined in Phase 1) before it can integrate correctly. This phase builds the tools; Phase 3 uses them.
+### Phase 4: Config Type Unification
 
-**Delivers:** Synchronous `RetryPolicy` with exponential backoff + jitter + idempotency gate; `ResiliencePolicy` interface + `ResiliencePolicyBuilder` fluent API; `CircuitBreaker.execute()` throwing typed `CircuitOpenException`; `GracefulDegradationManager` registered as IoC singleton; `cockatiel` added as single new dependency.
+**Rationale:** Depends on Phase 3 (public surface stable). `GravitoConfig` + `ApplicationConfig` unification and `boot()` forwarding fix are higher risk than export changes due to type cascade across 50+ packages.
+**Delivers:** `observabilityProvider` forwarded by `boot()`; `ApplicationConfig extends Pick<GravitoConfig, 'logger' | 'config'>`; no field duplication
+**Implements:** Config type unification pattern (Pattern 2 from ARCHITECTURE.md)
+**Avoids:** Pitfall 3 (GravitoConfig changes not forwarded by boot())
 
-**Uses:** `cockatiel@^3.2.1`; existing `CircuitBreaker` (extended, not replaced)
+### Phase 5: Container Type Improvement
 
-**Implements:** Architecture components 2 and 3
+**Rationale:** Last structural change before documentation. Modifies `Container.make()` return type — highest cascade risk to all 50+ packages using Container. Isolated as its own phase so typecheck failures are attributable.
+**Delivers:** `Container.make<K extends keyof ServiceMap>()` overload; eliminates `any` in the primary DI resolution path
+**Implements:** Pattern 5 (Container.make() inference) from ARCHITECTURE.md — lighter overload approach, not full generic Container refactor
 
-**Avoids:** Pitfalls 4 (non-idempotent retry), 5 (silent degradation), circuit breaker per-request instantiation
+### Phase 6: Documentation and Tooling
 
-### Phase 3: Foundation Orbit Migration (atlas + plasma + photon)
+**Rationale:** Tooling changes (Biome config upgrade, publint addition, TypeDoc setup) have no runtime risk and can validate the export surface changes from Phase 3. Documentation sync requires a stable API — do last.
+**Delivers:** `noExplicitAny: error` in Biome (CI gate for regressions), `noConsole` rule scoped to core src, publint in Turbo pipeline, TypeDoc config for `@gravito/core`, README API sync, orbit/register/use decision guide, JSDoc language unification
+**Uses:** publint ^0.3.18 (new), typedoc ^0.28.18 (new to core), Biome 2.3.10 (config changes only)
 
-**Rationale:** Atlas (PostgreSQL/MySQL) and plasma (Redis) are the highest-blast-radius Orbits — virtually every Satellite depends on them. Fixing these first validates the pattern under real complexity before applying it to 40+ other packages. Photon's `ErrorHandler` must recognize `CircuitOpenException` before the app can render correct 503 responses.
+### Phase 7: v2.1.x Follow-up Validation
 
-**Delivers:** `DatabaseException` wrapping `DatabaseError` at atlas driver boundary; `CacheException` wrapping `RedisError` at plasma boundary; `ResiliencePolicy` defaults for atlas (retry 3× + CB) and plasma (CB only, fast-fail); photon `ErrorHandler` updated to handle `CircuitOpenException` as structured 503; signal `QueueException` migration.
-
-**Implements:** Architecture component 4 (foundation Orbits); error propagation flow (before → after)
-
-**Avoids:** Pitfall 3 (contract tests run for each migrated package); integration gotcha (atlas pool + circuit breaker wrapping strategy)
-
-### Phase 4: Secondary Orbit Migration (batch)
-
-**Rationale:** Once the pattern is validated in Phase 3, the remaining ~40 Orbit packages follow the same mechanical pattern. Batch by category (storage, communication, auth/security, stream) to maintain focus and allow parallel agent execution within each batch.
-
-**Delivers:** All remaining Orbit packages throwing from the `GravitoException` hierarchy with structured error codes; `ResiliencePolicy` defaults for each external boundary (echo, ripple, flare, stasis, nebula, fortify, sentinel, stream, horizon, flux, forge, nova); echo's duplicate `CircuitBreaker` fully retired; graceful shutdown deadline handlers registered for atlas, plasma, stream, signal, beam.
-
-**Batches:**
-- 4a: Storage — stasis, nebula, nebula-s3
-- 4b: Communication — echo (CB consolidation), flare, ripple
-- 4c: Auth/Security — fortify (align `FortifyError` with `GravitoException`), sentinel
-- 4d: Stream — stream (plug existing `ErrorCategorizer` into `ResiliencePolicy` adapter), horizon
-
-### Phase 5: Integration Verification + Advanced Features
-
-**Rationale:** Full Satellite-level integration testing is the canary for structural correctness — if Satellite behavior changes after Orbit migration, an error contract was broken. This phase validates the full system and adds v2.1.0 differentiators once the foundation is proven stable.
-
-**Delivers:** Satellite integration test suite verifying error contract integrity; migration guide for framework consumers documenting breaking changes; `withResilience()` convenience composition API; `OrbitDegradationManager` fallback value support (v2.1.0 differentiator); request-scoped error context enrichment.
-
-**Avoids:** Pitfall 3 (satellite integration tests as final canary); security mistakes (verify `cause` chain stripped from production API responses)
+**Rationale:** Features that require stable Phase 1-6 output to execute correctly. Lower urgency, higher complexity.
+**Delivers:** `suggestion` field on `GravitoException`, updated canonical examples, named export convergence profiling
+**Addresses:** Actionable error messages, v2 example updates, potential tsserver speed improvement measurement
 
 ### Phase Ordering Rationale
 
-- **Phase 1 must precede all others** because the `ErrorCode` registry and `InfrastructureException` base class are compile-time dependencies for all Orbit error adapters and for the typed `CircuitOpenException` that `ResiliencePolicy` throws.
-- **Phase 2 must precede Phase 3** because Orbit packages cannot implement `ResiliencePolicy` until the interface exists; `CircuitBreaker` must throw `CircuitOpenException` before `ErrorHandler` can handle it correctly.
-- **Foundation Orbits (Phase 3) before batch migration (Phase 4)** validates the pattern at high complexity before broad rollout; avoids discovering a design flaw after 40 packages have been migrated.
-- **Graceful shutdown (Phase 4) can be done in parallel with error model migration within Phase 4** — it is independent of the error hierarchy work and only requires hook registration.
-- **Graceful degradation (Phase 5) must come last** — it builds on: unified errors (Phase 1) + circuit breaker wired (Phase 3) + health reporting (Phase 4). Attempting it in Phase 2 leads to silent failure anti-patterns.
+- **Phases 1-2 before 3:** Export surface changes enumerate a stable symbol set. Fixing footguns and clarifying hierarchy first means the explicit named export list reflects the intended final API.
+- **Phase 3 before 4-5:** Type-level changes (config unification, Container generics) compound with export changes. Isolating them makes typecheck failures attributable.
+- **Phase 5 last among structural changes:** Container generics have the widest cascade risk (50+ consumers). Placing it last means a failure here does not block the higher-value Phases 1-4.
+- **Phase 6 after all structural changes:** Documentation and tooling that validates the final surface cannot be written or configured until that surface is stable.
+- **Full workspace typecheck (`bun run typecheck`) is the acceptance gate between every phase** — not per-package typecheck. This is the most important operational constraint from research.
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
+- **Phase 5 (Container type improvement):** The generic Container refactor (`Container<TServices>`) is a heavier approach deferred from v2.1.0. If stakeholders want to include it, it needs its own research pass on impact across 50+ consumer call sites.
+- **Phase 7 (Actionable errors with `suggestion` field):** The `GravitoException` constructor extension pattern needs design work — how `suggestion` strings are structured, whether they are i18n-key-capable, how they surface in HTTP responses.
 
-- **Phase 3 (atlas integration):** Atlas has complex pool management (`PoolHealthChecker`, `transactionWithRetry`, connection acquisition). The exact layer at which to insert `ResiliencePolicy` wrapping (connection acquire vs. query dispatch vs. transaction) needs careful validation against atlas internals to avoid double-retry with `transactionWithRetry`.
-- **Phase 4c (fortify alignment):** `FortifyError` has its own domain-specific hierarchy with `httpStatus` field. Whether to make it extend `GravitoException` directly or maintain a parallel hierarchy with duck-typing compatibility needs a compatibility analysis against Satellite RBAC test suite.
-- **Phase 5 (`OrbitDegradationManager` design):** The fallback value API (`DegradedResult<T>` vs callback vs `Result<T>`) needs a design decision. Multiple valid patterns exist; the wrong choice here creates the "silent failure" anti-pattern at scale.
-
-Phases with standard patterns (skip research-phase):
-
-- **Phase 1 (error hierarchy extension):** `GravitoException` is well-documented; `InfrastructureException` pattern is established; `ErrorCode` registry is a simple `const` object. Pattern is clear from `fortify`'s existing implementation.
-- **Phase 2 (resilience infrastructure):** `cockatiel` API is well-documented; `ResiliencePolicyBuilder` is a standard fluent builder; the composition order (retry inside circuit breaker) is established practice.
-- **Phase 4a/4b (storage + communication Orbit migration):** These follow the exact same pattern established in Phase 3; no novel design work required.
-
----
+Phases with well-documented patterns (skip research-phase):
+- **Phase 1 (API Footgun Fixes):** All fixes are known, audited, and have exact file/line citations. No research needed.
+- **Phase 2 (Exception Hierarchy Clarification):** JSDoc-only; documented pattern in ARCHITECTURE.md Pattern 4.
+- **Phase 3 (Named Export Conversion):** Established pattern with clear audit steps from PITFALLS.md. Tooling (`tsc --declaration`) is standard.
+- **Phase 4 (Config Type Unification):** `ApplicationConfig extends Pick<GravitoConfig, ...>` is a well-understood TypeScript pattern. ARCHITECTURE.md Pattern 2 covers it completely.
+- **Phase 6 (Documentation and Tooling):** Biome config changes are config-file edits. publint and TypeDoc installation and config are fully documented.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Direct npm registry verification + codebase audit; `cockatiel` confirmed Bun-compatible; only one new dependency |
-| Features | HIGH | All findings based on direct codebase inspection of ~50 packages; gap analysis confirmed against actual source |
-| Architecture | HIGH | All components inventoried from direct source inspection; build order validated against actual dependency graph |
-| Pitfalls | HIGH | Dual `CircuitBreaker` confirmed by file inspection; `instanceof` issue confirmed in `atlas/src/errors`; all pitfalls grounded in actual code state |
+| Stack | HIGH | All tool versions verified against npm registry; Biome rule existence confirmed via official docs; all recommendations from direct codebase audit |
+| Features | HIGH | Every footgun has file and line citation from direct codebase read; competitor patterns (Hono, Elysia, AdonisJS) verified via web search |
+| Architecture | HIGH | 875-line `index.ts` read in full; all 352 import sites grep-counted; all downstream dependency edges (fortify, sentinel, photon) confirmed from direct source reads |
+| Pitfalls | HIGH | All pitfalls grounded in specific code locations confirmed via direct read; no hypothetical risks — all sourced from actual codebase state |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Atlas pool integration layer:** The exact wrapping point for `ResiliencePolicy` in atlas is not fully specified. Atlas has `PoolHealthChecker`, `transactionWithRetry`, connection pool management, and multiple drivers. Phase 3 planning should audit atlas internals to define the precise integration boundary before implementation.
-- **fortify error hierarchy compatibility:** `FortifyError` uses `httpStatus` (not `status`) and has an independent `ErrorCodes` enum. Phase 4c planning needs to determine whether to rename `httpStatus → status` (breaking for fortify consumers) or add duck-typing to `ErrorHandler` during a transition window.
-- **Multi-worker `IdempotencyCache` scope:** Research confirmed that in-memory `IdempotencyCache` is per-process. If Bun cluster mode or multiple workers are used, Redis-backed idempotency is required. This is not blocking for v2.0.0 but must be documented as a known limitation.
-- **`GracefulDegradationManager` fallback API shape:** Three options are valid (`DegradedResult<T>`, callback pattern, `Result<T>` monad). This design decision should be made during Phase 5 planning, not during Phase 2 implementation, to avoid premature commitment.
-
----
+- **Exact count of `declare module '@gravito/core'` augmentation sites:** Research cites "14 orbit packages" but does not enumerate all 14 by name. Phase 3 planning must run `grep -r "declare module '@gravito/core'" packages/` to produce the exact list before starting export conversion.
+- **Skipped test root cause:** The two skipped tests in `orbit-middleware-isolation.test.ts` are identified but their failure mode is not diagnosed. Phase 1 must investigate why they were skipped before re-enabling.
+- **`index.browser.ts` full symbol inventory:** ARCHITECTURE.md audited `index.ts` (875 lines) in full but `index.browser.ts` (115 lines) was partially analyzed. Phase 3 must audit `index.browser.ts` completely to mirror named export changes.
+- **`Container.make()` cascade impact:** The lighter overload approach (Pattern 5) is recommended for v2.1.0, but the exact number of call sites that would receive a type error from the heavier generic refactor is not quantified. Phase 5 planning should profile this before deciding on approach.
 
 ## Sources
 
-### Primary (HIGH confidence — direct codebase inspection)
-
-- `packages/core/src/exceptions/` — `GravitoException` hierarchy confirmed
-- `packages/resilience/src/` — `CircuitBreaker`, `RetryScheduler`, `BackpressureManager`, `DeadLetterQueue` confirmed
-- `packages/echo/src/resilience/CircuitBreaker.ts` — duplicate circuit breaker confirmed
-- `packages/atlas/src/errors/index.ts` — `DatabaseError` hierarchy outside `GravitoException` confirmed
-- `packages/plasma/src/errors.ts` — `RedisError` outside `GravitoException` confirmed
-- `packages/fortify/src/errors/` — `FortifyError` + `ErrorCodes` pattern confirmed (reference implementation)
-- `packages/monitor/src/health/` — `HealthRegistry` with degraded state confirmed
-- npm registry — `cockatiel@3.2.1` zero deps, ESM+CJS, MIT (verified 2026-03-28)
+### Primary (HIGH confidence)
+- Direct codebase reads — `packages/core/src/index.ts`, `Router.ts`, `PlanetCore.ts`, `Application.ts`, `Container.ts`, `exceptions/*.ts`, `helpers.ts`, `adapters/bun/index.ts`, `testing/index.ts`
+- Direct codebase reads — `packages/fortify/src/errors/FortifyError.ts`, `packages/sentinel/src/errors/SentinelError.ts`, `packages/sentinel/src/middleware/auth.ts`
+- npm registry — publint@0.3.18, typedoc@0.28.18, knip@6.1.0, @microsoft/api-extractor@7.57.7 (verified 2026-03-29)
+- [Biome noConsole rule](https://biomejs.dev/linter/rules/no-console/) — official docs confirming allow-list support
+- [publint rules](https://publint.dev/rules) — exports field validation scope confirmed
 
 ### Secondary (MEDIUM confidence)
+- [What's New in Biome v2.4](https://medium.com/@onix_react/whats-new-in-biome-v2-4-00890baad13b) — noConsole in suspicious group confirmed
+- [AdonisJS v6 Released — InfoQ](https://www.infoq.com/news/2024/03/adonisjs-v6-released/) — documentation improvement motivation
+- [Barrel files — stop using them — DEV Community](https://dev.to/tassiofront/barrel-files-and-why-you-should-stop-using-them-now-bc4) — tsserver performance impact
+- [Hono Best Practices](https://hono.dev/docs/guides/best-practices) — no stdout in library code convention
+- [Elysia tsserver performance issue #1031](https://github.com/elysiajs/elysia/issues/1031) — barrel file DX impact
 
-- Harbor Engineering blog — "Why We Love Functional Programming but Don't Use Effect-TS" (Nov 2025) — confirms Effect-TS avoidance in production
-- [TypeScript `instanceof` with custom errors](https://dev.dev/dguo/how-to-fix-instanceof-not-working-for-custom-errors-in-typescript-4amp) — `Object.setPrototypeOf` requirement
-- [ESBuild issue #3333](https://github.com/evanw/esbuild/issues/3333) — `instanceof` breakage with bundled duplicate classes
-- [Circuit Breaker Pattern — Azure Architecture Center](https://learn.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker) — pattern validation
-- [Building Resilient Systems: Circuit Breakers and Retry Patterns](https://dasroot.net/posts/2026/01/building-resilient-systems-circuit-breakers-retry-patterns/)
-
-### Tertiary (LOW confidence — general guidance)
-
-- [Graceful Degradation in Distributed Systems — GeeksforGeeks](https://www.geeksforgeeks.org/system-design/graceful-degradation-in-distributed-systems/)
-- [AWS Well-Architected: Graceful Degradation](https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/rel_mitigate_interaction_failure_graceful_degradation.html)
+### Tertiary (LOW confidence)
+- Effect `suggestion` field pattern — inferred from ecosystem trend toward actionable error messages; not a direct Effect API feature
 
 ---
-*Research completed: 2026-03-28*
+*Research completed: 2026-03-29*
 *Ready for roadmap: yes*

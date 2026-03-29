@@ -1,599 +1,449 @@
 # Architecture Research
 
-**Domain:** Error handling & resilience integration in Galaxy Architecture framework (v2.0.0)
-**Researched:** 2026-03-28
-**Confidence:** HIGH (based on direct codebase inspection)
+**Domain:** TypeScript framework DX improvements — @gravito/core public API surface
+**Researched:** 2026-03-29
+**Confidence:** HIGH (direct codebase analysis, 875-line barrel file read in full)
 
----
+## Standard Architecture
 
-## System Overview
-
-### Current State: Galaxy Architecture Error Layers
+### System Overview
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│                    Satellites (15 business modules)                   │
-│  satellite-rbac  satellite-catalog  satellite-commerce  ...           │
-│  (NO direct changes — inherit benefits via event isolation)           │
-├──────────────────────────────────────────────────────────────────────┤
-│                    Orbit Packages (~50 packages)                      │
-│  ┌─────────┐ ┌─────────┐ ┌────────┐ ┌────────┐ ┌────────┐           │
-│  │ photon  │ │  atlas  │ │signal  │ │fortify │ │ echo   │           │
-│  │ HTTP    │ │  ORM    │ │events  │ │  auth  │ │webhook │           │
-│  │         │ │         │ │        │ │        │ │        │           │
-│  │HttpExc  │ │DatabaseE│ │raw     │ │Fortify │ │own CB  │           │
-│  │GravitoE │ │Connectio│ │throws  │ │Error   │ │own     │           │
-│  └────┬────┘ └────┬────┘ └───┬────┘ └───┬────┘ └───┬────┘           │
-│       │           │          │          │          │                 │
-│  plasma   stream  stasis  sentinel  flare  ripple  nova  ...         │
-│  RedisErr KafkaErr own CB  raw       raw    raw     NovaErr  ...      │
+│                    @gravito/core  (public API surface)               │
 │                                                                      │
-│  PROBLEM: ~10 incompatible error hierarchies, no unified interface   │
-├──────────────────────────────────────────────────────────────────────┤
-│                    PlanetCore (@gravito/core)                         │
-│  ┌──────────────────────────────────────────────────────────────┐    │
-│  │  GravitoException (abstract)                                  │    │
-│  │    ├─ HttpException        ├─ ValidationException             │    │
-│  │    ├─ AuthenticationExc    └─ AuthorizationException          │    │
-│  │  ErrorHandler (HTTP layer only, not shared to Orbits)         │    │
-│  │  GlobalErrorHandlers (process-level: unhandledRejection etc)  │    │
-│  │  Hooks: error:context / error:report / error:render           │    │
-│  └──────────────────────────────────────────────────────────────┘    │
-├──────────────────────────────────────────────────────────────────────┤
-│  @gravito/resilience (parallel, standalone package)                  │
-│    CircuitBreaker  BackpressureManager  DeadLetterQueue               │
-│    RetryScheduler  WorkerPool  EventBatcher  ObservableHookManager   │
-│  (currently: event-system focused, NOT integrated into Orbit errors) │
+│  ┌─────────────────────────────────────────────────────────────┐    │
+│  │  index.ts (main barrel)            index.browser.ts          │    │
+│  │  ~875 lines                        ~115 lines                │    │
+│  │                                                              │    │
+│  │  Named exports: ~80% complete                                │    │
+│  │  Star exports remaining (DX pain points):                    │    │
+│  │    export * from './exceptions'   → 17 exception classes     │    │
+│  │    export * from './helpers/data'                            │    │
+│  │    export * from './helpers/errors'                          │    │
+│  │    export * from './helpers/response'                        │    │
+│  │    export * from './testing'      → HttpTester, TestResponse │    │
+│  │    export * from './adapters/bun/index' → 7 Bun-specific     │    │
+│  └─────────────────────────────────────────────────────────────┘    │
+│                                                                      │
+│  Sub-path exports (clean, no changes needed):                        │
+│    @gravito/core/engine   @gravito/core/ffi   @gravito/core/compat   │
 └──────────────────────────────────────────────────────────────────────┘
-```
 
-### Target State: v2.0.0 Unified Error & Resilience Integration
-
-```
 ┌──────────────────────────────────────────────────────────────────────┐
-│                    Satellites (unchanged)                             │
-│  (benefit automatically: consistent errors from Orbits via events)   │
-├──────────────────────────────────────────────────────────────────────┤
-│                    Orbit Packages (~50 packages)                      │
-│  ┌────────────────────────────────────────────────────────────────┐  │
-│  │  Each Orbit wraps external calls with ResiliencePolicy          │  │
-│  │  Each Orbit extends GravitoException hierarchy                  │  │
-│  │  atlas: DatabaseException(GravitoException) + retry + CB        │  │
-│  │  plasma: RedisException(GravitoException) + CB                  │  │
-│  │  signal: EventException(GravitoException)                       │  │
-│  │  photon: already uses GravitoException hierarchy                │  │
-│  └────────────────────┬───────────────────────────────────────────┘  │
-│                        │ throws GravitoException subclasses only      │
-├────────────────────────┼─────────────────────────────────────────────┤
-│                    PlanetCore (@gravito/core)                         │
-│  ┌─────────────────────┴──────────────────────────────────────────┐  │
-│  │  GravitoException (abstract) ← NEW domain subclasses added     │  │
-│  │    ├─ HttpException       ├─ ValidationException                │  │
-│  │    ├─ DatabaseException   ├─ InfrastructureException [NEW]      │  │
-│  │    ├─ AuthException       └─ CircuitOpenException [NEW]         │  │
-│  │  ErrorCode enum (centralized across all Orbits) [NEW]           │  │
-│  │  ResiliencePolicy interface (standard contract) [NEW]           │  │
-│  └──────────────────────────────────────────────────────────────  ┘  │
-├──────────────────────────────────────────────────────────────────────┤
-│  @gravito/resilience (enhanced — new policy facade)                  │
-│    ResiliencePolicy (wraps: CB + Retry + Timeout + Fallback) [NEW]   │
-│    CircuitBreaker (existing — needs GravitoException integration)    │
-│    RetryScheduler (existing — needs GravitoException integration)    │
-│    GracefulDegradationManager [NEW]                                  │
+│                    Downstream consumers (352 import sites)           │
+│                                                                      │
+│  packages/fortify    → AuthException (FortifyError extends it)       │
+│  packages/sentinel   → AuthException + AuthenticationException       │
+│  packages/cosmos     → error types                                   │
+│  50+ Orbit packages  → GravitoException, Container, PlanetCore, etc  │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
----
+### Component Responsibilities
 
-## Existing Component Inventory
+| Component | Responsibility | DX Issue |
+|-----------|---------------|----------|
+| `src/index.ts` | Main public barrel (875 lines) | 6 star exports hide what is available |
+| `src/index.browser.ts` | Browser-safe entry (115 lines) | Also contains `setApp` (should be internal-only) |
+| `src/exceptions/index.ts` | Re-exports 17 exception classes via `export *` | Included in main barrel as `export * from './exceptions'` |
+| `src/exceptions/AuthException.ts` | Abstract base for auth-domain errors | Parallel to `AuthenticationException` — two confusingly similar names |
+| `src/exceptions/AuthenticationException.ts` | Concrete "unauthenticated" exception | Concrete class with identical surface to what `AuthException` subtypes do |
+| `src/helpers.ts` | Aggregates helpers + re-exports `data`, `errors`, `response` | Contains `setApp` which is `@internal` but exported publicly |
+| `src/PlanetCore.ts` | Defines `GravitoConfig` type | Separate from `ApplicationConfig` in `Application.ts` despite overlapping fields |
+| `src/Application.ts` | Defines `ApplicationConfig` | `logger`, `config`, `env` overlap with `GravitoConfig` |
+| `src/testing/` | `HttpTester`, `TestResponse` | Pulled into main barrel via `export * from './testing'` |
+| `src/adapters/bun/index.ts` | 7 Bun-specific classes | Pulled into main barrel via `export * from './adapters/bun/index'` |
+| `src/Container.ts` | DI container | `Container.make()` returns `any` — inference gap |
 
-### What Already Exists (Do Not Duplicate)
+## Recommended Project Structure
 
-| Component | Location | Status |
-|-----------|----------|--------|
-| `GravitoException` (abstract, HTTP-focused) | `core/src/exceptions/GravitoException.ts` | EXISTS — extend, not replace |
-| `HttpException`, `ValidationException` | `core/src/exceptions/` | EXISTS |
-| `AuthenticationException`, `AuthorizationException` | `core/src/exceptions/` | EXISTS |
-| `ModelNotFoundException` | `core/src/exceptions/` | EXISTS |
-| `ErrorHandler` (HTTP layer error rendering) | `core/src/ErrorHandler.ts` | EXISTS — keep as-is |
-| `GlobalErrorHandlers` (process-level) | `core/src/GlobalErrorHandlers.ts` | EXISTS — keep as-is |
-| `CircuitBreaker` (full implementation) | `resilience/src/circuit-breaker/CircuitBreaker.ts` | EXISTS — reuse |
-| `CircuitBreaker` (duplicate) | `core/src/events/CircuitBreaker.ts` | EXISTS — legacy, consolidate |
-| `RetryScheduler` (BullMQ-based, event-system) | `resilience/src/retry/RetryScheduler.ts` | EXISTS — narrow scope (events only) |
-| `BackpressureManager`, `DeadLetterQueue` | `resilience/src/` | EXISTS — event-system only |
-| `DatabaseError`, `ConnectionError` | `atlas/src/errors/index.ts` | EXISTS — needs to wrap into GravitoException |
-| `RedisError` | `plasma/src/errors.ts` | EXISTS — needs to wrap into GravitoException |
-| `FortifyError` + ErrorCodes | `fortify/src/errors/` | EXISTS — domain-specific, parallel hierarchy |
-| `ErrorCategorizer`, `ErrorRecoveryManager` | `stream/src/drivers/kafka/` | EXISTS — Kafka-specific, keep |
-| Echo's `CircuitBreaker` | `echo/src/resilience/CircuitBreaker.ts` | EXISTS — duplicate, consolidate |
-| Health checks (`createDatabaseCheck` etc) | `monitor/src/health/index.ts` | EXISTS — keep, integrate |
-
-### What Is Missing (Must Build)
-
-| Component | Purpose | New Package |
-|-----------|---------|-------------|
-| `InfrastructureException` | Base for all Orbit infrastructure failures (DB, Redis, cache, queue) | `@gravito/core` |
-| `CircuitOpenException` | Specific error when circuit breaker rejects call | `@gravito/core` |
-| `ErrorCode` registry (centralized enum/namespace) | Unified error codes across all Orbits | `@gravito/core` |
-| `ResiliencePolicy` interface | Standard contract for wrapping any operation | `@gravito/resilience` |
-| `ResiliencePolicyBuilder` | Fluent API: `.withRetry().withCircuitBreaker().withFallback()` | `@gravito/resilience` |
-| `GracefulDegradationManager` | Coordinate Orbit fallback strategies | `@gravito/resilience` |
-| Orbit-level error wrappers | Map raw driver errors → GravitoException subclasses | Each Orbit package |
-
----
-
-## Component Boundaries
-
-| Component | Responsibility | Package | Communicates With |
-|-----------|---------------|---------|-------------------|
-| `GravitoException` (extended) | Base error contract: status + code + cause + i18n | `@gravito/core` | All packages (throw/catch) |
-| `InfrastructureException` | Root for DB/Redis/cache/queue failures | `@gravito/core` | Orbit packages |
-| `CircuitOpenException` | Signals circuit is OPEN, carry circuit name + metrics | `@gravito/core` | Resilience consumers |
-| `ErrorCode` namespace | Centralized codes: `DB_CONNECTION_FAILED`, `REDIS_TIMEOUT`, etc. | `@gravito/core` | All Orbit error constructors |
-| `ResiliencePolicy` interface | Contract: `execute<T>(op, options) => Promise<T>` | `@gravito/resilience` | Orbit packages |
-| `ResiliencePolicyBuilder` | Fluent composition: retry + CB + timeout + fallback | `@gravito/resilience` | Application config layer |
-| `CircuitBreaker` (existing) | CLOSED/OPEN/HALF_OPEN state machine | `@gravito/resilience` | Via `ResiliencePolicy` |
-| `GracefulDegradationManager` | Track which Orbits are degraded; broadcast via hooks | `@gravito/resilience` | `@gravito/core` hooks |
-| Orbit error adapters | Convert raw driver errors to GravitoException subclasses | Each Orbit | `@gravito/core` |
-| Orbit `ResiliencePolicy` wrappers | Wrap all external I/O with retry + CB | Each Orbit | `@gravito/resilience` |
-
----
-
-## Error Propagation Flow
-
-### Current (Broken) Flow
-
-```
-atlas PostgreSQL driver fails
-    ↓
-throws ConnectionError (extends Error, not GravitoException)
-    ↓
-ErrorHandler in photon catches unknown
-    ↓
-duck-types: checks for `.status` property
-    ↓
-falls through to generic 500 — code is 'INTERNAL_ERROR', no context
-```
-
-### Target (v2.0.0) Flow
-
-```
-atlas PostgreSQL driver fails
-    ↓
-ResiliencePolicy wraps the call:
-  1. Retry: 3 attempts with exponential backoff
-  2. CircuitBreaker: opens after 5 consecutive failures
-  3. Fallback: returns cached result if available
-    ↓
-If all retry attempts fail:
-  throws DatabaseException(
-    code: ErrorCode.DB_CONNECTION_FAILED,
-    status: 503,
-    cause: original ConnectionError
-  )
-    ↓
-ErrorHandler in photon catches GravitoException
-    ↓
-Renders structured 503 with { code: 'DB_CONNECTION_FAILED', ... }
-    ↓
-hooks.doAction('error:report', ctx) → triggers monitoring/alerting
-```
-
-### Circuit Open Flow
-
-```
-CircuitBreaker detects 5 consecutive failures → opens circuit
-    ↓
-GracefulDegradationManager notified via hook
-    ↓
-All subsequent calls to that Orbit:
-  throw CircuitOpenException(
-    code: ErrorCode.CIRCUIT_OPEN,
-    status: 503,
-    circuitName: 'atlas-postgres',
-    metrics: { failures: 5, openedAt: ... }
-  )
-    ↓
-ErrorHandler responds 503 immediately (no retry, no wait)
-    ↓
-GracefulDegradationManager triggers fallback strategy:
-  - atlas: return cached data from stasis
-  - plasma: use in-memory fallback
-  - signal: queue events to dead-letter queue
-```
-
----
-
-## Recommended Project Structure (New Files Only)
+The existing structure is sound. No file moves needed. All DX improvements are
+API surface changes (what gets exported and how) and type-level changes.
 
 ```
 packages/core/src/
+├── index.ts                    # MODIFY: convert 6 star exports to named exports
+├── index.browser.ts            # MODIFY: remove setApp from exports
+│
 ├── exceptions/
-│   ├── GravitoException.ts        # EXISTS — add errorCategory field
-│   ├── InfrastructureException.ts # NEW — base for all Orbit failures
-│   ├── DatabaseException.ts       # NEW — wraps atlas/dark-matter errors
-│   ├── CacheException.ts          # NEW — wraps plasma/stasis errors
-│   ├── QueueException.ts          # NEW — wraps stream/signal errors
-│   ├── CircuitOpenException.ts    # NEW — circuit breaker rejection
-│   └── index.ts                   # RE-EXPORT all
-└── errors/
-    └── ErrorCode.ts               # NEW — centralized error code registry
-
-packages/resilience/src/
-├── policy/
-│   ├── ResiliencePolicy.ts        # NEW — interface + default impl
-│   ├── ResiliencePolicyBuilder.ts # NEW — fluent builder
-│   └── index.ts
-├── degradation/
-│   ├── GracefulDegradationManager.ts # NEW
-│   └── index.ts
-├── circuit-breaker/
-│   └── CircuitBreaker.ts          # EXISTS — minor: throw CircuitOpenException
-└── retry/
-    └── RetryPolicy.ts             # NEW — synchronous retry (not BullMQ-based)
-                                   # RetryScheduler stays for async event retries
-
-packages/atlas/src/
-├── errors/
-│   └── index.ts                   # MODIFY — DatabaseException wraps DatabaseError
-└── resilience/
-    └── AtlasResiliencePolicy.ts   # NEW — default policy for DB operations
-
-packages/plasma/src/
-├── errors.ts                      # MODIFY — CacheException wraps RedisError
-└── resilience/
-    └── PlasmaResiliencePolicy.ts  # NEW — default policy for Redis operations
-
-packages/signal/src/ (and other Orbit packages)
-├── errors.ts                      # NEW per package — QueueException etc.
-└── resilience/
-    └── [Package]ResiliencePolicy.ts # NEW per package
+│   ├── index.ts                # MODIFY: convert export * to named exports
+│   ├── AuthException.ts        # KEEP: abstract base used by fortify + sentinel
+│   ├── AuthenticationException.ts  # KEEP or DEPRECATE: see consolidation below
+│   └── [14 other exceptions]   # KEEP unchanged
+│
+├── helpers.ts                  # MODIFY: move setApp behind @internal guard
+│   └── (setApp kept in file but not re-exported from index.ts)
+│
+├── PlanetCore.ts               # MODIFY: GravitoConfig type unification
+│   └── GravitoConfig (expand to include ApplicationConfig fields)
+│
+├── Application.ts              # MODIFY: ApplicationConfig extends or re-uses GravitoConfig
+│
+├── Container.ts                # MODIFY: improve make() generic inference
+│
+├── testing/
+│   └── index.ts                # NEW EXPORT: explicit named re-export list
+│
+└── adapters/bun/
+    └── index.ts                # NEW EXPORT: explicit named re-export list
 ```
 
----
+### Structure Rationale
+
+- **No file moves:** 352 import sites across packages depend on existing paths. Moves risk regressions.
+- **Export-only changes:** Converting `export *` to named exports in `index.ts` is backwards-compatible (existing named imports continue to work).
+- **Type unification in-place:** `GravitoConfig` and `ApplicationConfig` can be unified without changing file locations — just make one extend or re-use the other.
+- **setApp isolation:** Move to unexported internal use only; PlanetCore calls it internally. No consumer should call it directly.
 
 ## Architectural Patterns
 
-### Pattern 1: GravitoException Hierarchy Extension
+### Pattern 1: Star-to-Named Export Conversion
 
-**What:** Add infrastructure-layer exception classes to `@gravito/core`, preserving the existing HTTP-status + code + i18n structure. All Orbit packages throw only from this hierarchy.
+**What:** Replace `export * from './module'` with explicit named export lists.
+**When to use:** Any barrel file in public API where the module has a stable, finite set of public symbols.
+**Trade-offs:** More verbose, but gives consumers precise IDE autocompletion, tree-shaking, and prevents accidental `@internal` symbol leakage.
 
-**When to use:** Any Orbit package that interacts with external systems (database, cache, queue, HTTP external).
-
-**Trade-offs:** Single hierarchy means all errors are expressible as HTTP responses, which is correct for Photon's `ErrorHandler`. The `status: 503` on infrastructure errors is semantically correct.
-
+**Example — exceptions/index.ts (current):**
 ```typescript
-// packages/core/src/exceptions/InfrastructureException.ts
-export abstract class InfrastructureException extends GravitoException {
-  constructor(
-    code: string,
-    options: ExceptionOptions & { retryable?: boolean } = {}
-  ) {
-    super(503, code, options)
-    this.name = 'InfrastructureException'
-    this.retryable = options.retryable ?? false
-  }
-  public readonly retryable: boolean
-}
-
-// packages/core/src/exceptions/DatabaseException.ts
-export class DatabaseException extends InfrastructureException {
-  constructor(options: ExceptionOptions & { query?: string } = {}) {
-    super(ErrorCode.DB_QUERY_FAILED, { retryable: false, ...options })
-    this.name = 'DatabaseException'
-  }
-}
-
-export class DatabaseConnectionException extends InfrastructureException {
-  constructor(options: ExceptionOptions = {}) {
-    super(ErrorCode.DB_CONNECTION_FAILED, { retryable: true, ...options })
-    this.name = 'DatabaseConnectionException'
-  }
-}
+// CURRENT (star — opaque)
+export * from './AuthenticationException'
+export * from './AuthException'
+// ... 15 more
 ```
 
-### Pattern 2: ResiliencePolicy Wrapper (Orbit Layer)
-
-**What:** Each Orbit wraps all external I/O calls in a `ResiliencePolicy`. The policy is configured once at package initialization and injected via IoC. Retry and circuit breaker run transparently.
-
-**When to use:** Any call that crosses a network boundary (DB, Redis, HTTP, Kafka, SMTP).
-
-**Trade-offs:** Adds ~2ms overhead per call in the happy path. Worth it because retry + CB remove the category of "cascade failure brings down the app" from production incidents.
-
+**Example — exceptions/index.ts (target):**
 ```typescript
-// packages/resilience/src/policy/ResiliencePolicy.ts
-export interface ResiliencePolicy {
-  execute<T>(
-    operation: () => Promise<T>,
-    options?: PolicyExecuteOptions
-  ): Promise<T>
-}
-
-export interface PolicyExecuteOptions {
-  fallback?: () => Promise<unknown>
-  retryable?: boolean      // Override per-call retryability
-  circuitName?: string     // Override which circuit to use
-}
-
-// Usage in atlas PostgresDriver:
-class PostgresDriver {
-  constructor(
-    private config: PostgresConfig,
-    private policy: ResiliencePolicy = defaultAtlasPolicy()
-  ) {}
-
-  async query(sql: string, bindings: unknown[]): Promise<QueryResult> {
-    return this.policy.execute(
-      () => this.pool.query(sql, bindings),
-      { retryable: sql.startsWith('SELECT') }
-    )
-  }
-}
+// TARGET (named — explicit)
+export { AuthenticationException } from './AuthenticationException'
+export { AuthException } from './AuthException'
+export type { ExceptionOptions } from './GravitoException'
+export {
+  GravitoException,
+  ErrorCodes,
+  type ErrorCode,
+} from './GravitoException'
+// ... 14 more, each explicit
 ```
 
-### Pattern 3: Error Code Registry (Central Namespace)
+**Impact on index.ts:** The main barrel's `export * from './exceptions'` line
+can remain a star export after `exceptions/index.ts` is cleaned up, OR it can
+be converted to a named block for maximum clarity. Named block preferred because
+it makes IDE "Go to Definition" deterministic.
 
-**What:** A single `ErrorCode` namespace in `@gravito/core` defines all machine-readable codes for all Orbit packages. No package invents its own codes outside this registry.
+### Pattern 2: Config Type Unification via Extension
 
-**When to use:** Constructing any `GravitoException` subclass.
+**What:** `GravitoConfig` becomes the canonical config type. `ApplicationConfig`
+is made to extend it (or re-use its shared fields via intersection/Pick).
+**When to use:** Two config types with overlapping fields serving different
+abstraction layers of the same system.
+**Trade-offs:** Unification removes footgun of `logger`/`config` duplication;
+slight risk of unexpected field inheritance if one config has stricter semantics.
 
-**Trade-offs:** All packages depend on core for error codes (they already do). Adding codes requires a `@gravito/core` change, which is the right signal that a new infrastructure failure mode is being formalized.
-
+**Example:**
 ```typescript
-// packages/core/src/errors/ErrorCode.ts
-export const ErrorCode = {
-  // HTTP layer (existing)
-  BAD_REQUEST: 'BAD_REQUEST',
-  NOT_FOUND: 'NOT_FOUND',
-  VALIDATION_ERROR: 'VALIDATION_ERROR',
+// PlanetCore.ts — GravitoConfig is the foundation
+export type GravitoConfig = {
+  logger?: Logger
+  config?: Record<string, unknown>
+  orbits?: (new () => GravitoOrbit)[] | GravitoOrbit[]
+  adapter?: HttpAdapter
+  container?: Container
+  observability?: ObservabilityConfig
+  observabilityProvider?: ObservabilityProvider
+}
 
-  // Database (atlas, dark-matter)
-  DB_CONNECTION_FAILED: 'DB_CONNECTION_FAILED',
-  DB_QUERY_FAILED: 'DB_QUERY_FAILED',
-  DB_TRANSACTION_FAILED: 'DB_TRANSACTION_FAILED',
-  DB_UNIQUE_VIOLATION: 'DB_UNIQUE_VIOLATION',
-
-  // Cache/Storage (plasma, stasis, nebula)
-  CACHE_CONNECTION_FAILED: 'CACHE_CONNECTION_FAILED',
-  CACHE_OPERATION_FAILED: 'CACHE_OPERATION_FAILED',
-
-  // Queue/Events (stream, signal)
-  QUEUE_UNAVAILABLE: 'QUEUE_UNAVAILABLE',
-  EVENT_DISPATCH_FAILED: 'EVENT_DISPATCH_FAILED',
-
-  // Resilience
-  CIRCUIT_OPEN: 'CIRCUIT_OPEN',
-  RETRY_EXHAUSTED: 'RETRY_EXHAUSTED',
-  OPERATION_TIMEOUT: 'OPERATION_TIMEOUT',
-} as const
-
-export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode]
+// Application.ts — ApplicationConfig re-uses shared fields
+export interface ApplicationConfig extends Pick<GravitoConfig, 'logger' | 'config'> {
+  basePath: string
+  configPath?: string
+  providersPath?: string
+  env?: 'development' | 'production' | 'testing'
+  providers?: ServiceProvider[]
+  autoDiscoverProviders?: boolean
+}
 ```
 
-### Pattern 4: GracefulDegradationManager (Coordination Layer)
+This is backwards-compatible — all existing `ApplicationConfig` fields survive.
 
-**What:** A singleton-per-app manager that tracks Orbit health state. When a circuit opens, the manager records the degraded state and emits a core hook. Consumers (other Orbits, application code) can query which Orbits are degraded and select fallback paths.
+### Pattern 3: @internal Symbol Hiding
 
-**When to use:** Applications where some Orbits depend on others (e.g., stasis can cache atlas results during DB outage).
+**What:** Symbols marked `@internal` in JSDoc should not appear in the public
+barrel's named export list. They remain in source files (for intra-package use)
+but are not re-exported from `index.ts`.
+**When to use:** Any utility that is framework-internal bootstrapping glue
+(`setApp`, `resetRuntimeAdapter`).
+**Trade-offs:** Breaking change if any consumer was calling `setApp` directly
+(unlikely — its sole caller is `PlanetCore.boot()`). Mitigated with deprecation
+notice in patch release before removal.
 
-**Trade-offs:** Requires coordination between Orbits without introducing direct coupling. Uses the existing hooks system — no new inter-package dependencies.
-
+**Implementation:**
 ```typescript
-// packages/resilience/src/degradation/GracefulDegradationManager.ts
-export class GracefulDegradationManager {
-  private degradedOrbits = new Map<string, DegradationState>()
+// helpers.ts — setApp stays in the file (PlanetCore.ts imports it directly)
+/** @internal — do not use outside @gravito/core */
+export function setApp(core: PlanetCore | null): void { ... }
 
-  onCircuitOpen(orbitName: string, metrics: CircuitBreakerMetrics): void {
-    this.degradedOrbits.set(orbitName, { since: new Date(), metrics })
-    // Fire core hook so app can react
-    this.hooks.doAction('orbit:degraded', { orbit: orbitName, metrics })
-  }
+// index.ts — REMOVE setApp from the exported list
+export {
+  Arr, abort, abortIf, abortUnless, app, blank, config,
+  DumpDieError, dd, dump, env, filled, hasApp, logger, router,
+  Str, /* setApp REMOVED */ tap, throwIf, throwUnless, value,
+} from './helpers'
+```
 
-  isDegraded(orbitName: string): boolean {
-    return this.degradedOrbits.has(orbitName)
-  }
+`index.browser.ts` also exports `setApp` — remove it from that barrel too.
 
-  getFallbackStrategy(orbitName: string): FallbackStrategy | undefined {
-    return this.fallbackStrategies.get(orbitName)
+### Pattern 4: Exception Class Consolidation (JSDoc-Only)
+
+**What:** `AuthException` (abstract) and `AuthenticationException` (concrete)
+serve different roles but their similar names cause confusion.
+
+Current reality:
+- `AuthException` = abstract base class, used by `fortify` and `sentinel` via extension
+- `AuthenticationException` = concrete "401 unauthenticated" class, used by `sentinel` directly
+
+Consolidation strategy — **rename, not remove** (backwards-compatible):
+- Keep `AuthException` as-is (downstream packages extend it — cannot remove without breaking)
+- Keep `AuthenticationException` as-is (sentinel imports it directly)
+- Add JSDoc to each class explicitly documenting their role difference
+- Add `@deprecated` alias pattern if desired (no new alias needed — the naming is the only issue)
+
+No file deletion required. The consolidation is documentation plus JSDoc clarification.
+
+### Pattern 5: Container.make() Type Inference Improvement
+
+**What:** Replace `any` return type on `Container.make()` with generic inference.
+**When to use:** DI containers where service keys map to known types.
+**Trade-offs:** Full type inference requires a ServiceMap generic on Container,
+which is a moderate API surface change. Lighter approach: overload signatures
+for specific known keys.
+
+**Example (lighter approach — no breaking change):**
+```typescript
+// Container.ts
+export class Container {
+  make<K extends keyof ServiceMap>(key: K): ServiceMap[K]
+  make(key: string): unknown  // fallback for unknown keys
+  make(key: string): unknown {
+    // implementation
   }
 }
 ```
 
----
+**Example (heavier approach — generic Container):**
+```typescript
+export class Container<TServices extends Record<string, unknown> = Record<string, unknown>> {
+  make<K extends keyof TServices>(key: K): TServices[K]
+}
+```
+The heavier approach is the correct long-term pattern but requires updating
+all `new Container()` call sites to provide a type parameter — a broader refactor
+best done as a dedicated phase.
 
-## Integration Points: New vs Modified
+## Data Flow
 
-### New Components (build from scratch)
-
-| Component | Package | Why New |
-|-----------|---------|---------|
-| `InfrastructureException` | `@gravito/core` | No base class for infrastructure failures exists |
-| `DatabaseException`, `DatabaseConnectionException` | `@gravito/core` | Atlas errors don't extend GravitoException |
-| `CacheException` | `@gravito/core` | Plasma/stasis errors don't extend GravitoException |
-| `QueueException` | `@gravito/core` | Signal/stream errors don't extend GravitoException |
-| `CircuitOpenException` | `@gravito/core` | No typed exception for circuit-open rejection |
-| `ErrorCode` namespace | `@gravito/core` | Codes are fragmented (HTTP codes in ErrorHandler, fortify codes in fortify) |
-| `ResiliencePolicy` interface | `@gravito/resilience` | No unified policy abstraction; CB and retry are used separately |
-| `ResiliencePolicyBuilder` | `@gravito/resilience` | No composition API |
-| `GracefulDegradationManager` | `@gravito/resilience` | No coordination layer exists |
-| `RetryPolicy` (sync, in-process) | `@gravito/resilience` | `RetryScheduler` is async+BullMQ; need sync retry for DB calls |
-| Per-Orbit `ResiliencePolicy` defaults | Each Orbit | No Orbits have resilience integration today |
-
-### Modified Components (existing, targeted changes)
-
-| Component | Package | Change |
-|-----------|---------|--------|
-| `GravitoException` | `@gravito/core` | Add `errorCategory` field (`client` | `infrastructure` | `transient`) |
-| `atlas DatabaseError`, `ConnectionError` | `@gravito/atlas` | Wrap in `DatabaseException` at driver boundary |
-| `plasma RedisError` | `@gravito/plasma` | Wrap in `CacheException` at client boundary |
-| `CircuitBreaker.execute()` | `@gravito/resilience` | Throw `CircuitOpenException` instead of raw `Error` |
-| `core/src/events/CircuitBreaker.ts` | `@gravito/core` | Deprecate, re-export from `@gravito/resilience` |
-| `echo` local `CircuitBreaker` | `@gravito/echo` | Replace with `@gravito/resilience` `CircuitBreaker` |
-| `ErrorHandler.handleError()` | `@gravito/core` | Handle `CircuitOpenException` as structured 503 |
-
----
-
-## Data Flow Changes
-
-### Error Propagation (Before vs After)
+### Export Resolution Flow (Current — Problematic)
 
 ```
-BEFORE:
-  atlas driver → throws ConnectionError (raw Error)
-  photon ErrorHandler → duck-types, falls to generic 500
-  Response: { error: { message: "Internal Server Error", code: "INTERNAL_ERROR" } }
-
-AFTER:
-  atlas driver → ResiliencePolicy wraps call
-  ResiliencePolicy (retry 3x) → all fail
-  ResiliencePolicy converts → throws DatabaseConnectionException(status=503, code="DB_CONNECTION_FAILED")
-  photon ErrorHandler → instanceof GravitoException, structured handler
-  Response: { error: { message: "Database unavailable", code: "DB_CONNECTION_FAILED" } }
-  Side effect: hooks.doAction("error:report") → monitor/alerting notified
+Consumer: import { AuthException } from '@gravito/core'
+    |
+    v
+index.ts: export * from './exceptions'
+    |
+    v
+exceptions/index.ts: export * from './AuthException'
+                     export * from './AuthenticationException'   <-- ambiguous hop
+    |
+    v
+AuthException.ts: export abstract class AuthException
+AuthenticationException.ts: export class AuthenticationException
 ```
 
-### Graceful Degradation Flow
+Problem: IDE cannot distinguish the two without reading both files. "Go to
+Definition" lands on `exceptions/index.ts` then requires a second hop.
+
+### Export Resolution Flow (Target — Named)
 
 ```
-1. atlas ResiliencePolicy: 5 consecutive DB failures
-2. CircuitBreaker transitions CLOSED → OPEN
-3. CircuitBreaker calls: GracefulDegradationManager.onCircuitOpen("atlas-postgres", metrics)
-4. GracefulDegradationManager: hooks.doAction("orbit:degraded", { orbit: "atlas-postgres" })
-5. stasis Orbit (if configured): activates fallback read-through cache mode
-6. Subsequent atlas calls: CircuitBreaker throws CircuitOpenException immediately (no wait)
-7. Application layer (configured): catches CircuitOpenException → calls stasis cache instead
-8. After resetTimeout: CircuitBreaker → HALF_OPEN → test request allowed
-9. On success: GracefulDegradationManager.onCircuitClosed("atlas-postgres")
-10. stasis returns to write-through mode
+Consumer: import { AuthException } from '@gravito/core'
+    |
+    v
+index.ts: export { AuthException, AuthenticationException, ... } from './exceptions'
+    |
+    v
+exceptions/index.ts: export { AuthException } from './AuthException'
+                     export { AuthenticationException } from './AuthenticationException'
+    |
+    v
+Direct file: IDE resolves in one hop. Clear separation visible.
 ```
 
----
-
-## Suggested Build Order
-
-The dependency graph drives this ordering. Core changes must land before Orbits can adopt them.
+### Config Unification Flow
 
 ```
-Phase 1: Core Error Model Foundation
-  1a. @gravito/core — Add ErrorCode registry
-  1b. @gravito/core — Add InfrastructureException + domain subclasses
-  1c. @gravito/core — Deprecate core/events/CircuitBreaker (re-export from resilience)
+CURRENT (two parallel types — confusion):
+  PlanetCore.boot(config: GravitoConfig)      config.logger, config.config
+  new Application(options: ApplicationConfig)  options.logger, options.config
 
-Phase 2: Resilience Policy Infrastructure
-  2a. @gravito/resilience — RetryPolicy (synchronous, in-process)
-  2b. @gravito/resilience — ResiliencePolicy interface + default impl
-  2c. @gravito/resilience — ResiliencePolicyBuilder (fluent API)
-  2d. @gravito/resilience — CircuitBreaker throws CircuitOpenException
-  2e. @gravito/resilience — GracefulDegradationManager
-
-Phase 3: Foundation Orbit Migration (highest blast radius first)
-  3a. @gravito/atlas — DatabaseException wraps DatabaseError, add ResiliencePolicy
-  3b. @gravito/plasma — CacheException wraps RedisError, add ResiliencePolicy
-  3c. @gravito/signal — QueueException, add ResiliencePolicy
-  3d. @gravito/photon — handle CircuitOpenException in ErrorHandler
-
-Phase 4: Secondary Orbit Migration (batch, similar patterns)
-  4a. Storage: @gravito/stasis, @gravito/nebula, @gravito/nebula-s3
-  4b. Communication: @gravito/echo (consolidate local CB), @gravito/flare, @gravito/ripple
-  4c. Auth/Security: @gravito/fortify (align FortifyError with GravitoException), @gravito/sentinel
-  4d. Stream: @gravito/stream (already has ErrorCategorizer — plug into ResiliencePolicy)
-
-Phase 5: Advanced Orbits + Verification
-  5a. Remaining Orbits: @gravito/horizon, @gravito/flux, @gravito/forge, @gravito/nova
-  5b. Full integration test: Satellite-level error path verification
-  5c. Migration guide: document breaking changes for consumers
+TARGET (unified base — no duplication):
+  PlanetCore.boot(config: GravitoConfig)      [unchanged]
+  new Application(options: ApplicationConfig)  [extends GravitoConfig shared fields]
+                          |
+                          v
+         ApplicationConfig = { basePath, ...Pick<GravitoConfig, 'logger' | 'config'> }
 ```
 
-### Build Order Rationale
+### setApp Internal Flow
 
-- **Phase 1 before 2:** Resilience package needs `CircuitOpenException` from core to throw typed errors.
-- **Phase 2 before 3:** Atlas/plasma need `ResiliencePolicy` interface before they can implement it.
-- **Atlas before plasma before signal (Phase 3):** These are the most depended-upon Orbits; fixing them first validates the pattern before batch-applying to 40+ others.
-- **photon (3d) after atlas/plasma (3a/3b):** `ErrorHandler` must recognize `CircuitOpenException` before the app can render correct 503s for DB/cache failures.
-- **Phase 4 in batches:** Storage, communication, and auth packages each follow the same pattern — implement once, verify, then batch the rest.
-- **fortify special case:** `FortifyError` has its own domain-specific hierarchy (auth codes). In Phase 4, ensure `FortifyError` is either made to extend `GravitoException` or that `ErrorHandler` recognizes it via duck-typing. The existing `httpStatus` field is compatible.
+```
+CURRENT (public — footgun):
+  index.ts exports setApp
+  Consumer can call setApp(null) and break app()
 
----
+TARGET (internal — safe):
+  index.ts does NOT export setApp
+  PlanetCore.ts imports setApp directly: import { setApp } from './helpers'
+  setApp remains functional — only export visibility changes
+```
 
-## Anti-Patterns to Avoid
+## Integration Points
 
-### Anti-Pattern 1: Replacing Existing Exception Hierarchy
+### Files Modified (not created)
 
-**What people do:** Delete `DatabaseError`/`ConnectionError` and replace with new classes.
-**Why it's wrong:** Breaks any code in tests or external consumers that catches these specific types. Causes 40+ rippling test failures.
-**Do this instead:** Keep `DatabaseError` as the internal driver representation. Wrap it at the Orbit boundary into `DatabaseException(cause: originalError)`. Callers catching `DatabaseError` still work; callers expecting `GravitoException` now work too.
+| File | Change Type | Backwards Compatible? |
+|------|------------|----------------------|
+| `packages/core/src/index.ts` | Convert 6 `export *` to named exports; remove `setApp` from helper export list | YES — named imports continue to work |
+| `packages/core/src/index.browser.ts` | Remove `setApp` from helper export list; convert `export * from './events'` to named | YES |
+| `packages/core/src/exceptions/index.ts` | Convert 17 `export *` to 17 named export lines | YES |
+| `packages/core/src/PlanetCore.ts` | Expand `GravitoConfig` with `env` field for parity with `ApplicationConfig` | YES (additive) |
+| `packages/core/src/Application.ts` | `ApplicationConfig` extends/picks from `GravitoConfig` | YES if field types match |
+| `packages/core/src/Container.ts` | Overload `make()` for better inference | YES if overload is additive |
+| `packages/core/src/exceptions/AuthException.ts` | JSDoc clarification only | YES (no runtime change) |
+| `packages/core/src/exceptions/AuthenticationException.ts` | JSDoc clarification only | YES (no runtime change) |
 
-### Anti-Pattern 2: Adding Circuit Breakers Inside Satellite Code
+### Files NOT Modified (downstream consumers)
 
-**What people do:** Copy `CircuitBreaker` into a satellite to protect its calls to an Orbit.
-**Why it's wrong:** Violates Satellite isolation — Satellites should not care about Orbit health. Duplicates state. Bypasses GracefulDegradationManager.
-**Do this instead:** Let the Orbit package own its own circuit breaker. If the Orbit's circuit is OPEN, it throws `CircuitOpenException`. The Satellite catches it as any other `GravitoException` and decides its business-level response.
+| Package | Why Untouched |
+|---------|--------------|
+| `packages/fortify/src/errors/FortifyError.ts` | `import { AuthException }` continues to resolve correctly |
+| `packages/sentinel/src/errors/SentinelError.ts` | `import { AuthException, ExceptionOptions }` continues to resolve correctly |
+| `packages/sentinel/src/AuthManager.ts` | `import { AuthenticationException }` continues to resolve correctly |
+| All 50+ Orbit packages | Named exports from `@gravito/core` are additive — no breakage |
 
-### Anti-Pattern 3: Sync Retry in RetryScheduler
+### Internal Boundaries Affected
 
-**What people do:** Use `RetryScheduler` (BullMQ-based) for synchronous DB retry logic.
-**Why it's wrong:** `RetryScheduler` is designed for async event-system retries with Redis persistence. Using it for DB queries adds a Redis dependency to every DB call and changes a synchronous operation into an async queue operation with unbounded latency.
-**Do this instead:** Build a separate `RetryPolicy` for synchronous in-process retries (exponential backoff, max attempts, synchronous). `RetryScheduler` stays for event-system use only.
+| Boundary | Current Communication | Post-DX |
+|----------|-----------------------|---------|
+| `index.ts` → `exceptions/` | Star export (opaque) | Named export block (explicit) |
+| `index.ts` → `helpers` | Includes `setApp` (footgun) | `setApp` removed from public list |
+| `index.ts` → `testing/` | Star export (leaks test internals) | Named: `HttpTester`, `TestResponse` |
+| `index.ts` → `adapters/bun/` | Star export (leaks 7 classes) | Named: explicit list of public API |
+| `Application.ts` <-> `PlanetCore.ts` | Two independent config types | `ApplicationConfig` references `GravitoConfig` fields |
+| `PlanetCore.ts` → `helpers` | Internal import of `setApp` | Same — import path unchanged |
 
-### Anti-Pattern 4: Centralizing All Resilience State in Core
+## Build Order
 
-**What people do:** Put `GracefulDegradationManager` and all circuit breakers into `@gravito/core`.
-**Why it's wrong:** Core has zero dependencies. Adding resilience managers would add state management and possibly timers to the microkernel, violating its minimal-footprint design.
-**Do this instead:** `@gravito/core` defines interfaces and exception types only. `@gravito/resilience` owns all runtime state (circuit breakers, degradation manager). Orbits depend on `@gravito/resilience` as an optional dependency for wrapping external calls.
+The DX improvements have no circular dependency risk. Recommended execution order:
 
-### Anti-Pattern 5: Making GracefulDegradationManager a Global Singleton
+```
+Phase 1: exceptions/index.ts  (isolated, no downstream risk)
+    |
+Phase 2: helpers / setApp removal from index.ts + index.browser.ts
+    |
+Phase 3: testing/* and adapters/bun/* named exports in index.ts
+    |
+Phase 4: GravitoConfig / ApplicationConfig unification
+    |
+Phase 5: Container.make() inference improvement
+    |
+Phase 6: AuthException / AuthenticationException JSDoc clarification
+    |
+Phase 7: Full typecheck + test run (bun run typecheck && bun test)
+```
 
-**What people do:** Export a module-level `degradationManager` instance.
-**Why it's wrong:** Makes testing impossible (shared state between tests), and conflicts with IoC container patterns already in core.
-**Do this instead:** `GracefulDegradationManager` is instantiated by `PlanetCore` during boot and registered in the IoC container. Orbit packages receive it via constructor injection.
+**Rationale for ordering:**
+- Phases 1-3 are pure export-surface changes. Zero runtime behavior change. Run `bun run typecheck` between each phase.
+- Phase 4 modifies type definitions consumed by Application.ts — must come after phases 1-3 are stable to avoid compounding errors.
+- Phase 5 changes Container generics — highest risk of cascade type errors across all 50+ packages that use `Container`. Do last before verification.
+- Phase 6 is documentation-only and can be done at any point, but placed last to avoid disrupting structural changes.
+- Phase 7 is the verification gate: `bun run typecheck && bun test`.
 
----
+## Anti-Patterns
+
+### Anti-Pattern 1: Removing AuthException to Eliminate Name Confusion
+
+**What people do:** See two similar names and delete the abstract base, forcing
+all subtypes to extend `DomainException` directly.
+**Why it's wrong:** `FortifyError extends AuthException` and `SentinelError extends AuthException`
+across two separate packages. Removing `AuthException` is a breaking change to
+the public API of those packages. The `instanceof AuthException` check in
+consumer code would also break.
+**Do this instead:** Improve JSDoc on both classes to explain the role split.
+`AuthException` = "abstract category base for auth-domain exceptions".
+`AuthenticationException` = "concrete 401 Unauthenticated response exception".
+
+### Anti-Pattern 2: Using `export * as namespace` for All Sub-modules
+
+**What people do:** Convert all `export *` to `export * as namespace` to avoid
+name collisions.
+**Why it's wrong:** The `engine` namespace export is intentional because
+`@gravito/core/engine` is a documented sub-path used for direct Bun-only
+performance work. Using namespaces for `exceptions` or `helpers` would break
+all consumer code that does `import { GravitoException } from '@gravito/core'`.
+**Do this instead:** Named exports at the barrel level. Namespaces only where
+there is a deliberate "module boundary" sub-path export in `package.json`.
+
+### Anti-Pattern 3: Merging GravitoConfig and ApplicationConfig into One Type
+
+**What people do:** Merge both types into a single `GravitoConfig` because
+they share fields.
+**Why it's wrong:** `PlanetCore` and `Application` serve different use cases.
+`Application` has `basePath`, `providersPath`, `autoDiscoverProviders` which
+are enterprise filesystem concerns that `PlanetCore` deliberately does not have.
+Collapsing them forces `PlanetCore` users to provide filesystem paths.
+**Do this instead:** `ApplicationConfig extends Pick<GravitoConfig, ...>` — shared
+fields are typed once in `GravitoConfig`, `ApplicationConfig` adds its own fields.
+
+### Anti-Pattern 4: Converting the Events Star Export
+
+**What people do:** Convert `export * from './events'` in browser entry to named
+exports and discover that `events/` has 20+ symbols.
+**Why it's wrong:** `events/` intentionally has a broad API (queue, circuit breaker,
+worker pool, backpressure, etc.). This is a legitimate grouping, not a DX problem.
+**Do this instead:** Leave `export * from './events'` as-is in both barrels.
+The DX problem is in `exceptions/`, `helpers/`, `testing/`, `adapters/bun/` — not events.
+
+### Anti-Pattern 5: Suppressing the setApp Type Error with @ts-ignore
+
+**What people do:** When removing setApp from the public barrel causes a type error
+in a test or usage file, silence it with `@ts-ignore`.
+**Why it's wrong:** `@ts-ignore` is banned by the codebase's TypeScript strict rules.
+**Do this instead:** Audit `grep -rn "setApp"` before removing. The only known
+caller is `PlanetCore.ts` itself which imports directly from `./helpers`, not from
+the public barrel. Confirm zero external callers before removing.
 
 ## Scaling Considerations
 
-| Scale | Architecture Notes |
-|-------|--------------------|
-| Single app | `ResiliencePolicy` defaults are adequate; `GracefulDegradationManager` runs in-process |
-| Multiple app instances | Each instance has independent circuit breaker state — acceptable for v2.0.0; distributed CB (Redis-backed) is future work |
-| High throughput (>10k req/s) | `CircuitBreaker.execute()` uses synchronous state checks — no I/O, negligible overhead |
-| Many Orbits degraded simultaneously | `GracefulDegradationManager` fan-out via hooks is synchronous; verify hook chain performance under load |
+This is a public API refactor, not a runtime scale concern. Risk surface:
 
----
-
-## Integration Points Summary
-
-### External Boundaries (where ResiliencePolicy wraps calls)
-
-| Boundary | Orbit Package | Exception Type | Default Policy |
-|----------|---------------|----------------|----------------|
-| PostgreSQL / MySQL / SQLite | `@gravito/atlas` | `DatabaseConnectionException`, `DatabaseException` | Retry(3) + CB(5 failures) |
-| Redis | `@gravito/plasma` | `CacheException` | CB(5 failures), no retry (Redis failures are fast-fail) |
-| MongoDB | `@gravito/dark-matter` | `DatabaseException` | Retry(2) + CB(5 failures) |
-| Object Storage (S3/R2) | `@gravito/nebula-s3` | `InfrastructureException` | Retry(3), no CB |
-| SMTP / Email | `@gravito/signal` | `QueueException` | Retry(3) + DLQ fallback |
-| Outgoing webhooks | `@gravito/echo` | `InfrastructureException` | Retry(4) + per-host CB |
-| WebSocket connections | `@gravito/ripple` | `InfrastructureException` | CB(3 failures), reconnect backoff |
-| Background jobs / BullMQ | `@gravito/stream` | `QueueException` | Retry handled by BullMQ; stream-level CB |
-| Kafka | `@gravito/stream` | `QueueException` | Uses existing `ErrorRecoveryManager` — wrap in `ResiliencePolicy` adapter |
-
-### Internal Boundaries (hook-based, no direct coupling)
-
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| `ResiliencePolicy` → `GracefulDegradationManager` | Callback on CB state change | CB options: `onOpen`, `onHalfOpen`, `onClose` |
-| `GracefulDegradationManager` → Application | `orbit:degraded` hook via `PlanetCore.hooks` | App can configure fallback behavior |
-| `ErrorHandler` → Monitoring | `error:report` hook (existing) | Unchanged; now receives richer `CircuitOpenException` |
-| Satellite → Orbit error | Event-driven (unchanged) | Satellites catch `GravitoException` from Orbit calls |
-
----
+| Risk | Scope | Mitigation |
+|------|-------|------------|
+| Type errors after named export conversion | 352 import sites | Run `bun run typecheck` after each phase |
+| `instanceof AuthException` breaks if class removed | fortify + sentinel | Do not remove — only clarify via JSDoc |
+| `setApp` callers outside core | Consumer packages | `grep -rn "setApp"` audit before removal |
+| `Container.make()` overload cascade errors | 50+ packages using Container | Last phase + full typecheck gate |
+| `index.browser.ts` diverges from `index.ts` | Browser consumers | Mirror every change in both barrels |
 
 ## Sources
 
-- Codebase inspection: `packages/core/src/exceptions/`, `packages/resilience/src/`, `packages/atlas/src/errors/`, `packages/plasma/src/errors.ts`, `packages/echo/src/resilience/`, `packages/stream/src/drivers/kafka/`
-- Galaxy Architecture design: `docs/claude/design.md`, `docs/claude/packages.md`
-- Project context: `.planning/PROJECT.md`
-- Confidence: HIGH — all findings from direct source code inspection, no speculation
+- Direct codebase analysis: `packages/core/src/index.ts` (875 lines, full read 2026-03-29)
+- Direct codebase analysis: `packages/core/src/exceptions/index.ts`, `AuthException.ts`, `AuthenticationException.ts`
+- Direct codebase analysis: `packages/fortify/src/errors/FortifyError.ts`, `packages/sentinel/src/errors/SentinelError.ts`
+- Direct codebase analysis: `packages/core/src/PlanetCore.ts` (GravitoConfig type), `packages/core/src/Application.ts` (ApplicationConfig type)
+- Direct codebase analysis: `packages/core/package.json` (exports map)
+- Import count: 352 files importing from `@gravito/core` (confirmed via grep)
+- Confidence: HIGH — all findings from live source, no training-data inference
 
 ---
-*Architecture research for: Gravito v2.0.0 Error Handling & Resilience Integration*
-*Researched: 2026-03-28*
+*Architecture research for: @gravito/core DX improvements (v2.1.0)*
+*Researched: 2026-03-29*

@@ -1,29 +1,27 @@
 # Feature Research
 
-**Domain:** TypeScript framework error handling & resilience (brownfield, ~50 Orbit packages)
-**Researched:** 2026-03-28
-**Confidence:** HIGH — based on direct codebase audit + verified production patterns
+**Domain:** TypeScript framework DX (developer experience) — @gravito/core v2.1.0
+**Researched:** 2026-03-29
+**Confidence:** HIGH — codebase audit + verified patterns from Hono, Elysia, AdonisJS, Effect, NestJS
 
 ---
 
-## Current State Audit
+## Context: What Was Already Built
 
-Before mapping features, what already exists in `@gravito/resilience` and `@gravito/core`:
+The v2.0.0 milestone shipped a production-ready error model and resilience layer. v2.1.0 targets
+**developer experience improvements only** — no new runtime features. DX in this context means:
+the experience of a developer writing code against `@gravito/core` API for the first time or
+the fifth time; what they see in their editor, what they read in docs, and how fast they get unblocked.
 
-| Component | Exists | Location | Gap |
-|-----------|--------|----------|-----|
-| `CircuitBreaker` | YES — full implementation | `resilience/src/circuit-breaker/` | Not wired to Orbit packages (atlas, plasma, beam, etc.) |
-| `RetryScheduler` | YES — BullMQ-based distributed retry | `resilience/src/retry/` | Only works for event bus retries, not general-purpose |
-| `GravitoException` | YES — base class with `status`, `code`, `i18nKey` | `core/src/exceptions/` | Missing numeric error codes; no `cause` chain standard |
-| `ErrorHandler` | YES — HTTP error handler with hook integration | `core/src/ErrorHandler.ts` | Handles HTTP layer only; Orbit-level errors not unified |
-| `DatabaseError` hierarchy | YES — atlas-specific, `DatabaseError` → `ConnectionError`, `ConstraintViolationError` | `atlas/src/errors/` | Not derived from `GravitoException`; no error codes |
-| `FortifyError` + `ErrorCodes` | YES — auth-domain specific, excellent pattern | `fortify/src/errors/` | Isolated to fortify; pattern not applied to other Orbits |
-| `BackpressureManager`, `DeadLetterQueue` | YES — for event bus | `resilience/src/` | Event-bus scoped; not generalized |
-| Graceful shutdown hooks | PARTIAL — plasma registers `core:shutdown` | `plasma/src/OrbitPlasma.ts` | Inconsistent; atlas, beam, stream lack timeout-guarded shutdown |
-| Timeout handling | PARTIAL — beam has `BeamTimeoutError`, stasis has `LockTimeoutError` | Per-package | No framework-level timeout wrapper; inconsistent error types |
-| Fallback / degradation | MINIMAL — comments only in plasma | `plasma/src/OrbitPlasma.ts` | No structural fallback mechanism; no `OrbitUnavailableError` |
+Known footguns audited from codebase (confirmed, HIGH confidence):
 
-**The core gap:** 50 packages each invent their own `throw new Error(...)` patterns. There is no shared error taxonomy, no standard error code namespace, and no framework-level way to say "this Orbit is degraded, here is a fallback value."
+| Footgun | Evidence | Impact |
+|---------|----------|--------|
+| `Router.ts:610` — `console.log` leaks on every route registration | Direct codebase read | Every request handler registration pollutes stdout in prod |
+| `Router.ts:436` — `throw new Error('ModelNotFound')` string-compare sentinel | Direct codebase read | Brittle: string comparison `=== 'ModelNotFound'` on line 475; any typo silently breaks 404 handling |
+| `AuthException` vs `AuthenticationException` naming conflict | Both exist in `exceptions/` | Confusing hierarchy — `AuthException` is abstract base, `AuthenticationException` is concrete; names don't communicate this clearly |
+| `core.services` public deprecated `Map` | `PlanetCore.ts:203` has `@deprecated Use core.container instead` | Deprecated API is still public, no runtime warning, leads new devs to wrong pattern |
+| 69 occurrences of `: any` / `<any>` in public-facing src | Grep count across 31 files | Type safety holes surface as `any` propagation into user code |
 
 ---
 
@@ -31,109 +29,98 @@ Before mapping features, what already exists in `@gravito/resilience` and `@grav
 
 ### Table Stakes (Users Expect These)
 
-Features that framework users (Satellite authors, app developers) assume exist in any production-grade TypeScript framework. Missing these makes the framework feel unfinished.
+Features any production TypeScript framework must have. Missing these = framework feels amateurish.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| **Unified error base class** — all Orbit errors extend a common `GravitoException`-derived class | Every mature framework (NestJS, Laravel, Spring) provides this; package authors cannot safely catch "Gravito errors" without it | LOW | `GravitoException` exists in core; work is migrating `DatabaseError`, `RedisError`, `MassValidationError`, etc. to extend it |
-| **Structured error codes** — machine-readable namespace:code strings on every error | Required for client-side error handling, logging, monitoring dashboards, and i18n; `fortify` already does this right | LOW | Fortify's `ErrorCodes` pattern (`auth.invalid_credentials`) is the model; needs framework-wide adoption with per-package namespaces (`db.*`, `redis.*`, `stream.*`) |
-| **Error cause chaining** — `cause` field propagated correctly | Node.js `Error` supports `cause` since v16.9; TypeScript consumers rely on it for root cause analysis | LOW | `GravitoException` constructor accepts `cause`; individual packages don't populate it consistently |
-| **General-purpose sync/async retry** — `withRetry(fn, options)` utility wrapping any operation | Production apps retry DB queries, HTTP calls, Redis ops; existing `RetryScheduler` is event-bus-only and requires BullMQ | MEDIUM | Needs a lightweight synchronous retry with exponential backoff that works without BullMQ; the `RetryScheduler` handles distributed retries separately |
-| **Circuit breaker wired to Orbit packages** — atlas, plasma, beam, signal use circuit breakers | Framework users expect DB and Redis calls to fail fast when those services are down, not hang indefinitely | MEDIUM | `CircuitBreaker` class is complete; work is integrating it into atlas pool, plasma Redis client, beam HTTP client |
-| **Timeout on all external I/O** — DB queries, Redis ops, HTTP requests have configurable timeouts | Production systems must bound latency; partial implementations in beam/stasis but inconsistent | MEDIUM | Requires per-package timeout wrapping; beam and atlas pool already handle some of this |
-| **Graceful shutdown with timeout** — all Orbits respond to `core:shutdown` within a deadline | Standard in any framework that manages connections; data corruption risk without it | MEDIUM | plasma has it; atlas, stream, signal, beam, monitor need to register shutdown handlers with deadline enforcement |
-| **Orbit health status reporting** — whether an Orbit is HEALTHY / DEGRADED / UNAVAILABLE | `@gravito/monitor` exists; Orbits need to publish health into it consistently | MEDIUM | Monitor package exists; the feature is wiring Orbit packages to register health checks |
+| **Zero-noise stdout in production** | Frameworks never log to stdout in library code — Hono, Elysia, Express all use logger hooks, not direct `console.log` | LOW | One fix: `Router.ts:610` — replace with `this.logger?.debug(...)` or remove entirely |
+| **Typed exception hierarchy that is self-documenting** | NestJS, AdonisJS, Effect all use names that communicate role — `HttpException`, `NotFoundException`; two "auth" classes with similar names breaks this | LOW | Rename `AuthException` → `AuthBaseException` or merge; JSDoc `@deprecated` on old name |
+| **No deprecated API in discoverable surface** | Star-exported deprecated APIs appear in IDE autocomplete, training devs into wrong patterns | LOW | Add `@deprecated` JSDoc annotation + TypeScript `@deprecated` tag on `services` property; consider `@internal` move |
+| **Actionable runtime error messages** | Hono prints "Expected a Response object" with the handler signature; Elysia prints the mismatched type. Raw `new Error('ModelNotFound')` as sentinel value gives IDE-opaque errors | MEDIUM | Replace string sentinel with `throw new ModelNotFoundException(param, value)` directly; remove intermediate string throw |
+| **Stable, discoverable public API** | Star exports (`export *`) from large barrel files break IDE completion ranking, slow tsserver, and hide what's truly public — documented by Vercel, AdonisJS, and TypeScript core team | MEDIUM | Converge `export *` usages (currently 15+ in `index.ts`) into explicit named exports for the public surface |
+| **README that matches current API** | EventManager/HookManager public methods documented in README must match source exactly; mismatches are #1 new-dev frustration (NestJS community issues, AdonisJS v6 launch post-mortem) | LOW | Audit README API section against source; sync or remove stale examples |
+| **Consistent JSDoc across public API** | IDE tooltip is the primary discovery surface; inconsistent or missing `@param`/`@returns`/`@example` forces devs to read source | LOW | Already 100% covered (v1.4.0), but language consistency (Chinese/English mix) breaks IDE experience |
 
 ### Differentiators (Competitive Advantage)
 
-Features that go beyond what users expect and distinguish the framework's resilience model.
+Features that distinguish Gravito's DX from competitors — not required, but meaningful.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| **Graceful degradation with fallback values** — Orbit operations return a typed fallback instead of throwing when degraded | NestJS/Express give you circuit breakers that throw; Gravito can offer `orbit.withFallback(operation, fallbackFn)` that never propagates to the HTTP layer | HIGH | Requires a degradation context: "Is this Orbit currently degraded? If yes, use cache/default/null instead of throwing." Interaction with circuit breaker state. |
-| **Per-Orbit error namespace registry** — each Orbit registers its error codes; framework can enumerate all possible errors | Enables generated API documentation that lists every error code, monitoring alert templates per error domain | MEDIUM | Lightweight registry: `ErrorRegistry.register('atlas', AtlasErrorCodes)`. No runtime overhead. |
-| **Retry + circuit breaker composition** — `withResilience(fn, { retry, circuitBreaker })` wraps both together in the right order | Forces correct ordering (retry inside circuit breaker, not the other way); prevents the common mistake of retrying an open circuit | MEDIUM | The composition layer. Retry wraps the inner fn; circuit breaker wraps the retry. Needs to be explicit in API. |
-| **Request-scoped error context** — errors carry the active request trace ID, user context, and Orbit source | `RequestScopeErrorContext` already exists in core; extending it to carry Orbit-level diagnostics | LOW-MEDIUM | Partial infrastructure exists; the differentiator is making this automatic for every Orbit, not opt-in |
-| **Idempotency key propagation** — retried operations carry the same idempotency key, preventing double-writes | Critical for commerce/payment Satellites; `IdempotencyCache` in resilience exists for events | HIGH | Event idempotency exists; generalizing to HTTP retries and DB operations is the complex part |
+| **Actionable error messages with fix suggestions** | Effect and Zod lead the ecosystem here — errors say "Did you mean X?" or "You likely forgot to call boot()" rather than raw stack traces. No framework does this systematically for DI/config errors | HIGH | Requires error constructor to accept `suggestion?: string`; applies to DI resolution failures, config errors, lifecycle errors |
+| **`orbit` / `register` / `use` decision guide** | AdonisJS v6 explicitly called out in their launch notes that `container.bind` vs `singleton` vs service providers confused devs; same problem exists here with `orbit()`, `register()`, `use()` having subtle behavioral differences | LOW | A single "when to use which" doc section + JSDoc cross-references pays huge dividends |
+| **Type-safe container with zero `any` in public generics** | tsyringe/typedi still use `any` in resolution path; Gravito's `Container<ServiceMap>` augmentation pattern is ahead — but 69 `any` usages in public src undercut this story | HIGH | Requires audit of `HookManager`, `Router`, `TestResponse`, `engine/types.ts` for `: any` in callable public API |
+| **v2-correct examples** | Hono's playground examples always use latest API; Elysia ships working examples in the repo. Gravito has 20+ example directories; if they use v1 patterns, they actively mislead | LOW | Update 3-5 key examples (`ecommerce-mvc`, `blog-mvc`, `auth-verification`) to v2 API |
+| **Troubleshooting FAQ covering top 5 bootstrap errors** | NestJS has an official FAQ page covering DI errors, circular deps, etc.; AdonisJS added a "common gotchas" page in v6. These dramatically reduce issue noise | LOW | 5 entries in a troubleshooting doc: boot() order, orbit vs register, ModelNotFound setup, container augmentation, GravitoConfig typing |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| **Global try/catch wrapper around all Orbit calls** | Seems easy to add "error safety" everywhere | Swallows errors silently; hides real failures; defeats TypeScript's type narrowing | Explicit error types per operation; consumers handle known failure modes |
-| **Automatic retry on ALL errors** | Reducing manual retry logic | Retrying non-transient errors (validation, auth, constraint violations) causes infinite loops and wasted resources | Classify errors as `Retryable` vs `Terminal` at error definition time; retry only `Retryable` |
-| **Single global circuit breaker** | Simpler to configure | One slow service trips the breaker for all services; unrelated features fail together | Per-dependency named circuit breakers (one for atlas-postgres, one for plasma-redis, one for beam-payments-api) |
-| **Synchronous blocking retry** | Familiar pattern | Blocks event loop; degrades throughput for all requests during retry wait | Async retry with `await`; or BullMQ-based distributed retry for long waits |
-| **Hiding errors from Satellite consumers** | "Better DX" — consumers don't need to handle errors | Removes Satellite authors' ability to apply domain-specific error handling; business errors need domain context | Propagate typed errors; let Satellite authors catch and transform as needed |
-| **Error swallowing in degraded mode** | Seems like graceful degradation | Silent failures are harder to debug than loud ones | Log + metric every degraded fallback; make fallback explicit in return type (use `Result<T>` or callback) |
+| **Global `export *` expansion** | Seems to make "everything available" from one import | Barrel files slow tsserver (documented TypeScript perf issue), break tree-shaking, collapse discriminated namespace info in autocomplete | Explicit named exports grouped by category in index.ts — same discoverability, better tooling |
+| **Runtime type validation on every API call** | Elysia does this with Eden; looks like DX improvement | Adds latency; Gravito targets Bun performance story; type-level validation (compile-time) is the correct layer for a framework | Keep validation at Zod/schema layer in user code; framework trusts TypeScript at runtime |
+| **Automatic deprecation migration scripts** | Seems helpful for `services` → `container` migration | High maintenance burden; scripts bitrot faster than docs; generates false confidence | Clear `@deprecated` JSDoc + one-line README migration note is sufficient |
+| **Universal i18n on exception messages** | `GravitoException` already has `i18nKey`; tempting to localize all error text | Framework errors should be in English for searchability and GitHub issues; i18n is for end-user messages, not developer errors | Reserve `i18nKey` for user-facing exception messages propagated to HTTP responses; internal errors stay English |
+| **Auto-generated README from JSDoc** | TypeDoc can do this; keeps docs "always up to date" | Auto-generated READMEs are verbose, miss narrative context, and look machine-generated — Hono and AdonisJS write READMEs by hand | Use TypeDoc for API reference site; hand-maintain the README's "why/how" narrative |
 
 ---
 
 ## Feature Dependencies
 
 ```
-[Unified error base class (GravitoException migration)]
-    └──required-by──> [Structured error codes (per-package namespaces)]
-    └──required-by──> [Error cause chaining]
-    └──required-by──> [Per-Orbit error namespace registry]
+[Zero-noise stdout]
+    └── LOW — standalone, no deps
 
-[General-purpose async retry utility]
-    └──required-by──> [Retry + circuit breaker composition]
-    └──uses-existing──> [CircuitBreaker (already built)]
+[Typed exception hierarchy cleanup]
+    └── enables──> [Actionable error messages with fix suggestions]
+                       └── uses──> [Consistent JSDoc]
 
-[Retry + circuit breaker composition]
-    └──required-by──> [Circuit breaker wired to Orbit packages]
+[Stable named exports]
+    └── improves──> [IDE discoverability]
+    └── requires──> [Deprecated API cleanup]
 
-[Circuit breaker wired to Orbit packages]
-    └──required-by──> [Graceful degradation with fallback values]
+[v2 examples]
+    └── requires──> [README sync] (examples should match README)
 
-[Orbit health status reporting]
-    └──uses-existing──> [@gravito/monitor (already built)]
-    └──required-by──> [Graceful degradation with fallback values]
-
-[Graceful shutdown with timeout]
-    └──independent──> can be done in parallel with error model work
-
-[Request-scoped error context enrichment]
-    └──uses-existing──> [RequestScopeErrorContext (already built)]
-    └──requires──> [Unified error base class]
+[Troubleshooting FAQ]
+    └── requires──> [orbit/register/use decision guide]
+    └── informed-by──> [Typed exception hierarchy cleanup]
 ```
 
 ### Dependency Notes
 
-- **Unified error base class is the blocker for everything else.** Error codes, registries, and fallback logic all assume a common base type. This must be Phase 1.
-- **General-purpose retry does NOT require circuit breaker.** They can be built independently and composed later. Build retry first (simpler, immediately useful), then compose.
-- **Circuit breaker integration into Orbit packages requires the circuit breaker class to be stable.** It already is. The work is configuration and wiring, not reimplementation.
-- **Graceful degradation is a late Phase feature.** It builds on: unified errors + circuit breaker wired + health reporting. Attempting it first leads to the anti-pattern of silent failure.
-- **Graceful shutdown is independent.** It does not depend on the error model. Can be parallelized.
+- **Exception cleanup blocks actionable errors:** You can't add `suggestion` fields to errors until the hierarchy is stable — otherwise you're building on a foundation that may rename.
+- **Named exports and deprecated API are coupled:** Converting `export *` to named exports is the natural time to drop the deprecated `services` property from the public surface.
+- **Examples must come after README sync:** Examples that contradict the README create worse confusion than no examples.
 
 ---
 
-## MVP Definition (for this milestone)
+## MVP Definition
 
-This is a brownfield feature addition to an existing framework. "MVP" means: the minimum to make the v2.0.0 claim true — "core + all Orbit packages have production-ready error handling and resilience."
+This milestone is an improvement pass, not a greenfield MVP. The definition of "done" is:
+no new footgun surfaces, docs match code, onboarding path is clear.
 
-### Launch With (v2.0.0 — this milestone)
+### Launch With (v2.1.0)
 
-- [ ] **Unified error taxonomy** — `DatabaseError`, `RedisError`, `MassValidationError`, `FluxError`, `BeamError`, etc. all extend `GravitoException` with structured `code` fields. Bare `throw new Error(...)` eliminated from all Orbit packages. Every atlas grammar error, connection error, and driver error has a typed class.
-- [ ] **Error code namespaces for all Orbit packages** — following fortify's `ErrorCodes` pattern: `AtlasErrorCodes` (`db.connection_failed`, `db.query_timeout`, `db.unique_constraint`), `PlasmaErrorCodes` (`redis.unavailable`, `redis.timeout`), `BeamErrorCodes` (`http.timeout`, `http.circuit_open`), etc.
-- [ ] **General-purpose async retry utility** — `withRetry<T>(fn: () => Promise<T>, options: RetryOptions): Promise<T>` with exponential backoff, jitter, max attempts, error classification (`Retryable | Terminal`). Lives in `@gravito/resilience` alongside `CircuitBreaker`.
-- [ ] **Circuit breaker wired to atlas (DB) and plasma (Redis)** — the two highest-impact integrations. atlas connection pool wraps driver calls through a named circuit breaker. plasma Redis client wraps operations through a named circuit breaker.
-- [ ] **Graceful shutdown with deadline** — atlas, plasma, stream, signal, and beam all register `core:shutdown` handlers with a configurable timeout. If shutdown exceeds deadline, force-close with a logged warning.
-- [ ] **Orbit health check registration** — atlas, plasma, stream, signal, beam each register a health check with `@gravito/monitor`. This is structural (defines the interface), not necessarily real-time probing.
+- [ ] **Remove Router console.log** — zero-noise stdout in library code; 5-minute fix with disproportionate professional signal
+- [ ] **Fix ModelNotFound string sentinel** — replace `throw new Error('ModelNotFound')` with direct `throw new ModelNotFoundException(param, value)`; eliminates brittle string comparison
+- [ ] **Clarify AuthException vs AuthenticationException** — rename or add JSDoc clarifying `AuthException` is abstract base, `AuthenticationException` is the concrete 401 class; add `@deprecated` redirects if renaming
+- [ ] **Mark `core.services` with TypeScript `@deprecated`** — IDE will show strikethrough; no runtime cost
+- [ ] **README API section sync** — audit EventManager/HookManager public methods in README; fix 3-5 concrete discrepancies; add helpers module table
+- [ ] **JSDoc language unification** — decide English-only or Chinese+English; apply consistently across public API (already 100% covered, this is language consistency only)
+- [ ] **`orbit` vs `register` vs `use` explanation** — one section in docs, cross-referenced from each method's JSDoc `@see`
 
-### Add After Validation (v2.1.0)
+### Add After Validation (v2.1.x)
 
-- [ ] **Circuit breaker for beam (HTTP client)** — wires the existing circuit breaker into beam's HTTP connection pool; lower urgency than DB/Redis
-- [ ] **Retry + circuit breaker composition API** — the `withResilience()` convenience wrapper; can be assembled manually in v2.0.0
-- [ ] **Graceful degradation with fallback values** — `OrbitDegradationManager` that returns fallback data when a circuit is open; requires v2.0.0 circuit breaker integrations to be stable first
-- [ ] **Request-scoped error context enrichment** — automatic trace ID / user context propagation into every Orbit error; nice-to-have for v2.0
+- [ ] **Named export convergence** — convert `export *` from `./exceptions`, `./helpers/data`, `./helpers/errors`, `./helpers/response` to explicit named exports; profile tsserver speed improvement before/after
+- [ ] **Actionable error messages with `suggestion` field** — extend `GravitoException` constructor to accept optional `suggestion: string`; apply to top 5 DI resolution errors and config errors
+- [ ] **Update 3-5 canonical examples** — `ecommerce-mvc`, `blog-mvc`, `auth-verification` to use v2 API patterns (container augmentation, GravitoException, orbit registration)
 
-### Future Consideration (v2.x+)
+### Future Consideration (v2.2+)
 
-- [ ] **Per-Orbit error namespace registry** — `ErrorRegistry.register(namespace, codes)` for documentation generation; low operational value, high DX value
-- [ ] **Idempotency key propagation for HTTP retries** — critical for payment flows but belongs in the commerce Satellite layer, not the framework layer
-- [ ] **Distributed tracing integration** — OTel span enrichment for circuit breaker and retry events; `@gravito/monitor` already has tracing infrastructure
+- [ ] **Type-safe public API (zero `any` in generics)** — systematic audit of 69 `any` usages; high complexity, requires careful generic threading; better deferred until API surface is stabilized
+- [ ] **Troubleshooting FAQ document** — 5-entry FAQ covering boot order, orbit vs register, ModelNotFound setup, container augmentation, GravitoConfig typing; low complexity but requires stabilized API to write accurately
+- [ ] **TypeDoc API reference site** — generate from existing JSDoc; useful once named exports are converged (ensures generated output is clean)
 
 ---
 
@@ -141,69 +128,78 @@ This is a brownfield feature addition to an existing framework. "MVP" means: the
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Unified error base class migration (~50 packages) | HIGH — type safety, consistent catch | MEDIUM — mechanical but broad | P1 |
-| Error code namespaces per Orbit | HIGH — machine-readable errors | LOW — pattern established by fortify | P1 |
-| General-purpose async retry utility | HIGH — every Orbit needs this | LOW — ~100 lines, no new deps | P1 |
-| Circuit breaker wired to atlas + plasma | HIGH — protects most critical dependencies | MEDIUM — integration work | P1 |
-| Graceful shutdown with deadline | HIGH — prevents data corruption | LOW-MEDIUM — hook registration | P1 |
-| Orbit health check registration | MEDIUM — observability | LOW — interface only | P1 |
-| Circuit breaker for beam | MEDIUM — HTTP is less critical than DB/Redis | LOW | P2 |
-| `withResilience()` composition | MEDIUM — DX | LOW | P2 |
-| Graceful degradation with fallback | HIGH — differentiator | HIGH — complex state machine | P2 |
-| Request-scoped error enrichment | MEDIUM — debugging | MEDIUM | P2 |
-| Error namespace registry | LOW — documentation | LOW | P3 |
-| Idempotency for HTTP retries | HIGH (for commerce) | HIGH — cross-cutting | P3 |
+| Remove Router console.log | HIGH — affects all prod users | LOW | P1 |
+| Fix ModelNotFound string sentinel | HIGH — affects all model binding users | LOW | P1 |
+| AuthException/AuthenticationException clarity | HIGH — confuses new devs daily | LOW | P1 |
+| README API sync | HIGH — first thing new devs read | LOW | P1 |
+| `core.services` @deprecated annotation | MEDIUM — reduces wrong-path discovery | LOW | P1 |
+| orbit/register/use decision guide | HIGH — top onboarding confusion | LOW | P1 |
+| JSDoc language unification | MEDIUM — affects IDE DX quality | LOW | P1 |
+| Named export convergence | MEDIUM — IDE perf + discoverability | MEDIUM | P2 |
+| Actionable errors with suggestion field | HIGH — dramatically reduces support burden | HIGH | P2 |
+| Update canonical examples | MEDIUM — affects new-dev success rate | LOW | P2 |
+| Zero `any` in public generics | HIGH long-term — type propagation safety | HIGH | P3 |
+| Troubleshooting FAQ | MEDIUM — reduces GitHub issue noise | LOW | P3 |
+| TypeDoc API reference site | LOW short-term | MEDIUM | P3 |
 
 **Priority key:**
-- P1: Must have for v2.0.0 to be "production-ready"
-- P2: Should have, add in v2.1.0
-- P3: Nice to have, v2.x+
+- P1: Must have for v2.1.0 — targeted fixes with high value-to-effort ratio
+- P2: Should have — add in v2.1.x follow-up
+- P3: Nice to have — future milestone
 
 ---
 
-## Competitor / Reference Framework Analysis
+## Competitor Feature Analysis
 
-How comparable frameworks handle these same problems:
+How comparable frameworks handle the same DX concerns in 2025-2026:
 
-| Feature | NestJS | Laravel (PHP reference) | Gravito v1.x | Gravito v2.0 Target |
-|---------|--------|------------------------|--------------|---------------------|
-| Unified error base | `HttpException` + filters | `Exception` hierarchy | `GravitoException` (partial adoption) | Full adoption across all Orbits |
-| Error codes | No built-in standard; community uses string constants | `$code` property on exceptions | `fortify` only | All packages with namespace:code |
-| Retry | Manual or `@nestjs/bull`; no framework primitive | Queue-based; no built-in | `RetryScheduler` (BullMQ, event-bus only) | `withRetry()` general-purpose + RetryScheduler |
-| Circuit breaker | Not built-in; use `opossum` library | Not built-in | `CircuitBreaker` class (complete, unwired) | Wired to atlas + plasma + beam |
-| Graceful shutdown | `enableShutdownHooks()` on AppModule | Laravel Octane handles this | Partial (plasma only) | All Orbits with deadline enforcement |
-| Graceful degradation | No framework-level support | Not built-in | Not present | `OrbitDegradationManager` (v2.1) |
-| Health checks | `@nestjs/terminus` (separate package) | Pulse (separate package) | `@gravito/monitor` (exists) | Wired to all Orbits |
-
-**Observation:** Gravito has more resilience infrastructure built than NestJS at this layer (circuit breaker, backpressure, DLQ are all present). The gap is breadth of adoption — the tools exist but are not wired into the packages that need them.
+| DX Concern | Hono | Elysia | AdonisJS v6 | Effect | Gravito Current | Gravito Target |
+|------------|------|--------|-------------|--------|-----------------|----------------|
+| **Error messages** | HTTP errors with typed status codes; no suggestion strings | Type-mismatch errors surfaced at compile time via Eden inference | Descriptive runtime errors; container errors include binding name | Full typed error channel in type signature; `Effect.fail(new MyError())` | Raw `Error('ModelNotFound')` strings; actionable messages inconsistent | `ModelNotFoundException` direct; optional `suggestion` field on `GravitoException` |
+| **No stdout leaks** | Zero — no console.log in library code | Zero — events only | Zero | Zero | `Router.ts:610` console.log on every route | Remove; route to `this.logger.debug()` |
+| **Public API discoverability** | Explicit named exports; small surface | Named + plugin-extended; structured | Explicit named exports; IoC docs comprehensive | Fully typed modules, explicit imports | 15+ `export *` in index.ts; 830-line barrel file | Converge to explicit named exports |
+| **Deprecated API handling** | Removed promptly; changelog notes | Removed with migration guide | `@deprecated` JSDoc + migration doc | N/A — breaking changes gated by major version | `services` prop still public and exported | `@deprecated` TypeScript annotation; move to `@internal` |
+| **Container DX** | No DI container | No built-in DI | Simplified IoC in v6; extensive docs | Dependency via `Context` layer | `ServiceMap` augmentation pattern is industry-leading concept | Eliminate `any` in resolution path; add decision guide |
+| **Documentation accuracy** | Manually maintained; high accuracy | Rapidly evolving; occasional lag | Comprehensive v6 rewrite; high accuracy | Excellent — type-driven so docs match types | JSDoc 100% (v1.4.0) but language inconsistency; README has stale API | Language-unified JSDoc; README audit |
+| **Onboarding examples** | Working examples in repo; playground | Eden examples; interactive playground | `create-adonisjs` scaffolding with fresh examples | Comprehensive introductory docs | 20+ examples but may use v1 API | 3-5 canonical examples updated to v2 |
 
 ---
 
-## Complexity Notes for Roadmap
+## Evidence-Based Confidence Notes
 
-| Phase Topic | Complexity Driver | Notes |
-|-------------|------------------|-------|
-| Error base class migration | BREADTH — ~50 packages to touch | Mostly mechanical; each package's work is similar but the total count is high. Parallel agent execution is appropriate. |
-| Error code namespaces | LOW — pattern is clear | fortify is the reference; copy and adapt per package |
-| General-purpose retry | LOW — algorithm is known | Exponential backoff with jitter is 80 lines; error classification interface adds 20 more |
-| Circuit breaker wiring to atlas | MEDIUM — atlas pool is complex | atlas has its own `PoolHealthChecker`, connection management; need to wrap at the right layer |
-| Circuit breaker wiring to plasma | LOW-MEDIUM — plasma is simpler | Redis client is more straightforward to wrap |
-| Graceful shutdown | LOW-MEDIUM — mostly hook registration | Deadline enforcement is the tricky part; must not hang the process |
-| Graceful degradation | HIGH — new design pattern | Requires: circuit state access + health status + fallback interface + consumer API. Do not rush into v2.0. |
+**HIGH confidence (direct codebase verification):**
+- `console.log` in Router.ts — confirmed line 610
+- String sentinel `'ModelNotFound'` — confirmed lines 436, 475
+- `AuthException` vs `AuthenticationException` coexistence — confirmed both files exist
+- `core.services` deprecated property — confirmed `@deprecated` JSDoc comment exists but no TypeScript `@deprecated` annotation or `@internal` tag
+- 69 `any` occurrences in public src — counted via grep across 31 files
+- 15+ `export *` in index.ts — confirmed via grep
+
+**MEDIUM confidence (WebSearch-verified patterns):**
+- Barrel file tsserver perf impact — multiple GitHub TypeScript issues + DEV community article
+- Framework `console.log` conventions — Hono/Elysia/AdonisJS confirmed no stdout leaks in library code
+- AdonisJS v6 documentation improvements motivation — InfoQ article + official blog
+- Elysia tsserver slowdown with large route sets — GitHub issue #1031
+
+**LOW confidence (training data + single source):**
+- Exact Hono error message format for context variable type mismatches — needs direct verification
+- Effect's `suggestion` field pattern — Effect uses typed errors, not string suggestions; this is an inference from the ecosystem trend, not a direct Effect feature
 
 ---
 
 ## Sources
 
-- Codebase audit: `/packages/resilience/src/`, `/packages/core/src/exceptions/`, `/packages/fortify/src/errors/`, `/packages/atlas/src/errors/`, `/packages/plasma/src/`
-- [NestJS Exception Filters](https://docs.nestjs.com/exception-filters) — global exception filter pattern
-- [Resilience Patterns in TypeScript: Circuit Breaker](https://nobuti.com/thoughts/resilience-patterns-circuit-breaker)
-- [Building Resilient Systems: Circuit Breakers and Retry Patterns](https://dasroot.net/posts/2026/01/building-resilient-systems-circuit-breakers-retry-patterns/)
-- [API Gateway Resilience and Fault Tolerance](https://zuplo.com/learning-center/api-gateway-resilience-fault-tolerance)
-- [Graceful Degradation in Distributed Systems](https://www.geeksforgeeks.org/system-design/graceful-degradation-in-distributed-systems/)
-- [The 5 commandments of clean error handling in TypeScript](https://medium.com/with-orus/the-5-commandments-of-clean-error-handling-in-typescript-93a9cbdf1af5)
-- [AWS Well-Architected: Graceful Degradation](https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/rel_mitigate_interaction_failure_graceful_degradation.html)
+- [Hono Best Practices — hono.dev](https://hono.dev/docs/guides/best-practices)
+- [Hono vs Elysia 2026 — PkgPulse](https://www.pkgpulse.com/blog/hono-vs-elysia-2026)
+- [AdonisJS v6 Released — InfoQ](https://www.infoq.com/news/2024/03/adonisjs-v6-released/)
+- [AdonisJS Dependency Injection docs](https://docs.adonisjs.com/guides/concepts/dependency-injection)
+- [Barrel files — stop using them — DEV Community](https://dev.to/tassiofront/barrel-files-and-why-you-should-stop-using-them-now-bc4)
+- [pretty-ts-errors VSCode extension](https://github.com/yoavbls/pretty-ts-errors) — evidence of ecosystem demand for readable errors
+- [Elysia tsserver performance issue #1031](https://github.com/elysiajs/elysia/issues/1031)
+- [TypeScript DI containers comparison — LogRocket](https://blog.logrocket.com/top-five-typescript-dependency-injection-containers/)
+- [Effect typed errors intro — aleksandra.codes](https://www.aleksandra.codes/effect-intro)
+- Direct codebase reads: `packages/core/src/Router.ts`, `packages/core/src/exceptions/*.ts`, `packages/core/src/PlanetCore.ts`, `packages/core/src/index.ts`
 
 ---
-*Feature research for: Gravito v2.0.0 — Error Handling & Resilience*
-*Researched: 2026-03-28*
+*Feature research for: @gravito/core v2.1.0 DX improvements*
+*Researched: 2026-03-29*
