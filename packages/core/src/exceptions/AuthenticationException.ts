@@ -1,8 +1,14 @@
 import { DomainException } from './DomainException'
 
 /**
- * Exception thrown when authentication fails.
+ * Concrete 401 Unauthorized exception — throw this when a request lacks valid credentials.
+ *
+ * This class extends {@link DomainException} directly and is **not** a subclass
+ * of {@link AuthException}. To create a custom auth error for use with fortify
+ * or sentinel, extend AuthException instead.
+ *
  * @public
+ * @see AuthException
  */
 export class AuthenticationException extends DomainException {
   constructor(message = 'Unauthenticated.') {
