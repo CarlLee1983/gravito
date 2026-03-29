@@ -8,24 +8,18 @@
  * @since 1.1.0
  */
 
-import crypto from 'node:crypto'
-
 import type { GravitoContext as Context, GravitoMiddleware } from '@gravito/core'
 
 /**
  * Timing-safe string comparison to prevent timing attacks
  */
 function timingSafeCompare(a: string, b: string): boolean {
-  try {
-    const bufA = Buffer.from(a)
-    const bufB = Buffer.from(b)
-    if (bufA.length !== bufB.length) {
-      return false
-    }
-    return crypto.timingSafeEqual(bufA, bufB)
-  } catch {
-    return false
+  if (a.length !== b.length) return false
+  let result = 0
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i)
   }
+  return result === 0
 }
 
 /**

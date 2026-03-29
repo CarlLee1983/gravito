@@ -10,7 +10,6 @@
  * @since 1.1.0
  */
 
-import crypto from 'node:crypto'
 import type { GravitoContext as Context, GravitoMiddleware } from '@gravito/core'
 
 /**
@@ -42,12 +41,12 @@ export type CsrfOptions = {
 const defaultSafeMethods = ['GET', 'HEAD', 'OPTIONS']
 
 function timingSafeEqual(a: string, b: string): boolean {
-  const bufA = Buffer.from(a)
-  const bufB = Buffer.from(b)
-  if (bufA.length !== bufB.length) {
-    return false
+  if (a.length !== b.length) return false
+  let result = 0
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i)
   }
-  return crypto.timingSafeEqual(bufA, bufB)
+  return result === 0
 }
 
 function buildCookieOptions(custom?: CsrfCookieOptions): CsrfCookieOptions {
@@ -117,7 +116,8 @@ export function getCsrfToken(c: Context, options: CsrfOptions = {}): string {
   let token = cookies[cookieName]
 
   if (!token) {
-    token = crypto.randomBytes(32).toString('hex')
+    const bytes = globalThis.crypto.getRandomValues(new Uint8Array(32))
+    token = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
     const cookieOptions = buildCookieOptions(options.cookie)
     // 在 photon 中直接設定 cookie header（不依賴 CookieJar）
     setCookieHeader(c, cookieName, token, cookieOptions)
