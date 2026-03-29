@@ -18,7 +18,7 @@ status: approved
 
 - [x] **Phase 21: API Footgun Fixes** — Fix Router console.log, ModelNotFoundException string sentinel, boot() observabilityProvider, deprecated annotation, and skipped tests (completed 2026-03-29)
 - [x] **Phase 22: Exception Hierarchy Clarification** — Add JSDoc role separation for AuthException (abstract base) and AuthenticationException (concrete 401); no structural changes (completed 2026-03-29)
-- [ ] **Phase 23: Named Export Conversion** — Convert 6 star exports to explicit named exports; remove setApp from public barrel; mirror index.browser.ts
+- [x] **Phase 23: Named Export Conversion** — Convert 6 star exports to explicit named exports; remove setApp from public barrel; mirror index.browser.ts (completed 2026-03-29)
 - [ ] **Phase 24: Config Type Unification** — ApplicationConfig extends Pick<GravitoConfig>; boot() forwards observabilityProvider without silent drop
 - [ ] **Phase 25: Container Type Improvement** — Add ServiceMap-keyed overload to Container.make() eliminating any in primary DI resolution path
 - [ ] **Phase 26: Documentation and Tooling** — Biome noExplicitAny upgrade, noConsole rule, publint CI gate, README sync, orbit/register/use guide, JSDoc language unification
@@ -66,10 +66,10 @@ Plans:
   3. `setApp` is not present in the compiled output of index.ts or index.browser.ts — it is inaccessible to downstream consumers as a public import
   4. index.browser.ts exports the same named symbols as index.ts for the shared surface; differences are intentional and documented
   5. `bun run typecheck` at workspace root passes with zero new errors after export conversion
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [x] 23-01-PLAN.md — Capture d.ts baseline, convert 6 star exports to named exports, remove setApp from index.ts (MOD-01, MOD-02)
-- [ ] 23-02-PLAN.md — Sync index.browser.ts helper exports and run d.ts diff verification (MOD-03)
+- [x] 23-02-PLAN.md — Sync index.browser.ts helper exports and run d.ts diff verification (MOD-03)
 
 ### Phase 24: Config Type Unification
 **Goal**: ApplicationConfig and GravitoConfig share a single source of truth for overlapping fields; boot() does not silently drop config fields that developers pass
@@ -113,7 +113,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 21. API Footgun Fixes | v2.1.0 | 3/3 | Complete    | 2026-03-29 |
 | 22. Exception Hierarchy Clarification | v2.1.0 | 1/1 | Complete    | 2026-03-29 |
-| 23. Named Export Conversion | v2.1.0 | 1/2 | In Progress|  |
+| 23. Named Export Conversion | v2.1.0 | 2/2 | Complete   | 2026-03-29 |
 | 24. Config Type Unification | v2.1.0 | 0/? | Not started | - |
 | 25. Container Type Improvement | v2.1.0 | 0/? | Not started | - |
 | 26. Documentation and Tooling | v2.1.0 | 0/? | Not started | - |
