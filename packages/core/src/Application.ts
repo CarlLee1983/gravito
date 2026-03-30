@@ -24,6 +24,7 @@ import type { EventManager } from './EventManager'
 import type { Logger } from './Logger'
 import { ConsoleLogger } from './Logger'
 import { PlanetCore } from './PlanetCore'
+import type { GravitoConfig } from './PlanetCore'
 import type { ServiceProvider } from './ServiceProvider'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -65,7 +66,7 @@ interface ProviderLoadResult {
  * Application Config options for the Application class.
  * @public
  */
-export interface ApplicationConfig {
+export interface ApplicationConfig extends Pick<GravitoConfig, 'logger' | 'config'> {
   /**
    * Base path of the application
    */
@@ -87,16 +88,6 @@ export interface ApplicationConfig {
    * Environment (development, production, testing)
    */
   env?: 'development' | 'production' | 'testing'
-
-  /**
-   * Logger instance
-   */
-  logger?: Logger
-
-  /**
-   * Initial configuration values
-   */
-  config?: Record<string, unknown>
 
   /**
    * Service providers to register

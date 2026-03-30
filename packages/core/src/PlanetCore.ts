@@ -83,7 +83,18 @@ export interface GravitoOrbit {
  * @public
  */
 export type GravitoConfig = {
+  /**
+   * Logger instance for the application.
+   * Used by both PlanetCore and Application. Defaults to ConsoleLogger if not provided.
+   * @since 2.0.0
+   */
   logger?: Logger
+
+  /**
+   * Initial configuration values, loaded into ConfigManager on boot.
+   * Accessible via `core.config` or `app.config` after booting.
+   * @since 2.0.0
+   */
   config?: Record<string, unknown>
   orbits?: (new () => GravitoOrbit)[] | GravitoOrbit[]
   /**
