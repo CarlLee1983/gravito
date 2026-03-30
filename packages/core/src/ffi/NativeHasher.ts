@@ -45,6 +45,24 @@ class BunCryptoHasher implements HashAccelerator {
   hmacSha256(key: string, data: string): string {
     return new Bun.CryptoHasher('sha256', key).update(data).digest('hex')
   }
+
+  /**
+   * SHA-512 計算（Bun 原生）
+   * @param input - 輸入（字串或 Uint8Array）
+   * @returns 十六進制編碼的 SHA-512 雜湊值（128 字元）
+   */
+  sha512(input: string | Uint8Array): string {
+    return new Bun.CryptoHasher('sha512').update(input).digest('hex')
+  }
+
+  /**
+   * BLAKE2b-256 計算（Bun 原生）
+   * @param input - 輸入（字串或 Uint8Array）
+   * @returns 十六進制編碼的 BLAKE2b-256 雜湊值（64 字元）
+   */
+  blake2b(input: string | Uint8Array): string {
+    return new Bun.CryptoHasher('blake2b256').update(input).digest('hex')
+  }
 }
 
 /**

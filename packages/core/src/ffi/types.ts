@@ -130,6 +130,21 @@ export interface HashAccelerator {
    * @returns 十六進制編碼的 HMAC-SHA256 值（64 字元）
    */
   hmacSha256(key: string, data: string): string
+
+  /**
+   * SHA-512 hash computation
+   * @param input - Input (string or binary)
+   * @returns Hex-encoded SHA-512 hash (128 characters)
+   */
+  sha512(input: string | Uint8Array): string
+
+  /**
+   * BLAKE2b-256 hash computation
+   * On non-Bun runtimes, falls back to SHA-256 with a console warning
+   * @param input - Input (string or binary)
+   * @returns Hex-encoded hash (64 characters)
+   */
+  blake2b(input: string | Uint8Array): string
 }
 
 /**
