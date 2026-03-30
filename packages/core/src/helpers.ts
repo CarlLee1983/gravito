@@ -53,6 +53,7 @@ const defaultDumpOptions: Required<DumpOptions> = {
  */
 export function dump(...values: unknown[]): void {
   for (const value of values) {
+    // biome-ignore lint/suspicious/noConsole: dump() is a developer utility that intentionally writes to stdout
     console.dir(value, {
       depth: defaultDumpOptions.depth,
       colors: defaultDumpOptions.colors,
