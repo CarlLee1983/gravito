@@ -21,7 +21,7 @@ status: approved
 - [x] **Phase 23: Named Export Conversion** — Convert 6 star exports to explicit named exports; remove setApp from public barrel; mirror index.browser.ts (completed 2026-03-29)
 - [x] **Phase 24: Config Type Unification** — ApplicationConfig extends Pick<GravitoConfig>; boot() forwards observabilityProvider without silent drop (completed 2026-03-30)
 - [x] **Phase 25: Container Type Improvement** — Add ServiceMap-keyed overload to Container.make() eliminating any in primary DI resolution path (completed 2026-03-30)
-- [x] **Phase 26: Documentation and Tooling** — Biome noExplicitAny upgrade, noConsole rule, publint CI gate, README sync, orbit/register/use guide, JSDoc language unification (completed 2026-03-30)
+- [ ] **Phase 26: Documentation and Tooling** — Biome noExplicitAny upgrade, noConsole rule, publint CI gate, README sync, orbit/register/use guide, JSDoc language unification (gap closure in progress)
 
 ---
 
@@ -107,12 +107,14 @@ Plans:
   5. The README HookManager section matches the actual public API surface — no methods that do not exist in source are referenced
   6. A developer choosing between orbit(), register(), and use() can find a decision guide (in README or docs) that explains when to use each with a concrete example
   7. All public API JSDoc comments in packages/core/src/ are written in English — no mixed-language blocks remain
-**Plans:** 4/4 plans complete
+**Plans:** 6 plans (4 complete, 2 gap closure)
 Plans:
 - [x] 26-01-PLAN.md — Biome noExplicitAny+noConsole overrides and fix 16 any violations (DOC-01, DOC-02)
 - [x] 26-02-PLAN.md — Console migration/suppression across core/src event system and infrastructure (DOC-02)
 - [x] 26-03-PLAN.md — publint CI gate with Turbo pipeline and per-package scripts (DOC-03)
 - [x] 26-04-PLAN.md — README API corrections, orbit/register/use guide, JSDoc English unification (DOC-04, DOC-05, DOC-06, DOC-07)
+- [ ] 26-05-PLAN.md — Gap closure: fix 37 noExplicitAny violations in events/ (DOC-01)
+- [ ] 26-06-PLAN.md — Gap closure: fix 24 noExplicitAny violations in runtime/ and hooks/ (DOC-01)
 
 ---
 
@@ -125,4 +127,4 @@ Plans:
 | 23. Named Export Conversion | v2.1.0 | 2/2 | Complete    | 2026-03-29 |
 | 24. Config Type Unification | v2.1.0 | 1/1 | Complete    | 2026-03-30 |
 | 25. Container Type Improvement | v2.1.0 | 1/1 | Complete    | 2026-03-30 |
-| 26. Documentation and Tooling | v2.1.0 | 4/4 | Complete   | 2026-03-30 |
+| 26. Documentation and Tooling | v2.1.0 | 4/6 | Gap Closure | — |
