@@ -782,8 +782,20 @@ export {
   type RuntimeSqliteDatabase,
   type RuntimeSqliteStatement,
   resetRuntimeAdapter,
+  resetPasswordAdapter,
   toUint8Array,
 } from './runtime'
+
+/**
+ * Native Orbit capability detection.
+ *
+ * Allows any Orbit to query available Bun-native capabilities at boot time
+ * without directly importing Bun APIs.
+ *
+ * @public
+ */
+export type { NativeFeatures } from './runtime/NativeOrbitDetector'
+export { NativeOrbitDetector, formatCapabilityReport } from './runtime/NativeOrbitDetector'
 
 /**
  * Runtime helper functions for file system operations.

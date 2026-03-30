@@ -50,6 +50,11 @@ export type {
 
 export { getRuntimeEnv, getRuntimeKind } from './detection'
 
+// ============ Native Orbit Detector Exports ============
+
+export type { NativeFeatures } from './NativeOrbitDetector'
+export { NativeOrbitDetector, formatCapabilityReport } from './NativeOrbitDetector'
+
 // ============ Archive Exports ============
 
 export {
