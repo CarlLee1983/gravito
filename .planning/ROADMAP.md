@@ -118,7 +118,7 @@ Plans:
 | 24. Config Type Unification | v2.1.0 | 1/1 | Complete | 2026-03-30 |
 | 25. Container Type Improvement | v2.1.0 | 1/1 | Complete | 2026-03-30 |
 | 26. Documentation and Tooling | v2.1.0 | 7/7 | Complete | 2026-03-30 |
-| 27. Bun-Native Foundation | v2.2.0 | 3/3 | Complete   | 2026-03-30 |
+| 27. Bun-Native Foundation | v2.2.0 | 3/3 | Complete    | 2026-03-30 |
 | 28. Fast-Path Routing | v2.2.0 | 0/? | Not started | - |
 | 29. Lite Satellite | v2.2.0 | 0/? | Not started | - |
 | 30. Static OpenAPI Generation | v2.2.0 | 0/? | Not started | - |
