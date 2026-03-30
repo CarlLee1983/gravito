@@ -78,7 +78,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 28-01-PLAN.md — Fast-Path Registry & photon.fast() implementation
-- [ ] 28-02-PLAN.md — Middleware opt-out via RadixRouter metadata & Security Mitigation Test
+- [x] 28-02-PLAN.md — Middleware opt-out via RadixRouter metadata & Security Mitigation Test
 
 ### Phase 29: Lite Satellite
 **Goal**: Developer can define a Lite Satellite as an object literal in gravito.config.ts with a single install(core) hook, without creating a directory structure or ServiceProvider class
@@ -122,7 +122,7 @@ Plans:
 | 25. Container Type Improvement | v2.1.0 | 1/1 | Complete | 2026-03-30 |
 | 26. Documentation and Tooling | v2.1.0 | 7/7 | Complete | 2026-03-30 |
 | 27. Bun-Native Foundation | v2.2.0 | 3/3 | Complete    | 2026-03-30 |
-| 28. Fast-Path Routing | v2.2.0 | 1/2 | In Progress|  |
+| 28. Fast-Path Routing | v2.2.0 | 2/2 | Complete    | 2026-03-30 |
 | 29. Lite Satellite | v2.2.0 | 3/3 | Completed | - |
 | 30. Static OpenAPI Generation | v2.2.0 | 4/4 | Completed | - |
 | 31. Dependency Graph Tooling | v2.2.0 | 2/2 | Completed | - |
