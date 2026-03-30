@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 24-config-type-unification/24-01-PLAN.md
-last_updated: "2026-03-30T02:26:52.016Z"
+stopped_at: Phase 25 context gathered
+last_updated: "2026-03-30T02:40:12.665Z"
 progress:
   total_phases: 6
   completed_phases: 4
@@ -81,9 +81,9 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-03-30T02:23:21.466Z
-Stopped at: Completed 24-config-type-unification/24-01-PLAN.md
-Resume file: None
+Last session: 2026-03-30T02:40:12.653Z
+Stopped at: Phase 25 context gathered
+Resume file: .planning/phases/25-container-type-improvement/25-CONTEXT.md
 
 ### To resume this milestone:
 
