@@ -782,6 +782,7 @@ export class HookManager {
     try {
       return await this.persistentDlqManager.getStats()
     } catch (error) {
+      // biome-ignore lint/suspicious/noConsole: HookManager has no Logger dependency at this stage — infrastructure error logging
       console.error(`[HookManager] Error getting persistent DLQ stats:`, error)
       return undefined
     }

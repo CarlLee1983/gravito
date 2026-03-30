@@ -92,6 +92,7 @@ export class RetryScheduler {
     } catch (error) {
       this.enabled = false
       this.bullmqLoadError = error instanceof Error ? error : new Error(String(error))
+      // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected; optional dep warning
       console.warn(
         '[RetryScheduler] bullmq 模組未安裝，已禁用 Bull Queue 重試',
         this.bullmqLoadError.message
@@ -180,6 +181,7 @@ export class RetryScheduler {
     } catch (schedulerError) {
       const err =
         schedulerError instanceof Error ? schedulerError : new Error(String(schedulerError))
+      // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
       console.error(`[RetryScheduler] 排程重試失敗: ${eventName}`, err)
       throw err
     }

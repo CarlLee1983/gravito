@@ -152,6 +152,7 @@ export class MessageQueueBridge {
     const jobId = task.id
     await this.config.eventBackend.enqueue(task)
 
+    // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
     console.info(`[MessageQueueBridge] Event "${eventName}" enqueued to Bull Queue (job: ${jobId})`)
 
     return jobId
@@ -190,6 +191,7 @@ export class MessageQueueBridge {
       } catch (error) {
         hasError = true
         lastError = error as Error
+        // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
         console.error(
           `[MessageQueueBridge] Callback failed for event "${task.hook}" (job: ${jobId}):`,
           error
@@ -198,12 +200,14 @@ export class MessageQueueBridge {
     }
 
     if (hasError) {
+      // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
       console.error(`[MessageQueueBridge] Event "${task.hook}" processing failed (job: ${jobId})`)
       // 拋出錯誤，讓 Bull Queue 處理重試
       // 重試耗盡後會觸發 onFailed callback
       throw lastError || new Error('Event processing failed')
     }
 
+    // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
     console.info(`[MessageQueueBridge] Event "${task.hook}" processed successfully (job: ${jobId})`)
   }
 
@@ -232,6 +236,7 @@ export class MessageQueueBridge {
     error: Error,
     retryCount = 0
   ): Promise<void> {
+    // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
     console.warn(
       `[MessageQueueBridge] Event "${task.hook}" failed after retries (job: ${jobId}), moving to DLQ`
     )
@@ -246,8 +251,10 @@ export class MessageQueueBridge {
         retryCount
       )
 
+      // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
       console.info(`[MessageQueueBridge] Event moved to DLQ (dlq_id: ${dlqId})`)
     } catch (dlqError) {
+      // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
       console.error(`[MessageQueueBridge] Failed to move event to DLQ:`, dlqError)
       // 即使 DLQ 失敗也不拋出，以免影響主流程
     }

@@ -176,6 +176,7 @@ export class DeadLetterQueue {
     this.onEntryAdded?.(entry)
 
     // Log DLQ entry
+    // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
     console.error(
       `[DeadLetterQueue] Event "${eventName}" added to DLQ (source: ${source}) after ${retryCount} retries:`,
       error.message
@@ -321,6 +322,7 @@ export class DeadLetterQueue {
     }
 
     if (oldestId && oldestEntry) {
+      // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
       console.warn(`[DeadLetterQueue] Capacity limit reached. Evicting oldest entry: ${oldestId}`)
       this.delete(oldestId)
     }

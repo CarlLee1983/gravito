@@ -262,6 +262,7 @@ export class EventPriorityQueue implements EventBackend {
         await this.taskExecutor.executeTask(task, this.queueCore.processingPartitions)
       }
     } catch (error) {
+      // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
       console.error(`[EventPriorityQueue] Error processing task ${task.id}:`, error)
     } finally {
       this.processing = false

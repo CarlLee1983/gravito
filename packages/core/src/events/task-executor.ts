@@ -162,6 +162,7 @@ export class TaskExecutor {
           const isCircuitBreakerOpen = lastError.message.includes('Circuit is OPEN')
 
           if (isCircuitBreakerOpen) {
+            // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
             console.warn(
               `[EventPriorityQueue] Circuit breaker is open for event '${hook}'. Rejecting event.`
             )
@@ -181,6 +182,7 @@ export class TaskExecutor {
                 'circuit_breaker'
               )
 
+              // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
               console.error(
                 `[EventPriorityQueue] Event '${hook}' sent to DLQ due to circuit breaker`
               )
@@ -189,6 +191,7 @@ export class TaskExecutor {
             break
           }
 
+          // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
           console.error(`[EventPriorityQueue] Error in callback for event '${hook}':`, error)
 
           if (!task.firstFailedAt) {
@@ -201,6 +204,7 @@ export class TaskExecutor {
           this.otelEventMetrics?.recordRetryAttempt(hook, task.retryCount)
 
           if (task.retryCount <= maxRetries) {
+            // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
             console.warn(
               `[EventPriorityQueue] Retrying event '${hook}' (attempt ${task.retryCount}/${maxRetries})`
             )
@@ -216,6 +220,7 @@ export class TaskExecutor {
                 )
                 return
               } catch (schedulerError) {
+                // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
                 console.warn(
                   '[EventPriorityQueue] RetryScheduler failed, falling back to setTimeout:',
                   schedulerError instanceof Error ? schedulerError.message : String(schedulerError)
@@ -248,10 +253,12 @@ export class TaskExecutor {
               'retry_exhausted'
             )
 
+            // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
             console.error(
               `[EventPriorityQueue] Event '${hook}' sent to DLQ after ${task.retryCount} failed attempts`
             )
           } else {
+            // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
             console.error(
               `[EventPriorityQueue] Event '${hook}' permanently failed after ${task.retryCount} attempts`
             )
@@ -287,6 +294,7 @@ export class TaskExecutor {
       try {
         await this.persistentDLQHandler(hook, args, options, error, retryCount, firstFailedAt)
       } catch (dlqHandlerError) {
+        // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
         console.error(`[EventPriorityQueue] Error handling persistent DLQ:`, dlqHandlerError)
       }
     }
@@ -309,12 +317,15 @@ export class TaskExecutor {
       resetTimeout: config.resetTimeout,
       halfOpenRequests: config.halfOpenRequests,
       onOpen: () => {
+        // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
         console.warn(`[EventPriorityQueue] Circuit breaker opened for event '${hook}'`)
       },
       onHalfOpen: () => {
+        // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
         console.info(`[EventPriorityQueue] Circuit breaker half-open for event '${hook}'`)
       },
       onClose: () => {
+        // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
         console.info(`[EventPriorityQueue] Circuit breaker closed for event '${hook}'`)
       },
       metricsRecorder: this.eventMetrics

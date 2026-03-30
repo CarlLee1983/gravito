@@ -273,6 +273,7 @@ export class QueueCore {
           `[EventPriorityQueue] Queue full (size: ${this.config.maxSize}). Rejected event '${hook}'.`
         )
       case 'drop-newest':
+        // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
         console.warn(`[EventPriorityQueue] Queue full. Dropping new event '${hook}' (drop-newest).`)
         return false
       case 'ignore':
@@ -290,6 +291,7 @@ export class QueueCore {
   private dropOldest(): void {
     if (this.lowPriority.length > 0) {
       const dropped = this.lowPriority.shift()
+      // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
       console.warn(
         `[EventPriorityQueue] Queue full. Dropped oldest LOW priority event '${dropped?.hook}'.`
       )
@@ -297,6 +299,7 @@ export class QueueCore {
     }
     if (this.normalPriority.length > 0) {
       const dropped = this.normalPriority.shift()
+      // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
       console.warn(
         `[EventPriorityQueue] Queue full. Dropped oldest NORMAL priority event '${dropped?.hook}'.`
       )
@@ -304,6 +307,7 @@ export class QueueCore {
     }
     if (this.highPriority.length > 0) {
       const dropped = this.highPriority.shift()
+      // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
       console.warn(
         `[EventPriorityQueue] Queue full. Dropped oldest HIGH priority event '${dropped?.hook}'.`
       )
@@ -311,6 +315,7 @@ export class QueueCore {
     }
     if (this.criticalPriority.length > 0) {
       const dropped = this.criticalPriority.shift()
+      // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
       console.warn(
         `[EventPriorityQueue] Queue full. Dropped oldest CRITICAL priority event '${dropped?.hook}'.`
       )
