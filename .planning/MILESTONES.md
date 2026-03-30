@@ -1,5 +1,34 @@
 # Milestones
 
+## v2.1.0 Core DX 改進 (Shipped: 2026-03-30)
+
+**Phases completed:** 6 phases, 15 plans, 27 tasks
+
+**Timeline:** 2 days (2026-03-29 → 2026-03-30), ~108 commits
+**Scope:** 221 files changed, +11,527 / -1,797 LOC
+
+**Delivered:** 提升 @gravito/core 開發者體驗 — 修正 API footgun、強化型別安全、收斂公開 API、同步文件與 CI lint 強化
+
+**Key accomplishments:**
+
+- Router stdout 清理 + ModelNotFoundException typed exception 取代 string sentinel 比對
+- AuthException/AuthenticationException JSDoc 角色釐清（abstract base vs concrete 401）
+- 6 star exports → 明確 named exports（46 symbols）；setApp 從公開 barrel 移除
+- ApplicationConfig extends Pick<GravitoConfig> 消除欄位重複；boot() 正確傳遞 observabilityProvider
+- ServiceMap interface + Container.make() overload — typed DI resolution 消除主路徑 any
+- Biome noExplicitAny error + noConsole 規則；publint CI gate（57 packages）
+- README EventManager/HookManager API 同步；orbit/register/use 決策指南；JSDoc 英文統一
+
+**Tech debt (from audit):**
+
+- index.browser.ts 未匯出 exceptions（likely intentional, undocumented）
+- observabilityProvider 無法透過 Application class 路徑存取（需 PlanetCore.boot()）
+- 7 個 lint violations 在 DOC-01/DOC-02 範圍外（useLiteralKeys ×4, noUselessCatch ×1, useImportType ×2）
+
+**Archive:** [v2.1.0-ROADMAP.md](milestones/v2.1.0-ROADMAP.md) | [v2.1.0-REQUIREMENTS.md](milestones/v2.1.0-REQUIREMENTS.md) | [v2.1.0-MILESTONE-AUDIT.md](milestones/v2.1.0-MILESTONE-AUDIT.md)
+
+---
+
 ## v2.0.0 Core & Orbit Resilience (Shipped: 2026-03-29)
 
 **Phases completed:** 5 phases, 25 plans, 40 tasks
@@ -21,6 +50,7 @@
 - 38 packages major version bump + peerDependency 更新 + migration guide
 
 **Tech debt (from audit):**
+
 - atlas grammar layer ~122 bare throws 未遷移（query-builder 路徑，非 I/O）
 - 19 packages dependencies 區塊 ^2.x.x 未更新（peerDeps 已正確）
 - 4 packages 無 GravitoOrbit.install() 無法自行註冊 health check
