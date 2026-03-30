@@ -27,6 +27,7 @@ import {
   createNoOpObservabilityProvider,
   type ObservabilityProvider,
 } from './observability/contracts'
+import { NativeOrbitDetector, formatCapabilityReport } from './runtime/NativeOrbitDetector'
 import type { ServiceProvider } from './ServiceProvider'
 
 /**
@@ -805,6 +806,10 @@ export class PlanetCore {
       ...(config.container && { container: config.container }),
       ...(config.observabilityProvider && { observabilityProvider: config.observabilityProvider }),
     })
+
+    // Boot-time native capability report
+    const features = NativeOrbitDetector.detectBunCapabilities()
+    core.logger.info(formatCapabilityReport(features))
 
     if (config.orbits) {
       for (const OrbitClassOrInstance of config.orbits) {
