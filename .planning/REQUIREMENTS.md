@@ -34,7 +34,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [ ] **DOC-01**: Biome noExplicitAny 從 warn 升級為 error
 - [ ] **DOC-02**: Biome 新增 noConsole 規則（scope 限 packages/core/src/）
-- [ ] **DOC-03**: publint 加入 CI pipeline 驗證 package.json exports map
+- [x] **DOC-03**: publint 加入 CI pipeline 驗證 package.json exports map
 - [ ] **DOC-04**: README EventManager API 段落同步為 dispatch/listen/unlisten
 - [ ] **DOC-05**: README HookManager API 段落移除不存在的 setRetryScheduler
 - [ ] **DOC-06**: 新增 orbit() vs register() vs use() 決策指南
@@ -87,7 +87,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TYPE-02 | Phase 25 | Complete |
 | DOC-01 | Phase 26 | Pending |
 | DOC-02 | Phase 26 | Pending |
-| DOC-03 | Phase 26 | Pending |
+| DOC-03 | Phase 26 | Complete |
 | DOC-04 | Phase 26 | Pending |
 | DOC-05 | Phase 26 | Pending |
 | DOC-06 | Phase 26 | Pending |
