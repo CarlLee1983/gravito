@@ -56,7 +56,7 @@ export function getMarkdownAdapter() {
 
 // Deep Equals - Browser safe implementation
 export function getDeepEquals() {
-  return (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
+  return (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 }
 
 // Escape - Browser safe

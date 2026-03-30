@@ -91,7 +91,7 @@ export function getRuntimeAdapter(): RuntimeAdapter {
   const kind = getRuntimeKind()
 
   // Browser safety: return unknown adapter immediately if we're in a browser
-  if (typeof window !== 'undefined' || (globalThis as any).process?.browser) {
+  if (typeof window !== 'undefined' || (globalThis as unknown as { process?: { browser?: boolean } }).process?.browser) {
     return (runtimeAdapter = createUnknownAdapter())
   }
 
@@ -134,7 +134,7 @@ export function getPasswordAdapter(): RuntimePasswordAdapter {
   }
 
   const kind = getRuntimeKind()
-  const B = (globalThis as any).Bun
+  const B = (globalThis as unknown as { Bun?: { password: { hash: (value: string, opts: Record<string, unknown>) => Promise<string>; verify: (value: string, hashed: string) => Promise<boolean> } } }).Bun
 
   if (kind === 'bun' && B) {
     passwordAdapter = {
@@ -179,7 +179,7 @@ export function getPasswordAdapter(): RuntimePasswordAdapter {
  */
 export async function createSqliteDatabase(path: string): Promise<RuntimeSqliteDatabase> {
   const kind = getRuntimeKind()
-  const B = (globalThis as any).Bun
+  const B = (globalThis as unknown as { Bun?: unknown }).Bun
 
   if (kind === 'bun' && B) {
     const sqlite = await import('bun:sqlite')
