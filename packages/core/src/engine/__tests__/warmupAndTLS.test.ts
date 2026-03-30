@@ -124,7 +124,7 @@ describe('optimizeTLS()', () => {
 
     // 陣列應該被保留
     expect(Array.isArray(optimized.tls)).toBe(true)
-    expect((optimized.tls as any[]).length).toBe(2)
+    expect((optimized.tls as unknown[]).length).toBe(2)
   })
 
   it('應該在生產環境設定 lowMemoryMode: true', () => {
@@ -185,7 +185,7 @@ describe('optimizeTLS()', () => {
       const optimized = app.serveConfig(config)
 
       // lowMemoryMode 應該保持為 false
-      expect((optimized.tls as any).lowMemoryMode).toBe(false)
+      expect((optimized.tls as { lowMemoryMode?: boolean }).lowMemoryMode).toBe(false)
     } finally {
       process.env.NODE_ENV = originalEnv
     }

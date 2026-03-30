@@ -1,4 +1,4 @@
-import { type GravitoConfig, PlanetCore } from './PlanetCore'
+import { type GravitoConfig, type GravitoOrbit, PlanetCore } from './PlanetCore'
 import { ServiceProvider } from './ServiceProvider'
 
 /**
@@ -16,7 +16,7 @@ export interface GravitoManifest {
  * Function type for asynchronous module resolution.
  * @public
  */
-export type ModuleResolver = () => Promise<any>
+export type ModuleResolver = () => Promise<unknown>
 
 /**
  * Gravito 核心啟動引擎 (已解耦)
@@ -31,7 +31,7 @@ export class GravitoServer {
   static async create(
     manifest: GravitoManifest,
     resolvers: Record<string, ModuleResolver>,
-    baseOrbits: any[] = []
+    baseOrbits: (GravitoOrbit | (new () => GravitoOrbit))[] = []
   ): Promise<PlanetCore> {
     const core = new PlanetCore(manifest.config || {})
 
@@ -54,7 +54,7 @@ export class GravitoServer {
         let instance: ServiceProvider
 
         if (typeof exported === 'function' && exported.prototype instanceof ServiceProvider) {
-          instance = new exported()
+          instance = new (exported as new () => ServiceProvider)()
         } else if (exported instanceof ServiceProvider) {
           instance = exported
         } else {

@@ -5,7 +5,7 @@ import type { ObjectPool } from '../pool'
 
 describe('Gravito Engine > Fuzz Testing & Hardening', () => {
   // Access private pool for testing
-  const getPool = (app: Gravito): ObjectPool<FastContext> => (app as any).contextPool
+  const getPool = (app: Gravito): ObjectPool<FastContext> => (app as unknown as { contextPool: ObjectPool<FastContext> }).contextPool
 
   test('Pool Stability: Should recycle objects after normal requests', async () => {
     const app = new Gravito({ poolSize: 100 })
@@ -75,7 +75,7 @@ describe('Gravito Engine > Fuzz Testing & Hardening', () => {
 
     for (const headers of badHeaders) {
       try {
-        const req = new Request('http://localhost/header-test', { headers: headers as any })
+        const req = new Request('http://localhost/header-test', { headers: headers as HeadersInit })
         const res = await app.fetch(req)
         expect(res.status).toBe(200)
 

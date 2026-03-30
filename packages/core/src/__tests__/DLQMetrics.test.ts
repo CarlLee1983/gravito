@@ -8,7 +8,7 @@
  */
 
 import { beforeEach, describe, expect, it } from 'bun:test'
-import type { Counter, Histogram, Meter, ObservableGauge } from '@opentelemetry/api'
+import type { Counter, Histogram, Meter, MetricOptions, ObservableGauge } from '@opentelemetry/api'
 import { OTelEventMetrics } from '../events/observability/OTelEventMetrics'
 
 /**
@@ -24,7 +24,7 @@ class MockMeter implements Meter {
   }> = []
   observableCallbacks: Map<string, Function> = new Map()
 
-  createCounter(name: string, _options?: any): Counter {
+  createCounter(name: string, _options?: MetricOptions): Counter {
     return {
       add: (value: number, attributes: Record<string, string> = {}) => {
         this.recordedCounterCalls.push({ name, value, attributes })
@@ -32,7 +32,7 @@ class MockMeter implements Meter {
     } as Counter
   }
 
-  createHistogram(name: string, _options?: any): Histogram {
+  createHistogram(name: string, _options?: MetricOptions): Histogram {
     return {
       record: (value: number, attributes: Record<string, string> = {}) => {
         this.recordedHistogramCalls.push({ name, value, attributes })
@@ -40,7 +40,7 @@ class MockMeter implements Meter {
     } as Histogram
   }
 
-  createObservableGauge(name: string, _options?: any): ObservableGauge {
+  createObservableGauge(name: string, _options?: MetricOptions): ObservableGauge {
     return {
       addCallback: (callback: Function) => {
         this.observableCallbacks.set(name, callback)
@@ -50,7 +50,7 @@ class MockMeter implements Meter {
 
   // Stub methods for unused Meter methods
   createUpDownCounter() {
-    return {} as any
+    return {} as ReturnType<Meter['createUpDownCounter']>
   }
 
   addView() {
@@ -226,8 +226,8 @@ describe('OTelEventMetrics - DLQ and Backpressure Metrics', () => {
       }
 
       // First call with depth = 10
-      let result: any = null
-      ;(mockObservableResult as any).observe = (value: number) => {
+      let result: number | null = null
+      ;(mockObservableResult as { observe: (value: number) => void }).observe = (value: number) => {
         result = value
       }
       depthCallback?.(mockObservableResult)

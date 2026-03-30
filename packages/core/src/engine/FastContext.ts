@@ -22,7 +22,7 @@ let bunEscapeHTML: (html: string) => string = (html: string) => {
 }
 
 try {
-  bunEscapeHTML = (require('bun') as any).escapeHTML
+  bunEscapeHTML = (require('bun') as { escapeHTML: (html: string) => string }).escapeHTML
 } catch {
   // Already have default fallback
 }
@@ -88,8 +88,8 @@ class FastRequestImpl implements FastRequest {
    */
   reset(): void {
     // Release references to allow GC
-    this._request = undefined as any
-    this._params = undefined as any
+    this._request = undefined as unknown as Request
+    this._params = undefined as unknown as Record<string, string>
     this._url = null
     this._query = null
     this._headers = null
@@ -206,7 +206,7 @@ class FastRequestImpl implements FastRequest {
     }
 
     // 1. Try Bun Native CookieMap (Injected in Bun.serve routes API)
-    const nativeCookies = (this._request as any).cookies
+    const nativeCookies = (this._request as unknown as { cookies?: Record<string, string> }).cookies
     if (nativeCookies) {
       this._cachedCookies = nativeCookies
       return nativeCookies
@@ -393,13 +393,13 @@ export class FastContext implements IFastContext {
   binary(data: Uint8Array | ArrayBuffer, status = 200): Response {
     this.checkReleased()
     const body = data instanceof ArrayBuffer ? new Uint8Array(data) : data
-    return new Response(body as any, {
+    return new Response(body as BodyInit, {
       status,
       headers: { 'Content-Type': 'application/octet-stream' },
     })
   }
 
-  stream(stream: any, status = 200): Response {
+  stream(stream: BodyInit, status = 200): Response {
     this.checkReleased()
     // Direct streaming for zero-copy socket transfers
     return new Response(stream, {
@@ -424,7 +424,7 @@ export class FastContext implements IFastContext {
     return this.text(message, 400)
   }
 
-  async forward(target: string, _options: any = {}): Promise<Response> {
+  async forward(target: string, _options: Record<string, unknown> = {}): Promise<Response> {
     this.checkReleased()
     // Minimal implementation of forwarding
     const url = new URL(this.req.url)
@@ -478,13 +478,13 @@ export class FastContext implements IFastContext {
   // Context Variables
   // ─────────────────────────────────────────────────────────────────────────
 
-  private _store = new Map<string, any>()
+  private _store = new Map<string, unknown>()
 
   get<T>(key: string): T {
-    return this._store.get(key)
+    return this._store.get(key) as T
   }
 
-  set(key: string, value: any): void {
+  set(key: string, value: unknown): void {
     this._store.set(key, value)
   }
 
@@ -521,7 +521,7 @@ export class FastContext implements IFastContext {
   // Lifecycle helpers
   // ─────────────────────────────────────────────────────────────────────────
 
-  public route: (name: string, params?: any, query?: any) => string = () => ''
+  public route: (name: string, params?: Record<string, string | number>, query?: Record<string, string | number | boolean | null | undefined>) => string = () => ''
 
   get native(): this {
     return this

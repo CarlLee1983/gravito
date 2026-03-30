@@ -325,8 +325,8 @@ export class AOTRouter {
       middleware: Middleware[],
       path: string
     ) => (req: Request) => Response | Promise<Response>
-  ): Record<string, any> {
-    const routes: Record<string, any> = {}
+  ): Record<string, (req: Request) => Response | Promise<Response>> {
+    const routes: Record<string, (req: Request) => Response | Promise<Response>> = {}
 
     for (const [key, metadata] of this.staticRoutes) {
       const [method, path] = key.split(':')

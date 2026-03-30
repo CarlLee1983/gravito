@@ -86,7 +86,7 @@ describe('Event Backpressure', () => {
         queue: { maxSize: 1, strategy: 'reject' },
       })
 
-      const queue = (hooks as any).eventQueue
+      const queue = (hooks as unknown as { eventQueue: { getDepth(): number } }).eventQueue
 
       // Manual control to force queue saturation
       let release: () => void = () => {}

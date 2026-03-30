@@ -22,7 +22,7 @@ export class HttpTester {
    */
   async post(
     uri: string,
-    data: any = null,
+    data: unknown = null,
     headers: Record<string, string> = {}
   ): Promise<TestResponse> {
     return this.call('POST', uri, data, headers)
@@ -33,7 +33,7 @@ export class HttpTester {
    */
   async put(
     uri: string,
-    data: any = null,
+    data: unknown = null,
     headers: Record<string, string> = {}
   ): Promise<TestResponse> {
     return this.call('PUT', uri, data, headers)
@@ -44,7 +44,7 @@ export class HttpTester {
    */
   async patch(
     uri: string,
-    data: any = null,
+    data: unknown = null,
     headers: Record<string, string> = {}
   ): Promise<TestResponse> {
     return this.call('PATCH', uri, data, headers)
@@ -55,7 +55,7 @@ export class HttpTester {
    */
   async delete(
     uri: string,
-    data: any = null,
+    data: unknown = null,
     headers: Record<string, string> = {}
   ): Promise<TestResponse> {
     return this.call('DELETE', uri, data, headers)
@@ -67,14 +67,14 @@ export class HttpTester {
   private async call(
     method: string,
     uri: string,
-    data: any,
+    data: unknown,
     headers: Record<string, string>
   ): Promise<TestResponse> {
     const url = uri.startsWith('http')
       ? uri
       : `http://localhost${uri.startsWith('/') ? '' : '/'}${uri}`
 
-    let body = null
+    let body: BodyInit | null = null
     const requestHeaders = { ...headers }
 
     // Add cookies to headers
@@ -92,7 +92,7 @@ export class HttpTester {
           requestHeaders['Content-Type'] = 'application/json'
         }
       } else {
-        body = data
+        body = data as BodyInit
       }
     }
 

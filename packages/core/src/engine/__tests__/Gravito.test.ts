@@ -153,7 +153,7 @@ describe('Gravito Engine', () => {
 
       app.get(
         '/protected',
-        (async (_c: any, next: any) => {
+        (async (_c: unknown, next: () => Promise<Response | undefined>) => {
           calls.push('auth')
           return await next()
         }) as unknown as Handler,

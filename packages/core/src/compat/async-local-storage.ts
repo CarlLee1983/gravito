@@ -3,7 +3,7 @@
  * Automatically switches between node:async_hooks and a browser mock.
  */
 
-let AsyncLocalStorageClass: any
+let AsyncLocalStorageClass: unknown
 
 // Try to load Node.js AsyncLocalStorage
 const tryGetNodeAsyncHooks = () => {
@@ -11,7 +11,7 @@ const tryGetNodeAsyncHooks = () => {
     if (
       typeof window === 'undefined' &&
       typeof process !== 'undefined' &&
-      !(process as any).browser
+      !(process as unknown as { browser?: boolean }).browser
     ) {
       // Try direct import for Bun/Node.js ESM compatibility
       try {
@@ -63,5 +63,4 @@ if (!AsyncLocalStorageClass) {
   }
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: generic class mock
-export const AsyncLocalStorage: { new <_T>(): any } = AsyncLocalStorageClass
+export const AsyncLocalStorage = AsyncLocalStorageClass as { new <T>(): { run<R>(store: T, fn: () => R): R; getStore(): T | undefined; disable(): void } }

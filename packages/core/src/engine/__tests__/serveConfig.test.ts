@@ -36,7 +36,7 @@ describe('serveConfig()', () => {
 
       expect(config.hostname).toBe('localhost')
       expect(config.port).toBe(3000)
-      expect((config as any).custom).toEqual({ foo: 'bar' })
+      expect((config as unknown as { custom?: { foo: string } }).custom).toEqual({ foo: 'bar' })
     })
 
     it('應該處理空的 baseConfig', () => {

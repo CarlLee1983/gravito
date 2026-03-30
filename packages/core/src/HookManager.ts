@@ -2,6 +2,7 @@ import { DeadLetterQueue } from './events/DeadLetterQueue'
 import type { EventBackend } from './events/EventBackend'
 import type { EventOptions } from './events/EventOptions'
 import { EventPriorityQueue } from './events/EventPriorityQueue'
+import type { EventStatus, MessageQueueBridge } from './events/MessageQueueBridge'
 import { ActionManager } from './hooks/ActionManager'
 import { AsyncDetector } from './hooks/AsyncDetector'
 import {
@@ -54,7 +55,7 @@ export class HookManager {
   private backend: EventBackend
   private dlq?: DeadLetterQueue
   private persistentDlqManager?: DeadLetterQueueManager
-  private messageQueueBridge?: any
+  private messageQueueBridge?: MessageQueueBridge
   private config: HookManagerConfig
 
   constructor(config: HookManagerConfig = {}) {
@@ -692,7 +693,7 @@ export class HookManager {
   async dispatchQueued<TArgs = unknown>(
     event: string,
     args: TArgs,
-    options?: any
+    options?: EventOptions
   ): Promise<string> {
     if (!this.messageQueueBridge) {
       throw new Error(
@@ -730,7 +731,7 @@ export class HookManager {
     event: string,
     args: TArgs,
     delay: number,
-    options?: any
+    options?: EventOptions
   ): Promise<string> {
     if (!this.messageQueueBridge) {
       throw new Error(
@@ -758,7 +759,7 @@ export class HookManager {
    *
    * @public
    */
-  async getEventStatus(eventId: string): Promise<any> {
+  async getEventStatus(eventId: string): Promise<EventStatus> {
     if (!this.messageQueueBridge) {
       throw new Error(
         '[HookManager] MessageQueueBridge not configured. Set messageQueueBridge in HookManagerConfig to use getEventStatus().'

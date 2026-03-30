@@ -162,7 +162,7 @@ export class DeadLetterQueue {
       error: {
         message: error.message,
         stack: error.stack,
-        code: (error as any).code,
+        code: (error as Error & { code?: string }).code,
       },
       retryCount,
       firstFailedAt,

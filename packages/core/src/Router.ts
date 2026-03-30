@@ -9,7 +9,7 @@ import { RequestValidator } from './router/RequestValidator'
  * Type for Controller Class Constructor
  * @public
  */
-export type ControllerClass = new (core: PlanetCore) => any
+export type ControllerClass = new (core: PlanetCore) => unknown
 
 /**
  * Handler can be a function or [Class, 'methodName']
@@ -668,7 +668,7 @@ export class Router {
         if (c.req.header('host') !== options.domain) {
           // If domain mismatch, return 404 immediately.
           // In a more complex router, this would backtrack, but for now this is correct.
-          return c.text('Not Found', 404) as any
+          return c.text('Not Found', 404) as Response
         }
         await next()
       }
@@ -678,7 +678,7 @@ export class Router {
     }
 
     this.routes.push({ method: method.toUpperCase(), path: fullPath, domain: options.domain })
-    this.core.adapter.route(method, fullPath, ...(handlers as any[]))
+    this.core.adapter.route(method, fullPath, ...(handlers as (GravitoHandler | GravitoMiddleware)[]))
 
     return new Route(this, method, fullPath, options)
   }
@@ -714,7 +714,7 @@ METHODS.forEach((method) => {
     arg1: RouteDefinitionArg,
     handler?: RouteHandler
   ) {
-    return (this as any).router.req(method, path, arg1, handler, (this as any).options)
+    return (this as unknown as { router: Router; options: RouteOptions }).router.req(method, path, arg1, handler, (this as unknown as { options: RouteOptions }).options)
   }
 
   Router.prototype[method] = function (

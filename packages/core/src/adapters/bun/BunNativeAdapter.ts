@@ -46,7 +46,7 @@ export class BunNativeAdapter implements HttpAdapter {
     path: string,
     ...handlers: (GravitoHandler | GravitoMiddleware)[]
   ): void {
-    this.router.add(method, path, handlers as any[])
+    this.router.add(method, path, handlers as Function[])
   }
 
   routes(routes: RouteDefinition[]): void {
@@ -149,7 +149,7 @@ export class BunNativeAdapter implements HttpAdapter {
       ctx.reset(request)
       return ctx
     }
-    return BunContext.create(request) as any
+    return BunContext.create(request) as BunContext
   }
 
   /**
@@ -188,7 +188,7 @@ export class BunNativeAdapter implements HttpAdapter {
       const res = await subAdapter.fetch(newReq)
       // Ensure response is stored in context for middleware chain
       if ('res' in ctx) {
-        ;(ctx as any).res = res
+        ctx.res = res
       }
       return res
     })
@@ -237,11 +237,11 @@ export class BunNativeAdapter implements HttpAdapter {
     const url = new URL(request.url)
     if (
       _server != null &&
-      typeof (_server as any).upgrade === 'function' &&
+      typeof (_server as { upgrade?: unknown }).upgrade === 'function' &&
       request.headers.get('upgrade')?.toLowerCase() === 'websocket' &&
       this.wsHandler.hasRoute(url.pathname)
     ) {
-      const upgraded = (_server as any).upgrade(request, {
+      const upgraded = (_server as { upgrade: (req: Request, opts: { data: unknown }) => boolean }).upgrade(request, {
         data: {
           path: url.pathname,
           id: crypto.randomUUID(),
@@ -315,8 +315,8 @@ export class BunNativeAdapter implements HttpAdapter {
       const result = await fn(ctx, async () => {
         const res = await dispatch(i + 1)
         // If next() returned a response, attach it to context so subsequent c.header() calls work
-        if (res && (ctx as any).res !== res) {
-          ;(ctx as any).res = res
+        if (res && ctx.res !== res) {
+          ctx.res = res
         }
         return res
       })
@@ -334,8 +334,8 @@ export class BunNativeAdapter implements HttpAdapter {
     }
 
     // Check if context has stored response (from middleware/handler calls to ctx.json() etc)
-    if ((ctx as any).res) {
-      return (ctx as any).res!
+    if (ctx.res) {
+      return ctx.res
     }
 
     // If no response returned and no notFoundHandler handled it:

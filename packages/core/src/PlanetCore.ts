@@ -232,7 +232,7 @@ export class PlanetCore {
       // If observabilityProvider is already provided (from monitor), use it directly
       if (
         this.observabilityProvider &&
-        this.observabilityProvider !== (this.observabilityProvider as any)._isNoOp
+        (this.observabilityProvider as unknown as { _isNoOp?: boolean })._isNoOp !== true
       ) {
         this.logger.info('[Observability] ✅ Using observability provider from @gravito/monitor')
         // Prometheus setup is handled by monitor
@@ -267,7 +267,7 @@ export class PlanetCore {
 
         // Set queue depth callback
         eventMetrics.setQueueDepthCallback(() => {
-          const queue = (observableHooks as any).getEventQueue()
+          const queue = (observableHooks as unknown as { getEventQueue(): { getDepthByPriority(p: string): number } }).getEventQueue()
           return {
             critical: queue.getDepthByPriority('critical'),
             high: queue.getDepthByPriority('high'),
@@ -330,11 +330,12 @@ export class PlanetCore {
    */
   register(provider: ServiceProvider): this {
     // Set core reference
-    if (typeof (provider as any).setCore === 'function') {
-      ;(provider as any).setCore(this)
+    const providerRecord = provider as unknown as Record<string, unknown>
+    if (typeof providerRecord['setCore'] === 'function') {
+      ;(providerRecord['setCore'] as (core: this) => void)(this)
     } else {
       // Fallback: set core directly on the provider
-      ;(provider as any).core = this
+      providerRecord['core'] = this
     }
 
     // Handle deferred providers
@@ -613,11 +614,11 @@ export class PlanetCore {
       c.set('cookieJar', cookieJar)
 
       // Add route helper
-      c.route = (name: string, params?: any, query?: any) => this.router.url(name, params, query)
+      c.route = (name: string, params?: Record<string, string | number>, query?: Record<string, string | number | boolean | null | undefined>) => this.router.url(name, params, query)
 
       // Execute the request within the container scope context
       // This enables request-scoped services to be properly isolated
-      const requestScope = (c as any).requestScope?.()
+      const requestScope = c.requestScope?.() as import('./Container/RequestScopeManager').RequestScopeManager | undefined
       const result = requestScope
         ? await Container.runWithScope(requestScope, async () => next())
         : await next()

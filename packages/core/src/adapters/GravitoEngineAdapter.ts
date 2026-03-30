@@ -1,5 +1,10 @@
 import { Gravito } from '../engine/Gravito'
 import type {
+  ErrorHandler as EngineErrorHandler,
+  Middleware as EngineMiddleware,
+  NotFoundHandler as EngineNotFoundHandler,
+} from '../engine/types'
+import type {
   GravitoContext,
   GravitoErrorHandler,
   GravitoHandler,
@@ -38,25 +43,25 @@ export class GravitoEngineAdapter<V extends GravitoVariables = GravitoVariables>
     ...handlers: (GravitoHandler<V> | GravitoMiddleware<V>)[]
   ): void {
     // Gravito engine uses Hono-like API for methods
-    const methodFn = (this.engine as any)[method.toLowerCase()]
+    const methodFn = (this.engine as unknown as Record<string, unknown>)[method.toLowerCase()]
     if (typeof methodFn !== 'function') {
       throw new Error(`Unsupported HTTP method: ${method}`)
     }
-    methodFn.call(this.engine, path, ...handlers)
+    (methodFn as (path: string, ...h: typeof handlers) => void).call(this.engine, path, ...handlers)
   }
 
   routes(routes: RouteDefinition[]): void {
     for (const route of routes) {
-      this.route(route.method, route.path, ...(route.handlers as any[]))
+      this.route(route.method, route.path, ...(route.handlers as (GravitoHandler<V> | GravitoMiddleware<V>)[]))
     }
   }
 
   use(path: string, ...middleware: GravitoMiddleware<V>[]): void {
-    this.engine.use(path, ...(middleware as any))
+    this.engine.use(path, ...(middleware as unknown as EngineMiddleware[]))
   }
 
   useGlobal(...middleware: GravitoMiddleware<V>[]): void {
-    this.engine.use(...(middleware as any))
+    this.engine.use(...(middleware as unknown as EngineMiddleware[]))
   }
 
   mount(path: string, subAdapter: HttpAdapter<V>): void {
@@ -67,11 +72,11 @@ export class GravitoEngineAdapter<V extends GravitoVariables = GravitoVariables>
   }
 
   onError(handler: GravitoErrorHandler<V>): void {
-    this.engine.onError(handler as any)
+    this.engine.onError(handler as unknown as EngineErrorHandler)
   }
 
   onNotFound(handler: GravitoNotFoundHandler<V>): void {
-    this.engine.notFound(handler as any)
+    this.engine.notFound(handler as unknown as EngineNotFoundHandler)
   }
 
   fetch = (request: Request, _server?: unknown): Response | Promise<Response> => {

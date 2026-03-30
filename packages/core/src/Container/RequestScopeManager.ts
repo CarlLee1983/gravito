@@ -91,7 +91,7 @@ export class RequestScopeManager {
 
     for (const [, instance] of this.scoped) {
       if (instance && typeof instance === 'object' && 'cleanup' in instance) {
-        const fn = (instance as any).cleanup
+        const fn = (instance as Record<string, unknown>)['cleanup']
         if (typeof fn === 'function') {
           try {
             await fn.call(instance)

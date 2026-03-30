@@ -31,7 +31,7 @@ export interface FastContext {
   forbidden(message?: string): Response
   unauthorized(message?: string): Response
   badRequest(message?: string): Response
-  forward(target: string, options?: any): Promise<Response>
+  forward(target: string, options?: Record<string, unknown>): Promise<Response>
   escape(html: string): string
 
   /** Header management */
@@ -41,15 +41,15 @@ export interface FastContext {
 
   /** Context Variables */
   get<T>(key: string): T
-  set(key: string, value: any): void
+  set(key: string, value: unknown): void
 
   /** Request Scope Management */
-  requestScope(): any // RequestScopeManager (avoid circular import)
+  requestScope(): unknown // RequestScopeManager (avoid circular import)
   scoped<T>(key: string | symbol, factory: () => T): T
 
   /** Lifecycle helpers */
-  route: (name: string, params?: any, query?: any) => string
-  readonly native: any
+  route: (name: string, params?: Record<string, string | number>, query?: Record<string, string | number | boolean | null | undefined>) => string
+  readonly native: unknown
 
   /** Internal initialization for pooling */
   init(

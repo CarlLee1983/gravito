@@ -59,7 +59,7 @@ export class BunWebSocketHandler {
   } {
     return {
       open: async (ws: unknown) => {
-        const path = (ws as any)?.data?.path
+        const path = (ws as { data?: { path?: string } })?.data?.path
         if (!path) {
           return
         }
@@ -71,7 +71,7 @@ export class BunWebSocketHandler {
       },
 
       message: async (ws: unknown, data: string | Buffer | Uint8Array) => {
-        const path = (ws as any)?.data?.path
+        const path = (ws as { data?: { path?: string } })?.data?.path
         if (!path) {
           return
         }
@@ -83,7 +83,7 @@ export class BunWebSocketHandler {
       },
 
       close: async (ws: unknown, code: number, reason: string) => {
-        const path = (ws as any)?.data?.path
+        const path = (ws as { data?: { path?: string } })?.data?.path
         if (!path) {
           return
         }
@@ -95,7 +95,7 @@ export class BunWebSocketHandler {
       },
 
       drain: async (ws: unknown) => {
-        const path = (ws as any)?.data?.path
+        const path = (ws as { data?: { path?: string } })?.data?.path
         if (!path) {
           return
         }
