@@ -79,7 +79,9 @@ Plans:
   1. ApplicationConfig is defined as `extends Pick<GravitoConfig, 'logger' | 'config'>` — the logger and config field definitions exist in exactly one place
   2. Passing `observabilityProvider` in a GravitoConfig object to `PlanetCore.boot()` results in it being available inside the booted application — confirmed by a passing test
   3. `bun run typecheck` at workspace root passes with zero errors after the type change
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 24-01-PLAN.md — Unify ApplicationConfig via Pick<GravitoConfig>, add JSDoc, verify FIX-03 (TYPE-01, FIX-03)
 
 ### Phase 25: Container Type Improvement
 **Goal**: Calling Container.make() with a known service key returns the concrete type, not any — eliminating the most common source of undetected type errors in DI resolution
@@ -114,6 +116,6 @@ Plans:
 | 21. API Footgun Fixes | v2.1.0 | 3/3 | Complete    | 2026-03-29 |
 | 22. Exception Hierarchy Clarification | v2.1.0 | 1/1 | Complete    | 2026-03-29 |
 | 23. Named Export Conversion | v2.1.0 | 2/2 | Complete    | 2026-03-29 |
-| 24. Config Type Unification | v2.1.0 | 0/? | Not started | - |
+| 24. Config Type Unification | v2.1.0 | 0/1 | In Progress | - |
 | 25. Container Type Improvement | v2.1.0 | 0/? | Not started | - |
 | 26. Documentation and Tooling | v2.1.0 | 0/? | Not started | - |
