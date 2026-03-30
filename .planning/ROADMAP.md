@@ -107,9 +107,9 @@ Plans:
   5. The README HookManager section matches the actual public API surface — no methods that do not exist in source are referenced
   6. A developer choosing between orbit(), register(), and use() can find a decision guide (in README or docs) that explains when to use each with a concrete example
   7. All public API JSDoc comments in packages/core/src/ are written in English — no mixed-language blocks remain
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 Plans:
-- [ ] 26-01-PLAN.md — Biome noExplicitAny+noConsole overrides and fix 16 any violations (DOC-01, DOC-02)
+- [x] 26-01-PLAN.md — Biome noExplicitAny+noConsole overrides and fix 16 any violations (DOC-01, DOC-02)
 - [ ] 26-02-PLAN.md — Console migration/suppression across core/src event system and infrastructure (DOC-02)
 - [x] 26-03-PLAN.md — publint CI gate with Turbo pipeline and per-package scripts (DOC-03)
 - [x] 26-04-PLAN.md — README API corrections, orbit/register/use guide, JSDoc English unification (DOC-04, DOC-05, DOC-06, DOC-07)
@@ -125,4 +125,4 @@ Plans:
 | 23. Named Export Conversion | v2.1.0 | 2/2 | Complete    | 2026-03-29 |
 | 24. Config Type Unification | v2.1.0 | 1/1 | Complete    | 2026-03-30 |
 | 25. Container Type Improvement | v2.1.0 | 1/1 | Complete    | 2026-03-30 |
-| 26. Documentation and Tooling | v2.1.0 | 2/4 | In Progress|  |
+| 26. Documentation and Tooling | v2.1.0 | 3/4 | In Progress|  |
