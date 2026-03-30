@@ -28,7 +28,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 ### 型別改善
 
 - [x] **TYPE-01**: ApplicationConfig 改為 extends Pick<GravitoConfig, 'logger' | 'config'> 消除欄位重複
-- [ ] **TYPE-02**: Container.make() 新增 ServiceMap-keyed overload，回傳具體型別而非 any
+- [x] **TYPE-02**: Container.make() 新增 ServiceMap-keyed overload，回傳具體型別而非 any
 
 ### 文件與工具
 
@@ -84,7 +84,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MOD-02 | Phase 23 | Complete |
 | MOD-03 | Phase 23 | Complete |
 | TYPE-01 | Phase 24 | Complete |
-| TYPE-02 | Phase 25 | Pending |
+| TYPE-02 | Phase 25 | Complete |
 | DOC-01 | Phase 26 | Pending |
 | DOC-02 | Phase 26 | Pending |
 | DOC-03 | Phase 26 | Pending |

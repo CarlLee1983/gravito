@@ -20,7 +20,7 @@ status: approved
 - [x] **Phase 22: Exception Hierarchy Clarification** — Add JSDoc role separation for AuthException (abstract base) and AuthenticationException (concrete 401); no structural changes (completed 2026-03-29)
 - [x] **Phase 23: Named Export Conversion** — Convert 6 star exports to explicit named exports; remove setApp from public barrel; mirror index.browser.ts (completed 2026-03-29)
 - [x] **Phase 24: Config Type Unification** — ApplicationConfig extends Pick<GravitoConfig>; boot() forwards observabilityProvider without silent drop (completed 2026-03-30)
-- [ ] **Phase 25: Container Type Improvement** — Add ServiceMap-keyed overload to Container.make() eliminating any in primary DI resolution path
+- [x] **Phase 25: Container Type Improvement** — Add ServiceMap-keyed overload to Container.make() eliminating any in primary DI resolution path (completed 2026-03-30)
 - [ ] **Phase 26: Documentation and Tooling** — Biome noExplicitAny upgrade, noConsole rule, publint CI gate, README sync, orbit/register/use guide, JSDoc language unification
 
 ---
@@ -91,9 +91,9 @@ Plans:
   1. `container.make('myService')` where 'myService' is a key in ServiceMap returns the concrete type declared in ServiceMap — TypeScript infers it without a cast
   2. Calling `container.make()` with a key not present in ServiceMap still compiles and returns the existing fallback type — no call sites are broken
   3. `bun run typecheck` at workspace root passes with zero errors — the overload does not cascade type errors into the 50+ downstream packages that use Container
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
-- [ ] 25-01-PLAN.md — Change ServiceMap type to interface, sync Container.d.ts, expand tests (TYPE-02)
+- [x] 25-01-PLAN.md — Change ServiceMap type to interface, sync Container.d.ts, expand tests (TYPE-02)
 
 ### Phase 26: Documentation and Tooling
 **Goal**: CI enforces the improved API surface via lint rules and export validation; documentation matches the actual API that developers encounter
@@ -119,5 +119,5 @@ Plans:
 | 22. Exception Hierarchy Clarification | v2.1.0 | 1/1 | Complete    | 2026-03-29 |
 | 23. Named Export Conversion | v2.1.0 | 2/2 | Complete    | 2026-03-29 |
 | 24. Config Type Unification | v2.1.0 | 1/1 | Complete    | 2026-03-30 |
-| 25. Container Type Improvement | v2.1.0 | 0/1 | Not started | - |
+| 25. Container Type Improvement | v2.1.0 | 1/1 | Complete   | 2026-03-30 |
 | 26. Documentation and Tooling | v2.1.0 | 0/? | Not started | - |

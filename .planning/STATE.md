@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Phase 25 context gathered
-last_updated: "2026-03-30T02:40:12.665Z"
+stopped_at: Completed 25-container-type-improvement-01-PLAN.md
+last_updated: "2026-03-30T03:02:30.508Z"
 progress:
   total_phases: 6
-  completed_phases: 4
-  total_plans: 7
-  completed_plans: 7
+  completed_phases: 5
+  total_plans: 8
+  completed_plans: 8
 ---
 
 # STATE: Gravito-Core v2.1.0
@@ -19,14 +19,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** 穩定可靠的核心基礎設施
-**Current focus:** Phase 24 — config-type-unification
+**Current focus:** Phase 25 — container-type-improvement
 
 ---
 
 ## Current Position
 
-Phase: 25
-Plan: Not started
+Phase: 25 (container-type-improvement) — EXECUTING
+Plan: 1 of 1
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Plan: Not started
 | Phase 23 P01 | 12 | 2 tasks | 1 files |
 | Phase 23-named-export-conversion P02 | 15 | 2 tasks | 1 files |
 | Phase 24-config-type-unification P01 | 8 | 2 tasks | 2 files |
+| Phase 25-container-type-improvement P01 | 6 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -81,9 +82,9 @@ None currently.
 
 ## Session Continuity
 
-Last session: 2026-03-30T02:40:12.653Z
-Stopped at: Phase 25 context gathered
-Resume file: .planning/phases/25-container-type-improvement/25-CONTEXT.md
+Last session: 2026-03-30T03:02:30.506Z
+Stopped at: Completed 25-container-type-improvement-01-PLAN.md
+Resume file: None
 
 ### To resume this milestone:
 
