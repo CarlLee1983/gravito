@@ -207,6 +207,7 @@ export class Container {
         return scope.resolve(key, () => binding.factory(this)) as T
       }
       // Fallback: if no scope context, create temporary instance with warning
+      // biome-ignore lint/suspicious/noConsole: No Logger in Container scope — warning must reach developer even without Logger
       console.warn(
         `Request-scoped service '${String(key)}' resolved outside request context. ` +
           'This instance will not be shared across the request. Consider wrapping with Container.runWithScope().'

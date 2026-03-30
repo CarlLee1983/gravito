@@ -71,8 +71,10 @@ export class RequestValidator {
       if (error instanceof TypeError) {
         // Constructor doesn't exist or has wrong signature
       } else if (error instanceof ReferenceError) {
+        // biome-ignore lint/suspicious/noConsole: Static utility — no Logger instance available in this scope
         console.warn('[Router] FormRequest detection failed: Missing dependencies', error)
       } else {
+        // biome-ignore lint/suspicious/noConsole: Static utility — no Logger instance available in this scope
         console.warn('[Router] Unexpected error during FormRequest detection:', error)
       }
       formRequestCache.set(value, false)

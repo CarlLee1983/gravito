@@ -40,6 +40,7 @@ export class GravitoServer {
       core.orbit(Orbit)
     }
 
+    // biome-ignore lint/suspicious/noConsole: Bootstrap output — Logger not yet initialized during module ignition
     console.log(`
 🌌 [Gravito Core] 正在點燃: ${manifest.name} v${manifest.version || '1.0.0'}`)
 
@@ -62,9 +63,11 @@ export class GravitoServer {
         }
 
         core.register(instance)
+        // biome-ignore lint/suspicious/noConsole: Bootstrap output — Logger not yet initialized during module ignition
         console.log(`   ✅ 模組點火成功: [${moduleId}]`)
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : String(error)
+        // biome-ignore lint/suspicious/noConsole: Bootstrap output — Logger not yet initialized during module ignition
         console.error(`   ❌ 模組 [${moduleId}] 點火失敗: ${message}`)
       }
     }

@@ -64,6 +64,7 @@ export class FilterManager {
       try {
         value = (await callback(value, ...args)) as T
       } catch (error) {
+        // biome-ignore lint/suspicious/noConsole: FilterManager has no Logger dependency — low-level hook infrastructure
         console.error(`[HookManager] Error in filter '${hook}':`, error)
         // 錯誤處理策略：記錄錯誤並繼續使用當前值
       }

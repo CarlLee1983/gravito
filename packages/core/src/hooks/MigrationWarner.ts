@@ -29,9 +29,13 @@ export class MigrationWarner {
       return
     }
 
+    // biome-ignore lint/suspicious/noConsole: Migration warning system — runs before Logger is bootstrapped, must output to console
     console.warn(`[Gravito Migration] Event "${eventName}" using synchronous dispatch`)
+    // biome-ignore lint/suspicious/noConsole: Migration warning system — runs before Logger is bootstrapped, must output to console
     console.warn(`  ${message}`)
+    // biome-ignore lint/suspicious/noConsole: Migration warning system — runs before Logger is bootstrapped, must output to console
     console.warn(`  Reference: https://gravito.dev/docs/events/async-migration`)
+    // biome-ignore lint/suspicious/noConsole: Migration warning system — runs before Logger is bootstrapped, must output to console
     console.warn(`  To suppress this warning: GRAVITO_SUPPRESS_MIGRATION_WARNING="${eventName}"`)
   }
 

@@ -191,6 +191,7 @@ export class AdaptiveAdapter implements HttpAdapter {
 
     // Log if verbose
     if (this.config.verbose && this.requestCount % 100 === 0) {
+      // biome-ignore lint/suspicious/noConsole: AdaptiveAdapter verbose mode — diagnostic logging gated by config flag
       console.log(
         `[AdaptiveAdapter] Requests: ${this.requestCount}, Avg time: ${this.metrics.getAverageTime().toFixed(4)}ms`
       )
@@ -218,6 +219,7 @@ export class AdaptiveAdapter implements HttpAdapter {
   switchAdapter(adapter: HttpAdapter): void {
     this.primary = adapter
     if (this.config.verbose) {
+      // biome-ignore lint/suspicious/noConsole: AdaptiveAdapter verbose mode — diagnostic logging gated by config flag
       console.log(`[AdaptiveAdapter] Switched to ${adapter.name}`)
     }
   }
