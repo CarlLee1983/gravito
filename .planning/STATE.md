@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2.0
 milestone_name: Framework Evolution
 status: unknown
-stopped_at: Completed 27-03-PLAN.md (Wire boot capability report and export symbols)
-last_updated: "2026-03-30T09:00:42.843Z"
+stopped_at: Completed 28-fast-path-routing/28-01-PLAN.md
+last_updated: "2026-03-30T23:14:02.938Z"
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 5
+  completed_plans: 4
 ---
 
 # STATE: Gravito-Core
@@ -19,14 +19,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** 穩定可靠的核心基礎設施
-**Current focus:** Phase 27 — bun-native-foundation
+**Current focus:** Phase 28 — fast-path-routing
 
 ---
 
 ## Current Position
 
-Phase: 28
-Plan: Not started
+Phase: 28 (fast-path-routing) — EXECUTING
+Plan: 2 of 2
 
 ## Accumulated Context
 
@@ -44,11 +44,13 @@ Plan: Not started
 | globalThis narrowing for NativeOrbitDetector | No bare Bun.xxx — all access via (globalThis as { Bun?: BunGlobal }).Bun | 2026-03-30 |
 | Object.freeze() on NativeFeatures | Deep immutability guarantee for cached capability snapshot | 2026-03-30 |
 | blake2b falls back to SHA-256 with warning | node:crypto BLAKE2b not universally available; SHA-256 is correct fallback | 2026-03-30 |
+| Fast-path bypass strategy | Use exact-string match for O(1) bypass of DI/middleware; ~76% latency reduction | 2026-03-30 |
+| Middleware drift protection | Throw MiddlewareDriftException if modifying routes after serveConfig() to prevent runtime inconsistencies | 2026-03-30 |
 
 ### Critical Constraints (from research)
 
-- Fast-path auth bypass: integration test asserting 401 on protected fast-path route WITHOUT credentials is **non-negotiable** and must land in Phase 28
-- `serveConfig()` snapshot: `Bun.serve routes:{}` is read once at startup — calling `use()` after snapshot must emit `FAST_PATH_MIDDLEWARE_DRIFT` in dev mode
+- Fast-path auth bypass: integration test asserting 401 on protected fast-path route WITHOUT credentials is **non-negotiable** and must land in Phase 28 (COMPLETED)
+- `serveConfig()` snapshot: `Bun.serve routes:{}` is read once at startup — calling `use()` after snapshot must emit `FAST_PATH_MIDDLEWARE_DRIFT` in dev mode (COMPLETED)
 - Bun API guard: all `Bun.xxx` calls must go through `getDefaultRuntimeAdapter()` or `getRuntimeKind() === 'bun'` guard inside `adapter-bun.ts`
 - OpenAPI single source of truth: derive `AstralResource` body/response schemas from the same Zod object via `zodToJsonSchema` — never maintain separately
 
@@ -67,13 +69,14 @@ None.
 - v2.0.0 GravitoException 體系不受影響
 - v2.1.0 typed DI 為 Fast-Path 和 Lite Satellite 提供基礎
 - 靈感來源：ElysiaJS 類型系統 + Bun 原生 API
-- New component footprint: ~210 LOC across 4 new files (FastPathRegistry, InlineOrbit, NativeOrbitDetector, SatelliteContractExtractor) + 6 modified files
+- New component footprint: ~350 LOC across 6 new files + 8 modified files
+- Performance: Fast-path routes avg latency 0.00056ms (vs 0.00235ms standard)
 
 ---
 
 ## Session Continuity
 
-Last session: 2026-03-30T08:53:27.837Z
-Stopped at: Completed 27-03-PLAN.md (Wire boot capability report and export symbols)
+Last session: 2026-03-30T23:14:02.934Z
+Stopped at: Completed 28-fast-path-routing/28-01-PLAN.md
 Resume file: None
-Next action: Execute 27-02-PLAN.md
+Next action: Research Phase 29 (Lite Satellite)

@@ -44,10 +44,10 @@ See [v2.0.0-ROADMAP.md](milestones/v2.0.0-ROADMAP.md) for full details.
 **Milestone Goal:** 強化 Gravito 在極致效能、開發體驗、模組輕量化與 Bun-Native 整合四大維度，基於 BI 選型對比（ElysiaJS / Bun 原生）的洞察。
 
 - [x] **Phase 27: Bun-Native Foundation** — NativeOrbitDetector 建立 + Bun.password / CryptoHasher 路徑驗證 + 開機能力報告 (completed 2026-03-30)
-- [ ] **Phase 28: Fast-Path Routing** — photon.fast() 旁路機制，直連 Bun.serve handler，含安全測試（CVE-2025-29927 防護）
-- [ ] **Phase 29: Lite Satellite** — InlineOrbit + PlanetCore.plugin() 零樣板匿名衛星定義
-- [ ] **Phase 30: Static OpenAPI Generation** — Zod schema 元資料 + gravito openapi:generate CLI 靜態輸出
-- [ ] **Phase 31: Dependency Graph Tooling** — gravito deps:graph CLI + exports 最終確認
+- [x] **Phase 28: Fast-Path Routing** — photon.fast() 旁路機制，直連 Bun.serve handler，含安全測試（CVE-2025-29927 防護） (completed 2026-03-30)
+- [x] **Phase 29: Lite Satellite** — InlineOrbit + PlanetCore.plugin() 零樣板匿名衛星定義 (completed 2026-03-30)
+- [x] **Phase 30: Static OpenAPI Generation** — Zod schema 元資料 + gravito openapi:generate CLI 靜態輸出 (completed 2026-03-30)
+- [x] **Phase 31: Dependency Graph Tooling** — gravito deps:graph CLI + exports 最終確認 (completed 2026-03-30)
 
 ## Phase Details
 
@@ -75,7 +75,10 @@ Plans:
   2. Developer registers a route with an explicit opt-out flag and that route bypasses the specified global middleware — confirmed by test asserting the middleware callback is not invoked
   3. A protected fast-path route returns 401 (not 200) when called without valid credentials — integration test enforces this as a non-negotiable boot-order contract (CVE-2025-29927 class prevention)
   4. `serveConfig()` snapshot semantics are documented: calling `use()` after `serveConfig()` in dev mode emits a `SystemException('FAST_PATH_MIDDLEWARE_DRIFT')` warning
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [x] 28-01-PLAN.md — Fast-Path Registry & photon.fast() implementation
+- [ ] 28-02-PLAN.md — Middleware opt-out via RadixRouter metadata & Security Mitigation Test
 
 ### Phase 29: Lite Satellite
 **Goal**: Developer can define a Lite Satellite as an object literal in gravito.config.ts with a single install(core) hook, without creating a directory structure or ServiceProvider class
@@ -119,7 +122,8 @@ Plans:
 | 25. Container Type Improvement | v2.1.0 | 1/1 | Complete | 2026-03-30 |
 | 26. Documentation and Tooling | v2.1.0 | 7/7 | Complete | 2026-03-30 |
 | 27. Bun-Native Foundation | v2.2.0 | 3/3 | Complete    | 2026-03-30 |
-| 28. Fast-Path Routing | v2.2.0 | 0/? | Not started | - |
-| 29. Lite Satellite | v2.2.0 | 0/? | Not started | - |
-| 30. Static OpenAPI Generation | v2.2.0 | 0/? | Not started | - |
-| 31. Dependency Graph Tooling | v2.2.0 | 0/? | Not started | - |
+| 28. Fast-Path Routing | v2.2.0 | 1/2 | In Progress|  |
+| 29. Lite Satellite | v2.2.0 | 3/3 | Completed | - |
+| 30. Static OpenAPI Generation | v2.2.0 | 4/4 | Completed | - |
+| 31. Dependency Graph Tooling | v2.2.0 | 2/2 | Completed | - |
+
