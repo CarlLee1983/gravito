@@ -22,6 +22,12 @@
       "outputs": ["dist/**/*.d.ts", "dist/**/*.d.cts", "dist/**/*.d.ts.map"],
       "cache": true
     },
+    "publint": {
+      "dependsOn": ["build"],
+      "inputs": ["dist/**", "package.json"],
+      "outputs": [],
+      "cache": false
+    },
     "create-gravito-app#build": {
       "cache": false,
       "outputs": [],
