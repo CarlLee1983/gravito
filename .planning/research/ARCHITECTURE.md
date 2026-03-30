@@ -1,449 +1,487 @@
 # Architecture Research
 
-**Domain:** TypeScript framework DX improvements — @gravito/core public API surface
-**Researched:** 2026-03-29
-**Confidence:** HIGH (direct codebase analysis, 875-line barrel file read in full)
+**Domain:** TypeScript framework evolution — performance bypass, DX, lightweight plugins, Bun-native integration
+**Researched:** 2026-03-30
+**Confidence:** HIGH (direct codebase inspection — engine, adapter, astral, runtime layers all read)
+
+---
 
 ## Standard Architecture
 
-### System Overview
+### System Overview — Existing Galaxy Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│                    @gravito/core  (public API surface)               │
-│                                                                      │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │  index.ts (main barrel)            index.browser.ts          │    │
-│  │  ~875 lines                        ~115 lines                │    │
-│  │                                                              │    │
-│  │  Named exports: ~80% complete                                │    │
-│  │  Star exports remaining (DX pain points):                    │    │
-│  │    export * from './exceptions'   → 17 exception classes     │    │
-│  │    export * from './helpers/data'                            │    │
-│  │    export * from './helpers/errors'                          │    │
-│  │    export * from './helpers/response'                        │    │
-│  │    export * from './testing'      → HttpTester, TestResponse │    │
-│  │    export * from './adapters/bun/index' → 7 Bun-specific     │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-│                                                                      │
-│  Sub-path exports (clean, no changes needed):                        │
-│    @gravito/core/engine   @gravito/core/ffi   @gravito/core/compat   │
-└──────────────────────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────────────────┐
-│                    Downstream consumers (352 import sites)           │
-│                                                                      │
-│  packages/fortify    → AuthException (FortifyError extends it)       │
-│  packages/sentinel   → AuthException + AuthenticationException       │
-│  packages/cosmos     → error types                                   │
-│  50+ Orbit packages  → GravitoException, Container, PlanetCore, etc  │
-└──────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Satellites (Business Domains — isolated, event-only cross-communication)   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
+│  │  satellite-  │  │  satellite-  │  │  satellite-  │  │  Lite/Inline │   │
+│  │  catalog     │  │  commerce    │  │  membership  │  │  Plugin (NEW)│   │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘   │
+│         │                 │                  │                  │           │
+├─────────┴─────────────────┴──────────────────┴──────────────────┴───────────┤
+│  Orbits (Infrastructure — GravitoOrbit.install() lifecycle)                 │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────────┐  │
+│  │ photon   │  │ astral   │  │ signal   │  │ fortify  │  │ sentinel    │  │
+│  │ (HTTP)   │  │ (OpenAPI)│  │ (events) │  │ (auth)   │  │ (native auth│  │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └──────┬──────┘  │
+│       │              │              │              │               │          │
+├───────┴──────────────┴──────────────┴──────────────┴───────────────┴─────────┤
+│  PlanetCore (micro-kernel)                                                   │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │ Container (IoC) | HookManager | Router | EventManager | ConfigManager│    │
+│  │ GravitoEngineAdapter → Gravito engine → AOTRouter                   │    │
+│  │  (static: O(1) Map)   (dynamic: Radix Tree)                         │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Component Responsibilities
+### What v2.2.0 Adds to This Picture
 
-| Component | Responsibility | DX Issue |
-|-----------|---------------|----------|
-| `src/index.ts` | Main public barrel (875 lines) | 6 star exports hide what is available |
-| `src/index.browser.ts` | Browser-safe entry (115 lines) | Also contains `setApp` (should be internal-only) |
-| `src/exceptions/index.ts` | Re-exports 17 exception classes via `export *` | Included in main barrel as `export * from './exceptions'` |
-| `src/exceptions/AuthException.ts` | Abstract base for auth-domain errors | Parallel to `AuthenticationException` — two confusingly similar names |
-| `src/exceptions/AuthenticationException.ts` | Concrete "unauthenticated" exception | Concrete class with identical surface to what `AuthException` subtypes do |
-| `src/helpers.ts` | Aggregates helpers + re-exports `data`, `errors`, `response` | Contains `setApp` which is `@internal` but exported publicly |
-| `src/PlanetCore.ts` | Defines `GravitoConfig` type | Separate from `ApplicationConfig` in `Application.ts` despite overlapping fields |
-| `src/Application.ts` | Defines `ApplicationConfig` | `logger`, `config`, `env` overlap with `GravitoConfig` |
-| `src/testing/` | `HttpTester`, `TestResponse` | Pulled into main barrel via `export * from './testing'` |
-| `src/adapters/bun/index.ts` | 7 Bun-specific classes | Pulled into main barrel via `export * from './adapters/bun/index'` |
-| `src/Container.ts` | DI container | `Container.make()` returns `any` — inference gap |
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  gravito.config.ts                                                          │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │  plugins: [{ name: 'ops', fastRoutes: [{GET: '/health', handler}] }]  │  │
+│  │      ↓ PlanetCore.plugin()  ↓ InlineOrbit.install()                  │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  Fast-Path Layer  (NEW — inside Gravito engine, parallel to AOTRouter)      │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │  FastPathRegistry (Map)  →  Bun.serve routes{}  →  direct Response   │  │
+│  │  (no DI, no middleware chain, no context pool)                        │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  Static Contract Layer  (NEW — in @gravito/astral)                          │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │  SatelliteContractExtractor  →  OpenApiGenerator  →  openapi.json    │  │
+│  │  (no server boot required — CI/build-time generation)                 │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  Bun-Native Abstraction  (NEW — in @gravito/core/runtime)                   │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │  NativeOrbitDetector  →  hasPassword | hasCryptoHasher | hasFileAPI  │  │
+│  │  (called once in PlanetCore constructor; flags cached on instance)    │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
-## Recommended Project Structure
+---
 
-The existing structure is sound. No file moves needed. All DX improvements are
-API surface changes (what gets exported and how) and type-level changes.
+## Component Responsibilities
+
+### Existing Components Relevant to v2.2.0
+
+| Component | Package | Responsibility | v2.2.0 Touch? |
+|-----------|---------|----------------|---------------|
+| `Gravito` | `core/engine/Gravito.ts` | AOT router, object pool, `serveConfig()` for Bun.serve integration | YES — `fastPath()` + `FastPathRegistry` |
+| `AOTRouter` | `core/engine/AOTRouter.ts` | Static O(1) `Map` + dynamic Radix Tree; `getNativeRoutes()` for Bun offload | MINIMAL — `FastPathRegistry` is a sibling, not merged into `AOTRouter` |
+| `GravitoEngineAdapter` | `core/adapters/GravitoEngineAdapter.ts` | Adapts `Gravito` engine to `HttpAdapter` interface used by `PlanetCore` | YES — `fastPathRoute()` method added |
+| `BunNativeAdapter` | `core/adapters/bun/BunNativeAdapter.ts` | Legacy Bun adapter (wraps `RadixRouter`) | NOT MODIFIED — active adapter is `GravitoEngineAdapter` for new code |
+| `PlanetCore` | `core/PlanetCore.ts` | Micro-kernel: container, hooks, router, event bus | YES — `plugin()` method; call `NativeOrbitDetector` in constructor |
+| `BunHasher` | `core/security/Hasher.ts` | Wraps `Bun.password.hash/verify`; already native | NO — already correct; `NativeOrbitDetector` documents the pattern explicitly |
+| `OpenApiGenerator` | `astral/OpenApiGenerator.ts` | `generate(routes[])` → `OpenAPIV3_1.Document` | YES — `generateFromContracts()` overload |
+| `generateStaticSite()` | `astral/export-static.ts` | `openapi.json` + Swagger HTML from live `core.router.compile()` | YES — accept `{ contracts }` as alternative to `{ core }` |
+| `getRuntimeKind()` | `core/runtime/detection.ts` | Detect Bun / Deno / Node; already used by `adapter-bun.ts` | YES — `NativeOrbitDetector` extends this with capability-level flags |
+
+### New Components for v2.2.0
+
+| Component | Package / Path | Responsibility |
+|-----------|---------------|----------------|
+| `FastPathRegistry` | `core/engine/FastPathRegistry.ts` (new) | `Map<string, (req: Request) => Response \| Promise<Response>>`. Holds routes registered via `fastPath()`. Consumed by `Gravito.serveConfig()` to populate Bun.serve `routes{}`. |
+| `InlineOrbit` | `core/InlineOrbit.ts` (new) | Implements `GravitoOrbit`. Accepts `InlineOrbitConfig { name, routes?, fastRoutes?, register? }`. Converts config into standard `adapter.route()` or `adapter.fastPathRoute()` calls during `install()`. |
+| `NativeOrbitDetector` | `core/runtime/NativeOrbitDetector.ts` (new) | `detectBunCapabilities(): NativeFeatures`. Probes `typeof Bun`, `typeof Bun.password`, `typeof Bun.CryptoHasher`, `typeof Bun.file`. Returns `NativeFeatures` record. Called once per `PlanetCore` construction. |
+| `SatelliteContractExtractor` | `astral/SatelliteContractExtractor.ts` (new) | `extract(module: unknown): AstralResource[]`. Imports a Satellite module (no side effects), reads its exported `contracts` property, and converts it to `AstralResource[]` compatible with `OpenApiGenerator`. |
+
+---
+
+## Recommended Project Structure — Changes Only
+
+Only net-new and modified files are listed. Unchanged files are omitted.
 
 ```
 packages/core/src/
-├── index.ts                    # MODIFY: convert 6 star exports to named exports
-├── index.browser.ts            # MODIFY: remove setApp from exports
-│
-├── exceptions/
-│   ├── index.ts                # MODIFY: convert export * to named exports
-│   ├── AuthException.ts        # KEEP: abstract base used by fortify + sentinel
-│   ├── AuthenticationException.ts  # KEEP or DEPRECATE: see consolidation below
-│   └── [14 other exceptions]   # KEEP unchanged
-│
-├── helpers.ts                  # MODIFY: move setApp behind @internal guard
-│   └── (setApp kept in file but not re-exported from index.ts)
-│
-├── PlanetCore.ts               # MODIFY: GravitoConfig type unification
-│   └── GravitoConfig (expand to include ApplicationConfig fields)
-│
-├── Application.ts              # MODIFY: ApplicationConfig extends or re-uses GravitoConfig
-│
-├── Container.ts                # MODIFY: improve make() generic inference
-│
-├── testing/
-│   └── index.ts                # NEW EXPORT: explicit named re-export list
-│
-└── adapters/bun/
-    └── index.ts                # NEW EXPORT: explicit named re-export list
+├── engine/
+│   ├── Gravito.ts              MODIFIED: fastPath() method; consumes FastPathRegistry in serveConfig()
+│   ├── AOTRouter.ts            UNTOUCHED: FastPathRegistry is a sibling, not merged here
+│   └── FastPathRegistry.ts     NEW: ~30 lines; pure Map wrapper
+├── adapters/
+│   └── GravitoEngineAdapter.ts MODIFIED: fastPathRoute() delegates to engine.fastPath()
+├── InlineOrbit.ts              NEW: ~60 lines; implements GravitoOrbit from inline config
+├── runtime/
+│   ├── detection.ts            UNTOUCHED: NativeOrbitDetector extends it by importing from it
+│   └── NativeOrbitDetector.ts  NEW: ~40 lines; probes Bun capability flags
+├── PlanetCore.ts               MODIFIED: plugin() method; _nativeFeatures init; export new symbols
+└── index.ts                    MODIFIED: add FastPathRegistry, InlineOrbit, NativeOrbitDetector exports
+
+packages/astral/src/
+├── OpenApiGenerator.ts         MODIFIED: generateFromContracts() static overload
+├── SatelliteContractExtractor.ts NEW: ~80 lines; module inspection → AstralResource[]
+├── export-static.ts            MODIFIED: accept { contracts: AstralResource[] } as alternative input
+└── index.ts                    MODIFIED: export SatelliteContractExtractor
 ```
 
 ### Structure Rationale
 
-- **No file moves:** 352 import sites across packages depend on existing paths. Moves risk regressions.
-- **Export-only changes:** Converting `export *` to named exports in `index.ts` is backwards-compatible (existing named imports continue to work).
-- **Type unification in-place:** `GravitoConfig` and `ApplicationConfig` can be unified without changing file locations — just make one extend or re-use the other.
-- **setApp isolation:** Move to unexported internal use only; PlanetCore calls it internally. No consumer should call it directly.
+- **`FastPathRegistry` as sibling to `AOTRouter`:** Keeping it separate avoids entangling the bypass mechanism with the standard routing tree. `AOTRouter` owns matching logic; `FastPathRegistry` owns bypass registration. Single responsibility.
+- **`InlineOrbit` at `core/InlineOrbit.ts`:** Parallel to `ServiceProvider.ts` at the same level. Users composing inline plugins think in terms of the orbit system, not the engine internals.
+- **`NativeOrbitDetector` in `core/runtime/`:** Runtime detection is already the concern of `core/runtime/detection.ts`. The new file extends that concern without moving unrelated code.
+- **`SatelliteContractExtractor` in `astral/`:** OpenAPI concerns belong in `@gravito/astral`, not `@gravito/core`. The extractor reads Satellite module shapes but produces `AstralResource[]` — an astral type, not a core type.
+
+---
 
 ## Architectural Patterns
 
-### Pattern 1: Star-to-Named Export Conversion
+### Pattern 1: Fast-Path Bypass
 
-**What:** Replace `export * from './module'` with explicit named export lists.
-**When to use:** Any barrel file in public API where the module has a stable, finite set of public symbols.
-**Trade-offs:** More verbose, but gives consumers precise IDE autocompletion, tree-shaking, and prevents accidental `@internal` symbol leakage.
+**What:** A secondary registration method on `Gravito` that stores a handler directly in `FastPathRegistry` — a flat `Map<string, BunHandler>`. When `Gravito.serveConfig()` builds the Bun.serve configuration, fast-path handlers are included in the `routes{}` object alongside AOT-compiled static routes. The difference: fast-path handlers skip the middleware chain, context pool, and DI resolution entirely. They are compiled once at registration time.
 
-**Example — exceptions/index.ts (current):**
-```typescript
-// CURRENT (star — opaque)
-export * from './AuthenticationException'
-export * from './AuthException'
-// ... 15 more
+**When to use:** High-frequency, zero-dependency infrastructure routes: `/health`, `/ping`, `/metrics`, `/favicon.ico`. The rule of thumb: if the handler body is a single `return new Response(...)` or equivalent, it qualifies for fast-path.
+
+**Trade-offs:** Zero middleware means zero CORS, zero auth enforcement, zero logging. A fast-path route must never process authenticated data or business logic. The explicit opt-in (`fastPath()` vs `get()`) prevents accidental misuse.
+
+**Integration point chain:**
+```
+Satellite registers fastRoute
+    ↓
+GravitoEngineAdapter.fastPathRoute(method, path, handler)
+    ↓
+Gravito.fastPath(method, path, handler)
+    ↓
+FastPathRegistry.set('get:/health', handler)
+    ↓
+Gravito.serveConfig() includes FastPathRegistry entries in routes{}
+    ↓
+Bun.serve({ routes: { '/health': handler, ...aotRoutes }, fetch: fallback })
 ```
 
-**Example — exceptions/index.ts (target):**
+**Example signature:**
 ```typescript
-// TARGET (named — explicit)
-export { AuthenticationException } from './AuthenticationException'
-export { AuthException } from './AuthException'
-export type { ExceptionOptions } from './GravitoException'
-export {
-  GravitoException,
-  ErrorCodes,
-  type ErrorCode,
-} from './GravitoException'
-// ... 14 more, each explicit
-```
+// Gravito engine (new method)
+fastPath(method: HttpMethod, path: string, handler: (req: Request) => Response | Promise<Response>): this
 
-**Impact on index.ts:** The main barrel's `export * from './exceptions'` line
-can remain a star export after `exceptions/index.ts` is cleaned up, OR it can
-be converted to a named block for maximum clarity. Named block preferred because
-it makes IDE "Go to Definition" deterministic.
-
-### Pattern 2: Config Type Unification via Extension
-
-**What:** `GravitoConfig` becomes the canonical config type. `ApplicationConfig`
-is made to extend it (or re-use its shared fields via intersection/Pick).
-**When to use:** Two config types with overlapping fields serving different
-abstraction layers of the same system.
-**Trade-offs:** Unification removes footgun of `logger`/`config` duplication;
-slight risk of unexpected field inheritance if one config has stricter semantics.
-
-**Example:**
-```typescript
-// PlanetCore.ts — GravitoConfig is the foundation
-export type GravitoConfig = {
-  logger?: Logger
-  config?: Record<string, unknown>
-  orbits?: (new () => GravitoOrbit)[] | GravitoOrbit[]
-  adapter?: HttpAdapter
-  container?: Container
-  observability?: ObservabilityConfig
-  observabilityProvider?: ObservabilityProvider
-}
-
-// Application.ts — ApplicationConfig re-uses shared fields
-export interface ApplicationConfig extends Pick<GravitoConfig, 'logger' | 'config'> {
-  basePath: string
-  configPath?: string
-  providersPath?: string
-  env?: 'development' | 'production' | 'testing'
-  providers?: ServiceProvider[]
-  autoDiscoverProviders?: boolean
+// InlineOrbit config
+{
+  name: 'ops',
+  fastRoutes: [
+    { method: 'GET', path: '/health', handler: () => new Response('ok') }
+  ]
 }
 ```
 
-This is backwards-compatible — all existing `ApplicationConfig` fields survive.
+### Pattern 2: Static Contract Generation
 
-### Pattern 3: @internal Symbol Hiding
+**What:** `SatelliteContractExtractor` imports a Satellite module (without booting PlanetCore, without connecting to a database) and reads its exported `contracts` property. The contracts are plain objects — `AstralResource[]` or a shape convertible to that type. The extractor outputs `AstralResource[]` which `OpenApiGenerator.generateFromContracts()` consumes to produce an `OpenAPIV3_1.Document`.
 
-**What:** Symbols marked `@internal` in JSDoc should not appear in the public
-barrel's named export list. They remain in source files (for intra-package use)
-but are not re-exported from `index.ts`.
-**When to use:** Any utility that is framework-internal bootstrapping glue
-(`setApp`, `resetRuntimeAdapter`).
-**Trade-offs:** Breaking change if any consumer was calling `setApp` directly
-(unlikely — its sole caller is `PlanetCore.boot()`). Mitigated with deprecation
-notice in patch release before removal.
+**When to use:** CI pipeline (`bun run openapi:generate`), pre-commit spec drift detection, documentation deployment. The existing live-server approach (`core.router.compile()`) remains for development preview.
 
-**Implementation:**
-```typescript
-// helpers.ts — setApp stays in the file (PlanetCore.ts imports it directly)
-/** @internal — do not use outside @gravito/core */
-export function setApp(core: PlanetCore | null): void { ... }
+**Trade-offs:** Requires Satellite contracts to be statically expressible (no computed paths, no runtime-only Zod schemas). Satellites that build routes dynamically from database config cannot use static extraction — they fall back to the live approach. This is acceptable: the common case (CRUD Satellites) is static.
 
-// index.ts — REMOVE setApp from the exported list
-export {
-  Arr, abort, abortIf, abortUnless, app, blank, config,
-  DumpDieError, dd, dump, env, filled, hasApp, logger, router,
-  Str, /* setApp REMOVED */ tap, throwIf, throwUnless, value,
-} from './helpers'
+**Integration point:** New `generateStaticSite({ contracts })` overload in `astral/export-static.ts` accepts `{ contracts: AstralResource[] }` instead of (or in addition to) `{ core }`. The `OpenApiGenerator` already accepts an empty `routes[]` — the only gap is the extractor that converts Satellite module exports into `AstralResource[]`.
+
+**Data flow:**
+```
+CLI: bun run openapi:generate
+    ↓
+SatelliteContractExtractor.extract(import('./satellite-catalog'))
+    ↓ AstralResource[]
+OpenApiGenerator.generateFromContracts(resources)    // no routes[] needed
+    ↓ OpenAPIV3_1.Document
+writeFile('openapi.json', JSON.stringify(spec))
 ```
 
-`index.browser.ts` also exports `setApp` — remove it from that barrel too.
+### Pattern 3: Lite Satellite / Inline Plugin
 
-### Pattern 4: Exception Class Consolidation (JSDoc-Only)
+**What:** `InlineOrbit` is a concrete implementation of `GravitoOrbit` that accepts a plain configuration object (`InlineOrbitConfig`) instead of requiring a class hierarchy, ServiceProvider, and directory structure. `PlanetCore.plugin(config)` is a convenience method that instantiates `InlineOrbit` and calls `.install(this)`.
 
-**What:** `AuthException` (abstract) and `AuthenticationException` (concrete)
-serve different roles but their similar names cause confusion.
+**When to use:** Single-file utilities, ops endpoints, feature-flagged routes, experimental handlers. A plugin that fits in one function or fewer than 5 routes. If it grows beyond that, promote it to a full Satellite.
 
-Current reality:
-- `AuthException` = abstract base class, used by `fortify` and `sentinel` via extension
-- `AuthenticationException` = concrete "401 unauthenticated" class, used by `sentinel` directly
+**Promotion path:** Inline plugin → copy routes to `satellites/<domain>/` directory → delete plugin entry from `gravito.config.ts`. The migration preserves all route definitions.
 
-Consolidation strategy — **rename, not remove** (backwards-compatible):
-- Keep `AuthException` as-is (downstream packages extend it — cannot remove without breaking)
-- Keep `AuthenticationException` as-is (sentinel imports it directly)
-- Add JSDoc to each class explicitly documenting their role difference
-- Add `@deprecated` alias pattern if desired (no new alias needed — the naming is the only issue)
+**Trade-offs:** No DI into the inline handler (receives raw `GravitoContext`, not container-resolved services). No Signal emit/subscribe. No message services. These limitations are intentional guards against over-using the inline pattern.
 
-No file deletion required. The consolidation is documentation plus JSDoc clarification.
-
-### Pattern 5: Container.make() Type Inference Improvement
-
-**What:** Replace `any` return type on `Container.make()` with generic inference.
-**When to use:** DI containers where service keys map to known types.
-**Trade-offs:** Full type inference requires a ServiceMap generic on Container,
-which is a moderate API surface change. Lighter approach: overload signatures
-for specific known keys.
-
-**Example (lighter approach — no breaking change):**
+**Example usage in gravito.config.ts:**
 ```typescript
-// Container.ts
-export class Container {
-  make<K extends keyof ServiceMap>(key: K): ServiceMap[K]
-  make(key: string): unknown  // fallback for unknown keys
-  make(key: string): unknown {
-    // implementation
+// gravito.config.ts
+export default {
+  plugins: [
+    {
+      name: 'ops',
+      routes: [
+        { method: 'GET', path: '/version', handler: (c) => c.json({ version: '2.2.0' }) }
+      ],
+      fastRoutes: [
+        { method: 'GET', path: '/health', handler: () => new Response('ok') }
+      ]
+    }
+  ]
+}
+```
+
+### Pattern 4: Native Orbit Detection
+
+**What:** `NativeOrbitDetector` is a stateless utility module (not a class) called exactly once during `PlanetCore` construction. It returns a `NativeFeatures` record of boolean flags. Orbits query these flags in their `install()` method to select between a Bun-native implementation and a universal fallback.
+
+**Why this matters for v2.2.0:** `BunHasher` already hardcodes `Bun.password` calls. Other Orbits (e.g., a future storage orbit using `Bun.file`) need a consistent pattern for detecting capability availability. `NativeOrbitDetector` makes that pattern explicit and testable.
+
+**When to use:** Any Orbit that has a Bun-native path and a Node/universal fallback. Currently: hashing (`fortify`), crypto operations (`sentinel`), file I/O in any Orbit. Not needed if the Orbit is Bun-only and the codebase has no Node target.
+
+**Trade-offs:** Detection at boot time means the decision is made once and cached. If a Bun update adds a new API at runtime (impossible in practice), the detection would be stale until restart. Acceptable.
+
+**Example structure:**
+```typescript
+// NativeOrbitDetector.ts
+export interface NativeFeatures {
+  hasPassword: boolean      // Bun.password.hash/verify
+  hasCryptoHasher: boolean  // Bun.CryptoHasher
+  hasFileAPI: boolean       // Bun.file()
+  hasTestAPI: boolean       // Bun.jest / bun:test
+}
+
+export function detectBunCapabilities(): NativeFeatures {
+  const isBun = typeof Bun !== 'undefined'
+  return {
+    hasPassword: isBun && typeof (Bun as any).password?.hash === 'function',
+    hasCryptoHasher: isBun && typeof (Bun as any).CryptoHasher === 'function',
+    hasFileAPI: isBun && typeof (Bun as any).file === 'function',
+    hasTestAPI: isBun && typeof (Bun as any).jest !== 'undefined',
   }
 }
 ```
 
-**Example (heavier approach — generic Container):**
-```typescript
-export class Container<TServices extends Record<string, unknown> = Record<string, unknown>> {
-  make<K extends keyof TServices>(key: K): TServices[K]
-}
-```
-The heavier approach is the correct long-term pattern but requires updating
-all `new Container()` call sites to provide a type parameter — a broader refactor
-best done as a dedicated phase.
+---
 
 ## Data Flow
 
-### Export Resolution Flow (Current — Problematic)
+### Request Flow — Standard vs Fast-Path
 
 ```
-Consumer: import { AuthException } from '@gravito/core'
-    |
-    v
-index.ts: export * from './exceptions'
-    |
-    v
-exceptions/index.ts: export * from './AuthException'
-                     export * from './AuthenticationException'   <-- ambiguous hop
-    |
-    v
-AuthException.ts: export abstract class AuthException
-AuthenticationException.ts: export class AuthenticationException
+Incoming Request
+      ↓
+Bun.serve (configured by Gravito.serveConfig())
+      │
+      ├── routes{} match (includes fast-path + AOT-compiled static)
+      │       │
+      │       ├── Fast-path handler → direct Response (zero middleware overhead)
+      │       │
+      │       └── AOT-compiled static → pre-compiled middleware chain → FastContext → Response
+      │
+      └── no routes{} match → fetch() fallback
+              ↓
+          AOTRouter.match() (dynamic Radix Tree)
+              ↓
+          Context Pool → acquire FastContext
+              ↓
+          compileMiddlewareChain (cached per route version)
+              ↓
+          GravitoHandler (may use DI via closure over Container)
+              ↓
+          Context Pool → release → Response
 ```
 
-Problem: IDE cannot distinguish the two without reading both files. "Go to
-Definition" lands on `exceptions/index.ts` then requires a second hop.
-
-### Export Resolution Flow (Target — Named)
+### OpenAPI Generation — Static (new) vs Live (existing)
 
 ```
-Consumer: import { AuthException } from '@gravito/core'
-    |
-    v
-index.ts: export { AuthException, AuthenticationException, ... } from './exceptions'
-    |
-    v
-exceptions/index.ts: export { AuthException } from './AuthException'
-                     export { AuthenticationException } from './AuthenticationException'
-    |
-    v
-Direct file: IDE resolves in one hop. Clear separation visible.
+STATIC (new — CI-friendly, no server boot):
+
+  import('./satellite-catalog')      ← no Bun.serve, no atlas, no redis
+          ↓
+  SatelliteContractExtractor.extract(module)
+          ↓  AstralResource[]
+  OpenApiGenerator.generateFromContracts(resources)
+          ↓  OpenAPIV3_1.Document
+  writeFile('openapi.json', JSON.stringify(spec))
+
+
+LIVE (existing — unchanged):
+
+  core.router.compile()              ← requires booted PlanetCore + registered routes
+          ↓  AstralRoute[]
+  OpenApiGenerator.generateWithCache(routes)
+          ↓  OpenAPIV3_1.Document
+  Served at GET /docs/openapi.json
 ```
 
-### Config Unification Flow
+### Inline Plugin Registration Flow
 
 ```
-CURRENT (two parallel types — confusion):
-  PlanetCore.boot(config: GravitoConfig)      config.logger, config.config
-  new Application(options: ApplicationConfig)  options.logger, options.config
-
-TARGET (unified base — no duplication):
-  PlanetCore.boot(config: GravitoConfig)      [unchanged]
-  new Application(options: ApplicationConfig)  [extends GravitoConfig shared fields]
-                          |
-                          v
-         ApplicationConfig = { basePath, ...Pick<GravitoConfig, 'logger' | 'config'> }
+gravito.config.ts: plugins: [{ name, routes, fastRoutes }]
+        ↓
+PlanetCore.plugin(config)            ← new 3-line method
+        ↓
+new InlineOrbit(config).install(core)
+        ↓
+InlineOrbit reads config.routes[]    → core.adapter.route(method, path, handler)
+InlineOrbit reads config.fastRoutes[] → core.adapter.fastPathRoute(method, path, handler)
+                                              ↓
+                                   FastPathRegistry.set(key, handler)
 ```
 
-### setApp Internal Flow
+### Native Detection Flow
 
 ```
-CURRENT (public — footgun):
-  index.ts exports setApp
-  Consumer can call setApp(null) and break app()
+new PlanetCore(config)
+        ↓
+this._nativeFeatures = detectBunCapabilities()   ← called once in constructor
+        ↓ NativeFeatures cached on instance
 
-TARGET (internal — safe):
-  index.ts does NOT export setApp
-  PlanetCore.ts imports setApp directly: import { setApp } from './helpers'
-  setApp remains functional — only export visibility changes
+Later, during orbit boot:
+core.orbit(new FortifyOrbit())
+        ↓
+FortifyOrbit.install(core)
+        ↓
+const features = core.nativeFeatures           ← read cached flags
+if (features.hasPassword) {
+  // use BunHasher (Bun.password)
+} else {
+  // use bcrypt fallback
+}
 ```
 
-## Integration Points
+---
 
-### Files Modified (not created)
+## Integration Points — New vs Modified Explicit Breakdown
 
-| File | Change Type | Backwards Compatible? |
-|------|------------|----------------------|
-| `packages/core/src/index.ts` | Convert 6 `export *` to named exports; remove `setApp` from helper export list | YES — named imports continue to work |
-| `packages/core/src/index.browser.ts` | Remove `setApp` from helper export list; convert `export * from './events'` to named | YES |
-| `packages/core/src/exceptions/index.ts` | Convert 17 `export *` to 17 named export lines | YES |
-| `packages/core/src/PlanetCore.ts` | Expand `GravitoConfig` with `env` field for parity with `ApplicationConfig` | YES (additive) |
-| `packages/core/src/Application.ts` | `ApplicationConfig` extends/picks from `GravitoConfig` | YES if field types match |
-| `packages/core/src/Container.ts` | Overload `make()` for better inference | YES if overload is additive |
-| `packages/core/src/exceptions/AuthException.ts` | JSDoc clarification only | YES (no runtime change) |
-| `packages/core/src/exceptions/AuthenticationException.ts` | JSDoc clarification only | YES (no runtime change) |
+| Component | Status | Package | What Changes |
+|-----------|--------|---------|--------------|
+| `Gravito` | MODIFIED | `core` | `fastPath(method, path, handler)` method; `FastPathRegistry` as private field; include registry entries in `serveConfig()` |
+| `GravitoEngineAdapter` | MODIFIED | `core` | `fastPathRoute(method, path, handler)` delegates to `this.engine.fastPath()` |
+| `PlanetCore` | MODIFIED | `core` | `plugin(config): Promise<this>` method; `_nativeFeatures: NativeFeatures` field initialized in constructor; `get nativeFeatures()` accessor |
+| `core/index.ts` | MODIFIED | `core` | Export `FastPathRegistry`, `InlineOrbit`, `InlineOrbitConfig`, `NativeOrbitDetector`, `NativeFeatures`, `detectBunCapabilities` |
+| `OpenApiGenerator` | MODIFIED | `astral` | `generateFromContracts(resources: AstralResource[]): OpenAPIV3_1.Document` — no `routes[]` required |
+| `generateStaticSite()` | MODIFIED | `astral` | Accept `{ contracts: AstralResource[] }` as alternative to `{ core: PlanetCore }` |
+| `astral/index.ts` | MODIFIED | `astral` | Export `SatelliteContractExtractor` |
+| `FastPathRegistry` | NEW | `core/engine/` | `Map<string, BunHandler>` with `set/get/entries/has` |
+| `InlineOrbit` | NEW | `core/` | `implements GravitoOrbit`; accepts `InlineOrbitConfig` |
+| `NativeOrbitDetector` | NEW | `core/runtime/` | `detectBunCapabilities(): NativeFeatures` |
+| `SatelliteContractExtractor` | NEW | `astral/` | `extract(module): AstralResource[]` |
 
-### Files NOT Modified (downstream consumers)
+### Boundaries That Must Not Be Crossed
 
-| Package | Why Untouched |
-|---------|--------------|
-| `packages/fortify/src/errors/FortifyError.ts` | `import { AuthException }` continues to resolve correctly |
-| `packages/sentinel/src/errors/SentinelError.ts` | `import { AuthException, ExceptionOptions }` continues to resolve correctly |
-| `packages/sentinel/src/AuthManager.ts` | `import { AuthenticationException }` continues to resolve correctly |
-| All 50+ Orbit packages | Named exports from `@gravito/core` are additive — no breakage |
+| Boundary | Rule | Reason |
+|----------|------|--------|
+| Fast-path handlers ↔ DI container | Fast-path handlers MUST NOT call `core.container.make()` | Defeats the bypass; defeats testing isolation |
+| `InlineOrbit` ↔ Signal bus | Inline plugins MUST NOT emit or subscribe to Signal events | Requires fully booted Satellite context |
+| `SatelliteContractExtractor` ↔ database / Bun.serve | Extractor import MUST NOT trigger atlas connections or server startup | Static generation must be zero-side-effect |
+| `FastPathRegistry` ↔ `AOTRouter` | Registry is a sibling Map, not merged into `AOTRouter` | Avoids entangling bypass logic with standard routing match logic |
+| `NativeOrbitDetector` ↔ orbit `install()` timing | Detection runs in `PlanetCore` constructor; flags available by the time any `orbit()` call reaches `install()` | Calling detection inside `install()` would duplicate work |
 
-### Internal Boundaries Affected
+### Components NOT Modified
 
-| Boundary | Current Communication | Post-DX |
-|----------|-----------------------|---------|
-| `index.ts` → `exceptions/` | Star export (opaque) | Named export block (explicit) |
-| `index.ts` → `helpers` | Includes `setApp` (footgun) | `setApp` removed from public list |
-| `index.ts` → `testing/` | Star export (leaks test internals) | Named: `HttpTester`, `TestResponse` |
-| `index.ts` → `adapters/bun/` | Star export (leaks 7 classes) | Named: explicit list of public API |
-| `Application.ts` <-> `PlanetCore.ts` | Two independent config types | `ApplicationConfig` references `GravitoConfig` fields |
-| `PlanetCore.ts` → `helpers` | Internal import of `setApp` | Same — import path unchanged |
+| Component | Why Untouched |
+|-----------|--------------|
+| `AOTRouter` | `FastPathRegistry` is a sibling; no AOT logic changes needed |
+| `BunNativeAdapter` | Legacy adapter; active path uses `GravitoEngineAdapter` |
+| `BunHasher` | Already uses `Bun.password` natively; `NativeOrbitDetector` documents the pattern but does not change the hasher |
+| All Satellite packages | Satellite isolation principle — core changes propagate via the adapter/orbit interface, not direct satellite modification |
+| `signal` package | No interaction with fast-path or inline plugin features |
 
-## Build Order
-
-The DX improvements have no circular dependency risk. Recommended execution order:
-
-```
-Phase 1: exceptions/index.ts  (isolated, no downstream risk)
-    |
-Phase 2: helpers / setApp removal from index.ts + index.browser.ts
-    |
-Phase 3: testing/* and adapters/bun/* named exports in index.ts
-    |
-Phase 4: GravitoConfig / ApplicationConfig unification
-    |
-Phase 5: Container.make() inference improvement
-    |
-Phase 6: AuthException / AuthenticationException JSDoc clarification
-    |
-Phase 7: Full typecheck + test run (bun run typecheck && bun test)
-```
-
-**Rationale for ordering:**
-- Phases 1-3 are pure export-surface changes. Zero runtime behavior change. Run `bun run typecheck` between each phase.
-- Phase 4 modifies type definitions consumed by Application.ts — must come after phases 1-3 are stable to avoid compounding errors.
-- Phase 5 changes Container generics — highest risk of cascade type errors across all 50+ packages that use `Container`. Do last before verification.
-- Phase 6 is documentation-only and can be done at any point, but placed last to avoid disrupting structural changes.
-- Phase 7 is the verification gate: `bun run typecheck && bun test`.
+---
 
 ## Anti-Patterns
 
-### Anti-Pattern 1: Removing AuthException to Eliminate Name Confusion
+### Anti-Pattern 1: Fast-Path for Business Logic Routes
 
-**What people do:** See two similar names and delete the abstract base, forcing
-all subtypes to extend `DomainException` directly.
-**Why it's wrong:** `FortifyError extends AuthException` and `SentinelError extends AuthException`
-across two separate packages. Removing `AuthException` is a breaking change to
-the public API of those packages. The `instanceof AuthException` check in
-consumer code would also break.
-**Do this instead:** Improve JSDoc on both classes to explain the role split.
-`AuthException` = "abstract category base for auth-domain exceptions".
-`AuthenticationException` = "concrete 401 Unauthenticated response exception".
+**What people do:** Register `/api/orders` as a fast-path route to reduce latency on a critical endpoint.
+**Why it's wrong:** Business routes require auth middleware, request validation, and DI-resolved services. Fast-path bypasses all three unconditionally. This is a security hole, not a performance win.
+**Do this instead:** Use standard `get('/api/orders', authMiddleware, handler)`. Reserve fast-path exclusively for ops/infrastructure endpoints that have no auth or business logic requirements.
 
-### Anti-Pattern 2: Using `export * as namespace` for All Sub-modules
+### Anti-Pattern 2: Growing an Inline Plugin Beyond Its Scope
 
-**What people do:** Convert all `export *` to `export * as namespace` to avoid
-name collisions.
-**Why it's wrong:** The `engine` namespace export is intentional because
-`@gravito/core/engine` is a documented sub-path used for direct Bun-only
-performance work. Using namespaces for `exceptions` or `helpers` would break
-all consumer code that does `import { GravitoException } from '@gravito/core'`.
-**Do this instead:** Named exports at the barrel level. Namespaces only where
-there is a deliberate "module boundary" sub-path export in `package.json`.
+**What people do:** Keep adding routes and service registrations to an `InlineOrbit` config because the API is convenient.
+**Why it's wrong:** Inline plugins have no test fixture structure, no message services, no typed DI. Past three routes or any DI dependency, the inline format becomes harder to test than a proper Satellite.
+**Do this instead:** Promote to a full Satellite. Copy the inline routes to `satellites/<domain>/routes/`, create `ServiceProvider`, `MessageService`, and test fixtures. Delete the plugin entry from `gravito.config.ts`.
 
-### Anti-Pattern 3: Merging GravitoConfig and ApplicationConfig into One Type
+### Anti-Pattern 3: Using `SatelliteContractExtractor` at Request Time
 
-**What people do:** Merge both types into a single `GravitoConfig` because
-they share fields.
-**Why it's wrong:** `PlanetCore` and `Application` serve different use cases.
-`Application` has `basePath`, `providersPath`, `autoDiscoverProviders` which
-are enterprise filesystem concerns that `PlanetCore` deliberately does not have.
-Collapsing them forces `PlanetCore` users to provide filesystem paths.
-**Do this instead:** `ApplicationConfig extends Pick<GravitoConfig, ...>` — shared
-fields are typed once in `GravitoConfig`, `ApplicationConfig` adds its own fields.
+**What people do:** Call `SatelliteContractExtractor.extract()` inside a request handler to generate OpenAPI on demand.
+**Why it's wrong:** The extractor imports modules (cold-import cost), inspects their shape, and builds an AST-like structure. This is a build-time operation. Calling it per-request bypasses the `SpecCache` in `OpenApiGenerator` and adds significant latency to the first `/docs` request.
+**Do this instead:** Run the extractor in the build step. Cache the result as `openapi.json`. Serve it as a static file.
 
-### Anti-Pattern 4: Converting the Events Star Export
+### Anti-Pattern 4: Calling `detectBunCapabilities()` per Request
 
-**What people do:** Convert `export * from './events'` in browser entry to named
-exports and discover that `events/` has 20+ symbols.
-**Why it's wrong:** `events/` intentionally has a broad API (queue, circuit breaker,
-worker pool, backpressure, etc.). This is a legitimate grouping, not a DX problem.
-**Do this instead:** Leave `export * from './events'` as-is in both barrels.
-The DX problem is in `exceptions/`, `helpers/`, `testing/`, `adapters/bun/` — not events.
+**What people do:** Check native capability inside a handler to decide which hash function to call.
+**Why it's wrong:** Runtime capabilities do not change between requests. Repeated detection is wasted work.
+**Do this instead:** Call `detectBunCapabilities()` once in `install(core)`, store the result on the Orbit instance (`this.features = detectBunCapabilities()`), and branch on `this.features.hasPassword` in handler code.
 
-### Anti-Pattern 5: Suppressing the setApp Type Error with @ts-ignore
+### Anti-Pattern 5: Merging `FastPathRegistry` into `AOTRouter`
 
-**What people do:** When removing setApp from the public barrel causes a type error
-in a test or usage file, silence it with `@ts-ignore`.
-**Why it's wrong:** `@ts-ignore` is banned by the codebase's TypeScript strict rules.
-**Do this instead:** Audit `grep -rn "setApp"` before removing. The only known
-caller is `PlanetCore.ts` itself which imports directly from `./helpers`, not from
-the public barrel. Confirm zero external callers before removing.
+**What people do:** Add a `fastPathRoutes` map directly inside `AOTRouter` to keep routing logic in one place.
+**Why it's wrong:** `AOTRouter` owns request-time matching with middleware resolution. `FastPathRegistry` owns compile-time bypass registration. Merging them forces `AOTRouter.match()` to handle both code paths, complicating the hot path and making the bypass harder to reason about independently.
+**Do this instead:** Keep them as separate fields on `Gravito`. `serveConfig()` merges their outputs when building the Bun.serve configuration.
+
+---
 
 ## Scaling Considerations
 
-This is a public API refactor, not a runtime scale concern. Risk surface:
+| Concern | Current State (v2.1.0) | With v2.2.0 |
+|---------|----------------------|-------------|
+| High-frequency route throughput | AOT Map O(1) + Bun.serve `routes{}` offload | Fast-path eliminates context pool + middleware overhead; suitable for `/health` at 10k+ req/s |
+| OpenAPI spec generation | Runtime-only; requires booted server | Also available at build/CI time via static extraction |
+| Plugin registration overhead | Full `ServiceProvider` + directory structure for every plugin | `InlineOrbit` skips directory and provider lifecycle; suitable for <5 routes |
+| Bun API compatibility | `BunHasher` uses `Bun.password` directly; no fallback detection | `NativeOrbitDetector` makes fallback explicit; other Orbits can adopt the pattern |
+| Module coupling visibility | Implicit; no tooling | `DependencyGraph` (Phase 5 optional) adds CLI output; zero runtime overhead |
 
-| Risk | Scope | Mitigation |
-|------|-------|------------|
-| Type errors after named export conversion | 352 import sites | Run `bun run typecheck` after each phase |
-| `instanceof AuthException` breaks if class removed | fortify + sentinel | Do not remove — only clarify via JSDoc |
-| `setApp` callers outside core | Consumer packages | `grep -rn "setApp"` audit before removal |
-| `Container.make()` overload cascade errors | 50+ packages using Container | Last phase + full typecheck gate |
-| `index.browser.ts` diverges from `index.ts` | Browser consumers | Mirror every change in both barrels |
+---
+
+## Suggested Build Order
+
+Ordered by dependency. Each phase is independently buildable and testable.
+
+### Phase 1 — Foundation Utilities (no dependencies on each other or on modified components)
+
+1. **`FastPathRegistry`** (~30 lines): pure `Map` wrapper with typed `BunHandler`. No imports beyond TypeScript types. Unit test: `set/get/entries/has`.
+2. **`NativeOrbitDetector`** (~40 lines): imports `getRuntimeKind` from existing `detection.ts`; adds capability-level probing. Unit test: mock `typeof Bun` via `globalThis` override.
+
+Rationale: Both are leaf nodes in the dependency graph. Building them first unblocks all subsequent phases.
+
+### Phase 2 — Core Engine Integration
+
+3. **`Gravito.fastPath()` + `serveConfig()` update**: add `FastPathRegistry` as a private field; wire it into the `routes{}` object built by `serveConfig()`. Integration test: register a fast-path route, call `serveConfig()`, verify the handler is present in `routes{}` and invoked directly without middleware.
+4. **`GravitoEngineAdapter.fastPathRoute()`**: one-line delegation to `this.engine.fastPath()`. Integration test: call through `PlanetCore` adapter interface.
+
+Rationale: These two changes touch the active request path. They must have test coverage before Phase 3 builds on them.
+
+### Phase 3 — PlanetCore Plugin API
+
+5. **`InlineOrbit`** (~60 lines): implements `GravitoOrbit`; reads `InlineOrbitConfig.routes` and `fastRoutes`; calls `core.adapter.route()` and `core.adapter.fastPathRoute()`. Unit test: boot a minimal `PlanetCore` with an inline plugin; assert routes are registered; assert a fast-route is in `FastPathRegistry`.
+6. **`PlanetCore.plugin()`**: three-line wrapper: `new InlineOrbit(config).install(this)`. Test: call `plugin()` on a live `PlanetCore` instance.
+7. **`PlanetCore` constructor** update: call `detectBunCapabilities()` and store on `this._nativeFeatures`; add `get nativeFeatures()` accessor.
+
+Rationale: `InlineOrbit` depends on Phase 2 work (`fastPathRoute()` must exist). `PlanetCore` changes are last in this phase to avoid rebuilding during Phase 2 iteration.
+
+### Phase 4 — Static OpenAPI
+
+8. **`SatelliteContractExtractor`** (~80 lines): imports a module, checks for `contracts` export, converts to `AstralResource[]`. Unit test: fixture module with a known contract shape; assert correct `AstralResource` structure.
+9. **`OpenApiGenerator.generateFromContracts()`**: thin wrapper calling the existing `generate()` with an empty `routes[]`. Test: generate a spec from a fixture `AstralResource[]`; assert valid OpenAPI 3.1 output.
+10. **`generateStaticSite()` overload**: detect `{ contracts }` vs `{ core }` input; branch accordingly. Test: generate a static site file tree without instantiating `PlanetCore`.
+
+Rationale: `@gravito/astral` is an optional dependency of `@gravito/core`. Its changes do not block Phases 1-3 and can be developed in parallel by a second contributor.
+
+### Phase 5 — Exports and Tooling (cleanup)
+
+11. **`core/index.ts` exports**: add `FastPathRegistry`, `InlineOrbit`, `InlineOrbitConfig`, `NativeOrbitDetector`, `NativeFeatures`, `detectBunCapabilities`. Run `publint` to verify exports map stays valid.
+12. **`astral/index.ts` exports**: add `SatelliteContractExtractor`. Run `publint`.
+13. **`DependencyGraph`** (optional, additive): walk `core._orbits` at runtime; emit DOT/JSON; exposed as a CLI command. Zero integration surface with Phases 1-4.
+
+---
 
 ## Sources
 
-- Direct codebase analysis: `packages/core/src/index.ts` (875 lines, full read 2026-03-29)
-- Direct codebase analysis: `packages/core/src/exceptions/index.ts`, `AuthException.ts`, `AuthenticationException.ts`
-- Direct codebase analysis: `packages/fortify/src/errors/FortifyError.ts`, `packages/sentinel/src/errors/SentinelError.ts`
-- Direct codebase analysis: `packages/core/src/PlanetCore.ts` (GravitoConfig type), `packages/core/src/Application.ts` (ApplicationConfig type)
-- Direct codebase analysis: `packages/core/package.json` (exports map)
-- Import count: 352 files importing from `@gravito/core` (confirmed via grep)
-- Confidence: HIGH — all findings from live source, no training-data inference
+- Direct codebase inspection (2026-03-30):
+  - `packages/core/src/engine/Gravito.ts` (AOT router, `serveConfig()`, object pool)
+  - `packages/core/src/engine/AOTRouter.ts` (static Map, `getNativeRoutes()`)
+  - `packages/core/src/adapters/GravitoEngineAdapter.ts`
+  - `packages/core/src/adapters/bun/BunNativeAdapter.ts`
+  - `packages/core/src/PlanetCore.ts` (micro-kernel, `GravitoOrbit` interface, `orbit()` method)
+  - `packages/core/src/security/Hasher.ts` (existing `BunHasher` pattern for `Bun.password`)
+  - `packages/core/src/runtime/detection.ts` (`getRuntimeKind`, `getRuntimeEnv`)
+  - `packages/astral/src/OpenApiGenerator.ts` (`generate()`, schema caching, route matching)
+  - `packages/astral/src/export-static.ts` (`generateStaticSite()`, `core.router.compile()` usage)
+  - `packages/photon/src/photon.ts` (Photon wraps `BunNativeAdapter`)
+- Project context: `.planning/PROJECT.md` (v2.2.0 milestone goals confirmed)
+- Architecture reference: `docs/claude/design.md` (Galaxy Architecture principles, dependency flow rules)
 
 ---
-*Architecture research for: @gravito/core DX improvements (v2.1.0)*
-*Researched: 2026-03-29*
+
+*Architecture research for: Gravito v2.2.0 — Fast-Path routing, Static OpenAPI, Lite Satellite, Bun-Native abstractions*
+*Researched: 2026-03-30*

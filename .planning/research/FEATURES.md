@@ -1,27 +1,25 @@
 # Feature Research
 
-**Domain:** TypeScript framework DX (developer experience) — @gravito/core v2.1.0
-**Researched:** 2026-03-29
-**Confidence:** HIGH — codebase audit + verified patterns from Hono, Elysia, AdonisJS, Effect, NestJS
+**Domain:** TypeScript framework — performance bypass, OpenAPI generation, lightweight plugins, Bun-native integration
+**Researched:** 2026-03-30
+**Confidence:** HIGH (codebase-verified) / MEDIUM (ecosystem patterns from ElysiaJS, Fastify, Hono official docs)
 
 ---
 
-## Context: What Was Already Built
+## Context: What Already Exists
 
-The v2.0.0 milestone shipped a production-ready error model and resilience layer. v2.1.0 targets
-**developer experience improvements only** — no new runtime features. DX in this context means:
-the experience of a developer writing code against `@gravito/core` API for the first time or
-the fifth time; what they see in their editor, what they read in docs, and how fast they get unblocked.
+This is milestone v2.2.0 — a subsequent milestone on top of a stable v2.1.0 framework. The following are already built and must not be re-implemented:
 
-Known footguns audited from codebase (confirmed, HIGH confidence):
-
-| Footgun | Evidence | Impact |
-|---------|----------|--------|
-| `Router.ts:610` — `console.log` leaks on every route registration | Direct codebase read | Every request handler registration pollutes stdout in prod |
-| `Router.ts:436` — `throw new Error('ModelNotFound')` string-compare sentinel | Direct codebase read | Brittle: string comparison `=== 'ModelNotFound'` on line 475; any typo silently breaks 404 handling |
-| `AuthException` vs `AuthenticationException` naming conflict | Both exist in `exceptions/` | Confusing hierarchy — `AuthException` is abstract base, `AuthenticationException` is concrete; names don't communicate this clearly |
-| `core.services` public deprecated `Map` | `PlanetCore.ts:203` has `@deprecated Use core.container instead` | Deprecated API is still public, no runtime warning, leads new devs to wrong pattern |
-| 69 occurrences of `: any` / `<any>` in public-facing src | Grep count across 31 files | Type safety holes surface as `any` propagation into user code |
+- `PhotonOrbit` + `BunNativeAdapter` + `Gravito` engine (`AOTRouter`, `ObjectPool`, `RadixRouter`)
+- `Gravito` engine already has `isPureStaticApp` fast-path flag and `compileMiddlewareChain` optimization
+- Full middleware chain pipeline with `GravitoMiddleware`, `GravitoHandler`
+- `Satellite` system with `ServiceProvider`, `GravitoOrbit.install()`, lifecycle hooks
+- Zod-based validation on routes
+- `Container` with typed `ServiceMap` DI (declaration merging)
+- `HashManager` in `@gravito/sentinel` using `getPasswordAdapter()` from `@gravito/core`
+- `RuntimeAdapter` abstraction in `packages/core/src/runtime/` (wraps Bun fs, crypto, archive, password)
+- `GravitoException` three-layer error hierarchy across 38 packages
+- `GravitoConfig.orbits` type already accepts both `(new () => GravitoOrbit)[]` and `GravitoOrbit[]`
 
 ---
 
@@ -29,98 +27,101 @@ Known footguns audited from codebase (confirmed, HIGH confidence):
 
 ### Table Stakes (Users Expect These)
 
-Features any production TypeScript framework must have. Missing these = framework feels amateurish.
+Features users assume exist when a framework advertises Bun-native performance and API-first architecture.
+Missing any of these = the framework feels incomplete for its stated v2.2.0 goals.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| **Zero-noise stdout in production** | Frameworks never log to stdout in library code — Hono, Elysia, Express all use logger hooks, not direct `console.log` | LOW | One fix: `Router.ts:610` — replace with `this.logger?.debug(...)` or remove entirely |
-| **Typed exception hierarchy that is self-documenting** | NestJS, AdonisJS, Effect all use names that communicate role — `HttpException`, `NotFoundException`; two "auth" classes with similar names breaks this | LOW | Rename `AuthException` → `AuthBaseException` or merge; JSDoc `@deprecated` on old name |
-| **No deprecated API in discoverable surface** | Star-exported deprecated APIs appear in IDE autocomplete, training devs into wrong patterns | LOW | Add `@deprecated` JSDoc annotation + TypeScript `@deprecated` tag on `services` property; consider `@internal` move |
-| **Actionable runtime error messages** | Hono prints "Expected a Response object" with the handler signature; Elysia prints the mismatched type. Raw `new Error('ModelNotFound')` as sentinel value gives IDE-opaque errors | MEDIUM | Replace string sentinel with `throw new ModelNotFoundException(param, value)` directly; remove intermediate string throw |
-| **Stable, discoverable public API** | Star exports (`export *`) from large barrel files break IDE completion ranking, slow tsserver, and hide what's truly public — documented by Vercel, AdonisJS, and TypeScript core team | MEDIUM | Converge `export *` usages (currently 15+ in `index.ts`) into explicit named exports for the public surface |
-| **README that matches current API** | EventManager/HookManager public methods documented in README must match source exactly; mismatches are #1 new-dev frustration (NestJS community issues, AdonisJS v6 launch post-mortem) | LOW | Audit README API section against source; sync or remove stale examples |
-| **Consistent JSDoc across public API** | IDE tooltip is the primary discovery surface; inconsistent or missing `@param`/`@returns`/`@example` forces devs to read source | LOW | Already 100% covered (v1.4.0), but language consistency (Chinese/English mix) breaks IDE experience |
+| **Fast-path route registration API** | Any Bun-native performance framework is expected to expose a way to bypass DI/lifecycle for high-frequency routes. ElysiaJS 1.3 does this via AOT `compileHandler` + Bun native router dual strategy. Bun's own `Bun.serve({ routes: { "/path": handler } })` is direct with zero overhead | MEDIUM | `Gravito` engine already has an internal `isPureStaticApp` fast-path. The missing piece is a **public API** on `PhotonOrbit` that registers a route bypassing the DI context construction step, wiring directly to a raw `(req: Request) => Response | Promise<Response>` Bun-compatible signature |
+| **`Bun.password` natively called in Sentinel** | Sentinel's `HashManager` calls `getPasswordAdapter()` which returns a `RuntimePasswordAdapter`. The Bun-specific adapter must call `Bun.password.hash/verify` natively. If it falls through to a Node.js shim (e.g., bcryptjs), the hashing is 10-50x slower and misses argon2id native support | LOW | Direct audit required: `packages/core/src/runtime/adapter-bun.ts` — verify `createPasswordAdapter()` uses `Bun.password`. If it does, this is a capability-logging story. If it doesn't, it's a bug fix |
+| **`Bun.CryptoHasher` for non-password hashing** | Frameworks targeting Bun must avoid Node's `crypto` module where Bun has native replacements. `Bun.CryptoHasher` supports SHA-256, SHA-512, BLAKE2b, etc. | LOW | `packages/core/src/ffi/NativeHasher.ts` and `packages/core/src/security/Hasher.ts` — verify the detection path uses `Bun.CryptoHasher` on Bun runtime |
+| **OpenAPI spec output from registered Zod schemas** | Frameworks with built-in Zod validation are expected to generate OpenAPI 3.x docs in 2025. `@hono/zod-openapi` and `@elysiajs/swagger` both solve this. Gravito has Zod validation at the route level but no schema-to-spec pipeline | HIGH | Requires: (1) route registry that retains Zod schema metadata, (2) a schema-walking generator using `zod-to-openapi` or `@asteasolutions/zod-to-openapi`, (3) output as either a runtime endpoint or a build-time artifact |
+| **Route-level opt-out of middleware** | FastAPI, ElysiaJS (via `parse: 'none'` and per-hook guards), and Hono's `.use()` scoping all support per-route middleware exclusion. Users registering fast-path routes expect to say "skip global auth for this health-check route" | MEDIUM | `BunNativeAdapter.useScoped()` partially addresses this via path-scoping. The fast-path registration pattern should codify bypass as a first-class, explicitly typed option |
 
 ### Differentiators (Competitive Advantage)
 
-Features that distinguish Gravito's DX from competitors — not required, but meaningful.
+Features that distinguish Gravito from ElysiaJS/Hono for the Bun ecosystem. Aligned with the v2.2.0 milestone goal statement.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| **Actionable error messages with fix suggestions** | Effect and Zod lead the ecosystem here — errors say "Did you mean X?" or "You likely forgot to call boot()" rather than raw stack traces. No framework does this systematically for DI/config errors | HIGH | Requires error constructor to accept `suggestion?: string`; applies to DI resolution failures, config errors, lifecycle errors |
-| **`orbit` / `register` / `use` decision guide** | AdonisJS v6 explicitly called out in their launch notes that `container.bind` vs `singleton` vs service providers confused devs; same problem exists here with `orbit()`, `register()`, `use()` having subtle behavioral differences | LOW | A single "when to use which" doc section + JSDoc cross-references pays huge dividends |
-| **Type-safe container with zero `any` in public generics** | tsyringe/typedi still use `any` in resolution path; Gravito's `Container<ServiceMap>` augmentation pattern is ahead — but 69 `any` usages in public src undercut this story | HIGH | Requires audit of `HookManager`, `Router`, `TestResponse`, `engine/types.ts` for `: any` in callable public API |
-| **v2-correct examples** | Hono's playground examples always use latest API; Elysia ships working examples in the repo. Gravito has 20+ example directories; if they use v1 patterns, they actively mislead | LOW | Update 3-5 key examples (`ecommerce-mvc`, `blog-mvc`, `auth-verification`) to v2 API |
-| **Troubleshooting FAQ covering top 5 bootstrap errors** | NestJS has an official FAQ page covering DI errors, circular deps, etc.; AdonisJS added a "common gotchas" page in v6. These dramatically reduce issue noise | LOW | 5 entries in a troubleshooting doc: boot() order, orbit vs register, ModelNotFound setup, container augmentation, GravitoConfig typing |
+| **Inline `gravito.config.ts` Satellite (Lite Satellite)** | ElysiaJS supports `new Elysia().use((app) => app.get(...))` inline functional callbacks. Fastify supports anonymous `register(async (instance) => ...)`. Gravito requires a full directory + `ServiceProvider` class. An inline API lets developers prototype domain logic without boilerplate, or add small cross-cutting concerns without a full Satellite | LOW-MEDIUM | `GravitoConfig.orbits` type already accepts `GravitoOrbit[]` (object literals). If `PlanetCore.boot()` handles plain objects alongside class constructors, this may be a near-zero-change addition. Constraint: inline Satellites should only have `install(core)` — no two-phase register/boot |
+| **Static OpenAPI generation (build-time CLI)** | Hono has `@hono/zod-openapi` (runtime); ElysiaJS has `@elysiajs/swagger` (runtime Swagger UI). Neither generates a **static artifact at build time**. A `gravito openapi:generate` CLI command that emits `openapi.json` is a genuine differentiator for CI/CD pipelines where the spec becomes an auditable artifact in version control | HIGH | Depends on route schema metadata registry. Once metadata is collected, `@asteasolutions/zod-to-openapi` (MEDIUM confidence, widely cited) can walk it. The static-file output is the differentiator; a runtime endpoint is table stakes |
+| **Boot-time native capability report** | Gravito is silent about which Bun APIs it uses. Surfacing this at boot ("Sentinel: using Bun.password (argon2id, native)" vs "Sentinel: using bcryptjs fallback (Node.js)") differentiates Gravito's operational transparency and makes runtime behavior auditable without reading source code | LOW | Requires: detection already present in `RuntimeAdapter`; add structured log output at `core.boot()` via the existing `Logger` interface |
+| **Dependency graph visualization** | No TypeScript framework ships this as a first-party CLI tool. Gravito's monorepo already has `scripts/generate-dependency-graph.ts`. Exposing an application-level version (`gravito deps:graph`) that maps Orbit/Satellite coupling is a genuine differentiator for large apps debugging module coupling | MEDIUM | Scope: application-level module graph (which Orbits depend on which), not package-level. The existing script provides a reference implementation pattern |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| **Global `export *` expansion** | Seems to make "everything available" from one import | Barrel files slow tsserver (documented TypeScript perf issue), break tree-shaking, collapse discriminated namespace info in autocomplete | Explicit named exports grouped by category in index.ts — same discoverability, better tooling |
-| **Runtime type validation on every API call** | Elysia does this with Eden; looks like DX improvement | Adds latency; Gravito targets Bun performance story; type-level validation (compile-time) is the correct layer for a framework | Keep validation at Zod/schema layer in user code; framework trusts TypeScript at runtime |
-| **Automatic deprecation migration scripts** | Seems helpful for `services` → `container` migration | High maintenance burden; scripts bitrot faster than docs; generates false confidence | Clear `@deprecated` JSDoc + one-line README migration note is sufficient |
-| **Universal i18n on exception messages** | `GravitoException` already has `i18nKey`; tempting to localize all error text | Framework errors should be in English for searchability and GitHub issues; i18n is for end-user messages, not developer errors | Reserve `i18nKey` for user-facing exception messages propagated to HTTP responses; internal errors stay English |
-| **Auto-generated README from JSDoc** | TypeDoc can do this; keeps docs "always up to date" | Auto-generated READMEs are verbose, miss narrative context, and look machine-generated — Hono and AdonisJS write READMEs by hand | Use TypeDoc for API reference site; hand-maintain the README's "why/how" narrative |
+| **Runtime OpenAPI spec regeneration on every request** | Seems convenient — always fresh, no build step | Schema walking is O(n) over all registered routes. On high-traffic APIs, even 5ms per request for spec generation adds up. Also causes cold-start spikes if done at first request | Generate once at app startup, cache in memory. Or better: `gravito openapi:generate` at build time as a static artifact |
+| **Inline Satellite with full two-phase lifecycle** | Developers want a "micro-Satellite" with all Satellite features (register + boot + event bus + health check) | Full lifecycle in an inline object requires the container to be partially initialized before the inline definition runs, violating the register→boot contract. Leads to initialization order bugs that are hard to debug | Inline Satellite has only `install(core)` — a single synchronous hook. Full lifecycle requires a full Satellite class |
+| **Fast-path as the default for all routes** | Performance-first developers ask "why not always bypass DI?" | Bypassing DI means no observability injection, no auth middleware, no error normalization via `GravitoException`. Applying this globally creates silent security/observability gaps that are hard to audit | Fast-path is explicitly opt-in per route. The standard path is the default |
+| **Auto-generate OpenAPI from TypeScript interface types (no Zod)** | Developers who don't use Zod schemas want the same doc DX | TypeScript types are erased at runtime. Generating OpenAPI from plain interfaces requires a build-time compiler plugin (`ts-json-schema-generator` or TypeDoc + custom transformer), adding significant toolchain complexity and maintenance burden | Require Zod schemas on routes that want OpenAPI output. Routes without schemas are undocumented in the spec |
+| **Bun-only removal of all Node.js compat layers** | Tempting since Bun is the primary runtime and compat layers add indirection | The existing `RuntimeAdapter` abstraction enables test environments (`bun test` can run against Node.js in CI), compatibility for downstream users deploying to Node.js, and future Deno support. Removing it would break 38 packages and violate the framework's stated multi-runtime goal | Ensure the Bun path is the hot path with zero overhead. Keep Node/Deno fallback but log a capability warning at boot |
 
 ---
 
 ## Feature Dependencies
 
 ```
-[Zero-noise stdout]
-    └── LOW — standalone, no deps
+[Fast-Path Route API]
+    └──requires──> [BunNativeAdapter direct handler signature (Request → Response)]
+    └──requires──> [Route registration flag: { fastPath: true }]
+    └──enhances──> [Bun.serve native throughput]
+    └──conflicts──> [Global middleware stack (intentional bypass)]
 
-[Typed exception hierarchy cleanup]
-    └── enables──> [Actionable error messages with fix suggestions]
-                       └── uses──> [Consistent JSDoc]
+[Static OpenAPI Generation]
+    └──requires──> [Route schema metadata registry (Zod schema stored at registration time)]
+    └──requires──> [@asteasolutions/zod-to-openapi or equivalent]
+    └──enables──> [gravito openapi:generate CLI command]
+    └──enables──> [Runtime /openapi.json endpoint (optional, lower priority)]
+    └──depends-on phase-order──> [Route schema metadata registry must ship first]
 
-[Stable named exports]
-    └── improves──> [IDE discoverability]
-    └── requires──> [Deprecated API cleanup]
+[Lite Satellite / Inline Plugin]
+    └──requires──> [PlanetCore.boot() handles plain GravitoOrbit objects (not just class constructors)]
+    └──type already supports──> [GravitoConfig.orbits: GravitoOrbit[] — check if boot() implements it]
+    └──enhances──> [gravito.config.ts DX]
+    └──conflicts──> [Full Satellite two-phase lifecycle in inline form]
 
-[v2 examples]
-    └── requires──> [README sync] (examples should match README)
+[Native Orbit Detection / Capability Report]
+    └──requires──> [RuntimeAdapter detection (already exists in packages/core/src/runtime/)]
+    └──requires──> [Logger at boot time (already exists: GravitoConfig.logger)]
+    └──enhances──> [Sentinel HashManager — verify Bun.password path]
+    └──standalone──> [No blocking dependencies; can ship in Phase 1]
 
-[Troubleshooting FAQ]
-    └── requires──> [orbit/register/use decision guide]
-    └── informed-by──> [Typed exception hierarchy cleanup]
+[Dependency Graph Visualization]
+    └──requires──> [Orbit/Satellite registry awareness at boot time]
+    └──enhances──> [scripts/generate-dependency-graph.ts (existing reference)]
+    └──standalone──> [Does not block or depend on other v2.2.0 features]
 ```
 
 ### Dependency Notes
 
-- **Exception cleanup blocks actionable errors:** You can't add `suggestion` fields to errors until the hierarchy is stable — otherwise you're building on a foundation that may rename.
-- **Named exports and deprecated API are coupled:** Converting `export *` to named exports is the natural time to drop the deprecated `services` property from the public surface.
-- **Examples must come after README sync:** Examples that contradict the README create worse confusion than no examples.
+- **Static OpenAPI requires route schema metadata:** Routes must store their Zod input/output schemas at registration time, not just validate against them. This is the core infrastructure change. Without it, the generator has nothing to walk. Ship the metadata registry before the generator.
+- **Lite Satellite may already work:** `GravitoConfig.orbits` accepts `GravitoOrbit[]` objects. If `PlanetCore.boot()` already handles both class constructors and plain objects, the feature is already present but undocumented. Audit `PlanetCore.ts` boot logic before building.
+- **Fast-path does not replace Photon:** Fast-path is an additional registration method on `PhotonOrbit` (e.g., `photon.fast(method, path, rawHandler)`). Routes registered this way bypass the DI context construction step but still go through `Bun.serve`'s router infrastructure.
+- **Capability report has zero-risk implementation:** Uses existing `RuntimeAdapter` detection and existing `Logger`. Ships independently and unblocks trust validation for Sentinel in production.
 
 ---
 
 ## MVP Definition
 
-This milestone is an improvement pass, not a greenfield MVP. The definition of "done" is:
-no new footgun surfaces, docs match code, onboarding path is clear.
+This is milestone v2.2.0 on an existing, healthy framework. "Launch with" means what must be in the first phase to validate the performance/DX narrative and unblock subsequent features.
 
-### Launch With (v2.1.0)
+### Launch With (Phase 1 of v2.2.0)
 
-- [ ] **Remove Router console.log** — zero-noise stdout in library code; 5-minute fix with disproportionate professional signal
-- [ ] **Fix ModelNotFound string sentinel** — replace `throw new Error('ModelNotFound')` with direct `throw new ModelNotFoundException(param, value)`; eliminates brittle string comparison
-- [ ] **Clarify AuthException vs AuthenticationException** — rename or add JSDoc clarifying `AuthException` is abstract base, `AuthenticationException` is the concrete 401 class; add `@deprecated` redirects if renaming
-- [ ] **Mark `core.services` with TypeScript `@deprecated`** — IDE will show strikethrough; no runtime cost
-- [ ] **README API section sync** — audit EventManager/HookManager public methods in README; fix 3-5 concrete discrepancies; add helpers module table
-- [ ] **JSDoc language unification** — decide English-only or Chinese+English; apply consistently across public API (already 100% covered, this is language consistency only)
-- [ ] **`orbit` vs `register` vs `use` explanation** — one section in docs, cross-referenced from each method's JSDoc `@see`
+- [ ] **Native Orbit Detection + Sentinel Bun.password audit** — Lowest complexity, highest safety and trust impact. Verify `adapter-bun.ts` calls `Bun.password` natively. Add boot-time capability logging. Unblocks trust in Sentinel for production deployments.
+- [ ] **Lite Satellite / Inline Plugin** — Audit whether `PlanetCore.boot()` already handles plain `GravitoOrbit` objects. If not, the delta is small. Once working, document with examples in `gravito.config.ts`. Unblocks DX for prototyping and small cross-cutting concerns.
 
-### Add After Validation (v2.1.x)
+### Add After Validation (Phase 2)
 
-- [ ] **Named export convergence** — convert `export *` from `./exceptions`, `./helpers/data`, `./helpers/errors`, `./helpers/response` to explicit named exports; profile tsserver speed improvement before/after
-- [ ] **Actionable error messages with `suggestion` field** — extend `GravitoException` constructor to accept optional `suggestion: string`; apply to top 5 DI resolution errors and config errors
-- [ ] **Update 3-5 canonical examples** — `ecommerce-mvc`, `blog-mvc`, `auth-verification` to use v2 API patterns (container augmentation, GravitoException, orbit registration)
+- [ ] **Route Zod schema metadata registry** — Required foundation for OpenAPI generation. Add `meta?: { schema?: { input?: ZodType; output?: ZodType } }` to route registration in `BunNativeAdapter` and `Gravito` engine. This is the prerequisite for Phase 3 OpenAPI work.
+- [ ] **Fast-Path Route API** — Requires understanding `AOTRouter`'s static routes map and compiled handler path. `PhotonOrbit` gains a `.fast(method, path, rawHandler)` method registering directly against the static routes map without DI context construction.
 
-### Future Consideration (v2.2+)
+### Future Consideration (Phase 3 / v2.2 end)
 
-- [ ] **Type-safe public API (zero `any` in generics)** — systematic audit of 69 `any` usages; high complexity, requires careful generic threading; better deferred until API surface is stabilized
-- [ ] **Troubleshooting FAQ document** — 5-entry FAQ covering boot order, orbit vs register, ModelNotFound setup, container augmentation, GravitoConfig typing; low complexity but requires stabilized API to write accurately
-- [ ] **TypeDoc API reference site** — generate from existing JSDoc; useful once named exports are converged (ensures generated output is clean)
+- [ ] **Static OpenAPI generation** — Depends on route schema registry. Once metadata is collected, `@asteasolutions/zod-to-openapi` can walk it and emit `openapi.json`. The CLI command (`gravito openapi:generate`) is the deliverable.
+- [ ] **Dependency graph visualization** — Valuable for large applications but not blocking. Can reuse `scripts/generate-dependency-graph.ts` as reference with application-level awareness added.
 
 ---
 
@@ -128,78 +129,46 @@ no new footgun surfaces, docs match code, onboarding path is clear.
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Remove Router console.log | HIGH — affects all prod users | LOW | P1 |
-| Fix ModelNotFound string sentinel | HIGH — affects all model binding users | LOW | P1 |
-| AuthException/AuthenticationException clarity | HIGH — confuses new devs daily | LOW | P1 |
-| README API sync | HIGH — first thing new devs read | LOW | P1 |
-| `core.services` @deprecated annotation | MEDIUM — reduces wrong-path discovery | LOW | P1 |
-| orbit/register/use decision guide | HIGH — top onboarding confusion | LOW | P1 |
-| JSDoc language unification | MEDIUM — affects IDE DX quality | LOW | P1 |
-| Named export convergence | MEDIUM — IDE perf + discoverability | MEDIUM | P2 |
-| Actionable errors with suggestion field | HIGH — dramatically reduces support burden | HIGH | P2 |
-| Update canonical examples | MEDIUM — affects new-dev success rate | LOW | P2 |
-| Zero `any` in public generics | HIGH long-term — type propagation safety | HIGH | P3 |
-| Troubleshooting FAQ | MEDIUM — reduces GitHub issue noise | LOW | P3 |
-| TypeDoc API reference site | LOW short-term | MEDIUM | P3 |
+| Bun.password native detection + logging | HIGH | LOW | P1 |
+| Lite Satellite inline in gravito.config.ts | HIGH | LOW-MEDIUM | P1 |
+| Boot-time capability report | MEDIUM | LOW | P1 |
+| Route Zod schema metadata registry | HIGH (blocks OpenAPI) | MEDIUM | P1 (prerequisite) |
+| Fast-Path route API | HIGH | MEDIUM | P2 |
+| Runtime `/openapi.json` endpoint | MEDIUM | LOW (after registry) | P2 |
+| Static OpenAPI generation CLI | HIGH | HIGH | P2 |
+| Dependency graph visualization | LOW-MEDIUM | MEDIUM | P3 |
 
 **Priority key:**
-- P1: Must have for v2.1.0 — targeted fixes with high value-to-effort ratio
-- P2: Should have — add in v2.1.x follow-up
-- P3: Nice to have — future milestone
+- P1: Must have for this milestone to deliver its stated value
+- P2: Core deliverable — should ship within this milestone
+- P3: Stretch goal or next milestone
 
 ---
 
 ## Competitor Feature Analysis
 
-How comparable frameworks handle the same DX concerns in 2025-2026:
-
-| DX Concern | Hono | Elysia | AdonisJS v6 | Effect | Gravito Current | Gravito Target |
-|------------|------|--------|-------------|--------|-----------------|----------------|
-| **Error messages** | HTTP errors with typed status codes; no suggestion strings | Type-mismatch errors surfaced at compile time via Eden inference | Descriptive runtime errors; container errors include binding name | Full typed error channel in type signature; `Effect.fail(new MyError())` | Raw `Error('ModelNotFound')` strings; actionable messages inconsistent | `ModelNotFoundException` direct; optional `suggestion` field on `GravitoException` |
-| **No stdout leaks** | Zero — no console.log in library code | Zero — events only | Zero | Zero | `Router.ts:610` console.log on every route | Remove; route to `this.logger.debug()` |
-| **Public API discoverability** | Explicit named exports; small surface | Named + plugin-extended; structured | Explicit named exports; IoC docs comprehensive | Fully typed modules, explicit imports | 15+ `export *` in index.ts; 830-line barrel file | Converge to explicit named exports |
-| **Deprecated API handling** | Removed promptly; changelog notes | Removed with migration guide | `@deprecated` JSDoc + migration doc | N/A — breaking changes gated by major version | `services` prop still public and exported | `@deprecated` TypeScript annotation; move to `@internal` |
-| **Container DX** | No DI container | No built-in DI | Simplified IoC in v6; extensive docs | Dependency via `Context` layer | `ServiceMap` augmentation pattern is industry-leading concept | Eliminate `any` in resolution path; add decision guide |
-| **Documentation accuracy** | Manually maintained; high accuracy | Rapidly evolving; occasional lag | Comprehensive v6 rewrite; high accuracy | Excellent — type-driven so docs match types | JSDoc 100% (v1.4.0) but language inconsistency; README has stale API | Language-unified JSDoc; README audit |
-| **Onboarding examples** | Working examples in repo; playground | Eden examples; interactive playground | `create-adonisjs` scaffolding with fresh examples | Comprehensive introductory docs | 20+ examples but may use v1 API | 3-5 canonical examples updated to v2 |
-
----
-
-## Evidence-Based Confidence Notes
-
-**HIGH confidence (direct codebase verification):**
-- `console.log` in Router.ts — confirmed line 610
-- String sentinel `'ModelNotFound'` — confirmed lines 436, 475
-- `AuthException` vs `AuthenticationException` coexistence — confirmed both files exist
-- `core.services` deprecated property — confirmed `@deprecated` JSDoc comment exists but no TypeScript `@deprecated` annotation or `@internal` tag
-- 69 `any` occurrences in public src — counted via grep across 31 files
-- 15+ `export *` in index.ts — confirmed via grep
-
-**MEDIUM confidence (WebSearch-verified patterns):**
-- Barrel file tsserver perf impact — multiple GitHub TypeScript issues + DEV community article
-- Framework `console.log` conventions — Hono/Elysia/AdonisJS confirmed no stdout leaks in library code
-- AdonisJS v6 documentation improvements motivation — InfoQ article + official blog
-- Elysia tsserver slowdown with large route sets — GitHub issue #1031
-
-**LOW confidence (training data + single source):**
-- Exact Hono error message format for context variable type mismatches — needs direct verification
-- Effect's `suggestion` field pattern — Effect uses typed errors, not string suggestions; this is an inference from the ecosystem trend, not a direct Effect feature
+| Feature | ElysiaJS | Hono | Fastify | Gravito v2.2.0 Planned |
+|---------|----------|------|---------|------------------------|
+| **Route bypass / fast-path** | AOT `compileHandler` + Bun native router dual strategy (1.3); `compileHandler` eliminates conditional branches and inlines validators | Route handlers are already thin (Hono itself is the fast path); no explicit bypass API | Plugin-based; fast routes register without middleware encapsulation | `photon.fast(method, path, rawHandler)` — direct `BunNativeAdapter` static route registration bypassing DI context construction |
+| **Inline plugin / anonymous module** | `new Elysia().use((app) => app.get(...))` functional callback; also instance-based plugins | `app.use(async (c, next) => ...)` middleware only; no inline plugin with state | `fastify.register(async (instance) => { instance.get(...) })` anonymous function | `orbits: [{ install(core) { core.router.get(...) } }]` — object literal in `gravito.config.ts` |
+| **OpenAPI generation** | Built-in `@elysiajs/swagger` (runtime Swagger UI + JSON endpoint); no build-time static export | `@hono/zod-openapi` (runtime schema + response validation); `@hono/swagger-ui` for UI | `@fastify/swagger` (runtime); requires schema registration per route | `zod-to-openapi` walker over schema metadata registry; `gravito openapi:generate` CLI emitting static `openapi.json` |
+| **Bun.password / native crypto** | Direct `Bun.password` calls in guides; no abstraction layer | No auth primitives | N/A (Node.js target) | `RuntimePasswordAdapter` already abstracts; verify `adapter-bun.ts` calls `Bun.password` natively; log at boot |
+| **Dependency graph** | None | None | None | First-party CLI — genuine ecosystem differentiator |
 
 ---
 
 ## Sources
 
-- [Hono Best Practices — hono.dev](https://hono.dev/docs/guides/best-practices)
-- [Hono vs Elysia 2026 — PkgPulse](https://www.pkgpulse.com/blog/hono-vs-elysia-2026)
-- [AdonisJS v6 Released — InfoQ](https://www.infoq.com/news/2024/03/adonisjs-v6-released/)
-- [AdonisJS Dependency Injection docs](https://docs.adonisjs.com/guides/concepts/dependency-injection)
-- [Barrel files — stop using them — DEV Community](https://dev.to/tassiofront/barrel-files-and-why-you-should-stop-using-them-now-bc4)
-- [pretty-ts-errors VSCode extension](https://github.com/yoavbls/pretty-ts-errors) — evidence of ecosystem demand for readable errors
-- [Elysia tsserver performance issue #1031](https://github.com/elysiajs/elysia/issues/1031)
-- [TypeScript DI containers comparison — LogRocket](https://blog.logrocket.com/top-five-typescript-dependency-injection-containers/)
-- [Effect typed errors intro — aleksandra.codes](https://www.aleksandra.codes/effect-intro)
-- Direct codebase reads: `packages/core/src/Router.ts`, `packages/core/src/exceptions/*.ts`, `packages/core/src/PlanetCore.ts`, `packages/core/src/index.ts`
+- [ElysiaJS Plugin documentation](https://elysiajs.com/essential/plugin) — HIGH confidence (official docs, fetched 2026-03-30)
+- [ElysiaJS Lifecycle documentation](https://elysiajs.com/essential/life-cycle) — HIGH confidence (official docs, fetched 2026-03-30)
+- [ElysiaJS 1.3 release blog — dual router strategy](https://elysiajs.com/blog/elysia-13) — HIGH confidence (official release, fetched 2026-03-30)
+- [Bun Hashing API reference](https://bun.com/docs/runtime/hashing) — HIGH confidence (official docs, fetched 2026-03-30)
+- [Fastify plugin system guide](https://fastify.dev/docs/latest/Reference/Plugins/) — HIGH confidence (official docs)
+- [asteasolutions/zod-to-openapi](https://github.com/asteasolutions/zod-to-openapi) — MEDIUM confidence (WebSearch, widely cited library)
+- [samchungy/zod-openapi](https://www.npmjs.com/package/zod-openapi) — MEDIUM confidence (WebSearch, uses Zod native `.meta()`)
+- [GitHub middleware support for Bun.serve](https://github.com/oven-sh/bun/issues/17608) — MEDIUM confidence (community discussion confirming Bun routes have no native middleware layer)
+- Gravito codebase direct inspection: `packages/core/src/engine/Gravito.ts`, `packages/core/src/engine/AOTRouter.ts`, `packages/core/src/runtime/index.ts`, `packages/photon/src/photon.ts`, `packages/sentinel/src/HashManager.ts`, `packages/core/src/PlanetCore.ts`, `packages/core/src/ServiceProvider.ts`, `examples/rest-api-demo/src/gravito.config.ts` — HIGH confidence (source of truth)
 
 ---
-*Feature research for: @gravito/core v2.1.0 DX improvements*
-*Researched: 2026-03-29*
+*Feature research for: Gravito v2.2.0 — performance bypass, OpenAPI generation, Lite Satellite, Bun-native integration*
+*Researched: 2026-03-30*

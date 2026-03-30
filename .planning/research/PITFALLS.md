@@ -1,169 +1,173 @@
 # Pitfalls Research
 
-**Domain:** DX improvements to an existing TypeScript monorepo — star export removal, exception consolidation, config type changes, @internal API hiding, with 38 downstream consumers
-**Researched:** 2026-03-29
-**Confidence:** HIGH (based on direct codebase analysis of gravito-core v2.0.0 state)
+**Domain:** Modular TypeScript Framework — Fast-Path Routing, Static OpenAPI Generation, Lite Satellite Plugins, Bun-Native Abstractions
+**Researched:** 2026-03-30
+**Confidence:** HIGH (codebase directly inspected; corroborated by web research)
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: Star Export Removal Silently Breaks Re-Exporting Packages
+### Pitfall 1: Fast-Path Bypass Silently Skips Auth / Observability Middleware
 
 **What goes wrong:**
-When `export * from './exceptions'` in `packages/core/src/index.ts` is replaced with explicit named exports, any downstream package that does `export { HttpException } from '@gravito/core'` continues to work fine — but packages that do `export * from '@gravito/core'` or that relied on an exception class being in the namespace _without knowing the exact import path_ will break at TypeScript check time. The breakage is silent at runtime (modules are still exported) but shows as type errors in dependent packages.
-
-In this repo, `packages/photon/src/http-exception.ts` already re-exports `HttpException` from `@gravito/core`. If the star export from `./exceptions` is removed and `HttpException` is no longer in the explicit named list, photon's re-export silently exports `undefined` at runtime even though TypeScript already reported an error.
+A route registered through the fast-path mechanism (`serveConfig()` → Bun.serve `routes:` map, or the `isPureStaticApp` ultra-fast path inside `Gravito.fetch()`) receives pre-compiled handler closures at startup time. Any Orbit that installs middleware via `use()` / `useGlobal()` *after* that compilation step — or any middleware added on the Photon (`BunNativeAdapter`) path — is not automatically present in those pre-compiled chains. Result: auth, rate-limiting, observability, and request-scope cleanup silently stop executing for fast-path requests while still running for dynamic routes. The system appears fully functional during testing (most test routes are dynamic) and the gap only surfaces in production under specific static route patterns.
 
 **Why it happens:**
-Star exports collapse namespaces. When `export * from './exceptions'` covers 17 classes at once, a developer removing it for a "named-only" refactor may only explicitly list the ones they _remember_. The test suite for `@gravito/core` itself passes; failures appear only when running `bun run typecheck` at the workspace root or when affected packages rebuild.
+The `Gravito` engine pre-compiles `compileMiddlewareChain(middleware, handler)` at route registration time when `serveConfig()` is called. If middleware is registered later (e.g., OrbitSentinel's `install()` runs during `core.boot()`, which occurs *after* the app configures routes), those middlewares are absent from the compiled chain. Developers see the `serveConfig()` pattern as a pure performance optimisation and do not realise it freezes middleware order.
 
 **How to avoid:**
-Before removing any `export *`, generate a full symbol inventory: `tsc --declaration --emitDeclarationOnly` produces `.d.ts` files listing every exported symbol. Diff the symbol list before and after the change. Gate the phase on `bun run typecheck` passing across all 38 consumers, not just the package under edit.
+1. Define a strict registration contract: all Orbits that inject middleware must complete their `install()` phase before `serveConfig()` / fast-path route compilation is called.
+2. Expose an explicit `FastPath.freeze()` step that validates no global middleware has been installed after the last compilation.
+3. Add an integration test fixture that registers auth middleware, registers a fast-path route, then asserts a request without credentials gets a 401 — not a 200.
+4. Consider a dev-mode assertion: if `isPureStaticApp === false` at serve time but `serveConfig()` was already called, emit a `SystemException` with `code: 'FAST_PATH_MIDDLEWARE_DRIFT'`.
 
 **Warning signs:**
-- `bun run typecheck` passes for `packages/core` but fails for `packages/photon`, `packages/sentinel`, or `packages/fortify`
-- A symbol appears as `any` or `undefined` in downstream `.d.ts` output after the change
-- Any package using `export * from '@gravito/core'` starts emitting "Module X has no exported member Y"
+- Tests pass on dynamic routes but silent 200s appear on static routes that should be protected.
+- Auth headers ignored on endpoints tagged `@FastPath`.
+- Request-scope metrics show `cleanup()` never called for certain routes (missing from pool release logs).
 
-**Phase to address:**
-Module organization cleanup phase — must run full workspace typecheck (`bun run typecheck`) as acceptance gate, not just per-package typecheck.
+**Phase to address:** Fast-Path Routing phase — Day 1 design constraint, not a post-implementation fix.
 
 ---
 
-### Pitfall 2: AuthException / AuthenticationException Consolidation Breaks Catch Blocks and instanceof Checks
+### Pitfall 2: `serveConfig()` Routes Map Does Not Update After Post-Startup `use()` Calls
 
 **What goes wrong:**
-Currently the codebase has two coexisting but semantically different auth exception classes:
-- `AuthException` — abstract base class, extended by `FortifyError` and `SentinelError`
-- `AuthenticationException` — concrete leaf class, thrown by `sentinel` middleware
-
-If consolidation removes `AuthException` in favor of `AuthenticationException` (or vice versa), any `catch (e) { if (e instanceof AuthException) }` block in consuming application code stops matching. Because `instanceof` checks cross ESM/CJS boundaries, the failure can be silent at compile time (the class name is still exported) but broken at runtime (the prototype chain is wrong).
-
-Specifically: `fortify` (`FortifyError extends AuthException`) and `sentinel` (`SentinelError extends AuthException`, separate from `AuthenticationException`) both depend on `AuthException` existing as an abstract base. Removing it forces both packages to change their hierarchy in the same release.
+`Bun.serve({ routes: {...} })` consumes the routes object at server start. Calling `Gravito.route()` or `use()` after `Bun.serve()` has started modifies the in-memory router but does NOT update the live Bun native routes map. New routes added post-startup are silently routed to the `fetch` fallback, not the SIMD-accelerated native handler. If the `fetch` fallback is not configured (or is stripped), those routes 404.
 
 **Why it happens:**
-Two classes with overlapping names exist because they were added at different times for different purposes (`AuthException` as an abstract domain base, `AuthenticationException` as a concrete HTTP 401 class). Consolidation looks superficially simple — "they're the same thing" — but their inheritance roles differ.
+Bun's native routing is a startup-time optimisation. The `routes:` field is read once. This is documented implicitly by Bun's server API but is not surfaced clearly in Gravito's `serveConfig()` return value. Developers familiar with Express/Hono expect live route mutation.
 
 **How to avoid:**
-Do not delete `AuthException`. Deprecate it with `@deprecated` JSDoc pointing to the replacement, keep it as a re-export alias for one release cycle. Mark with `@deprecated` and export the alias:
-```typescript
-/** @deprecated Use AuthenticationException instead */
-export { AuthenticationException as AuthException } from './AuthenticationException'
-```
-Only remove in a subsequent major version. This keeps `instanceof AuthException` working via the prototype chain.
+1. Document `serveConfig()` explicitly: "Returns a snapshot. Call again and use `server.reload()` to reflect new routes."
+2. Make the `fetch` fallback mandatory — never omit it from the `serveConfig()` return object (it is already included in the current implementation as `fetch: this.fetch`).
+3. If hot-reload is required, call `server.reload(gravito.serveConfig())` instead of mutating the existing instance.
+4. In tests, always exercise both the native route path and the `fetch` fallback path.
 
 **Warning signs:**
-- `FortifyError` or `SentinelError` constructor calls throw at runtime even though TypeScript is clean
-- Auth middleware starts returning 500 instead of 401 (catch block missed)
-- `e instanceof AuthException` returns `false` for errors that are clearly auth errors
+- Routes added after `Bun.serve()` starts return 404 in production but pass in unit tests (which call `gravito.fetch()` directly, bypassing the native map).
+- Routes missing from Bun's native router show up only in `fetch` fallback timing metrics (slower p99).
 
-**Phase to address:**
-API footgun / exception naming phase — add deprecation before removing, never remove in the same PR that adds the replacement.
+**Phase to address:** Fast-Path Routing phase — document and enforce in the `serveConfig()` API surface.
 
 ---
 
-### Pitfall 3: GravitoConfig Type Changes Break defineConfig() Consumers at Runtime Without TypeScript Errors
+### Pitfall 3: Static OpenAPI Generation Diverges from Runtime Behaviour
 
 **What goes wrong:**
-`defineConfig()` in `packages/core/src/index.ts` is typed as `(config: GravitoConfig): GravitoConfig`. It is a pass-through identity function — it does no validation at runtime. If `GravitoConfig` adds new required fields or changes an existing field's type (e.g., `observability` going from `unknown` to a structured type), consumer `gravito.config.ts` files across applications will:
-
-1. Fail TypeScript typecheck if the new field is required
-2. Pass TypeScript typecheck but break at runtime if the new field is optional but `boot()` now dereferences it differently
-
-The `boot()` footgun already present (`observabilityProvider` is not forwarded from `GravitoConfig` to the `PlanetCore` constructor — see `PlanetCore.ts` line 788-811) means that even fixing `GravitoConfig` to include `observabilityProvider` may not fix the runtime behavior unless `boot()` is also patched to pass it through.
+The static contract (`astral.resource(...)`) declares the API shape at definition time. The actual request handling in the Satellite uses Zod (or raw validation) at runtime. If the Zod schema and the `AstralResource` contract are maintained separately, they diverge. The generated OpenAPI spec shows types that the runtime rejects (or vice versa). Clients generated from the spec fail with real API calls.
 
 **Why it happens:**
-`GravitoConfig` is an exported type contract, but `boot()` destructures it manually and can fall behind when new fields are added to the type. The identity function `defineConfig()` provides zero runtime protection.
+`OrbitAstral` / `astral.resource()` describes resources declaratively. There is no compile-time or test-time assertion that `resource.operations.create.body` matches the actual `z.parse()` schema in the route handler. Because both exist in separate files (contract definition vs handler implementation), they drift during refactoring.
 
 **How to avoid:**
-When adding or changing any field in `GravitoConfig`:
-1. Check every place `GravitoConfig` is destructured (grep for `config.observability`, `config.adapter`, etc.)
-2. Ensure `boot()` forwards every field from `GravitoConfig` to the `PlanetCore` constructor
-3. Add a test that passes a `GravitoConfig` with the new field through `boot()` and asserts the field is reachable on the resulting instance
+1. Enforce a single source of truth: define the Zod schema first, then derive the `AstralResource` body/response schemas from the same Zod schema object using `zodToJsonSchema` (already possible via `astral`'s existing Zod bridge).
+2. Add a CI contract test: run static generation, then send a valid-per-spec request and a minimally-invalid request to the live handler; assert correct acceptance/rejection.
+3. Lint rule or PR checklist: any change to a route handler's Zod schema must update the `astral.resource()` contract in the same commit.
+4. For Satellite Lite plugins, keep contract and handler co-located in the same `gravito.config.ts` closure — this eliminates drift by construction.
 
 **Warning signs:**
-- A new field added to `GravitoConfig` typechecks clean but `PlanetCore.boot()` doesn't use it
-- `defineConfig({ observabilityProvider: ... })` compiles but the provider is silently ignored at runtime
-- Application code passes `config.newField` and gets `undefined` despite setting it
+- OpenAPI spec says a field is `string`, but runtime throws `ZodError: expected number`.
+- Spec shows `required: ['email']`, but a missing email returns 200.
+- Existing `AstralSchemaError` thrown during generation (schema incompatible with OpenAPI) — this surfaces at generation time, not in tests.
 
-**Phase to address:**
-Config type changes phase — pair every `GravitoConfig` change with a `boot()` audit and a test that verifies propagation end-to-end.
+**Phase to address:** Static OpenAPI Generation phase — single-source-of-truth constraint established upfront.
 
 ---
 
-### Pitfall 4: Hiding @internal Exports Breaks Module Augmentation in Orbit Packages
+### Pitfall 4: Lite Satellite / Inline Plugin Leaks Container Registrations Globally
 
 **What goes wrong:**
-`GravitoVariables` is extended via TypeScript module augmentation in at least 14 packages:
-```typescript
-declare module '@gravito/core' {
-  interface GravitoVariables { myService: MyService }
-}
-```
-Module augmentation only works when the augmented interface is exported from the package's public surface. If `GravitoVariables` is moved behind an `@internal` barrel or removed from the root export of `@gravito/core`, the `declare module '@gravito/core'` blocks in all 14 consuming packages silently augment the _wrong_ declaration, causing the added fields to be invisible to TypeScript. Application code gets `Property 'myService' does not exist on type 'GravitoVariables'` errors across the entire monorepo.
-
-This also applies to any interface that downstream packages augment: `GravitoContext`, `GravitoOrbit`, `GravitoConfig` augmentable sections.
+An inline Lite Satellite defined in `gravito.config.ts` registers services or middleware on the global `PlanetCore` container. If the config is hot-reloaded or if two different config files are loaded in the same process (test environment, multi-tenancy), the inline plugin's registrations accumulate or collide with existing registrations from named Satellites. Because Lite Satellites have no package boundary, there is no `@gravito/<name>` namespace to isolate them.
 
 **Why it happens:**
-`@internal` tagging is a documentation convention, not a TypeScript enforced boundary. A developer sees `@internal` on a helper and removes it from the public index, not realizing that 14 other packages depend on the interface being at the `@gravito/core` module resolution path.
+Named Satellites use `GravitoOrbit.install(core: PlanetCore)` which enforces an isolated registration scope. An inline lambda that calls `core.bind('myService', ...)` directly participates in the same flat namespace. Two inline satellites with the same service key silently overwrite each other.
 
 **How to avoid:**
-Never move any interface that has `declare module '@gravito/core'` augmentations out of the public export surface. Use a dedicated `@public` JSDoc tag on all augmentable interfaces and include in the PR description: "This interface is augmented in N packages — do not make @internal."
-
-Before any export cleanup, grep for `declare module '@gravito/core'` to enumerate all augmentation sites.
+1. Require inline Lite Satellites to declare a `namespace` string that is auto-prefixed to all their service bindings: `core.bind('inline:health:checker', ...)` not `core.bind('checker', ...)`.
+2. Add a dev-mode duplicate-binding check: if `Container.bind()` is called with a key that already exists and the caller is a different Satellite namespace, throw a `SystemException` with `code: 'CONTAINER_BINDING_COLLISION'`.
+3. Design Lite Satellites to be stateless lambdas that only register routes (HTTP concern), not services (DI concern) — push any DI needs into a proper named Orbit.
+4. In tests, always create a fresh `PlanetCore` instance per test suite when testing inline plugins.
 
 **Warning signs:**
-- After hiding an interface, `bun run typecheck` emits errors in unrelated orbit packages
-- `ctx.vars.myService` starts returning `any` instead of a typed service
-- Module augmentation blocks in orbit packages show TypeScript warning "Augmentations for the global scope can only be directly nested in external modules or ambient module declarations"
+- Service resolved from container returns wrong implementation in mixed Satellite environments.
+- `Container.make('x')` throws `CircularDependencyException` after adding an inline plugin that registers a similarly-named service.
+- Tests pass in isolation but fail when run together (`bun test` discovers ordering dependency).
 
-**Phase to address:**
-Star export / module organization phase — before removing any export, run `grep -r "declare module '@gravito/core'" packages/` to identify all augmentation sites.
+**Phase to address:** Lite Satellite / Inline Plugin phase — namespace requirement enforced in the API design.
 
 ---
 
-### Pitfall 5: Router console.log Removal Masks Missing Test Coverage
+### Pitfall 5: Bun-Native Abstraction Uses Direct `Bun.xxx` API Instead of Runtime Guard
 
 **What goes wrong:**
-`packages/core/src/Router.ts` line 610 has `console.log('[Router] Registering ...')`. Removing it is correct for DX, but this log is often the only signal in failing tests that a route was registered at the wrong path. After removal, failing route tests produce no useful diagnostic output, making flaky or broken tests much harder to debug.
-
-More critically: the two skipped tests in `packages/core/tests/orbit-middleware-isolation.test.ts` were likely skipped _because_ route registration debugging was done via this log. Removing the log without first re-enabling and fixing those skipped tests risks shipping broken middleware isolation silently.
+New Orbit code for Bun-native APIs (crypto, fs, password) calls `require('bun')` or directly references `Bun.password.hash(...)` without checking for Bun availability. This causes `ReferenceError: Bun is not defined` when:
+- Tests run with `bun test --conditions node` for CI parity checks.
+- `@gravito/core` is imported by a downstream package that runs in Node (e.g., integration tests in `gravito-satellites`).
+- The package is bundled for a non-Bun environment (edge workers, WASM).
 
 **Why it happens:**
-Removing debug logs is treated as a pure cleanup. The dependency between a specific log statement and the ability to diagnose test failures is invisible until a test breaks in CI.
+The existing `getRuntimeKind()` in `packages/core/src/runtime/detection.ts` provides the correct pattern, but new contributors writing Orbit code often reach for `require('bun')` directly (it is the shortest path), bypassing the detection layer. The `adapter-bun.ts` pattern is not enforced by linting.
 
 **How to avoid:**
-Before removing `console.log` from `Router.ts`, investigate and fix the two skipped middleware isolation tests (`orbit-middleware-isolation.test.ts`). Ensure test failure messages are sufficient without the log. Add a `debug` flag to Router that emits route registration logs only when explicitly enabled (e.g., `new Router({ debug: true })`).
+1. All Bun-native API access must go through the existing `getDefaultRuntimeAdapter()` or a `getRuntimeKind() === 'bun'` guard — never call Bun APIs directly in Orbit source.
+2. Add a Biome lint rule (custom or via regex lint hook) that flags direct `Bun.password`, `Bun.crypto`, `Bun.file` usage outside of `packages/core/src/runtime/adapter-bun.ts`.
+3. Write cross-runtime tests: every Bun-native abstraction must have a test that runs against a Node polyfill fallback to verify graceful degradation.
+4. The `OrbitDegradationManager` pattern (already in v2.0.0) is the correct model for Bun-unavailable fallback — use it.
 
 **Warning signs:**
-- Skipped tests (`it.skip`) remain skipped after the console.log is removed
-- Route-related test failures produce no useful diagnostic output
-- CI passes but `bun test --verbose` shows no route registration confirmation
+- `ReferenceError: Bun is not defined` in CI for packages that previously had no Bun dependency.
+- `publint` CI gate passes but downstream package test fails with `ERR_MODULE_NOT_FOUND: bun`.
+- Hash benchmark shows identical timing in Node and Bun (Bun.password not activated, falling through to bcrypt).
 
-**Phase to address:**
-API footgun fixes phase — fix skipped tests before removing the log, not after.
+**Phase to address:** Bun-Native Abstraction phase — enforced via adapter pattern and lint from the start.
 
 ---
 
-### Pitfall 6: Barrel Refactoring Creates Name Collisions Between Modules
+### Pitfall 6: New Package or Sub-Path Export Breaks publint CI Gate
 
 **What goes wrong:**
-`packages/atlas/src` exports `ModelNotFoundError` (a `DatabaseException` subclass). `packages/core/src/exceptions` exports `ModelNotFoundException` (a separate class). When `export * from './exceptions'` in core is replaced with named exports, the opportunity to accidentally include `ModelNotFoundError` from an atlas import or vice versa creates name collision errors. More dangerously: if a developer adds `export { ModelNotFoundError as ModelNotFoundException }` as an alias without realizing the class hierarchy differs (one extends `DatabaseException`, the other extends `HttpException`), catch blocks in atlas-consuming code start matching the wrong class.
+Adding a new sub-path export for fast-path, OpenAPI static export, or Lite Satellite API (e.g., `@gravito/core/fast-path`, `@gravito/astral/static`) without updating the `exports` field in `package.json` causes the publint CI gate to fail. More insidiously, if the entry is added to `exports` but the dist file does not exist (build step not run), consumers get `ERR_PACKAGE_PATH_NOT_EXPORTED` at runtime.
 
 **Why it happens:**
-Similar names across packages are a natural result of the domain model. Barrel refactoring that collapses multiple namespaces increases collision risk.
+Gravito has 57 packages validated by publint in CI. Each new sub-path export requires: (1) source file, (2) build output (ESM `.mjs` + CJS `.cjs` + types `.d.ts`), (3) `exports` map entry in `package.json`, and (4) publint validation. Developers focus on (1) and forget (3) or (4) during rapid development. The CLAUDE.md already documents the ESM naming / `buildCJSStub` consistency constraint but it is easy to miss during new feature work.
 
 **How to avoid:**
-When refactoring barrels, explicitly verify that no re-exported symbol name appears in more than one source module. The TypeScript compiler will catch _type_ conflicts but not _semantic_ conflicts when two classes have the same name and compatible structures.
+1. publint CI gate is already in place — it will catch the missing entry. The pitfall is that it only catches it at CI time, not locally.
+2. Add `publint` to the local `bun run check` flow so it fails fast before push.
+3. Template for new sub-path exports: document the four-step checklist (source → build → exports → publint) in `docs/claude/development.md`.
+4. For Lite Satellites (`gravito.config.ts`-based), avoid new sub-path exports entirely — keep them in the existing `@gravito/core` barrel export.
 
 **Warning signs:**
-- `tsc` reports "Duplicate identifier" during barrel refactoring
-- `instanceof ModelNotFoundException` starts returning `false` in atlas error handlers
-- Code that previously caught `ModelNotFoundException` starts catching atlas database errors
+- publint CI fails with "Package path './fast-path' is not exported".
+- `ERR_PACKAGE_PATH_NOT_EXPORTED` at runtime despite the file existing on disk.
+- TypeScript resolves the type correctly (`d.ts` found) but runtime import fails (`.mjs` not in exports map).
 
-**Phase to address:**
-Module organization cleanup phase — run symbol deduplication check after every barrel change.
+**Phase to address:** Any phase that adds new public sub-path exports — enforce the checklist immediately when creating the package structure.
+
+---
+
+### Pitfall 7: Inline Lite Satellite Violates Satellite Isolation Principle via Event Name Collision
+
+**What goes wrong:**
+The Satellite isolation principle forbids direct Satellite-to-Satellite imports. Inline Lite Satellites communicate via Signal bus events. If an inline plugin emits a generic event name (`user:created`) that collides with a named Satellite's Signal handler, the inline plugin accidentally triggers business logic it has no knowledge of. Unlike import-based coupling (caught by the pre-push circular dependency check), event-name coupling is invisible to static analysis.
+
+**Why it happens:**
+Named Satellites typically namespace events (e.g., `catalog:product:created`). Inline plugins lack the package discipline that enforces this convention. A developer writing a quick inline health-check plugin emits `health:checked` without realising a named Satellite is listening for `health:*` events as a dependency signal.
+
+**How to avoid:**
+1. Require inline Lite Satellite events to use the `inline:<name>:<event>` naming convention enforced by the plugin definition API.
+2. Register inline plugin event names in the Signal bus manifest at install time so conflicts surface at startup, not in production.
+3. Document the naming convention prominently in the Lite Satellite API design.
+4. Add an integration test that verifies no named Satellite handler fires when an inline plugin event is emitted.
+
+**Warning signs:**
+- Named Satellite performs unexpected action after an inline plugin is added to config.
+- Signal bus metrics show unexpected event subscriber counts after config change.
+- Production: business logic triggered without corresponding user action.
+
+**Phase to address:** Lite Satellite / Inline Plugin phase — event namespace constraint in API design.
 
 ---
 
@@ -171,25 +175,26 @@ Module organization cleanup phase — run symbol deduplication check after every
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Keep `export * from './exceptions'` as-is | No downstream breakage | Uncontrolled namespace growth, makes tree-shaking harder | Acceptable until explicit audit is done |
-| Add `@deprecated` JSDoc only, no runtime warning | Clean deprecation without behavior change | Developers ignore JSDoc-only deprecations | Only if CI enforces `no-deprecated` lint rule |
-| Keep `AuthException` as alias to `AuthenticationException` | Avoids breaking `fortify`/`sentinel` | Two names for overlapping concepts remain in docs | Acceptable for one minor version cycle |
-| `any` on `GravitoVariables` core properties (current state: `core?: unknown`) | Avoids circular reference | IDE offers no autocomplete for `ctx.vars.core` | Acceptable while circular ref exists; fix with opaque type |
-| Defer skipped tests (`it.skip`) | Faster CI | Middleware isolation could be broken undetected | Never — fix before shipping DX improvements |
+| Skip middleware validation on fast-path routes | Faster p99 in benchmarks | Auth silently skipped; security incident | Never — always validate middleware chain coverage |
+| Inline Lite Satellite registers services globally without namespace | Less boilerplate | Container collision in multi-satellite environments | Never — namespace is free and prevents collisions |
+| Single `AstralResource` contract without linking to Zod schema | Fast to write | Contract drift; generated client fails | Only during initial spike with a TODO marker; must be unified before merge |
+| Bun API called directly without runtime guard | Shortest code | Crashes in Node CI, edge environments | Never in Orbit packages; acceptable only in `adapter-bun.ts` |
+| `serveConfig()` called mid-lifecycle (before all Orbits install) | Convenience | Middleware missing from native routes | Never — document boot order explicitly |
+| New sub-path export without running publint locally | Fast iteration | CI red; consumer `ERR_PACKAGE_PATH_NOT_EXPORTED` | Never — run `bun run check` before push |
+| Generic event names in inline plugins | Less typing | Accidental named Satellite handler trigger | Never — namespace all inline plugin events |
 
 ---
 
 ## Integration Gotchas
 
-| Integration Point | Common Mistake | Correct Approach |
-|-------------------|----------------|------------------|
-| `GravitoVariables` augmentation in orbit packages | Moving the interface out of the public export breaks all `declare module` blocks | Keep `GravitoVariables` at the root public export of `@gravito/core` permanently |
-| `photon` re-exporting from `@gravito/core` | Removing a core export breaks photon's re-export without a core typecheck failure | Run full workspace typecheck after every core export change |
-| `fortify` extending `AuthException` | Renaming/removing `AuthException` forces `fortify` to change its class hierarchy | Deprecate with alias; never remove in the same release |
-| `sentinel` using `AuthenticationException` | Both `AuthException` and `AuthenticationException` are imported; consolidating them changes catch semantics | Keep both exported; make `AuthenticationException extends AuthException` |
-| `defineConfig()` in consumer `gravito.config.ts` | Adding required fields to `GravitoConfig` without a migration guide | Make all new config fields optional with sensible defaults for one release |
-| Module augmentation `declare module '@gravito/core'` | 14 orbit packages use this; any export surface change breaks them | Grep for augmentations before any export cleanup |
-| `instanceof` checks across ESM/CJS boundaries | Renaming a class while keeping the same file path silently breaks instanceof | `Object.setPrototypeOf(this, new.target.prototype)` already in place — preserve it in all new exception classes |
+| Integration | Common Mistake | Correct Approach |
+|-------------|----------------|------------------|
+| Bun.serve `routes:` + Gravito | Calling `gravito.route()` after `Bun.serve()` starts and expecting native routing | Call `server.reload(gravito.serveConfig())` — routes map is read once |
+| OrbitSentinel + fast-path | Installing auth middleware after `serveConfig()` snapshot | Complete all Orbit `install()` calls before generating `serveConfig()` |
+| OrbitAstral static export + CI | Generating spec in build script that references runtime `core` instance | Use `StaticExportConfig` with a lightweight core fixture, not a live server |
+| Bun.password + Node fallback | No availability check; direct call crashes | Use `getPasswordAdapter()` (already in HashManager) — this pattern is correct, duplicate it |
+| Lite Satellite + existing Orbit events | Emitting event names that collide with Signal bus events in named Satellites | Namespace all inline-plugin events: `inline:<name>:<event>` |
+| Container.make() ServiceMap overload + inline plugin | Extending `ServiceMap` in `gravito.config.ts` causes declaration merging issues in monorepo CI | Only extend `ServiceMap` in a proper package with `.d.ts` output; inline plugins must not extend global types |
 
 ---
 
@@ -197,9 +202,11 @@ Module organization cleanup phase — run symbol deduplication check after every
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Adding required runtime validation to `defineConfig()` | Boot time increases; tests that construct config objects inline slow down | Keep `defineConfig()` as identity function; do validation in `boot()` with a fast Zod schema | At ~100+ boot cycles in test suite |
-| Eager-loading all exception classes during import | First import of `@gravito/core` triggers loading 17 exception classes even if only `PlanetCore` is used | Lazy-load exception sub-modules; the current `export * from './exceptions'` already defers to module bundler | No threshold — affects cold start time |
-| Deep `instanceof` chains for exception hierarchy checks | `e instanceof GravitoException` checked before more specific classes is O(chain depth) | Order catch blocks from most specific to least specific; document hierarchy depth | Not a concern at current hierarchy depth (3 levels) |
+| Object pool exhaustion on fast-path surge | Requests queue behind pool wait; latency spike | Size pool relative to expected concurrency (default 256 is conservative for >500 RPS bursts) | ~2x pool size in concurrent requests |
+| High-cardinality dynamic route patterns | `RadixRouter` cache fills to 10,000 entries; memory grows; GC pressure | Use static route registration for all known URL patterns; keep dynamic parameters well-bounded | >10,000 unique path patterns |
+| OpenAPI static generation on every request | `OrbitAstral` re-generates spec on each `/openapi.json` hit during load test | Cache is already in `OrbitAstral.cachedSpec` — verify cache invalidation does not fire during normal operation | First request after any route change clears cache |
+| Inline Lite Satellite with per-request closure allocation | New closure created per request inside handler | Move closure outside handler; keep handler as pure function reference | >1,000 RPS on Lite Satellite routes |
+| `compileMiddlewareChain` called on every post-startup `use()` | `Gravito.use()` calls `compileRoutes()` which recompiles all routes | Batch all route/middleware registrations before starting server; avoid post-startup `use()` calls | Servers with >50 routes + 5+ middleware layers |
 
 ---
 
@@ -207,21 +214,29 @@ Module organization cleanup phase — run symbol deduplication check after every
 
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Exposing `@internal` bootstrap helpers in public API surface | Internal helpers may manipulate global state or bypass validation; making them public invites misuse | Keep `setGlobalCore()` and similar bootstrap helpers behind explicit `@internal` — and verify they are not in the named export list |
-| Removing type-narrowing from `GravitoVariables` | Wide `[key: string]: unknown` makes it easy to access sensitive context properties without type checking | Keep typed core properties (`core?: PlanetCore`) even at risk of needing an opaque type to avoid circular ref |
-| README examples showing unsafe config patterns | Outdated examples may use deprecated/removed APIs that expose security gaps | Update examples as part of the same PR that changes the API, not separately |
+| Fast-path route with no auth middleware in chain | Auth bypass — identical to CVE-2025-29927 class (middleware skipped via bypass mechanism) | Integration test: assert 401 on every fast-path route that should be protected, before fast-path activation |
+| Inline Lite Satellite exposing admin endpoint without rate limiting | Brute-force on config-level endpoints | Any route registered via Lite Satellite must pass the same Orbit-level security review as named Satellites |
+| Bun.crypto used for token signing without checking availability | Falls back to weaker polyfill silently | Explicit capability check: if Bun.crypto unavailable, throw `SystemException` with `code: 'CRYPTO_UNAVAILABLE'` — do not silently degrade cryptographic operations |
+| OpenAPI spec exposes internal error codes or stack traces in `AstralGenerationError` context | Information disclosure via spec endpoint | Strip `AstralGenerationError.context` before serialising spec to HTTP response |
+| Lite Satellite container binding accessible via `Container.make()` from other Satellites | Satellite isolation violation | Inline plugins must not bind services to the global DI container (routes only) |
 
 ---
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **Star export removal:** Verify with `bun run typecheck` at workspace root, not just `cd packages/core && bun run typecheck` — they check different things
-- [ ] **Exception consolidation:** Verify `instanceof AuthException` still returns `true` in both `fortify` and `sentinel` after any renaming
-- [ ] **GravitoConfig change:** Verify that `PlanetCore.boot()` actually uses the new/changed field — grep for every field name in `GravitoConfig` and confirm it appears in `boot()`
-- [ ] **@internal hiding:** Verify that no `declare module '@gravito/core'` block in any orbit package references the hidden interface — run `grep -r "declare module '@gravito/core'" packages/`
-- [ ] **README update:** Verify examples compile against the current API by adding them as `//example` blocks in a type-check-only test file
-- [ ] **console.log removal from Router:** Verify the two skipped tests in `orbit-middleware-isolation.test.ts` are re-enabled and passing before removing the log
-- [ ] **`defineConfig()` change:** Verify a fresh `gravito.config.ts` using the new API compiles without errors in a separate `examples/` directory test
+- [ ] **Fast-Path Routing:** Middleware chain coverage — verify auth Orbit middleware is present in compiled chain for every fast-path route, not just dynamic routes.
+- [ ] **Fast-Path Routing:** `fetch` fallback is never `undefined` in `serveConfig()` output — dynamic routes and error routes must still resolve.
+- [ ] **Fast-Path Routing:** Integration test explicitly asserts a protected fast-path route returns 401 without credentials (not just that it returns 200 with them).
+- [ ] **Static OpenAPI Generation:** Generated spec is validated against `openapi-types` `OpenAPIV3_1.Document` schema — do not assume `OrbitAstral`'s in-memory validation is sufficient.
+- [ ] **Static OpenAPI Generation:** Static file output passes through `export-static.ts` archive logic — verify archive integrity in CI.
+- [ ] **Static OpenAPI Generation:** Spec generated from a fresh `PlanetCore` fixture (not a live server instance) in CI.
+- [ ] **Lite Satellite / Inline Plugin:** Registering an inline plugin does NOT extend `ServiceMap` in global TypeScript scope — verify no `declare module` block in `gravito.config.ts`.
+- [ ] **Lite Satellite / Inline Plugin:** Inline plugin routes are exercised by at least one integration test (not just unit test).
+- [ ] **Lite Satellite / Inline Plugin:** Event names use `inline:<name>:<event>` convention — no generic names.
+- [ ] **Bun-Native Abstraction:** Every new Bun API abstraction has a Node fallback test that runs in the monorepo CI matrix.
+- [ ] **Bun-Native Abstraction:** `getPasswordAdapter()` / `getDefaultRuntimeAdapter()` used — not direct `Bun.xxx` calls in Orbit source files.
+- [ ] **Any new package or sub-path export:** `publint` passes locally (`bun run check`) before pushing.
+- [ ] **GravitoException compliance:** All new error throws use `SystemException` / `DomainException` / `OperationalException` hierarchy — zero bare `throw new Error(...)` in Orbit source.
 
 ---
 
@@ -229,12 +244,13 @@ Module organization cleanup phase — run symbol deduplication check after every
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Star export removed, downstream package broken | MEDIUM | Re-add the missing named export, release a patch version, run workspace typecheck to confirm |
-| AuthException removed, fortify/sentinel broken | HIGH | Restore the abstract class, re-export both names, publish patch to affected packages before any consumers update |
-| GravitoConfig field added, boot() doesn't use it | LOW | Add the missing forward in `boot()`, add regression test, patch release |
-| @internal hiding breaks module augmentation | HIGH | Restore the interface to the public export immediately; augmentation blocks in 14 packages all fail simultaneously; requires republishing core and all affected orbit packages |
-| Router console.log removed, skipped tests reveal breakage | MEDIUM | Re-add the log temporarily, fix the failing middleware isolation tests, then remove the log in a follow-up PR |
-| AuthException renamed to AuthenticationException without alias | HIGH | Restore old name as an alias (`export { AuthenticationException as AuthException }`); issue a semver minor version (not major) since it was previously shipped as stable API |
+| Auth middleware missing from fast-path compiled chain | HIGH | 1. Disable fast-path (`serveConfig()` → remove from `Bun.serve`). 2. Re-enable full `fetch` fallback. 3. Fix boot order. 4. Re-enable fast-path after verification. 5. Incident: all fast-path requests since deploy were unauthenticated — treat as security incident. |
+| Contract drift between Zod schema and AstralResource | MEDIUM | 1. Regenerate spec from current Zod schemas. 2. Diff against committed spec. 3. Update `AstralResource` contracts. 4. Pin to single-source pattern. Clients may need re-generation. |
+| Container binding collision from Lite Satellite | MEDIUM | 1. Add namespace prefix to inline plugin bindings. 2. `bun run typecheck` to surface declaration conflicts. 3. Restart server — bindings resolved in new instance. |
+| New export missing from publint gate | LOW | 1. Add entry to `exports` in `package.json`. 2. Run `bun run build`. 3. Run `bun run check`. 4. Push. No user impact if caught in CI before release. |
+| Direct Bun API crash in non-Bun environment | LOW-MEDIUM | 1. Wrap in `getRuntimeKind() === 'bun'` guard. 2. Route through existing `adapter-bun.ts`. 3. Add Node fallback test. Impact: dependent packages crash on Node until patched. |
+| `serveConfig()` routes not updated after post-startup `use()` | MEDIUM | 1. Call `server.reload(gravito.serveConfig())`. 2. If reload not available, restart server process. 3. Long-term: document that post-startup middleware changes require reload. |
+| Inline plugin event name collision | MEDIUM | 1. Rename inline plugin event to use `inline:<name>:<event>` convention. 2. Search Signal bus listeners for false matches. 3. Deploy; verify named Satellite no longer fires spuriously. |
 
 ---
 
@@ -242,32 +258,28 @@ Module organization cleanup phase — run symbol deduplication check after every
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| Star export removal breaks downstream | Module organization cleanup | `bun run typecheck` at workspace root with zero errors |
-| AuthException consolidation breaks instanceof | API footgun / exception naming | `grep -rn "instanceof Auth"` returns non-zero results; each result still compiles and passes at runtime |
-| GravitoConfig changes not forwarded by boot() | Config type unification | Test: `PlanetCore.boot(config)` with every `GravitoConfig` field populated; assert each field on resulting instance |
-| @internal hiding breaks module augmentation | Module organization cleanup | `grep -r "declare module '@gravito/core'" packages/` returns list; each listed file compiles after export change |
-| Router console.log removal masks broken tests | API footgun fixes | Skipped tests in `orbit-middleware-isolation.test.ts` re-enabled and passing before log is removed |
-| Barrel refactor creates name collisions | Module organization cleanup | Symbol deduplication check: no exported name appears in two different source modules |
-| README drift (fixed without CI enforcement) | Documentation sync | Compile-check every README code block via `examples/` or a dedicated type-test file; add to CI |
-| `any` elimination introduces breaking generic changes | Type safety phase | `bun run typecheck` at workspace root; check that photon, sentinel, forge still compile with no new errors |
+| Fast-path silently skips auth middleware | Fast-Path Routing phase — boot-order contract before implementing bypass | Integration test: protected fast-path route returns 401 without auth header |
+| `serveConfig()` routes not updated after post-startup `use()` | Fast-Path Routing phase — document and test | Test: register route after `serveConfig()`, verify it resolves via `fetch` fallback |
+| OpenAPI contract diverges from Zod schema | Static OpenAPI Generation phase — single-source-of-truth constraint | CI contract test: generate spec, send valid + invalid requests, assert expected responses |
+| Lite Satellite leaks global container registrations | Lite Satellite phase — namespace requirement in API design | Unit test: two inline plugins with same logical service key throw collision error |
+| Lite Satellite event name collision | Lite Satellite phase — event namespace in API design | Integration test: inline plugin event does not trigger named Satellite handler |
+| Bun API called without runtime guard | Bun-Native Abstraction phase — lint rule + cross-runtime test | `bun test --conditions node` passes for every new Bun abstraction |
+| publint CI gate fails on new sub-path export | Any new export phase — pre-push `bun run check` | publint runs clean locally before PR is opened |
+| GravitoException hierarchy not followed | Any phase — Biome `noExplicitAny` and review checklist | `grep -r "throw new Error" packages/*/src` returns zero results in new code |
+| Container ServiceMap polluted by inline plugin | Lite Satellite phase — `declare module` forbidden in config files | TypeScript `--noEmit` on `gravito.config.ts` shows no `declare module` blocks |
 
 ---
 
 ## Sources
 
-- Direct codebase analysis: `packages/core/src/exceptions/index.ts`, `AuthException.ts`, `AuthenticationException.ts`
-- Direct codebase analysis: `packages/core/src/PlanetCore.ts` (boot() body, lines 788-811)
-- Direct codebase analysis: `packages/core/src/index.ts` (star export sites, lines 392-874)
-- Direct codebase analysis: `packages/core/src/Router.ts` (console.log line 610, ModelNotFound string compare lines 436/475)
-- Direct codebase analysis: `packages/core/src/http/types.ts` (GravitoVariables module augmentation pattern)
-- Direct codebase analysis: `packages/fortify/src/errors/FortifyError.ts` (extends AuthException)
-- Direct codebase analysis: `packages/sentinel/src/errors/SentinelError.ts` (extends AuthException)
-- Direct codebase analysis: `packages/sentinel/src/middleware/auth.ts` (throws AuthenticationException)
-- Direct codebase analysis: `packages/atlas/src/orm/model/errors.ts` (ModelNotFoundError vs ModelNotFoundException naming)
-- Direct codebase analysis: 14 orbit packages augmenting `GravitoVariables` via `declare module '@gravito/core'`
-- Codebase concerns: `.planning/codebase/CONCERNS.md` (skipped tests, ESM/CJS build complexity)
-- Project context: `.planning/PROJECT.md` (v2.1.0 DX goals, 38 downstream consumers, TypeScript strict constraint)
+- Gravito codebase direct inspection: `packages/core/src/engine/Gravito.ts`, `packages/core/src/adapters/bun/BunNativeAdapter.ts`, `packages/core/src/runtime/detection.ts`, `packages/astral/src/export-static.ts`, `packages/astral/src/errors.ts`, `packages/sentinel/src/HashManager.ts` (2026-03-30)
+- [CVE-2025-29927: Next.js Middleware Authorization Bypass](https://projectdiscovery.io/blog/nextjs-middleware-authorization-bypass) — illustrates the class of vulnerability when fast-path bypasses middleware
+- [Bun Middleware Support Issue #17608](https://github.com/oven-sh/bun/issues/17608) — confirms Bun.serve routes map does not support per-route middleware natively; routes object is read once at startup
+- [JS Runtimes Have Forked in 2025: Cross-Runtime Libraries](https://debugg.ai/resources/js-runtimes-have-forked-2025-cross-runtime-libraries-node-bun-deno-edge-workers) — Bun-specific API abstraction recommendations and pitfalls
+- [publint Rules](https://publint.dev/rules) — exports map validation requirements
+- [TypeScript in 2025 with ESM and CJS](https://lirantal.com/blog/typescript-in-2025-with-esm-and-cjs-npm-publishing) — dual-publish type file requirements
+- [Request Validation at the Edge: Zod Schemas, OpenAPI](https://dev.to/young_gao/request-validation-at-the-edge-zod-schemas-openapi-and-type-safe-apis-1kib) — runtime vs compile-time schema validation gap
 
 ---
-*Pitfalls research for: DX improvements to @gravito/core in a 38-consumer TypeScript monorepo*
-*Researched: 2026-03-29*
+*Pitfalls research for: Gravito v2.2.0 — Fast-Path Routing, Static OpenAPI, Lite Satellite, Bun-Native*
+*Researched: 2026-03-30*
