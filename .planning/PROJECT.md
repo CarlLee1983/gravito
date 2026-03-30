@@ -40,7 +40,13 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 
 ### Active
 
-(Defining in v2.2.0 milestone — see REQUIREMENTS.md)
+- **Bun-Native Foundation** (v2.2.0 Phase 27) — ✓ Validated
+  - NativeOrbitDetector runtime detection (BUN-03)
+  - SHA-512/BLAKE2b in BunCryptoHasher (BUN-02)
+  - Boot-time capability report (PERF-03)
+  - Sentinel argon2id native integration (BUN-01)
+
+(See REQUIREMENTS.md for remaining v2.2.0 requirements)
 
 ### Out of Scope
 
@@ -180,4 +186,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-30 after v2.2.0 milestone started*
+*Last updated: 2026-03-30 after Phase 27 (bun-native-foundation) complete*
