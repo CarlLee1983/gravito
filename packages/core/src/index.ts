@@ -906,6 +906,7 @@ export function defineConfig(config: GravitoConfig): GravitoConfig {
 export {
   BunContext,
   BunRequest,
+  type BunRouteOptions,
   BunWebSocketHandler,
   NodeType,
   RadixNode,
