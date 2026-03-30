@@ -19,14 +19,14 @@ export interface GravitoManifest {
 export type ModuleResolver = () => Promise<any>
 
 /**
- * Gravito 核心啟動引擎 (已解耦)
+ * Gravito core boot engine (decoupled).
  */
 export class GravitoServer {
   /**
-   * 一鍵建立並組裝伺服器
-   * @param manifest 站點描述清單
-   * @param resolvers 模組解析器字典
-   * @param baseOrbits 基礎軌道模組 (例如 OrbitMonolith)
+   * Create and assemble a server in one step.
+   * @param manifest - Application manifest describing the site structure.
+   * @param resolvers - Dictionary of module resolvers.
+   * @param baseOrbits - Base orbit modules (e.g., OrbitMonolith).
    */
   static async create(
     manifest: GravitoManifest,

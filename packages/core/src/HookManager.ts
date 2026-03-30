@@ -36,11 +36,11 @@ import type {
 /**
  * Manager for WordPress-style hooks (actions and filters).
  *
- * 此為 facade 類別，將職責委派給專門的管理器：
- * - FilterManager：處理 filter hook 的登記與執行
- * - ActionManager：處理 action hook 的登記與執行
- * - AsyncDetector：非同步偵測快取
- * - MigrationWarner：遷移警告管理
+ * This is a facade class that delegates responsibilities to specialized managers:
+ * - FilterManager: handles filter hook registration and execution
+ * - ActionManager: handles action hook registration and execution
+ * - AsyncDetector: caches async detection results
+ * - MigrationWarner: manages migration warnings
  *
  * @public
  */
@@ -181,8 +181,9 @@ export class HookManager {
    * This method supports both synchronous and asynchronous dispatch based on configuration.
    * In hybrid mode, it auto-detects async listeners and uses async dispatch.
    *
-   * 注意：dispatch 模式決策在此層級完成，以確保子類別（如 ObservableHookManager）
-   * 可透過多型覆寫正確攔截 doActionSync / doActionAsync 的呼叫。
+   * Note: Dispatch mode decisions are made at this level to ensure that subclasses
+   * (e.g., ObservableHookManager) can correctly intercept doActionSync / doActionAsync
+   * calls via polymorphic overrides.
    *
    * @template TArgs - The type of arguments passed to the action.
    * @param hook - The name of the hook.
@@ -664,20 +665,20 @@ export class HookManager {
   // ========== Message Queue Bridge（分佈式處理）==========
 
   /**
-   * Dispatch an event through Bull Queue（分佈式異步處理）.
+   * Dispatch an event through Bull Queue (distributed async processing).
    *
-   * 與 doActionAsync() 不同：
-   * - doActionAsync() 使用 EventPriorityQueue (Memory-based)
-   * - dispatchQueued() 使用 Bull Queue (Redis-backed, 分佈式)
+   * Unlike doActionAsync():
+   * - doActionAsync() uses EventPriorityQueue (memory-based)
+   * - dispatchQueued() uses Bull Queue (Redis-backed, distributed)
    *
-   * 適用於需要持久化和跨進程處理的事件。
+   * Use this for events that require persistence and cross-process handling.
    *
-   * @template TArgs - 事件參數類型
-   * @param event - 事件名稱
-   * @param args - 事件參數
-   * @param options - 事件選項（可選）
-   * @returns Job ID
-   * @throws 如果未配置 MessageQueueBridge 或沒有 listeners
+   * @template TArgs - The type of event arguments.
+   * @param event - Event name.
+   * @param args - Event arguments.
+   * @param options - Event options (optional).
+   * @returns Job ID.
+   * @throws If MessageQueueBridge is not configured or there are no listeners.
    *
    * @example
    * ```typescript
@@ -704,19 +705,19 @@ export class HookManager {
   }
 
   /**
-   * Dispatch an event through Bull Queue with delay（延遲隊列分發）.
+   * Dispatch an event through Bull Queue with a delay (deferred distributed dispatch).
    *
-   * @template TArgs - 事件參數類型
-   * @param event - 事件名稱
-   * @param args - 事件參數
-   * @param delay - 延遲時間（毫秒）
-   * @param options - 事件選項（可選）
-   * @returns Job ID
-   * @throws 如果未配置 MessageQueueBridge
+   * @template TArgs - The type of event arguments.
+   * @param event - Event name.
+   * @param args - Event arguments.
+   * @param delay - Delay in milliseconds.
+   * @param options - Event options (optional).
+   * @returns Job ID.
+   * @throws If MessageQueueBridge is not configured.
    *
    * @example
    * ```typescript
-   * // 延遲 5 秒後處理
+   * // Delay processing by 5 seconds
    * const jobId = await hookManager.dispatchDeferredQueued(
    *   'reminder:send',
    *   { userId: '123' },
@@ -750,11 +751,11 @@ export class HookManager {
   /**
    * Get the execution status of an event.
    *
-   * 查詢事件執行狀態，支持查詢 Bull Queue 和 DLQ 中的事件。
+   * Queries event execution status from Bull Queue and DLQ.
    *
-   * @param eventId - 事件 ID (task.id 或 jobId)
-   * @returns 事件狀態信息
-   * @throws 如果未配置 MessageQueueBridge
+   * @param eventId - Event ID (task.id or jobId).
+   * @returns Event status information.
+   * @throws If MessageQueueBridge is not configured.
    *
    * @public
    */
