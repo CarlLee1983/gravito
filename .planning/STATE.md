@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.2.0
-milestone_name: Framework Evolution — 效能旁路與開發敏捷性
-status: active
-stopped_at: Roadmap defined — awaiting Phase 27 planning
-last_updated: "2026-03-30T17:00:00.000Z"
+milestone_name: Framework Evolution
+status: unknown
+stopped_at: Roadmap created — 5 phases (27-31), 10/10 requirements mapped
+last_updated: "2026-03-30T08:43:04.402Z"
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 3
+  completed_plans: 1
 ---
 
 # STATE: Gravito-Core
@@ -19,20 +19,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** 穩定可靠的核心基礎設施
-**Current focus:** v2.2.0 Framework Evolution — Phase 27 ready to plan
+**Current focus:** Phase 27 — bun-native-foundation
 
 ---
 
 ## Current Position
 
-Phase: 27 (Bun-Native Foundation) — Not started
-Plan: —
-Status: Roadmap defined, ready for `/gsd:plan-phase 27`
-Last activity: 2026-03-30 — v2.2.0 roadmap created (Phases 27-31)
-
-Progress bar: ░░░░░░░░░░ 0% (0/5 phases)
-
----
+Phase: 27 (bun-native-foundation) — EXECUTING
+Plan: 2 of 3
 
 ## Accumulated Context
 
@@ -47,6 +41,9 @@ Progress bar: ░░░░░░░░░░ 0% (0/5 phases)
 | DX-01 before DX-02 | Schema registry metadata (DX-01) 是 OpenAPI generation (DX-02) 的先決條件 | 2026-03-30 |
 | TOOL-01 last (Phase 31) | 獨立功能，待所有 Phase 27-30 新 symbols 穩定後再確認 exports | 2026-03-30 |
 | All Bun API via adapter-bun.ts only | 直接呼叫 Bun.xxx 在 adapter 外會造成 Node CI ReferenceError | 2026-03-30 |
+| globalThis narrowing for NativeOrbitDetector | No bare Bun.xxx — all access via (globalThis as { Bun?: BunGlobal }).Bun | 2026-03-30 |
+| Object.freeze() on NativeFeatures | Deep immutability guarantee for cached capability snapshot | 2026-03-30 |
+| blake2b falls back to SHA-256 with warning | node:crypto BLAKE2b not universally available; SHA-256 is correct fallback | 2026-03-30 |
 
 ### Critical Constraints (from research)
 
@@ -77,6 +74,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-30
-Stopped at: Roadmap created — 5 phases (27-31), 10/10 requirements mapped
-Resume file: .planning/ROADMAP.md
-Next action: `/gsd:plan-phase 27`
+Stopped at: Completed 27-01-PLAN.md (NativeOrbitDetector + HashAccelerator sha512/blake2b)
+Resume file: .planning/phases/27-bun-native-foundation/27-01-SUMMARY.md
+Next action: Execute 27-02-PLAN.md
