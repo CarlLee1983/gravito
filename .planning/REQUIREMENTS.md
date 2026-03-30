@@ -11,7 +11,7 @@ Requirements for Framework Evolution milestone. Each maps to roadmap phases.
 
 - [ ] **PERF-01**: Developer can register fast-path routes via `photon.fast(method, path, handler)` that bypass DI context construction and lifecycle hooks, wiring directly to Bun.serve handler
 - [ ] **PERF-02**: Developer can opt-out of global middleware on per-route basis with explicit typed flag at registration time
-- [ ] **PERF-03**: Framework logs Bun-native capability report at boot time showing which native APIs are active (e.g. Bun.password argon2id, Bun.CryptoHasher, Bun.Glob)
+- [x] **PERF-03**: Framework logs Bun-native capability report at boot time showing which native APIs are active (e.g. Bun.password argon2id, Bun.CryptoHasher, Bun.Glob)
 
 ### Developer Experience
 
@@ -65,7 +65,7 @@ Deferred to future milestones. Tracked but not in current roadmap.
 |-------------|-------|--------|
 | PERF-01 | Phase 28 | Pending |
 | PERF-02 | Phase 28 | Pending |
-| PERF-03 | Phase 27 | Pending |
+| PERF-03 | Phase 27 | Complete |
 | DX-01 | Phase 30 | Pending |
 | DX-02 | Phase 30 | Pending |
 | DX-03 | Phase 29 | Pending |

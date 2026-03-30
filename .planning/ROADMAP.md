@@ -43,7 +43,7 @@ See [v2.0.0-ROADMAP.md](milestones/v2.0.0-ROADMAP.md) for full details.
 
 **Milestone Goal:** 強化 Gravito 在極致效能、開發體驗、模組輕量化與 Bun-Native 整合四大維度，基於 BI 選型對比（ElysiaJS / Bun 原生）的洞察。
 
-- [ ] **Phase 27: Bun-Native Foundation** — NativeOrbitDetector 建立 + Bun.password / CryptoHasher 路徑驗證 + 開機能力報告
+- [x] **Phase 27: Bun-Native Foundation** — NativeOrbitDetector 建立 + Bun.password / CryptoHasher 路徑驗證 + 開機能力報告 (completed 2026-03-30)
 - [ ] **Phase 28: Fast-Path Routing** — photon.fast() 旁路機制，直連 Bun.serve handler，含安全測試（CVE-2025-29927 防護）
 - [ ] **Phase 29: Lite Satellite** — InlineOrbit + PlanetCore.plugin() 零樣板匿名衛星定義
 - [ ] **Phase 30: Static OpenAPI Generation** — Zod schema 元資料 + gravito openapi:generate CLI 靜態輸出
@@ -64,7 +64,7 @@ See [v2.0.0-ROADMAP.md](milestones/v2.0.0-ROADMAP.md) for full details.
 Plans:
 - [x] 27-01-PLAN.md — NativeOrbitDetector + NativeFeatures type + HashAccelerator sha512/blake2b extension
 - [x] 27-02-PLAN.md — NativeHasher sha512/blake2b implementation + argon2id integration test
-- [ ] 27-03-PLAN.md — Boot capability report in PlanetCore.boot() + public exports
+- [x] 27-03-PLAN.md — Boot capability report in PlanetCore.boot() + public exports
 
 ### Phase 28: Fast-Path Routing
 **Goal**: Developer can register fast-path routes that bypass DI context construction and lifecycle hooks, and can opt specific routes out of global middleware, with a security contract guaranteeing auth middleware still fires
@@ -118,7 +118,7 @@ Plans:
 | 24. Config Type Unification | v2.1.0 | 1/1 | Complete | 2026-03-30 |
 | 25. Container Type Improvement | v2.1.0 | 1/1 | Complete | 2026-03-30 |
 | 26. Documentation and Tooling | v2.1.0 | 7/7 | Complete | 2026-03-30 |
-| 27. Bun-Native Foundation | v2.2.0 | 2/3 | In Progress|  |
+| 27. Bun-Native Foundation | v2.2.0 | 3/3 | Complete   | 2026-03-30 |
 | 28. Fast-Path Routing | v2.2.0 | 0/? | Not started | - |
 | 29. Lite Satellite | v2.2.0 | 0/? | Not started | - |
 | 30. Static OpenAPI Generation | v2.2.0 | 0/? | Not started | - |
