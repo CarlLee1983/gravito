@@ -442,7 +442,7 @@ export interface GravitoContext<V extends GravitoVariables = GravitoVariables> {
    * URL generator helper.
    * Generates a URL for a named route.
    */
-  route: (name: string, params?: Record<string, any>, query?: Record<string, any>) => string
+  route: (name: string, params?: Record<string, string | number>, query?: Record<string, string | number | boolean | null | undefined>) => string
 
   /**
    * Access the native context object from the underlying HTTP engine.
@@ -466,7 +466,7 @@ export interface GravitoContext<V extends GravitoVariables = GravitoVariables> {
    * Access the RequestScopeManager for this request
    * Services resolved through this manager are scoped to the HTTP request lifetime.
    */
-  requestScope(): any // RequestScopeManager (avoid circular import)
+  requestScope(): unknown // RequestScopeManager (avoid circular import)
 
   /**
    * Resolve or create a request-scoped service

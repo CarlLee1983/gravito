@@ -5,7 +5,7 @@ import { expect } from 'bun:test'
  * inspired by Laravel's TestResponse.
  */
 export class TestResponse {
-  private _jsonData: any = null
+  private _jsonData: unknown = null
   private _textData: string | null = null
 
   constructor(public readonly response: Response) {}
@@ -67,16 +67,16 @@ export class TestResponse {
   /**
    * Assert that the response contains the given JSON data.
    */
-  async assertJson(data: any): Promise<this> {
+  async assertJson(data: unknown): Promise<this> {
     const json = await this.getJson()
-    expect(json).toMatchObject(data)
+    expect(json).toMatchObject(data as object)
     return this
   }
 
   /**
    * Assert that the response contains exactly the given JSON data.
    */
-  async assertExactJson(data: any): Promise<this> {
+  async assertExactJson(data: unknown): Promise<this> {
     const json = await this.getJson()
     expect(json).toEqual(data)
     return this
@@ -85,19 +85,23 @@ export class TestResponse {
   /**
    * Assert the structure of the JSON response.
    */
-  async assertJsonStructure(structure: any): Promise<this> {
+  async assertJsonStructure(structure: unknown): Promise<this> {
     const json = await this.getJson()
     // Simple implementation: check keys recursively
-    const checkKeys = (data: any, struct: any) => {
-      for (const key in struct) {
-        if (Array.isArray(struct[key])) {
-          expect(Array.isArray(data[key])).toBe(true)
-          if (data[key].length > 0) {
-            checkKeys(data[key][0], struct[key][0])
+    const checkKeys = (data: unknown, struct: unknown) => {
+      const structObj = struct as Record<string, unknown>
+      const dataObj = data as Record<string, unknown>
+      for (const key in structObj) {
+        if (Array.isArray(structObj[key])) {
+          expect(Array.isArray(dataObj[key])).toBe(true)
+          const dataArr = dataObj[key] as unknown[]
+          const structArr = structObj[key] as unknown[]
+          if (dataArr.length > 0) {
+            checkKeys(dataArr[0], structArr[0])
           }
-        } else if (typeof struct[key] === 'object') {
-          expect(typeof data[key]).toBe('object')
-          checkKeys(data[key], struct[key])
+        } else if (typeof structObj[key] === 'object') {
+          expect(typeof dataObj[key]).toBe('object')
+          checkKeys(dataObj[key], structObj[key])
         } else {
           expect(data).toHaveProperty(key)
         }
@@ -144,7 +148,7 @@ export class TestResponse {
   /**
    * Get the JSON content
    */
-  async getJson(): Promise<any> {
+  async getJson(): Promise<unknown> {
     if (this._jsonData) {
       return this._jsonData
     }

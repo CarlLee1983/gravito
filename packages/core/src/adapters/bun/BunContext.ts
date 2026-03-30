@@ -27,7 +27,7 @@ export class BunContext<V extends GravitoVariables = GravitoVariables>
   /**
    * URL generator helper
    */
-  public route!: (name: string, params?: Record<string, any>, query?: Record<string, any>) => string
+  public route!: (name: string, params?: Record<string, string | number>, query?: Record<string, string | number | boolean | null | undefined>) => string
 
   // Response state
   private _status: StatusCode = 200
@@ -73,12 +73,12 @@ export class BunContext<V extends GravitoVariables = GravitoVariables>
 
         // 2. If not, try to fetch from internal variable map
         if (typeof prop === 'string') {
-          return target.get(prop as any)
+          return target.get(prop as keyof V)
         }
 
         return undefined
       },
-    }) as any
+    }) as GravitoContext<V>
   }
 
   // Response Builders

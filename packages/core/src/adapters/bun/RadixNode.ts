@@ -41,7 +41,7 @@ export class RadixNode {
     this.type = type
   }
 
-  toJSON(): any {
+  toJSON(): Record<string, unknown> {
     return {
       segment: this.segment,
       type: this.type,
@@ -53,22 +53,22 @@ export class RadixNode {
     }
   }
 
-  static fromJSON(json: any): RadixNode {
-    const node = new RadixNode(json.segment, json.type)
-    node.paramName = json.paramName
+  static fromJSON(json: Record<string, unknown>): RadixNode {
+    const node = new RadixNode(json.segment as string | undefined, json.type as NodeType | undefined)
+    node.paramName = (json.paramName as string | null) ?? null
     if (json.regex) {
-      node.regex = new RegExp(json.regex)
+      node.regex = new RegExp(json.regex as string)
     }
     if (json.children) {
-      for (const [key, childJson] of json.children) {
+      for (const [key, childJson] of json.children as [string, Record<string, unknown>][]) {
         node.children.set(key, RadixNode.fromJSON(childJson))
       }
     }
     if (json.paramChild) {
-      node.paramChild = RadixNode.fromJSON(json.paramChild)
+      node.paramChild = RadixNode.fromJSON(json.paramChild as Record<string, unknown>)
     }
     if (json.wildcardChild) {
-      node.wildcardChild = RadixNode.fromJSON(json.wildcardChild)
+      node.wildcardChild = RadixNode.fromJSON(json.wildcardChild as Record<string, unknown>)
     }
     return node
   }

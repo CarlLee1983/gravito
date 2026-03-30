@@ -3,15 +3,21 @@
  * Automatically switches between node:crypto and globalThis.crypto.
  */
 
+export interface RandomBytesResult extends Iterable<number> {
+  readonly length: number
+  toString(encoding: string): string
+  [index: number]: number | undefined
+}
+
 let randomUUIDFn: () => string
-let randomBytesFn: (size: number) => any
+let randomBytesFn: (size: number) => RandomBytesResult
 
 const tryGetNodeCrypto = () => {
   try {
     if (
       typeof window === 'undefined' &&
       typeof process !== 'undefined' &&
-      !(process as any).browser
+      !(process as unknown as { browser?: boolean }).browser
     ) {
       // biome-ignore lint/security/noGlobalEval: specialized case for hiding node built-ins
       return eval('require')('node:crypto')

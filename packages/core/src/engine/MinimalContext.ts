@@ -27,7 +27,7 @@ let bunEscapeHTML: (html: string) => string = (html: string) => {
 }
 
 try {
-  bunEscapeHTML = (require('bun') as any).escapeHTML
+  bunEscapeHTML = (require('bun') as { escapeHTML: (html: string) => string }).escapeHTML
 } catch {
   // Already have default fallback
 }
@@ -157,7 +157,7 @@ class MinimalRequest implements FastRequest {
 
   get cookies(): Record<string, string> {
     // 1. Try Bun Native CookieMap (Injected in Bun.serve routes API)
-    const nativeCookies = (this._request as any).cookies
+    const nativeCookies = (this._request as unknown as { cookies?: Record<string, string> }).cookies
     if (nativeCookies) {
       return nativeCookies
     }
@@ -301,7 +301,7 @@ export class MinimalContext implements IFastContext {
     return this.text(message, 400)
   }
 
-  async forward(target: string, _options: any = {}): Promise<Response> {
+  async forward(target: string, _options: Record<string, unknown> = {}): Promise<Response> {
     const url = new URL(this.req.url)
     const targetUrl = new URL(
       target.startsWith('http') ? target : `${url.protocol}//${target}${this.req.path}`
@@ -317,10 +317,10 @@ export class MinimalContext implements IFastContext {
   }
 
   get<T>(_key: string): T {
-    return undefined as any
+    return undefined as unknown as T
   }
 
-  set(_key: string, _value: any): void {}
+  set(_key: string, _value: unknown): void {}
 
   /**
    * Get the request-scoped service manager for this request.
@@ -343,7 +343,7 @@ export class MinimalContext implements IFastContext {
     return this._requestScope.resolve(key, factory)
   }
 
-  public route: (name: string, params?: any, query?: any) => string = () => ''
+  public route: (name: string, params?: Record<string, string | number>, query?: Record<string, string | number | boolean | null | undefined>) => string = () => ''
 
   get native(): this {
     return this

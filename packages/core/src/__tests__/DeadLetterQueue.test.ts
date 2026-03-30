@@ -238,7 +238,7 @@ describe('Dead Letter Queue (DLQ)', () => {
 
       // Setup listener
       const processedIds: number[] = []
-      hookManager.addAction('event:a', async (payload: any) => {
+      hookManager.addAction('event:a', async (payload: unknown) => {
         processedIds.push(payload.id)
       })
 

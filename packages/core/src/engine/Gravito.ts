@@ -32,11 +32,11 @@ import type {
 } from './types'
 
 // Bun runtime optimization: cache frequently used functions
-let bunPeek = (promise: any) => promise // Default fallback
+let bunPeek = <T>(promise: T) => promise // Default fallback
 let bunFile = (path: string) => path // Default fallback
 
 try {
-  const bunModule = require('bun') as any
+  const bunModule = require('bun') as { peek: typeof bunPeek; file: typeof bunFile }
   bunPeek = bunModule.peek
   bunFile = bunModule.file
 } catch {
@@ -63,10 +63,10 @@ function compileMiddlewareChain(middleware: Middleware[], handler: Handler): Com
       })
 
       // Optimization: Only use peek/await if result is truly a Promise
-      let finalResult: any
+      let finalResult: Response | undefined
       if (result instanceof Promise) {
         const peeked = bunPeek(result)
-        finalResult = peeked === result ? await result : peeked
+        finalResult = (peeked === result ? await result : peeked) as Response | undefined
       } else {
         finalResult = result
       }
@@ -79,7 +79,7 @@ function compileMiddlewareChain(middleware: Middleware[], handler: Handler): Com
         const hResult = handler(ctx)
         if (hResult instanceof Promise) {
           const p = bunPeek(hResult)
-          return p === hResult ? await hResult : p
+          return (p === hResult ? await hResult : p) as Response
         }
         return hResult
       }
@@ -101,10 +101,10 @@ function compileMiddlewareChain(middleware: Middleware[], handler: Handler): Com
       })
 
       // Optimization: Only use peek/await if result is truly a Promise
-      let finalResult: any
+      let finalResult: Response | undefined
       if (result instanceof Promise) {
         const peeked = bunPeek(result)
-        finalResult = peeked === result ? await result : peeked
+        finalResult = (peeked === result ? await result : peeked) as Response | undefined
       } else {
         finalResult = result
       }
@@ -348,7 +348,7 @@ export class Gravito {
           let response: Response
           if (result instanceof Promise) {
             const peeked = bunPeek(result)
-            response = peeked === result ? await result : peeked
+            response = peeked === result ? await result : (peeked as unknown as Response)
           } else {
             response = result
           }
@@ -377,7 +377,7 @@ export class Gravito {
       routes: nativeRoutes,
       fetch: this.fetch, // Fallback for dynamic routes
       // Optimize TLS if provided in baseConfig
-      tls: baseConfig.tls ? this.optimizeTLS(baseConfig.tls) : undefined,
+      tls: baseConfig.tls ? this.optimizeTLS(baseConfig.tls as Record<string, unknown> | Record<string, unknown>[]) : undefined,
       error: (error: Error) => {
         console.error('Native route error:', error)
         return new Response(CACHED_RESPONSES.INTERNAL_ERROR, {
@@ -391,10 +391,10 @@ export class Gravito {
   /**
    * Optimize TLS Configuration for Bun 1.39+
    */
-  private optimizeTLS(tls: any): any {
+  private optimizeTLS(tls: Record<string, unknown> | Record<string, unknown>[]): Record<string, unknown> | Record<string, unknown>[] {
     const isProd = process.env.NODE_ENV === 'production'
 
-    const optimizeEntry = (entry: any) => {
+    const optimizeEntry = (entry: Record<string, unknown>) => {
       const optimized = { ...entry }
       if (typeof optimized.key === 'string' && !optimized.key.startsWith('-----BEGIN')) {
         optimized.key = bunFile(optimized.key)
@@ -436,7 +436,7 @@ export class Gravito {
         let response: Response
         if (result instanceof Promise) {
           const peeked = bunPeek(result)
-          response = peeked === result ? await result : peeked
+          response = peeked === result ? await result : (peeked as unknown as Response)
         } else {
           response = result
         }
@@ -491,7 +491,7 @@ export class Gravito {
         let response: Response
         if (result instanceof Promise) {
           const peeked = bunPeek(result)
-          response = peeked === result ? await result : peeked
+          response = peeked === result ? await result : (peeked as unknown as Response)
         } else {
           response = result
         }

@@ -52,13 +52,13 @@ export class ConfigManager {
       const parts = key.split('.')
       const rootKey = parts[0]
       if (rootKey) {
-        let current: any = this.config.get(rootKey)
+        let current: unknown = this.config.get(rootKey)
 
         if (current !== undefined) {
           for (let i = 1; i < parts.length; i++) {
             const part = parts[i]
             if (part && current && typeof current === 'object' && part in current) {
-              current = current[part]
+              current = (current as Record<string, unknown>)[part]
             } else {
               current = undefined
               break

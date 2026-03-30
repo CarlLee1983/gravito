@@ -92,7 +92,7 @@ export function extractRequestScopeErrorContext(
   ctx: GravitoContext,
   error: unknown
 ): RequestScopeErrorContext {
-  const scope = (ctx as any)._requestScope
+  const scope = (ctx as unknown as { _requestScope?: RequestScopeManager })._requestScope
   const metrics = scope?.getMetrics?.()
   const scopeSize = scope?.size?.()
 
@@ -161,7 +161,7 @@ export function withRequestScopeCleanup<
   T extends (ctx: GravitoContext, error: unknown) => Promise<Response>,
 >(handler: T): T {
   return (async (ctx: GravitoContext, error: unknown): Promise<Response> => {
-    const scope = (ctx as any)._requestScope
+    const scope = (ctx as unknown as { _requestScope?: RequestScopeManager })._requestScope
     // Ensure scoped resources are cleaned up before error handler completes
     // Errors during cleanup are logged but don't prevent error response
     void (await cleanupRequestScopeOnError(scope))

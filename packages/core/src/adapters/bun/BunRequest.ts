@@ -100,7 +100,7 @@ export class BunRequest implements GravitoRequest {
       contentType?.includes('multipart/form-data')
     ) {
       const formData = await this.formData()
-      const body: Record<string, any> = {}
+      const body: Record<string, unknown> = {}
       formData.forEach((value, key) => {
         body[key] = value
       })
