@@ -69,6 +69,27 @@
           }
         }
       }
+    },
+    {
+      "includes": ["packages/core/src/**/*.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "error",
+            "noConsole": "error"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/core/src/cli/**/*.ts", "packages/core/src/Logger.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
     }
   ],
   "linter": {
