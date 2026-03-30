@@ -11,6 +11,7 @@ import { BunContext } from './BunContext'
 import type { BunRequest } from './BunRequest'
 import type { WebSocketRouteHandlers } from './BunWebSocketHandler'
 import { BunWebSocketHandler } from './BunWebSocketHandler'
+import { FastPathRegistry } from './FastPathRegistry'
 import { RadixRouter } from './RadixRouter'
 
 /**
@@ -27,6 +28,7 @@ export class BunNativeAdapter implements HttpAdapter {
   }
 
   private router = new RadixRouter()
+  private fastPathRegistry = new FastPathRegistry()
   private middlewares: Array<{ path: string; handlers: GravitoMiddleware[] }> = []
   private errorHandler: GravitoErrorHandler | null = null
   private notFoundHandler: GravitoNotFoundHandler | null = null
@@ -211,6 +213,38 @@ export class BunNativeAdapter implements HttpAdapter {
     this.notFoundHandler = handler
   }
 
+  registerFastPath(
+    method: string,
+    path: string,
+    handler: (req: Request) => Response | Promise<Response>
+  ): void {
+    this.fastPathRegistry.register(method, path, handler)
+  }
+
+  /**
+   * Generate configuration for Bun.serve().
+   * Offloads fast-path GET routes to Bun's native router.
+   */
+  serveConfig(baseConfig: Record<string, unknown> = {}): Record<string, unknown> {
+    const routes: Record<string, (req: Request) => Response | Promise<Response>> = {}
+
+    // Offload fast-path GET routes to Bun's native router for maximum performance
+    for (const [method, pathMap] of this.fastPathRegistry.getAll()) {
+      if (method === 'GET') {
+        for (const [path, handler] of pathMap) {
+          routes[path] = handler
+        }
+      }
+    }
+
+    return {
+      ...baseConfig,
+      routes,
+      fetch: this.fetch.bind(this),
+      websocket: this.websocket,
+    }
+  }
+
   /**
    * 註冊 WebSocket 路由
    */
@@ -238,15 +272,25 @@ export class BunNativeAdapter implements HttpAdapter {
   }
 
   async fetch(request: Request, _server?: unknown): Promise<Response> {
-    // WebSocket upgrade check (before context acquisition)
     const url = new URL(request.url)
+    const path = url.pathname
+
+    // Fast-path bypass (Ultra-low latency, bypasses context pooling and DI)
+    const fastHandler = this.fastPathRegistry.match(request.method, path)
+    if (fastHandler) {
+      return fastHandler(request)
+    }
+
+    // WebSocket upgrade check (before context acquisition)
     if (
       _server != null &&
       typeof (_server as { upgrade?: unknown }).upgrade === 'function' &&
       request.headers.get('upgrade')?.toLowerCase() === 'websocket' &&
-      this.wsHandler.hasRoute(url.pathname)
+      this.wsHandler.hasRoute(path)
     ) {
-      const upgraded = (_server as { upgrade: (req: Request, opts: { data: unknown }) => boolean }).upgrade(request, {
+      const upgraded = (
+        _server as { upgrade: (req: Request, opts: { data: unknown }) => boolean }
+      ).upgrade(request, {
         data: {
           path: url.pathname,
           id: crypto.randomUUID(),
@@ -262,7 +306,6 @@ export class BunNativeAdapter implements HttpAdapter {
     const ctx = this.acquireContext(request)
 
     try {
-      const path = url.pathname
       const method = request.method
 
       const match = this.router.match(method, path)
