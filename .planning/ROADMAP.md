@@ -107,7 +107,7 @@ Plans:
   5. The README HookManager section matches the actual public API surface — no methods that do not exist in source are referenced
   6. A developer choosing between orbit(), register(), and use() can find a decision guide (in README or docs) that explains when to use each with a concrete example
   7. All public API JSDoc comments in packages/core/src/ are written in English — no mixed-language blocks remain
-**Plans:** 6/6 plans complete
+**Plans:** 7 plans (6 complete, 1 gap closure pending)
 Plans:
 - [x] 26-01-PLAN.md — Biome noExplicitAny+noConsole overrides and fix 16 any violations (DOC-01, DOC-02)
 - [x] 26-02-PLAN.md — Console migration/suppression across core/src event system and infrastructure (DOC-02)
@@ -115,6 +115,7 @@ Plans:
 - [x] 26-04-PLAN.md — README API corrections, orbit/register/use guide, JSDoc English unification (DOC-04, DOC-05, DOC-06, DOC-07)
 - [x] 26-05-PLAN.md — Gap closure: fix 37 noExplicitAny violations in events/ (DOC-01)
 - [x] 26-06-PLAN.md — Gap closure: fix 24 noExplicitAny violations in runtime/ and hooks/ (DOC-01)
+- [ ] 26-07-PLAN.md — Gap closure: fix final 5 noExplicitAny + 1 noConsole violations (DOC-01, DOC-02)
 
 ---
 
@@ -127,4 +128,4 @@ Plans:
 | 23. Named Export Conversion | v2.1.0 | 2/2 | Complete    | 2026-03-29 |
 | 24. Config Type Unification | v2.1.0 | 1/1 | Complete    | 2026-03-30 |
 | 25. Container Type Improvement | v2.1.0 | 1/1 | Complete    | 2026-03-30 |
-| 26. Documentation and Tooling | v2.1.0 | 6/6 | Complete   | 2026-03-30 |
+| 26. Documentation and Tooling | v2.1.0 | 6/7 | Gap Closure | 2026-03-30 |
