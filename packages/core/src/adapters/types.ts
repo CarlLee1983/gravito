@@ -299,6 +299,32 @@ export interface HttpAdapter<V extends GravitoVariables = GravitoVariables> {
    * @returns Gravito context
    */
   createContext(request: Request): GravitoContext<V>
+
+  /**
+   * Register an ultra-low latency route that bypasses the Gravito engine.
+   *
+   * @param method - HTTP method
+   * @param path - Exact route path (no wildcards or parameters)
+   * @param handler - Native fetch handler (Request => Response)
+   * @since 2.2.0
+   */
+  registerFastPath?(
+    method: string,
+    path: string,
+    handler: (req: Request) => Response | Promise<Response>
+  ): void
+
+  /**
+   * Generate configuration for the native HTTP engine.
+   *
+   * This allows offloading fast-path routes to the runtime's native router
+   * (e.g., Bun.serve({ routes: { ... } })).
+   *
+   * @param baseConfig - Base configuration to merge
+   * @returns Optimized engine configuration
+   * @since 2.2.0
+   */
+  serveConfig?(baseConfig?: Record<string, unknown>): Record<string, unknown>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

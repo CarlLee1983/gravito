@@ -312,4 +312,45 @@ describe('BunNativeAdapter', () => {
       }
     })
   })
+
+  describe('Fast-Path 路由', () => {
+    it('應該匹配 fast-path 路由並繞過 context pool', async () => {
+      let handlerCalled = false
+      adapter.registerFastPath('GET', '/fast', (req) => {
+        handlerCalled = true
+        return new Response('Fast OK')
+      })
+
+      const req = new Request('http://localhost/fast')
+      const res = await adapter.fetch(req)
+
+      expect(res.status).toBe(200)
+      const text = await res.text()
+      expect(text).toBe('Fast OK')
+      expect(handlerCalled).toBe(true)
+    })
+
+    it('應該在 serveConfig 中包含 fast-path 路由', () => {
+      adapter.registerFastPath('GET', '/health', () => new Response('OK'))
+
+      const config = adapter.serveConfig() as any
+      expect(config.routes).toBeDefined()
+      expect(config.routes['/health']).toBeDefined()
+      expect(typeof config.routes['/health']).toBe('function')
+
+      const res = config.routes['/health'](new Request('http://localhost/health'))
+      expect(res.status).toBe(200)
+    })
+
+    it('應該優先匹配 fast-path 路由而非普通路由', async () => {
+      adapter.route('GET', '/conflict', (ctx) => ctx.text('Normal'))
+      adapter.registerFastPath('GET', '/conflict', () => new Response('Fast'))
+
+      const req = new Request('http://localhost/conflict')
+      const res = await adapter.fetch(req)
+
+      const text = await res.text()
+      expect(text).toBe('Fast')
+    })
+  })
 })
