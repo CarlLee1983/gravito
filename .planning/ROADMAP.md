@@ -63,7 +63,7 @@ See [v2.0.0-ROADMAP.md](milestones/v2.0.0-ROADMAP.md) for full details.
 **Plans**: 3 plans
 Plans:
 - [x] 27-01-PLAN.md — NativeOrbitDetector + NativeFeatures type + HashAccelerator sha512/blake2b extension
-- [ ] 27-02-PLAN.md — NativeHasher sha512/blake2b implementation + argon2id integration test
+- [x] 27-02-PLAN.md — NativeHasher sha512/blake2b implementation + argon2id integration test
 - [ ] 27-03-PLAN.md — Boot capability report in PlanetCore.boot() + public exports
 
 ### Phase 28: Fast-Path Routing
@@ -118,7 +118,7 @@ Plans:
 | 24. Config Type Unification | v2.1.0 | 1/1 | Complete | 2026-03-30 |
 | 25. Container Type Improvement | v2.1.0 | 1/1 | Complete | 2026-03-30 |
 | 26. Documentation and Tooling | v2.1.0 | 7/7 | Complete | 2026-03-30 |
-| 27. Bun-Native Foundation | v2.2.0 | 1/3 | In Progress|  |
+| 27. Bun-Native Foundation | v2.2.0 | 2/3 | In Progress|  |
 | 28. Fast-Path Routing | v2.2.0 | 0/? | Not started | - |
 | 29. Lite Satellite | v2.2.0 | 0/? | Not started | - |
 | 30. Static OpenAPI Generation | v2.2.0 | 0/? | Not started | - |

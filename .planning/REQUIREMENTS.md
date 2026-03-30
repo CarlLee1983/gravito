@@ -21,7 +21,7 @@ Requirements for Framework Evolution milestone. Each maps to roadmap phases.
 
 ### Bun-Native
 
-- [ ] **BUN-01**: Sentinel HashManager uses `Bun.password` natively on Bun runtime for hash/verify operations (not Node.js bcryptjs shim)
+- [x] **BUN-01**: Sentinel HashManager uses `Bun.password` natively on Bun runtime for hash/verify operations (not Node.js bcryptjs shim)
 - [x] **BUN-02**: RuntimeCryptoAdapter uses `Bun.CryptoHasher` for non-password hashing (SHA-256, SHA-512, BLAKE2b) on Bun runtime
 - [x] **BUN-03**: NativeOrbitDetector utility allows any Orbit to query available Bun capabilities at boot time via structured API
 
@@ -69,7 +69,7 @@ Deferred to future milestones. Tracked but not in current roadmap.
 | DX-01 | Phase 30 | Pending |
 | DX-02 | Phase 30 | Pending |
 | DX-03 | Phase 29 | Pending |
-| BUN-01 | Phase 27 | Pending |
+| BUN-01 | Phase 27 | Complete |
 | BUN-02 | Phase 27 | Complete |
 | BUN-03 | Phase 27 | Complete |
 | TOOL-01 | Phase 31 | Pending |
