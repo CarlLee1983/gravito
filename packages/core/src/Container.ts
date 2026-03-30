@@ -27,8 +27,8 @@ const scopeStorage = new AsyncLocalStorage<RequestScopeManager>()
  * }
  * ```
  */
-// biome-ignore lint/complexity/noBannedTypes: empty interface needed for module augmentation
-export type ServiceMap = {}
+// biome-ignore lint/suspicious/noEmptyInterface: empty interface needed for module augmentation
+export interface ServiceMap {}
 
 /**
  * ServiceKey represents the allowed keys for service resolution.
