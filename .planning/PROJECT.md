@@ -46,6 +46,12 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
   - Boot-time capability report (PERF-03)
   - Sentinel argon2id native integration (BUN-01)
 
+- **Fast-Path Routing** (v2.2.0 Phase 28) — ✓ Validated in Phase 28
+  - photon.fast() API for O(1) route bypass (PERF-01)
+  - Per-route middleware opt-out via excludeMiddleware (PERF-02)
+  - CVE-2025-29927 security contract test
+  - serveConfig() snapshot lock + MiddlewareDriftException
+
 (See REQUIREMENTS.md for remaining v2.2.0 requirements)
 
 ### Out of Scope
