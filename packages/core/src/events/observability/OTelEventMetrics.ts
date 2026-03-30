@@ -207,29 +207,23 @@ export class OTelEventMetrics implements CircuitBreakerMetricsRecorder {
       }
     })
 
-    // Create circuit breaker failures counter (with graceful fallback for testing)
-    this.cbFailuresCounter = (meter as any).createCounter
-      ? (meter as any).createCounter(`${prefix}circuit_breaker_failures_total`, {
-          description: 'Total number of failures recorded by circuit breakers',
-          unit: '{failures}',
-        })
-      : ({ add: () => {} } as any)
+    // Create circuit breaker failures counter
+    this.cbFailuresCounter = meter.createCounter(`${prefix}circuit_breaker_failures_total`, {
+      description: 'Total number of failures recorded by circuit breakers',
+      unit: '{failures}',
+    })
 
     // Create circuit breaker successes counter
-    this.cbSuccessesCounter = (meter as any).createCounter
-      ? (meter as any).createCounter(`${prefix}circuit_breaker_successes_total`, {
-          description: 'Total number of successes recorded by circuit breakers',
-          unit: '{successes}',
-        })
-      : ({ add: () => {} } as any)
+    this.cbSuccessesCounter = meter.createCounter(`${prefix}circuit_breaker_successes_total`, {
+      description: 'Total number of successes recorded by circuit breakers',
+      unit: '{successes}',
+    })
 
     // Create circuit breaker transitions counter
-    this.cbTransitionsCounter = (meter as any).createCounter
-      ? (meter as any).createCounter(`${prefix}circuit_breaker_transitions_total`, {
-          description: 'Total number of state transitions in circuit breakers',
-          unit: '{transitions}',
-        })
-      : ({ add: () => {} } as any)
+    this.cbTransitionsCounter = meter.createCounter(`${prefix}circuit_breaker_transitions_total`, {
+      description: 'Total number of state transitions in circuit breakers',
+      unit: '{transitions}',
+    })
 
     // Create circuit breaker open duration histogram
     this.cbOpenDurationHistogram = meter.createHistogram(
@@ -244,12 +238,10 @@ export class OTelEventMetrics implements CircuitBreakerMetricsRecorder {
     )
 
     // Create backpressure metrics
-    this.backpressureRejectionsCounter = (meter as any).createCounter
-      ? (meter as any).createCounter(`${prefix}backpressure_rejections_total`, {
-          description: 'Total number of events rejected due to backpressure',
-          unit: '{rejections}',
-        })
-      : ({ add: () => {} } as any)
+    this.backpressureRejectionsCounter = meter.createCounter(`${prefix}backpressure_rejections_total`, {
+      description: 'Total number of events rejected due to backpressure',
+      unit: '{rejections}',
+    })
 
     this.backpressureStateGauge = meter.createObservableGauge(`${prefix}backpressure_state`, {
       description: 'Current backpressure state (0=NORMAL, 1=WARNING, 2=CRITICAL, 3=OVERFLOW)',
@@ -266,20 +258,16 @@ export class OTelEventMetrics implements CircuitBreakerMetricsRecorder {
       observableResult.observe(stateMap[this.backpressureStateValue] ?? 0)
     })
 
-    this.backpressureDegradationsCounter = (meter as any).createCounter
-      ? (meter as any).createCounter(`${prefix}backpressure_degradations_total`, {
-          description: 'Total number of priority degradations due to backpressure',
-          unit: '{degradations}',
-        })
-      : ({ add: () => {} } as any)
+    this.backpressureDegradationsCounter = meter.createCounter(`${prefix}backpressure_degradations_total`, {
+      description: 'Total number of priority degradations due to backpressure',
+      unit: '{degradations}',
+    })
 
     // Create DLQ metrics
-    this.dlqEntriesCounter = (meter as any).createCounter
-      ? (meter as any).createCounter(`${prefix}dlq_entries_total`, {
-          description: 'Total number of events added to Dead Letter Queue',
-          unit: '{entries}',
-        })
-      : ({ add: () => {} } as any)
+    this.dlqEntriesCounter = meter.createCounter(`${prefix}dlq_entries_total`, {
+      description: 'Total number of events added to Dead Letter Queue',
+      unit: '{entries}',
+    })
 
     this.dlqDepthGauge = meter.createObservableGauge(`${prefix}dlq_depth`, {
       description: 'Current Dead Letter Queue depth',
@@ -292,27 +280,21 @@ export class OTelEventMetrics implements CircuitBreakerMetricsRecorder {
       }
     })
 
-    this.dlqRequeueCounter = (meter as any).createCounter
-      ? (meter as any).createCounter(`${prefix}dlq_requeue_total`, {
-          description: 'Total number of DLQ requeue attempts',
-          unit: '{attempts}',
-        })
-      : ({ add: () => {} } as any)
+    this.dlqRequeueCounter = meter.createCounter(`${prefix}dlq_requeue_total`, {
+      description: 'Total number of DLQ requeue attempts',
+      unit: '{attempts}',
+    })
 
-    this.retryAttemptsCounter = (meter as any).createCounter
-      ? (meter as any).createCounter(`${prefix}retry_attempts_total`, {
-          description: 'Total number of event retry attempts',
-          unit: '{attempts}',
-        })
-      : ({ add: () => {} } as any)
+    this.retryAttemptsCounter = meter.createCounter(`${prefix}retry_attempts_total`, {
+      description: 'Total number of event retry attempts',
+      unit: '{attempts}',
+    })
 
     // Create priority escalation counter
-    this.priorityEscalationCounter = (meter as any).createCounter
-      ? (meter as any).createCounter(`${prefix}priority_escalation_total`, {
-          description: 'Total number of priority escalations',
-          unit: '{escalations}',
-        })
-      : ({ add: () => {} } as any)
+    this.priorityEscalationCounter = meter.createCounter(`${prefix}priority_escalation_total`, {
+      description: 'Total number of priority escalations',
+      unit: '{escalations}',
+    })
   }
 
   /**

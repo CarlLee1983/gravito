@@ -4,6 +4,7 @@
  * Wraps HookManager with observability support (metrics and tracing).
  */
 
+import type { Span } from '@opentelemetry/api'
 import { HookManager, type HookManagerConfig } from '../../HookManager'
 import type { EventOptions } from '../EventOptions'
 import { EventMetrics } from './EventMetrics'
@@ -25,7 +26,7 @@ export interface ObservabilityConfig {
    * MetricsRegistry instance from @gravito/monitor.
    * Required if metrics collection is enabled.
    */
-  metrics?: any
+  metrics?: unknown
 
   /**
    * Enable OpenTelemetry distributed tracing.
@@ -107,7 +108,7 @@ export class ObservableHookManager extends HookManager {
     const callbacks = this.getListeners(hook)
 
     // Create dispatch span using EventTracing (preferred) or EventTracer (fallback)
-    let span: any
+    let span: Span | undefined
     if (this.eventTracing) {
       span = this.eventTracing.startDispatchSpan(
         hook,
@@ -185,11 +186,11 @@ export class ObservableHookManager extends HookManager {
     const callbacks = this.getListeners(hook)
 
     // Create dispatch span using EventTracing (preferred) or EventTracer (fallback)
-    let span: any
+    let span: Span | undefined
     if (this.eventTracing) {
       span = this.eventTracing.startDispatchSpan(hook, callbacks.length, 'normal')
       // Add sync dispatch mode attribute
-      span.setAttributes({ 'event.dispatch_mode': 'sync' })
+      span?.setAttributes({ 'event.dispatch_mode': 'sync' })
     } else if (this.eventTracer) {
       span = this.eventTracer.startDispatchSpan(hook, callbacks.length, 'normal')
     }

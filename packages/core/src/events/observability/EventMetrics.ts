@@ -41,11 +41,16 @@ export class EventMetrics {
    * @param prefix - Metric name prefix (default: 'gravito_event_')
    */
   constructor(
-    registry: any, // MetricsRegistry type
+    registry: unknown,
     prefix = 'gravito_event_'
   ) {
+    const reg = registry as {
+      histogram: (config: Record<string, unknown>) => EventMetricHistogram
+      gauge: (config: Record<string, unknown>) => EventMetricGauge
+      counter: (config: Record<string, unknown>) => EventMetricCounter
+    }
     // Initialize histogram for event dispatch latency
-    this.dispatchLatency = registry.histogram({
+    this.dispatchLatency = reg.histogram({
       name: `${prefix}dispatch_latency_seconds`,
       help: 'Event dispatch latency in seconds',
       labels: ['event_name', 'priority'],
@@ -53,7 +58,7 @@ export class EventMetrics {
     })
 
     // Initialize histogram for listener execution time
-    this.listenerExecutionTime = registry.histogram({
+    this.listenerExecutionTime = reg.histogram({
       name: `${prefix}listener_execution_seconds`,
       help: 'Listener execution time in seconds',
       labels: ['event_name', 'listener_index'],
@@ -61,59 +66,59 @@ export class EventMetrics {
     })
 
     // Initialize gauge for queue depth
-    this.queueDepthGauge = registry.gauge({
+    this.queueDepthGauge = reg.gauge({
       name: `${prefix}queue_depth`,
       help: 'Current queue depth by priority',
       labels: ['priority'],
     })
 
     // Initialize counter for failures
-    this.failureCounter = registry.counter({
+    this.failureCounter = reg.counter({
       name: `${prefix}failures_total`,
       help: 'Total number of failed event processing',
       labels: ['event_name', 'error_type'],
     })
 
     // Initialize counter for timeouts
-    this.timeoutCounter = registry.counter({
+    this.timeoutCounter = reg.counter({
       name: `${prefix}timeouts_total`,
       help: 'Total number of event processing timeouts',
       labels: ['event_name'],
     })
 
     // Initialize counter for processed events
-    this.processedCounter = registry.counter({
+    this.processedCounter = reg.counter({
       name: `${prefix}processed_total`,
       help: 'Total number of processed events',
       labels: ['event_name', 'status'],
     })
 
     // Initialize CircuitBreaker metrics
-    this.circuitBreakerStateGauge = registry.gauge({
+    this.circuitBreakerStateGauge = reg.gauge({
       name: `${prefix}circuit_breaker_state`,
       help: 'Current circuit breaker state (0=CLOSED, 1=HALF_OPEN, 2=OPEN)',
       labels: ['event_name'],
     })
 
-    this.circuitBreakerTransitionsCounter = registry.counter({
+    this.circuitBreakerTransitionsCounter = reg.counter({
       name: `${prefix}circuit_breaker_transitions_total`,
       help: 'Total number of circuit breaker state transitions',
       labels: ['event_name', 'from_state', 'to_state'],
     })
 
-    this.circuitBreakerFailuresCounter = registry.counter({
+    this.circuitBreakerFailuresCounter = reg.counter({
       name: `${prefix}circuit_breaker_failures_total`,
       help: 'Total number of failures tracked by circuit breaker',
       labels: ['event_name'],
     })
 
-    this.circuitBreakerSuccessesCounter = registry.counter({
+    this.circuitBreakerSuccessesCounter = reg.counter({
       name: `${prefix}circuit_breaker_successes_total`,
       help: 'Total number of successes tracked by circuit breaker',
       labels: ['event_name'],
     })
 
-    this.circuitBreakerOpenDurationHistogram = registry.histogram({
+    this.circuitBreakerOpenDurationHistogram = reg.histogram({
       name: `${prefix}circuit_breaker_open_duration_seconds`,
       help: 'Duration of circuit breaker OPEN state in seconds',
       labels: ['event_name'],
