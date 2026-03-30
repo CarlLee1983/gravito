@@ -171,6 +171,14 @@ export function getPasswordAdapter(): RuntimePasswordAdapter {
   return passwordAdapter
 }
 
+/**
+ * Reset the password adapter singleton (mainly for testing).
+ * @internal
+ */
+export function resetPasswordAdapter(): void {
+  passwordAdapter = null
+}
+
 // ============ SQLite Adapter ============
 
 /**

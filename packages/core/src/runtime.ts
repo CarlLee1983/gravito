@@ -58,6 +58,7 @@ export {
   getMarkdownAdapter,
   // Password adapter
   getPasswordAdapter,
+  resetPasswordAdapter,
   // Runtime adapter
   getRuntimeAdapter,
   // Detection
