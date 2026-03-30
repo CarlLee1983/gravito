@@ -17,7 +17,8 @@
   "scripts": {
     "build": "node --check bin/gravito.js",
     "test": "bun test tests/ --timeout=10000",
-    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "publint": "publint"
   },
   "publishConfig": {
     "access": "public"

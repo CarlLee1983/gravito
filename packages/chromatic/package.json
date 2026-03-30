@@ -31,7 +31,8 @@
     "check": "biome check ./src",
     "check:fix": "biome check --write ./src",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
-    "prepublishOnly": "bun run typecheck && bun run build"
+    "prepublishOnly": "bun run typecheck && bun run build",
+    "publint": "publint"
   },
   "keywords": [
     "color",

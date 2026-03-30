@@ -26,7 +26,8 @@
     "build:dts": "tsup src/index.ts --format cjs,esm --dts --clean",
     "test:ci": "bun test tests/ --timeout=10000",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
-    "test": "bun test tests/ --timeout=10000"
+    "test": "bun test tests/ --timeout=10000",
+    "publint": "publint"
   },
   "peerDependencies": {
     "@gravito/core": "^3.0.0"

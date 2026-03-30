@@ -24,7 +24,8 @@
     "test": "bun test tests/ --timeout=10000",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test:coverage": "echo \"✓ No tests for quark (infrastructure package)\"",
-    "test:ci": "echo \"✓ No tests for quark (infrastructure package)\""
+    "test:ci": "echo \"✓ No tests for quark (infrastructure package)\"",
+    "publint": "publint"
   },
   "keywords": [
     "gravito",

@@ -27,7 +27,8 @@
     "seed": "bun scripts/seed.ts",
     "worker": "bun scripts/worker.ts",
     "test:unit": "bun test",
-    "test:integration": "test $(find tests -name '*.integration.test.ts' 2>/dev/null | wc -l) -gt 0 && find tests -name '*.integration.test.ts' -print0 | xargs -0 bun test --timeout=10000 || echo 'No integration tests found'"
+    "test:integration": "test $(find tests -name '*.integration.test.ts' 2>/dev/null | wc -l) -gt 0 && find tests -name '*.integration.test.ts' -print0 | xargs -0 bun test --timeout=10000 || echo 'No integration tests found'",
+    "publint": "publint"
   },
   "dependencies": {
     "@gravito/core": "^2.0.0",

@@ -36,7 +36,8 @@
     "build": "bun run build.ts",
     "build:dts": "bun run build.ts --dts-only",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
-    "test": "bun test tests/ --timeout=10000"
+    "test": "bun test tests/ --timeout=10000",
+    "publint": "publint"
   },
   "files": [
     "dist",

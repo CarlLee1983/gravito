@@ -32,7 +32,8 @@
     "build:dts": "bun run build.ts --dts-only",
     "test": "bun test --timeout=10000",
     "test:coverage": "bun test --timeout=10000 --coverage --coverage-reporter=lcov --coverage-dir coverage",
-    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "publint": "publint"
   },
   "dependencies": {},
   "peerDependencies": {
