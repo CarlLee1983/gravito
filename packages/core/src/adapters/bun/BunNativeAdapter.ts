@@ -292,9 +292,11 @@ export class BunNativeAdapter implements HttpAdapter {
             return response
           }
         } catch (e) {
+          // biome-ignore lint/suspicious/noConsole: HTTP adapter error boundary — no Logger injected in BunNativeAdapter
           console.error('Error handler failed', e)
         }
       }
+      // biome-ignore lint/suspicious/noConsole: HTTP adapter error boundary — no Logger injected in BunNativeAdapter
       console.error(err)
       return new Response('Internal Server Error', { status: 500 })
     } finally {

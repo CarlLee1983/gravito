@@ -179,6 +179,7 @@ async function handleProcessError(kind: GlobalProcessErrorKind, error: unknown):
       })
     )
   } catch (e) {
+    // biome-ignore lint/suspicious/noConsole: Process-level error handler — Logger may be uninitialized or the source of the error
     console.error('[@gravito/core] Failed to handle process-level error:', e)
   } finally {
     if (shouldExit) {

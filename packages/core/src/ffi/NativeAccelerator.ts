@@ -69,6 +69,7 @@ export class NativeAccelerator {
     this.updateStatus('js-fallback')
 
     if (this.isDebugEnabled()) {
+      // biome-ignore lint/suspicious/noConsole: Static FFI class — no Logger instance available; debug output gated by env var
       console.log('[GRAVITO_FFI] 使用 JavaScript 回退實現（FFI 已禁用）')
     }
 

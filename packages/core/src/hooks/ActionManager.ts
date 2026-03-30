@@ -176,6 +176,7 @@ export class ActionManager {
       try {
         await callback(args)
       } catch (error) {
+        // biome-ignore lint/suspicious/noConsole: ActionManager has no Logger dependency — low-level event infrastructure
         console.error(`[HookManager] Error in action '${hook}':`, error)
       }
     }
@@ -219,6 +220,7 @@ export class ActionManager {
       const isDuplicate = this.idempotencyCache.isDuplicate(mergedOptions.idempotencyKey, ttl)
 
       if (isDuplicate) {
+        // biome-ignore lint/suspicious/noConsole: ActionManager has no Logger dependency — low-level event infrastructure
         console.warn(
           `[HookManager] Event '${hook}' with idempotency key '${mergedOptions.idempotencyKey}' was skipped (duplicate within TTL window)`
         )
@@ -245,11 +247,13 @@ export class ActionManager {
       try {
         const accepted = await this.aggregationManager.submit(task)
         if (!accepted) {
+          // biome-ignore lint/suspicious/noConsole: ActionManager has no Logger dependency — low-level event infrastructure
           console.warn(
             `[HookManager] Event '${hook}' was rejected due to backpressure (aggregation overflow)`
           )
         }
       } catch (error) {
+        // biome-ignore lint/suspicious/noConsole: ActionManager has no Logger dependency — low-level event infrastructure
         console.error(`[HookManager] Aggregation error for event '${hook}':`, error)
         // 錯誤時降級至直接加入佇列
         this.backend.enqueue(task)

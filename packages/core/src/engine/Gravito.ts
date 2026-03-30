@@ -379,6 +379,7 @@ export class Gravito {
       // Optimize TLS if provided in baseConfig
       tls: baseConfig.tls ? this.optimizeTLS(baseConfig.tls as Record<string, unknown> | Record<string, unknown>[]) : undefined,
       error: (error: Error) => {
+        // biome-ignore lint/suspicious/noConsole: HTTP engine error handler — no Logger dependency injected in Gravito engine
         console.error('Native route error:', error)
         return new Response(CACHED_RESPONSES.INTERNAL_ERROR, {
           status: 500,
@@ -533,6 +534,7 @@ export class Gravito {
       return result as Promise<Response>
     }
 
+    // biome-ignore lint/suspicious/noConsole: HTTP engine error handler — no Logger dependency injected in Gravito engine
     console.error('Unhandled error:', error)
     return new Response(CACHED_RESPONSES.INTERNAL_ERROR, {
       status: 500,

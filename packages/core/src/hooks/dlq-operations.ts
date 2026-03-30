@@ -97,6 +97,7 @@ export function createPersistentDLQHandler(persistentDlqManager: DeadLetterQueue
       // 移至持久化 DLQ
       await persistentDlqManager.moveToDlq(hook, args, options, error, retryCount, retryPolicy)
     } catch (dlqError) {
+      // biome-ignore lint/suspicious/noConsole: Standalone DLQ handler function — no Logger instance injected
       console.error(`[HookManager] Error moving event to persistent DLQ:`, dlqError)
     }
   }
@@ -129,6 +130,7 @@ export async function requeuePersistentDLQEntry(
 
     return true
   } catch (error) {
+    // biome-ignore lint/suspicious/noConsole: Standalone DLQ handler function — no Logger instance injected
     console.error(`[HookManager] Error requeuing persistent DLQ entry:`, error)
     return false
   }
@@ -150,6 +152,7 @@ export async function requeuePersistentDLQBatch(
   try {
     return await persistentDlqManager.retryBatch(filter)
   } catch (error) {
+    // biome-ignore lint/suspicious/noConsole: Standalone DLQ handler function — no Logger instance injected
     console.error(`[HookManager] Error in persistent DLQ batch retry:`, error)
     return { total: 0, succeeded: 0, failed: 0 }
   }

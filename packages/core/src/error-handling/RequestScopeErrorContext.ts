@@ -171,6 +171,7 @@ export function withRequestScopeCleanup<
       return await handler(ctx, error)
     } catch (handlerError) {
       // If error handler itself fails, at least we tried to cleanup
+      // biome-ignore lint/suspicious/noConsole: Error boundary — Logger may be unavailable when error handler itself fails
       console.error('Error handler failed after RequestScope cleanup:', handlerError)
       throw handlerError
     }

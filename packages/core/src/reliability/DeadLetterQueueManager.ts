@@ -313,6 +313,7 @@ export class DeadLetterQueueManager {
         await this.requeue(event.dlq_id)
         succeeded++
       } catch (error) {
+        // biome-ignore lint/suspicious/noConsole: DeadLetterQueueManager has no Logger dependency — infrastructure-level error logging
         console.error(`Failed to requeue ${event.dlq_id}:`, error)
         failed++
       }
@@ -540,6 +541,7 @@ export class DeadLetterQueueManager {
 
       return records && records.length > 0 ? records[0] : undefined
     } catch (error) {
+      // biome-ignore lint/suspicious/noConsole: DeadLetterQueueManager has no Logger dependency — infrastructure-level error logging
       console.error(`[DeadLetterQueueManager] Error finding record by Bull Job ID:`, error)
       return undefined
     }
@@ -571,6 +573,7 @@ export class DeadLetterQueueManager {
     // TODO: Phase 4 Task 3 - 整合 MessageQueueBridge.dispatchDeferredQueued()
     // 當前作為 stub 實現，在完整實現中應該通過 HookManager 調用 dispatchDeferredQueued
 
+    // biome-ignore lint/suspicious/noConsole: DeadLetterQueueManager has no Logger dependency — infrastructure-level info logging
     console.info(
       `[DeadLetterQueueManager] Scheduled retry for event ${record.event_name} (dlq_id: ${dlqId}) with delay ${delayMs}ms`
     )

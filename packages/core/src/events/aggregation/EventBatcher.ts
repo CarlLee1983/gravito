@@ -210,6 +210,7 @@ export class EventBatcher {
       if (this.queue.length > 0) {
         // Async flush, non-blocking
         this.flush(true).catch((error) => {
+          // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
           console.error('[EventBatcher] Flush error:', error)
         })
       }
@@ -233,6 +234,7 @@ export class EventBatcher {
     // Check if immediate flush is needed
     if (this.queue.length >= newSize && newSize < this.batchSize) {
       this.flush(true).catch((error) => {
+        // biome-ignore lint/suspicious/noConsole: Event infrastructure — no Logger dependency injected
         console.error('[EventBatcher] Flush error:', error)
       })
     }

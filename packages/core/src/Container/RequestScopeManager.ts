@@ -117,6 +117,7 @@ export class RequestScopeManager {
 
     // Log errors if any occurred
     if (errors.length > 0) {
+      // biome-ignore lint/suspicious/noConsole: RequestScopeManager has no Logger dependency — cleanup must report errors even if Logger is unavailable
       console.error('RequestScope cleanup errors:', errors)
     }
   }
