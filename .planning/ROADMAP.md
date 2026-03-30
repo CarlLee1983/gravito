@@ -91,7 +91,9 @@ Plans:
   1. `container.make('myService')` where 'myService' is a key in ServiceMap returns the concrete type declared in ServiceMap — TypeScript infers it without a cast
   2. Calling `container.make()` with a key not present in ServiceMap still compiles and returns the existing fallback type — no call sites are broken
   3. `bun run typecheck` at workspace root passes with zero errors — the overload does not cascade type errors into the 50+ downstream packages that use Container
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 25-01-PLAN.md — Change ServiceMap type to interface, sync Container.d.ts, expand tests (TYPE-02)
 
 ### Phase 26: Documentation and Tooling
 **Goal**: CI enforces the improved API surface via lint rules and export validation; documentation matches the actual API that developers encounter
@@ -117,5 +119,5 @@ Plans:
 | 22. Exception Hierarchy Clarification | v2.1.0 | 1/1 | Complete    | 2026-03-29 |
 | 23. Named Export Conversion | v2.1.0 | 2/2 | Complete    | 2026-03-29 |
 | 24. Config Type Unification | v2.1.0 | 1/1 | Complete    | 2026-03-30 |
-| 25. Container Type Improvement | v2.1.0 | 0/? | Not started | - |
+| 25. Container Type Improvement | v2.1.0 | 0/1 | Not started | - |
 | 26. Documentation and Tooling | v2.1.0 | 0/? | Not started | - |
