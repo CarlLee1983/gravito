@@ -198,6 +198,7 @@ export class QueueDashboard {
     const successRate = totalProcessed > 0 ? (poolStats.totalSuccess ?? 0) / totalProcessed : 1.0
 
     return {
+      // biome-ignore lint/suspicious/noExplicitAny: accessing private WorkerPool.config — no public accessor exists
       poolSize: (workerPool as any).config?.workerThreads ?? 0,
       activeWorkers: poolStats.activeWorkers ?? 0,
       utilization: poolStats.utilization ?? 0,

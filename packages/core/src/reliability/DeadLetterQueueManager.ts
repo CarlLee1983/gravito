@@ -108,6 +108,7 @@ export interface DLQStats {
 export class DeadLetterQueueManager {
   private retryEngine: RetryEngine
 
+  // biome-ignore lint/suspicious/noExplicitAny: db is an injected query builder with no shared interface in core
   constructor(private db: any) {
     this.retryEngine = new RetryEngine()
   }
@@ -162,7 +163,7 @@ export class DeadLetterQueueManager {
       next_retry_at: nextRetryAt,
       last_error: {
         message: error.message,
-        code: (error as any).code,
+        code: (error as NodeJS.ErrnoException).code,
         stack: error.stack,
         timestamp: new Date().toISOString(),
       },

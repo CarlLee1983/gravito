@@ -87,9 +87,16 @@ export {
   throwUnless,
   value,
 } from './helpers'
-export { dataGet, dataHas, dataSet, type DataPath, type PathSegment } from './helpers/data'
+export { type DataPath, dataGet, dataHas, dataSet, type PathSegment } from './helpers/data'
 export { createErrorBag, type ErrorBag, errors, old } from './helpers/errors'
-export { type ApiFailure, type ApiSuccess, fail, jsonFail, jsonSuccess, ok } from './helpers/response'
+export {
+  type ApiFailure,
+  type ApiSuccess,
+  fail,
+  jsonFail,
+  jsonSuccess,
+  ok,
+} from './helpers/response'
 
 // HTTP utilities
 export { CookieJar, type CookieOptions } from './http/CookieJar'
@@ -108,6 +115,6 @@ export * from './runtime/index.browser'
 // Configuration Helper
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function defineConfig(config: any): any {
+export function defineConfig<T extends Record<string, unknown>>(config: T): T {
   return config
 }
