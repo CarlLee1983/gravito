@@ -135,23 +135,7 @@ core.hooks.addAction('user_registered', async (userId: string) => {
 await core.hooks.doAction('user_registered', 'user_123');
 ```
 
-### 5. Reliability & Distributed Retries
-
-Built-in support for distributed retries via Bull Queue:
-
-```typescript
-import { RetryScheduler } from '@gravito/core';
-
-const scheduler = new RetryScheduler({
-  initialDelayMs: 1000,
-  multiplier: 2,
-  maxRetries: 5
-});
-
-core.hooks.setRetryScheduler(scheduler);
-```
-
-### 6. Mount an Orbit
+### 5. Mount an Orbit
 
 Orbits are just standard Photon applications that plug into the core.
 
@@ -165,14 +149,14 @@ blogOrbit.get('/posts', (c) => c.json({ posts: [] }));
 core.mountOrbit('/api/blog', blogOrbit);
 ```
 
-### 7. Liftoff! 🚀
+### 6. Liftoff! 🚀
 
 ```typescript
 // Export for Bun.serve
 export default core.liftoff(); // Automatically uses PORT from config/env
 ```
 
-### 8. Process-level Error Handling (Recommended)
+### 7. Process-level Error Handling (Recommended)
 
 Request-level errors are handled by `PlanetCore` automatically, but background jobs and startup code can still fail outside the request lifecycle.
 
@@ -301,21 +285,76 @@ const logger = container.make('logger'); // inferred as Logger
 ### `HookManager`
 
 - **`addFilter(hook, callback)`**: Register a filter.
-- **`applyFilters(hook, initialValue, ...args)`**: Execute filters sequentially.
-- **`addAction(hook, callback)`**: Register an action.
-- **`doAction(hook, ...args)`**: Execute actions.
+- **`applyFilters(hook, initialValue, ...args)`**: Apply all registered filters sequentially.
+- **`addAction(hook, callback, options?)`**: Register an action hook.
+- **`doAction(hook, args, options?)`**: Execute action hooks asynchronously.
+- **`doActionSync(hook, args)`**: Execute action hooks synchronously.
+- **`doActionAsync(hook, args, options)`**: Execute action hooks via priority queue.
 
 ### `EventManager`
 
-- **`emit(event, ...args)`**: Dispatch an event.
-- **`on(event, callback)`**: Listen to an event.
-- **`off(event, callback)`**: Remove a listener.
+- **`dispatch(event)`**: Dispatch an event asynchronously.
+- **`listen(event, listener, options?)`**: Register an event listener.
+- **`unlisten(event, listener)`**: Remove an event listener.
+- **`clear()`**: Remove all event listeners.
+- **`getListeners(event?)`**: Get registered listeners.
 
 ### `ConfigManager`
 
 - **`get(key, default?)`**: Retrieve a config value.
 - **`set(key, value)`**: Set a config value.
 - **`has(key)`**: Check if a config key exists.
+
+## When to use orbit() vs register() vs use()
+
+### `orbit(orbitInstance)` — Infrastructure Plugins
+
+Use when integrating a **GravitoOrbit** that implements `install()`.
+Orbits are infrastructure-level plugins that extend core capabilities.
+
+```typescript
+import { OrbitDatabase } from '@gravito/atlas'
+import { OrbitAuth } from '@gravito/sentinel'
+
+const app = await PlanetCore.boot()
+await app.orbit(new OrbitDatabase({ connection: 'sqlite' }))
+await app.orbit(new OrbitAuth({ driver: 'session' }))
+```
+
+### `register(provider)` — Service Providers
+
+Use when adding a **ServiceProvider** to the IoC container.
+Providers register bindings and boot services synchronously.
+
+```typescript
+import { CacheServiceProvider } from './providers/CacheServiceProvider'
+
+const app = await PlanetCore.boot()
+app.register(new CacheServiceProvider())
+```
+
+### `use(satelliteOrFn)` — Satellites & Setup Functions
+
+Use when adding a **satellite module** or a **one-off setup function**.
+Accepts either a ServiceProvider (delegates to register()) or an async function.
+
+```typescript
+// Satellite module
+import { CartSatellite } from '@gravito/satellite-cart'
+await app.use(new CartSatellite())
+
+// Setup function
+await app.use(async (core) => {
+  core.register(new MyProvider())
+  await core.orbit(new MyOrbit())
+})
+```
+
+### Decision Tree
+
+1. Does it implement `GravitoOrbit.install()`? → Use `orbit()`
+2. Does it implement `ServiceProvider.register()`? → Use `register()`
+3. Is it a function or satellite module? → Use `use()`
 
 ## 🤝 Contributing
 
