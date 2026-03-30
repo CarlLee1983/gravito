@@ -63,22 +63,22 @@ Deferred to future milestones. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PERF-01 | — | Pending |
-| PERF-02 | — | Pending |
-| PERF-03 | — | Pending |
-| DX-01 | — | Pending |
-| DX-02 | — | Pending |
-| DX-03 | — | Pending |
-| BUN-01 | — | Pending |
-| BUN-02 | — | Pending |
-| BUN-03 | — | Pending |
-| TOOL-01 | — | Pending |
+| PERF-01 | Phase 28 | Pending |
+| PERF-02 | Phase 28 | Pending |
+| PERF-03 | Phase 27 | Pending |
+| DX-01 | Phase 30 | Pending |
+| DX-02 | Phase 30 | Pending |
+| DX-03 | Phase 29 | Pending |
+| BUN-01 | Phase 27 | Pending |
+| BUN-02 | Phase 27 | Pending |
+| BUN-03 | Phase 27 | Pending |
+| TOOL-01 | Phase 31 | Pending |
 
 **Coverage:**
 - v2.2.0 requirements: 10 total
-- Mapped to phases: 0
-- Unmapped: 10 (awaiting roadmap)
+- Mapped to phases: 10
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-30*
-*Last updated: 2026-03-30 after initial definition*
+*Last updated: 2026-03-30 after roadmap creation — all 10 requirements mapped to Phases 27-31*
