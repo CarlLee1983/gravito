@@ -7,6 +7,13 @@
 
 import type { RuntimeAdapter, RuntimeSpawnOptions } from './types'
 
+/**
+ * Bun.serve websocket handler type, used to bridge from unknown to Bun's expected type.
+ * @internal
+ */
+// biome-ignore lint/suspicious/noExplicitAny: Bun.serve websocket param requires any for compatibility
+type BunWebSocketHandler = any
+
 function createEphemeralPort(): number {
   return Math.floor(Math.random() * 50000) + 10000
 }
@@ -261,7 +268,7 @@ export function createBunAdapter(): RuntimeAdapter {
         return Bun.serve({
           port: config.port,
           fetch: config.fetch,
-          websocket: config.websocket as any,
+          websocket: config.websocket as unknown as BunWebSocketHandler,
         })
       }
 
@@ -271,7 +278,7 @@ export function createBunAdapter(): RuntimeAdapter {
           return Bun.serve({
             port: createEphemeralPort(),
             fetch: config.fetch,
-            websocket: config.websocket as any,
+            websocket: config.websocket as unknown as BunWebSocketHandler,
           })
         } catch (error) {
           lastError = error

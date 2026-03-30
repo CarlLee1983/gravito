@@ -1,7 +1,9 @@
 // import type { ConnectionContract } from '@gravito/atlas'
 import type { CircuitBreakerOptions } from '../events/CircuitBreaker'
 import type { EventBackend } from '../events/EventBackend'
+import type { MessageQueueBridge } from '../events/MessageQueueBridge'
 import type { EventQueueConfig } from '../events/EventPriorityQueue'
+import type { AggregationConfig } from '../events/aggregation/types'
 
 /**
  * Callback function for filters (transforms values).
@@ -102,8 +104,10 @@ export interface HookManagerConfig {
   /**
    * Database connection for persistent DLQ (optional).
    * If provided, failed events after max retries will be persisted to database.
+   * Typed as `unknown` since core does not depend on @gravito/atlas or any specific DB type.
+   * The consuming code (DeadLetterQueueManager) accepts and narrows this to its internal type.
    */
-  db?: any
+  db?: unknown
 
   /**
    * Enable persistent DLQ for failed events (requires db).
@@ -115,11 +119,11 @@ export interface HookManagerConfig {
    * Message Queue Bridge for distributed event processing via Bull Queue.
    * When provided, enables dispatchQueued() method for routing events to Redis-backed queue.
    */
-  messageQueueBridge?: any
+  messageQueueBridge?: MessageQueueBridge
 
   /**
    * Event aggregation configuration (FS-102).
    * Enables deduplication and micro-batching for improved throughput.
    */
-  aggregation?: any
+  aggregation?: AggregationConfig
 }

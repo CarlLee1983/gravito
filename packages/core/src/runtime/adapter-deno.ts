@@ -9,6 +9,40 @@ import { toUint8Array } from './detection'
 import type { RuntimeAdapter, RuntimeSpawnOptions } from './types'
 
 /**
+ * Minimal type interface for the Deno global used in adapter operations.
+ * Avoids `any` while remaining compatible with globalThis access.
+ * @internal
+ */
+interface DenoGlobal {
+  Command?: new (
+    cmd: string,
+    options: {
+      args?: string[]
+      cwd?: string
+      env?: Record<string, string | undefined>
+      stdin?: string
+      stdout?: string
+      stderr?: string
+    }
+  ) => {
+    spawn: () => {
+      kill: (signal: string) => void
+      stdout: ReadableStream<Uint8Array> | null
+      stderr: ReadableStream<Uint8Array> | null
+      status: Promise<{ code: number; success: boolean }>
+    }
+    outputSync: () => { stdout?: Uint8Array; stderr?: Uint8Array; code?: number }
+  }
+  writeFile?: (path: string, data: Uint8Array) => Promise<void>
+  readFile?: (path: string) => Promise<Uint8Array>
+  stat?: (path: string) => Promise<{ size: number }>
+  remove?: (path: string) => Promise<void>
+  mkdir?: (path: string, options?: { recursive?: boolean }) => Promise<void>
+  readDir?: (path: string) => AsyncIterable<{ name: string; isFile: boolean; isDirectory: boolean }>
+  env?: { toObject?: () => Record<string, string> }
+}
+
+/**
  * Map stdio option to Deno-compatible value.
  * @internal
  */
@@ -37,7 +71,7 @@ export function createDenoAdapter(): RuntimeAdapter {
       if (!cmd) {
         throw new Error('[RuntimeAdapter] spawn() requires a command')
       }
-      const deno = (globalThis as any).Deno
+      const deno = (globalThis as unknown as { Deno?: DenoGlobal }).Deno
       if (!deno?.Command) {
         throw new Error('[RuntimeAdapter] Deno runtime is required for spawn()')
       }
@@ -98,7 +132,7 @@ export function createDenoAdapter(): RuntimeAdapter {
       if (!cmd) {
         throw new Error('[RuntimeAdapter] spawn() requires a command')
       }
-      const deno = (globalThis as any).Deno
+      const deno = (globalThis as unknown as { Deno?: DenoGlobal }).Deno
       if (!deno?.Command) {
         throw new Error('[RuntimeAdapter] Deno runtime is required for spawn()')
       }
@@ -184,7 +218,7 @@ export function createDenoAdapter(): RuntimeAdapter {
       if (!cmd) {
         throw new Error('[RuntimeAdapter] spawn() requires a command')
       }
-      const deno = (globalThis as any).Deno
+      const deno = (globalThis as unknown as { Deno?: DenoGlobal }).Deno
       if (!deno?.Command) {
         throw new Error('[RuntimeAdapter] Deno runtime is required for spawnSync()')
       }
@@ -211,7 +245,7 @@ export function createDenoAdapter(): RuntimeAdapter {
       }
     },
     async writeFile(path, data) {
-      const deno = (globalThis as any).Deno
+      const deno = (globalThis as unknown as { Deno?: DenoGlobal }).Deno
       if (!deno?.writeFile) {
         throw new Error('[RuntimeAdapter] Deno runtime is required for writeFile()')
       }
@@ -219,7 +253,7 @@ export function createDenoAdapter(): RuntimeAdapter {
       await deno.writeFile(path, payload)
     },
     async readFile(path) {
-      const deno = (globalThis as any).Deno
+      const deno = (globalThis as unknown as { Deno?: DenoGlobal }).Deno
       if (!deno?.readFile) {
         throw new Error('[RuntimeAdapter] Deno runtime is required for readFile()')
       }
@@ -230,7 +264,7 @@ export function createDenoAdapter(): RuntimeAdapter {
       return new Blob([buffer as unknown as BlobPart])
     },
     async exists(path) {
-      const deno = (globalThis as any).Deno
+      const deno = (globalThis as unknown as { Deno?: DenoGlobal }).Deno
       if (!deno?.stat) {
         throw new Error('[RuntimeAdapter] Deno runtime is required for exists()')
       }
@@ -242,7 +276,7 @@ export function createDenoAdapter(): RuntimeAdapter {
       }
     },
     async stat(path) {
-      const deno = (globalThis as any).Deno
+      const deno = (globalThis as unknown as { Deno?: DenoGlobal }).Deno
       if (!deno?.stat) {
         throw new Error('[RuntimeAdapter] Deno runtime is required for stat()')
       }
@@ -250,7 +284,7 @@ export function createDenoAdapter(): RuntimeAdapter {
       return { size: stats.size }
     },
     async deleteFile(path) {
-      const deno = (globalThis as any).Deno
+      const deno = (globalThis as unknown as { Deno?: DenoGlobal }).Deno
       if (!deno?.remove) {
         throw new Error('[RuntimeAdapter] Deno runtime is required for deleteFile()')
       }

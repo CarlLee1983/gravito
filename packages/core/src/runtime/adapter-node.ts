@@ -56,10 +56,12 @@ export function createNodeAdapter(): RuntimeAdapter {
           return null
         }
         const maybeWeb = streamReadable as unknown as ReadableStream<Uint8Array>
-        if (typeof (maybeWeb as any).getReader === 'function') {
+        if (typeof (maybeWeb as unknown as Record<string, unknown>).getReader === 'function') {
           return maybeWeb
         }
-        return stream.Readable.toWeb(streamReadable as any) as unknown as ReadableStream<Uint8Array>
+        return stream.Readable.toWeb(
+          streamReadable as unknown as Parameters<typeof stream.Readable.toWeb>[0]
+        ) as unknown as ReadableStream<Uint8Array>
       }
 
       let timeoutHandle: NodeJS.Timeout | undefined
@@ -103,7 +105,15 @@ export function createNodeAdapter(): RuntimeAdapter {
         },
         resourceUsage: async () => {
           try {
-            const usage = (child as any).resourceUsage?.()
+            type ResourceUsageResult = {
+              user?: number
+              system?: number
+              maxRss?: number
+            }
+            const childWithUsage = child as unknown as {
+              resourceUsage?: () => ResourceUsageResult
+            }
+            const usage = childWithUsage.resourceUsage?.()
             if (!usage) {
               return undefined
             }
@@ -200,7 +210,7 @@ export function createNodeAdapter(): RuntimeAdapter {
         stdout: (result.stdout ?? '') as string,
         stderr: (result.stderr ?? '') as string,
         success: (result.status ?? 0) === 0,
-        timedOut: (result.error as any)?.code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER',
+        timedOut: (result.error as unknown as { code?: string })?.code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER',
       }
     },
     async writeFile(path, data) {

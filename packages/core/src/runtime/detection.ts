@@ -8,6 +8,24 @@
 import type { RuntimeKind } from './types'
 
 /**
+ * Minimal type interface for the Deno global used in runtime detection.
+ * Avoids `any` while remaining compatible with globalThis access.
+ * @internal
+ */
+interface DenoGlobal {
+  version?: { deno?: string }
+  env?: { toObject?: () => Record<string, string> }
+  spawn?: unknown
+  Command?: unknown
+  writeFile?: unknown
+  readFile?: unknown
+  stat?: unknown
+  remove?: unknown
+  mkdir?: unknown
+  readDir?: unknown
+}
+
+/**
  * Detect the current JavaScript runtime environment.
  * @internal
  */
@@ -15,7 +33,7 @@ export function getRuntimeKind(): RuntimeKind {
   if (typeof Bun !== 'undefined' && typeof Bun.spawn === 'function') {
     return 'bun'
   }
-  const denoRuntime = (globalThis as any).Deno
+  const denoRuntime = (globalThis as unknown as { Deno?: DenoGlobal }).Deno
   if (typeof denoRuntime !== 'undefined' && typeof denoRuntime?.version?.deno === 'string') {
     return 'deno'
   }
@@ -35,7 +53,7 @@ export function getRuntimeEnv(): Record<string, string | undefined> {
     return Bun.env
   }
   if (kind === 'deno') {
-    const deno = (globalThis as any).Deno
+    const deno = (globalThis as unknown as { Deno?: DenoGlobal }).Deno
     if (deno?.env?.toObject) {
       return deno.env.toObject()
     }

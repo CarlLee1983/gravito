@@ -12,6 +12,22 @@ import type {
   RuntimeArchiveAdapter,
 } from './types'
 
+/**
+ * Minimal type interface for Bun global used in archive operations.
+ * Avoids `any` while remaining compatible with globalThis access.
+ * @internal
+ */
+interface BunGlobal {
+  Tar?: new () => {
+    append: (path: string, data: Uint8Array) => void
+    out: ReadableStream
+  }
+  Glob?: new (pattern: string) => {
+    scan: (path: string) => AsyncIterable<string>
+  }
+  file?: (path: string) => { arrayBuffer: () => Promise<ArrayBuffer> }
+}
+
 // ============ Bun Archive Adapter ============
 
 /**
@@ -22,7 +38,7 @@ function createBunArchiveAdapter(): RuntimeArchiveAdapter {
   return {
     async create(entries, _options = {}) {
       // Use globalThis to avoid Vite import errors
-      const B = (globalThis as any).Bun
+      const B = (globalThis as unknown as { Bun?: BunGlobal }).Bun
       if (!B) {
         throw new Error('[RuntimeArchiveAdapter] Bun global not found')
       }
@@ -51,7 +67,7 @@ function createBunArchiveAdapter(): RuntimeArchiveAdapter {
     },
 
     async extract(_data, _targetDir, _options = {}) {
-      const B = (globalThis as any).Bun
+      const B = (globalThis as unknown as { Bun?: BunGlobal }).Bun
       if (!B?.Tar) {
         throw new Error('[RuntimeArchiveAdapter] Bun.Tarball is not available')
       }
@@ -59,7 +75,7 @@ function createBunArchiveAdapter(): RuntimeArchiveAdapter {
     },
 
     async list(_data, _glob?) {
-      const B = (globalThis as any).Bun
+      const B = (globalThis as unknown as { Bun?: BunGlobal }).Bun
       if (!B?.Tar) {
         throw new Error('[RuntimeArchiveAdapter] Bun.Tarball is not available')
       }
@@ -67,7 +83,7 @@ function createBunArchiveAdapter(): RuntimeArchiveAdapter {
     },
 
     async readFile(_data, _filePath) {
-      const B = (globalThis as any).Bun
+      const B = (globalThis as unknown as { Bun?: BunGlobal }).Bun
       if (!B?.Tar) {
         throw new Error('[RuntimeArchiveAdapter] Bun.Tarball is not available')
       }
@@ -217,7 +233,10 @@ export async function archiveFromDirectory(
   let entries: Record<string, Uint8Array> = {}
 
   if (kind === 'bun') {
-    const B = (globalThis as any).Bun
+    const B = (globalThis as unknown as { Bun?: BunGlobal }).Bun
+    if (!B?.Glob || !B.file) {
+      throw new Error('[RuntimeArchiveAdapter] Bun global not available for directory scanning')
+    }
     const glob = new B.Glob(options.glob ?? '**/*')
     for await (const file of glob.scan(dirPath)) {
       // biome-ignore lint/security/noGlobalEval: hide from Vite
