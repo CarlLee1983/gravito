@@ -26,7 +26,7 @@ export class PriorityEscalationManager {
   ): 'critical' | 'high' | 'normal' | 'low' {
     // 如果未啟用升級，返回原始優先級
     if (config?.enabled === false) {
-      return (task.options.priority as any) || 'normal'
+      return (task.options.priority as 'critical' | 'high' | 'normal' | 'low') || 'normal'
     }
 
     const nowMs = Date.now()
@@ -45,7 +45,7 @@ export class PriorityEscalationManager {
     }
     const thresholds = { ...defaultThresholds, ...config?.thresholds }
 
-    const currentPriority = (task.options.priority as any) || 'normal'
+    const currentPriority = (task.options.priority as 'critical' | 'high' | 'normal' | 'low') || 'normal'
 
     // LOW → NORMAL（等待 > 200ms）
     if (currentPriority === 'low' && waitTimeMs > thresholds.lowToNormal) {
@@ -70,8 +70,8 @@ export class PriorityEscalationManager {
    * @returns 負數表示 task1 優先級更高，正數表示 task2 優先級更高
    */
   static comparePriority(task1: EventTask, task2: EventTask): number {
-    const priority1 = (task1.options.priority as any) || 'normal'
-    const priority2 = (task2.options.priority as any) || 'normal'
+    const priority1 = (task1.options.priority as 'critical' | 'high' | 'normal' | 'low') || 'normal'
+    const priority2 = (task2.options.priority as 'critical' | 'high' | 'normal' | 'low') || 'normal'
 
     const priorityOrder: Record<string, number> = {
       critical: 0,

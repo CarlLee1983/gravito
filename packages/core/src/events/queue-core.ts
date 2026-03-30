@@ -110,7 +110,7 @@ export class QueueCore {
     }
 
     const priority = task.options.priority || 'normal'
-    this.priorityStats?.recordEvent(priority as any)
+    this.priorityStats?.recordEvent(priority as 'critical' | 'high' | 'normal' | 'low')
 
     // === Evaluate advanced backpressure if enabled ===
     if (this.backpressureManager) {

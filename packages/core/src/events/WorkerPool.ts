@@ -46,8 +46,8 @@ export class WorkerPool {
     taskSource?: TaskSource
   }
   private metrics?: WorkerPoolMetrics
-  private healthCheckTimer?: any
-  private metricsTimer?: any
+  private healthCheckTimer?: ReturnType<typeof setInterval>
+  private metricsTimer?: ReturnType<typeof setInterval>
   private isRunning = false
   private scaleDownCounter = 0
 
@@ -55,7 +55,7 @@ export class WorkerPool {
     // Set defaults
     let cpuCores = 1
     try {
-      if (typeof process !== 'undefined' && !(process as any).browser) {
+      if (typeof process !== 'undefined' && !(process as unknown as Record<string, unknown>).browser) {
         // biome-ignore lint/security/noGlobalEval: hide from Vite
         cpuCores = Math.max(1, eval('require')('node:os').cpus().length)
       }

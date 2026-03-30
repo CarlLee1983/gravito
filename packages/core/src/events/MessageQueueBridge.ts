@@ -8,6 +8,7 @@
 import type { HookManager } from '../HookManager'
 import type { DeadLetterQueueManager } from '../reliability/DeadLetterQueueManager'
 import type { EventBackend } from './EventBackend'
+import type { EventOptions } from './EventOptions'
 import type { EventTask } from './types'
 import type { WorkerPool } from './WorkerPool'
 
@@ -118,7 +119,7 @@ export class MessageQueueBridge {
   async dispatchWithQueue<TArgs = unknown>(
     eventName: string,
     args: TArgs,
-    options?: any
+    options?: EventOptions
   ): Promise<string> {
     // 1. 驗證 listeners 存在
     const listeners = this.config.hookManager.getListeners(eventName)
@@ -128,7 +129,10 @@ export class MessageQueueBridge {
 
     // 2. 檢查 CircuitBreaker 狀態（如果啟用）
     if (this.config.enableCircuitBreaker) {
-      const breaker = (this.config.hookManager as any).getCircuitBreaker?.(eventName)
+      const hm = this.config.hookManager as unknown as {
+        getCircuitBreaker?: (name: string) => { getState?: () => string }
+      }
+      const breaker = hm.getCircuitBreaker?.(eventName)
       if (breaker?.getState?.() === 'OPEN') {
         throw new Error(`[MessageQueueBridge] Circuit breaker is OPEN for event: ${eventName}`)
       }

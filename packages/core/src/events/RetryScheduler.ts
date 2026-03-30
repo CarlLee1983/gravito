@@ -169,9 +169,9 @@ export class RetryScheduler {
       const delay = this.calculateDelay(retryCount)
 
       // 使用反射呼叫 add() 方法（因為 Queue 類型未導出）
-      const addMethod = (queue as any).add
-      if (typeof addMethod === 'function') {
-        await addMethod.call(
+      const queueObj = queue as unknown as { add?: (...args: unknown[]) => Promise<unknown> }
+      if (typeof queueObj.add === 'function') {
+        await queueObj.add.call(
           queue,
           'retry',
           { payload, error: error.message, retryCount },
@@ -205,7 +205,15 @@ export class RetryScheduler {
     const stats = new Map<string, QueueStats>()
 
     for (const [queueName, queue] of this.queues.entries()) {
-      const queueObj = queue as any
+      const queueObj = queue as unknown as {
+        count?: {
+          waiting?: number
+          active?: number
+          delayed?: number
+          failed?: number
+          completed?: number
+        }
+      }
 
       stats.set(queueName, {
         name: queueName,
@@ -230,7 +238,7 @@ export class RetryScheduler {
     const closePromises: Promise<void>[] = []
 
     for (const queue of this.queues.values()) {
-      const queueObj = queue as any
+      const queueObj = queue as unknown as { close?: () => Promise<void> }
       if (typeof queueObj.close === 'function') {
         closePromises.push(queueObj.close())
       }
