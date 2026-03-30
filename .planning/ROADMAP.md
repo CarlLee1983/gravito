@@ -128,4 +128,4 @@ Plans:
 | 23. Named Export Conversion | v2.1.0 | 2/2 | Complete    | 2026-03-29 |
 | 24. Config Type Unification | v2.1.0 | 1/1 | Complete    | 2026-03-30 |
 | 25. Container Type Improvement | v2.1.0 | 1/1 | Complete    | 2026-03-30 |
-| 26. Documentation and Tooling | v2.1.0 | 7/7 | Complete   | 2026-03-30 |
+| 26. Documentation and Tooling | v2.1.0 | 7/7 | Complete    | 2026-03-30 |
