@@ -60,7 +60,11 @@ See [v2.0.0-ROADMAP.md](milestones/v2.0.0-ROADMAP.md) for full details.
   2. Sentinel HashManager calls `Bun.password.hash()` and `Bun.password.verify()` on Bun runtime — confirmed by integration test asserting argon2id algorithm is used, not bcryptjs
   3. RuntimeCryptoAdapter calls `Bun.CryptoHasher` for SHA-256/SHA-512/BLAKE2b on Bun runtime — confirmed by test asserting the Bun-native code path is exercised
   4. Any Orbit can call `NativeOrbitDetector.detectBunCapabilities()` and receive a typed `NativeFeatures` object with boolean flags — no direct `Bun.xxx` calls outside `adapter-bun.ts`
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 27-01-PLAN.md — NativeOrbitDetector + NativeFeatures type + HashAccelerator sha512/blake2b extension
+- [ ] 27-02-PLAN.md — NativeHasher sha512/blake2b implementation + argon2id integration test
+- [ ] 27-03-PLAN.md — Boot capability report in PlanetCore.boot() + public exports
 
 ### Phase 28: Fast-Path Routing
 **Goal**: Developer can register fast-path routes that bypass DI context construction and lifecycle hooks, and can opt specific routes out of global middleware, with a security contract guaranteeing auth middleware still fires
@@ -114,7 +118,7 @@ See [v2.0.0-ROADMAP.md](milestones/v2.0.0-ROADMAP.md) for full details.
 | 24. Config Type Unification | v2.1.0 | 1/1 | Complete | 2026-03-30 |
 | 25. Container Type Improvement | v2.1.0 | 1/1 | Complete | 2026-03-30 |
 | 26. Documentation and Tooling | v2.1.0 | 7/7 | Complete | 2026-03-30 |
-| 27. Bun-Native Foundation | v2.2.0 | 0/? | Not started | - |
+| 27. Bun-Native Foundation | v2.2.0 | 0/3 | Planning complete | - |
 | 28. Fast-Path Routing | v2.2.0 | 0/? | Not started | - |
 | 29. Lite Satellite | v2.2.0 | 0/? | Not started | - |
 | 30. Static OpenAPI Generation | v2.2.0 | 0/? | Not started | - |
