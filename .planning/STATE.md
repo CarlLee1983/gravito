@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.1.0
-milestone_name: Core DX 改進
-status: complete
-stopped_at: Milestone v2.1.0 archived
-last_updated: "2026-03-30T15:15:00.000Z"
+milestone: v2.2.0
+milestone_name: Framework Evolution — 效能旁路與開發敏捷性
+status: active
+stopped_at: Defining requirements
+last_updated: "2026-03-30T16:00:00.000Z"
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 15
-  completed_plans: 15
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # STATE: Gravito-Core
@@ -19,14 +19,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-30)
 
 **Core value:** 穩定可靠的核心基礎設施
-**Current focus:** Planning next milestone
+**Current focus:** Defining v2.2.0 requirements
 
 ---
 
 ## Current Position
 
-Milestone: v2.1.0 ✅ COMPLETE (shipped 2026-03-30)
-Next: `/gsd:new-milestone` to start next milestone
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-30 — Milestone v2.2.0 started
 
 ## Accumulated Context
 
@@ -34,11 +36,8 @@ Next: `/gsd:new-milestone` to start next milestone
 
 | Decision | Rationale | Made |
 |----------|-----------|------|
-| v2.1.0 minor version | DX 改進不需 breaking changes，保持向下相容 | 2026-03-29 |
-| 聚焦 @gravito/core 包 | core 是所有下游包的基礎，DX 改善影響最大 | 2026-03-29 |
-| star export → named export | 明確 API surface 可審計、可控制 | 2026-03-29 |
-| ServiceMap type→interface | 啟用 declaration merging，下游可擴展 | 2026-03-30 |
-| publint CI gate | 防止 exports map 漂移 | 2026-03-30 |
+| v2.2.0 minor version | 所有改進為 additive（非 breaking），保持向下相容 | 2026-03-30 |
+| 4 大改進維度 | 基於 BI 選型對比 ElysiaJS / Bun 原生的洞察 | 2026-03-30 |
 
 ### Blockers
 
@@ -47,17 +46,13 @@ None.
 ### Architectural Notes
 
 - v2.0.0 GravitoException 體系不受影響
-- v2.1.0 所有修改限於 packages/core/ 範圍
-- publint CI gate 覆蓋全部 57 packages
+- v2.1.0 typed DI 為 Fast-Path 和 Lite Satellite 提供基礎
+- 靈感來源：ElysiaJS 類型系統 + Bun 原生 API
 
 ---
 
 ## Session Continuity
 
 Last session: 2026-03-30
-Stopped at: Milestone v2.1.0 archived
+Stopped at: Defining requirements
 Resume file: None
-
-### To start next milestone:
-
-1. Run: `/gsd:new-milestone`

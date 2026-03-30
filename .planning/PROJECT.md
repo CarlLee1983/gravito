@@ -8,18 +8,17 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 
 **穩定可靠的核心基礎設施** — core 及所有 Orbit 包必須具備 production-ready 的錯誤處理、韌性機制和一致的 API 行為，讓下游 Satellite 和應用能安心依賴。
 
-## Current State
+## Current Milestone: v2.2.0 Framework Evolution — 效能旁路與開發敏捷性
 
-**Shipped:** v2.1.0 Core DX 改進 (2026-03-30)
-**Next:** Planning next milestone
+**Goal:** 基於 BI 選型對比（ElysiaJS / Bun 原生）的洞察，強化 Gravito 在極致效能、開發體驗、模組輕量化與 Bun-Native 整合四大維度。
 
-**What v2.1.0 delivered:**
-- Router stdout 清理 + typed ModelNotFoundException
-- 6 star exports → named exports；setApp 從公開 API 移除
-- ApplicationConfig extends Pick<GravitoConfig>；boot() 正確傳遞 observabilityProvider
-- Container.make() ServiceMap-keyed overload — typed DI 消除主路徑 any
-- Biome noExplicitAny error + noConsole；publint CI gate（57 packages）
-- README API 同步、orbit/register/use 決策指南、JSDoc 英文統一
+**Target features:**
+- Fast-Path 旁路機制：PhotonOrbit 高頻路由跳過 DI/Lifecycle，直連 Bun.serve Handler
+- Native Orbit Detection：Sentinel 等 Orbit 自動切換至 Bun.password / Bun.crypto
+- Static Contract Generation：從 Satellite 介面定義自動生成 OpenAPI 規格
+- Lite Satellite / Inline Plugin：gravito.config.ts 中定義輕量匿名衛星
+- 依賴樹視覺化：模組耦合關係圖形化輸出
+- Bun-Native 抽象層：core 內建 Bun 原生 API 適配（fs, crypto, test）
 
 ## Requirements
 
@@ -41,7 +40,7 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 
 ### Active
 
-(None — define in next milestone via `/gsd:new-milestone`)
+(Defining in v2.2.0 milestone — see REQUIREMENTS.md)
 
 ### Out of Scope
 
@@ -181,4 +180,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-30 after v2.1.0 milestone*
+*Last updated: 2026-03-30 after v2.2.0 milestone started*
