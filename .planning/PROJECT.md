@@ -27,6 +27,7 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 - Phase 22 ✓ Exception Hierarchy Clarification (JSDoc role separation)
 - Phase 23 ✓ Named Export Conversion (star re-exports → explicit named exports)
 - Phase 24 ✓ Config Type Unification (ApplicationConfig extends Pick<GravitoConfig>)
+- Phase 25 ✓ Container Type Improvement (ServiceMap type→interface for declaration merging)
 
 ## Requirements
 
@@ -383,4 +384,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-30 after Phase 24 complete*
+*Last updated: 2026-03-30 after Phase 25 complete*
