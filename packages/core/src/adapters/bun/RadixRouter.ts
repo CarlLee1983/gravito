@@ -1,6 +1,6 @@
 import type { HttpMethod } from '../../http/types'
 import { RadixNode } from './RadixNode'
-import { NodeType, type RouteHandler, type RouteMatch } from './types'
+import { NodeType, type RouteHandler, type RouteMatch, type BunRouteOptions } from './types'
 
 /**
  * Simple LRU Cache for route matching
@@ -56,7 +56,7 @@ export class RadixRouter {
   /**
    * Register a route
    */
-  add(method: HttpMethod, path: string, handlers: RouteHandler[]): void {
+  add(method: HttpMethod, path: string, handlers: RouteHandler[], options?: BunRouteOptions): void {
     let node = this.root
     const segments = this.splitPath(path)
 
@@ -95,7 +95,11 @@ export class RadixRouter {
     }
 
     // Ensure we store handlers for lowercase method
-    node.handlers.set(method.toLowerCase() as HttpMethod, handlers)
+    const normalizedMethod = method.toLowerCase() as HttpMethod
+    node.handlers.set(normalizedMethod, handlers)
+    if (options) {
+      node.options.set(normalizedMethod, options)
+    }
 
     // P2 optimization: Clear cache when new route added
     this.routeCache.clear()
@@ -111,7 +115,7 @@ export class RadixRouter {
     if (path === '/' || path === '') {
       const handlers = this.root.handlers.get(normalizedMethod)
       if (handlers) {
-        return { handlers, params: {} }
+        return { handlers, params: {}, options: this.root.options.get(normalizedMethod) }
       }
       return null
     }
@@ -144,11 +148,15 @@ export class RadixRouter {
     // 1. Check if we reached end of path
     if (depth >= segments.length) {
       let handlers = node.handlers.get(method)
+      let options = node.options.get(method)
+
       if (!handlers) {
         handlers = node.handlers.get('all' as HttpMethod)
+        options = node.options.get('all' as HttpMethod)
       }
+
       if (handlers) {
-        return { handlers, params }
+        return { handlers, params, options }
       }
       return null
     }
@@ -187,11 +195,15 @@ export class RadixRouter {
     // 4. Try Wildcard Match
     if (node.wildcardChild) {
       let handlers = node.wildcardChild.handlers.get(method)
+      let options = node.wildcardChild.options.get(method)
+
       if (!handlers) {
         handlers = node.wildcardChild.handlers.get('all' as HttpMethod)
+        options = node.wildcardChild.options.get('all' as HttpMethod)
       }
+
       if (handlers) {
-        return { handlers, params }
+        return { handlers, params, options }
       }
     }
 

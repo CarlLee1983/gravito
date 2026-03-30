@@ -10,6 +10,14 @@ export type RouteHandler = Function
 export interface RouteMatch {
   handlers: RouteHandler[]
   params: Record<string, string>
+  options?: BunRouteOptions
+}
+
+/**
+ * Route Options (Metadata)
+ */
+export interface BunRouteOptions {
+  excludeMiddleware?: string[]
 }
 
 /**

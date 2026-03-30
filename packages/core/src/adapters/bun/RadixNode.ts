@@ -1,5 +1,5 @@
 import type { HttpMethod } from '../../http/types'
-import { NodeType, type RouteHandler } from './types'
+import { NodeType, type RouteHandler, type BunRouteOptions } from './types'
 
 /**
  * Node in the Radix Router tree.
@@ -23,6 +23,9 @@ export class RadixNode {
 
   // Handlers registered at this node (keyed by HTTP method)
   public handlers: Map<HttpMethod, RouteHandler[]> = new Map()
+
+  // Options registered at this node (keyed by HTTP method)
+  public options: Map<HttpMethod, BunRouteOptions> = new Map()
 
   // Parameter name if this is a PARAM node (e.g., "id" for ":id")
   public paramName: string | null = null
@@ -48,6 +51,8 @@ export class RadixNode {
       children: Array.from(this.children.entries()).map(([k, v]) => [k, v.toJSON()]),
       paramChild: this.paramChild?.toJSON() || null,
       wildcardChild: this.wildcardChild?.toJSON() || null,
+      handlers: Array.from(this.handlers.entries()),
+      options: Array.from(this.options.entries()),
       paramName: this.paramName,
       regex: this.regex ? this.regex.source : null,
     }
@@ -69,6 +74,16 @@ export class RadixNode {
     }
     if (json.wildcardChild) {
       node.wildcardChild = RadixNode.fromJSON(json.wildcardChild as Record<string, unknown>)
+    }
+    if (json.handlers) {
+      for (const [method, handlers] of json.handlers as [HttpMethod, RouteHandler[]][]) {
+        node.handlers.set(method, handlers)
+      }
+    }
+    if (json.options) {
+      for (const [method, options] of json.options as [HttpMethod, BunRouteOptions][]) {
+        node.options.set(method, options)
+      }
     }
     return node
   }

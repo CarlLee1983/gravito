@@ -14,7 +14,7 @@ import type {
   GravitoMiddleware,
   GravitoNotFoundHandler,
 } from '@gravito/core'
-import { BunNativeAdapter } from '@gravito/core'
+import { BunNativeAdapter, type BunRouteOptions } from '@gravito/core'
 
 type MountablePhotonApp = Photon | BunNativeAdapter
 
@@ -76,37 +76,37 @@ export class Photon {
    */
   readonly fast: FastPathProxy = this._buildFastProxy()
 
-  get(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
+  get(path: string, ...handlers: (GravitoHandler | GravitoMiddleware | BunRouteOptions)[]): this {
     this.adapter.route('get', path, ...handlers)
     return this
   }
 
-  post(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
+  post(path: string, ...handlers: (GravitoHandler | GravitoMiddleware | BunRouteOptions)[]): this {
     this.adapter.route('post', path, ...handlers)
     return this
   }
 
-  put(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
+  put(path: string, ...handlers: (GravitoHandler | GravitoMiddleware | BunRouteOptions)[]): this {
     this.adapter.route('put', path, ...handlers)
     return this
   }
 
-  delete(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
+  delete(path: string, ...handlers: (GravitoHandler | GravitoMiddleware | BunRouteOptions)[]): this {
     this.adapter.route('delete', path, ...handlers)
     return this
   }
 
-  patch(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
+  patch(path: string, ...handlers: (GravitoHandler | GravitoMiddleware | BunRouteOptions)[]): this {
     this.adapter.route('patch', path, ...handlers)
     return this
   }
 
-  head(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
+  head(path: string, ...handlers: (GravitoHandler | GravitoMiddleware | BunRouteOptions)[]): this {
     this.adapter.route('head', path, ...handlers)
     return this
   }
 
-  options(path: string, ...handlers: (GravitoHandler | GravitoMiddleware)[]): this {
+  options(path: string, ...handlers: (GravitoHandler | GravitoMiddleware | BunRouteOptions)[]): this {
     this.adapter.route('options', path, ...handlers)
     return this
   }

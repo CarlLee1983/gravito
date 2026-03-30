@@ -13,6 +13,8 @@ import type { WebSocketRouteHandlers } from './BunWebSocketHandler'
 import { BunWebSocketHandler } from './BunWebSocketHandler'
 import { FastPathRegistry } from './FastPathRegistry'
 import { RadixRouter } from './RadixRouter'
+import type { BunRouteOptions } from './types'
+import { MiddlewareDriftException } from '../../exceptions'
 
 /**
  * Native Bun-optimized HTTP Adapter for Gravito.
@@ -27,6 +29,7 @@ export class BunNativeAdapter implements HttpAdapter {
     return this
   }
 
+  private isSnapshotLocked = false
   private router = new RadixRouter()
   private fastPathRegistry = new FastPathRegistry()
   private middlewares: Array<{ path: string; handlers: GravitoMiddleware[] }> = []
@@ -43,35 +46,67 @@ export class BunNativeAdapter implements HttpAdapter {
   // WebSocket support
   private wsHandler = new BunWebSocketHandler()
 
+  private checkLock(): void {
+    if (this.isSnapshotLocked && process.env.NODE_ENV !== 'production') {
+      throw new MiddlewareDriftException(
+        'FAST_PATH_MIDDLEWARE_DRIFT: Middleware or routes cannot be added after serveConfig() has been called. ' +
+          'This ensures the snapshotted configuration remains consistent with the application state.'
+      )
+    }
+  }
+
   route(
     method: HttpMethod,
     path: string,
-    ...handlers: (GravitoHandler | GravitoMiddleware)[]
+    ...handlers: (GravitoHandler | GravitoMiddleware | BunRouteOptions)[]
   ): void {
-    this.router.add(method, path, handlers as Function[])
+    this.checkLock()
+    const last = handlers[handlers.length - 1]
+    let options: BunRouteOptions | undefined
+
+    if (
+      last &&
+      typeof last === 'object' &&
+      !Array.isArray(last) &&
+      'excludeMiddleware' in (last as Record<string, unknown>)
+    ) {
+      options = handlers.pop() as BunRouteOptions
+    }
+
+    this.router.add(method, path, handlers as Function[], options)
   }
 
   routes(routes: RouteDefinition[]): void {
+    this.checkLock()
     for (const route of routes) {
-      this.route(
+      const options: BunRouteOptions = {}
+      if ((route as any).excludeMiddleware) {
+        options.excludeMiddleware = (route as any).excludeMiddleware
+      }
+
+      this.router.add(
         route.method,
         route.path,
-        ...(route.handlers as (GravitoHandler | GravitoMiddleware)[])
+        route.handlers as Function[],
+        Object.keys(options).length > 0 ? options : undefined
       )
     }
   }
 
   use(path: string, ...middleware: GravitoMiddleware[]): void {
+    this.checkLock()
     this.middlewares.push({ path, handlers: middleware })
     // P2 optimization: Clear middleware cache when new middleware added
     this.middlewareChainCache.clear()
   }
 
   useGlobal(...middleware: GravitoMiddleware[]): void {
+    this.checkLock()
     this.use('*', ...middleware)
   }
 
   useScoped(scope: string, path: string, ...middleware: GravitoMiddleware[]): void {
+    this.checkLock()
     if (path === '*' || path === '*/*') {
       throw new Error(
         `useScoped(): Cannot use wildcard path '*' in Orbit-scoped middleware. ` +
@@ -126,10 +161,15 @@ export class BunNativeAdapter implements HttpAdapter {
   /**
    * P2 optimization: Pre-compile middleware chain for a path
    */
-  private getCompiledMiddlewareChain(path: string): GravitoMiddleware[] {
+  private getCompiledMiddlewareChain(path: string, options?: BunRouteOptions): GravitoMiddleware[] {
+    const exclude = options?.excludeMiddleware || []
+
     // Check cache first
-    if (this.middlewareChainCache.has(path)) {
-      return this.middlewareChainCache.get(path)!
+    const cacheKey =
+      exclude.length > 0 ? `${path}:exclude:${exclude.sort().join(',')}` : path
+
+    if (this.middlewareChainCache.has(cacheKey)) {
+      return this.middlewareChainCache.get(cacheKey)!
     }
 
     // Build chain
@@ -137,12 +177,19 @@ export class BunNativeAdapter implements HttpAdapter {
 
     for (const mw of this.middlewares) {
       if (this.matchesPath(mw.path, path)) {
-        chain.push(...mw.handlers)
+        for (const handler of mw.handlers) {
+          // Check if middleware should be excluded by name
+          const name = handler.name || (handler as any).middlewareName
+          if (name && exclude.includes(name)) {
+            continue
+          }
+          chain.push(handler)
+        }
       }
     }
 
     // Cache it
-    this.middlewareChainCache.set(path, chain)
+    this.middlewareChainCache.set(cacheKey, chain)
 
     return chain
   }
@@ -206,10 +253,12 @@ export class BunNativeAdapter implements HttpAdapter {
   }
 
   onError(handler: GravitoErrorHandler): void {
+    this.checkLock()
     this.errorHandler = handler
   }
 
   onNotFound(handler: GravitoNotFoundHandler): void {
+    this.checkLock()
     this.notFoundHandler = handler
   }
 
@@ -218,6 +267,7 @@ export class BunNativeAdapter implements HttpAdapter {
     path: string,
     handler: (req: Request) => Response | Promise<Response>
   ): void {
+    this.checkLock()
     this.fastPathRegistry.register(method, path, handler)
   }
 
@@ -226,6 +276,7 @@ export class BunNativeAdapter implements HttpAdapter {
    * Offloads fast-path GET routes to Bun's native router.
    */
   serveConfig(baseConfig: Record<string, unknown> = {}): Record<string, unknown> {
+    this.isSnapshotLocked = true
     const routes: Record<string, (req: Request) => Response | Promise<Response>> = {}
 
     // Offload fast-path GET routes to Bun's native router for maximum performance
@@ -249,6 +300,7 @@ export class BunNativeAdapter implements HttpAdapter {
    * 註冊 WebSocket 路由
    */
   registerWebSocketRoute(path: string, handlers: WebSocketRouteHandlers): void {
+    this.checkLock()
     this.wsHandler.register(path, handlers)
   }
 
@@ -313,7 +365,7 @@ export class BunNativeAdapter implements HttpAdapter {
       const handlers: Function[] = []
 
       // P2 optimization: Use pre-compiled middleware chain
-      const middlewareChain = this.getCompiledMiddlewareChain(path)
+      const middlewareChain = this.getCompiledMiddlewareChain(path, match?.options)
       handlers.push(...middlewareChain)
 
       if (match) {
