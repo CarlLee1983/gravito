@@ -147,6 +147,26 @@ export class NativeHasher {
   }
 
   /**
+   * SHA-512 hash computation
+   * @param input - Input (string or Uint8Array)
+   * @returns Hex-encoded SHA-512 hash (128 characters)
+   */
+  static sha512(input: string | Uint8Array): string {
+    return this.getAccelerator().sha512(input)
+  }
+
+  /**
+   * BLAKE2b-256 hash computation
+   * On Bun: uses Bun.CryptoHasher('blake2b256')
+   * On Node: falls back to SHA-256 with console warning
+   * @param input - Input (string or Uint8Array)
+   * @returns Hex-encoded hash (64 characters)
+   */
+  static blake2b(input: string | Uint8Array): string {
+    return this.getAccelerator().blake2b(input)
+  }
+
+  /**
    * 計算 SHA-256 雜湊
    * 支援字串和二進制輸入
    *
