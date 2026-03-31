@@ -1,5 +1,21 @@
 # Milestones
 
+## v2.2.0 Framework Evolution (Shipped: 2026-03-31)
+
+**Phases completed:** 6 phases, 10 plans, 16 tasks
+
+**Key accomplishments:**
+
+- NativeOrbitDetector with frozen NativeFeatures capability snapshot and HashAccelerator extended with SHA-512/BLAKE2b via node:crypto fallback
+- NativeHasher.sha512()/blake2b() static methods, resetPasswordAdapter() singleton reset, and integration tests confirming argon2id native path on Bun runtime (BUN-01/BUN-02)
+- PlanetCore.boot() now logs [gravito] native: capability report before orbit installation; NativeOrbitDetector, NativeFeatures, formatCapabilityReport, and resetPasswordAdapter all publicly exported from @gravito/core
+- One-liner:
+- Per-route middleware exclusion via BunRouteOptions, CVE-2025-29927 security test, and serveConfig() drift detection
+- Lite Satellite collision guards with dev-only exception handling, namespaced inline bindings, and boot() routing for named object orbits
+- Static OpenAPI generation hardened with Zod v4 native schema conversion, fail-fast error handling, and expanded regression coverage.
+- `@gravito/photon` export map with `types` precedence across every public subpath entry, validated by publint on photon, cli, and core
+- One-liner:
+
 ## v2.1.0 Core DX 改進 (Shipped: 2026-03-30)
 
 **Phases completed:** 6 phases, 15 plans, 27 tasks

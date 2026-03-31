@@ -10,6 +10,8 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 
 ## Current Milestone: v2.2.0 Framework Evolution — 效能旁路與開發敏捷性
 
+**Status:** Phase 31 complete (2026-03-31) — all v2.2.0 phases validated
+
 **Goal:** 基於 BI 選型對比（ElysiaJS / Bun 原生）的洞察，強化 Gravito 在極致效能、開發體驗、模組輕量化與 Bun-Native 整合四大維度。
 
 **Target features:**
@@ -37,6 +39,7 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 - ✓ **模組組織清理** (v2.1.0) — star export 收斂, setApp 移除, index.browser.ts 同步
 - ✓ **型別安全強化** (v2.1.0) — ApplicationConfig Pick<>, Container.make() ServiceMap overload
 - ✓ **文件與工具** (v2.1.0) — noExplicitAny error, noConsole, publint CI gate, README sync, decision guide, JSDoc English
+- ✓ **依賴樹視覺化** (v2.2.0 Phase 31) — `gravito deps:graph` CLI, `gravito.config.ts` discovery, publint-clean exports
 
 ### Active
 
@@ -192,4 +195,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-30 after Phase 27 (bun-native-foundation) complete*
+*Last updated: 2026-03-31 after Phase 31 (dependency-graph-tooling) complete*
