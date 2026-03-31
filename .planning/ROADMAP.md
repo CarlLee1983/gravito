@@ -39,15 +39,15 @@ See [v2.0.0-ROADMAP.md](milestones/v2.0.0-ROADMAP.md) for full details.
 
 </details>
 
-### 🚧 v2.2.0 Framework Evolution (In Progress)
+### v2.2.0 Framework Evolution (In Progress)
 
 **Milestone Goal:** 強化 Gravito 在極致效能、開發體驗、模組輕量化與 Bun-Native 整合四大維度，基於 BI 選型對比（ElysiaJS / Bun 原生）的洞察。
 
 - [x] **Phase 27: Bun-Native Foundation** — NativeOrbitDetector 建立 + Bun.password / CryptoHasher 路徑驗證 + 開機能力報告 (completed 2026-03-30)
 - [x] **Phase 28: Fast-Path Routing** — photon.fast() 旁路機制，直連 Bun.serve handler，含安全測試（CVE-2025-29927 防護） (completed 2026-03-30)
-- [x] **Phase 29: Lite Satellite** — InlineOrbit + PlanetCore.plugin() 零樣板匿名衛星定義 (completed 2026-03-30)
-- [x] **Phase 30: Static OpenAPI Generation** — Zod schema 元資料 + gravito openapi:generate CLI 靜態輸出 (completed 2026-03-30)
-- [x] **Phase 31: Dependency Graph Tooling** — gravito deps:graph CLI + exports 最終確認 (completed 2026-03-30)
+- [ ] **Phase 29: Lite Satellite** — InlineOrbit + PlanetCore.plugin() 零樣板匿名衛星定義
+- [ ] **Phase 30: Static OpenAPI Generation** — Zod schema 元資料 + gravito openapi:generate CLI 靜態輸出
+- [ ] **Phase 31: Dependency Graph Tooling** — gravito deps:graph CLI + exports 最終確認
 
 ## Phase Details
 
@@ -88,7 +88,9 @@ Plans:
   1. Developer defines `{ name: 'ping', install(core) { core.route('GET', '/ping', ...) } }` in `gravito.config.ts` and it registers routes with no additional files required
   2. Inline plugin service bindings are namespaced under `inline:<name>:` prefix — attempting a collision in dev mode throws `CONTAINER_BINDING_COLLISION` exception
   3. `PlanetCore.plugin(inlineConfig)` accepts the object literal and integrates it into the existing `GravitoOrbit.install()` lifecycle without requiring a class constructor
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 29-01-PLAN.md — ContainerBindingCollisionException + collision guards + boot() discrimination + comprehensive tests
 
 ### Phase 30: Static OpenAPI Generation
 **Goal**: Route registrations carry Zod schema metadata accessible to downstream tools, and the developer can generate a static openapi.json artifact at build time via a single CLI command
@@ -123,7 +125,6 @@ Plans:
 | 26. Documentation and Tooling | v2.1.0 | 7/7 | Complete | 2026-03-30 |
 | 27. Bun-Native Foundation | v2.2.0 | 3/3 | Complete    | 2026-03-30 |
 | 28. Fast-Path Routing | v2.2.0 | 2/2 | Complete    | 2026-03-30 |
-| 29. Lite Satellite | v2.2.0 | 3/3 | Completed | - |
-| 30. Static OpenAPI Generation | v2.2.0 | 4/4 | Completed | - |
-| 31. Dependency Graph Tooling | v2.2.0 | 2/2 | Completed | - |
-
+| 29. Lite Satellite | v2.2.0 | 0/1 | In Progress | - |
+| 30. Static OpenAPI Generation | v2.2.0 | 0/0 | Pending | - |
+| 31. Dependency Graph Tooling | v2.2.0 | 0/0 | Pending | - |
