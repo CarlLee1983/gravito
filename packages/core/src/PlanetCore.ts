@@ -11,6 +11,7 @@
 import { type HttpAdapter, isHttpAdapter } from './adapters/types'
 import { ConfigManager } from './ConfigManager'
 import { Container } from './Container'
+import { ContainerBindingCollisionException } from './exceptions/ContainerBindingCollisionException'
 import { ErrorHandler } from './ErrorHandler'
 import { EventManager } from './EventManager'
 import { ObservableHookManager } from './events/observability/ObservableHookManager'
@@ -76,6 +77,20 @@ export type ErrorHandlerContext = {
  * @public
  */
 export interface GravitoOrbit {
+  /**
+   * The unique name of the orbit.
+   * Required for Lite Satellites to enable namespaced service injection.
+   * @since 2.2.0
+   */
+  name?: string
+
+  /**
+   * List of other orbit names this orbit depends on.
+   * Used for dependency graph generation.
+   * @since 2.2.0
+   */
+  dependencies?: string[]
+
   install(core: PlanetCore): void | Promise<void>
 }
 
@@ -216,6 +231,12 @@ export class PlanetCore {
 
   public encrypter?: Encrypter
   public hasher: BunHasher
+
+  /**
+   * Track installed orbits and their dependencies.
+   * @since 2.2.0
+   */
+  public readonly installedOrbits: Array<{ name: string; dependencies: string[] }> = []
 
   /**
    * Observability provider for distributed tracing and metrics.
@@ -704,6 +725,53 @@ export class PlanetCore {
   }
 
   /**
+   * Register a Lite Satellite (Anonymous Plugin) as an object literal.
+   * This is a simplified alternative to full-featured Orbits.
+   *
+   * @param config - The plugin configuration object.
+   * @returns The PlanetCore instance for chaining.
+   *
+   * @example
+   * ```typescript
+   * await core.plugin({
+   *   name: 'ping',
+   *   install(core) {
+   *     core.router.get('/ping', (c) => c.text('pong'))
+   *   }
+   * });
+   * ```
+   */
+  async plugin(config: GravitoOrbit): Promise<this> {
+    if (!config.name) {
+      throw new Error(
+        'plugin(): Lite Satellites require a "name" property to enable safe service namespacing. ' +
+          'Consider naming it based on the feature (e.g., "ping", "health-check").'
+      )
+    }
+
+    const alreadyRegistered = this.installedOrbits.some(orbit => orbit.name === config.name)
+    if (alreadyRegistered) {
+      if (process.env.NODE_ENV !== 'production') {
+        throw new ContainerBindingCollisionException(
+          `Lite Satellite name '${config.name}' already registered`
+        )
+      }
+      this.logger.warn(
+        `[gravito] Lite Satellite '${config.name}' already registered — skipping duplicate installation.`
+      )
+      return this
+    }
+
+    this.logger.debug(`🔌 Installing Lite Satellite: ${config.name}`)
+    this.installedOrbits.push({
+      name: config.name,
+      dependencies: config.dependencies || [],
+    })
+    await config.install(this)
+    return this
+  }
+
+  /**
    * Programmatically register an infrastructure module (Orbit).
    * @since 2.0.0
    *
@@ -717,6 +785,19 @@ export class PlanetCore {
    */
   async orbit(orbit: GravitoOrbit | (new () => GravitoOrbit)): Promise<this> {
     const instance = typeof orbit === 'function' ? new orbit() : orbit
+    const name = instance.name || instance.constructor.name
+
+    if (instance.name) {
+      this.logger.debug(`🛰️ Installing Orbit: ${instance.name}`)
+    } else {
+      this.logger.debug(`🛰️ Installing Orbit: ${instance.constructor.name}`)
+    }
+
+    this.installedOrbits.push({
+      name,
+      dependencies: instance.dependencies || [],
+    })
+
     await instance.install(this)
     return this
   }
@@ -813,15 +894,19 @@ export class PlanetCore {
 
     if (config.orbits) {
       for (const OrbitClassOrInstance of config.orbits) {
-        let orbit: GravitoOrbit
-        if (typeof OrbitClassOrInstance === 'function') {
-          // It's a constructor
-          orbit = new (OrbitClassOrInstance as new () => GravitoOrbit)()
+        if (typeof OrbitClassOrInstance !== 'function' && OrbitClassOrInstance.name) {
+          await core.plugin(OrbitClassOrInstance)
         } else {
-          orbit = OrbitClassOrInstance
-        }
+          let orbit: GravitoOrbit
+          if (typeof OrbitClassOrInstance === 'function') {
+            // It's a constructor
+            orbit = new (OrbitClassOrInstance as new () => GravitoOrbit)()
+          } else {
+            orbit = OrbitClassOrInstance
+          }
 
-        await orbit.install(core)
+          await orbit.install(core)
+        }
       }
     }
 

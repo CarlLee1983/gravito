@@ -1,6 +1,7 @@
 import type { RequestScopeManager } from './Container/RequestScopeManager'
 import { AsyncLocalStorage } from './compat/async-local-storage'
 import { CircularDependencyException } from './exceptions/CircularDependencyException'
+import { ContainerBindingCollisionException } from './exceptions/ContainerBindingCollisionException'
 
 /**
  * Factory type for creating service instances
@@ -120,6 +121,38 @@ export class Container {
       shared: true,
       scope: 'singleton',
     })
+  }
+
+  /**
+   * Bind a shared service with a namespace prefix (e.g., 'inline:my-plugin:service').
+   * Used by Lite Satellites to prevent global namespace pollution.
+   *
+   * @template T - The type of the service being bound.
+   * @param namespace - The namespace for the service (e.g., plugin name).
+   * @param key - The unique identifier for the service within the namespace.
+   * @param factory - The factory function that creates the service instance.
+   *
+   * @example
+   * ```typescript
+   * container.singletonInline('ping', 'service', (c) => new PingService());
+   * // Resulting key: 'inline:ping:service'
+   * ```
+   */
+  singletonInline<T>(namespace: string, key: string, factory: Factory<T>): void {
+    const namespacedKey = `inline:${namespace}:${key}`
+    if (this.has(namespacedKey)) {
+      if (process.env.NODE_ENV !== 'production') {
+        throw new ContainerBindingCollisionException(
+          `Binding '${namespacedKey}' already registered by plugin '${namespace}'`
+        )
+      }
+      // biome-ignore lint/suspicious/noConsole: Container has no Logger dependency
+      console.warn(
+        `[gravito] Binding '${namespacedKey}' collision detected — skipping duplicate registration.`
+      )
+      return
+    }
+    this.singleton(namespacedKey, factory)
   }
 
   /**
