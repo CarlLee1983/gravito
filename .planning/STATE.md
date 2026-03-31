@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.2.0
 milestone_name: Framework Evolution
-status: complete
+status: unknown
 stopped_at: Milestone complete
-last_updated: "2026-03-31T13:11:45+08:00"
+last_updated: "2026-03-31T05:15:46.867Z"
 progress:
   total_phases: 6
   completed_phases: 6
