@@ -115,7 +115,7 @@ Plans:
   3. All new public symbols from Phases 27-30 pass `publint` validation — no `ERR_PACKAGE_PATH_NOT_EXPORTED` regressions
 **Plans**: 2 plans
 Plans:
-- [ ] 31-01-PLAN.md — Harden depsGraph.ts with entry discovery, DOT styling, and comprehensive test coverage
+- [x] 31-01-PLAN.md — Harden depsGraph.ts with entry discovery, DOT styling, and comprehensive test coverage
 - [ ] 31-02-PLAN.md — Fix photon exports map types ordering and publint validation
 
 ## Progress
@@ -132,4 +132,4 @@ Plans:
 | 28. Fast-Path Routing | v2.2.0 | 2/2 | Complete    | 2026-03-30 |
 | 29. Lite Satellite | v2.2.0 | 1/1 | Complete   | 2026-03-31 |
 | 30. Static OpenAPI Generation | v2.2.0 | 1/1 | Complete   | 2026-03-31 |
-| 31. Dependency Graph Tooling | v2.2.0 | 0/2 | Pending | - |
+| 31. Dependency Graph Tooling | v2.2.0 | 1/2 | In Progress|  |
