@@ -8,19 +8,10 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 
 **穩定可靠的核心基礎設施** — core 及所有 Orbit 包必須具備 production-ready 的錯誤處理、韌性機制和一致的 API 行為，讓下游 Satellite 和應用能安心依賴。
 
-## Current Milestone: v2.2.0 Framework Evolution — 效能旁路與開發敏捷性
+## Current State
 
-**Status:** Phase 31 complete (2026-03-31) — all v2.2.0 phases validated
-
-**Goal:** 基於 BI 選型對比（ElysiaJS / Bun 原生）的洞察，強化 Gravito 在極致效能、開發體驗、模組輕量化與 Bun-Native 整合四大維度。
-
-**Target features:**
-- Fast-Path 旁路機制：PhotonOrbit 高頻路由跳過 DI/Lifecycle，直連 Bun.serve Handler
-- Native Orbit Detection：Sentinel 等 Orbit 自動切換至 Bun.password / Bun.crypto
-- Static Contract Generation：從 Satellite 介面定義自動生成 OpenAPI 規格
-- Lite Satellite / Inline Plugin：gravito.config.ts 中定義輕量匿名衛星
-- 依賴樹視覺化：模組耦合關係圖形化輸出
-- Bun-Native 抽象層：core 內建 Bun 原生 API 適配（fs, crypto, test）
+**Latest shipped:** v2.2.0 Framework Evolution (2026-03-31)
+**Next milestone:** TBD — use `/gsd:new-milestone` to plan
 
 ## Requirements
 
@@ -40,22 +31,15 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 - ✓ **型別安全強化** (v2.1.0) — ApplicationConfig Pick<>, Container.make() ServiceMap overload
 - ✓ **文件與工具** (v2.1.0) — noExplicitAny error, noConsole, publint CI gate, README sync, decision guide, JSDoc English
 - ✓ **依賴樹視覺化** (v2.2.0 Phase 31) — `gravito deps:graph` CLI, `gravito.config.ts` discovery, publint-clean exports
+- ✓ **Bun-Native Foundation** (v2.2.0) — NativeOrbitDetector, SHA-512/BLAKE2b, boot-time capability report, Sentinel argon2id native
+- ✓ **Fast-Path Routing** (v2.2.0) — photon.fast() O(1) bypass, per-route middleware exclusion, CVE-2025-29927 security test, MiddlewareDriftException
+- ✓ **Lite Satellite** (v2.2.0) — Object-literal satellite in gravito.config.ts, collision guards, namespaced bindings
+- ✓ **Static OpenAPI Generation** (v2.2.0) — `gravito openapi:generate` CLI, Zod v4 schema conversion, Route.schema() metadata
+- ✓ **Verification Audit Trail** (v2.2.0) — 10/10 requirements verified, all phases passed
 
 ### Active
 
-- **Bun-Native Foundation** (v2.2.0 Phase 27) — ✓ Validated
-  - NativeOrbitDetector runtime detection (BUN-03)
-  - SHA-512/BLAKE2b in BunCryptoHasher (BUN-02)
-  - Boot-time capability report (PERF-03)
-  - Sentinel argon2id native integration (BUN-01)
-
-- **Fast-Path Routing** (v2.2.0 Phase 28) — ✓ Validated in Phase 28
-  - photon.fast() API for O(1) route bypass (PERF-01)
-  - Per-route middleware opt-out via excludeMiddleware (PERF-02)
-  - CVE-2025-29927 security contract test
-  - serveConfig() snapshot lock + MiddlewareDriftException
-
-(See REQUIREMENTS.md for remaining v2.2.0 requirements)
+(None — use `/gsd:new-milestone` to define next milestone requirements)
 
 ### Out of Scope
 
@@ -63,14 +47,16 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 - Obsidian 文檔庫 — 文檔工作暫緩，優先處理核心穩定性
 - Satellite 業務邏輯改造 — 本次僅改造 Orbit 層，Satellite 層後續跟進
 - UI/前端改造 — 不涉及前端包
-- Container 完整 generic 重構 — 影響 50+ 包所有 constructor，留給 v2.2
+- Container 完整 generic 重構 — 影響 50+ 包所有 constructor
 - GravitoVariables 型別改善 — 14 包 module augmentation 風險太高
+- Runtime OpenAPI spec per-request — O(n) schema walking; cache at startup or build time
+- Fast-path as default — 會跳過 observability/auth/error normalization; 必須 opt-in
 
 ## Context
 
 **Brownfield 環境：** gravito-core 已運作多年，66 個核心包 + 15 個衛星模組。
 
-**當前狀態（v2.1.0 shipped）：**
+**當前狀態（v2.2.0 shipped）：**
 - Framework health: 100/100
 - Test pass rate: 99.7%+, 3000+ tests
 - TypeScript strict mode, 0 errors
@@ -81,6 +67,11 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 - Biome noExplicitAny (error) + noConsole 強制執行
 - publint CI gate 驗證 57 packages exports map
 - 38 packages 已 major version bump（core 3.0.0, photon 2.0.0 等）
+- NativeOrbitDetector + NativeFeatures — Bun runtime capability detection
+- Fast-path routing — O(1) latency bypass for hot routes (~76% reduction)
+- Route.schema() + `gravito openapi:generate` — static OpenAPI 3.1 generation
+- Lite Satellite — object-literal satellites in gravito.config.ts
+- `gravito deps:graph` — Orbit/Satellite dependency visualization
 
 **Known tech debt：**
 - atlas grammar layer ~122 bare throws 未遷移（query-builder 路徑，非 I/O）
@@ -112,8 +103,39 @@ Gravito 是一個模組化、高效能的 TypeScript 框架，基於 Galaxy Arch
 | ServiceMap type→interface | 啟用 declaration merging，下游可擴展 | ✓ Good — typed DI 無 any |
 | publint CI gate | 防止 exports map 漂移，57 packages 驗證 | ✓ Good — 預防性品質守衛 |
 | atlas grammar bare throws 列為 tech debt | query-builder 路徑非 I/O，不影響韌性 | ⚠️ Revisit — 後續 milestone |
+| v2.2.0 minor version | 所有改進為 additive，保持向下相容 | ✓ Good — 零迴歸 |
+| Leaf-node-first phase order | NativeOrbitDetector 建立後後續才能安全使用 | ✓ Good — 依賴清晰 |
+| Fast-path bypass O(1) strategy | exact-string match 直連 Bun.serve，跳過 DI | ✓ Good — 76% latency reduction |
+| globalThis narrowing for Bun API | 所有 Bun.xxx 透過 (globalThis as { Bun? }) 存取 | ✓ Good — Node CI 不報 ReferenceError |
+| Object.freeze() on NativeFeatures | Deep immutability guarantee for cached snapshot | ✓ Good — 防止意外修改 |
+| Zod v4 native for OpenAPI | zodToJsonSchema + native Zod toJSONSchema() | ✓ Good — 零額外依賴 |
 
 ---
+
+<details>
+<summary>Milestone: v2.2.0 Framework Evolution (COMPLETE)</summary>
+
+**Status:** ✅ **COMPLETE** — 2026-03-31
+**Duration:** 2 days (2026-03-30 → 2026-03-31)
+**Phases:** 6 (Phase 27-32), 10 plans, 62 commits
+**Scope:** 98 files changed, +11,350 / -1,058 LOC
+
+### Achievements
+
+- NativeOrbitDetector with frozen NativeFeatures — Bun runtime capability detection
+- Fast-path routing with O(1) DI bypass, CVE-2025-29927 security test, MiddlewareDriftException
+- Lite Satellite — object-literal satellites with collision guards and namespaced bindings
+- Static OpenAPI 3.1 generation via `gravito openapi:generate` with Zod v4 native conversion
+- Dependency graph tooling via `gravito deps:graph` with gravito.config.ts discovery
+- Sentinel argon2id native + SHA-512/BLAKE2b via Bun.CryptoHasher
+
+### Archive
+
+- [v2.2.0-ROADMAP.md](milestones/v2.2.0-ROADMAP.md)
+- [v2.2.0-REQUIREMENTS.md](milestones/v2.2.0-REQUIREMENTS.md)
+- [v2.2.0-MILESTONE-AUDIT.md](milestones/v2.2.0-MILESTONE-AUDIT.md)
+
+</details>
 
 <details>
 <summary>Milestone: v2.1.0 Core DX 改進 (COMPLETE)</summary>
@@ -195,4 +217,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-31 after Phase 31 (dependency-graph-tooling) complete*
+*Last updated: 2026-03-31 after v2.2.0 milestone*

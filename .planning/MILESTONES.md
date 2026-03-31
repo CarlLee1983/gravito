@@ -2,19 +2,24 @@
 
 ## v2.2.0 Framework Evolution (Shipped: 2026-03-31)
 
-**Phases completed:** 6 phases, 10 plans, 16 tasks
+**Phases completed:** 6 phases (27-32), 10 plans, 16 tasks
+**Timeline:** 2 days (2026-03-30 → 2026-03-31), 62 commits
+**Scope:** 98 files changed, +11,350 / -1,058 LOC
+**Requirements:** 10/10 satisfied (PERF-01~03, DX-01~03, BUN-01~03, TOOL-01)
+
+**Delivered:** 強化 Gravito 在效能旁路、Bun-Native 整合、開發體驗與模組工具四大維度
 
 **Key accomplishments:**
 
-- NativeOrbitDetector with frozen NativeFeatures capability snapshot and HashAccelerator extended with SHA-512/BLAKE2b via node:crypto fallback
-- NativeHasher.sha512()/blake2b() static methods, resetPasswordAdapter() singleton reset, and integration tests confirming argon2id native path on Bun runtime (BUN-01/BUN-02)
-- PlanetCore.boot() now logs [gravito] native: capability report before orbit installation; NativeOrbitDetector, NativeFeatures, formatCapabilityReport, and resetPasswordAdapter all publicly exported from @gravito/core
-- One-liner:
-- Per-route middleware exclusion via BunRouteOptions, CVE-2025-29927 security test, and serveConfig() drift detection
-- Lite Satellite collision guards with dev-only exception handling, namespaced inline bindings, and boot() routing for named object orbits
-- Static OpenAPI generation hardened with Zod v4 native schema conversion, fail-fast error handling, and expanded regression coverage.
-- `@gravito/photon` export map with `types` precedence across every public subpath entry, validated by publint on photon, cli, and core
-- One-liner:
+- NativeOrbitDetector with frozen NativeFeatures — Bun runtime capability detection at boot
+- Sentinel argon2id native + SHA-512/BLAKE2b via Bun.CryptoHasher
+- Fast-path routing with O(1) DI bypass (~76% latency reduction), CVE-2025-29927 security test
+- Per-route middleware exclusion via BunRouteOptions + serveConfig() drift detection
+- Lite Satellite — object-literal satellites with collision guards and namespaced bindings
+- Static OpenAPI 3.1 generation via `gravito openapi:generate` with Zod v4 native conversion
+- `gravito deps:graph` CLI for Orbit/Satellite dependency visualization
+
+**Archive:** [v2.2.0-ROADMAP.md](milestones/v2.2.0-ROADMAP.md) | [v2.2.0-REQUIREMENTS.md](milestones/v2.2.0-REQUIREMENTS.md) | [v2.2.0-MILESTONE-AUDIT.md](milestones/v2.2.0-MILESTONE-AUDIT.md)
 
 ## v2.1.0 Core DX 改進 (Shipped: 2026-03-30)
 
