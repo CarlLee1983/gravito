@@ -66,13 +66,13 @@ Deferred to future milestones. Tracked but not in current roadmap.
 | PERF-01 | Phase 28 | Complete |
 | PERF-02 | Phase 28 | Complete |
 | PERF-03 | Phase 27 | Complete |
-| DX-01 | Phase 30 | Pending |
-| DX-02 | Phase 30 | Pending |
-| DX-03 | Phase 29 | Pending |
+| DX-01 | Phase 30 → 32 (verification) | Pending |
+| DX-02 | Phase 30 → 32 (verification) | Pending |
+| DX-03 | Phase 29 → 32 (checkbox sync) | Pending |
 | BUN-01 | Phase 27 | Complete |
 | BUN-02 | Phase 27 | Complete |
 | BUN-03 | Phase 27 | Complete |
-| TOOL-01 | Phase 31 | Pending |
+| TOOL-01 | Phase 31 → 32 (checkbox sync) | Pending |
 
 **Coverage:**
 - v2.2.0 requirements: 10 total

@@ -8,7 +8,7 @@
 - ✅ **v1.5.1 Satellite Verification** — Phase 15 (shipped 2026-03-27)
 - ✅ **v2.0.0 Core & Orbit Resilience** — Phases 16-20 (shipped 2026-03-29)
 - ✅ **v2.1.0 Core DX 改進** — Phases 21-26 (shipped 2026-03-30)
-- 🚧 **v2.2.0 Framework Evolution** — Phases 27-31 (in progress)
+- ✅ **v2.2.0 Framework Evolution** — Phases 27-31 (shipped 2026-03-31)
 
 ## Phases
 
@@ -39,7 +39,7 @@ See [v2.0.0-ROADMAP.md](milestones/v2.0.0-ROADMAP.md) for full details.
 
 </details>
 
-### v2.2.0 Framework Evolution (In Progress)
+### v2.2.0 Framework Evolution (Complete)
 
 **Milestone Goal:** 強化 Gravito 在極致效能、開發體驗、模組輕量化與 Bun-Native 整合四大維度，基於 BI 選型對比（ElysiaJS / Bun 原生）的洞察。
 
@@ -48,6 +48,7 @@ See [v2.0.0-ROADMAP.md](milestones/v2.0.0-ROADMAP.md) for full details.
 - [x] **Phase 29: Lite Satellite** — InlineOrbit + PlanetCore.plugin() 零樣板匿名衛星定義 (completed 2026-03-31)
 - [x] **Phase 30: Static OpenAPI Generation** — Zod schema 元資料 + gravito openapi:generate CLI 靜態輸出 (completed 2026-03-31)
 - [x] **Phase 31: Dependency Graph Tooling** — gravito deps:graph CLI + exports 最終確認 (completed 2026-03-31)
+- [ ] **Phase 32: Verification Audit Trail Completion** — Phase 30 VERIFICATION.md + Phase 28 verification refresh + REQUIREMENTS.md checkbox sync
 
 ## Phase Details
 
@@ -118,6 +119,20 @@ Plans:
 - [x] 31-01-PLAN.md — Harden depsGraph.ts with entry discovery, DOT styling, and comprehensive test coverage
 - [x] 31-02-PLAN.md — Fix photon exports map types ordering and publint validation
 
+### Phase 32: Verification Audit Trail Completion
+**Goal**: Close audit gaps by adding missing Phase 30 VERIFICATION.md, refreshing stale Phase 28 verification, and syncing REQUIREMENTS.md checkboxes
+**Depends on**: Phase 31
+**Requirements**: DX-01, DX-02 (verification evidence), DX-03, TOOL-01 (checkbox sync)
+**Gap Closure:** Closes gaps from v2.2.0 milestone audit
+**Success Criteria** (what must be TRUE):
+  1. `30-VERIFICATION.md` exists confirming DX-01 (Zod schema metadata on routes) and DX-02 (gravito openapi:generate CLI output) with test evidence
+  2. `28-VERIFICATION.md` refreshed to reflect resolved BunRouteOptions export and PERF-02 completion
+  3. REQUIREMENTS.md checkboxes for DX-01, DX-02, DX-03, TOOL-01 are all `[x]`
+  4. Re-running `/gsd:audit-milestone` produces `passed` status
+**Plans**: 1 plan
+Plans:
+- [ ] 32-01-PLAN.md — Verify Phase 30 outputs, write verification reports, sync requirements
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -133,3 +148,4 @@ Plans:
 | 29. Lite Satellite | v2.2.0 | 1/1 | Complete   | 2026-03-31 |
 | 30. Static OpenAPI Generation | v2.2.0 | 1/1 | Complete   | 2026-03-31 |
 | 31. Dependency Graph Tooling | v2.2.0 | 2/2 | Complete    | 2026-03-31 |
+| 32. Verification Audit Trail | v2.2.0 | 0/1 | Not started | - |
