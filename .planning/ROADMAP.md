@@ -47,7 +47,7 @@ See [v2.0.0-ROADMAP.md](milestones/v2.0.0-ROADMAP.md) for full details.
 - [x] **Phase 28: Fast-Path Routing** — photon.fast() 旁路機制，直連 Bun.serve handler，含安全測試（CVE-2025-29927 防護） (completed 2026-03-30)
 - [x] **Phase 29: Lite Satellite** — InlineOrbit + PlanetCore.plugin() 零樣板匿名衛星定義 (completed 2026-03-31)
 - [x] **Phase 30: Static OpenAPI Generation** — Zod schema 元資料 + gravito openapi:generate CLI 靜態輸出 (completed 2026-03-31)
-- [ ] **Phase 31: Dependency Graph Tooling** — gravito deps:graph CLI + exports 最終確認
+- [x] **Phase 31: Dependency Graph Tooling** — gravito deps:graph CLI + exports 最終確認 (completed 2026-03-31)
 
 ## Phase Details
 
@@ -116,7 +116,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 31-01-PLAN.md — Harden depsGraph.ts with entry discovery, DOT styling, and comprehensive test coverage
-- [ ] 31-02-PLAN.md — Fix photon exports map types ordering and publint validation
+- [x] 31-02-PLAN.md — Fix photon exports map types ordering and publint validation
 
 ## Progress
 
@@ -132,4 +132,4 @@ Plans:
 | 28. Fast-Path Routing | v2.2.0 | 2/2 | Complete    | 2026-03-30 |
 | 29. Lite Satellite | v2.2.0 | 1/1 | Complete   | 2026-03-31 |
 | 30. Static OpenAPI Generation | v2.2.0 | 1/1 | Complete   | 2026-03-31 |
-| 31. Dependency Graph Tooling | v2.2.0 | 1/2 | In Progress|  |
+| 31. Dependency Graph Tooling | v2.2.0 | 2/2 | Complete    | 2026-03-31 |
