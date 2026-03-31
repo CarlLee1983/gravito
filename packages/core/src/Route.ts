@@ -31,6 +31,18 @@ export class Route {
     return this
   }
 
+  /**
+   * Attach Zod schemas to the route for validation and OpenAPI generation.
+   * @since 2.2.0
+   */
+  schema(schemas: NonNullable<RouteOptions['schema']>): this {
+    this.options.schema = {
+      ...(this.options.schema || {}),
+      ...schemas,
+    }
+    return this
+  }
+
   // ─────────────────────────────────────────────────────────────────────────────
   // Static Facade Methods
   // ─────────────────────────────────────────────────────────────────────────────

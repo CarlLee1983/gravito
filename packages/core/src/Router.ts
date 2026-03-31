@@ -59,6 +59,17 @@ export interface RouteOptions {
   domain?: string
   /** Middleware stack for the route */
   middleware?: GravitoMiddleware[]
+  /**
+   * Zod schemas for request validation and response documentation.
+   * Used for OpenAPI generation.
+   * @since 2.2.0
+   */
+  schema?: {
+    body?: unknown
+    params?: unknown
+    query?: unknown
+    response?: unknown
+  }
 }
 
 /**
@@ -258,13 +269,14 @@ export interface Router extends RoutingMethods {}
 // biome-ignore lint/suspicious/noUnsafeDeclarationMerging: intentionally merged for dynamic mixins
 export class Router {
   // Internal list of all registered routes (for scanning and debugging)
-  public routes: Array<{ method: string; path: string; domain?: string }> = []
+  public routes: Array<{ method: string; path: string; domain?: string; options?: RouteOptions }> =
+    []
 
   private dispatcher: ControllerDispatcher
 
   private namedRoutes = new Map<
     string,
-    { method: string; path: string; domain?: string | undefined }
+    { method: string; path: string; domain?: string | undefined; options?: RouteOptions }
   >()
   private bindings = new Map<string, (id: string) => Promise<unknown>>()
 
@@ -278,12 +290,13 @@ export class Router {
       path: string
       name?: string
       domain?: string | undefined
+      schema?: RouteOptions['schema']
     }> = []
 
     // Create a map of path+method to name for quick lookup
-    const nameMap = new Map<string, string>()
+    const nameMap = new Map<string, { name: string; options?: RouteOptions }>()
     for (const [name, info] of this.namedRoutes) {
-      nameMap.set(`${info.method.toUpperCase()}:${info.path}`, name)
+      nameMap.set(`${info.method.toUpperCase()}:${info.path}`, { name, options: info.options })
     }
 
     // Use Set to track compiled routes for O(1) lookup
@@ -295,11 +308,13 @@ export class Router {
       const key = `${method}:${route.path}`
 
       compiledKeys.add(key)
+      const namedInfo = nameMap.get(key)
       compiled.push({
         method,
         path: route.path,
         domain: route.domain,
-        name: nameMap.get(key),
+        name: namedInfo?.name,
+        schema: route.options?.schema || namedInfo?.options?.schema,
       })
     }
 
@@ -314,6 +329,7 @@ export class Router {
           method: info.method.toUpperCase(),
           path: info.path,
           domain: info.domain,
+          schema: info.options?.schema,
         })
       }
     }
@@ -330,6 +346,7 @@ export class Router {
       method: method.toUpperCase(),
       path: fullPath,
       domain: options.domain,
+      options,
     })
   }
 
@@ -466,13 +483,9 @@ export class Router {
           continue
         }
 
-        try {
-          const resolved = await resolver(value)
-          routeModels[param] = resolved
-          hasResolvedModels = true
-        } catch (err: unknown) {
-          throw err
-        }
+        const resolved = await resolver(value)
+        routeModels[param] = resolved
+        hasResolvedModels = true
       }
 
       // Only set routeModels if we actually resolved something
@@ -672,8 +685,17 @@ export class Router {
       handlers.unshift(domainCheck)
     }
 
-    this.routes.push({ method: method.toUpperCase(), path: fullPath, domain: options.domain })
-    this.core.adapter.route(method, fullPath, ...(handlers as (GravitoHandler | GravitoMiddleware)[]))
+    this.routes.push({
+      method: method.toUpperCase(),
+      path: fullPath,
+      domain: options.domain,
+      options,
+    })
+    this.core.adapter.route(
+      method,
+      fullPath,
+      ...(handlers as (GravitoHandler | GravitoMiddleware)[])
+    )
 
     return new Route(this, method, fullPath, options)
   }
@@ -709,7 +731,13 @@ METHODS.forEach((method) => {
     arg1: RouteDefinitionArg,
     handler?: RouteHandler
   ) {
-    return (this as unknown as { router: Router; options: RouteOptions }).router.req(method, path, arg1, handler, (this as unknown as { options: RouteOptions }).options)
+    return (this as unknown as { router: Router; options: RouteOptions }).router.req(
+      method,
+      path,
+      arg1,
+      handler,
+      (this as unknown as { options: RouteOptions }).options
+    )
   }
 
   Router.prototype[method] = function (

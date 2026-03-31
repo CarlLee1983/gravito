@@ -17,8 +17,6 @@ import path from 'node:path'
 import { cancel, intro, isCancel, note, outro, select, spinner, text } from '@clack/prompts'
 import { Painter as pc } from '@gravito/chromatic'
 import { getRuntimeAdapter } from '@gravito/core'
-import { CliError } from './errors/CliError'
-import { CliErrorCodes } from './errors/codes'
 import {
   DependencyValidator,
   EnvironmentDetector,
@@ -26,8 +24,11 @@ import {
   ProfileResolver,
   type ProfileType,
 } from '@gravito/scaffold'
+import type { CAC } from 'cac'
 import cac from 'cac'
 import { downloadTemplate } from 'giget'
+import { CliError } from './errors/CliError'
+import { CliErrorCodes } from './errors/codes'
 import { VersionChecker } from './utils/VersionChecker'
 import { VersionRegistry } from './utils/VersionRegistry'
 
@@ -947,6 +948,32 @@ cli
   .option('--entry <file>', 'Entry file (default: src/index.ts)', { default: 'src/index.ts' })
   .action((options) => routeList(options))
 
+// --- OpenAPI Generation ---
+import { openapiGenerate } from './commands/openapiGenerate'
+
+cli
+  .command('openapi:generate', 'Generate OpenAPI 3.1 specification from routes')
+  .option('--entry <file>', 'Entry file (default: src/index.ts)', { default: 'src/index.ts' })
+  .option('--output <file>', 'Output file (default: openapi.json)', { default: 'openapi.json' })
+  .option('--title <title>', 'API title in spec (default: Gravito API)')
+  .option('--version <version>', 'API version in spec (default: 1.0.0)')
+  .action((options) =>
+    openapiGenerate({
+      ...options,
+      title: options.title,
+      version: options.version,
+    })
+  )
+
+// --- Dependency Graph ---
+import { depsGraph } from './commands/depsGraph'
+
+cli
+  .command('deps:graph', 'Generate Orbit/Satellite dependency graph')
+  .option('--entry <file>', 'Entry file (default: src/index.ts)', { default: 'src/index.ts' })
+  .option('--format <format>', 'Output format (dot, json)', { default: 'dot' })
+  .action((options) => depsGraph(options))
+
 // --- Route Cache ---
 cli
   .command('route:cache', 'Cache named routes manifest')
@@ -1406,7 +1433,7 @@ cli.version('3.3.0')
  * { "gravito": { "plugins": ["./my-local-plugin.ts"] } }
  * ```
  */
-async function loadPlugins(cli: any) {
+async function loadPlugins(cli: CAC) {
   try {
     const cwd = process.cwd()
     const pkgPath = path.join(cwd, 'package.json')

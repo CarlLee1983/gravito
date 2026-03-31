@@ -23,6 +23,7 @@ export const CliErrorCodes = {
   // Route errors
   ROUTE_EXPORT_NOT_FOUND: 'cli.route_export_not_found',
   APP_INSTANCE_NOT_FOUND: 'cli.app_instance_not_found',
+  SCHEMA_CONVERSION_FAILED: 'cli.schema_conversion_failed',
   // Install errors
   INSTALL_FAILED: 'cli.install_failed',
 } as const
