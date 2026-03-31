@@ -101,7 +101,9 @@ Plans:
   2. Running `gravito openapi:generate` from the project root produces `openapi.json` in the configured output directory with valid OpenAPI 3.1 structure
   3. The generated spec reflects all routes that have associated Zod schemas — routes without schemas are included with empty request/response bodies, not omitted
   4. The CLI command exits with code 0 on success and non-zero on schema extraction failure, making it safe to run in CI
-**Plans**: TBD
+**Plans**: 1 plans
+Plans:
+- [ ] 30-01-PLAN.md — Migrate to z.toJSONSchema(), harden error handling, expand test coverage
 
 ### Phase 31: Dependency Graph Tooling
 **Goal**: Developer can generate a visual Orbit/Satellite dependency graph via a CLI command that reveals module coupling relationships in the application
@@ -126,5 +128,5 @@ Plans:
 | 27. Bun-Native Foundation | v2.2.0 | 3/3 | Complete    | 2026-03-30 |
 | 28. Fast-Path Routing | v2.2.0 | 2/2 | Complete    | 2026-03-30 |
 | 29. Lite Satellite | v2.2.0 | 1/1 | Complete   | 2026-03-31 |
-| 30. Static OpenAPI Generation | v2.2.0 | 0/0 | Pending | - |
+| 30. Static OpenAPI Generation | v2.2.0 | 0/1 | In Progress | - |
 | 31. Dependency Graph Tooling | v2.2.0 | 0/0 | Pending | - |
