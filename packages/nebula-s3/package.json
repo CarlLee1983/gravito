@@ -1,7 +1,7 @@
 {
   "name": "@gravito/nebula-s3",
   "sideEffects": false,
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "S3 storage driver for @gravito/nebula",
   "type": "module",
   "main": "./dist/index.js",
@@ -37,7 +37,7 @@
     "@gravito/nebula": "^4.1.3"
   },
   "devDependencies": {
-    "@gravito/core": "^2.0.6",
+    "@gravito/core": "workspace:*",
     "bun-types": "latest",
     "tsup": "^8.0.0",
     "typescript": "^5.9.3"

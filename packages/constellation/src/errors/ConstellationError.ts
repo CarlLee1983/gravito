@@ -1,4 +1,4 @@
-import { StorageException, type InfrastructureExceptionOptions } from '@gravito/core'
+import { type InfrastructureExceptionOptions, StorageException } from '@gravito/core'
 import type { ConstellationErrorCode } from './codes'
 
 /**
@@ -7,13 +7,14 @@ import type { ConstellationErrorCode } from './codes'
  * @public
  */
 export class ConstellationError extends StorageException {
+  override name = 'ConstellationError'
+
   constructor(
     status: number,
     code: ConstellationErrorCode,
     options: InfrastructureExceptionOptions = {}
   ) {
     super(status, code, options)
-    this.name = 'ConstellationError'
     Object.setPrototypeOf(this, new.target.prototype)
   }
 }

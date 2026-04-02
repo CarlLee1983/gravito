@@ -34,12 +34,11 @@ async function measureAverageMs(fn: () => Promise<void>, iterations: number): Pr
 describe('Fast-Path vs Standard Route Performance', () => {
   it(`standard route processes ${ITERATIONS} requests (context pool + middleware dispatch)`, async () => {
     const app = new Photon()
-    app.get('/health', (ctx) => ctx.text('OK'))
+    app.get('/health', (ctx: any) => ctx.text('OK'))
 
-    const avgMs = await measureAverageMs(
-      () => app.fetch(new Request('http://localhost/health')),
-      ITERATIONS
-    )
+    const avgMs = await measureAverageMs(async () => {
+      await app.fetch(new Request('http://localhost/health'))
+    }, ITERATIONS)
 
     // Standard route should be reasonably fast (< 1ms average)
     expect(avgMs).toBeLessThan(1)
@@ -51,10 +50,9 @@ describe('Fast-Path vs Standard Route Performance', () => {
     const app = new Photon()
     app.fast.get('/health', () => new Response('OK'))
 
-    const avgMs = await measureAverageMs(
-      () => app.fetch(new Request('http://localhost/health')),
-      ITERATIONS
-    )
+    const avgMs = await measureAverageMs(async () => {
+      await app.fetch(new Request('http://localhost/health'))
+    }, ITERATIONS)
 
     // Fast-path should be ultra-low latency (< 0.5ms average)
     expect(avgMs).toBeLessThan(0.5)
@@ -64,20 +62,18 @@ describe('Fast-Path vs Standard Route Performance', () => {
 
   it('fast-path is at least as fast as standard route', async () => {
     const standardApp = new Photon()
-    standardApp.get('/health', (ctx) => ctx.text('OK'))
+    standardApp.get('/health', (ctx: any) => ctx.text('OK'))
 
     const fastApp = new Photon()
     fastApp.fast.get('/health', () => new Response('OK'))
 
-    const standardAvg = await measureAverageMs(
-      () => standardApp.fetch(new Request('http://localhost/health')),
-      ITERATIONS
-    )
+    const standardAvg = await measureAverageMs(async () => {
+      await standardApp.fetch(new Request('http://localhost/health'))
+    }, ITERATIONS)
 
-    const fastAvg = await measureAverageMs(
-      () => fastApp.fetch(new Request('http://localhost/health')),
-      ITERATIONS
-    )
+    const fastAvg = await measureAverageMs(async () => {
+      await fastApp.fetch(new Request('http://localhost/health'))
+    }, ITERATIONS)
 
     // biome-ignore lint/suspicious/noConsole: benchmark output
     console.log(`  Standard: ${standardAvg.toFixed(4)}ms | Fast-path: ${fastAvg.toFixed(4)}ms`)
@@ -129,7 +125,7 @@ describe('serveConfig() correctness', () => {
   it('serveConfig fetch fallback handles non-fast routes', async () => {
     const app = new Photon()
     app.fast.get('/health', () => new Response('fast'))
-    app.get('/api/data', (ctx) => ctx.json({ ok: true }))
+    app.get('/api/data', (ctx: any) => ctx.json({ ok: true }))
 
     const config = app.serveConfig() as {
       fetch: (req: Request) => Promise<Response>

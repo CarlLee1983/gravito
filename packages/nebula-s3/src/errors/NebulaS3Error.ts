@@ -1,4 +1,4 @@
-import { StorageException, type InfrastructureExceptionOptions } from '@gravito/core'
+import { type InfrastructureExceptionOptions, StorageException } from '@gravito/core'
 import type { NebulaS3ErrorCode } from './codes'
 
 /**
@@ -7,13 +7,14 @@ import type { NebulaS3ErrorCode } from './codes'
  * @public
  */
 export class NebulaS3Error extends StorageException {
+  override name = 'NebulaS3Error'
+
   constructor(
     status: number,
     code: NebulaS3ErrorCode,
     options: InfrastructureExceptionOptions = {}
   ) {
     super(status, code, options)
-    this.name = 'NebulaS3Error'
     Object.setPrototypeOf(this, new.target.prototype)
   }
 }

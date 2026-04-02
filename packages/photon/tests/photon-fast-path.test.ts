@@ -74,7 +74,7 @@ describe('photon.fast()', () => {
 
   it('fast route takes priority over regular route on same path', async () => {
     const app = new Photon()
-    app.get('/conflict', (ctx) => ctx.text('normal'))
+    app.get('/conflict', (ctx: any) => ctx.text('normal'))
     app.fast.get('/conflict', () => new Response('fast'))
 
     const res = await app.fetch(new Request('http://localhost/conflict'))
@@ -123,7 +123,7 @@ describe('photon.fast()', () => {
   it('non-fast-path routes still work alongside fast routes', async () => {
     const app = new Photon()
     app.fast.get('/health', () => new Response('fast'))
-    app.get('/api/data', (ctx) => ctx.json({ data: 'value' }))
+    app.get('/api/data', (ctx: any) => ctx.json({ data: 'value' }))
 
     const fastRes = await app.fetch(new Request('http://localhost/health'))
     const normalRes = await app.fetch(new Request('http://localhost/api/data'))

@@ -7,7 +7,7 @@ describe('Photon Middleware Opt-out', () => {
     let middlewareCalled = false
 
     const myMiddleware = Object.assign(
-      async (c: any, next: any) => {
+      async (_c: any, next: any) => {
         middlewareCalled = true
         return next()
       },
@@ -16,8 +16,8 @@ describe('Photon Middleware Opt-out', () => {
 
     app.use(myMiddleware)
 
-    app.get('/protected', (c) => c.text('protected'))
-    app.get('/opt-out', (c) => c.text('opt-out'), { excludeMiddleware: ['my-mw'] })
+    app.get('/protected', (c: any) => c.text('protected'))
+    app.get('/opt-out', (c: any) => c.text('opt-out'), { excludeMiddleware: ['my-mw'] })
 
     // Test protected route
     const res1 = await app.request('/protected')
@@ -57,7 +57,7 @@ describe('Photon Middleware Opt-out', () => {
     app.use(mw1)
     app.use(mw2)
 
-    app.get('/skip-mw1', (c) => c.text('skip-mw1'), { excludeMiddleware: ['mw1'] })
+    app.get('/skip-mw1', (c: any) => c.text('skip-mw1'), { excludeMiddleware: ['mw1'] })
 
     const res = await app.request('/skip-mw1')
     expect(await res.text()).toBe('skip-mw1')

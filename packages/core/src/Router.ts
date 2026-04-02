@@ -678,7 +678,7 @@ export class Router {
           // In a more complex router, this would backtrack, but for now this is correct.
           return c.text('Not Found', 404) as Response
         }
-        await next()
+        return await next()
       }
 
       // Prepend domain check

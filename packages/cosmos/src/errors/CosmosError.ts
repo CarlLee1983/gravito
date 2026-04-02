@@ -1,4 +1,4 @@
-import { SystemException, type ExceptionOptions } from '@gravito/core'
+import { type ExceptionOptions, SystemException } from '@gravito/core'
 import type { CosmosErrorCode } from './codes'
 
 /**
@@ -8,13 +8,10 @@ import type { CosmosErrorCode } from './codes'
  * @public
  */
 export class CosmosError extends SystemException {
-  constructor(
-    status: number,
-    code: CosmosErrorCode,
-    options: ExceptionOptions = {}
-  ) {
+  override name = 'CosmosError'
+
+  constructor(status: number, code: CosmosErrorCode, options: ExceptionOptions = {}) {
     super(status, code, options)
-    this.name = 'CosmosError'
     Object.setPrototypeOf(this, new.target.prototype)
   }
 }

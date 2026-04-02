@@ -26,7 +26,7 @@ describe('Fast-path Performance', () => {
     const app = new Photon()
 
     // Standard route (Context, DI, Middleware chain)
-    app.get('/normal', (ctx) => ctx.text('Normal'))
+    app.get('/normal', (ctx: any) => ctx.text('Normal'))
 
     // Fast-path route (Raw Request/Response bypass)
     app.fast.get('/fast', () => new Response('Fast'))
