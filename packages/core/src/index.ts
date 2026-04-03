@@ -390,8 +390,8 @@ export {
  * @public
  */
 export {
-  AuthenticationException,
   AuthException,
+  AuthenticationException,
   AuthorizationException,
   CacheException,
   CircularDependencyException,
@@ -503,6 +503,7 @@ export {
   logger,
   router,
   Str,
+  setApp,
   tap,
   throwIf,
   throwUnless,
@@ -513,7 +514,7 @@ export {
  * Helper utilities for data transformation and validation.
  * @public
  */
-export { dataGet, dataHas, dataSet, type DataPath, type PathSegment } from './helpers/data'
+export { type DataPath, dataGet, dataHas, dataSet, type PathSegment } from './helpers/data'
 
 /**
  * Error creation and handling helpers.
@@ -525,7 +526,14 @@ export { createErrorBag, type ErrorBag, errors, old } from './helpers/errors'
  * HTTP response building helpers.
  * @public
  */
-export { type ApiFailure, type ApiSuccess, fail, jsonFail, jsonSuccess, ok } from './helpers/response'
+export {
+  type ApiFailure,
+  type ApiSuccess,
+  fail,
+  jsonFail,
+  jsonSuccess,
+  ok,
+} from './helpers/response'
 
 /**
  * Cookie jar and cookie management utilities.
@@ -781,8 +789,8 @@ export {
   type RuntimeSpawnSyncResult,
   type RuntimeSqliteDatabase,
   type RuntimeSqliteStatement,
-  resetRuntimeAdapter,
   resetPasswordAdapter,
+  resetRuntimeAdapter,
   toUint8Array,
 } from './runtime'
 
@@ -795,7 +803,7 @@ export {
  * @public
  */
 export type { NativeFeatures } from './runtime/NativeOrbitDetector'
-export { NativeOrbitDetector, formatCapabilityReport } from './runtime/NativeOrbitDetector'
+export { formatCapabilityReport, NativeOrbitDetector } from './runtime/NativeOrbitDetector'
 
 /**
  * Runtime helper functions for file system operations.
