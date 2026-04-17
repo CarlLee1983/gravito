@@ -5,7 +5,7 @@
 **@gravito/atlas** 是一個高效能、以開發者體驗為中心的資料庫工具包。它提供流暢的 Query Builder、強大的 Active Record ORM，以及深受 Laravel 與 Drizzle 啟發的水平分表 (Sharding) 功能。
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.6.0-orange)](package.json)
+[![Version](https://img.shields.io/badge/version-3.1.0-orange)](package.json)
 [![Performance](https://img.shields.io/badge/performance-extreme-brightgreen)](docs/architecture.md)
 
 ---
