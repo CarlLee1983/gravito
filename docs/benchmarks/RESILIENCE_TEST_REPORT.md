@@ -158,7 +158,7 @@ The test failures indicate **implementation/export mismatch**:
 
 **Rationale**:
 1. @gravito/resilience is production code, not experimental
-2. Currently marked as v1.0.0 in package.json (production version)
+2. The release line targets v1.0.0 (production)
 3. Circuit Breaker and Deduplication are critical patterns
 4. Testing investment now prevents issues in production
 5. 2-3 hours is reasonable for quality assurance

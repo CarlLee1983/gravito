@@ -635,7 +635,7 @@ find packages/*/dist -type f | wc -l
 
 - **[turbo.json](../../turbo.json)** - 實際配置
 - **[Turbo 官方文檔](https://turbo.build)** - 完整參考
-- **[root package.json](../../package.json)** - 構建命令定義
+- **[root scripts](../../package.json)** - 構建命令定義
 - **[scripts/](../../scripts/)** - 輔助構建腳本
 - **[docs/claude/commands.md](../../docs/claude/commands.md)** - 完整命令參考
 
