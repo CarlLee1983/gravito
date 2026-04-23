@@ -7,13 +7,14 @@ import type { DarkMatterErrorCode } from './codes'
  * @public
  */
 export class DarkMatterError extends InfrastructureException {
+  public override name = 'DarkMatterError'
+
   constructor(
     status: number,
     code: DarkMatterErrorCode,
     options: InfrastructureExceptionOptions = {}
   ) {
     super(status, code, options)
-    this.name = 'DarkMatterError'
     Object.setPrototypeOf(this, new.target.prototype)
   }
 }
