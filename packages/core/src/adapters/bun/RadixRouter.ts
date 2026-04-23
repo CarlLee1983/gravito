@@ -1,6 +1,6 @@
 import type { HttpMethod } from '../../http/types'
 import { RadixNode } from './RadixNode'
-import { NodeType, type RouteHandler, type RouteMatch, type BunRouteOptions } from './types'
+import { type BunRouteOptions, NodeType, type RouteHandler, type RouteMatch } from './types'
 
 /**
  * Simple LRU Cache for route matching
@@ -158,6 +158,21 @@ export class RadixRouter {
       if (handlers) {
         return { handlers, params, options }
       }
+
+      // If no handlers on current node, but we have a wildcard child, it matches (empty string)
+      if (node.wildcardChild) {
+        let wh = node.wildcardChild.handlers.get(method)
+        let wo = node.wildcardChild.options.get(method)
+        if (!wh) {
+          wh = node.wildcardChild.handlers.get('all' as HttpMethod)
+          wo = node.wildcardChild.options.get('all' as HttpMethod)
+        }
+        if (wh) {
+          params['*'] = ''
+          return { handlers: wh, params, options: wo }
+        }
+      }
+
       return null
     }
 
@@ -203,6 +218,9 @@ export class RadixRouter {
       }
 
       if (handlers) {
+        // Capture the remainder as '*' param
+        const wildcardPath = segments.slice(depth).join('/')
+        params['*'] = wildcardPath
         return { handlers, params, options }
       }
     }
