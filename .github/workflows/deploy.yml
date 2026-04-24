@@ -25,6 +25,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Default job limit is 6h; a hung `bun run build` should fail fast with logs, not burn the cap.
+    timeout-minutes: 120
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,7 +42,9 @@ jobs:
           SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
 
       - name: Build All Packages
-        run: bun run build
+        # --verbosity: turbo tracing; --log-order=grouped: readable logs when a task stalls.
+        # stdbuf: line-buffered I/O on ubuntu runners so the log updates during long builds.
+        run: stdbuf -oL -eL bun run build -- --verbosity=1 --log-order=grouped
 
       - name: Build Official Site
         working-directory: examples/official-site
